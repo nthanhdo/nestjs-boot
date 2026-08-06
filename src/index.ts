@@ -34,3 +34,15 @@ export {
   getReaderConnectionName,
 } from './database';
 export type { PaginatedResult, FindAllOptions } from './database';
+
+// --- Cache ---
+export {
+  CacheModule,
+  MultiCacheService,
+  MemoryCacheAdapter,
+  RedisCacheAdapter,
+  InjectCache,
+  CACHE_SERVICE,
+  CACHE_OPTIONS,
+} from './cache';
+export type { CacheAdapter, CacheSetOptions } from './cache';

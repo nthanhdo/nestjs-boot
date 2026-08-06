@@ -94,54 +94,60 @@ curl -s http://localhost:3000/health | jq
 ## Architecture
 
 ```mermaid
-graph TB
-    Client([Client / Browser]) -->|HTTP :3000| GW
+graph LR
+    Client([Client]) -->|HTTP :3000| GW[API Gateway<br/>JWT + RBAC + Correlation]
 
-    subgraph Gateway["API Gateway :3000"]
-        GW[JWT + RBAC + Correlation + Envelope]
+    subgraph services [" "]
+        direction TB
+
+        subgraph core ["Core"]
+            AUTH[Auth<br/>:5001]
+            PROD[Product<br/>:5002]
+            ORD[Order<br/>:5003]
+        end
+
+        subgraph evented ["Event-Driven"]
+            NOTIF[Notification<br/>:5004]
+            FULFILL[Fulfillment<br/>:5008]
+            CAMP[Campaign<br/>:5009]
+        end
+
+        subgraph content ["Content & Ops"]
+            FILE[File<br/>:5005]
+            BLOG[Blog<br/>:5007]
+            SCHED[Scheduler<br/>:5006]
+        end
     end
 
-    subgraph Core Services
-        AUTH[Auth :5001]
-        PROD[Product :5002]
-        ORD[Order :5003]
-    end
+    GW ---|gRPC| AUTH
+    GW ---|gRPC| PROD
+    GW ---|gRPC| ORD
+    GW ---|gRPC| NOTIF
+    GW ---|gRPC| FILE
+    GW ---|gRPC| SCHED
+    GW ---|gRPC| BLOG
+    GW ---|gRPC| FULFILL
+    GW ---|gRPC| CAMP
 
-    subgraph Event-Driven Services
-        NOTIF[Notification :5004]
-        FULFILL[Fulfillment :5008]
-        CAMP[Campaign :5009]
-    end
+    MONGO[(MongoDB)] ~~~ REDIS[(Redis)]
 
-    subgraph Content & Storage
-        FILE[File :5005]
-        BLOG[Blog :5007]
-    end
-
-    subgraph Job Processing
-        SCHED[Scheduler :5006]
-    end
-
-    GW -->|gRPC| AUTH
-    GW -->|gRPC| PROD
-    GW -->|gRPC| ORD
-    GW -->|gRPC| NOTIF
-    GW -->|gRPC| FILE
-    GW -->|gRPC| SCHED
-    GW -->|gRPC| BLOG
-    GW -->|gRPC| FULFILL
-    GW -->|gRPC| CAMP
-
-    subgraph Infrastructure
-        MONGO[(MongoDB)]
-        REDIS[(Redis)]
-    end
-
-    AUTH & PROD & ORD & NOTIF & FILE & SCHED & BLOG & FULFILL & CAMP --> MONGO
-    PROD & ORD & NOTIF & SCHED & BLOG & FULFILL & CAMP --> REDIS
+    style GW fill:#0ea5e9,stroke:#0284c7,color:#fff
+    style AUTH fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    style PROD fill:#10b981,stroke:#059669,color:#fff
+    style ORD fill:#10b981,stroke:#059669,color:#fff
+    style NOTIF fill:#f59e0b,stroke:#d97706,color:#fff
+    style FULFILL fill:#f59e0b,stroke:#d97706,color:#fff
+    style CAMP fill:#f59e0b,stroke:#d97706,color:#fff
+    style FILE fill:#6366f1,stroke:#4f46e5,color:#fff
+    style BLOG fill:#6366f1,stroke:#4f46e5,color:#fff
+    style SCHED fill:#6366f1,stroke:#4f46e5,color:#fff
+    style MONGO fill:#334155,stroke:#1e293b,color:#fff
+    style REDIS fill:#dc2626,stroke:#b91c1c,color:#fff
 ```
 
-Ten services connected via gRPC. See [`examples/microservices/`](examples/microservices/) for the full working setup with per-service details, gRPC method tables, and API route reference.
+All 10 services communicate via **gRPC**. Each uses `createApp()` with different feature combinations. Infrastructure (MongoDB + Redis) is shared.
+
+See [`examples/microservices/`](examples/microservices/) for per-service details, gRPC method tables, and API routes.
 
 ### Request Flow
 

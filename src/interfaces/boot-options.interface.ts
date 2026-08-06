@@ -46,7 +46,7 @@ export interface CacheOptions {
  * Response envelope + error handling options.
  */
 export interface ResponseOptions {
-  /** Enable unified response envelope interceptor (default: true) */
+  /** Enable unified response envelope interceptor (default: false — opt-in) */
   envelope?: boolean;
   /** Enable global all-exceptions filter (default: true) */
   errorHandler?: boolean;

@@ -23,6 +23,7 @@ export {
 export {
   DatabaseModule,
   BaseRepository,
+  CachedBaseRepository,
   InjectRepository,
   InjectConnection,
   createConnectionModules,
@@ -34,6 +35,24 @@ export {
   getReaderConnectionName,
 } from './database';
 export type { PaginatedResult, FindAllOptions } from './database';
+
+// --- Common ---
+export {
+  ResponseInterceptor,
+  AllExceptionsFilter,
+} from './common';
+export type { ResponseEnvelope, ErrorResponse } from './common';
+
+// --- Health ---
+export {
+  HealthModule,
+  HealthController,
+  DatabaseHealthIndicator,
+  RedisHealthIndicator,
+} from './health';
+
+// --- createApp ---
+export { createApp } from './create-app';
 
 // --- Cache ---
 export {

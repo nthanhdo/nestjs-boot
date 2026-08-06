@@ -11,3 +11,4 @@ export {
   getReaderConnectionName,
 } from './constants';
 export { createConnectionModules } from './connection.factory';
+export { CachedBaseRepository } from './cached.repository';

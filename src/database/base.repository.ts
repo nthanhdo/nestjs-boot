@@ -53,17 +53,17 @@ export class BaseRepository<T extends Document> {
     const limit = options.limit ?? 20;
     const skip = (page - 1) * limit;
 
-    let query = this.readModel.find(filter).skip(skip).limit(limit);
+    const query = this.readModel.find(filter).skip(skip).limit(limit);
 
     if (options.sort) {
-      query = query.sort(options.sort);
+      query.sort(options.sort);
     }
     if (options.select) {
-      query = query.select(options.select);
+      query.select(options.select);
     }
 
     const [data, total] = await Promise.all([
-      query.exec(),
+      query.exec() as Promise<T[]>,
       this.readModel.countDocuments(filter).exec(),
     ]);
 

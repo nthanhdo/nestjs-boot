@@ -38,7 +38,7 @@ const cacheSchema = Joi.object({
 });
 
 const responseSchema = Joi.object({
-  envelope: Joi.boolean().default(true),
+  envelope: Joi.boolean().default(false),
   errorHandler: Joi.boolean().default(true),
 });
 
@@ -54,7 +54,7 @@ const healthSchema = Joi.object({
 export const bootOptionsSchema = Joi.object({
   database: databaseSchema.optional(),
   cache: cacheSchema.optional(),
-  response: responseSchema.optional().default({ envelope: true, errorHandler: true }),
+  response: responseSchema.optional().default({ envelope: false, errorHandler: true }),
   health: healthSchema.optional().default({ enabled: true, path: '/health' }),
 }).options({ abortEarly: false });
 

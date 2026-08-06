@@ -3,11 +3,19 @@ export type {
   BootOptions,
   DatabaseOptions,
   ConnectionOptions,
+  MongooseConnectionOptions,
   CacheOptions,
   RedisCacheOptions,
+  MemcachedCacheOptions,
   ResponseOptions,
   HealthOptions,
+  AuthOptions,
 } from './interfaces/boot-options.interface';
+export type {
+  JwtAuthOptions,
+  ApiKeyAuthOptions,
+  RbacOptions,
+} from './auth';
 
 // --- Config ---
 export {
@@ -31,7 +39,7 @@ export {
   getWriterConnectionName,
   getReaderConnectionName,
 } from './database';
-export type { PaginatedResult, FindAllOptions } from './database';
+export type { PaginatedResult, FindAllOptions, ModelDefinition } from './database';
 
 // --- Common ---
 export {
@@ -48,6 +56,23 @@ export {
   RedisHealthIndicator,
 } from './health';
 
+// --- Auth ---
+export {
+  AuthModule,
+  BootJwtService,
+  JwtAuthGuard,
+  ApiKeyGuard,
+  RolesGuard,
+  PermissionsGuard,
+  Roles,
+  Permissions,
+  Public,
+  AUTH_OPTIONS,
+  ROLES_KEY,
+  PERMISSIONS_KEY,
+  IS_PUBLIC_KEY,
+} from './auth';
+
 // --- createApp ---
 export { createApp } from './create-app';
 
@@ -57,6 +82,7 @@ export {
   MultiCacheService,
   MemoryCacheAdapter,
   RedisCacheAdapter,
+  MemcachedCacheAdapter,
   InjectCache,
   CACHE_SERVICE,
   CACHE_OPTIONS,

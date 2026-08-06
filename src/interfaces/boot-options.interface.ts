@@ -1,4 +1,31 @@
 /**
+ * Mongoose connection options passthrough.
+ */
+export interface MongooseConnectionOptions {
+  maxPoolSize?: number;
+  minPoolSize?: number;
+  serverSelectionTimeoutMS?: number;
+  socketTimeoutMS?: number;
+  connectTimeoutMS?: number;
+  heartbeatFrequencyMS?: number;
+  retryWrites?: boolean;
+  retryReads?: boolean;
+  w?: string | number;
+  wtimeoutMS?: number;
+  journal?: boolean;
+  authSource?: string;
+  authMechanism?: string;
+  ssl?: boolean;
+  tls?: boolean;
+  tlsCAFile?: string;
+  tlsCertificateKeyFile?: string;
+  replicaSet?: string;
+  readPreference?: string;
+  /** Any additional Mongoose ConnectOptions */
+  [key: string]: unknown;
+}
+
+/**
  * Per-connection configuration for a MongoDB database.
  */
 export interface ConnectionOptions {
@@ -6,6 +33,8 @@ export interface ConnectionOptions {
   writerUri: string;
   /** Read-replica MongoDB URI — optional. Reads auto-route here when provided. */
   readerUri?: string;
+  /** Mongoose connection options (pool size, auth, timeouts, etc.) */
+  options?: MongooseConnectionOptions;
 }
 
 /**
@@ -25,9 +54,22 @@ export interface RedisCacheOptions {
 /**
  * Cache configuration — multi-layer (L1 in-memory + L2 Redis).
  */
+/**
+ * Memcached connection options.
+ */
+export interface MemcachedCacheOptions {
+  /** Memcached server(s) — e.g., 'localhost:11211' or 'host1:11211,host2:11211' */
+  servers: string;
+}
+
+/**
+ * Cache configuration — multi-layer (L1 in-memory/memcached + L2 Redis).
+ */
 export interface CacheOptions {
   /** Redis config for L2 cache layer */
   redis?: RedisCacheOptions;
+  /** Memcached config for L1 cache layer (replaces in-memory LRU) */
+  memcached?: MemcachedCacheOptions;
   /** Default TTL in seconds (default: 300) */
   defaultTtl?: number;
 }
@@ -53,6 +95,11 @@ export interface HealthOptions {
 }
 
 /**
+ * Re-export AuthOptions so consumers can import from boot-options.
+ */
+export type { AuthOptions } from '../auth/interfaces';
+
+/**
  * Master configuration object for nestjs-boot.
  * Pass to `createApp()` — each section is optional.
  * Omitted sections = module not loaded.
@@ -68,4 +115,6 @@ export interface BootOptions {
   response?: ResponseOptions;
   /** Health check endpoint */
   health?: HealthOptions;
+  /** Auth + RBAC configuration (opt-in — omit to disable all auth) */
+  auth?: import('../auth/interfaces').AuthOptions;
 }

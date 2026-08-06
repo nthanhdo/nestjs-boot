@@ -1,20 +1,23 @@
 import { DynamicModule, Global, Logger, Module, OnModuleDestroy } from '@nestjs/common';
 import { CacheOptions } from '../interfaces/boot-options.interface';
 import { MemoryCacheAdapter } from './adapters/memory-cache.adapter';
+import { MemcachedCacheAdapter } from './adapters/memcached-cache.adapter';
 import { RedisCacheAdapter } from './adapters/redis-cache.adapter';
+import { CacheAdapter } from './interfaces';
 import { MultiCacheService } from './multi-cache.service';
 import { CACHE_SERVICE, CACHE_OPTIONS } from './constants';
 
 /**
  * CacheModule — multi-layer cache with size-aware routing.
  *
- * - L1: always in-memory LRU (MemoryCacheAdapter)
+ * - L1: in-memory LRU (default) or memcached (if configured) — requires memjs installed
  * - L2: optional Redis (RedisCacheAdapter) — requires ioredis installed
  *
  * Usage:
  * ```ts
  * CacheModule.register({
- *   redis: { url: 'redis://localhost:6379' },
+ *   memcached: { servers: 'localhost:11211' }, // optional L1 memcached
+ *   redis: { url: 'redis://localhost:6379' },  // optional L2 redis
  *   defaultTtl: 300,
  * })
  * ```
@@ -25,6 +28,8 @@ export class CacheModule implements OnModuleDestroy {
   private static logger = new Logger('CacheModule');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private static redisClient: any = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private static memcachedClient: any = null;
 
   static register(options: CacheOptions): DynamicModule {
     const providers = [
@@ -35,8 +40,30 @@ export class CacheModule implements OnModuleDestroy {
       {
         provide: CACHE_SERVICE,
         useFactory: () => {
-          // L1: always in-memory LRU
-          const l1 = new MemoryCacheAdapter(1000);
+          // L1: memcached (if configured) or in-memory LRU
+          let l1: CacheAdapter;
+
+          if (options.memcached?.servers) {
+            try {
+              // eslint-disable-next-line @typescript-eslint/no-var-requires
+              const memjs = require('memjs');
+              // Clean up previous client if register() called multiple times (e.g. testing)
+              if (CacheModule.memcachedClient) {
+                try { CacheModule.memcachedClient.close(); } catch { /* best effort */ }
+              }
+              const client = memjs.Client.create(options.memcached.servers);
+              CacheModule.memcachedClient = client;
+              l1 = new MemcachedCacheAdapter(client);
+              CacheModule.logger.log('Memcached L1 cache connected');
+            } catch {
+              CacheModule.logger.warn(
+                'memjs not installed — falling back to in-memory LRU for L1 cache. Install memjs for memcached support.',
+              );
+              l1 = new MemoryCacheAdapter(1000);
+            }
+          } else {
+            l1 = new MemoryCacheAdapter(1000);
+          }
 
           // L2: optional Redis
           let l2: RedisCacheAdapter | null = null;
@@ -55,7 +82,7 @@ export class CacheModule implements OnModuleDestroy {
               CacheModule.logger.log('Redis L2 cache connected');
             } catch {
               CacheModule.logger.warn(
-                'ioredis not installed — running with L1 (in-memory) cache only. Install ioredis for Redis L2 cache.',
+                'ioredis not installed — running with L1 cache only. Install ioredis for Redis L2 cache.',
               );
             }
           }
@@ -83,6 +110,15 @@ export class CacheModule implements OnModuleDestroy {
         CacheModule.logger.warn('Failed to close Redis connection gracefully');
       }
       CacheModule.redisClient = null;
+    }
+    if (CacheModule.memcachedClient) {
+      try {
+        CacheModule.memcachedClient.close();
+        CacheModule.logger.log('Memcached connection closed');
+      } catch {
+        CacheModule.logger.warn('Failed to close Memcached connection gracefully');
+      }
+      CacheModule.memcachedClient = null;
     }
   }
 }

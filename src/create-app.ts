@@ -6,6 +6,7 @@ import { validateBootOptions } from './config/validators';
 import { DatabaseModule } from './database/database.module';
 import { CacheModule } from './cache/cache.module';
 import { HealthModule } from './health/health.module';
+import { AuthModule } from './auth/auth.module';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { BootOptions } from './interfaces/boot-options.interface';
@@ -42,6 +43,9 @@ export async function createApp(
   }
   if (validated.health?.enabled !== false) {
     imports.push(HealthModule.register(validated));
+  }
+  if (validated.auth) {
+    imports.push(AuthModule.register(validated.auth));
   }
 
   // 3. Wrap user's AppModule with infrastructure

@@ -1,6 +1,11 @@
 import * as Joi from 'joi';
 import { BootOptions } from '../interfaces/boot-options.interface';
 
+const connectionOptionsSchema = Joi.object().pattern(
+  Joi.string(),
+  Joi.any(),
+).optional();
+
 const connectionSchema = Joi.object({
   writerUri: Joi.string().uri().pattern(/^mongodb(\+srv)?:\/\//).required().messages({
     'string.uri': 'writerUri must be a valid MongoDB URI',
@@ -10,6 +15,7 @@ const connectionSchema = Joi.object({
   readerUri: Joi.string().uri().pattern(/^mongodb(\+srv)?:\/\//).optional().messages({
     'string.pattern.base': 'readerUri must start with mongodb:// or mongodb+srv://',
   }),
+  options: connectionOptionsSchema,
 });
 
 const databaseSchema = Joi.object({
@@ -29,8 +35,15 @@ const redisSchema = Joi.object({
   }),
 });
 
+const memcachedSchema = Joi.object({
+  servers: Joi.string().required().messages({
+    'any.required': 'Memcached servers string is required when memcached is configured',
+  }),
+});
+
 const cacheSchema = Joi.object({
   redis: redisSchema.optional(),
+  memcached: memcachedSchema.optional(),
   defaultTtl: Joi.number().integer().min(1).default(300),
 });
 
@@ -54,7 +67,28 @@ export const bootOptionsSchema = Joi.object({
   response: responseSchema.optional().default({ envelope: false, errorHandler: true }),
   health: healthSchema.optional().default({ enabled: true, path: '/health' }),
   logger: Joi.any().optional(),
-}).options({ abortEarly: false, stripUnknown: true });
+  auth: Joi.object({
+    jwt: Joi.object({
+      secret: Joi.string().min(8).required(),
+      signOptions: Joi.object({
+        expiresIn: Joi.alternatives().try(Joi.string(), Joi.number()).optional(),
+        algorithm: Joi.string().optional(),
+      }).optional(),
+      refreshSecret: Joi.string().optional(),
+      refreshExpiresIn: Joi.alternatives().try(Joi.string(), Joi.number()).optional(),
+    }).optional(),
+    apiKey: Joi.object({
+      enabled: Joi.boolean().required(),
+      headerName: Joi.string().optional(),
+      validate: Joi.function().required(),
+    }).optional(),
+    rbac: Joi.object({
+      enabled: Joi.boolean().required(),
+      extractRoles: Joi.function().optional(),
+      extractPermissions: Joi.function().optional(),
+    }).optional(),
+  }).optional(),
+}).options({ abortEarly: false, stripUnknown: false });
 
 /**
  * Validate BootOptions, throwing with clear messages on failure.

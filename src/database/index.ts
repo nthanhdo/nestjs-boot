@@ -1,4 +1,5 @@
 export { DatabaseModule } from './database.module';
+export type { ModelDefinition } from './database.module';
 export { BaseRepository } from './base.repository';
 export type { PaginatedResult, FindAllOptions } from './base.repository';
 export { InjectConnection } from './decorators';

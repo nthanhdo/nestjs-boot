@@ -93,27 +93,124 @@ curl -s http://localhost:3000/health | jq
 
 ## Architecture
 
-```
-                         HTTP :3000
-                            |
-                    ┌───────┴───────┐
-                    │  API Gateway  │
-                    │  JWT + RBAC   │
-                    │  Correlation  │
-                    │  Rate Limit   │
-                    └──┬──┬──┬──┬──┘
-                       │  │  │  │
-         ┌─────────────┼──┼──┼──┼─────────────┐
-         │    ┌────────┘  │  │  └────────┐     │
-         │    │    ┌──────┘  └──────┐    │     │
-         ▼    ▼    ▼    ▼    ▼      ▼    ▼     ▼
-       Auth  Prod  Ord  Notif File  Sched Blog  Fulfill Campaign
-       :5001 :5002 :5003 :5004 :5005 :5006 :5007 :5008  :5009
+```mermaid
+graph TB
+    Client([Client / Browser]) -->|HTTP :3000| GW
+
+    subgraph Gateway["API Gateway :3000"]
+        GW[JWT + RBAC + Correlation + Envelope]
+    end
+
+    subgraph Core Services
+        AUTH[Auth :5001]
+        PROD[Product :5002]
+        ORD[Order :5003]
+    end
+
+    subgraph Event-Driven Services
+        NOTIF[Notification :5004]
+        FULFILL[Fulfillment :5008]
+        CAMP[Campaign :5009]
+    end
+
+    subgraph Content & Storage
+        FILE[File :5005]
+        BLOG[Blog :5007]
+    end
+
+    subgraph Job Processing
+        SCHED[Scheduler :5006]
+    end
+
+    GW -->|gRPC| AUTH
+    GW -->|gRPC| PROD
+    GW -->|gRPC| ORD
+    GW -->|gRPC| NOTIF
+    GW -->|gRPC| FILE
+    GW -->|gRPC| SCHED
+    GW -->|gRPC| BLOG
+    GW -->|gRPC| FULFILL
+    GW -->|gRPC| CAMP
+
+    subgraph Infrastructure
+        MONGO[(MongoDB)]
+        REDIS[(Redis)]
+    end
+
+    AUTH & PROD & ORD & NOTIF & FILE & SCHED & BLOG & FULFILL & CAMP --> MONGO
+    PROD & ORD & NOTIF & SCHED & BLOG & FULFILL & CAMP --> REDIS
 ```
 
-Ten services connected via gRPC. See [`examples/microservices/`](examples/microservices/) for the full working setup.
+Ten services connected via gRPC. See [`examples/microservices/`](examples/microservices/) for the full working setup with per-service details, gRPC method tables, and API route reference.
+
+### Request Flow
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant GW as API Gateway :3000
+    participant AUTH as Auth Service
+    participant SVC as Product Service
+
+    C->>GW: POST /products (+ Bearer token)
+    GW->>AUTH: ValidateToken(token)
+    AUTH-->>GW: { valid, userId, roles }
+    GW->>SVC: Create(data) [gRPC]
+    SVC-->>GW: Product
+    GW-->>C: { statusCode: 200, data: Product }
+```
+
+### Event Flow
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant GW as API Gateway
+    participant ORD as Order Service
+    participant EVT as EventBus (Redis)
+    participant NOTIF as Notification
+    participant FULFILL as Fulfillment
+
+    C->>GW: POST /orders
+    GW->>ORD: Create [gRPC]
+    ORD->>EVT: emit OrderCreatedEvent
+    EVT-->>NOTIF: OrderCreatedEvent
+    EVT-->>FULFILL: OrderCreatedEvent
+    NOTIF->>NOTIF: Enqueue notification job
+    FULFILL->>FULFILL: Create shipment
+    ORD-->>GW: Order
+    GW-->>C: { data: Order }
+```
 
 ## How `createApp()` Works
+
+```mermaid
+flowchart TD
+    A["createApp(AppModule, options)"] --> B{options.tracing?}
+    B -->|Yes| C[initTracing — BEFORE NestFactory]
+    B -->|No| D[ ]
+    C --> D
+    D --> E[Build BootModule dynamically]
+    E --> F{database?}
+    E --> G{cache?}
+    E --> H{auth?}
+    E --> I{transport?}
+    E --> J{events?}
+    E --> K{queue?}
+    F -->|Yes| F1[+ DatabaseModule]
+    G -->|Yes| G1[+ CacheModule]
+    H -->|Yes| H1[+ AuthModule]
+    I -->|Yes| I1[+ TransportModule<br/>+ CorrelationModule]
+    J -->|Yes| J1[+ EventBusModule]
+    K -->|Yes| K1[+ QueueModule]
+    F1 & G1 & H1 & I1 & J1 & K1 --> L[NestFactory.create]
+    L --> M[Apply global guards /<br/>interceptors / filters]
+    M --> N{transport configured?}
+    N -->|Yes| O[connectTransports +<br/>startAllMicroservices]
+    N -->|No| P[ ]
+    O --> Q[return app]
+    P --> Q
+```
 
 **Before** — manual wiring (~40 lines of infrastructure per service):
 

@@ -19,7 +19,7 @@ npm install
 npm run start:dev
 ```
 
-### Option 2: Clone and run the example (4-service microservice architecture)
+### Option 2: Clone and run the example (10-service microservice architecture)
 
 ```bash
 git clone https://github.com/nthanhdo/nestjs-boot.git
@@ -27,15 +27,20 @@ cd nestjs-boot/examples/microservices
 docker-compose up --build
 ```
 
-This starts:
+This starts 10 services + MongoDB + Redis:
 
 | Service | HTTP | gRPC | What it demonstrates |
 |---------|------|------|---------------------|
-| API Gateway | [:3000](http://localhost:3000) | — | JWT auth, correlation ID, response envelope, gRPC clients |
+| API Gateway | [:3000](http://localhost:3000) | — | JWT auth, correlation ID, response envelope, 9 gRPC clients |
 | Auth Service | :3003 | :5001 | `BootJwtService`, bcrypt, user management |
 | Product Service | :3002 | :5002 | L1+L2 cache, reader/writer split |
 | Order Service | :3001 | :5003 | Database, gRPC server |
 | Notification Service | :3004 | :5004 | EventBus (`@OnEvent`), BullMQ queue (`@Processor`) |
+| File Service | :3005 | :5005 | File upload, disk storage, metadata in MongoDB |
+| Scheduler Service | :3006 | :5006 | Cron-like jobs via BullMQ repeatable queues |
+| Blog Service | :3007 | :5007 | Article CRUD with Redis-cached reads |
+| Fulfillment Service | :3008 | :5008 | EventBus + Queue pipeline, order fulfillment |
+| Campaign Service | :3009 | :5009 | Promo campaigns, EventBus lifecycle |
 | MongoDB | :27017 | — | |
 | Redis | :6379 | — | |
 
@@ -48,44 +53,65 @@ curl -s -X POST http://localhost:3000/auth/register \
   -d '{"email":"test@test.com","password":"123456","name":"Test User"}'
 
 # Login (save the accessToken)
-curl -s -X POST http://localhost:3000/auth/login \
+TOKEN=$(curl -s -X POST http://localhost:3000/auth/login \
   -H 'Content-Type: application/json' \
-  -d '{"email":"test@test.com","password":"123456"}'
+  -d '{"email":"test@test.com","password":"123456"}' | jq -r '.data.accessToken')
 
 # Create a product
 curl -s -X POST http://localhost:3000/products \
   -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{"name":"Wireless Mouse","price":29.99,"category":"electronics","stock":150}'
 
-# List products
-curl -s 'http://localhost:3000/products?category=electronics'
+# Create a blog article
+curl -s -X POST http://localhost:3000/blog/articles \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"title":"Hello World","content":"First post!","tags":["intro"],"authorId":"user-123"}'
+
+# Create a campaign
+curl -s -X POST http://localhost:3000/campaigns \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"Summer Sale","promoCode":"SUMMER20","discountPercent":20,"startDate":"2026-08-01T00:00:00Z","endDate":"2026-08-31T23:59:59Z"}'
+
+# Create an order (triggers Fulfillment + Notification)
+curl -s -X POST http://localhost:3000/orders \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"userId":"user-123","items":[{"productId":"<id>","quantity":2,"price":29.99}],"promoCode":"SUMMER20"}'
+
+# Schedule a job
+curl -s -X POST http://localhost:3000/scheduler/jobs \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"daily-report","cron":"0 9 * * *","handler":"generateDailyReport"}'
 
 # Health check
-curl http://localhost:3000/health
+curl -s http://localhost:3000/health | jq
 ```
 
 ## Architecture
 
 ```
-                        HTTP :3000
-                           │
-                   ┌───────┴───────┐
-                   │  API Gateway  │
-                   │  JWT + Envelope│
-                   └┬──┬──┬──┬────┘
-                    │  │  │  │
-        gRPC :5001 ─┘  │  │  └─ gRPC :5004
-        gRPC :5002 ─────┘  └──── gRPC :5003
-                    │  │  │  │
-              ┌─────┘  │  │  └─────┐
-              ▼        ▼  ▼        ▼
-          ┌──────┐ ┌──────┐ ┌──────┐ ┌──────────────┐
-          │ Auth │ │Prod. │ │Order │ │ Notification │
-          │      │ │      │ │      │ │              │
-          │Mongo │ │Mongo │ │Mongo │ │Mongo+EventBus│
-          │JWT   │ │Redis │ │Redis │ │BullMQ Queue  │
-          └──────┘ └──────┘ └──────┘ └──────────────┘
+                         HTTP :3000
+                            |
+                    ┌───────┴───────┐
+                    │  API Gateway  │
+                    │  JWT + RBAC   │
+                    │  Correlation  │
+                    │  Rate Limit   │
+                    └──┬──┬──┬──┬──┘
+                       │  │  │  │
+         ┌─────────────┼──┼──┼──┼─────────────┐
+         │    ┌────────┘  │  │  └────────┐     │
+         │    │    ┌──────┘  └──────┐    │     │
+         ▼    ▼    ▼    ▼    ▼      ▼    ▼     ▼
+       Auth  Prod  Ord  Notif File  Sched Blog  Fulfill Campaign
+       :5001 :5002 :5003 :5004 :5005 :5006 :5007 :5008  :5009
 ```
+
+Ten services connected via gRPC. See [`examples/microservices/`](examples/microservices/) for the full working setup.
 
 ## How `createApp()` Works
 

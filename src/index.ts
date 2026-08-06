@@ -73,6 +73,73 @@ export {
   IS_PUBLIC_KEY,
 } from './auth';
 
+// --- Correlation ---
+export {
+  CorrelationModule,
+  CorrelationIdMiddleware,
+  getCorrelationId,
+  setCorrelationId,
+  runWithCorrelationId,
+  CORRELATION_HEADER,
+  CORRELATION_OPTIONS,
+} from './correlation';
+export type { CorrelationOptions } from './correlation';
+
+// --- Shutdown ---
+export {
+  ShutdownModule,
+  ShutdownService,
+  SHUTDOWN_OPTIONS,
+  DEFAULT_SHUTDOWN_TIMEOUT,
+  DEFAULT_SHUTDOWN_SIGNALS,
+} from './shutdown';
+export type { ShutdownOptions } from './shutdown';
+
+// --- Inter-Service Auth ---
+export {
+  InterServiceAuthModule,
+  AuthPropagationInterceptor,
+  getAuthContext,
+  setAuthContext,
+  runWithAuthContext,
+  buildAuthHeaders,
+  injectAuthIntoPayload,
+  INTER_SERVICE_AUTH_OPTIONS,
+} from './inter-service-auth';
+export type { InterServiceAuthOptions, AuthContext } from './inter-service-auth';
+
+// --- Transport ---
+export {
+  TransportModule,
+  connectTransports,
+  InjectClient,
+  InjectGrpcClient,
+  getClientToken,
+  TRANSPORT_CLIENT_PREFIX,
+  TRANSPORT_OPTIONS,
+  TRANSPORT_TYPE_MAP,
+} from './transport';
+export type {
+  TransportOptions,
+  GrpcTransportOptions,
+  TcpTransportOptions,
+  NatsTransportOptions,
+  RmqTransportOptions,
+  ClientTransportOptions,
+} from './transport';
+
+// --- RPC ---
+export {
+  RpcModule,
+  BootRpcExceptionFilter,
+  deserializeRpcError,
+  GrpcStatus,
+  httpStatusToGrpc,
+  grpcStatusToHttp,
+  RPC_OPTIONS,
+} from './rpc';
+export type { RpcErrorEnvelope, RpcOptions } from './rpc';
+
 // --- createApp ---
 export { createApp } from './create-app';
 

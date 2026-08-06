@@ -117,4 +117,17 @@ export interface BootOptions {
   health?: HealthOptions;
   /** Auth + RBAC configuration (opt-in — omit to disable all auth) */
   auth?: import('../auth/interfaces').AuthOptions;
+  /** Graceful shutdown configuration */
+  shutdown?: import('../shutdown/interfaces').ShutdownOptions;
+  /** Inter-service auth propagation (opt-in — omit to disable) */
+  interServiceAuth?: import('../inter-service-auth/interfaces').InterServiceAuthOptions;
+  /** Transport configuration for hybrid microservice support (gRPC, TCP, NATS, RMQ) */
+  transport?: import('../transport/interfaces').TransportOptions;
+  /** Correlation ID middleware configuration */
+  correlation?: {
+    /** Header name (default: 'X-Correlation-Id') */
+    header?: string;
+    /** Custom ID generator (default: crypto.randomUUID()) */
+    generator?: () => string;
+  };
 }

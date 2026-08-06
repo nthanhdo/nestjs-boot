@@ -88,6 +88,76 @@ export const bootOptionsSchema = Joi.object({
       extractPermissions: Joi.function().optional(),
     }).optional(),
   }).optional(),
+  correlation: Joi.object({
+    header: Joi.string().optional(),
+    generator: Joi.function().optional(),
+  }).optional(),
+  shutdown: Joi.object({
+    timeout: Joi.number().integer().min(0).optional(),
+    signals: Joi.array().items(Joi.string()).optional(),
+  }).optional(),
+  interServiceAuth: Joi.object({
+    propagation: Joi.boolean().optional(),
+    serviceToken: Joi.string().optional(),
+    headerName: Joi.string().optional(),
+  }).optional(),
+  transport: Joi.object({
+    grpc: Joi.object({
+      url: Joi.string().required().messages({
+        'any.required': 'gRPC url is required (e.g., "0.0.0.0:5000")',
+      }),
+      package: Joi.alternatives().try(
+        Joi.string(),
+        Joi.array().items(Joi.string()),
+      ).required().messages({
+        'any.required': 'gRPC package name is required',
+      }),
+      protoPath: Joi.alternatives().try(
+        Joi.string(),
+        Joi.array().items(Joi.string()),
+      ).required().messages({
+        'any.required': 'gRPC protoPath is required',
+      }),
+      loader: Joi.object({
+        keepCase: Joi.boolean().optional(),
+        longs: Joi.function().optional(),
+        enums: Joi.function().optional(),
+        defaults: Joi.boolean().optional(),
+        oneofs: Joi.boolean().optional(),
+        includeDirs: Joi.array().items(Joi.string()).optional(),
+      }).optional(),
+      credentials: Joi.any().optional(),
+    }).optional(),
+    tcp: Joi.object({
+      host: Joi.string().optional(),
+      port: Joi.number().integer().min(1).max(65535).optional(),
+    }).optional(),
+    nats: Joi.object({
+      url: Joi.string().required().messages({
+        'any.required': 'NATS url is required',
+      }),
+      queue: Joi.string().optional(),
+    }).optional(),
+    rabbitmq: Joi.object({
+      urls: Joi.array().items(Joi.string()).min(1).required().messages({
+        'any.required': 'RabbitMQ urls array is required',
+        'array.min': 'At least one RabbitMQ URL must be provided',
+      }),
+      queue: Joi.string().required().messages({
+        'any.required': 'RabbitMQ queue name is required',
+      }),
+      queueOptions: Joi.object({
+        durable: Joi.boolean().optional(),
+      }).optional(),
+    }).optional(),
+    clients: Joi.object().pattern(
+      Joi.string(),
+      Joi.object({
+        transport: Joi.string().valid('grpc', 'tcp', 'nats', 'rabbitmq').required(),
+        options: Joi.object().required(),
+      }),
+    ).optional(),
+  }).optional(),
 }).options({ abortEarly: false, stripUnknown: false });
 
 /**

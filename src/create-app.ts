@@ -7,6 +7,12 @@ import { DatabaseModule } from './database/database.module';
 import { CacheModule } from './cache/cache.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
+import { CorrelationModule } from './correlation/correlation.module';
+import { ShutdownModule } from './shutdown/shutdown.module';
+import { TransportModule } from './transport/transport.module';
+import { InterServiceAuthModule } from './inter-service-auth/inter-service-auth.module';
+import { RpcModule } from './rpc/rpc.module';
+import { connectTransports } from './transport/transport.factory';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { BootOptions } from './interfaces/boot-options.interface';
@@ -47,6 +53,19 @@ export async function createApp(
   if (validated.auth) {
     imports.push(AuthModule.register(validated.auth));
   }
+  if (validated.correlation || validated.transport) {
+    imports.push(CorrelationModule.register(validated.correlation));
+  }
+  if (validated.shutdown) {
+    imports.push(ShutdownModule.register(validated.shutdown));
+  }
+  if (validated.transport) {
+    imports.push(TransportModule.register(validated.transport));
+    imports.push(RpcModule.register());
+  }
+  if (validated.interServiceAuth) {
+    imports.push(InterServiceAuthModule.register(validated.interServiceAuth));
+  }
 
   // 3. Wrap user's AppModule with infrastructure
   @Module({ imports: [...imports, AppModule] })
@@ -60,7 +79,17 @@ export async function createApp(
   }
   const app = await NestFactory.create(BootWrappedModule, nestOptions);
 
-  // 5. Apply global interceptors/filters
+  // 5. Connect microservice transports
+  if (validated.transport) {
+    await connectTransports(app, validated.transport);
+  }
+
+  // 6. Enable shutdown hooks
+  if (validated.shutdown !== undefined) {
+    app.enableShutdownHooks();
+  }
+
+  // 7. Apply global interceptors/filters
   if (validated.response?.envelope) {
     app.useGlobalInterceptors(new ResponseInterceptor());
   }

@@ -10,12 +10,22 @@ services:
       - order-service
       - product-service
       - notification-service
+      - file-service
+      - scheduler-service
+      - blog-service
+      - fulfillment-service
+      - campaign-service
     environment:
       JWT_SECRET: dev-secret-change-in-production
       AUTH_SERVICE_URL: auth-service:5000
       ORDER_SERVICE_URL: order-service:5000
       PRODUCT_SERVICE_URL: product-service:5000
       NOTIFICATION_SERVICE_URL: notification-service:5000
+      FILE_SERVICE_URL: file-service:5005
+      SCHEDULER_SERVICE_URL: scheduler-service:5006
+      BLOG_SERVICE_URL: blog-service:5007
+      FULFILLMENT_SERVICE_URL: fulfillment-service:5008
+      CAMPAIGN_SERVICE_URL: campaign-service:5009
 
   auth-service:
     build: ./auth-service
@@ -65,6 +75,67 @@ services:
       MONGO_URI: mongodb://mongodb:27017/notifications
       REDIS_URL: redis://redis:6379
 
+  file-service:
+    build: ./file-service
+    ports:
+      - '3005:3005'
+      - '5005:5005'
+    depends_on:
+      - mongodb
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/files
+      FILE_BASE_URL: http://localhost:3005/files
+    volumes:
+      - file-uploads:/app/uploads
+
+  scheduler-service:
+    build: ./scheduler-service
+    ports:
+      - '3006:3006'
+      - '5006:5006'
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/scheduler
+      REDIS_URL: redis://redis:6379
+
+  blog-service:
+    build: ./blog-service
+    ports:
+      - '3007:3007'
+      - '5007:5007'
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/blog
+      REDIS_URL: redis://redis:6379
+
+  fulfillment-service:
+    build: ./fulfillment-service
+    ports:
+      - '3008:3008'
+      - '5008:5008'
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/fulfillment
+      REDIS_URL: redis://redis:6379
+
+  campaign-service:
+    build: ./campaign-service
+    ports:
+      - '3009:3009'
+      - '5009:5009'
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/campaigns
+      REDIS_URL: redis://redis:6379
+
   mongodb:
     image: mongo:7
     ports:
@@ -79,3 +150,4 @@ services:
 
 volumes:
   mongo-data:
+  file-uploads:

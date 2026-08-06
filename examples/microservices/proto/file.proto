@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package file;
+
+service FileService {
+  rpc Upload (UploadRequest) returns (FileResponse);
+  rpc GetFile (FileById) returns (FileResponse);
+  rpc DeleteFile (FileById) returns (DeleteResponse);
+  rpc ListFiles (ListFilesRequest) returns (FileListResponse);
+}
+
+message UploadRequest {
+  string filename = 1;
+  string mimetype = 2;
+  bytes data = 3;
+  string uploadedBy = 4;
+  string folder = 5;
+}
+
+message FileResponse {
+  string id = 1;
+  string filename = 2;
+  string originalName = 3;
+  string mimetype = 4;
+  int64 size = 5;
+  string url = 6;
+  string folder = 7;
+  string uploadedBy = 8;
+  string createdAt = 9;
+}
+
+message FileById {
+  string id = 1;
+}
+
+message DeleteResponse {
+  bool success = 1;
+}
+
+message ListFilesRequest {
+  string folder = 1;
+  string uploadedBy = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
+
+message FileListResponse {
+  repeated FileResponse items = 1;
+  int32 total = 2;
+}

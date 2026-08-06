@@ -1,0 +1,113 @@
+syntax = "proto3";
+package campaign;
+
+service CampaignService {
+  rpc CreateCampaign (CreateCampaignRequest) returns (Campaign);
+  rpc GetCampaign (CampaignById) returns (Campaign);
+  rpc ListCampaigns (ListCampaignsRequest) returns (CampaignListResponse);
+  rpc UpdateCampaign (UpdateCampaignRequest) returns (Campaign);
+  rpc DeleteCampaign (CampaignById) returns (DeleteResponse);
+  rpc ActivateCampaign (CampaignById) returns (Campaign);
+  rpc DeactivateCampaign (CampaignById) returns (Campaign);
+  rpc ValidatePromoCode (ValidatePromoRequest) returns (PromoValidationResponse);
+  rpc ApplyPromoCode (ApplyPromoRequest) returns (PromoApplicationResponse);
+  rpc GetCampaignStats (CampaignById) returns (CampaignStats);
+}
+
+message Campaign {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string type = 4;
+  string status = 5;
+  string promoCode = 6;
+  Discount discount = 7;
+  string startDate = 8;
+  string endDate = 9;
+  int32 usageLimit = 10;
+  int32 usageCount = 11;
+  double minOrderAmount = 12;
+  repeated string targetProducts = 13;
+  repeated string targetCategories = 14;
+  string createdAt = 15;
+}
+
+message Discount {
+  string type = 1;
+  double value = 2;
+  double maxDiscount = 3;
+}
+
+message CreateCampaignRequest {
+  string name = 1;
+  string description = 2;
+  string type = 3;
+  string promoCode = 4;
+  Discount discount = 5;
+  string startDate = 6;
+  string endDate = 7;
+  int32 usageLimit = 8;
+  double minOrderAmount = 9;
+  repeated string targetProducts = 10;
+  repeated string targetCategories = 11;
+}
+
+message UpdateCampaignRequest {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  Discount discount = 4;
+  string endDate = 5;
+  int32 usageLimit = 6;
+  double minOrderAmount = 7;
+}
+
+message CampaignById { string id = 1; }
+
+message ListCampaignsRequest {
+  string status = 1;
+  string type = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
+
+message CampaignListResponse {
+  repeated Campaign items = 1;
+  int32 total = 2;
+}
+
+message DeleteResponse { bool success = 1; }
+
+message ValidatePromoRequest {
+  string promoCode = 1;
+  double orderAmount = 2;
+  repeated string productIds = 3;
+}
+
+message PromoValidationResponse {
+  bool valid = 1;
+  string message = 2;
+  Discount discount = 3;
+  double discountAmount = 4;
+}
+
+message ApplyPromoRequest {
+  string promoCode = 1;
+  string orderId = 2;
+  string userId = 3;
+  double orderAmount = 4;
+}
+
+message PromoApplicationResponse {
+  bool success = 1;
+  double discountApplied = 2;
+  string message = 3;
+}
+
+message CampaignStats {
+  string campaignId = 1;
+  int32 totalUses = 2;
+  double totalDiscountGiven = 3;
+  int32 uniqueUsers = 4;
+  double conversionRate = 5;
+}

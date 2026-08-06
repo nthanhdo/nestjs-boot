@@ -48,6 +48,46 @@ async function bootstrap() {
             protoPath: join(protoDir, 'notification.proto'),
           },
         },
+        FILE_SERVICE: {
+          transport: 'grpc',
+          options: {
+            url: process.env.FILE_SERVICE_URL || 'localhost:5005',
+            package: 'file',
+            protoPath: join(protoDir, 'file.proto'),
+          },
+        },
+        SCHEDULER_SERVICE: {
+          transport: 'grpc',
+          options: {
+            url: process.env.SCHEDULER_SERVICE_URL || 'localhost:5006',
+            package: 'scheduler',
+            protoPath: join(protoDir, 'scheduler.proto'),
+          },
+        },
+        BLOG_SERVICE: {
+          transport: 'grpc',
+          options: {
+            url: process.env.BLOG_SERVICE_URL || 'localhost:5007',
+            package: 'blog',
+            protoPath: join(protoDir, 'blog.proto'),
+          },
+        },
+        FULFILLMENT_SERVICE: {
+          transport: 'grpc',
+          options: {
+            url: process.env.FULFILLMENT_SERVICE_URL || 'localhost:5008',
+            package: 'fulfillment',
+            protoPath: join(protoDir, 'fulfillment.proto'),
+          },
+        },
+        CAMPAIGN_SERVICE: {
+          transport: 'grpc',
+          options: {
+            url: process.env.CAMPAIGN_SERVICE_URL || 'localhost:5009',
+            package: 'campaign',
+            protoPath: join(protoDir, 'campaign.proto'),
+          },
+        },
       },
     },
     health: { enabled: true },

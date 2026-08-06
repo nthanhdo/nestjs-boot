@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package fulfillment;
+
+service FulfillmentService {
+  rpc CreateShipment (CreateShipmentRequest) returns (Shipment);
+  rpc GetShipment (ShipmentById) returns (Shipment);
+  rpc GetShipmentByOrder (OrderById) returns (Shipment);
+  rpc UpdateStatus (UpdateStatusRequest) returns (Shipment);
+  rpc ListShipments (ListShipmentsRequest) returns (ShipmentListResponse);
+  rpc ReserveInventory (ReserveInventoryRequest) returns (ReservationResponse);
+  rpc ReleaseInventory (ReleaseInventoryRequest) returns (ReservationResponse);
+}
+
+message Shipment {
+  string id = 1;
+  string orderId = 2;
+  string userId = 3;
+  string status = 4;
+  string carrier = 5;
+  string trackingNumber = 6;
+  Address shippingAddress = 7;
+  repeated ShipmentItem items = 8;
+  string estimatedDelivery = 9;
+  string shippedAt = 10;
+  string deliveredAt = 11;
+  string createdAt = 12;
+}
+
+message Address {
+  string street = 1;
+  string city = 2;
+  string state = 3;
+  string country = 4;
+  string zipCode = 5;
+}
+
+message ShipmentItem {
+  string productId = 1;
+  int32 quantity = 2;
+  string status = 3;
+}
+
+message CreateShipmentRequest {
+  string orderId = 1;
+  string userId = 2;
+  Address shippingAddress = 3;
+  repeated ShipmentItem items = 4;
+  string carrier = 5;
+}
+
+message ShipmentById { string id = 1; }
+message OrderById { string orderId = 1; }
+
+message UpdateStatusRequest {
+  string id = 1;
+  string status = 2;
+  string trackingNumber = 3;
+}
+
+message ListShipmentsRequest {
+  string userId = 1;
+  string status = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
+
+message ShipmentListResponse {
+  repeated Shipment items = 1;
+  int32 total = 2;
+}
+
+message ReserveInventoryRequest {
+  repeated ShipmentItem items = 1;
+  string orderId = 2;
+}
+
+message ReleaseInventoryRequest {
+  string orderId = 1;
+}
+
+message ReservationResponse {
+  bool success = 1;
+  string message = 2;
+}

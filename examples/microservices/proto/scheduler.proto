@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package scheduler;
+
+service SchedulerService {
+  rpc CreateJob (CreateJobRequest) returns (JobResponse);
+  rpc GetJob (JobById) returns (JobResponse);
+  rpc ListJobs (ListJobsRequest) returns (JobListResponse);
+  rpc PauseJob (JobById) returns (JobResponse);
+  rpc ResumeJob (JobById) returns (JobResponse);
+  rpc DeleteJob (JobById) returns (DeleteResponse);
+  rpc TriggerJob (JobById) returns (JobResponse);
+}
+
+message CreateJobRequest {
+  string name = 1;
+  string cron = 2;
+  string handler = 3;
+  string payload = 4;
+  bool enabled = 5;
+}
+
+message JobResponse {
+  string id = 1;
+  string name = 2;
+  string cron = 3;
+  string handler = 4;
+  string status = 5;
+  string lastRun = 6;
+  string nextRun = 7;
+  int32 runCount = 8;
+  int32 failCount = 9;
+}
+
+message JobById {
+  string id = 1;
+}
+
+message ListJobsRequest {
+  string status = 1;
+  int32 page = 2;
+  int32 limit = 3;
+}
+
+message JobListResponse {
+  repeated JobResponse items = 1;
+  int32 total = 2;
+}
+
+message DeleteResponse {
+  bool success = 1;
+}

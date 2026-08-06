@@ -1,0 +1,77 @@
+import { DynamicModule, Logger, Module } from '@nestjs/common';
+import { QueueOptions } from './interfaces';
+import { QueueService } from './queue.service';
+import { QUEUE_OPTIONS, QUEUE_PREFIX } from './constants';
+
+/**
+ * QueueModule — config-driven queue abstraction with BullMQ.
+ *
+ * Usage:
+ * ```ts
+ * QueueModule.register({
+ *   driver: 'bullmq',
+ *   redis: { url: 'redis://localhost:6379' },
+ *   defaultOptions: { attempts: 3, backoff: { type: 'exponential', delay: 1000 } },
+ * })
+ * ```
+ *
+ * Then inject QueueService to add jobs:
+ * ```ts
+ * constructor(private readonly queueService: QueueService) {}
+ * await this.queueService.addJob('email', 'send-welcome', { to: 'user@example.com' });
+ * ```
+ */
+@Module({})
+export class QueueModule {
+  private static readonly logger = new Logger('QueueModule');
+
+  /**
+   * Register the queue system with global options (connection, defaults).
+   */
+  static register(options: QueueOptions): DynamicModule {
+    const providers = [
+      {
+        provide: QUEUE_OPTIONS,
+        useValue: options,
+      },
+      {
+        provide: QueueService,
+        useFactory: () => {
+          QueueModule.logger.log(`Queue system initializing (driver: ${options.driver})`);
+          return new QueueService(options);
+        },
+      },
+    ];
+
+    return {
+      module: QueueModule,
+      global: true,
+      providers,
+      exports: [QueueService, QUEUE_OPTIONS],
+    };
+  }
+
+  /**
+   * Register a specific named queue. Use after `register()` to create dedicated queues.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  static registerQueue(name: string, _options?: Partial<QueueOptions>): DynamicModule {
+    const token = `${QUEUE_PREFIX}${name}`;
+
+    const providers = [
+      {
+        provide: token,
+        useFactory: (queueService: QueueService) => {
+          return queueService.getQueue(name);
+        },
+        inject: [QueueService],
+      },
+    ];
+
+    return {
+      module: QueueModule,
+      providers,
+      exports: [token],
+    };
+  }
+}

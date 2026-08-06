@@ -16,6 +16,17 @@ import { connectTransports } from './transport/transport.factory';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { BootOptions } from './interfaces/boot-options.interface';
+import { MetricsModule } from './metrics/metrics.module';
+import { LoggingModule } from './logging/logging.module';
+import { TracingModule } from './tracing/tracing.module';
+import { initTracing } from './tracing/init-tracing';
+import { QueueModule } from './queue/queue.module';
+import { EventBusModule } from './events/event-bus.module';
+import { TimeoutInterceptor } from './resilience/timeout.interceptor';
+import { HttpMetricsInterceptor } from './metrics/http-metrics.interceptor';
+import { LoggingInterceptor } from './logging/logging.interceptor';
+import { BootLogger } from './logging/boot-logger';
+import { BootRpcExceptionFilter } from './rpc/rpc-exception.filter';
 
 /**
  * createApp() — the soul of nestjs-boot.
@@ -38,9 +49,15 @@ export async function createApp(
   // 1. Validate options via Joi
   const validated = validateBootOptions(options);
 
-  // 2. Build infrastructure imports dynamically
+  // 2. Init tracing FIRST — OTel SDK must patch before NestFactory imports modules
+  if (validated.tracing) {
+    initTracing(validated.tracing);
+  }
+
+  // 3. Build infrastructure imports dynamically
   const imports: DynamicModule[] = [BootConfigModule.register(validated)];
 
+  // Existing W0 modules
   if (validated.database) {
     imports.push(DatabaseModule.register(validated.database));
   }
@@ -53,6 +70,8 @@ export async function createApp(
   if (validated.auth) {
     imports.push(AuthModule.register(validated.auth));
   }
+
+  // W1 modules
   if (validated.correlation || validated.transport) {
     imports.push(CorrelationModule.register(validated.correlation));
   }
@@ -67,34 +86,89 @@ export async function createApp(
     imports.push(InterServiceAuthModule.register(validated.interServiceAuth));
   }
 
-  // 3. Wrap user's AppModule with infrastructure
+  // W2 modules
+  if (validated.metrics) {
+    imports.push(MetricsModule.register(validated.metrics));
+  }
+  if (validated.logging) {
+    imports.push(LoggingModule.register(validated.logging));
+  }
+  if (validated.tracing) {
+    imports.push(TracingModule.register(validated.tracing));
+  }
+
+  // W3 modules
+  if (validated.queue) {
+    imports.push(QueueModule.register(validated.queue));
+  }
+  if (validated.events) {
+    imports.push(EventBusModule.register(validated.events));
+  }
+
+  // 4. Wrap user's AppModule with infrastructure
   @Module({ imports: [...imports, AppModule] })
   class BootWrappedModule {}
 
-  // 4. Create NestJS app
-  // Logger option: if user provides `logger` in BootOptions, use it; otherwise NestJS default
+  // 5. Create NestJS app
   const nestOptions: Record<string, unknown> = {};
   if (validated.logger !== undefined) {
     nestOptions.logger = validated.logger;
   }
   const app = await NestFactory.create(BootWrappedModule, nestOptions);
 
-  // 5. Connect microservice transports
+  // 6. Set app logger to BootLogger if logging configured
+  if (validated.logging) {
+    const logger = app.get(BootLogger);
+    app.useLogger(logger);
+  }
+
+  // 7. Apply global interceptors
+  if (validated.response?.envelope) {
+    app.useGlobalInterceptors(new ResponseInterceptor());
+  }
+  if (validated.resilience?.timeout) {
+    const { Reflector } = require('@nestjs/core');
+    const reflector = app.get(Reflector);
+    app.useGlobalInterceptors(new TimeoutInterceptor(reflector, validated.resilience));
+  }
+  if (validated.metrics) {
+    try {
+      const httpMetrics = app.get(HttpMetricsInterceptor);
+      app.useGlobalInterceptors(httpMetrics);
+    } catch {
+      // MetricsModule disabled — skip
+    }
+  }
+  if (validated.logging) {
+    try {
+      const loggingInterceptor = app.get(LoggingInterceptor);
+      app.useGlobalInterceptors(loggingInterceptor);
+    } catch {
+      // LoggingModule not available — skip
+    }
+  }
+
+  // 8. Apply global filters
+  if (validated.response?.errorHandler !== false) {
+    app.useGlobalFilters(new AllExceptionsFilter());
+  }
+  if (validated.transport) {
+    try {
+      const rpcFilter = app.get(BootRpcExceptionFilter);
+      app.useGlobalFilters(rpcFilter);
+    } catch {
+      // RPC filter not available — skip
+    }
+  }
+
+  // 9. Connect microservice transports
   if (validated.transport) {
     await connectTransports(app, validated.transport);
   }
 
-  // 6. Enable shutdown hooks
+  // 10. Enable shutdown hooks
   if (validated.shutdown !== undefined) {
     app.enableShutdownHooks();
-  }
-
-  // 7. Apply global interceptors/filters
-  if (validated.response?.envelope) {
-    app.useGlobalInterceptors(new ResponseInterceptor());
-  }
-  if (validated.response?.errorHandler !== false) {
-    app.useGlobalFilters(new AllExceptionsFilter());
   }
 
   return app;

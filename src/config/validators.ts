@@ -158,6 +158,55 @@ export const bootOptionsSchema = Joi.object({
       }),
     ).optional(),
   }).optional(),
+  metrics: Joi.object({
+    enabled: Joi.boolean().optional().default(true),
+    path: Joi.string().optional(),
+    prefix: Joi.string().optional(),
+    defaultMetrics: Joi.boolean().optional().default(true),
+  }).optional(),
+  logging: Joi.object({
+    level: Joi.string().valid('trace', 'debug', 'info', 'warn', 'error', 'fatal').optional().default('info'),
+    pretty: Joi.boolean().optional(),
+    redact: Joi.array().items(Joi.string()).optional(),
+  }).optional(),
+  tracing: Joi.object({
+    enabled: Joi.boolean().optional(),
+    exporter: Joi.string().valid('otlp', 'jaeger', 'zipkin', 'console').required(),
+    endpoint: Joi.string().optional(),
+    serviceName: Joi.string().optional(),
+    sampleRate: Joi.number().min(0).max(1).optional(),
+  }).optional(),
+  resilience: Joi.object({
+    circuitBreaker: Joi.object({
+      failureThreshold: Joi.number().integer().min(1).optional(),
+      resetTimeout: Joi.number().integer().min(0).optional(),
+      halfOpenMax: Joi.number().integer().min(1).optional(),
+    }).optional(),
+    timeout: Joi.object({
+      default: Joi.number().integer().min(0).optional(),
+    }).optional(),
+  }).optional(),
+  queue: Joi.object({
+    driver: Joi.string().valid('bullmq').required(),
+    redis: Joi.object({
+      url: Joi.string().pattern(/^rediss?:\/\//).required(),
+    }).required(),
+    defaultOptions: Joi.object({
+      attempts: Joi.number().integer().min(1).optional(),
+      backoff: Joi.object({
+        type: Joi.string().valid('exponential', 'fixed').required(),
+        delay: Joi.number().integer().min(0).required(),
+      }).optional(),
+      removeOnComplete: Joi.alternatives().try(Joi.boolean(), Joi.number()).optional(),
+      removeOnFail: Joi.alternatives().try(Joi.boolean(), Joi.number()).optional(),
+    }).optional(),
+  }).optional(),
+  events: Joi.object({
+    transport: Joi.string().valid('memory', 'redis').required(),
+    redis: Joi.object({
+      url: Joi.string().pattern(/^rediss?:\/\//).required(),
+    }).optional(),
+  }).optional(),
 }).options({ abortEarly: false, stripUnknown: false });
 
 /**

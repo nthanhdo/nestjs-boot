@@ -523,6 +523,70 @@ Requires `@nestjs/terminus` as a peer dependency.
 
 ---
 
+### Metrics
+
+Prometheus metrics endpoint with automatic HTTP request tracking.
+
+**Config:** `metrics: { path: '/metrics', prefix: 'myapp_', defaultMetrics: true }`. Exposes a `/metrics` endpoint for Prometheus scraping. `HttpMetricsInterceptor` is applied globally when configured, tracking request duration and count by method/route/status.
+
+---
+
+### Logging
+
+Structured logging with pino, correlation ID injection, and request logging.
+
+**Config:** `logging: { level: 'info', pretty: true, redact: ['req.headers.authorization'] }`. Replaces the NestJS default logger with `BootLogger` (pino-based). `LoggingInterceptor` logs request/response timing automatically. Requires `pino` as peer dependency; `pino-pretty` optional for dev.
+
+---
+
+### Tracing
+
+OpenTelemetry distributed tracing with auto-instrumentation.
+
+**Config:** `tracing: { exporter: 'otlp', endpoint: 'http://localhost:4318/v1/traces', sampleRate: 0.1 }`. `initTracing()` is called before `NestFactory.create` so OTel patches HTTP/gRPC/Mongo at import time. Supports `otlp`, `jaeger`, `zipkin`, and `console` exporters. All `@opentelemetry/*` packages are optional peers.
+
+---
+
+### Resilience
+
+Decorators for fault tolerance: `@CircuitBreaker()`, `@Retry()`, `@Timeout()`.
+
+**Config:** `resilience: { timeout: { default: 5000 }, circuitBreaker: { failureThreshold: 5 } }`. `@CircuitBreaker()` wraps methods with CLOSED/OPEN/HALF_OPEN state machine. `@Retry()` adds configurable retry with exponential/fixed backoff. `@Timeout()` sets per-route or global request timeouts via `TimeoutInterceptor`.
+
+---
+
+### Queue
+
+BullMQ-based job queue with decorator-driven processors.
+
+**Config:** `queue: { driver: 'bullmq', redis: { url: 'redis://localhost:6379' } }`. Use `QueueService.addJob(queue, name, data)` to enqueue. Decorate processor classes with `@Processor('queueName')` and methods with `@Process('jobName')`, `@OnCompleted()`, `@OnFailed()`.
+
+---
+
+### EventBus
+
+In-process or Redis pub/sub event system with typed events.
+
+**Config:** `events: { transport: 'memory' }` or `events: { transport: 'redis', redis: { url: '...' } }`. Emit events via `EventBusService.emit(event)`. Subscribe with `@OnEvent('event.name')` decorator. Events extend `BootEvent` base class for type safety.
+
+---
+
+### Testing Helpers
+
+Utilities for integration tests: `createTestApp()`, `seedDatabase()`, `cleanDatabase()`, `createMockGrpcService()`, `ContractVerifier`.
+
+`createTestApp(AppModule, bootOptions)` spins up a fully-wired test app with overrides. `ContractVerifier` validates gRPC service contracts against proto definitions.
+
+---
+
+### CLI
+
+Scaffold new projects with `npx nestjs-boot new my-service`. Generates a ready-to-run project with `createApp()` wiring, Docker, CI, and example module.
+
+See `examples/` directory for a complete working project reference.
+
+---
+
 ## Full Config Reference
 
 The complete `BootOptions` interface — every field documented:
@@ -531,27 +595,107 @@ The complete `BootOptions` interface — every field documented:
 interface BootOptions {
   database?: {
     connections: Record<string, {
-      writerUri: string;    // Primary MongoDB URI (required)
-      readerUri?: string;   // Read-replica MongoDB URI (optional)
+      writerUri: string;        // Primary MongoDB URI (required)
+      readerUri?: string;       // Read-replica MongoDB URI (optional)
+      options?: MongooseConnectionOptions;
     }>;
   };
 
   cache?: {
-    redis?: {
-      url: string;          // Redis connection URL for L2 cache
-    };
-    defaultTtl?: number;    // Default TTL in seconds (default: 300)
+    redis?: { url: string };    // Redis connection URL for L2 cache
+    memcached?: { servers: string };
+    defaultTtl?: number;        // Default TTL in seconds (default: 300)
   };
 
   response?: {
-    envelope?: boolean;     // Wrap responses in { data, message, statusCode } (default: false)
-    errorHandler?: boolean; // Global exception filter (default: true)
+    envelope?: boolean;         // Wrap responses in { data, message, statusCode } (default: false)
+    errorHandler?: boolean;     // Global exception filter (default: true)
   };
 
   health?: {
-    enabled?: boolean;      // Enable /health endpoint (default: true)
-    path?: string;          // Health endpoint path (default: '/health')
+    enabled?: boolean;          // Enable /health endpoint (default: true)
+    path?: string;              // Health endpoint path (default: '/health')
   };
+
+  auth?: {
+    jwt?: { secret: string; signOptions?: { expiresIn?: string | number } };
+    apiKey?: { enabled: boolean; validate: (key: string) => Promise<boolean> };
+    rbac?: { enabled: boolean };
+  };
+
+  correlation?: {
+    header?: string;            // Header name (default: 'X-Correlation-Id')
+    generator?: () => string;
+  };
+
+  shutdown?: {
+    timeout?: number;           // Graceful shutdown timeout in ms
+    signals?: string[];         // Signals to listen for (default: ['SIGTERM', 'SIGINT'])
+  };
+
+  transport?: {
+    grpc?: { url: string; package: string | string[]; protoPath: string | string[] };
+    tcp?: { host?: string; port?: number };
+    nats?: { url: string; queue?: string };
+    rabbitmq?: { urls: string[]; queue: string };
+    clients?: Record<string, { transport: string; options: object }>;
+  };
+
+  interServiceAuth?: {
+    propagation?: boolean;
+    serviceToken?: string;
+    headerName?: string;
+  };
+
+  metrics?: {
+    enabled?: boolean;          // Enable metrics endpoint (default: true)
+    path?: string;              // Metrics endpoint path (default: '/metrics')
+    prefix?: string;            // Metric name prefix (e.g. 'myapp_')
+    defaultMetrics?: boolean;   // Collect Node.js process metrics (default: true)
+  };
+
+  logging?: {
+    level?: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'; // default: 'info'
+    pretty?: boolean;           // Pretty-print logs (default: NODE_ENV !== 'production')
+    redact?: string[];          // Paths to redact (e.g. ['req.headers.authorization'])
+  };
+
+  tracing?: {
+    enabled?: boolean;          // Enable tracing (default: true)
+    exporter: 'otlp' | 'jaeger' | 'zipkin' | 'console';
+    endpoint?: string;          // Exporter endpoint URL
+    serviceName?: string;       // Service name (default: package.json name)
+    sampleRate?: number;        // 0.0–1.0 (default: 1.0)
+  };
+
+  resilience?: {
+    circuitBreaker?: {
+      failureThreshold?: number;  // Failures before OPEN (default: 5)
+      resetTimeout?: number;      // Ms before HALF_OPEN (default: 30000)
+      halfOpenMax?: number;       // Max HALF_OPEN requests (default: 1)
+    };
+    timeout?: {
+      default?: number;           // Default request timeout in ms (default: 30000)
+    };
+  };
+
+  queue?: {
+    driver: 'bullmq';
+    redis: { url: string };
+    defaultOptions?: {
+      attempts?: number;
+      backoff?: { type: 'exponential' | 'fixed'; delay: number };
+      removeOnComplete?: boolean | number;
+      removeOnFail?: boolean | number;
+    };
+  };
+
+  events?: {
+    transport: 'memory' | 'redis';
+    redis?: { url: string };
+  };
+
+  logger?: boolean | unknown;   // NestJS logger option (overridden by logging module)
 }
 ```
 
@@ -648,29 +792,32 @@ function createApp(
 ```
 
 1. Validates `options` via Joi
-2. Builds infrastructure modules from config (only loads what you configure)
-3. Wraps your `AppModule` with infrastructure
-4. Creates the NestJS app (`NestFactory.create`)
-5. Applies global interceptors/filters based on `response` config
-6. Returns the ready `INestApplication`
-
-Note: The app is created with `{ logger: false }`. Configure your own logger (we recommend [nestjs-pino](https://github.com/iamolegga/nestjs-pino)).
+2. Initializes OpenTelemetry tracing (if configured) — before NestFactory
+3. Builds infrastructure modules from config (only loads what you configure)
+4. Wraps your `AppModule` with infrastructure
+5. Creates the NestJS app (`NestFactory.create`)
+6. Sets `BootLogger` as app logger (if `logging` configured)
+7. Applies global interceptors (response envelope, timeout, HTTP metrics, logging)
+8. Applies global filters (exceptions, RPC)
+9. Connects microservice transports
+10. Enables shutdown hooks
+11. Returns the ready `INestApplication`
 
 ---
 
-## Recommended Companions
+## Optional Peer Dependencies
 
-We don't wrap what's already great:
+Install only what you use:
 
-- **Logging:** [nestjs-pino](https://github.com/iamolegga/nestjs-pino) — structured logging
-- **Auth:** [@nestjs/jwt](https://github.com/nestjs/jwt) + [@nestjs/passport](https://github.com/nestjs/passport)
-- **Queue:** [@nestjs/bullmq](https://github.com/nestjs/bull) — BullMQ integration
-
-## Roadmap
-
-- [ ] **v0.2.0** — Auth Kit: JWT guard + API Key guard (composable, no forced user model)
-- [ ] **v0.2.0** — Prometheus metrics + graceful shutdown
-- [ ] **v0.3.0** — OpenTelemetry tracing + multi-driver queue abstraction
+```bash
+npm install pino                              # Logging module
+npm install pino-pretty                       # Pretty dev logs
+npm install prom-client                       # Metrics module
+npm install @opentelemetry/sdk-node           # Tracing module
+npm install @opentelemetry/exporter-trace-otlp-http  # OTLP exporter
+npm install bullmq                            # Queue module
+npm install @nestjs/terminus                  # Health checks
+```
 
 ## Contributing
 

@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package order;
+
+service OrderService {
+  rpc Create (CreateOrderRequest) returns (Order);
+  rpc FindOne (OrderById) returns (Order);
+  rpc FindByUser (UserOrders) returns (OrderList);
+}
+
+message Order {
+  string id = 1;
+  string userId = 2;
+  repeated OrderItem items = 3;
+  double total = 4;
+  string status = 5;
+}
+
+message OrderItem {
+  string productId = 1;
+  int32 quantity = 2;
+  double price = 3;
+}
+
+message CreateOrderRequest {
+  string userId = 1;
+  repeated OrderItem items = 2;
+}
+
+message OrderById {
+  string id = 1;
+}
+
+message UserOrders {
+  string userId = 1;
+}
+
+message OrderList {
+  repeated Order items = 1;
+  int32 total = 2;
+}

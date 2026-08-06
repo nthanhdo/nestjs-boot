@@ -123,6 +123,18 @@ export interface BootOptions {
   interServiceAuth?: import('../inter-service-auth/interfaces').InterServiceAuthOptions;
   /** Transport configuration for hybrid microservice support (gRPC, TCP, NATS, RMQ) */
   transport?: import('../transport/interfaces').TransportOptions;
+  /** OpenTelemetry tracing configuration */
+  tracing?: import('../tracing/interfaces').TracingOptions;
+  /** Prometheus metrics configuration */
+  metrics?: import('../metrics/interfaces').MetricsOptions;
+  /** Structured logging (pino) configuration */
+  logging?: import('../logging/interfaces').LoggingOptions;
+  /** Resilience configuration (circuit breaker defaults, timeout) */
+  resilience?: import('../resilience/interfaces').ResilienceOptions;
+  /** Queue configuration (BullMQ) */
+  queue?: import('../queue/interfaces').QueueOptions;
+  /** Event bus configuration (memory or Redis pub/sub) */
+  events?: import('../events/interfaces').EventBusOptions;
   /** Correlation ID middleware configuration */
   correlation?: {
     /** Header name (default: 'X-Correlation-Id') */

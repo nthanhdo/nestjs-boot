@@ -49,7 +49,12 @@ export async function createApp(
   class BootWrappedModule {}
 
   // 4. Create NestJS app
-  const app = await NestFactory.create(BootWrappedModule, { logger: false });
+  // Logger option: if user provides `logger` in BootOptions, use it; otherwise NestJS default
+  const nestOptions: Record<string, unknown> = {};
+  if (validated.logger !== undefined) {
+    nestOptions.logger = validated.logger;
+  }
+  const app = await NestFactory.create(BootWrappedModule, nestOptions);
 
   // 5. Apply global interceptors/filters
   if (validated.response?.envelope) {

@@ -5,7 +5,6 @@ export type {
   ConnectionOptions,
   CacheOptions,
   RedisCacheOptions,
-  MemcachedCacheOptions,
   ResponseOptions,
   HealthOptions,
 } from './interfaces/boot-options.interface';
@@ -24,13 +23,11 @@ export {
   DatabaseModule,
   BaseRepository,
   CachedBaseRepository,
-  InjectRepository,
   InjectConnection,
   createConnectionModules,
   DATABASE_CONNECTION_PREFIX,
   getWriterToken,
   getReaderToken,
-  getModelToken,
   getWriterConnectionName,
   getReaderConnectionName,
 } from './database';

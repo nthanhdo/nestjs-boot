@@ -45,6 +45,10 @@ export class CacheModule implements OnModuleDestroy {
             try {
               // eslint-disable-next-line @typescript-eslint/no-var-requires
               const Redis = require('ioredis');
+              // Clean up previous client if register() called multiple times (e.g. testing)
+              if (CacheModule.redisClient) {
+                try { CacheModule.redisClient.quit(); } catch { /* best effort */ }
+              }
               const client = new Redis(options.redis.url);
               CacheModule.redisClient = client;
               l2 = new RedisCacheAdapter(client);

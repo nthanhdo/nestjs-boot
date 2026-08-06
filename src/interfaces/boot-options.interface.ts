@@ -23,21 +23,11 @@ export interface RedisCacheOptions {
 }
 
 /**
- * Memcached connection options for L1 cache.
- */
-export interface MemcachedCacheOptions {
-  url: string;
-}
-
-/**
- * Cache configuration — multi-layer (L1 + L2).
- * If memcached is not provided, an in-memory LRU is used as L1.
+ * Cache configuration — multi-layer (L1 in-memory + L2 Redis).
  */
 export interface CacheOptions {
   /** Redis config for L2 cache layer */
   redis?: RedisCacheOptions;
-  /** Memcached config for L1 cache layer (falls back to in-memory LRU) */
-  memcached?: MemcachedCacheOptions;
   /** Default TTL in seconds (default: 300) */
   defaultTtl?: number;
 }
@@ -70,8 +60,10 @@ export interface HealthOptions {
 export interface BootOptions {
   /** MongoDB database configuration (multi-connection, reader/writer split) */
   database?: DatabaseOptions;
-  /** Cache configuration (multi-layer L1+L2) */
+  /** Cache configuration (L1 in-memory + L2 Redis) */
   cache?: CacheOptions;
+  /** NestJS logger option (default: NestJS default logger). Set false to disable. */
+  logger?: boolean | unknown;
   /** Response envelope + error handling */
   response?: ResponseOptions;
   /** Health check endpoint */

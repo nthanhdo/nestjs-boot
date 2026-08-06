@@ -1,4 +1,4 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { CacheAdapter, CacheSetOptions } from './interfaces';
 
 /** Threshold for L1 storage — values >= 1MB go to L2 only. */
@@ -15,6 +15,8 @@ const SIZE_THRESHOLD_BYTES = 1024 * 1024; // 1MB
  */
 @Injectable()
 export class MultiCacheService implements OnModuleDestroy {
+  private readonly logger = new Logger('MultiCacheService');
+
   constructor(
     private readonly l1: CacheAdapter,
     private readonly l2: CacheAdapter | null,
@@ -127,8 +129,11 @@ export class MultiCacheService implements OnModuleDestroy {
   private estimateSize(value: unknown): number {
     try {
       return Buffer.byteLength(JSON.stringify(value), 'utf8');
-    } catch {
-      return 0; // If serialization fails, treat as small
+    } catch (error) {
+      this.logger.warn(
+        `Failed to estimate size for cache value (type: ${typeof value}). Treating as small. Error: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return 0;
     }
   }
 }

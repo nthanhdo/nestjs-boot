@@ -1,28 +1,117 @@
 # nestjs-boot
 
-> Multi-database connections. Reader/writer split. Multi-layer cache.
-> One config object. Zero wiring.
+> Spring Boot-style auto-configuration for NestJS. Multi-database, reader/writer split, multi-layer cache. One config object, zero wiring.
 
 [![npm version](https://img.shields.io/npm/v/nestjs-boot.svg)](https://www.npmjs.com/package/nestjs-boot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/nthanhdo/nestjs-boot/actions/workflows/ci.yml/badge.svg)](https://github.com/nthanhdo/nestjs-boot/actions/workflows/ci.yml)
 
-## Why
+## Install
 
-Every new NestJS project starts the same way: copy-paste 2,500+ lines of infrastructure setup. MongoDB connections, Redis cache, response envelope, health checks, error filters, config validation. Eight modules. Ten imports. Fifty lines of wiring. Every. Single. Time.
+```bash
+npm install nestjs-boot
+```
 
-`nestjs-boot` compresses all of that into a single config object.
+Peer dependencies:
+
+```bash
+npm install @nestjs/common @nestjs/core mongoose rxjs
+```
+
+Optional:
+
+```bash
+npm install ioredis           # Redis L2 cache
+npm install @nestjs/terminus  # Health checks
+```
+
+## Quick Start
+
+A complete working example — `main.ts` + one service:
+
+```ts
+// main.ts
+import { createApp } from 'nestjs-boot';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await createApp(AppModule, {
+    database: {
+      connections: {
+        master: {
+          writerUri: process.env.MONGO_URI!,
+          readerUri: process.env.MONGO_READER_URI, // optional replica
+        },
+      },
+    },
+    cache: {
+      redis: { url: process.env.REDIS_URL! },
+      defaultTtl: 300,
+    },
+    response: { envelope: true },
+    health: { enabled: true },
+  });
+
+  await app.listen(3000);
+}
+
+bootstrap();
+```
+
+```ts
+// app.module.ts
+import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { getWriterConnectionName } from 'nestjs-boot';
+import { ProductService } from './product.service';
+import { Product, ProductSchema } from './product.schema';
+
+@Module({
+  imports: [
+    // Register Mongoose schemas on the 'master' writer connection
+    MongooseModule.forFeature(
+      [{ name: Product.name, schema: ProductSchema }],
+      getWriterConnectionName('master'), // → 'master_writer'
+    ),
+  ],
+  providers: [ProductService],
+})
+export class AppModule {}
+```
+
+```ts
+// product.service.ts
+import { Injectable } from '@nestjs/common';
+import { InjectCache, MultiCacheService } from 'nestjs-boot';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Product, ProductDocument } from './product.schema';
+
+@Injectable()
+export class ProductService {
+  constructor(
+    @InjectModel(Product.name) private readonly model: Model<ProductDocument>,
+    @InjectCache() private readonly cache: MultiCacheService,
+  ) {}
+
+  async findById(id: string): Promise<ProductDocument | null> {
+    return this.cache.getOrSet(
+      `product:${id}`,
+      () => this.model.findById(id).exec(),
+      { ttl: 60, l2Ttl: 300 },
+    );
+  }
+}
+```
+
+That gives you: validated config, MongoDB with reader/writer split, two-layer cache, response envelope, health endpoint at `/health`, and global error handling.
 
 ## Before / After
 
-**Before** -- manual wiring across multiple files:
+**Before** — manual wiring across multiple files:
 
 ```ts
-// main.ts — 47 lines just to wire infrastructure
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-
-// app.module.ts
+// app.module.ts — ~40 lines of infrastructure
 @Module({
   imports: [
     MongooseModule.forRootAsync({
@@ -38,15 +127,15 @@ import { AppModule } from './app.module';
       useFactory: () => ({ uri: process.env.MONGO_ANALYTICS_URI }),
     }),
     CacheModule.register({ store: redisStore, url: process.env.REDIS_URL }),
-    ConfigModule.forRoot({ validationSchema: Joi.object({ ... }) }),
+    ConfigModule.forRoot({ validationSchema: Joi.object({ /* ... */ }) }),
     TerminusModule.forRoot(),
-    // ... ResponseInterceptor, AllExceptionsFilter, health indicators ...
+    // + ResponseInterceptor, AllExceptionsFilter, health indicators ...
   ],
 })
 export class AppModule {}
 ```
 
-**After** -- one config object:
+**After** — one config object:
 
 ```ts
 // main.ts — that's it
@@ -56,112 +145,20 @@ import { AppModule } from './app.module';
 const app = await createApp(AppModule, {
   database: {
     connections: {
-      master: { writerUri: process.env.MONGO_URI, readerUri: process.env.MONGO_READER_URI },
-      analytics: { writerUri: process.env.MONGO_ANALYTICS_URI },
+      master: { writerUri: process.env.MONGO_URI!, readerUri: process.env.MONGO_READER_URI },
+      analytics: { writerUri: process.env.MONGO_ANALYTICS_URI! },
     },
   },
-  cache: { redis: { url: process.env.REDIS_URL } },
+  cache: { redis: { url: process.env.REDIS_URL! } },
   health: { enabled: true },
 });
 
 await app.listen(3000);
 ```
 
-Your `AppModule` stays clean -- just your business logic.
+Your `AppModule` stays clean — just your business logic and schema registrations.
 
-## Features nobody else has
-
-These are the features that don't exist in any other NestJS package or boilerplate:
-
-### Multi-database connections
-
-Declare N named MongoDB connections in config. Each gets auto-wired with its own injection tokens. No manual `forRootAsync()` calls.
-
-```ts
-database: {
-  connections: {
-    master: { writerUri: '...' },
-    analytics: { writerUri: '...' },
-    logs: { writerUri: '...' },
-  },
-}
-```
-
-### Reader/writer split
-
-Add a `readerUri` to any connection. Reads auto-route to the replica, writes always go to the primary. Zero application code changes.
-
-```ts
-master: {
-  writerUri: 'mongodb://primary:27017/app',
-  readerUri: 'mongodb://replica:27017/app',
-}
-```
-
-The `BaseRepository` handles routing transparently -- all read methods (`findAll`, `findById`, `findOne`, `count`, `aggregate`, `exists`) use the reader connection when available.
-
-### Multi-layer cache (L1 + L2)
-
-In-memory L1 with Redis L2. Read path: L1 miss -> L2 hit -> write-back to L1. Size-aware routing: values under 1MB go to both layers, larger values go to L2 only (no L1 memory pressure).
-
-```ts
-cache: {
-  redis: { url: 'redis://localhost:6379' },     // L2
-  memcached: { url: 'localhost:11211' },         // L1 (optional -- falls back to in-memory LRU)
-  defaultTtl: 300,
-}
-```
-
-## Also included
-
-- **Config** -- Joi validation on boot, typed access via `BootConfigService.get('database.connections.master.writerUri')`
-- **Response envelope** -- unified `{ data, message, statusCode, total, page, limit }` format, opt-in (`response: { envelope: true }`)
-- **Health checks** -- auto-detects configured drivers (MongoDB, Redis) and exposes `/health`
-- **Error filter** -- global catch-all exception filter with structured error responses (on by default)
-- **Base repository** -- generic CRUD + pagination + aggregation pipeline, with reader/writer awareness built in
-
-## Install
-
-```bash
-npm install nestjs-boot
-```
-
-Peer dependencies (you probably already have these):
-
-```bash
-npm install @nestjs/common @nestjs/core mongoose rxjs
-```
-
-Optional (for cache):
-
-```bash
-npm install ioredis    # Redis L2 cache
-npm install memjs      # Memcached L1 cache (otherwise uses in-memory LRU)
-```
-
-## Quick Start
-
-```ts
-// main.ts
-import { createApp } from 'nestjs-boot';
-import { AppModule } from './app.module';
-
-async function bootstrap() {
-  const app = await createApp(AppModule, {
-    database: {
-      connections: {
-        master: { writerUri: process.env.MONGO_URI },
-      },
-    },
-  });
-
-  await app.listen(3000);
-}
-
-bootstrap();
-```
-
-That gives you: validated config, MongoDB connection, health endpoint at `/health`, and global error handling. Add sections to the config object to enable more modules.
+---
 
 ## Modules
 
@@ -169,25 +166,50 @@ That gives you: validated config, MongoDB connection, health endpoint at `/healt
 
 Config-driven multi-connection MongoDB with automatic reader/writer split.
 
-```ts
-import { createApp } from 'nestjs-boot';
+**What it does:** Creates N named MongoDB connections from config. Each connection gets a writer, and optionally a reader that receives all read queries automatically.
 
-const app = await createApp(AppModule, {
-  database: {
-    connections: {
-      master: {
-        writerUri: process.env.MONGO_MASTER_URI,
-        readerUri: process.env.MONGO_MASTER_READER_URI, // optional
-      },
-      analytics: {
-        writerUri: process.env.MONGO_ANALYTICS_URI,
-      },
+**Config:**
+
+```ts
+database: {
+  connections: {
+    master: {
+      writerUri: 'mongodb://primary:27017/app',
+      readerUri: 'mongodb://replica:27017/app', // optional
+    },
+    analytics: {
+      writerUri: 'mongodb://analytics:27017/metrics',
     },
   },
-});
+}
 ```
 
-Access raw connections with `@InjectConnection`:
+**Registering Mongoose schemas:**
+
+`nestjs-boot` does not have a `forFeature` method. Use standard `MongooseModule.forFeature` with the connection name helpers:
+
+```ts
+import { MongooseModule } from '@nestjs/mongoose';
+import { getWriterConnectionName, getReaderConnectionName } from 'nestjs-boot';
+
+@Module({
+  imports: [
+    // Writer connection (for reads and writes if no reader configured)
+    MongooseModule.forFeature(
+      [{ name: 'Product', schema: ProductSchema }],
+      getWriterConnectionName('master'), // → 'master_writer'
+    ),
+    // Reader connection (optional — for read-replica routing)
+    MongooseModule.forFeature(
+      [{ name: 'Product', schema: ProductSchema }],
+      getReaderConnectionName('master'), // → 'master_reader'
+    ),
+  ],
+})
+export class ProductModule {}
+```
+
+**Injecting raw connections:**
 
 ```ts
 import { InjectConnection } from 'nestjs-boot';
@@ -202,9 +224,147 @@ export class MigrationService {
 }
 ```
 
+**`InjectConnection(connectionName, type?)` parameters:**
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `connectionName` | `string` | — | Connection name from config (e.g. `'master'`) |
+| `type` | `'writer' \| 'reader'` | `'writer'` | Which connection to inject |
+
+**Connection name helpers:**
+
+| Function | Returns | Example |
+|----------|---------|---------|
+| `getWriterConnectionName(name)` | `string` | `getWriterConnectionName('master')` → `'master_writer'` |
+| `getReaderConnectionName(name)` | `string` | `getReaderConnectionName('master')` → `'master_reader'` |
+| `getWriterToken(name)` | `string` | Injection token: `'BOOT_DB_MASTER_WRITER'` |
+| `getReaderToken(name)` | `string` | Injection token: `'BOOT_DB_MASTER_READER'` |
+
+---
+
+### BaseRepository
+
+Generic CRUD repository with automatic reader/writer routing. All read operations use the reader connection (if configured), all writes go to the writer.
+
+**Usage:**
+
+```ts
+import { BaseRepository } from 'nestjs-boot';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Product, ProductDocument } from './product.schema';
+
+@Injectable()
+export class ProductRepository extends BaseRepository<ProductDocument> {
+  constructor(
+    @InjectModel(Product.name, 'master_writer') writerModel: Model<ProductDocument>,
+    @InjectModel(Product.name, 'master_reader') readerModel: Model<ProductDocument>,
+  ) {
+    super(writerModel, readerModel);
+  }
+}
+```
+
+**Constructor:** `new BaseRepository(writerModel, readerModel?)`
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `writerModel` | `Model<T>` | Primary Mongoose model (all writes) |
+| `readerModel` | `Model<T>` (optional) | Read-replica model. Falls back to `writerModel` if omitted. |
+
+**Methods:**
+
+| Method | Signature | Uses Reader | Description |
+|--------|-----------|:-----------:|-------------|
+| `findAll` | `(filter?, options?) → PaginatedResult<T>` | Yes | Paginated query. Options: `{ page, limit, sort, select }` |
+| `findById` | `(id: string) → T \| null` | Yes | Find by `_id` |
+| `findOne` | `(filter) → T \| null` | Yes | Find first match |
+| `count` | `(filter?) → number` | Yes | Count matching documents |
+| `aggregate` | `(pipeline: PipelineStage[]) → unknown[]` | Yes | Run aggregation pipeline |
+| `exists` | `(filter) → boolean` | Yes | Check if any document matches |
+| `create` | `(data: Partial<T>) → T` | No | Insert one document |
+| `createMany` | `(data: Partial<T>[]) → T[]` | No | Insert multiple documents |
+| `update` | `(id: string, data: Partial<T>) → T \| null` | No | Update by `_id`, returns updated doc |
+| `updateMany` | `(filter, data) → { modifiedCount }` | No | Update all matching documents |
+| `delete` | `(id: string) → T \| null` | No | Delete by `_id`, returns deleted doc |
+| `deleteMany` | `(filter) → { deletedCount }` | No | Delete all matching documents |
+
+**`FindAllOptions`:**
+
+```ts
+interface FindAllOptions {
+  page?: number;                        // default: 1
+  limit?: number;                       // default: 20
+  sort?: Record<string, 1 | -1>;       // e.g. { createdAt: -1 }
+  select?: string | Record<string, 1 | 0>;
+}
+```
+
+**`PaginatedResult<T>`:**
+
+```ts
+interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+```
+
+---
+
+### CachedBaseRepository
+
+Extends `BaseRepository` with automatic cache-aside. Read methods check cache first (key = MD5 of collection + method + args). Write methods invalidate the collection's cache prefix.
+
+**Constructor:** `new CachedBaseRepository(writerModel, readerModel, cacheService, cacheTtl?)`
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `writerModel` | `Model<T>` | — | Primary Mongoose model |
+| `readerModel` | `Model<T> \| undefined` | — | Read-replica model |
+| `cacheService` | `MultiCacheService` | — | The multi-layer cache instance |
+| `cacheTtl` | `number` | `300` | TTL in seconds for cached read results |
+
+**Usage:**
+
+```ts
+import { CachedBaseRepository, InjectCache, MultiCacheService } from 'nestjs-boot';
+
+@Injectable()
+export class CachedProductRepository extends CachedBaseRepository<ProductDocument> {
+  constructor(
+    @InjectModel(Product.name, 'master_writer') writerModel: Model<ProductDocument>,
+    @InjectModel(Product.name, 'master_reader') readerModel: Model<ProductDocument>,
+    @InjectCache() cacheService: MultiCacheService,
+  ) {
+    super(writerModel, readerModel, cacheService, 600); // 10 min TTL
+  }
+}
+```
+
+All `BaseRepository` read methods are overridden with cache-first logic. All write methods auto-invalidate the collection's cache entries.
+
+---
+
 ### Cache
 
-Multi-layer cache with cache-aside pattern and per-layer TTL control.
+Multi-layer cache with size-aware routing and cache-aside pattern.
+
+**What it does:** L1 in-memory LRU + optional L2 Redis. Reads check L1 then L2 (with write-back). Values under 1MB go to both layers; larger values go to L2 only to avoid L1 memory pressure.
+
+**Config:**
+
+```ts
+cache: {
+  redis: { url: 'redis://localhost:6379' },  // L2 — requires ioredis
+  defaultTtl: 300,                            // seconds (default: 300)
+}
+```
+
+If `ioredis` is not installed, a warning is logged and only L1 (in-memory LRU) is used.
+
+**Usage:**
 
 ```ts
 import { Injectable } from '@nestjs/common';
@@ -218,90 +378,45 @@ export class PriceService {
     return this.cache.getOrSet(
       `price:${productId}`,
       () => this.fetchFromApi(productId),
-      { ttl: 60, l2Ttl: 300 }, // L1: 1 min, L2: 5 min
+      { ttl: 60, l2Ttl: 300 },
     );
   }
 
   async invalidateAll(): Promise<void> {
-    await this.cache.delByPrefix('price:'); // deletes across all layers
+    await this.cache.delByPrefix('price:');
   }
 }
 ```
 
-The `MultiCacheService` API:
+**`MultiCacheService` methods:**
 
-| Method | Description |
-|--------|-------------|
-| `get<T>(key)` | L1 -> L2 -> undefined. Writes back to L1 on L2 hit. |
-| `set(key, value, opts?)` | Size-aware write to L1 + L2. `opts: { ttl, l2Ttl }` |
-| `del(key)` | Delete from all layers |
-| `delByPrefix(prefix)` | Prefix deletion across all layers |
-| `getOrSet<T>(key, factory, opts?)` | Cache-aside: return cached or call factory and cache result |
-| `has(key)` | Check existence in any layer |
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `get<T>` | `(key: string) → T \| undefined` | L1 → L2 → undefined. Writes back to L1 on L2 hit. |
+| `set` | `(key, value, opts?) → void` | Size-aware write to L1 + L2. |
+| `del` | `(key: string) → void` | Delete from all layers. |
+| `delByPrefix` | `(prefix: string) → void` | Prefix deletion across all layers. |
+| `getOrSet<T>` | `(key, factory, opts?) → T` | Cache-aside: return cached or call factory and cache result. |
+| `has` | `(key: string) → boolean` | Check existence in any layer. |
 
-### Repository
-
-`BaseRepository<T>` provides generic CRUD with automatic reader/writer routing. All read operations use the reader connection (if configured), all writes go to the writer.
+**`CacheSetOptions`:**
 
 ```ts
-import { Injectable } from '@nestjs/common';
-import { InjectRepository, BaseRepository } from 'nestjs-boot';
-import { ProductDocument } from './product.schema';
-
-@Injectable()
-export class ProductService {
-  constructor(
-    @InjectRepository('Product', 'master')
-    private readonly repo: BaseRepository<ProductDocument>,
-  ) {}
-
-  async list(page: number, limit: number) {
-    return this.repo.findAll({}, { page, limit, sort: { createdAt: -1 } });
-    // Returns: { data: Product[], total: number, page: number, limit: number }
-  }
-
-  async getById(id: string) {
-    return this.repo.findById(id);
-  }
-
-  async create(data: Partial<ProductDocument>) {
-    return this.repo.create(data); // always writes to primary
-  }
+interface CacheSetOptions {
+  ttl?: number;    // L1 TTL in seconds (default: defaultTtl from config)
+  l2Ttl?: number;  // L2 TTL in seconds (default: 2x ttl)
 }
 ```
 
-`BaseRepository` methods: `findAll`, `findById`, `findOne`, `create`, `createMany`, `update`, `updateMany`, `delete`, `deleteMany`, `count`, `aggregate`, `exists`.
-
-#### CachedBaseRepository
-
-Extends `BaseRepository` with automatic cache-aside. Reads check cache first (key = MD5 of collection + method + args). Writes invalidate the collection's cache prefix.
-
-```ts
-import { CachedBaseRepository } from 'nestjs-boot';
-
-@Injectable()
-export class CachedProductService {
-  constructor(
-    @InjectRepository('Product', 'master')
-    private readonly repo: CachedBaseRepository<ProductDocument>,
-  ) {}
-
-  async getById(id: string) {
-    return this.repo.findById(id);
-    // First call: DB query + cache write
-    // Subsequent calls: L1 -> L2 -> DB (cache-aside, automatic)
-  }
-
-  async update(id: string, data: Partial<ProductDocument>) {
-    return this.repo.update(id, data);
-    // Writes to DB + invalidates all cached entries for this collection
-  }
-}
-```
+---
 
 ### Config
 
 Typed access to the validated boot config from anywhere in your app.
+
+**What it does:** Validates the `BootOptions` object on startup using Joi, then provides typed dot-notation access to any config value.
+
+**Usage:**
 
 ```ts
 import { Injectable } from '@nestjs/common';
@@ -315,7 +430,7 @@ export class SomeService {
     const uri = this.config.get<string>('database.connections.master.writerUri');
     const ttl = this.config.get<number>('cache.defaultTtl');
 
-    // Or throw if missing:
+    // Throws if path doesn't exist:
     const redisUrl = this.config.getOrThrow<string>('cache.redis.url');
 
     // Full config object:
@@ -324,75 +439,240 @@ export class SomeService {
 }
 ```
 
+**`BootConfigService` methods:**
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `get<T>` | `(path: string) → T \| undefined` | Dot-notation path lookup. Returns `undefined` if not found. |
+| `getOrThrow<T>` | `(path: string) → T` | Same as `get`, but throws `Error` if path is undefined. |
+| `getAll` | `() → Readonly<BootOptions>` | Returns the full validated config object. |
+
+---
+
 ### Response Envelope
 
-Opt-in unified response format. Default is **off** -- enable it explicitly.
+Opt-in unified response format. Off by default.
+
+**What it does:** Wraps all handler responses into `{ statusCode, message, data }`. Detects paginated responses (`{ data, total, page, limit }`) and spreads them into the envelope. Skips responses that are already enveloped.
+
+**Config:**
 
 ```ts
-const app = await createApp(AppModule, {
-  response: {
-    envelope: true,     // wraps all responses in { data, message, statusCode }
-    errorHandler: true, // global exception filter (default: true)
-  },
-});
+response: {
+  envelope: true,      // enable response wrapper (default: false)
+  errorHandler: true,  // enable global exception filter (default: true)
+}
 ```
 
-Success response:
+**Success response:**
 
 ```json
 {
   "statusCode": 200,
   "message": "Success",
-  "data": { "id": "123", "name": "Widget" },
+  "data": { "id": "123", "name": "Widget" }
+}
+```
+
+**Paginated response** (when handler returns `{ data, total, page, limit }`):
+
+```json
+{
+  "statusCode": 200,
+  "message": "Success",
+  "data": [{ "id": "1" }, { "id": "2" }],
   "total": 42,
   "page": 1,
   "limit": 20
 }
 ```
 
-Error response:
+**Error response** (from `AllExceptionsFilter`):
 
 ```json
 {
   "statusCode": 400,
   "message": "Validation failed",
   "error": "BadRequestException",
+  "details": ["name must be a string", "price must be positive"],
   "timestamp": "2026-08-06T10:00:00.000Z",
   "path": "/api/products"
 }
 ```
 
+The error filter handles `HttpException` (extracts status + message), `ValidationPipe` errors (extracts `details` array), and unknown errors (500).
+
+---
+
 ### Health
 
-Auto-detects configured drivers and registers health indicators. No manual wiring.
+Auto-detects configured drivers and registers health indicators.
+
+**What it does:** If `database` is configured, registers a MongoDB health indicator. If `cache.redis` is configured, registers a Redis health indicator. Exposes a `GET` endpoint.
+
+**Config:**
 
 ```ts
-const app = await createApp(AppModule, {
-  database: { connections: { master: { writerUri: '...' } } },
-  cache: { redis: { url: '...' } },
-  health: { enabled: true, path: '/health' }, // defaults
-});
+health: {
+  enabled: true,       // default: true
+  path: '/health',     // default: '/health'
+}
 ```
 
-`GET /health` returns status for each configured driver (MongoDB connections, Redis).
+Requires `@nestjs/terminus` as a peer dependency.
 
-## Recommended companions
+---
 
-We don't wrap what's already great.
+## Full Config Reference
 
-- **Logging:** [nestjs-pino](https://github.com/iamolegga/nestjs-pino) -- structured logging done right (2.4M downloads/week)
-- **Auth:** [@nestjs/jwt](https://github.com/nestjs/jwt) + [@nestjs/passport](https://github.com/nestjs/passport) -- until nestjs-boot v0.2.0 ships a composable auth kit
-- **Queue:** [@nestjs/bullmq](https://github.com/nestjs/bull) -- BullMQ integration
+The complete `BootOptions` interface — every field documented:
+
+```ts
+interface BootOptions {
+  database?: {
+    connections: Record<string, {
+      writerUri: string;    // Primary MongoDB URI (required)
+      readerUri?: string;   // Read-replica MongoDB URI (optional)
+    }>;
+  };
+
+  cache?: {
+    redis?: {
+      url: string;          // Redis connection URL for L2 cache
+    };
+    defaultTtl?: number;    // Default TTL in seconds (default: 300)
+  };
+
+  response?: {
+    envelope?: boolean;     // Wrap responses in { data, message, statusCode } (default: false)
+    errorHandler?: boolean; // Global exception filter (default: true)
+  };
+
+  health?: {
+    enabled?: boolean;      // Enable /health endpoint (default: true)
+    path?: string;          // Health endpoint path (default: '/health')
+  };
+}
+```
+
+Every top-level section is optional. Omitted sections = that module is not loaded.
+
+---
+
+## Standalone Usage
+
+You can use any module without `createApp` by calling `.register()` directly:
+
+### Database only
+
+```ts
+// app.module.ts
+import { Module } from '@nestjs/common';
+import { DatabaseModule } from 'nestjs-boot';
+
+@Module({
+  imports: [
+    DatabaseModule.register({
+      connections: {
+        master: { writerUri: process.env.MONGO_URI! },
+      },
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+### Cache only
+
+```ts
+import { Module } from '@nestjs/common';
+import { CacheModule } from 'nestjs-boot';
+
+@Module({
+  imports: [
+    CacheModule.register({
+      redis: { url: process.env.REDIS_URL! },
+      defaultTtl: 600,
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+### Config only
+
+```ts
+import { Module } from '@nestjs/common';
+import { BootConfigModule } from 'nestjs-boot';
+
+@Module({
+  imports: [
+    BootConfigModule.register({
+      database: { connections: { master: { writerUri: '...' } } },
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+### Health only
+
+```ts
+import { Module } from '@nestjs/common';
+import { HealthModule } from 'nestjs-boot';
+
+@Module({
+  imports: [
+    HealthModule.register({
+      database: { connections: { master: { writerUri: '...' } } },
+      health: { path: '/healthz' },
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+Note: `HealthModule.register()` takes the full `BootOptions` object (not just `HealthOptions`) so it can auto-detect which drivers to monitor.
+
+All modules are `@Global()` (except `HealthModule`), so their providers are available app-wide without re-importing.
+
+---
+
+## `createApp()` Reference
+
+```ts
+function createApp(
+  AppModule: Type<unknown>,
+  options: BootOptions,
+): Promise<INestApplication>
+```
+
+1. Validates `options` via Joi
+2. Builds infrastructure modules from config (only loads what you configure)
+3. Wraps your `AppModule` with infrastructure
+4. Creates the NestJS app (`NestFactory.create`)
+5. Applies global interceptors/filters based on `response` config
+6. Returns the ready `INestApplication`
+
+Note: The app is created with `{ logger: false }`. Configure your own logger (we recommend [nestjs-pino](https://github.com/iamolegga/nestjs-pino)).
+
+---
+
+## Recommended Companions
+
+We don't wrap what's already great:
+
+- **Logging:** [nestjs-pino](https://github.com/iamolegga/nestjs-pino) — structured logging
+- **Auth:** [@nestjs/jwt](https://github.com/nestjs/jwt) + [@nestjs/passport](https://github.com/nestjs/passport)
+- **Queue:** [@nestjs/bullmq](https://github.com/nestjs/bull) — BullMQ integration
 
 ## Roadmap
 
-- [ ] **v0.2.0** -- Auth Kit: JWT guard + API Key guard (composable, no forced user model)
-- [ ] **v0.2.0** -- Prometheus metrics + graceful shutdown
-- [ ] **v0.3.0** -- OpenTelemetry tracing + multi-driver queue abstraction
+- [ ] **v0.2.0** — Auth Kit: JWT guard + API Key guard (composable, no forced user model)
+- [ ] **v0.2.0** — Prometheus metrics + graceful shutdown
+- [ ] **v0.3.0** — OpenTelemetry tracing + multi-driver queue abstraction
 
 ## Contributing
-
-Contributions are welcome. Please open an issue first to discuss what you'd like to change.
 
 ```bash
 git clone https://github.com/nthanhdo/nestjs-boot.git

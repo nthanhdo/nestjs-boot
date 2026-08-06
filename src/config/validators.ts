@@ -1,11 +1,15 @@
 import * as Joi from 'joi';
+import { BootOptions } from '../interfaces/boot-options.interface';
 
 const connectionSchema = Joi.object({
-  writerUri: Joi.string().uri().required().messages({
+  writerUri: Joi.string().uri().pattern(/^mongodb(\+srv)?:\/\//).required().messages({
     'string.uri': 'writerUri must be a valid MongoDB URI',
+    'string.pattern.base': 'writerUri must start with mongodb:// or mongodb+srv://',
     'any.required': 'writerUri is required for each database connection',
   }),
-  readerUri: Joi.string().uri().optional(),
+  readerUri: Joi.string().uri().pattern(/^mongodb(\+srv)?:\/\//).optional().messages({
+    'string.pattern.base': 'readerUri must start with mongodb:// or mongodb+srv://',
+  }),
 });
 
 const databaseSchema = Joi.object({
@@ -19,21 +23,14 @@ const databaseSchema = Joi.object({
 });
 
 const redisSchema = Joi.object({
-  url: Joi.string().required().messages({
+  url: Joi.string().pattern(/^rediss?:\/\//).required().messages({
+    'string.pattern.base': 'Redis url must start with redis:// or rediss://',
     'any.required': 'Redis url is required when redis cache is configured',
-  }),
-});
-
-const memcachedSchema = Joi.object({
-  url: Joi.string().required().messages({
-    'any.required':
-      'Memcached url is required when memcached cache is configured',
   }),
 });
 
 const cacheSchema = Joi.object({
   redis: redisSchema.optional(),
-  memcached: memcachedSchema.optional(),
   defaultTtl: Joi.number().integer().min(1).default(300),
 });
 
@@ -56,12 +53,13 @@ export const bootOptionsSchema = Joi.object({
   cache: cacheSchema.optional(),
   response: responseSchema.optional().default({ envelope: false, errorHandler: true }),
   health: healthSchema.optional().default({ enabled: true, path: '/health' }),
-}).options({ abortEarly: false });
+  logger: Joi.any().optional(),
+}).options({ abortEarly: false, stripUnknown: true });
 
 /**
  * Validate BootOptions, throwing with clear messages on failure.
  */
-export function validateBootOptions<T>(options: T): T {
+export function validateBootOptions(options: BootOptions): BootOptions {
   const { error, value } = bootOptionsSchema.validate(options);
   if (error) {
     const messages = error.details.map((d) => `  - ${d.message}`).join('\n');
@@ -69,5 +67,5 @@ export function validateBootOptions<T>(options: T): T {
       `[nestjs-boot] Invalid configuration:\n${messages}`,
     );
   }
-  return value as T;
+  return value as BootOptions;
 }

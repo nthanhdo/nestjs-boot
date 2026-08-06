@@ -45,12 +45,20 @@
   "peerDependencies": {
     "@nestjs/common": "^10.0.0 || ^11.0.0",
     "@nestjs/core": "^10.0.0 || ^11.0.0",
+    "@nestjs/mongoose": "^10.0.0 || ^11.0.0",
+    "@nestjs/terminus": "^10.0.0 || ^11.0.0",
     "mongoose": "^7.0.0 || ^8.0.0",
     "rxjs": "^7.0.0"
   },
   "peerDependenciesMeta": {
     "mongoose": {
-      "optional": false
+      "optional": true
+    },
+    "@nestjs/mongoose": {
+      "optional": true
+    },
+    "@nestjs/terminus": {
+      "optional": true
     }
   },
   "dependencies": {

@@ -6,18 +6,34 @@ services:
     ports:
       - '3000:3000'
     depends_on:
+      - auth-service
       - order-service
       - product-service
+      - notification-service
     environment:
       JWT_SECRET: dev-secret-change-in-production
+      AUTH_SERVICE_URL: auth-service:5000
       ORDER_SERVICE_URL: order-service:5000
       PRODUCT_SERVICE_URL: product-service:5000
+      NOTIFICATION_SERVICE_URL: notification-service:5000
+
+  auth-service:
+    build: ./auth-service
+    ports:
+      - '3003:3003'
+      - '5001:5000'
+    depends_on:
+      - mongodb
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/auth
+      JWT_SECRET: dev-secret-change-in-production
+      JWT_REFRESH_SECRET: dev-refresh-secret
 
   order-service:
     build: ./order-service
     ports:
       - '3001:3001'
-      - '5001:5000'
+      - '5003:5000'
     depends_on:
       - mongodb
       - redis
@@ -35,6 +51,18 @@ services:
       - redis
     environment:
       MONGO_URI: mongodb://mongodb:27017/products
+      REDIS_URL: redis://redis:6379
+
+  notification-service:
+    build: ./notification-service
+    ports:
+      - '3004:3004'
+      - '5004:5000'
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/notifications
       REDIS_URL: redis://redis:6379
 
   mongodb:

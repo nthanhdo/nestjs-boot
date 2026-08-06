@@ -16,6 +16,14 @@ async function bootstrap() {
     },
     transport: {
       clients: {
+        AUTH_SERVICE: {
+          transport: 'grpc',
+          options: {
+            url: process.env.AUTH_SERVICE_URL || 'localhost:5001',
+            package: 'auth',
+            protoPath: join(protoDir, 'auth.proto'),
+          },
+        },
         PRODUCT_SERVICE: {
           transport: 'grpc',
           options: {
@@ -27,9 +35,17 @@ async function bootstrap() {
         ORDER_SERVICE: {
           transport: 'grpc',
           options: {
-            url: process.env.ORDER_SERVICE_URL || 'localhost:5001',
+            url: process.env.ORDER_SERVICE_URL || 'localhost:5003',
             package: 'order',
             protoPath: join(protoDir, 'order.proto'),
+          },
+        },
+        NOTIFICATION_SERVICE: {
+          transport: 'grpc',
+          options: {
+            url: process.env.NOTIFICATION_SERVICE_URL || 'localhost:5004',
+            package: 'notification',
+            protoPath: join(protoDir, 'notification.proto'),
           },
         },
       },

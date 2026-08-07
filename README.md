@@ -5,11 +5,12 @@
 [![npm version](https://img.shields.io/npm/v/nestjs-boot.svg)](https://www.npmjs.com/package/nestjs-boot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/nthanhdo/nestjs-boot/actions/workflows/ci.yml/badge.svg)](https://github.com/nthanhdo/nestjs-boot/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-258%20passing-brightgreen.svg)](#)
+[![Tests](https://img.shields.io/badge/tests-411%20passing-brightgreen.svg)](#)
+[![Modules](https://img.shields.io/badge/modules-40%2B-blue.svg)](#modules)
 
 ## What is nestjs-boot?
 
-`nestjs-boot` is a **runtime package** (not a template or boilerplate). You install it as a dependency, call `createApp(AppModule, config)`, and it auto-wires databases, cache, auth, gRPC transports, queues, events, health checks, metrics, tracing, and more -- based on what you configure. Your `AppModule` stays clean with only business logic. Every module is optional: omit a config section and that module is not loaded.
+`nestjs-boot` is a **runtime package** (not a template or boilerplate). Install it as a dependency, call `createApp(AppModule, config)`, and it auto-wires databases, cache, auth, transports, queues, events, health checks, metrics, tracing, and more -- based on what you configure. Every module is optional: omit a config section and that module is not loaded. Your `AppModule` stays clean with only business logic.
 
 ## Getting Started
 
@@ -22,11 +23,18 @@ npm install
 npm run start:dev
 ```
 
-The CLI prompts for database (MongoDB, PostgreSQL, MySQL, DynamoDB, Elasticsearch), cache (Redis, Memcached), auth (JWT), and transport (HTTP, gRPC, TCP, NATS, RabbitMQ). Or pass flags directly:
+The CLI prompts for database (MongoDB, PostgreSQL, MySQL, DynamoDB, Elasticsearch), cache (Redis, Memcached), auth (JWT), and transport (HTTP, gRPC, TCP, NATS, RabbitMQ). Or pass flags:
 
 ```bash
 npx nestjs-boot new my-service --db=postgres --cache=redis --auth=jwt --transport=grpc
-npx nestjs-boot new my-service -y  # accept all defaults (MongoDB + Redis + JWT + HTTP)
+npx nestjs-boot new my-service -y  # defaults: MongoDB + Redis + JWT + HTTP
+```
+
+Test it:
+
+```bash
+curl http://localhost:3000/health       # health check
+curl http://localhost:3000/metrics      # Prometheus metrics
 ```
 
 ### Option 2: Run the 10-service example
@@ -37,7 +45,7 @@ cd nestjs-boot/examples/microservices
 docker-compose up --build
 ```
 
-This starts 10 services + MongoDB + Redis. See [examples/microservices/](examples/microservices/) for full details.
+Starts 10 services + MongoDB + Redis communicating via gRPC. See [examples/microservices/](examples/microservices/).
 
 ## Architecture
 
@@ -93,8 +101,6 @@ graph LR
     style REDIS fill:#dc2626,stroke:#b91c1c,color:#fff
 ```
 
-All 10 services communicate via **gRPC**. Each uses `createApp()` with different feature combinations. Infrastructure (MongoDB + Redis) is shared.
-
 ## `createApp()` -- How It Works
 
 **Before** -- manual wiring (~40 lines of infrastructure per service):
@@ -126,14 +132,13 @@ const app = await createApp(AppModule, {
     },
   },
   cache: { redis: { url: process.env.REDIS_URL! }, defaultTtl: 300 },
+  auth: { jwt: { secret: process.env.JWT_SECRET! } },
   health: { enabled: true },
   response: { envelope: true },
 });
 
 await app.listen(3000);
 ```
-
-`createApp()` validates config via Joi, creates only the modules you configure, applies global interceptors/filters, connects microservice transports, enables shutdown hooks, and in dev mode prints a config summary. Your `AppModule` stays clean -- just business logic.
 
 ### Boot Sequence
 
@@ -171,50 +176,11 @@ flowchart TD
     P --> Q
 ```
 
-### Request Flow
-
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant GW as API Gateway :3000
-    participant AUTH as Auth Service
-    participant SVC as Product Service
-
-    C->>GW: POST /products (+ Bearer token)
-    GW->>AUTH: ValidateToken(token)
-    AUTH-->>GW: { valid, userId, roles }
-    GW->>SVC: Create(data) [gRPC]
-    SVC-->>GW: Product
-    GW-->>C: { statusCode: 200, data: Product }
-```
-
-### Event Flow
-
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant GW as API Gateway
-    participant ORD as Order Service
-    participant EVT as EventBus (Redis)
-    participant NOTIF as Notification
-    participant FULFILL as Fulfillment
-
-    C->>GW: POST /orders
-    GW->>ORD: Create [gRPC]
-    ORD->>EVT: emit OrderCreatedEvent
-    EVT-->>NOTIF: OrderCreatedEvent
-    EVT-->>FULFILL: OrderCreatedEvent
-    NOTIF->>NOTIF: Enqueue notification job
-    FULFILL->>FULFILL: Create shipment
-    ORD-->>GW: Order
-    GW-->>C: { data: Order }
-```
-
 ## Modules
 
 ### Database
 
-Multi-connection MongoDB with automatic reader/writer split.
+Multi-connection MongoDB with automatic reader/writer split. `BaseRepository<T>` provides CRUD + pagination with automatic connection routing. `CachedBaseRepository<T>` adds cache-aside on top. `CrudService<T>` provides lifecycle hooks (`beforeCreate`, `afterCreate`, etc.).
 
 ```ts
 database: {
@@ -225,314 +191,154 @@ database: {
 }
 ```
 
-Register schemas with `DatabaseModule.forFeature('master', [{ name: 'Product', schema: ProductSchema }])`.
-
-- **`BaseRepository<T>`** -- data-access layer with automatic reader/writer routing, pagination, and `findAll`/`findById`/`create`/`update`/`delete` methods.
-- **`CachedBaseRepository<T>`** -- extends `BaseRepository` with cache-aside pattern on top.
-- **`CrudService<T>`** -- abstract service layer with lifecycle hooks (`beforeCreate`, `afterCreate`, `beforeUpdate`, `afterUpdate`, `beforeDelete`, `afterDelete`). Extend it, override hooks for business logic (slugify, emit events, validate).
-- **`@InjectConnection('master')`** -- inject a named Mongoose connection directly.
-
 ### Cache
 
-L1 in-memory LRU + optional L2 Redis. Size-aware routing (>1MB goes to L2 only). Optional Memcached adapter for L1.
+L1 in-memory LRU + optional L2 Redis. Size-aware routing (>1MB goes to L2 only). Optional Memcached adapter for L1. `MultiCacheService` provides `getOrSet()`, `del()`, `delByPrefix()`.
 
 ```ts
 cache: { redis: { url: 'redis://localhost:6379' }, defaultTtl: 300 }
-// or with Memcached as L1:
-cache: { memcached: { servers: 'localhost:11211' }, redis: { url: 'redis://...' }, defaultTtl: 300 }
 ```
-
-Inject with `@InjectCache()` and use `MultiCacheService`:
-
-```ts
-const result = await this.cache.getOrSet('product:123', () => this.db.findById(id), { ttl: 300 });
-```
-
-Adapters: `MemoryCacheAdapter`, `RedisCacheAdapter`, `MemcachedCacheAdapter`.
 
 ### Auth
 
-JWT signing/verification with access + refresh tokens, API key validation, RBAC guards, token revocation support.
+Full auth stack: JWT (access + refresh + revocation), API key validation, RBAC (`@Roles`, `@Permissions`), `@Public()` bypass, `@CurrentUser()` extraction.
+
+**Social/OAuth2:** `SocialAuthModule` with `GoogleStrategy` and `GitHubStrategy` out of the box.
+**TOTP:** `TotpService` for 2FA (generate secret, verify token).
+**Session:** `SessionAuthModule` with pluggable `SessionStore` and `@Session()` decorator.
+**WebSocket:** `WsJwtGuard` for authenticated WebSocket connections.
 
 ```ts
 auth: {
-  jwt: { secret: '...', signOptions: { expiresIn: '15m' }, refreshSecret: '...', refreshExpiresIn: '7d' },
+  jwt: { secret: '...', refreshSecret: '...', refreshExpiresIn: '7d' },
   apiKey: { enabled: true, validate: async (key) => isValid(key) },
   rbac: { enabled: true },
 }
 ```
 
-**Services and guards:**
-- `BootJwtService` -- `sign()`, `verify()`, `signRefresh()`, `verifyRefresh()`, `revoke()`
-- `JwtAuthGuard` -- auto-validates Bearer tokens
-- `ApiKeyGuard` -- validates API keys via custom callback
-- `RolesGuard` + `PermissionsGuard` -- RBAC enforcement
-
-**Decorators:**
-- `@Roles('admin', 'manager')` -- route requires any of these roles
-- `@Permissions('product:read', 'product:write')` -- route requires all permissions
-- `@Public()` -- skip all auth guards
-- `@CurrentUser()` -- extract user from request, or `@CurrentUser('id')` for a specific field
-
 ### Transport
 
-Config-driven hybrid HTTP + gRPC (or TCP/NATS/RabbitMQ) with typed service clients.
+Config-driven hybrid HTTP + gRPC/TCP/NATS/RabbitMQ. `ServiceClient<T>` provides type-safe RPC calls with auto correlation-ID forwarding. `createResilientClient()` wraps clients with circuit breaker + retry. `ServiceDiscoveryHook` enables dynamic service resolution.
 
 ```ts
-// Server (backend service)
-transport: { grpc: { url: '0.0.0.0:5000', package: 'product', protoPath: 'product.proto' } }
-
-// Clients (gateway)
 transport: {
+  grpc: { url: '0.0.0.0:5000', package: 'product', protoPath: 'product.proto' },
   clients: {
     PRODUCT_SERVICE: { transport: 'grpc', options: { url: 'product:5000', package: 'product', protoPath: 'product.proto' } },
   },
 }
 ```
 
-**`ServiceClient<T>`** -- typed wrapper around NestJS `ClientProxy` with auto-correlation ID forwarding and auth propagation:
-
-```ts
-interface ProductService {
-  findOne(data: { id: string }): Product;
-  create(data: CreateProductDto): Product;
-}
-
-const client = new ServiceClient<ProductService>(proxy);
-const product = await client.call('findOne', { id: '123' }); // type-safe, autocomplete
-```
-
-Inject with `@InjectClient('PRODUCT_SERVICE')` or `@InjectGrpcClient('PRODUCT_SERVICE')`.
-
 ### Observability
 
-**Metrics** -- Prometheus endpoint with HTTP request tracking:
+**Metrics:** Prometheus endpoint via `MetricsModule`. Includes `HttpMetricsInterceptor`, `DbMetricsInterceptor`, `CacheMetricsInterceptor`, and `QueueMetrics` collectors.
+
+**Logging:** Structured pino via `LoggingModule` with `BootLogger` and `LoggingInterceptor` (request timing, redaction).
+
+**Tracing:** OpenTelemetry via `TracingModule`. `@BootTrace('name')` auto-creates spans. `initTracing()` runs before NestFactory (handled by `createApp`).
+
+**Correlation:** `X-Correlation-Id` propagated across services via `AsyncLocalStorage`. Use `getCorrelationId()` / `setCorrelationId()` anywhere.
 
 ```ts
-metrics: { enabled: true, path: '/metrics', prefix: 'myapp_', defaultMetrics: true }
+metrics: { enabled: true, path: '/metrics', prefix: 'myapp_' },
+logging: { level: 'info', pretty: true, redact: ['req.headers.authorization'] },
+tracing: { exporter: 'otlp', endpoint: 'http://jaeger:4318', sampleRate: 0.1 },
+correlation: { header: 'X-Correlation-Id' },
 ```
-
-**Logging** -- Structured pino logging with request timing:
-
-```ts
-logging: { level: 'info', pretty: true, redact: ['req.headers.authorization'] }
-```
-
-**Tracing** -- OpenTelemetry distributed tracing (must init before NestFactory -- `createApp` handles this automatically):
-
-```ts
-tracing: { exporter: 'otlp', endpoint: 'http://jaeger:4318', sampleRate: 0.1 }
-```
-
-**`@BootTrace('ServiceName.method')`** -- method decorator that auto-creates an OpenTelemetry span. Attaches correlation ID. No-op passthrough if `@opentelemetry/api` is not installed.
-
-**Correlation ID** -- `X-Correlation-Id` propagated across services via middleware + `AsyncLocalStorage`:
-
-```ts
-correlation: { header: 'X-Correlation-Id' }
-```
-
-Use `getCorrelationId()` / `setCorrelationId()` / `runWithCorrelationId()` anywhere.
 
 ### Resilience
+
+`@CircuitBreaker()` wraps methods with closed/open/half-open state machine. `@Retry({ attempts: 3, backoff: 'exponential' })` adds automatic retries. `@Timeout(5000)` enforces per-method deadlines via `TimeoutInterceptor`.
 
 ```ts
 resilience: { circuitBreaker: { failureThreshold: 5, resetTimeout: 30000 }, timeout: { default: 5000 } }
 ```
 
-- **`@CircuitBreakerDecorator()`** -- wraps method with circuit breaker (closed/open/half-open states)
-- **`@Retry({ attempts: 3, delay: 1000, backoff: 'exponential' })`** -- automatic retries with backoff
-- **`@Timeout(5000)`** -- per-method or global timeout via `TimeoutInterceptor`
-- **`CircuitBreaker`** class -- standalone circuit breaker for manual use
-
 ### Error Handling
 
-- **`AllExceptionsFilter`** -- global HTTP exception filter with structured error responses
-- **`BootRpcExceptionFilter`** -- gRPC exception filter with HTTP-to-gRPC status code mapping
-- **`BootException`** -- extends `HttpException` with a stable machine-readable `code` field and `details` array:
+`AllExceptionsFilter` for structured HTTP errors. `BootRpcExceptionFilter` for gRPC with HTTP-to-gRPC status mapping. `BootException` adds stable `code` + `details` fields. `MongooseErrorInterceptor` transforms duplicate-key and validation errors. `toProblemDetails()` outputs RFC 9457. `ErrorReporter` hooks into Sentry/Datadog. `errorBoundary()` wraps async calls with fallback.
 
 ```ts
-throw new BootException('Product not found', {
-  code: 'PRODUCT_NOT_FOUND',
-  status: 404,
-  details: [{ sku: 'ABC123' }],
-});
+throw new BootException('Not found', { code: ErrorCodes.NOT_FOUND, status: 404 });
 ```
 
-- **`isRetryable(error)`** -- checks if an RPC error is safe to retry (network errors, timeouts, resource exhaustion)
-- **Monitoring hooks** -- plug in Sentry/Datadog without subclassing filters:
+### Queue & Events
+
+**Queue:** BullMQ job processing with `@Processor`, `@Process`, `@OnFailed`, `@OnCompleted` decorators. `QueueService.addJob()` to enqueue.
+
+**Events:** In-process or Redis pub/sub event bus. `BootEvent` for fire-and-forget. `BootQuery` for request/response (`emitAndWait`). `@OnEvent()` and `@OnQuery()` handler decorators.
 
 ```ts
-monitoring: {
-  errorReporter: (error, context) => Sentry.captureException(error, { extra: context }),
-}
-```
-
-### Queue and Events
-
-**Queue** -- BullMQ job queue with decorator-driven processors:
-
-```ts
-queue: {
-  driver: 'bullmq',
-  redis: { url: 'redis://localhost:6379' },
-  defaultOptions: { attempts: 3, backoff: { type: 'exponential', delay: 1000 } },
-}
-```
-
-```ts
-// Enqueue
-await this.queueService.addJob('notifications', 'send-email', { to: 'user@example.com' });
-
-// Process
-@Processor('notifications')
-class NotificationProcessor {
-  @Process('send-email')
-  async handle(job) { /* ... */ }
-
-  @OnFailed()
-  async onFailed(job, error) { /* ... */ }
-
-  @OnCompleted()
-  async onCompleted(job) { /* ... */ }
-}
-```
-
-**Events** -- in-process or Redis pub/sub event bus with typed events:
-
-```ts
-events: { transport: 'redis', redis: { url: 'redis://localhost:6379' } }
-```
-
-```ts
-// Define
-class OrderCreatedEvent extends BootEvent {
-  constructor(public readonly orderId: string) {
-    super();
-  }
-}
-
-// Emit
-this.eventBus.emit(new OrderCreatedEvent('order-123'));
-
-// Listen
-@OnEvent(OrderCreatedEvent)
-async handleOrderCreated(event: OrderCreatedEvent) { /* ... */ }
+queue: { driver: 'bullmq', redis: { url: 'redis://localhost:6379' } },
+events: { transport: 'redis', redis: { url: 'redis://localhost:6379' } },
 ```
 
 ### Config
 
-- **`BootConfigModule.register(options)`** -- sync config registration with Joi validation
-- **`BootConfigModule.registerAsync(asyncOptions)`** -- async config loading from Vault, AWS Secrets Manager, etc.:
+Joi validation, `.env` + `.env.{BOOT_ENV}` profiles, `BootConfigService` with typed dot-notation access. Async loading via `BootConfigModule.registerAsync()`. Secret adapters: `AwsSecretsAdapter`, `VaultAdapter`, `EnvFileAdapter`. `mergeConfigs()` for multi-source composition. `ConfigWatcher` for dev hot-reload. `generateConfigDocs()` outputs config schema docs.
 
 ```ts
 BootConfigModule.registerAsync({
-  imports: [VaultModule],
-  inject: [VaultService],
-  useFactory: async (vault: VaultService) => {
-    const secrets = await vault.getSecrets('my-service');
-    return { database: { connections: { master: { writerUri: secrets.MONGO_URI } } } };
-  },
+  useFactory: async (vault) => ({ database: { connections: { master: { writerUri: await vault.get('MONGO_URI') } } } }),
 })
 ```
 
-- **`BootConfigService`** -- typed access with dot-notation paths and autocomplete:
-
-```ts
-const uri = configService.get<string>('database.connections.master.writerUri');
-const all = configService.getAll();           // full BootOptions
-const schema = configService.getSchema();     // Joi schema description
-configService.getOrThrow('auth.jwt.secret');  // throws if missing
-```
-
-- **Environment profiles** -- `.env` loaded automatically, `.env.{BOOT_ENV || NODE_ENV}` overrides
-- **Config dump** -- in dev mode, `createApp()` logs a sanitized summary of active modules (credentials redacted)
-
 ### Health
 
-Auto-detects configured drivers (MongoDB, Redis) and registers health indicators:
+Auto-detects configured drivers (MongoDB, Redis) and registers `@nestjs/terminus` health indicators. Returns 503 during graceful shutdown.
 
 ```ts
 health: { enabled: true, path: '/health' }
 ```
 
-Built-in indicators: `DatabaseHealthIndicator`, `RedisHealthIndicator`. Uses `@nestjs/terminus` under the hood.
-
 ### Graceful Shutdown
+
+`ShutdownModule` drains in-flight requests, closes database connections, flushes queues. K8s-aware with configurable pre-stop delay.
 
 ```ts
 shutdown: { timeout: 10000, signals: ['SIGTERM', 'SIGINT'] }
 ```
 
-Drains in-flight requests, closes database connections, and flushes queues before exit.
-
 ### Inter-Service Auth
 
-Propagate auth context (JWT tokens, API keys) across service boundaries via `AsyncLocalStorage`:
+Propagates auth context (JWT, API keys) across service boundaries via `AsyncLocalStorage`. `AuthPropagationInterceptor` captures incoming auth. `getAuthContext()` / `buildAuthHeaders()` for manual propagation.
 
 ```ts
 interServiceAuth: { propagation: true, serviceToken: 'internal-service-secret' }
 ```
 
-`AuthPropagationInterceptor` captures incoming auth and makes it available via `getAuthContext()`. `ServiceClient<T>` auto-forwards auth headers in gRPC calls.
+### DI Safety
+
+**Error enrichment:** `parseDiError()` + `formatDiError()` turn cryptic Nest DI errors into actionable fix suggestions.
+
+**Contracts:** `createContract<T>()` defines interface-based DI tokens. `provideContract()` / `provideContractFactory()` bind implementations. `validateContracts()` catches missing bindings at startup.
+
+**Graph analysis:** `analyzeModules()` walks the module tree. `detectCycles()` finds circular dependencies via Tarjan's SCC. `renderMermaid()` outputs a visual diagram.
+
+**Layer enforcement:** `@Layer(ModuleLayer.INFRASTRUCTURE)` decorator + `validateLayers()` prevents upward dependencies (infra importing application).
 
 ### Testing
 
-- **`createTestApp(options)`** -- spin up a fully configured NestJS app for integration tests with real or in-memory databases
-- **`createFactory<T>(defaults)`** -- test data factories with override support:
+`createTestSuite(options)` -- full lifecycle manager (setup/teardown, module compilation, cleanup). `createFactory<T>(defaults)` -- data factories with traits, sequences, and `afterCreate` hooks. `createTestClient(app)` -- supertest wrapper with typed responses. `createGrpcTestClient()` -- gRPC service testing. `createMessageDispatcher()` -- microservice message testing. `ContractVerifier` -- verify gRPC contracts against proto files. `expectSnapshot()` + `stripVolatileFields()` -- deterministic snapshot testing. `seedDatabase()` / `cleanDatabase()` -- test data lifecycle. `createTestJwt()` + `MockAuthModule` -- auth test helpers.
 
 ```ts
-const userFactory = createFactory<User>({ name: 'Test User', email: 'test@test.com' });
-const user = userFactory.build({ name: 'Custom' }); // { name: 'Custom', email: 'test@test.com' }
-const users = userFactory.buildMany(5);
-```
-
-- **`createTestClient(app)`** -- HTTP test client wrapping supertest with typed responses:
-
-```ts
+const suite = createTestSuite({ imports: [AppModule] });
+const app = await suite.compile();
 const client = createTestClient(app);
-const res = await client.get('/products').expect(200);
+await client.get('/products').expect(200);
+await suite.teardown();
 ```
 
-- **`ContractVerifier`** -- verify gRPC service contracts against proto definitions
-- **`createMockGrpcService(definition)`** -- mock gRPC services for unit tests
-- **`seedDatabase(model, fixtures)`** / **`cleanDatabase(model)`** -- test data lifecycle helpers
+## CLI Commands
 
-### DI Error Enrichment
+### `npx nestjs-boot new <name>`
 
-When `NestFactory.create()` fails due to dependency injection errors, `createApp()` catches the error and prints actionable guidance:
-
-```
-+==============================================================+
-|  nestjs-boot: Dependency Injection Error Detected            |
-+==============================================================+
-
-  UNRESOLVED DEPENDENCY
-
-   Modules involved: ProductModule
-   Providers: CacheService
-
-   FIX:
-   Ensure CacheService is provided and exported:
-   1. Check that the module providing it is imported
-   2. Check that CacheService is in providers AND exports
-   3. If from a dynamic module, ensure .register() is called
-
-   Debug commands:
-     - Set NEST_DEBUG=true for the full dependency tree
-     - Run: npx nestjs-boot graph
-```
-
-## CLI
-
-### `npx nestjs-boot new <project-name>`
-
-Interactive project scaffolding with 5 database types, 3 cache options, JWT auth, and 5 transport types.
+Interactive project scaffolding. Supports 5 database types, cache, auth, and 5 transport options.
 
 ```bash
 npx nestjs-boot new my-service              # interactive prompts
 npx nestjs-boot new my-service --grpc       # with gRPC transport
-npx nestjs-boot new my-service -y           # all defaults (MongoDB + Redis + JWT + HTTP)
+npx nestjs-boot new my-service -y           # all defaults
 npx nestjs-boot new my-service --db=postgres --cache=memcached --transport=nats
 ```
 
@@ -547,10 +353,13 @@ npx nestjs-boot g resource product --minimal  # minimal scaffold
 
 ### `npx nestjs-boot graph`
 
-Visualize module dependency graph as a Mermaid diagram. Detects circular dependencies.
+Visualize module dependency graph. Detects circular dependencies.
 
 ```bash
-npx nestjs-boot graph                       # outputs Mermaid diagram to stdout
+npx nestjs-boot graph                       # Mermaid diagram to stdout
+npx nestjs-boot graph --strict              # exit 1 if cycles found (CI gate)
+npx nestjs-boot graph --format=json         # JSON output
+npx nestjs-boot graph --output=graph.md     # write to file
 ```
 
 ## Full Config Reference
@@ -561,16 +370,16 @@ interface BootOptions {
     connections: Record<string, {
       writerUri: string;
       readerUri?: string;
-      options?: MongooseConnectionOptions;  // pool size, auth, TLS, read preference, etc.
+      options?: MongooseConnectionOptions;
     }>;
   };
   cache?: {
     redis?: { url: string };
-    memcached?: { servers: string };        // e.g., 'host1:11211,host2:11211'
+    memcached?: { servers: string };
     defaultTtl?: number;                    // seconds (default: 300)
   };
   response?: {
-    envelope?: boolean;                     // wrap in { statusCode, message, data } (default: false)
+    envelope?: boolean;                     // wrap in { statusCode, message, data }
     errorHandler?: boolean;                 // global AllExceptionsFilter (default: true)
   };
   health?: {
@@ -621,11 +430,33 @@ interface BootOptions {
   monitoring?: {
     errorReporter?: (error: Error, context: Record<string, unknown>) => void;
   };
-  logger?: boolean | unknown;               // NestJS logger option
+  logger?: boolean | unknown;
 }
 ```
 
 Every top-level section is optional. Omitted sections = that module is not loaded.
+
+## Guides
+
+Detailed documentation for specific topics:
+
+- [Circular Dependency Prevention](docs/guides/circular-dependency-prevention.md) -- patterns to avoid circular imports
+- [DI Best Practices](docs/guides/di-best-practices.md) -- contract-based DI, layer enforcement, graph analysis
+- [Testing Guide](docs/guides/testing-guide.md) -- factories, suites, snapshots, gRPC testing, message dispatching
+- [Transport Selection](docs/guides/transport-selection.md) -- when to use gRPC vs TCP vs NATS vs RabbitMQ
+- [Auth & Rate Limiting](docs/guides/auth-rate-limiting.md) -- JWT lifecycle, API key rotation, guard composition
+- [Production Checklist](docs/guides/production-checklist.md) -- health checks, shutdown, metrics, tracing, security
+- [Serverless Considerations](docs/guides/serverless-considerations.md) -- cold start, connection pooling, stateless auth
+
+## Examples
+
+- **[10-service microservice architecture](examples/microservices/)** -- API Gateway + 9 services, gRPC, EventBus, BullMQ, MongoDB, Redis
+- **[Learning skeleton](examples/learning/)** -- minimal starter for understanding nestjs-boot
+
+## Tools
+
+- **[Web Generator](packages/web-generator/)** -- interactive browser-based project generator with visual config builder
+- **[Admin Dashboard](packages/admin-dashboard/)** -- real-time monitoring dashboard for nestjs-boot services
 
 ## Standalone Usage
 
@@ -644,48 +475,31 @@ import { DatabaseModule, CacheModule, AuthModule } from 'nestjs-boot';
 export class AppModule {}
 ```
 
-## Examples
+## Roadmap
 
-- **[10-service microservice architecture](examples/microservices/)** -- full production-like setup with API Gateway, 9 backend services, gRPC, EventBus, BullMQ queues, MongoDB, Redis
-- **[Learning skeleton](examples/learning/)** -- minimal starter for understanding nestjs-boot concepts
-
-## Web Generator
-
-Interactive browser-based project generator with visual config builder.
-
-See [`packages/web-generator/`](packages/web-generator/)
-
-## Admin Dashboard
-
-Real-time admin dashboard for monitoring nestjs-boot services.
-
-See [`packages/admin-dashboard/`](packages/admin-dashboard/)
+- OAuth2 / OpenID Connect guard
+- Grafana dashboard templates
+- PostgreSQL / TypeORM database adapter
+- Rate limiting module
+- WebSocket transport improvements
 
 ## Optional Peer Dependencies
 
 Install only what you use:
 
 ```bash
-npm install mongoose @nestjs/mongoose    # Database module
-npm install ioredis                      # Redis L2 cache
-npm install memjs                        # Memcached L1 cache
-npm install bullmq                       # Queue module
-npm install pino pino-pretty             # Logging module
-npm install prom-client                  # Metrics module
-npm install @nestjs/terminus             # Health checks
+npm install mongoose @nestjs/mongoose        # Database
+npm install ioredis                          # Redis cache
+npm install memjs                            # Memcached cache
+npm install bullmq                           # Queue
+npm install pino pino-pretty                 # Logging
+npm install prom-client                      # Metrics
+npm install @nestjs/terminus                 # Health checks
 npm install @opentelemetry/sdk-node @opentelemetry/api  # Tracing
-npm install @grpc/grpc-js @grpc/proto-loader            # gRPC transport
-npm install @nestjs/microservices        # Transport module
+npm install @grpc/grpc-js @grpc/proto-loader # gRPC transport
+npm install @nestjs/microservices            # Transport module
+npm install otpauth                          # TOTP 2FA
 ```
-
-## Roadmap (v0.2)
-
-- OAuth2 / OpenID Connect guard
-- WebSocket transport guard
-- Grafana dashboard templates
-- Secrets manager adapters (AWS, GCP, Azure, Vault)
-- PostgreSQL / TypeORM database adapter
-- Rate limiting module
 
 ## Contributing
 
@@ -693,7 +507,7 @@ npm install @nestjs/microservices        # Transport module
 git clone https://github.com/nthanhdo/nestjs-boot.git
 cd nestjs-boot
 npm install
-npm test           # 258 tests
+npm test           # 411 tests
 npm run build      # CJS + ESM + DTS
 ```
 

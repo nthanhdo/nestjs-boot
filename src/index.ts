@@ -24,8 +24,15 @@ export {
   BOOT_OPTIONS,
   bootOptionsSchema,
   validateBootOptions,
+  mergeConfigs,
+  formatConfigError,
+  generateConfigDocs,
+  ConfigWatcher,
 } from './config';
-export type { BootConfigAsyncOptions, BootConfigPath } from './config';
+export type { BootConfigAsyncOptions, BootConfigPath, ConfigSource } from './config';
+export { EnvFileAdapter } from './config';
+export { AwsSecretsAdapter } from './config';
+export { VaultAdapter } from './config';
 
 // --- Database ---
 export {
@@ -47,6 +54,11 @@ export {
   ResponseInterceptor,
   AllExceptionsFilter,
   BootException,
+  ErrorCodes,
+  errorBoundary,
+  toProblemDetails,
+  MongooseErrorInterceptor,
+  ErrorReporter,
   CrudService,
   CrudController,
 } from './common';
@@ -149,6 +161,9 @@ export {
   InjectClient,
   InjectGrpcClient,
   getClientToken,
+  createResilientClient,
+  ResilientServiceClient,
+  ServiceDiscoveryHook,
   TRANSPORT_CLIENT_PREFIX,
   TRANSPORT_OPTIONS,
   TRANSPORT_TYPE_MAP,
@@ -191,6 +206,9 @@ export {
   MetricsService,
   MetricsController,
   HttpMetricsInterceptor,
+  DbMetricsInterceptor,
+  CacheMetricsInterceptor,
+  QueueMetrics,
   METRICS_OPTIONS,
   METRICS_SERVICE,
   DEFAULT_METRICS_PATH,
@@ -240,6 +258,10 @@ export type { Contract, ContractType } from './contracts';
 export { Layer, LAYER_KEY, ModuleLayer, validateLayers } from './layers';
 export type { LayerViolation, LayerValidationResult, LayerOptions } from './layers';
 
+// --- Graph ---
+export { analyzeModules, detectCycles, renderMermaid } from './graph';
+export type { ModuleNode, GraphResult } from './graph';
+
 // --- createApp ---
 export { createApp } from './create-app';
 
@@ -274,7 +296,9 @@ export {
   EventBusModule,
   EventBusService,
   BootEvent,
+  BootQuery,
   OnEvent,
+  OnQuery,
   EVENT_BUS_OPTIONS,
   EVENT_BUS_SERVICE,
 } from './events';
@@ -285,15 +309,20 @@ export {
   createMockGrpcService,
   ContractVerifier,
   createTestApp,
+  createTestSuite,
   seedDatabase,
   cleanDatabase,
   createFactory,
   createTestClient,
+  createGrpcTestClient,
+  createMessageDispatcher,
   createTestJwt,
   createTestApiKey,
   createAuthenticatedRequest,
   MockAuthModule,
   TEST_SECRET,
+  expectSnapshot,
+  stripVolatileFields,
 } from './testing';
 export type {
   ResponseFactory,

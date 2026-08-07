@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await createApp(AppModule, {
+{{#eq dbType "mongodb"}}
     database: {
       connections: {
         master: {
@@ -11,12 +12,53 @@ async function bootstrap() {
         },
       },
     },
-    {{#if cache}}
+{{/eq}}
+{{#eq dbType "postgres"}}
+    database: {
+      type: 'postgres',
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432', 10),
+      database: process.env.DB_NAME || '{{name}}',
+      username: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASS || 'postgres',
+    },
+{{/eq}}
+{{#eq dbType "mysql"}}
+    database: {
+      type: 'mysql',
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '3306', 10),
+      database: process.env.DB_NAME || '{{name}}',
+      username: process.env.DB_USER || 'root',
+      password: process.env.DB_PASS || 'root',
+    },
+{{/eq}}
+{{#eq dbType "dynamodb"}}
+    database: {
+      type: 'dynamodb',
+      region: process.env.AWS_REGION || 'us-east-1',
+      endpoint: process.env.DYNAMODB_ENDPOINT || 'http://localhost:8000',
+    },
+{{/eq}}
+{{#eq dbType "elasticsearch"}}
+    database: {
+      type: 'elasticsearch',
+      node: process.env.ELASTICSEARCH_URL || 'http://localhost:9200',
+    },
+{{/eq}}
+{{#if cache}}
+{{#eq cacheType "redis"}}
     cache: {
       redis: { url: process.env.REDIS_URL || 'redis://localhost:6379' },
     },
-    {{/if}}
-    {{#if grpc}}
+{{/eq}}
+{{#eq cacheType "memcached"}}
+    cache: {
+      memcached: { servers: process.env.MEMCACHED_SERVERS || 'localhost:11211' },
+    },
+{{/eq}}
+{{/if}}
+{{#eq transportType "grpc"}}
     transport: {
       grpc: {
         url: '0.0.0.0:5000',
@@ -24,14 +66,36 @@ async function bootstrap() {
         protoPath: join(__dirname, '../proto/{{name}}.proto'),
       },
     },
-    {{/if}}
-    {{#if auth}}
+{{/eq}}
+{{#eq transportType "tcp"}}
+    transport: {
+      tcp: {
+        host: '0.0.0.0',
+        port: 4000,
+      },
+    },
+{{/eq}}
+{{#eq transportType "nats"}}
+    transport: {
+      nats: {
+        url: process.env.NATS_URL || 'nats://localhost:4222',
+      },
+    },
+{{/eq}}
+{{#eq transportType "rabbitmq"}}
+    transport: {
+      rabbitmq: {
+        url: process.env.RABBITMQ_URL || 'amqp://localhost:5672',
+      },
+    },
+{{/eq}}
+{{#if auth}}
     auth: {
       jwt: {
         secret: process.env.JWT_SECRET || 'change-me-in-production',
       },
     },
-    {{/if}}
+{{/if}}
     health: { enabled: true },
   });
 

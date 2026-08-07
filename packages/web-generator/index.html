@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>nestjs-boot — Configure &amp; Generate</title>
+  <meta name="description" content="Visually configure and generate a production-ready NestJS microservice project. Zero build step.">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Prism.js — syntax highlighting (tomorrow night theme) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-docker.min.js"></script>
+
+  <!-- Mermaid.js — live diagrams -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+  <!-- JSZip + FileSaver — ZIP download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+  <!-- Inter font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/custom.css">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+</head>
+<body class="bg-gray-950 text-gray-100 antialiased">
+
+  <!-- Toast -->
+  <div id="toast" class="toast">Copied to clipboard!</div>
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="border-b border-gray-800/50 bg-gray-950/80 backdrop-blur-sm sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-500/20 flex items-center justify-center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight">nestjs-boot</h1>
+          <p class="text-xs text-gray-500">Configure your microservice. Download the code.</p>
+        </div>
+      </div>
+      <a href="https://github.com/nthanhdo/nestjs-boot" target="_blank" rel="noopener"
+         class="btn-secondary text-xs hidden sm:inline-flex">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </header>
+
+  <!-- ═══ MAIN CONTENT ═══ -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+
+    <!-- ── Top: Config + Preview side by side ── -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+
+      <!-- LEFT: Configuration -->
+      <div class="lg:col-span-4 space-y-6">
+        <div class="bg-gray-900/50 border border-gray-800/50 rounded-xl p-5 space-y-5">
+          <h2 class="text-sm font-semibold text-gray-300 flex items-center gap-2">
+            <span class="w-5 h-5 rounded bg-sky-500/20 text-sky-400 flex items-center justify-center text-xs font-bold">1</span>
+            Project Configuration
+          </h2>
+
+          <!-- Project Name -->
+          <div>
+            <label class="section-label" for="project-name">Project Name</label>
+            <input type="text" id="project-name" class="form-input font-mono" value="my-service" placeholder="my-service" spellcheck="false">
+          </div>
+
+          <!-- Database -->
+          <div>
+            <label class="section-label" for="database">Database</label>
+            <select id="database" class="form-select">
+              <option value="none">None</option>
+              <option value="mongodb">MongoDB</option>
+              <option value="postgres" selected>PostgreSQL</option>
+              <option value="mysql">MySQL</option>
+              <option value="dynamodb">DynamoDB</option>
+              <option value="elasticsearch">Elasticsearch</option>
+            </select>
+          </div>
+
+          <!-- Cache -->
+          <div>
+            <label class="section-label" for="cache">Cache</label>
+            <select id="cache" class="form-select">
+              <option value="none">None</option>
+              <option value="redis" selected>Redis</option>
+              <option value="memcached">Memcached</option>
+            </select>
+          </div>
+
+          <!-- Auth -->
+          <div>
+            <label class="section-label" for="auth">Authentication</label>
+            <select id="auth" class="form-select">
+              <option value="none">None</option>
+              <option value="jwt" selected>JWT</option>
+            </select>
+          </div>
+
+          <!-- Transport -->
+          <div>
+            <label class="section-label" for="transport">Transport</label>
+            <select id="transport" class="form-select">
+              <option value="http" selected>HTTP only</option>
+              <option value="grpc">+ gRPC</option>
+              <option value="tcp">+ TCP</option>
+              <option value="nats">+ NATS</option>
+              <option value="rabbitmq">+ RabbitMQ</option>
+            </select>
+          </div>
+
+          <!-- Extras -->
+          <div>
+            <label class="section-label">Extras</label>
+            <div class="space-y-1">
+              <label class="checkbox-label">
+                <input type="checkbox" id="extra-docker" checked> Docker
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="extra-k8s"> K8s manifests
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="extra-lint" checked> ESLint + Prettier
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" id="extra-tests" checked> Tests
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="space-y-3">
+          <button id="btn-download" class="btn-primary w-full justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download ZIP
+          </button>
+          <button id="btn-copy-cli" class="btn-secondary w-full justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            Copy CLI Command
+          </button>
+        </div>
+
+        <!-- CLI preview -->
+        <div class="bg-gray-900/50 border border-gray-800/50 rounded-xl p-4">
+          <div class="section-label mb-2">CLI Equivalent</div>
+          <code id="cli-preview" class="text-xs font-mono text-sky-400 break-all leading-relaxed"></code>
+        </div>
+
+        <!-- File tree -->
+        <div class="bg-gray-900/50 border border-gray-800/50 rounded-xl p-4">
+          <div class="section-label mb-2">Generated Files</div>
+          <div id="file-tree" class="file-tree"></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Code Preview -->
+      <div class="lg:col-span-8">
+        <div class="bg-gray-900/50 border border-gray-800/50 rounded-xl overflow-hidden sticky top-20">
+          <h2 class="text-sm font-semibold text-gray-300 flex items-center gap-2 px-5 pt-4 pb-2">
+            <span class="w-5 h-5 rounded bg-sky-500/20 text-sky-400 flex items-center justify-center text-xs font-bold">2</span>
+            Live Preview
+          </h2>
+
+          <!-- Tabs -->
+          <div class="flex border-b border-gray-800 px-4 gap-1" id="code-tabs">
+            <button class="code-tab active" data-tab="main">main.ts</button>
+            <button class="code-tab" data-tab="docker">docker-compose.yml</button>
+            <button class="code-tab" data-tab="package">package.json</button>
+            <button class="code-tab" data-tab="env">.env.example</button>
+          </div>
+
+          <!-- Code panels -->
+          <div class="code-preview fade-update">
+            <pre id="code-main" class="block"><code class="language-typescript"></code></pre>
+            <pre id="code-docker" class="hidden"><code class="language-yaml"></code></pre>
+            <pre id="code-package" class="hidden"><code class="language-json"></code></pre>
+            <pre id="code-env" class="hidden"><code class="language-bash"></code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Bottom: Architecture Diagram ── -->
+    <div class="bg-gray-900/50 border border-gray-800/50 rounded-xl p-5">
+      <h2 class="text-sm font-semibold text-gray-300 flex items-center gap-2 mb-4">
+        <span class="w-5 h-5 rounded bg-sky-500/20 text-sky-400 flex items-center justify-center text-xs font-bold">3</span>
+        Architecture Preview
+      </h2>
+      <div id="mermaid-output" class="mermaid-container"></div>
+    </div>
+  </main>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="border-t border-gray-800/50 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-600">
+      <span>nestjs-boot &mdash; Production-ready NestJS in seconds</span>
+      <a href="https://github.com/nthanhdo/nestjs-boot" target="_blank" rel="noopener" class="hover:text-gray-400 transition-colors">github.com/nthanhdo/nestjs-boot</a>
+    </div>
+  </footer>
+
+  <!-- ═══ APP LOGIC ═══ -->
+  <script type="module">
+    import {
+      readConfig, generateFileTree, renderFileTree,
+      generateMermaidDiagram, generateCliCommand, generateZip,
+      generateMainTsPreview, generateDockerComposePreview,
+    } from './js/generator.js';
+    import { mainTs, packageJson, dockerCompose, envExample } from './js/templates.js';
+
+    // ── Mermaid init ──
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'dark',
+      themeVariables: {
+        primaryColor: '#0ea5e9',
+        primaryTextColor: '#f3f4f6',
+        primaryBorderColor: '#374151',
+        lineColor: '#6b7280',
+        secondaryColor: '#1f2937',
+        tertiaryColor: '#111827',
+        background: '#111827',
+        mainBkg: '#111827',
+        nodeBorder: '#374151',
+      },
+      flowchart: { curve: 'basis' },
+    });
+
+    // ── State ──
+    let currentTab = 'main';
+
+    // ── Tab switching ──
+    document.getElementById('code-tabs').addEventListener('click', (e) => {
+      const tab = e.target.closest('.code-tab');
+      if (!tab) return;
+      currentTab = tab.dataset.tab;
+      document.querySelectorAll('.code-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      showTab(currentTab);
+    });
+
+    function showTab(name) {
+      ['main', 'docker', 'package', 'env'].forEach(t => {
+        document.getElementById(`code-${t}`).classList.toggle('hidden', t !== name);
+        document.getElementById(`code-${t}`).classList.toggle('block', t === name);
+      });
+    }
+
+    // ── Toast ──
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 2000);
+    }
+
+    // ── Update everything ──
+    let mermaidId = 0;
+
+    async function update() {
+      const c = readConfig();
+
+      // Code previews
+      const mainCode = mainTs(c);
+      const dockerCode = dockerCompose(c);
+      const pkgCode = packageJson(c);
+      const envCode = envExample(c);
+
+      document.querySelector('#code-main code').textContent = mainCode;
+      document.querySelector('#code-docker code').textContent = dockerCode;
+      document.querySelector('#code-package code').textContent = pkgCode;
+      document.querySelector('#code-env code').textContent = envCode;
+
+      // Re-highlight
+      Prism.highlightAllUnder(document.querySelector('.code-preview'));
+
+      // File tree
+      const files = generateFileTree(c);
+      document.getElementById('file-tree').innerHTML = renderFileTree(files, c.name);
+
+      // CLI command
+      const cli = generateCliCommand(c);
+      document.getElementById('cli-preview').textContent = cli;
+
+      // Mermaid diagram
+      const graphDef = generateMermaidDiagram(c);
+      const container = document.getElementById('mermaid-output');
+      try {
+        const id = `mermaid-${++mermaidId}`;
+        const { svg } = await mermaid.render(id, graphDef);
+        container.innerHTML = svg;
+      } catch {
+        container.innerHTML = '<p class="text-gray-500 text-sm">Diagram rendering...</p>';
+      }
+    }
+
+    // ── Bind all inputs ──
+    const inputs = [
+      'project-name', 'database', 'cache', 'auth', 'transport',
+      'extra-docker', 'extra-k8s', 'extra-lint', 'extra-tests',
+    ];
+
+    inputs.forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', update);
+    });
+
+    // ── Buttons ──
+    document.getElementById('btn-download').addEventListener('click', async () => {
+      const c = readConfig();
+      await generateZip(c);
+      showToast(`${c.name}.zip downloaded!`);
+    });
+
+    document.getElementById('btn-copy-cli').addEventListener('click', () => {
+      const c = readConfig();
+      const cli = generateCliCommand(c);
+      navigator.clipboard.writeText(cli).then(() => showToast('CLI command copied!'));
+    });
+
+    // ── Initial render ──
+    update();
+  </script>
+</body>
+</html>

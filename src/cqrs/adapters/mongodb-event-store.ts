@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common';
+import type { Connection as MongooseConnection } from 'mongoose';
 import { StoredEvent } from '../domain-event';
 import { EventStore, ConcurrencyError } from '../interfaces';
 
@@ -23,8 +24,7 @@ export class MongoDBEventStore implements EventStore {
   /**
    * @param connection - A Mongoose connection instance from DatabaseModule
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(private readonly connection: any) {}
+  constructor(private readonly connection: MongooseConnection) {}
 
   private async ensureInitialized(): Promise<void> {
     if (this.initialized) return;

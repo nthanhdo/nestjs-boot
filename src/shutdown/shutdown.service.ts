@@ -1,6 +1,8 @@
 import { Inject, Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { ShutdownOptions } from './interfaces';
+import { InFlightTracker } from './in-flight-tracker';
+import { SignalHandler } from './signal-handler';
 import {
   SHUTDOWN_OPTIONS,
   DEFAULT_SHUTDOWN_TIMEOUT,
@@ -26,17 +28,21 @@ export function getK8sPreStopDelay(): number {
   return isNaN(parsed) ? 5_000 : parsed;
 }
 
+/**
+ * ShutdownService — orchestrates graceful shutdown.
+ *
+ * Delegates specific concerns to focused classes:
+ * - InFlightTracker: tracks in-flight HTTP requests
+ * - SignalHandler: registers OS signal handlers
+ * - K8s detection: utility functions (isKubernetesEnvironment, getK8sPreStopDelay)
+ */
 @Injectable()
 export class ShutdownService implements OnApplicationShutdown {
   private readonly logger = new Logger(ShutdownService.name);
-  private readonly timeout: number;
-  private readonly signals: string[];
-  private readonly beforeShutdownHook?: () => Promise<void>;
   private readonly drainStrategy: 'drain' | 'immediate';
-  private isShuttingDown = false;
-
-  /** Tracks the number of in-flight HTTP requests */
-  private inFlightRequests = 0;
+  private readonly beforeShutdownHook?: () => Promise<void>;
+  private readonly signalHandler: SignalHandler;
+  private readonly signals: string[];
 
   /** Set to true when shutdown is initiated — health endpoint reads this */
   private shuttingDownFlag = false;
@@ -44,13 +50,17 @@ export class ShutdownService implements OnApplicationShutdown {
   constructor(
     @Inject(SHUTDOWN_OPTIONS) options: ShutdownOptions,
     @Inject(HttpAdapterHost) private readonly httpAdapterHost: HttpAdapterHost,
+    @Inject(InFlightTracker) public readonly inFlightTracker: InFlightTracker,
   ) {
-    this.timeout = options.timeout ?? DEFAULT_SHUTDOWN_TIMEOUT;
+    const timeout = options.timeout ?? DEFAULT_SHUTDOWN_TIMEOUT;
     this.signals = options.signals ?? DEFAULT_SHUTDOWN_SIGNALS;
     this.beforeShutdownHook = options.beforeShutdown;
     this.drainStrategy = options.drainStrategy ?? 'drain';
 
-    this.registerSignalHandlers();
+    this.signalHandler = new SignalHandler(this.signals, timeout, () => {
+      this.shuttingDownFlag = true;
+    });
+    this.signalHandler.register();
     this.logK8sInfo();
   }
 
@@ -64,27 +74,26 @@ export class ShutdownService implements OnApplicationShutdown {
 
   /**
    * Returns the number of currently in-flight HTTP requests.
+   * @deprecated Use inFlightTracker.getCount() directly
    */
   getInFlightCount(): number {
-    return this.inFlightRequests;
+    return this.inFlightTracker.getCount();
   }
 
   /**
    * Increment in-flight request counter.
-   * Called by InFlightRequestInterceptor on request start.
+   * @deprecated Use inFlightTracker.increment() directly
    */
   incrementInFlight(): void {
-    this.inFlightRequests++;
+    this.inFlightTracker.increment();
   }
 
   /**
    * Decrement in-flight request counter.
-   * Called by InFlightRequestInterceptor on request complete.
+   * @deprecated Use inFlightTracker.decrement() directly
    */
   decrementInFlight(): void {
-    if (this.inFlightRequests > 0) {
-      this.inFlightRequests--;
-    }
+    this.inFlightTracker.decrement();
   }
 
   /**
@@ -101,38 +110,6 @@ export class ShutdownService implements OnApplicationShutdown {
         `K8s detected — preStop delay: ${delay}ms (configure via BOOT_PRESTOP_DELAY_MS). ` +
         `Ensure your deployment.yaml lifecycle.preStop matches this value.`,
       );
-    }
-  }
-
-  private registerSignalHandlers(): void {
-    for (const signal of this.signals) {
-      process.on(signal, () => {
-        this.logger.log(`Received ${signal} — initiating graceful shutdown`);
-        this.initiateShutdown();
-      });
-    }
-    this.logger.log(`Signal handlers registered: ${this.signals.join(', ')}`);
-  }
-
-  private initiateShutdown(): void {
-    if (this.isShuttingDown) {
-      this.logger.warn('Shutdown already in progress — ignoring duplicate signal');
-      return;
-    }
-    this.isShuttingDown = true;
-    this.shuttingDownFlag = true;
-
-    // Force-exit safety net
-    const timer = setTimeout(() => {
-      this.logger.error(
-        `Graceful shutdown timed out after ${this.timeout}ms — forcing exit`,
-      );
-      process.exit(1);
-    }, this.timeout);
-
-    // Unref so it doesn't keep the event loop alive if everything else finishes
-    if (timer.unref) {
-      timer.unref();
     }
   }
 
@@ -163,9 +140,10 @@ export class ShutdownService implements OnApplicationShutdown {
       if (httpAdapter) {
         const server = httpAdapter.getHttpServer();
         if (server) {
-          if (this.drainStrategy === 'drain' && this.inFlightRequests > 0) {
+          const inFlight = this.inFlightTracker.getCount();
+          if (this.drainStrategy === 'drain' && inFlight > 0) {
             this.logger.log(
-              `Phase 2: Draining ${this.inFlightRequests} in-flight request(s) — strategy: drain`,
+              `Phase 2: Draining ${inFlight} in-flight request(s) — strategy: drain`,
             );
           }
 
@@ -188,10 +166,6 @@ export class ShutdownService implements OnApplicationShutdown {
     } catch (error) {
       this.logger.error('Phase 2: Failed to close HTTP server', error);
     }
-
-    // Phases 3-6 (flush metrics, close DB, cache, broker) are handled by
-    // NestJS lifecycle — each module's own onModuleDestroy / onApplicationShutdown
-    // hooks fire automatically. nestjs-boot modules log their own teardown.
 
     const elapsed = Date.now() - startTime;
     this.logger.log(`Shutdown complete in ${(elapsed / 1000).toFixed(1)}s`);

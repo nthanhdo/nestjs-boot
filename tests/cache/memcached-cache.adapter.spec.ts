@@ -95,14 +95,14 @@ describe('MemcachedCacheAdapter', () => {
     expect(await adapter.get('complex')).toEqual(complex);
   });
 
-  it('delByPrefix should warn and be a no-op', async () => {
+  it('delByPrefix should throw UnsupportedOperationError', async () => {
     await adapter.set('prefix:a', 1);
     await adapter.set('prefix:b', 2);
 
-    // Should not throw
-    await adapter.delByPrefix('prefix:');
+    // Should throw since Memcached cannot scan keys
+    await expect(adapter.delByPrefix('prefix:')).rejects.toThrow('is not supported by Memcached');
 
-    // Values should still exist (no-op)
+    // Values should still exist (nothing was deleted)
     expect(await adapter.get('prefix:a')).toBe(1);
     expect(await adapter.get('prefix:b')).toBe(2);
   });

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpAdapterHost } from '@nestjs/core';
 import { ShutdownService } from '../../src/shutdown/shutdown.service';
+import { InFlightTracker } from '../../src/shutdown/in-flight-tracker';
 import {
   SHUTDOWN_OPTIONS,
   DEFAULT_SHUTDOWN_SIGNALS,
@@ -53,6 +54,7 @@ describe('ShutdownService', () => {
           provide: HttpAdapterHost,
           useValue: httpAdapterHost ?? createMockHttpAdapterHost(),
         },
+        InFlightTracker,
         ShutdownService,
       ],
     }).compile();

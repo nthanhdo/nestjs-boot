@@ -1,6 +1,7 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
 import { ShutdownOptions } from './interfaces';
 import { ShutdownService } from './shutdown.service';
+import { InFlightTracker } from './in-flight-tracker';
 import { SHUTDOWN_OPTIONS } from './constants';
 
 @Global()
@@ -27,9 +28,10 @@ export class ShutdownModule {
           provide: SHUTDOWN_OPTIONS,
           useValue: options,
         },
+        InFlightTracker,
         ShutdownService,
       ],
-      exports: [ShutdownService],
+      exports: [ShutdownService, InFlightTracker],
     };
   }
 }

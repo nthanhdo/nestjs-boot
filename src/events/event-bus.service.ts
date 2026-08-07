@@ -33,30 +33,45 @@ export class EventBusService implements OnModuleDestroy {
   private redisSubscriber: any = null;
   private readonly redisChannel = 'boot:events';
 
+  /** Whether this service owns the Redis clients (and should close them on destroy) */
+  private ownsRedisClients = false;
+
   constructor(options: EventBusOptions) {
-    if (options.transport === 'redis' && options.redis?.url) {
-      try {
-        const IORedis = require('ioredis');
-        this.redisPublisher = new IORedis(options.redis.url);
-        this.redisSubscriber = new IORedis(options.redis.url);
-
-        this.redisSubscriber.subscribe(this.redisChannel);
-        this.redisSubscriber.on('message', (_channel: string, message: string) => {
-          try {
-            const parsed = JSON.parse(message);
-            this.invokeHandlers(parsed.eventClassName, parsed.data);
-          } catch (err) {
-            this.logger.error('Failed to process Redis event message', err);
-          }
-        });
-
-        this.logger.log('EventBus Redis transport connected');
-      } catch {
-        this.logger.warn(
-          'ioredis not installed — falling back to memory transport. Install ioredis for Redis event bus.',
-        );
+    if (options.transport === 'redis') {
+      // Prefer injected Redis clients over creating new ones
+      if (options.redisClient) {
+        this.redisPublisher = options.redisClient.publisher;
+        this.redisSubscriber = options.redisClient.subscriber;
+        this.ownsRedisClients = false;
+        this.setupRedisSubscriber();
+        this.logger.log('EventBus Redis transport connected (injected client)');
+      } else if (options.redis?.url) {
+        try {
+          const IORedis = require('ioredis');
+          this.redisPublisher = new IORedis(options.redis.url);
+          this.redisSubscriber = new IORedis(options.redis.url);
+          this.ownsRedisClients = true;
+          this.setupRedisSubscriber();
+          this.logger.log('EventBus Redis transport connected');
+        } catch {
+          this.logger.warn(
+            'ioredis not installed — falling back to memory transport. Install ioredis for Redis event bus.',
+          );
+        }
       }
     }
+  }
+
+  private setupRedisSubscriber(): void {
+    this.redisSubscriber.subscribe(this.redisChannel);
+    this.redisSubscriber.on('message', (_channel: string, message: string) => {
+      try {
+        const parsed = JSON.parse(message);
+        this.invokeHandlers(parsed.eventClassName, parsed.data);
+      } catch (err) {
+        this.logger.error('Failed to process Redis event message', err);
+      }
+    });
   }
 
   /**
@@ -231,6 +246,12 @@ export class EventBusService implements OnModuleDestroy {
   }
 
   async onModuleDestroy(): Promise<void> {
+    // Only close Redis clients if we created them ourselves
+    if (!this.ownsRedisClients) {
+      this.redisSubscriber = null;
+      this.redisPublisher = null;
+      return;
+    }
     if (this.redisSubscriber) {
       try {
         await this.redisSubscriber.unsubscribe(this.redisChannel);

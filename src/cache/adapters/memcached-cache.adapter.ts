@@ -1,5 +1,14 @@
-import { Logger } from '@nestjs/common';
 import { CacheAdapter } from '../interfaces';
+
+/**
+ * Thrown when an operation is not supported by the adapter implementation.
+ */
+export class UnsupportedOperationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'UnsupportedOperationError';
+  }
+}
 
 /**
  * Memcached cache adapter using memjs.
@@ -7,11 +16,10 @@ import { CacheAdapter } from '../interfaces';
  *
  * Limitations:
  * - delByPrefix: Memcached does not support key scanning/iteration.
- *   This implementation logs a warning and is a no-op. Use explicit key deletion instead,
+ *   Throws UnsupportedOperationError. Use explicit key deletion instead,
  *   or consider Redis L2 for prefix-based invalidation.
  */
 export class MemcachedCacheAdapter implements CacheAdapter {
-  private readonly logger = new Logger('MemcachedCacheAdapter');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private readonly client: any;
 
@@ -47,12 +55,14 @@ export class MemcachedCacheAdapter implements CacheAdapter {
 
   /**
    * Memcached does not support key scanning or prefix-based deletion.
-   * This is a documented limitation — logs a warning and is a no-op.
+   * Throws UnsupportedOperationError so callers know the operation failed
+   * rather than silently skipping invalidation.
    */
   async delByPrefix(prefix: string): Promise<void> {
-    this.logger.warn(
-      `delByPrefix("${prefix}") called on MemcachedCacheAdapter — ` +
-        'memcached does not support key scanning. Use explicit key deletion or Redis for prefix-based invalidation.',
+    throw new UnsupportedOperationError(
+      `delByPrefix("${prefix}") is not supported by Memcached — ` +
+        'Memcached does not support key scanning/iteration. ' +
+        'Use explicit key deletion, or switch to Redis L2 for prefix-based invalidation.',
     );
   }
 

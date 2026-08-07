@@ -29,6 +29,10 @@ export type { ReplayResult } from './event-replay.service';
 export { OutboxProcessor } from './outbox-processor';
 export type { OutboxEntry } from './outbox-processor';
 
+// --- Saga ---
+export { defineSaga, SagaRunner, SagaBuilder } from './saga';
+export type { SagaStep, SagaDefinition, SagaResult } from './saga';
+
 // --- Constants ---
 export {
   CQRS_OPTIONS,

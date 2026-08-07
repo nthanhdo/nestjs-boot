@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { HttpAdapterHost } from '@nestjs/core';
 import { ShutdownService, isKubernetesEnvironment, getK8sPreStopDelay } from '../../src/shutdown/shutdown.service';
+import { InFlightTracker } from '../../src/shutdown/in-flight-tracker';
 import { getK8sShutdownInfo } from '../../src/shutdown/k8s-shutdown';
 import { SHUTDOWN_OPTIONS } from '../../src/shutdown/constants';
 
@@ -26,6 +27,7 @@ async function createService(
     providers: [
       { provide: SHUTDOWN_OPTIONS, useValue: options },
       { provide: HttpAdapterHost, useValue: httpAdapterHost ?? makeHttpAdapterHost() },
+      InFlightTracker,
       ShutdownService,
     ],
   }).compile();

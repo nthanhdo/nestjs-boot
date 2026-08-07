@@ -13,7 +13,7 @@ describe('LocalAdapter', () => {
 
   beforeEach(async () => {
     uploadDir = await mkdtemp(join(tmpdir(), 'storage-test-'));
-    adapter = new LocalAdapter(uploadDir, '/uploads');
+    adapter = new LocalAdapter(uploadDir, '/uploads', 'test-signing-secret');
   });
 
   afterEach(async () => {
@@ -75,6 +75,7 @@ describe('LocalAdapter', () => {
     };
     const result = await adapter.upload(file);
     const signedUrl = await adapter.getSignedUrl(result.key, 600);
+    expect(signedUrl).toContain('token=');
     expect(signedUrl).toContain('expires=');
     expect(signedUrl).toContain(result.key);
   });

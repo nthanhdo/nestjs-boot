@@ -83,25 +83,17 @@ function loadEnvFiles(): void {
  * await app.listen(3000);
  * ```
  */
-export async function createApp(
+/**
+ * Build the BootWrappedModule by assembling infrastructure imports
+ * based on validated options.
+ */
+function buildBootModule(
   AppModule: Type<unknown>,
-  options: BootOptions,
-): Promise<INestApplication> {
-  // 0. Load .env files (dotenv) — environment-specific overrides
-  loadEnvFiles();
-
-  // 1. Validate options via Joi
-  const validated = validateBootOptions(options);
-
-  // 2. Init tracing FIRST — OTel SDK must patch before NestFactory imports modules
-  if (validated.tracing) {
-    initTracing(validated.tracing);
-  }
-
-  // 3. Build infrastructure imports dynamically
+  validated: BootOptions,
+): Type<unknown> {
   const imports: DynamicModule[] = [BootConfigModule.register(validated)];
 
-  // Existing W0 modules
+  // W0 modules
   if (validated.database) {
     imports.push(DatabaseModule.register(validated.database));
   }
@@ -181,59 +173,17 @@ export async function createApp(
     imports.push(StorageModule.register(validated.storage));
   }
 
-  // 4. Wrap user's AppModule with infrastructure
   @Module({ imports: [...imports, AppModule] })
   class BootWrappedModule {}
 
-  // 5. Create NestJS app (with DI error enrichment)
-  const nestOptions: Record<string, unknown> = {};
-  if (validated.logger !== undefined) {
-    nestOptions.logger = validated.logger;
-  }
-  let app: INestApplication;
-  try {
-    app = await NestFactory.create(BootWrappedModule, nestOptions);
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      const diInfo = parseDiError(error);
-      if (diInfo) {
-        const { Logger: NestLogger } = require('@nestjs/common');
-        const logger = new NestLogger('nestjs-boot');
-        logger.error(formatDiError(diInfo));
-      }
-    }
-    throw error;
-  }
+  return BootWrappedModule;
+}
 
-  // 5a. Enable NestJS API versioning if configured
-  if (validated.versioning) {
-    const { VersioningModule: VM } = require('./versioning/versioning.module');
-    const nestVersioningType = VM.getNestVersioningType(validated.versioning.type ?? 'uri');
-    const versioningConfig: Record<string, unknown> = { type: nestVersioningType };
-    if (validated.versioning.defaultVersion) {
-      versioningConfig.defaultVersion = validated.versioning.defaultVersion;
-    }
-    if (validated.versioning.type === 'header' && validated.versioning.header) {
-      versioningConfig.header = validated.versioning.header;
-    }
-    if (validated.versioning.type === 'media-type' && validated.versioning.mediaTypeKey) {
-      versioningConfig.key = validated.versioning.mediaTypeKey;
-    }
-    app.enableVersioning(versioningConfig as any);
-  }
-
-  // 5b. Dev-mode: scan for circular dependency risks (non-blocking)
-  if (process.env.NODE_ENV !== 'production') {
-    scanForCircularDepWarnings(app);
-  }
-
-  // 6. Set app logger to BootLogger if logging configured
-  if (validated.logging) {
-    const logger = app.get(BootLogger);
-    app.useLogger(logger);
-  }
-
-  // 7. Apply global interceptors
+/**
+ * Apply global interceptors and filters to the NestJS app.
+ */
+function applyGlobals(app: INestApplication, validated: BootOptions): void {
+  // Interceptors
   if (validated.response?.envelope) {
     app.useGlobalInterceptors(new ResponseInterceptor());
   }
@@ -259,7 +209,7 @@ export async function createApp(
     }
   }
 
-  // 8. Apply global filters + monitoring hooks
+  // Filters + monitoring hooks
   if (validated.monitoring?.errorReporter) {
     AllExceptionsFilter.errorReporter = validated.monitoring.errorReporter;
     BootRpcExceptionFilter.errorReporter = validated.monitoring.errorReporter;
@@ -275,6 +225,76 @@ export async function createApp(
       // RPC filter not available — skip
     }
   }
+}
+
+export async function createApp(
+  AppModule: Type<unknown>,
+  options: BootOptions,
+): Promise<INestApplication> {
+  // 0. Load .env files (dotenv) — environment-specific overrides
+  loadEnvFiles();
+
+  // 1. Validate options
+  const validated = validateBootOptions(options);
+
+  // 2. Init tracing FIRST — OTel SDK must patch before NestFactory imports modules
+  if (validated.tracing) {
+    initTracing(validated.tracing);
+  }
+
+  // 3. Build infrastructure module
+  const BootWrappedModule = buildBootModule(AppModule, validated);
+
+  // 4. Create NestJS app (with DI error enrichment)
+  const nestOptions: Record<string, unknown> = {};
+  if (validated.logger !== undefined) {
+    nestOptions.logger = validated.logger;
+  }
+  let app: INestApplication;
+  try {
+    app = await NestFactory.create(BootWrappedModule, nestOptions);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      const diInfo = parseDiError(error);
+      if (diInfo) {
+        const { Logger: NestLogger } = require('@nestjs/common');
+        const logger = new NestLogger('nestjs-boot');
+        logger.error(formatDiError(diInfo));
+      }
+    }
+    throw error;
+  }
+
+  // 5. Enable NestJS API versioning if configured
+  if (validated.versioning) {
+    const { VersioningModule: VM } = require('./versioning/versioning.module');
+    const nestVersioningType = VM.getNestVersioningType(validated.versioning.type ?? 'uri');
+    const versioningConfig: Record<string, unknown> = { type: nestVersioningType };
+    if (validated.versioning.defaultVersion) {
+      versioningConfig.defaultVersion = validated.versioning.defaultVersion;
+    }
+    if (validated.versioning.type === 'header' && validated.versioning.header) {
+      versioningConfig.header = validated.versioning.header;
+    }
+    if (validated.versioning.type === 'media-type' && validated.versioning.mediaTypeKey) {
+      versioningConfig.key = validated.versioning.mediaTypeKey;
+    }
+    app.enableVersioning(versioningConfig as any);
+  }
+
+  // 6. Dev-mode: scan for circular dependency risks (non-blocking)
+  if (process.env.NODE_ENV !== 'production') {
+    scanForCircularDepWarnings(app);
+  }
+
+  // 7. Set app logger
+  if (validated.logging) {
+    const logger = app.get(BootLogger);
+    app.useLogger(logger);
+  }
+
+  // 8. Apply global interceptors + filters
+  applyGlobals(app, validated);
 
   // 9. Connect microservice transports
   if (validated.transport) {
@@ -299,12 +319,12 @@ export async function createApp(
     validateLayers(app, validated.layers);
   }
 
-  // 13. Config dump in dev mode — instant "this package is professional" signal
+  // 13. Config dump in dev mode
   if (process.env.NODE_ENV !== 'production') {
     logConfigSummary(validated);
   }
 
-  // PP16. Swagger/OpenAPI — setup after app creation (needs INestApplication)
+  // 14. Swagger/OpenAPI
   if (validated.swagger !== undefined) {
     setupSwagger(app, validated.swagger, !!validated.auth);
   }

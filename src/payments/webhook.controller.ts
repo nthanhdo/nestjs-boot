@@ -9,14 +9,18 @@ import {
   Inject,
   Logger,
   RawBodyRequest,
+  Param,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { WebhookEvent, WebhookModuleOptions } from './webhook.interfaces';
+import { WebhookEvent, WebhookModuleOptions, WebhookProvider } from './webhook.interfaces';
 import { StripeWebhookProvider, PayPalWebhookProvider } from './webhook.providers';
 import { WEBHOOK_OPTIONS, IDEMPOTENCY_STORE } from './constants';
 
 /**
- * WebhookController — receives Stripe and PayPal webhook POSTs.
+ * WebhookController — dynamically routes webhook POSTs to registered providers.
+ *
+ * Built-in providers (Stripe, PayPal) are registered automatically when configured.
+ * Custom providers are registered via `customProviders` in WebhookModuleOptions.
  *
  * NestJS must be configured with rawBody:true so Buffer is available:
  * ```ts
@@ -26,23 +30,57 @@ import { WEBHOOK_OPTIONS, IDEMPOTENCY_STORE } from './constants';
 @Controller('webhooks')
 export class WebhookController {
   private readonly logger = new Logger(WebhookController.name);
-  private readonly stripe = new StripeWebhookProvider();
-  private readonly paypal = new PayPalWebhookProvider();
+  private readonly providerMap = new Map<string, { provider: WebhookProvider; secret: string }>();
 
   constructor(
     @Inject(WEBHOOK_OPTIONS) private readonly options: WebhookModuleOptions,
     @Inject(IDEMPOTENCY_STORE) private readonly store: Map<string, boolean>,
-  ) {}
+  ) {
+    // Register built-in providers from config
+    if (options.providers.stripe) {
+      this.providerMap.set('stripe', {
+        provider: new StripeWebhookProvider(),
+        secret: options.providers.stripe.secret,
+      });
+    }
+    if (options.providers.paypal) {
+      this.providerMap.set('paypal', {
+        provider: new PayPalWebhookProvider(),
+        secret: options.providers.paypal.secret,
+      });
+    }
 
-  @Post('stripe')
+    // Register custom providers
+    if (options.customProviders) {
+      for (const customProvider of options.customProviders) {
+        // Custom providers get their secret from provider config if available
+        const providerConfig = (options.providers as Record<string, { secret: string } | undefined>)[customProvider.name];
+        if (providerConfig) {
+          this.providerMap.set(customProvider.name, {
+            provider: customProvider,
+            secret: providerConfig.secret,
+          });
+        }
+      }
+    }
+
+    this.logger.log(`Webhook providers registered: ${[...this.providerMap.keys()].join(', ')}`);
+  }
+
+  /**
+   * Dynamic webhook endpoint — routes to provider by name.
+   * POST /webhooks/:provider
+   */
+  @Post(':provider')
   @HttpCode(HttpStatus.OK)
-  async handleStripe(
+  async handleWebhook(
+    @Param('provider') providerName: string,
     @Req() req: RawBodyRequest<Request>,
-    @Headers('stripe-signature') signature: string,
+    @Headers() headers: Record<string, string>,
   ): Promise<{ received: boolean }> {
-    const stripeOptions = this.options.providers.stripe;
-    if (!stripeOptions) {
-      throw new UnauthorizedException('Stripe webhook not configured');
+    const entry = this.providerMap.get(providerName);
+    if (!entry) {
+      throw new UnauthorizedException(`Unknown webhook provider: ${providerName}`);
     }
 
     const rawBody = req.rawBody;
@@ -50,13 +88,15 @@ export class WebhookController {
       throw new UnauthorizedException('Raw body not available — enable rawBody in NestFactory');
     }
 
+    // Extract signature from headers — provider-specific header names
+    const signature = this.extractSignature(providerName, headers);
     if (!signature) {
-      throw new UnauthorizedException('Missing stripe-signature header');
+      throw new UnauthorizedException(`Missing signature header for ${providerName}`);
     }
 
-    const valid = this.stripe.verifySignature(rawBody, signature, stripeOptions.secret);
+    const valid = entry.provider.verifySignature(rawBody, signature, entry.secret);
     if (!valid) {
-      throw new UnauthorizedException('Invalid Stripe webhook signature');
+      throw new UnauthorizedException(`Invalid ${providerName} webhook signature`);
     }
 
     let parsed: unknown;
@@ -66,46 +106,23 @@ export class WebhookController {
       throw new UnauthorizedException('Invalid JSON payload');
     }
 
-    const event = this.stripe.normalizeEvent(parsed);
+    const event = entry.provider.normalizeEvent(parsed);
     await this.dispatchIfNew(event);
     return { received: true };
   }
 
-  @Post('paypal')
-  @HttpCode(HttpStatus.OK)
-  async handlePayPal(
-    @Req() req: RawBodyRequest<Request>,
-    @Headers('paypal-transmission-sig') signature: string,
-  ): Promise<{ received: boolean }> {
-    const paypalOptions = this.options.providers.paypal;
-    if (!paypalOptions) {
-      throw new UnauthorizedException('PayPal webhook not configured');
-    }
-
-    const rawBody = req.rawBody;
-    if (!rawBody) {
-      throw new UnauthorizedException('Raw body not available — enable rawBody in NestFactory');
-    }
-
-    if (!signature) {
-      throw new UnauthorizedException('Missing paypal-transmission-sig header');
-    }
-
-    const valid = this.paypal.verifySignature(rawBody, signature, paypalOptions.secret);
-    if (!valid) {
-      throw new UnauthorizedException('Invalid PayPal webhook signature');
-    }
-
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(rawBody.toString('utf8'));
-    } catch {
-      throw new UnauthorizedException('Invalid JSON payload');
-    }
-
-    const event = this.paypal.normalizeEvent(parsed);
-    await this.dispatchIfNew(event);
-    return { received: true };
+  /**
+   * Extract signature header based on provider name.
+   * Known providers have conventional header names; custom providers
+   * fall back to `x-webhook-signature`.
+   */
+  private extractSignature(providerName: string, headers: Record<string, string>): string | undefined {
+    const headerMap: Record<string, string> = {
+      stripe: 'stripe-signature',
+      paypal: 'paypal-transmission-sig',
+    };
+    const headerName = headerMap[providerName] ?? 'x-webhook-signature';
+    return headers[headerName];
   }
 
   /**

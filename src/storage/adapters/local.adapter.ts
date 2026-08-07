@@ -11,10 +11,12 @@ import { generateStorageKey } from '../storage.utils';
 export class LocalAdapter implements StorageAdapter {
   private readonly uploadDir: string;
   private readonly basePath: string;
+  private readonly signingSecret?: string;
 
-  constructor(uploadDir: string, basePath = '/uploads') {
+  constructor(uploadDir: string, basePath = '/uploads', signingSecret?: string) {
     this.uploadDir = uploadDir;
     this.basePath = basePath;
+    this.signingSecret = signingSecret;
   }
 
   async upload(file: UploadedFile): Promise<StorageResult> {
@@ -63,12 +65,33 @@ export class LocalAdapter implements StorageAdapter {
   }
 
   /**
-   * Local adapter doesn't have native signed URLs.
-   * Returns a plain URL with an `expires` query param as a best-effort stub.
+   * Generates a time-limited signed URL for local file access.
+   *
+   * The URL includes an HMAC-SHA256 token and expiry timestamp:
+   *   /files/{key}?token={hmac}&expires={timestamp}
+   *
+   * The caller MUST implement token verification middleware that:
+   * 1. Checks `expires` is in the future
+   * 2. Recomputes HMAC over `${key}:${expires}` with the same secret
+   * 3. Compares token using timing-safe comparison
+   *
+   * If no signing secret is provided (via constructor), throws an error
+   * to prevent fake URLs from being silently returned.
    */
   async getSignedUrl(key: string, expiresIn = 3600): Promise<string> {
+    if (!this.signingSecret) {
+      throw new Error(
+        'LocalAdapter.getSignedUrl() requires a signingSecret. ' +
+          'Pass it as the 3rd constructor argument, and implement token verification middleware ' +
+          'to validate the HMAC token on the serving endpoint.',
+      );
+    }
+    const { createHmac } = await import('crypto');
     const expires = Math.floor(Date.now() / 1000) + expiresIn;
-    return `${this.basePath}/${key}?expires=${expires}`;
+    const token = createHmac('sha256', this.signingSecret)
+      .update(`${key}:${expires}`)
+      .digest('hex');
+    return `${this.basePath}/${key}?token=${token}&expires=${expires}`;
   }
 }
 

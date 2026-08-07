@@ -81,4 +81,22 @@ export class BootConfigService {
   getSchema(): Record<string, unknown> {
     return bootOptionsSchema.describe();
   }
+
+  /**
+   * Get a typed sub-section of the config.
+   *
+   * Instead of drilling into `getAll()` manually:
+   * ```ts
+   * // Before:
+   * const db = configService.getAll().database;
+   *
+   * // After (identical type, more ergonomic):
+   * const db = configService.section('database'); // typed as DatabaseOptions | undefined
+   * ```
+   *
+   * Returns `undefined` if the section is not present in the config.
+   */
+  section<K extends keyof BootOptions>(key: K): BootOptions[K] {
+    return this.options[key];
+  }
 }

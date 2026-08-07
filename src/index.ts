@@ -48,6 +48,7 @@ export {
   AllExceptionsFilter,
   BootException,
   CrudService,
+  CrudController,
 } from './common';
 export type { ResponseEnvelope, ErrorResponse, BootExceptionOptions, CrudPaginatedResult, CrudFindAllOptions } from './common';
 
@@ -64,6 +65,7 @@ export {
   AuthModule,
   BootJwtService,
   JwtAuthGuard,
+  WsJwtGuard,
   ApiKeyGuard,
   RolesGuard,
   PermissionsGuard,
@@ -75,6 +77,28 @@ export {
   ROLES_KEY,
   PERMISSIONS_KEY,
   IS_PUBLIC_KEY,
+  // Social auth
+  SocialAuthModule,
+  GoogleStrategy,
+  GitHubStrategy,
+  SOCIAL_AUTH_OPTIONS,
+  // TOTP
+  TotpModule,
+  TotpService,
+  // Session
+  SessionAuthModule,
+  SessionGuard,
+  Session,
+  MemorySessionStore,
+  SESSION_OPTIONS,
+} from './auth';
+export type {
+  SocialProfile,
+  SocialAuthOptions,
+  SocialProviderConfig,
+  SessionStore,
+  SessionData,
+  SessionModuleOptions,
 } from './auth';
 
 // --- Correlation ---
@@ -95,11 +119,14 @@ export type { CorrelationOptions } from './correlation';
 export {
   ShutdownModule,
   ShutdownService,
+  isKubernetesEnvironment,
+  getK8sPreStopDelay,
+  getK8sShutdownInfo,
   SHUTDOWN_OPTIONS,
   DEFAULT_SHUTDOWN_TIMEOUT,
   DEFAULT_SHUTDOWN_SIGNALS,
 } from './shutdown';
-export type { ShutdownOptions } from './shutdown';
+export type { ShutdownOptions, DrainStrategy } from './shutdown';
 
 // --- Inter-Service Auth ---
 export {
@@ -202,6 +229,8 @@ export type {
 // --- DI ---
 export { parseDiError, formatDiError } from './di/di-error-handler';
 export type { DiErrorInfo } from './di/di-error-handler';
+export { StartupProfiler, createNoOpProfiler } from './di/startup-profiler';
+export type { PhaseResult } from './di/startup-profiler';
 
 // --- Contracts (interface-based DI) ---
 export { createContract, InjectContract, provideContract, provideContractFactory, validateContracts } from './contracts';
@@ -260,6 +289,11 @@ export {
   cleanDatabase,
   createFactory,
   createTestClient,
+  createTestJwt,
+  createTestApiKey,
+  createAuthenticatedRequest,
+  MockAuthModule,
+  TEST_SECRET,
 } from './testing';
 export type {
   ResponseFactory,
@@ -273,4 +307,5 @@ export type {
   TestFactory,
   TestClient,
   TestResponse,
+  CreateTestJwtOptions,
 } from './testing';

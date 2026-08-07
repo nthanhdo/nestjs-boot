@@ -66,4 +66,58 @@ export class BootJwtService {
       refreshToken: this.signRefresh(payload),
     };
   }
+
+  /**
+   * Sign a password reset token. Short-lived (default 15m).
+   * Includes a purpose claim to prevent misuse as an access token.
+   */
+  signPasswordReset(userId: string, options?: { expiresIn?: string }): string {
+    const signOpts: jwt.SignOptions = {
+      expiresIn: (options?.expiresIn ?? '15m') as jwt.SignOptions['expiresIn'],
+    };
+    return jwt.sign(
+      { sub: userId, purpose: 'password-reset' },
+      this.secret,
+      signOpts,
+    );
+  }
+
+  /**
+   * Verify a password reset token. Checks purpose claim.
+   * Throws if invalid, expired, or wrong purpose.
+   */
+  verifyPasswordReset(token: string): { sub: string; purpose: string } {
+    const decoded = jwt.verify(token, this.secret) as Record<string, any>;
+    if (decoded.purpose !== 'password-reset') {
+      throw new Error('Invalid token purpose: expected password-reset');
+    }
+    return { sub: decoded.sub, purpose: decoded.purpose };
+  }
+
+  /**
+   * Sign an email verification token with the email embedded.
+   * Default expiry: 24h.
+   */
+  signEmailVerification(email: string, options?: { expiresIn?: string }): string {
+    const signOpts: jwt.SignOptions = {
+      expiresIn: (options?.expiresIn ?? '24h') as jwt.SignOptions['expiresIn'],
+    };
+    return jwt.sign(
+      { email, purpose: 'email-verification' },
+      this.secret,
+      signOpts,
+    );
+  }
+
+  /**
+   * Verify an email verification token. Checks purpose claim.
+   * Returns the email. Throws if invalid, expired, or wrong purpose.
+   */
+  verifyEmailVerification(token: string): { email: string; purpose: string } {
+    const decoded = jwt.verify(token, this.secret) as Record<string, any>;
+    if (decoded.purpose !== 'email-verification') {
+      throw new Error('Invalid token purpose: expected email-verification');
+    }
+    return { email: decoded.email, purpose: decoded.purpose };
+  }
 }

@@ -277,13 +277,156 @@ describe('ProductService Contract', () => {
 });
 ```
 
+## 7. Using `createTestSuite` (auto-isolation)
+
+`createTestSuite` wraps `createTestApp` + `createTestClient` + `createFactory` into one clean API with per-test DB isolation.
+
+```ts
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { createTestSuite } from 'nestjs-boot/testing';
+import { AppModule } from './app.module';
+import { ProductSchema } from './product.schema';
+
+const suite = createTestSuite(AppModule, {
+  response: { envelope: true },
+});
+
+beforeAll(() => suite.setup());
+afterAll(() => suite.teardown());
+beforeEach(() => suite.reset()); // cleans DB automatically
+
+it('creates and lists products', async () => {
+  const factory = suite.factory('Product', ProductSchema, {
+    name: (seq) => `Product ${seq}`,
+    price: () => Math.random() * 100,
+  });
+  await factory.createMany(5, suite.connection!);
+
+  const res = await suite.client.get('/products');
+  expect(res.data).toHaveLength(5);
+});
+
+it('starts with clean DB (isolation)', async () => {
+  // Previous test's data is gone
+  const res = await suite.client.get('/products');
+  expect(res.data).toHaveLength(0);
+});
+```
+
+## 8. Factory Traits and Sequences
+
+```ts
+const productFactory = createFactory('Product', ProductSchema, {
+  name: (seq) => `Product-${seq}`,
+  price: () => 10,
+  category: 'electronics',
+  stock: 50,
+}, {
+  traits: {
+    expensive: { price: () => 500 + Math.random() * 500 },
+    outOfStock: { stock: 0 },
+    digital: { category: 'digital', stock: Infinity },
+  },
+  afterCreate: async (product, conn) => {
+    // Auto-create audit log, update counters, etc.
+  },
+});
+
+const cheap = productFactory.build();              // price ~10
+const expensive = productFactory.build('expensive'); // price 500+
+const oos = productFactory.build('outOfStock');      // stock 0
+```
+
+## 9. Testing gRPC Handlers with `createGrpcTestClient`
+
+Test `@GrpcMethod` handlers without spinning up a real gRPC server:
+
+```ts
+import { createGrpcTestClient } from 'nestjs-boot/testing';
+
+const client = createGrpcTestClient(app, 'OrderService', OrderService);
+
+it('finds an order', async () => {
+  const result = await client.call('FindOne', { id: '123' });
+  expect(result.status).toBe('shipped');
+});
+
+it('lists available methods', () => {
+  expect(client.listMethods()).toContain('FindOne');
+});
+```
+
+## 10. Testing Message Patterns with `createMessageDispatcher`
+
+Test `@MessagePattern` and `@EventPattern` handlers without a real broker:
+
+```ts
+import { createMessageDispatcher } from 'nestjs-boot/testing';
+
+const dispatcher = createMessageDispatcher(app);
+
+it('handles order.create message', async () => {
+  const result = await dispatcher.send('order.create', { userId: '123' });
+  expect(result.orderId).toBeDefined();
+});
+
+it('handles order.created event', async () => {
+  await dispatcher.emit('order.created', { orderId: '456' });
+  // Verify side effects (DB updates, etc.)
+});
+```
+
+## 11. Snapshot Testing
+
+Strip volatile fields (IDs, timestamps) for stable snapshots:
+
+```ts
+import { expectSnapshot, stripVolatileFields } from 'nestjs-boot/testing';
+
+it('matches API response snapshot', async () => {
+  const res = await client.get('/products/123');
+  expectSnapshot(res.data, {
+    ignore: ['_id', 'createdAt', 'updatedAt'],
+  });
+});
+
+it('custom comparison with stripped fields', () => {
+  const cleaned = stripVolatileFields(data);
+  expect(cleaned).toEqual({ name: 'Widget', price: 9.99 });
+});
+```
+
+## 12. Testing Auth Guards (MockAuthModule)
+
+Bypass auth for tests where auth isn't the focus:
+
+```ts
+import { MockAuthModule, createTestJwt } from 'nestjs-boot/testing';
+
+// Option A: Bypass all auth
+const ctx = await createTestApp(AppModule, {
+  overrideProviders: [MockAuthModule.register({ sub: 'test-user' })],
+});
+
+// Option B: Test with real JWT
+const token = createTestJwt({ sub: 'user-1', roles: ['admin'] });
+client.setBearerToken(token);
+```
+
 ## Quick Reference
 
 | Utility | Import | Purpose |
 |---------|--------|---------|
 | `createTestApp` | `nestjs-boot/testing` | In-memory app with MongoDB, auto-cleanup |
-| `createFactory` | `nestjs-boot/testing` | Schema-aware test data factories |
+| `createTestSuite` | `nestjs-boot/testing` | All-in-one suite with auto-isolation |
+| `createFactory` | `nestjs-boot/testing` | Schema-aware factories with traits + sequences |
 | `createTestClient` | `nestjs-boot/testing` | Envelope-aware HTTP client (supertest) |
+| `createGrpcTestClient` | `nestjs-boot/testing` | In-process gRPC handler testing |
+| `createMessageDispatcher` | `nestjs-boot/testing` | MessagePattern/EventPattern dispatcher |
+| `expectSnapshot` | `nestjs-boot/testing` | Volatile-field-aware snapshot testing |
+| `stripVolatileFields` | `nestjs-boot/testing` | Strip IDs/timestamps for comparison |
 | `ContractVerifier` | `nestjs-boot/testing` | Verify service contracts (class or instance) |
+| `MockAuthModule` | `nestjs-boot/testing` | Bypass auth guards in tests |
+| `createTestJwt` | `nestjs-boot/testing` | Generate test JWTs |
 | `cleanDatabase` | `nestjs-boot/testing` | Drop all collections |
 | `seedDatabase` | `nestjs-boot/testing` | Bulk insert test data |

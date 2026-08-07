@@ -1,0 +1,143 @@
+groups:
+  - name: nestjs-boot-alerts
+    rules:
+      # ── HTTP Error Rate ─────────────────────────────────────────────
+      - alert: HighErrorRate
+        expr: >
+          sum(rate(http_requests_total{status_code=~"5.."}[5m])) by (service)
+          /
+          sum(rate(http_requests_total[5m])) by (service)
+          > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Error rate > 5% for {{ $labels.service }}"
+          description: >
+            Service {{ $labels.service }} 5xx error rate is {{ printf "%.2f" $value | humanizePercentage }}
+            over the last 5 minutes.
+          runbook_url: "https://github.com/your-org/your-repo/wiki/runbook-high-error-rate"
+
+      # ── High Latency ────────────────────────────────────────────────
+      - alert: HighLatency
+        expr: >
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "P95 latency > 2s for {{ $labels.service }}"
+          description: >
+            Service {{ $labels.service }} P95 request latency is {{ $value | humanizeDuration }}
+            over the last 5 minutes.
+          runbook_url: "https://github.com/your-org/your-repo/wiki/runbook-high-latency"
+
+      # ── P99 Latency (stricter) ───────────────────────────────────────
+      - alert: P99LatencyCritical
+        expr: >
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)
+          ) > 5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "P99 latency > 5s for {{ $labels.service }}"
+          description: >
+            Service {{ $labels.service }} P99 request latency is {{ $value | humanizeDuration }}.
+            Tail latency extremely high — investigate slow queries or downstream dependencies.
+          runbook_url: "https://github.com/your-org/your-repo/wiki/runbook-high-latency"
+
+      # ── Service Down ─────────────────────────────────────────────────
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: >
+            Prometheus target {{ $labels.instance }} (job: {{ $labels.job }}) has been unreachable
+            for more than 1 minute.
+          runbook_url: "https://github.com/your-org/your-repo/wiki/runbook-service-down"
+
+      # ── Cache Hit Rate ───────────────────────────────────────────────
+      - alert: CacheHitRateLow
+        expr: >
+          sum(rate(boot_cache_hit_total[10m])) by (service)
+          /
+          (
+            sum(rate(boot_cache_hit_total[10m])) by (service)
+            + sum(rate(boot_cache_miss_total[10m])) by (service)
+          ) < 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Cache hit rate < 50% for {{ $labels.service }}"
+          description: >
+            Service {{ $labels.service }} cache hit rate is {{ printf "%.2f" $value | humanizePercentage }}.
+            High miss rate increases DB pressure and response latency.
+          runbook_url: "https://github.com/your-org/your-repo/wiki/runbook-cache-hit-rate"
+
+      # ── Heap Memory ─────────────────────────────────────────────────
+      - alert: HighHeapMemory
+        expr: >
+          nodejs_heap_size_used_bytes{service=~".+"}
+          /
+          nodejs_heap_size_total_bytes{service=~".+"}
+          > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Heap usage > 85% for {{ $labels.service }}"
+          description: >
+            Service {{ $labels.service }} heap is at {{ printf "%.2f" $value | humanizePercentage }}.
+            Risk of OOM kill if usage continues to grow.
+          runbook_url: "https://github.com/your-org/your-repo/wiki/runbook-high-memory"
+
+      # ── Event Loop Lag ───────────────────────────────────────────────
+      - alert: EventLoopLagHigh
+        expr: nodejs_eventloop_lag_seconds{service=~".+"} > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Event loop lag > 100ms for {{ $labels.service }}"
+          description: >
+            Service {{ $labels.service }} event loop lag is {{ $value | humanizeDuration }}.
+            Long-running synchronous code or CPU saturation is blocking the event loop.
+          runbook_url: "https://github.com/your-org/your-repo/wiki/runbook-event-loop"
+
+      # ── Queue Depth ──────────────────────────────────────────────────
+      - alert: QueueDepthHigh
+        expr: boot_queue_depth{service=~".+"} > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Queue {{ $labels.queue }} depth > 1000 in {{ $labels.service }}"
+          description: >
+            Queue {{ $labels.queue }} in service {{ $labels.service }} has {{ $value }} pending jobs.
+            Worker may be stuck or under-provisioned.
+          runbook_url: "https://github.com/your-org/your-repo/wiki/runbook-queue-depth"
+
+      # ── Queue Failure Rate ───────────────────────────────────────────
+      - alert: QueueFailureRateHigh
+        expr: >
+          sum(rate(boot_queue_jobs_total{status="failed"}[5m])) by (queue, service)
+          /
+          sum(rate(boot_queue_jobs_total[5m])) by (queue, service)
+          > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Queue {{ $labels.queue }} failure rate > 10% in {{ $labels.service }}"
+          description: >
+            Queue {{ $labels.queue }} in service {{ $labels.service }} job failure rate is
+            {{ printf "%.2f" $value | humanizePercentage }}.
+          runbook_url: "https://github.com/your-org/your-repo/wiki/runbook-queue-failures"

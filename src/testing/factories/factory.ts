@@ -2,8 +2,9 @@ import { Connection, Model, Schema } from 'mongoose';
 
 /**
  * Factory field definition — either a static value or a generator function.
+ * Generator functions receive a sequence number (auto-incrementing per factory).
  */
-type FieldDef<T> = T | (() => T);
+type FieldDef<T> = T | ((seq: number) => T);
 
 /**
  * Factory defaults — each field is either a static value or a generator.
@@ -13,52 +14,89 @@ type FactoryDefaults<T> = {
 };
 
 /**
+ * Factory options — traits and hooks.
+ */
+export interface FactoryOptions<T> {
+  /** Named variants that override specific fields. */
+  traits?: Record<string, Partial<FactoryDefaults<T>>>;
+  /** Hook called after a document is created in the database. */
+  afterCreate?: (doc: T & { _id: any }, connection: Connection) => Promise<void>;
+}
+
+/**
  * A test factory for creating documents from a Mongoose schema.
- *
- * ```ts
- * const productFactory = createFactory<Product>('Product', ProductSchema, {
- *   name: () => `Product ${Math.random().toString(36).slice(2)}`,
- *   price: () => Math.random() * 100,
- *   category: 'electronics',
- * });
- *
- * const product = await productFactory.create(connection);
- * const products = await productFactory.createMany(5, connection);
- * const custom = await productFactory.create(connection, { price: 99.99 });
- * ```
  */
 export interface TestFactory<T> {
   /** Build a plain object (no DB write) with defaults + overrides. */
   build(overrides?: Partial<T>): T;
+  /** Build with a named trait applied. */
+  build(trait: string, overrides?: Partial<T>): T;
   /** Build N plain objects. */
   buildMany(count: number, overrides?: Partial<T>): T[];
+  /** Build N plain objects with a named trait. */
+  buildMany(count: number, trait: string, overrides?: Partial<T>): T[];
   /** Create a document in the database. */
   create(connection: Connection, overrides?: Partial<T>): Promise<T & { _id: any }>;
+  /** Create a document with a named trait. */
+  create(connection: Connection, trait: string, overrides?: Partial<T>): Promise<T & { _id: any }>;
   /** Create N documents in the database. */
   createMany(count: number, connection: Connection, overrides?: Partial<T>): Promise<(T & { _id: any })[]>;
+  /** Create N documents with a named trait. */
+  createMany(count: number, connection: Connection, trait: string, overrides?: Partial<T>): Promise<(T & { _id: any })[]>;
+  /** Reset the sequence counter. */
+  resetSequence(): void;
 }
 
 /**
  * Create a test factory for a Mongoose model.
- *
- * @param modelName - Mongoose model name (e.g., 'Product')
- * @param schema - Mongoose schema instance
- * @param defaults - Default field values (static or generator functions)
  */
 export function createFactory<T extends Record<string, any>>(
   modelName: string,
   schema: Schema,
   defaults: FactoryDefaults<T>,
+  factoryOptions?: FactoryOptions<T>,
 ): TestFactory<T> {
-  function resolveDefaults(overrides?: Partial<T>): T {
-    const result: Record<string, any> = {};
+  let sequence = 0;
+  const traits = factoryOptions?.traits ?? {};
+  const afterCreateHook = factoryOptions?.afterCreate;
 
-    for (const [key, def] of Object.entries(defaults)) {
-      result[key] = typeof def === 'function' ? (def as () => any)() : def;
+  function nextSeq(): number {
+    return ++sequence;
+  }
+
+  function resolveFields(defs: FactoryDefaults<T>, seq: number): Record<string, any> {
+    const result: Record<string, any> = {};
+    for (const [key, def] of Object.entries(defs)) {
+      result[key] = typeof def === 'function' ? (def as (s: number) => any)(seq) : def;
+    }
+    return result;
+  }
+
+  function resolveDefaults(traitOrOverrides?: string | Partial<T>, overrides?: Partial<T>): T {
+    const seq = nextSeq();
+    const result = resolveFields(defaults, seq);
+
+    let traitName: string | undefined;
+    let actualOverrides: Partial<T> | undefined;
+
+    if (typeof traitOrOverrides === 'string') {
+      traitName = traitOrOverrides;
+      actualOverrides = overrides;
+    } else {
+      actualOverrides = traitOrOverrides;
     }
 
-    if (overrides) {
-      Object.assign(result, overrides);
+    if (traitName) {
+      const traitDefs = traits[traitName];
+      if (!traitDefs) {
+        throw new Error(`[nestjs-boot] Unknown factory trait: "${traitName}". Available: ${Object.keys(traits).join(', ') || 'none'}`);
+      }
+      const traitResolved = resolveFields(traitDefs as FactoryDefaults<T>, seq);
+      Object.assign(result, traitResolved);
+    }
+
+    if (actualOverrides) {
+      Object.assign(result, actualOverrides);
     }
 
     return result as T;
@@ -73,26 +111,40 @@ export function createFactory<T extends Record<string, any>>(
   }
 
   return {
-    build(overrides?: Partial<T>): T {
-      return resolveDefaults(overrides);
+    build(traitOrOverrides?: string | Partial<T>, overrides?: Partial<T>): T {
+      return resolveDefaults(traitOrOverrides, overrides);
     },
 
-    buildMany(count: number, overrides?: Partial<T>): T[] {
-      return Array.from({ length: count }, () => resolveDefaults(overrides));
+    buildMany(count: number, traitOrOverrides?: string | Partial<T>, overrides?: Partial<T>): T[] {
+      return Array.from({ length: count }, () => resolveDefaults(traitOrOverrides, overrides));
     },
 
-    async create(connection: Connection, overrides?: Partial<T>): Promise<T & { _id: any }> {
+    async create(connection: Connection, traitOrOverrides?: string | Partial<T>, overrides?: Partial<T>): Promise<T & { _id: any }> {
       const model = getModel(connection);
-      const data = resolveDefaults(overrides);
+      const data = resolveDefaults(traitOrOverrides, overrides);
       const doc = await model.create(data);
-      return doc.toObject() as T & { _id: any };
+      const result = doc.toObject() as T & { _id: any };
+      if (afterCreateHook) {
+        await afterCreateHook(result, connection);
+      }
+      return result;
     },
 
-    async createMany(count: number, connection: Connection, overrides?: Partial<T>): Promise<(T & { _id: any })[]> {
+    async createMany(count: number, connection: Connection, traitOrOverrides?: string | Partial<T>, overrides?: Partial<T>): Promise<(T & { _id: any })[]> {
       const model = getModel(connection);
-      const items = Array.from({ length: count }, () => resolveDefaults(overrides));
+      const items = Array.from({ length: count }, () => resolveDefaults(traitOrOverrides, overrides));
       const docs = await model.insertMany(items);
-      return docs.map((d: any) => (d.toObject ? d.toObject() : d)) as (T & { _id: any })[];
+      const results = docs.map((d: any) => (d.toObject ? d.toObject() : d)) as (T & { _id: any })[];
+      if (afterCreateHook) {
+        for (const r of results) {
+          await afterCreateHook(r, connection);
+        }
+      }
+      return results;
+    },
+
+    resetSequence() {
+      sequence = 0;
     },
   };
 }

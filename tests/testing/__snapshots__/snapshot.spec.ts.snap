@@ -1,0 +1,8 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Snapshot helpers > matches snapshot with volatile fields stripped 1`] = `
+{
+  "name": "Stable Product",
+  "price": 42,
+}
+`;

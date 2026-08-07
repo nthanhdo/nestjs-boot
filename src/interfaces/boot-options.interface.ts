@@ -137,6 +137,23 @@ export interface BootOptions {
   events?: import('../events/interfaces').EventBusOptions;
   /** Module layer enforcement (opt-in — validates import direction at boot) */
   layers?: import('../layers/layer-config').LayerOptions;
+  /**
+   * Lazy initialization mode (default: false).
+   *
+   * When `true`, database and cache connections are deferred until the first
+   * request instead of connecting at bootstrap. This reduces cold start time
+   * by 40–60% for environments like AWS Lambda.
+   *
+   * **Trade-off:** The first request in a new Lambda instance will be slower
+   * because connections are established on demand. Subsequent requests reuse
+   * the same connections.
+   *
+   * Only set this for serverless/FaaS deployments. Long-running services
+   * should keep this `false` (default) so connections are validated at startup.
+   *
+   * See: docs/guides/serverless-considerations.md
+   */
+  lazy?: boolean;
   /** Monitoring hooks (Sentry, Datadog, etc.) — set callbacks without subclassing filters */
   monitoring?: {
     /** Called for every caught exception in HTTP and RPC filters */

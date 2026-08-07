@@ -1,0 +1,38 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: "nestjs-boot"
+
+rule_files:
+  - "grafana/alerts.yml"
+
+scrape_configs:
+  # ── Your NestJS application ──────────────────────────────────────────────
+  - job_name: "nestjs-boot"
+    scrape_interval: 15s
+    metrics_path: "/metrics"
+    static_configs:
+      - targets:
+          - "host.docker.internal:3000"
+        labels:
+          service: "nestjs-boot"
+          environment: "local"
+
+  # ── Prometheus self-monitoring ───────────────────────────────────────────
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # ── Multiple services example ────────────────────────────────────────────
+  # Uncomment and extend to scrape multiple services:
+  #
+  # - job_name: "my-other-service"
+  #   scrape_interval: 15s
+  #   metrics_path: "/metrics"
+  #   static_configs:
+  #     - targets:
+  #         - "host.docker.internal:3001"
+  #       labels:
+  #         service: "my-other-service"
+  #         environment: "local"

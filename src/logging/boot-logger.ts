@@ -1,6 +1,7 @@
 import { LoggerService } from '@nestjs/common';
 import { getCorrelationId } from '../correlation/correlation.storage';
 import { LoggingOptions } from './interfaces';
+import { buildLogContext } from './log-context';
 
 let pinoFactory: ((opts?: any) => any) | undefined;
 let hasPinoPretty = false;
@@ -25,8 +26,12 @@ try {
 export class BootLogger implements LoggerService {
   private readonly pinoInstance: any;
   private readonly useFallback: boolean;
+  private readonly staticContext: Record<string, unknown>;
 
   constructor(options: LoggingOptions = {}) {
+    // Build static context once — auto-populated + user overrides
+    this.staticContext = buildLogContext(options.context);
+
     if (!pinoFactory) {
       this.useFallback = true;
       return;
@@ -72,7 +77,8 @@ export class BootLogger implements LoggerService {
   }
 
   private buildPayload(context?: string): Record<string, unknown> {
-    const payload: Record<string, unknown> = {};
+    // Start with static context (service, environment, version, user extras)
+    const payload: Record<string, unknown> = { ...this.staticContext };
     const correlationId = getCorrelationId();
     if (correlationId) {
       payload.correlationId = correlationId;

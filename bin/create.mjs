@@ -58,6 +58,7 @@ function parseArgs(args) {
     if (arg === '-y' || arg === '--yes') { result.yes = true; continue; }
     if (arg === '-h' || arg === '--help') { result.help = true; continue; }
     if (arg === '--grpc') { result.transport = 'grpc'; continue; }
+    if (arg === '--observability') { result.observability = true; continue; }
     const match = arg.match(/^--(\w+)=(.+)$/);
     if (match) { result[match[1]] = match[2]; continue; }
     if (arg.startsWith('--no-')) { result[arg.slice(5)] = 'none'; continue; }
@@ -80,12 +81,16 @@ ${pc.bold('Options:')}
   --cache=<type>      Cache: redis, memcached, none
   --auth=<type>       Auth: jwt, none
   --transport=<type>  Transport: http, grpc, tcp, nats, rabbitmq
+  --ci=<provider>     CI/CD: github (generates .github/workflows/ci.yml), gitlab (.gitlab-ci.yml)
+  --observability     Include Prometheus config, Grafana dashboards, Jaeger, Loki docker-compose
   -y, --yes           Accept all defaults (no prompts)
   -h, --help          Show this help message
 
 ${pc.bold('Examples:')}
   npx nestjs-boot new my-service
   npx nestjs-boot new my-service --db=postgres --cache=redis --auth=jwt --transport=grpc
+  npx nestjs-boot new my-service --ci=github
+  npx nestjs-boot new my-service --observability
   npx nestjs-boot new my-service -y
 `);
 }
@@ -206,15 +211,47 @@ function createProject(config) {
     { tpl: 'vitest.config.ts.tpl',   out: 'vitest.config.ts' },
     { tpl: 'app.e2e-spec.ts.tpl',    out: 'test/app.e2e-spec.ts' },
     { tpl: 'README.md.tpl',          out: 'README.md' },
-    { tpl: 'k8s/deployment.yaml',    out: 'k8s/deployment.yaml' },
-    { tpl: 'k8s/service.yaml',       out: 'k8s/service.yaml' },
-    { tpl: 'k8s/configmap.yaml',     out: 'k8s/configmap.yaml' },
-    { tpl: 'k8s/hpa.yaml',           out: 'k8s/hpa.yaml' },
+    { tpl: 'k8s/deployment.yaml',              out: 'k8s/deployment.yaml' },
+    { tpl: 'k8s/service.yaml',                 out: 'k8s/service.yaml' },
+    { tpl: 'k8s/configmap.yaml',               out: 'k8s/configmap.yaml' },
+    { tpl: 'k8s/hpa.yaml',                     out: 'k8s/hpa.yaml' },
+    { tpl: 'k8s/ingress.yaml',                 out: 'k8s/ingress.yaml' },
+    { tpl: 'docker-compose.override.yml.tpl',  out: 'docker-compose.override.yml' },
   ];
 
   // Add proto file if gRPC
   if (transport === 'grpc') {
     files.push({ tpl: 'proto.tpl', out: `proto/${name}.proto` });
+  }
+
+  // Add CI configuration if --ci flag is set
+  const ciProvider = vars.ci || config?.ci;
+  if (ciProvider === 'github') {
+    files.push({ tpl: 'ci/github-actions.yml.tpl', out: '.github/workflows/ci.yml' });
+  } else if (ciProvider === 'gitlab') {
+    files.push({ tpl: 'ci/gitlab-ci.yml.tpl', out: '.gitlab-ci.yml' });
+  }
+
+  // Add observability stack if --observability flag is set
+  if (config.observability) {
+    const OBSERVABILITY_TEMPLATES_DIR = join(__dirname, '..', 'templates');
+    const obsFiles = [
+      { src: join(OBSERVABILITY_TEMPLATES_DIR, 'prometheus.yml'),                   out: 'observability/prometheus.yml' },
+      { src: join(OBSERVABILITY_TEMPLATES_DIR, 'docker-compose.observability.yml'), out: 'docker-compose.observability.yml' },
+      { src: join(OBSERVABILITY_TEMPLATES_DIR, 'grafana', 'http-overview.json'),    out: 'observability/grafana/dashboards/http-overview.json' },
+      { src: join(OBSERVABILITY_TEMPLATES_DIR, 'grafana', 'service-health.json'),   out: 'observability/grafana/dashboards/service-health.json' },
+      { src: join(OBSERVABILITY_TEMPLATES_DIR, 'grafana', 'microservice-overview.json'), out: 'observability/grafana/dashboards/microservice-overview.json' },
+      { src: join(OBSERVABILITY_TEMPLATES_DIR, 'grafana', 'alerts.yml'),            out: 'observability/grafana/alerts.yml' },
+    ];
+    for (const { src, out } of obsFiles) {
+      try {
+        const content = readFileSync(src, 'utf-8');
+        writeFile(join(projectDir, out), content);
+        createdFiles.push(out);
+      } catch {
+        p.log.warn(`Could not copy observability template: ${src}`);
+      }
+    }
   }
 
   const createdFiles = [];

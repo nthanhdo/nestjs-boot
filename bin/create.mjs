@@ -861,9 +861,197 @@ function generateGraph(cliArgs) {
   }
 }
 
+// ── Migration CLI ────────────────────────────────────────────────────
+
+/**
+ * Generate a timestamped migration file.
+ * Usage: nestjs-boot migrate:create <name>
+ */
+async function migrationCreate(name) {
+  if (!name || !/^[a-z][a-z0-9-]*$/.test(name)) {
+    console.error(pc.red('Error: migration name must be lowercase alphanumeric with hyphens (e.g. add-email-index).'));
+    process.exit(1);
+  }
+
+  const migrationsDir = join(process.cwd(), 'migrations');
+  if (!existsSync(migrationsDir)) {
+    mkdirSync(migrationsDir, { recursive: true });
+  }
+
+  // Version = date + sequence, e.g. 2026-08-07-001
+  const today = new Date().toISOString().slice(0, 10);
+  const existing = readdirSync(migrationsDir).filter(f => f.startsWith(today)).length;
+  const seq = String(existing + 1).padStart(3, '0');
+  const version = `${today}-${seq}`;
+  const filename = `${version}-${name}.ts`;
+  const filepath = join(migrationsDir, filename);
+
+  const template = `import type { Migration } from 'nestjs-boot';
+
+export const migration: Migration = {
+  version: '${version}',
+  name: '${name}',
+
+  async up(db) {
+    // TODO: apply migration
+    // Example: await db.collection('users').createIndex({ email: 1 }, { unique: true });
+  },
+
+  async down(db) {
+    // TODO: rollback migration
+    // Example: await db.collection('users').dropIndex('email_1');
+  },
+};
+`;
+
+  writeFileSync(filepath, template, 'utf-8');
+  console.log(pc.green(`✓ Created migration: migrations/${filename}`));
+}
+
+/**
+ * Load migrations from the project's `migrations/` directory and run a runner command.
+ * Requires the project to have a nestjs-boot app with MigrationRunner exported.
+ *
+ * For projects that expose a runner via a bootstrap script, this delegates to that.
+ * For simple cases, we dynamically load migration files and use MigrationRunner directly.
+ */
+async function runMigrationCommand(command) {
+  const { pathToFileURL } = await import('url');
+  const migrationsDir = join(process.cwd(), 'migrations');
+
+  if (!existsSync(migrationsDir)) {
+    console.error(pc.yellow(`No migrations directory found at ${migrationsDir}`));
+    console.log(pc.dim(`Run: nestjs-boot migrate:create <name> to create your first migration.`));
+    process.exit(0);
+  }
+
+  // Load migration files (compiled JS in dist/migrations or TS via tsx/ts-node)
+  const distDir = join(process.cwd(), 'dist', 'migrations');
+  const loadDir = existsSync(distDir) ? distDir : migrationsDir;
+  const ext = existsSync(distDir) ? '.js' : '.ts';
+
+  const files = readdirSync(loadDir)
+    .filter(f => f.endsWith(ext) && !f.endsWith('.d.ts'))
+    .sort();
+
+  if (files.length === 0) {
+    console.log(pc.dim('No migration files found.'));
+    process.exit(0);
+  }
+
+  const migrations = [];
+  for (const file of files) {
+    try {
+      const mod = await import(pathToFileURL(join(loadDir, file)).href);
+      const m = mod.migration ?? mod.default;
+      if (m && m.version && m.name && typeof m.up === 'function') {
+        migrations.push(m);
+      }
+    } catch (err) {
+      console.error(pc.red(`Failed to load ${file}: ${err.message}`));
+      if (ext === '.ts') {
+        console.log(pc.dim('Tip: build first with `tsc` or use `ts-node` / `tsx` to run migrations.'));
+      }
+      process.exit(1);
+    }
+  }
+
+  // Load mongoose connection from environment
+  let mongoose;
+  try {
+    mongoose = (await import('mongoose')).default ?? (await import('mongoose'));
+  } catch {
+    console.error(pc.red('mongoose is not installed. Add it as a dependency.'));
+    process.exit(1);
+  }
+
+  const uri = process.env.MONGODB_URI || process.env.DATABASE_URL;
+  if (!uri) {
+    console.error(pc.red('Set MONGODB_URI or DATABASE_URL environment variable.'));
+    process.exit(1);
+  }
+
+  let conn;
+  try {
+    conn = await mongoose.createConnection(uri).asPromise();
+  } catch (err) {
+    console.error(pc.red(`Failed to connect to MongoDB: ${err.message}`));
+    process.exit(1);
+  }
+
+  // Dynamically import MigrationRunner from the built dist or source
+  let MigrationRunner;
+  try {
+    const pkg = await import(pathToFileURL(join(process.cwd(), 'node_modules', 'nestjs-boot', 'dist', 'index.js')).href);
+    MigrationRunner = pkg.MigrationRunner;
+  } catch {
+    // Running from the library itself during dev
+    try {
+      const src = await import(pathToFileURL(join(__dirname, '..', 'dist', 'index.js')).href);
+      MigrationRunner = src.MigrationRunner;
+    } catch {
+      console.error(pc.red('Could not load MigrationRunner. Run `pnpm build` first.'));
+      await conn.close();
+      process.exit(1);
+    }
+  }
+
+  const runner = new MigrationRunner(conn, migrations);
+
+  try {
+    if (command === 'migrate') {
+      const results = await runner.migrate();
+      if (results.length === 0) {
+        console.log(pc.green('✓ All migrations are up to date.'));
+      } else {
+        for (const r of results) {
+          const icon = r.status === 'applied' ? pc.green('✓') : pc.red('✗');
+          console.log(`${icon} [${r.version}] ${r.name} — ${r.status} (${r.durationMs}ms)`);
+          if (r.error) console.log(pc.red(`  Error: ${r.error}`));
+        }
+      }
+    } else if (command === 'migrate:rollback') {
+      const count = parseInt(process.argv[3] || '1', 10);
+      const results = await runner.rollback(count);
+      if (results.length === 0) {
+        console.log(pc.yellow('Nothing to rollback.'));
+      } else {
+        for (const r of results) {
+          const icon = r.status === 'rolled_back' ? pc.green('↩') : r.status === 'skipped' ? pc.yellow('–') : pc.red('✗');
+          console.log(`${icon} [${r.version}] ${r.name} — ${r.status}`);
+          if (r.error) console.log(pc.dim(`  ${r.error}`));
+        }
+      }
+    } else if (command === 'migrate:status') {
+      const statuses = await runner.status();
+      console.log('');
+      console.log(pc.bold('Migration Status'));
+      console.log('─'.repeat(60));
+      for (const s of statuses) {
+        const badge = s.pending ? pc.yellow('PENDING') : pc.green('APPLIED');
+        const date = s.appliedAt ? pc.dim(s.appliedAt.toISOString().slice(0, 19).replace('T', ' ')) : '';
+        console.log(`  ${badge}  [${s.version}] ${s.name} ${date}`);
+      }
+      console.log('');
+    }
+  } finally {
+    await conn.close();
+  }
+}
+
 // ── Main ────────────────────────────────────────────────────────────
 
 const args = process.argv.slice(2);
+
+// Handle migrate subcommands
+if (args[0] === 'migrate:create') {
+  await migrationCreate(args[1]);
+  process.exit(0);
+}
+if (args[0] === 'migrate' || args[0] === 'migrate:rollback' || args[0] === 'migrate:status') {
+  await runMigrationCommand(args[0]);
+  process.exit(0);
+}
 
 // Handle `graph` subcommand — module dependency graph analyzer
 if (args[0] === 'graph') {

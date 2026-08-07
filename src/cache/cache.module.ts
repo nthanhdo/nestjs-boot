@@ -6,6 +6,9 @@ import { RedisCacheAdapter } from './adapters/redis-cache.adapter';
 import { CacheAdapter } from './interfaces';
 import { MultiCacheService } from './multi-cache.service';
 import { CACHE_SERVICE, CACHE_OPTIONS } from './constants';
+import { CacheWarmer } from './cache-warming';
+import { TaggedCacheService } from './cache-tags';
+import { CacheStats } from './cache-stats';
 
 /**
  * CacheModule — multi-layer cache with size-aware routing.
@@ -93,11 +96,25 @@ export class CacheModule implements OnModuleDestroy {
       },
     ];
 
+    providers.push(
+      {
+        provide: CacheWarmer.name,
+        useFactory: (cacheService: MultiCacheService) => new CacheWarmer(cacheService),
+        inject: [CACHE_SERVICE],
+      } as any,
+      {
+        provide: TaggedCacheService.name,
+        useFactory: (cacheService: MultiCacheService) => new TaggedCacheService(cacheService),
+        inject: [CACHE_SERVICE],
+      } as any,
+      CacheStats as any,
+    );
+
     return {
       module: CacheModule,
       global: true,
       providers,
-      exports: [CACHE_SERVICE],
+      exports: [CACHE_SERVICE, CacheWarmer.name, TaggedCacheService.name, CacheStats as any],
     };
   }
 

@@ -207,6 +207,31 @@ export const bootOptionsSchema = Joi.object({
       url: Joi.string().pattern(/^rediss?:\/\//).required(),
     }).optional(),
   }).optional(),
+  versioning: Joi.object({
+    type: Joi.string().valid('uri', 'header', 'media-type').optional().default('uri'),
+    defaultVersion: Joi.string().optional().default('1'),
+    header: Joi.string().optional().default('X-API-Version'),
+    mediaTypeKey: Joi.string().optional().default('version'),
+  }).optional(),
+  tenancy: Joi.object({
+    strategy: Joi.string().valid('header', 'subdomain', 'path').required(),
+    headerName: Joi.string().optional().default('X-Tenant-ID'),
+    resolver: Joi.function().optional(),
+    isolation: Joi.string().valid('database', 'schema', 'row').optional().default('row'),
+  }).optional(),
+  websocket: Joi.object({
+    adapter: Joi.string().valid('socket.io', 'ws').optional().default('socket.io'),
+    redis: Joi.object({
+      url: Joi.string().pattern(/^rediss?:\/\//).required().messages({
+        'string.pattern.base': 'websocket.redis.url must start with redis:// or rediss://',
+      }),
+    }).optional(),
+    cors: Joi.object({
+      origin: Joi.alternatives().try(Joi.string(), Joi.array().items(Joi.string())).required(),
+    }).optional(),
+    path: Joi.string().optional().default('/socket.io'),
+    namespaces: Joi.array().items(Joi.string()).optional(),
+  }).optional(),
 }).options({ abortEarly: false, stripUnknown: false });
 
 /**

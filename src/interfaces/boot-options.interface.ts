@@ -166,4 +166,34 @@ export interface BootOptions {
     /** Custom ID generator (default: crypto.randomUUID()) */
     generator?: () => string;
   };
+  /** API versioning configuration (opt-in — omit to disable) */
+  versioning?: import('../versioning/interfaces').VersioningOptions;
+  /** Multi-tenancy configuration (opt-in — omit to disable) */
+  tenancy?: import('../tenancy/interfaces').TenancyOptions;
+  /**
+   * Swagger/OpenAPI configuration (opt-in — omit to disable).
+   * Enabled by default in dev, disabled in prod.
+   * Requires @nestjs/swagger peer dependency.
+   */
+  swagger?: import('../swagger/interfaces').SwaggerOptions;
+  /**
+   * WebSocket configuration (opt-in — omit to disable).
+   * Supports Socket.IO (default) or native 'ws' adapter.
+   * Redis adapter enables pub/sub across multiple NestJS instances.
+   * Requires @nestjs/websockets + @nestjs/platform-socket.io peer dependencies.
+   * For multi-instance scaling: also install @socket.io/redis-adapter + ioredis.
+   */
+  websocket?: import('../websocket/interfaces').WebSocketOptions;
+  /**
+   * Payment webhook handling + idempotency (PP19).
+   * Registers POST /webhooks/stripe and POST /webhooks/paypal endpoints.
+   * Verifies HMAC signatures; deduplicates events by event ID.
+   * Requires NestJS rawBody:true — pass { rawBody: true } to NestFactory.create().
+   */
+  webhooks?: import('../payments/webhook.interfaces').WebhookModuleOptions;
+  /**
+   * File storage abstraction (PP20).
+   * Drivers: 'local' (zero deps) | 's3' (requires @aws-sdk/client-s3) | 'gcs' (requires @google-cloud/storage).
+   */
+  storage?: import('../storage/storage.interface').StorageModuleOptions;
 }

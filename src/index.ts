@@ -338,3 +338,75 @@ export type {
   TestResponse,
   CreateTestJwtOptions,
 } from './testing';
+
+// --- Versioning (PP13) ---
+export { VersioningModule } from './versioning';
+export type { VersioningOptions } from './versioning';
+export { ApiVersion, DeprecatedVersion, VersionInterceptor } from './versioning';
+export { VERSIONING_OPTIONS, DEPRECATED_VERSION_KEY } from './versioning';
+
+// --- Tenancy (PP14) ---
+export { TenancyModule } from './tenancy';
+export type { TenancyOptions } from './tenancy';
+export {
+  TenantContext,
+  getTenantId,
+  runWithTenant,
+  TenantMiddleware,
+  TenantGuard,
+  TenantRequired,
+  TenantScoped,
+  CurrentTenant,
+  TenantAwareRepository,
+  RowIsolation,
+  SchemaIsolation,
+  DatabaseIsolation,
+} from './tenancy';
+export { TENANCY_OPTIONS, TENANT_REQUIRED_KEY, TENANT_SCOPED_KEY } from './tenancy';
+
+
+// --- Migration System (PP15) ---
+export { MigrationModule, MigrationRunner } from './database';
+export type { Migration, MigrationResult, MigrationStatus, MigrationModuleOptions } from './database';
+
+// --- Swagger/OpenAPI (PP16) ---
+export { SwaggerModule, setupSwagger, SWAGGER_OPTIONS } from './swagger';
+export type { SwaggerOptions } from './swagger';
+export { ApiTag, ApiResponse, ApiPaginated, ApiErrorResponses, AutoApiProperties } from './swagger';
+
+// --- WebSocket Scaling (PP17) ---
+export { WebSocketModule, WS_OPTIONS, WS_REDIS_ADAPTER } from './websocket';
+export { WsCorrelationInterceptor } from './websocket';
+export { BootWsGateway } from './websocket';
+export { createRedisAdapterFactory } from './websocket';
+export {
+  WsRoom,
+  WsBroadcast,
+  WsAuthRequired,
+  OnConnection,
+  OnDisconnection,
+} from './websocket';
+export type { WebSocketOptions, WebSocketRedisOptions, WebSocketCorsOptions } from './websocket';
+
+// --- Advanced Cache Patterns (PP18) ---
+export {
+  CacheStampedeGuard,
+  CacheWarmer,
+  TaggedCacheService,
+  CacheStats,
+} from './cache';
+export type { CacheWarmEntry, TaggedCacheOptions, CacheStatsResult } from './cache';
+
+// --- Payment Webhook + Idempotency (PP19) ---
+export { WebhookModule } from './payments';
+export { WebhookController } from './payments';
+export { IdempotencyGuard, Idempotent } from './payments';
+export { StripeWebhookProvider, PayPalWebhookProvider } from './payments';
+export { WEBHOOK_OPTIONS, IDEMPOTENCY_STORE } from './payments';
+export type { WebhookEvent, WebhookProvider, WebhookModuleOptions } from './payments';
+
+// --- File Storage Abstraction (PP20) ---
+export { StorageModule, StorageService, FileValidationPipe, InjectStorage } from './storage';
+export { LocalAdapter, S3Adapter, GCSAdapter } from './storage';
+export { STORAGE_SERVICE, STORAGE_OPTIONS, STORAGE_ADAPTER } from './storage';
+export type { StorageAdapter, StorageModuleOptions, StorageResult, UploadedFile } from './storage';

@@ -30,6 +30,10 @@ import { BootRpcExceptionFilter } from './rpc/rpc-exception.filter';
 import { parseDiError, formatDiError } from './di/di-error-handler';
 import { scanForCircularDepWarnings } from './di/circular-dep-scanner';
 import { validateLayers } from './layers/layer-enforcer';
+import { VersioningModule } from './versioning/versioning.module';
+import { TenancyModule } from './tenancy/tenancy.module';
+import { setupSwagger } from './swagger/swagger.setup';
+import { WebSocketModule } from './websocket/websocket.module';
 
 /**
  * Load .env files using dotenv.
@@ -144,6 +148,33 @@ export async function createApp(
     imports.push(EventBusModule.register(validated.events));
   }
 
+  // PP13: API Versioning
+  if (validated.versioning) {
+    imports.push(VersioningModule.register(validated.versioning));
+  }
+
+  // PP14: Multi-tenancy
+  if (validated.tenancy) {
+    imports.push(TenancyModule.register(validated.tenancy));
+  }
+
+  // PP17: WebSocket Scaling
+  if (validated.websocket) {
+    imports.push(WebSocketModule.register(validated.websocket));
+  }
+
+  // PP19: Payment Webhooks
+  if (validated.webhooks) {
+    const { WebhookModule } = require('./payments/webhook.module');
+    imports.push(WebhookModule.register(validated.webhooks));
+  }
+
+  // PP20: File Storage
+  if (validated.storage) {
+    const { StorageModule } = require('./storage/storage.module');
+    imports.push(StorageModule.register(validated.storage));
+  }
+
   // 4. Wrap user's AppModule with infrastructure
   @Module({ imports: [...imports, AppModule] })
   class BootWrappedModule {}
@@ -166,6 +197,23 @@ export async function createApp(
       }
     }
     throw error;
+  }
+
+  // 5a. Enable NestJS API versioning if configured
+  if (validated.versioning) {
+    const { VersioningModule: VM } = require('./versioning/versioning.module');
+    const nestVersioningType = VM.getNestVersioningType(validated.versioning.type ?? 'uri');
+    const versioningConfig: Record<string, unknown> = { type: nestVersioningType };
+    if (validated.versioning.defaultVersion) {
+      versioningConfig.defaultVersion = validated.versioning.defaultVersion;
+    }
+    if (validated.versioning.type === 'header' && validated.versioning.header) {
+      versioningConfig.header = validated.versioning.header;
+    }
+    if (validated.versioning.type === 'media-type' && validated.versioning.mediaTypeKey) {
+      versioningConfig.key = validated.versioning.mediaTypeKey;
+    }
+    app.enableVersioning(versioningConfig as any);
   }
 
   // 5b. Dev-mode: scan for circular dependency risks (non-blocking)
@@ -250,6 +298,11 @@ export async function createApp(
     logConfigSummary(validated);
   }
 
+  // PP16. Swagger/OpenAPI — setup after app creation (needs INestApplication)
+  if (validated.swagger !== undefined) {
+    setupSwagger(app, validated.swagger, !!validated.auth);
+  }
+
   return app;
 }
 
@@ -330,6 +383,20 @@ function logConfigSummary(options: BootOptions): void {
   // Events
   if (options.events) {
     lines.push(`  Events: ${options.events.transport}`);
+  }
+
+  // Versioning
+  if (options.versioning) {
+    lines.push(
+      `  Versioning: ${options.versioning.type ?? 'uri'} (default v${options.versioning.defaultVersion ?? '1'})`,
+    );
+  }
+
+  // Tenancy
+  if (options.tenancy) {
+    lines.push(
+      `  Tenancy: ${options.tenancy.strategy} strategy / ${options.tenancy.isolation ?? 'row'} isolation`,
+    );
   }
 
   logger.log(lines.join('\n'));

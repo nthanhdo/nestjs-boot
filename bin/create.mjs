@@ -278,10 +278,12 @@ function printNextSteps(config) {
 
 // ── Resource generator ─────────────────────────────────────────────
 
-function generateResource(name) {
+function generateResource(name, flags = {}) {
   const pascal = name.charAt(0).toUpperCase() + name.slice(1);
   const lower = name.toLowerCase();
   const dir = join(process.cwd(), 'src', lower);
+  const isCrud = flags.crud !== false; // default: full CRUD
+  const isMinimal = flags.minimal === true;
 
   if (existsSync(dir)) {
     console.error(pc.red(`Error: directory "src/${lower}" already exists.`));
@@ -290,66 +292,173 @@ function generateResource(name) {
 
   mkdirSync(dir, { recursive: true });
 
-  // Schema
+  // Schema — Mongoose with timestamps + indexes
   writeFile(join(dir, `${lower}.schema.ts`), `import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-@Schema({ timestamps: true })
-export class ${pascal} extends Document {
-  @Prop({ required: true })
+export type ${pascal}Document = ${pascal} & Document;
+
+@Schema({ timestamps: true, collection: '${lower}s' })
+export class ${pascal} {
+  @Prop({ required: true, index: true })
   name: string;
+
+  @Prop({ default: true })
+  isActive: boolean;
 }
 
 export const ${pascal}Schema = SchemaFactory.createForClass(${pascal});
+
+// Compound indexes
+${pascal}Schema.index({ name: 1, isActive: 1 });
 `);
 
-  // DTO
-  writeFile(join(dir, `${lower}.dto.ts`), `export class Create${pascal}Dto {
+  // DTO — with class-validator decorators
+  writeFile(join(dir, `${lower}.dto.ts`), `import { IsString, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
+
+export class Create${pascal}Dto {
+  @IsString()
+  @IsNotEmpty()
   name: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }
 
 export class Update${pascal}Dto {
+  @IsString()
+  @IsOptional()
   name?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }
 `);
 
-  // Service
-  writeFile(join(dir, `${lower}.service.ts`), `import { Injectable } from '@nestjs/common';
+  if (isMinimal) {
+    // Minimal: just module + service (no controller, no CRUD, no test)
+    writeFile(join(dir, `${lower}.service.ts`), `import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { ${pascal} } from './${lower}.schema';
+import { ${pascal}, ${pascal}Document } from './${lower}.schema';
+
+@Injectable()
+export class ${pascal}Service {
+  constructor(
+    @InjectModel(${pascal}.name) private readonly model: Model<${pascal}Document>,
+  ) {}
+}
+`);
+
+    writeFile(join(dir, `${lower}.module.ts`), `import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { ${pascal}, ${pascal}Schema } from './${lower}.schema';
+import { ${pascal}Service } from './${lower}.service';
+
+@Module({
+  imports: [
+    MongooseModule.forFeature([{ name: ${pascal}.name, schema: ${pascal}Schema }]),
+  ],
+  providers: [${pascal}Service],
+  exports: [${pascal}Service],
+})
+export class ${pascal}Module {}
+`);
+
+    const files = [
+      `src/${lower}/${lower}.schema.ts`,
+      `src/${lower}/${lower}.dto.ts`,
+      `src/${lower}/${lower}.service.ts`,
+      `src/${lower}/${lower}.module.ts`,
+    ];
+
+    console.log('');
+    console.log(pc.green(pc.bold(`Resource "${lower}" generated! (minimal)`)));
+    console.log('');
+    for (const f of files) {
+      console.log(`  ${pc.dim('created')} ${f}`);
+    }
+    console.log('');
+    console.log(`  ${pc.cyan('Next:')} import ${pascal}Module in your AppModule.`);
+    console.log('');
+    return;
+  }
+
+  // Service — uses CrudService with lifecycle hooks
+  if (isCrud) {
+    writeFile(join(dir, `${lower}.service.ts`), `import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { CrudService } from 'nestjs-boot';
+import { ${pascal}, ${pascal}Document } from './${lower}.schema';
+
+@Injectable()
+export class ${pascal}Service extends CrudService<${pascal}Document> {
+  constructor(
+    @InjectModel(${pascal}.name) model: Model<${pascal}Document>,
+  ) {
+    super(model);
+  }
+
+  /**
+   * Hook: called before creating a document.
+   * Add custom validation, slug generation, etc.
+   */
+  protected async beforeCreate(data: Partial<${pascal}Document>): Promise<Partial<${pascal}Document>> {
+    // Example: data.slug = slugify(data.name);
+    return data;
+  }
+
+  /**
+   * Hook: called after creating a document.
+   * Emit events, update caches, etc.
+   */
+  protected async afterCreate(doc: ${pascal}Document): Promise<void> {
+    // Example: await this.eventBus.emit('${lower}.created', { id: doc._id });
+  }
+}
+`);
+  } else {
+    writeFile(join(dir, `${lower}.service.ts`), `import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { ${pascal}, ${pascal}Document } from './${lower}.schema';
 import { Create${pascal}Dto, Update${pascal}Dto } from './${lower}.dto';
 
 @Injectable()
 export class ${pascal}Service {
   constructor(
-    @InjectModel(${pascal}.name) private readonly model: Model<${pascal}>,
+    @InjectModel(${pascal}.name) private readonly model: Model<${pascal}Document>,
   ) {}
 
-  async create(dto: Create${pascal}Dto): Promise<${pascal}> {
+  async create(dto: Create${pascal}Dto): Promise<${pascal}Document> {
     return this.model.create(dto);
   }
 
-  async findAll(): Promise<${pascal}[]> {
+  async findAll(): Promise<${pascal}Document[]> {
     return this.model.find().exec();
   }
 
-  async findById(id: string): Promise<${pascal} | null> {
+  async findById(id: string): Promise<${pascal}Document | null> {
     return this.model.findById(id).exec();
   }
 
-  async update(id: string, dto: Update${pascal}Dto): Promise<${pascal} | null> {
+  async update(id: string, dto: Update${pascal}Dto): Promise<${pascal}Document | null> {
     return this.model.findByIdAndUpdate(id, dto, { new: true }).exec();
   }
 
-  async remove(id: string): Promise<${pascal} | null> {
+  async remove(id: string): Promise<${pascal}Document | null> {
     return this.model.findByIdAndDelete(id).exec();
   }
 }
 `);
+  }
 
-  // Controller
-  writeFile(join(dir, `${lower}.controller.ts`), `import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+  // Controller — @Public on GETs, @Roles('admin') on DELETE
+  writeFile(join(dir, `${lower}.controller.ts`), `import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import { Public, Roles } from 'nestjs-boot';
 import { ${pascal}Service } from './${lower}.service';
 import { Create${pascal}Dto, Update${pascal}Dto } from './${lower}.dto';
 
@@ -362,11 +471,16 @@ export class ${pascal}Controller {
     return this.service.create(dto);
   }
 
+  @Public()
   @Get()
-  findAll() {
-    return this.service.findAll();
+  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.service.findAll({}, {
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 20,
+    });
   }
 
+  @Public()
   @Get(':id')
   findById(@Param('id') id: string) {
     return this.service.findById(id);
@@ -377,9 +491,10 @@ export class ${pascal}Controller {
     return this.service.update(id, dto);
   }
 
+  @Roles('admin')
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.service.remove(id);
+    return this.service.delete(id);
   }
 }
 `);
@@ -402,19 +517,54 @@ import { ${pascal}Controller } from './${lower}.controller';
 export class ${pascal}Module {}
 `);
 
-  // Spec
-  writeFile(join(dir, `${lower}.spec.ts`), `import { describe, it, expect } from 'vitest';
+  // Test — uses createTestApp + createFactory
+  writeFile(join(dir, `${lower}.spec.ts`), `import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { createTestApp, createFactory } from 'nestjs-boot/testing';
+import type { TestAppContext, TestFactory } from 'nestjs-boot/testing';
+import { ${pascal}Module } from './${lower}.module';
 import { ${pascal}Service } from './${lower}.service';
+import { ${pascal}Schema, ${pascal}Document } from './${lower}.schema';
 
 describe('${pascal}Service', () => {
+  let ctx: TestAppContext;
+  let service: ${pascal}Service;
+  let factory: TestFactory<{ name: string; isActive: boolean }>;
+
+  beforeAll(async () => {
+    ctx = await createTestApp(${pascal}Module);
+    service = ctx.app.get(${pascal}Service);
+    factory = createFactory('${pascal}', ${pascal}Schema, {
+      name: () => \`Test ${pascal} \${Math.random().toString(36).slice(2, 8)}\`,
+      isActive: true,
+    });
+  });
+
+  afterAll(async () => {
+    await ctx.cleanup();
+  });
+
   it('should be defined', () => {
-    expect(${pascal}Service).toBeDefined();
+    expect(service).toBeDefined();
+  });
+
+  it('should create a ${lower}', async () => {
+    const data = factory.build();
+    const result = await service.create(data);
+    expect(result).toBeDefined();
+    expect(result.name).toBe(data.name);
+  });
+
+  it('should find by id', async () => {
+    const created = await factory.create(ctx.mongoConnection!, {});
+    const found = await service.findById(created._id.toString());
+    expect(found).toBeDefined();
+    expect(found!.name).toBe(created.name);
   });
 });
 `);
 
   console.log('');
-  console.log(pc.green(pc.bold(`Resource "${lower}" generated!`)));
+  console.log(pc.green(pc.bold(`Resource "${lower}" generated!${isCrud ? ' (with CrudService)' : ''}`)));
   console.log('');
   const files = [
     `src/${lower}/${lower}.schema.ts`,
@@ -432,9 +582,144 @@ describe('${pascal}Service', () => {
   console.log('');
 }
 
+// ── Module dependency graph ────────────────────────────────────────
+
+function generateGraph() {
+  const { readdirSync, statSync } = require('fs');
+
+  // Look for compiled JS in dist/, fall back to src/
+  let searchDir = join(process.cwd(), 'dist');
+  let ext = '.js';
+  if (!existsSync(searchDir)) {
+    searchDir = join(process.cwd(), 'src');
+    ext = '.ts';
+  }
+
+  if (!existsSync(searchDir)) {
+    console.error(pc.red('Error: no dist/ or src/ directory found. Run from your project root.'));
+    process.exit(1);
+  }
+
+  // Recursively find all module files
+  const moduleFiles = [];
+  function walk(dir) {
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      if (statSync(full).isDirectory()) {
+        if (entry === 'node_modules' || entry === '.git') continue;
+        walk(full);
+      } else if (entry.endsWith(`.module${ext}`)) {
+        moduleFiles.push(full);
+      }
+    }
+  }
+  walk(searchDir);
+
+  if (moduleFiles.length === 0) {
+    console.log(pc.yellow('No module files found.'));
+    process.exit(0);
+  }
+
+  // Parse @Module({ imports: [...] }) from each file
+  const graph = new Map(); // moduleName -> [importedModuleNames]
+  const moduleNameRegex = /(?:export\s+)?class\s+(\w+Module)\b/g;
+  const importsRegex = /imports\s*:\s*\[([\s\S]*?)\]/g;
+
+  for (const file of moduleFiles) {
+    const content = readFileSync(file, 'utf-8');
+    let nameMatch;
+    moduleNameRegex.lastIndex = 0;
+    while ((nameMatch = moduleNameRegex.exec(content))) {
+      const moduleName = nameMatch[1];
+      const imports = [];
+
+      importsRegex.lastIndex = 0;
+      let impMatch;
+      while ((impMatch = importsRegex.exec(content))) {
+        const block = impMatch[1];
+        // Extract module names from imports block
+        const refs = block.match(/(\w+Module)(?:\.(?:register|forRoot|forFeature|forRootAsync))?/g) || [];
+        for (const ref of refs) {
+          const cleanName = ref.replace(/\..*/, '');
+          if (cleanName !== moduleName) {
+            imports.push(cleanName);
+          }
+        }
+      }
+
+      graph.set(moduleName, [...new Set(imports)]);
+    }
+  }
+
+  // Detect cycles
+  const cycles = [];
+  const visited = new Set();
+  const stack = new Set();
+
+  function dfs(node, path) {
+    if (stack.has(node)) {
+      const cycleStart = path.indexOf(node);
+      cycles.push(path.slice(cycleStart).concat(node));
+      return;
+    }
+    if (visited.has(node)) return;
+    visited.add(node);
+    stack.add(node);
+    path.push(node);
+    for (const dep of (graph.get(node) || [])) {
+      dfs(dep, [...path]);
+    }
+    stack.delete(node);
+  }
+
+  for (const node of graph.keys()) {
+    dfs(node, []);
+  }
+
+  // Output Mermaid diagram
+  console.log('');
+  console.log(pc.bold('Module Dependency Graph (Mermaid)'));
+  console.log('');
+  console.log('```mermaid');
+  console.log('graph TD');
+
+  for (const [mod, deps] of graph.entries()) {
+    if (deps.length === 0) {
+      console.log(`  ${mod}`);
+    }
+    for (const dep of deps) {
+      console.log(`  ${mod} --> ${dep}`);
+    }
+  }
+
+  console.log('```');
+
+  // Report cycles
+  if (cycles.length > 0) {
+    console.log('');
+    console.log(pc.red(pc.bold(`⚠ ${cycles.length} circular dependency(ies) detected:`)));
+    for (const cycle of cycles) {
+      console.log(pc.red(`  ${cycle.join(' → ')}`));
+    }
+    console.log('');
+    console.log(pc.yellow('Fix: use forwardRef() or extract shared logic into a SharedModule.'));
+    console.log(pc.yellow('Read: docs/guides/di-best-practices.md'));
+  } else {
+    console.log('');
+    console.log(pc.green('✓ No circular dependencies detected.'));
+  }
+  console.log('');
+}
+
 // ── Main ────────────────────────────────────────────────────────────
 
 const args = process.argv.slice(2);
+
+// Handle `graph` subcommand — module dependency graph
+if (args[0] === 'graph') {
+  generateGraph();
+  process.exit(0);
+}
 
 // Handle `g resource <name>` subcommand
 if (args[0] === 'g' || args[0] === 'generate') {
@@ -444,10 +729,14 @@ if (args[0] === 'g' || args[0] === 'generate') {
       console.error(pc.red('Error: resource name must be lowercase alphanumeric with hyphens.'));
       process.exit(1);
     }
-    generateResource(resourceName);
+    const flags = {
+      crud: !args.includes('--minimal'),
+      minimal: args.includes('--minimal'),
+    };
+    generateResource(resourceName, flags);
     process.exit(0);
   } else {
-    console.error(pc.red('Usage: nestjs-boot g resource <name>'));
+    console.error(pc.red('Usage: nestjs-boot g resource <name> [--crud|--minimal]'));
     process.exit(1);
   }
 }

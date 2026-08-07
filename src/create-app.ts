@@ -27,6 +27,7 @@ import { HttpMetricsInterceptor } from './metrics/http-metrics.interceptor';
 import { LoggingInterceptor } from './logging/logging.interceptor';
 import { BootLogger } from './logging/boot-logger';
 import { BootRpcExceptionFilter } from './rpc/rpc-exception.filter';
+import { parseDiError, formatDiError } from './di/di-error-handler';
 
 /**
  * Load .env files using dotenv.
@@ -145,12 +146,25 @@ export async function createApp(
   @Module({ imports: [...imports, AppModule] })
   class BootWrappedModule {}
 
-  // 5. Create NestJS app
+  // 5. Create NestJS app (with DI error enrichment)
   const nestOptions: Record<string, unknown> = {};
   if (validated.logger !== undefined) {
     nestOptions.logger = validated.logger;
   }
-  const app = await NestFactory.create(BootWrappedModule, nestOptions);
+  let app: INestApplication;
+  try {
+    app = await NestFactory.create(BootWrappedModule, nestOptions);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      const diInfo = parseDiError(error);
+      if (diInfo) {
+        const { Logger: NestLogger } = require('@nestjs/common');
+        const logger = new NestLogger('nestjs-boot');
+        logger.error(formatDiError(diInfo));
+      }
+    }
+    throw error;
+  }
 
   // 6. Set app logger to BootLogger if logging configured
   if (validated.logging) {
@@ -219,5 +233,92 @@ export async function createApp(
     );
   }
 
+  // 12. Config dump in dev mode — instant "this package is professional" signal
+  if (process.env.NODE_ENV !== 'production') {
+    logConfigSummary(validated);
+  }
+
   return app;
+}
+
+/**
+ * Log a sanitized config summary in dev mode.
+ * Redacts credentials from URIs.
+ */
+function logConfigSummary(options: BootOptions): void {
+  const { Logger: NestLogger } = require('@nestjs/common');
+  const logger = new NestLogger('nestjs-boot');
+
+  const lines: string[] = ['Config summary:'];
+
+  // Database
+  if (options.database) {
+    const connNames = Object.keys(options.database.connections);
+    lines.push(`  Database: ${connNames.length} connection(s) [${connNames.join(', ')}]`);
+  } else {
+    lines.push('  Database: not configured');
+  }
+
+  // Cache
+  const hasRedis = !!options.cache?.redis;
+  const hasMemcached = !!options.cache?.memcached;
+  if (hasRedis || hasMemcached) {
+    lines.push(`  Cache: Redis ${hasRedis ? '✓' : '✗'}, Memcached ${hasMemcached ? '✓' : '✗'}`);
+  } else {
+    lines.push('  Cache: not configured');
+  }
+
+  // Auth
+  const hasJwt = !!options.auth?.jwt;
+  const hasApiKey = !!options.auth?.apiKey;
+  if (hasJwt || hasApiKey) {
+    lines.push(`  Auth: JWT ${hasJwt ? '✓' : '✗'}, API Key ${hasApiKey ? '✓' : '✗'}`);
+  } else {
+    lines.push('  Auth: not configured');
+  }
+
+  // Transport
+  if (options.transport) {
+    const transports: string[] = ['HTTP'];
+    if (options.transport.grpc) transports.push('gRPC');
+    if (options.transport.tcp) transports.push('TCP');
+    if (options.transport.nats) transports.push('NATS');
+    if (options.transport.rabbitmq) transports.push('RabbitMQ');
+    lines.push(`  Transport: ${transports.join(' + ')}`);
+  } else {
+    lines.push('  Transport: HTTP only');
+  }
+
+  // Health
+  const healthEnabled = options.health?.enabled !== false;
+  const healthPath = options.health?.path || '/health';
+  lines.push(`  Health: ${healthEnabled ? healthPath : '✗ disabled'}`);
+
+  // Metrics
+  if (options.metrics) {
+    const metricsPath = options.metrics.path || '/metrics';
+    lines.push(`  Metrics: ${metricsPath}`);
+  }
+
+  // Tracing
+  if (options.tracing) {
+    lines.push(`  Tracing: ${options.tracing.exporter} exporter`);
+  }
+
+  // Logging
+  if (options.logging) {
+    lines.push(`  Logging: pino (level: ${options.logging.level || 'info'})`);
+  }
+
+  // Queue
+  if (options.queue) {
+    lines.push(`  Queue: ${options.queue.driver}`);
+  }
+
+  // Events
+  if (options.events) {
+    lines.push(`  Events: ${options.events.transport}`);
+  }
+
+  logger.log(lines.join('\n'));
 }

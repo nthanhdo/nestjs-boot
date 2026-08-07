@@ -25,6 +25,7 @@ export {
   bootOptionsSchema,
   validateBootOptions,
 } from './config';
+export type { BootConfigAsyncOptions } from './config';
 
 // --- Database ---
 export {
@@ -46,8 +47,9 @@ export {
   ResponseInterceptor,
   AllExceptionsFilter,
   BootException,
+  CrudService,
 } from './common';
-export type { ResponseEnvelope, ErrorResponse, BootExceptionOptions } from './common';
+export type { ResponseEnvelope, ErrorResponse, BootExceptionOptions, CrudPaginatedResult, CrudFindAllOptions } from './common';
 
 // --- Health ---
 export {
@@ -196,6 +198,10 @@ export type {
   RetryOptions,
   ResilienceOptions,
 } from './resilience';
+
+// --- DI ---
+export { parseDiError, formatDiError } from './di/di-error-handler';
+export type { DiErrorInfo } from './di/di-error-handler';
 
 // --- createApp ---
 export { createApp } from './create-app';

@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { BootOptions } from '../interfaces/boot-options.interface';
 import { BOOT_OPTIONS } from './constants';
+import { bootOptionsSchema } from './validators';
 
 /**
  * Utility type to generate dot-notation paths from a nested object type.
@@ -65,5 +66,19 @@ export class BootConfigService {
    */
   getAll(): Readonly<BootOptions> {
     return this.options;
+  }
+
+  /**
+   * Get the Joi schema definition as a describable object.
+   * Returns all valid config keys, types, defaults, and constraints.
+   *
+   * ```ts
+   * const schema = configService.getSchema();
+   * console.log(JSON.stringify(schema, null, 2));
+   * // { type: 'object', keys: { database: { type: 'object', ... }, ... } }
+   * ```
+   */
+  getSchema(): Record<string, unknown> {
+    return bootOptionsSchema.describe();
   }
 }

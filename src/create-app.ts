@@ -34,6 +34,7 @@ import { VersioningModule } from './versioning/versioning.module';
 import { TenancyModule } from './tenancy/tenancy.module';
 import { setupSwagger } from './swagger/swagger.setup';
 import { WebSocketModule } from './websocket/websocket.module';
+import { CqrsModule } from './cqrs/cqrs.module';
 
 /**
  * Load .env files using dotenv.
@@ -146,6 +147,11 @@ export async function createApp(
   }
   if (validated.events) {
     imports.push(EventBusModule.register(validated.events));
+  }
+
+  // PP21: CQRS + Event Sourcing
+  if (validated.cqrs) {
+    imports.push(CqrsModule.register(validated.cqrs));
   }
 
   // PP13: API Versioning

@@ -196,4 +196,11 @@ export interface BootOptions {
    * Drivers: 'local' (zero deps) | 's3' (requires @aws-sdk/client-s3) | 'gcs' (requires @google-cloud/storage).
    */
   storage?: import('../storage/storage.interface').StorageModuleOptions;
+  /**
+   * CQRS + Event Sourcing (PP21).
+   * Provides CommandBus, EventStore (append-only persistence), AggregateRoot,
+   * Projections, Snapshots, and Outbox pattern for guaranteed delivery.
+   * EventStore backends: 'mongodb' (default, uses DatabaseModule) | 'memory' (testing).
+   */
+  cqrs?: import('../cqrs/interfaces').CqrsOptions;
 }

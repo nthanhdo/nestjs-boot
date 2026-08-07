@@ -291,6 +291,43 @@ export {
 } from './queue';
 export type { QueueOptions } from './queue';
 
+// --- CQRS + Event Sourcing (PP21) ---
+export {
+  CqrsModule,
+  CommandBus,
+  CommandHandler,
+  COMMAND_HANDLER_METADATA,
+  DomainEvent,
+  AggregateRoot,
+  ConcurrencyError,
+  MemoryEventStore,
+  MongoDBEventStore,
+  MemorySnapshotStore,
+  MongoDBSnapshotStore,
+  Projection,
+  OnDomainEvent,
+  PROJECTION_METADATA,
+  ON_DOMAIN_EVENT_METADATA,
+  EventReplayService,
+  OutboxProcessor,
+  CQRS_OPTIONS,
+  CQRS_EVENT_STORE,
+  CQRS_SNAPSHOT_STORE,
+  CQRS_COMMAND_BUS,
+  CQRS_REPLAY_SERVICE,
+  CQRS_OUTBOX_PROCESSOR,
+} from './cqrs';
+export type {
+  ICommand,
+  ICommandHandler,
+  StoredEvent,
+  EventStore,
+  SnapshotStore,
+  CqrsOptions,
+  ReplayResult,
+  OutboxEntry,
+} from './cqrs';
+
 // --- Events ---
 export {
   EventBusModule,

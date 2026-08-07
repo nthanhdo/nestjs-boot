@@ -207,6 +207,17 @@ export const bootOptionsSchema = Joi.object({
       url: Joi.string().pattern(/^rediss?:\/\//).required(),
     }).optional(),
   }).optional(),
+  cqrs: Joi.object({
+    eventStore: Joi.string().valid('mongodb', 'memory').required(),
+    snapshotStore: Joi.string().valid('mongodb', 'memory').optional(),
+    snapshotFrequency: Joi.number().integer().min(1).optional().default(100),
+    outbox: Joi.object({
+      enabled: Joi.boolean().required(),
+      pollInterval: Joi.number().integer().min(100).optional().default(1000),
+      maxRetries: Joi.number().integer().min(1).optional().default(5),
+    }).optional(),
+    connection: Joi.string().optional(),
+  }).optional(),
   versioning: Joi.object({
     type: Joi.string().valid('uri', 'header', 'media-type').optional().default('uri'),
     defaultVersion: Joi.string().optional().default('1'),

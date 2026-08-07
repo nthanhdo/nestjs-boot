@@ -184,7 +184,11 @@ export async function createApp(
     }
   }
 
-  // 8. Apply global filters
+  // 8. Apply global filters + monitoring hooks
+  if (validated.monitoring?.errorReporter) {
+    AllExceptionsFilter.errorReporter = validated.monitoring.errorReporter;
+    BootRpcExceptionFilter.errorReporter = validated.monitoring.errorReporter;
+  }
   if (validated.response?.errorHandler !== false) {
     app.useGlobalFilters(new AllExceptionsFilter());
   }

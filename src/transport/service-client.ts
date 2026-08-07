@@ -1,5 +1,6 @@
 import { firstValueFrom } from 'rxjs';
 import { withCorrelationId } from '../correlation/correlation.interceptor';
+import { getAuthContext } from '../inter-service-auth/auth-context.storage';
 
 /**
  * Typed service client wrapper around NestJS ClientProxy.
@@ -33,7 +34,12 @@ export class ServiceClient<T extends Record<string, (...args: any[]) => any>> {
     data: Parameters<T[K]>[0],
   ): Promise<ReturnType<T[K]>> {
     const metadata = withCorrelationId({});
-    const payload = metadata.correlationId
+
+    // Auto-forward auth headers from ALS context
+    this.injectAuthMetadata(metadata);
+
+    const hasMetadata = metadata.correlationId || metadata.authorization || metadata.apiKey;
+    const payload = hasMetadata
       ? { ...data, __metadata: metadata }
       : data;
 
@@ -50,10 +56,30 @@ export class ServiceClient<T extends Record<string, (...args: any[]) => any>> {
     const client = this.client as any;
     if (typeof client.emit === 'function') {
       const metadata = withCorrelationId({});
-      const payload = metadata.correlationId
+
+      // Auto-forward auth headers from ALS context
+      this.injectAuthMetadata(metadata);
+
+      const hasMetadata = metadata.correlationId || metadata.authorization || metadata.apiKey;
+      const payload = hasMetadata
         ? { ...data, __metadata: metadata }
         : data;
       client.emit(event, payload);
+    }
+  }
+
+  /** @internal — inject auth context from ALS into metadata */
+  private injectAuthMetadata(metadata: Record<string, any>): void {
+    try {
+      const authCtx = getAuthContext();
+      if (authCtx?.token) {
+        metadata.authorization = authCtx.token;
+      }
+      if (authCtx?.apiKey) {
+        metadata.apiKey = authCtx.apiKey;
+      }
+    } catch {
+      // inter-service-auth module not configured — skip silently
     }
   }
 }

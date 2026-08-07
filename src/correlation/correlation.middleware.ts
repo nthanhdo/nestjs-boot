@@ -36,6 +36,23 @@ export class CorrelationIdMiddleware implements NestMiddleware {
     // Set on response header
     res.setHeader(this.header, correlationId);
 
+    // Feed W3C traceparent into OTel context propagation (if @opentelemetry/api is installed)
+    if (traceparent) {
+      try {
+        const otelApi = require('@opentelemetry/api');
+        const carrier = { traceparent };
+        const extractedContext = otelApi.propagation.extract(otelApi.context.active(), carrier);
+        otelApi.context.with(extractedContext, () => {
+          correlationStorage.run({ correlationId, traceparent }, () => {
+            next();
+          });
+        });
+        return;
+      } catch {
+        // @opentelemetry/api not installed — continue without OTel propagation
+      }
+    }
+
     // Run the rest of the request inside AsyncLocalStorage context
     correlationStorage.run({ correlationId, traceparent }, () => {
       next();

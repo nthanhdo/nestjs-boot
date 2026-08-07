@@ -129,6 +129,44 @@ describe('CorrelationIdMiddleware', () => {
   });
 });
 
+describe('W3C traceparent propagation', () => {
+  let app: INestApplication;
+
+  afterEach(async () => {
+    if (app) await app.close();
+  });
+
+  it('stores traceparent from incoming request header in ALS', async () => {
+    // Create a controller that reads traceparent from storage
+    const { getTraceparent } = await import('../../src/correlation/correlation.storage');
+
+    @Controller('trace')
+    class TraceController {
+      @Get()
+      getTrace() {
+        return { traceparent: getTraceparent() };
+      }
+    }
+
+    @Module({ controllers: [TraceController] })
+    class TraceAppModule {}
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [CorrelationModule.register(), TraceAppModule],
+    }).compile();
+    app = moduleRef.createNestApplication();
+    await app.init();
+
+    const tp = '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01';
+    const res = await request(app.getHttpServer())
+      .get('/trace')
+      .set('traceparent', tp)
+      .expect(200);
+
+    expect(res.body.traceparent).toBe(tp);
+  });
+});
+
 describe('correlationStorage standalone', () => {
   it('getCorrelationId returns undefined outside context', () => {
     expect(getCorrelationId()).toBeUndefined();

@@ -33,6 +33,18 @@ export interface ErrorResponse {
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger('AllExceptionsFilter');
 
+  /**
+   * Optional error reporter callback — called for every caught exception.
+   * Set this to integrate Sentry, Datadog, etc. without subclassing.
+   *
+   * ```ts
+   * AllExceptionsFilter.errorReporter = (error, context) => {
+   *   Sentry.captureException(error, { extra: context });
+   * };
+   * ```
+   */
+  static errorReporter?: (error: Error, context: { statusCode: number; path: string; contextType: string }) => void;
+
   catch(exception: unknown, host: ArgumentsHost): void | Record<string, unknown> {
     const contextType = host.getType();
 
@@ -44,6 +56,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
         `Exception in ${contextType} context: ${errorObj.message}`,
         exception instanceof Error ? exception.stack : undefined,
       );
+      // Call error reporter if configured
+      if (AllExceptionsFilter.errorReporter && exception instanceof Error) {
+        try {
+          AllExceptionsFilter.errorReporter(exception, {
+            statusCode: errorObj.statusCode,
+            path: '',
+            contextType,
+          });
+        } catch {
+          // Never let reporter crash the filter
+        }
+      }
       // For RPC contexts, throwing the error lets NestJS RpcExceptionFilter handle it
       if (contextType === 'rpc') {
         throw exception;
@@ -56,11 +80,25 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse();
 
     const errorObj = this.buildErrorObject(exception, contextType);
+    const path = request.url ?? request.path ?? '/';
+
+    // Call error reporter if configured
+    if (AllExceptionsFilter.errorReporter && exception instanceof Error) {
+      try {
+        AllExceptionsFilter.errorReporter(exception, {
+          statusCode: errorObj.statusCode,
+          path,
+          contextType,
+        });
+      } catch {
+        // Never let reporter crash the filter
+      }
+    }
 
     const errorResponse: ErrorResponse = {
       ...errorObj,
       timestamp: new Date().toISOString(),
-      path: request.url ?? request.path ?? '/',
+      path,
     };
 
     response.status(errorObj.statusCode).json(errorResponse);

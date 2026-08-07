@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { HttpException, HttpStatus, BadRequestException } from '@nestjs/common';
 import { AllExceptionsFilter } from '../../src/common/filters/all-exceptions.filter';
 
@@ -62,5 +62,49 @@ describe('AllExceptionsFilter', () => {
     expect(body.statusCode).toBe(500);
     expect(body.message).toBe('Internal Server Error');
     expect(body.error).toBe('InternalServerError');
+  });
+});
+
+describe('AllExceptionsFilter.errorReporter', () => {
+  afterEach(() => {
+    AllExceptionsFilter.errorReporter = undefined;
+  });
+
+  it('calls errorReporter when set and exception is an Error', () => {
+    const reporter = vi.fn();
+    AllExceptionsFilter.errorReporter = reporter;
+    const filter = new AllExceptionsFilter();
+
+    const { host } = createMockHost('/api/users');
+    const exception = new HttpException('Bad', HttpStatus.BAD_REQUEST);
+    filter.catch(exception, host);
+
+    expect(reporter).toHaveBeenCalledTimes(1);
+    expect(reporter).toHaveBeenCalledWith(exception, {
+      statusCode: 400,
+      path: '/api/users',
+      contextType: 'http',
+    });
+  });
+
+  it('does not call errorReporter for non-Error exceptions', () => {
+    const reporter = vi.fn();
+    AllExceptionsFilter.errorReporter = reporter;
+    const filter = new AllExceptionsFilter();
+
+    const { host } = createMockHost('/api/crash');
+    filter.catch('string error', host);
+
+    expect(reporter).not.toHaveBeenCalled();
+  });
+
+  it('does not crash if errorReporter throws', () => {
+    AllExceptionsFilter.errorReporter = () => { throw new Error('reporter boom'); };
+    const filter = new AllExceptionsFilter();
+
+    const { host, status } = createMockHost('/api/users');
+    filter.catch(new HttpException('fail', 500), host);
+
+    expect(status).toHaveBeenCalledWith(500);
   });
 });

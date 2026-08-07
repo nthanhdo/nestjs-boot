@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { HttpException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { BootRpcExceptionFilter, RpcErrorEnvelope } from '../../src/rpc/rpc-exception.filter';
@@ -93,6 +93,27 @@ describe('BootRpcExceptionFilter', () => {
 
     expect(envelope.statusCode).toBe(500);
     expect(envelope.message).toBe('Internal Server Error');
+  });
+
+  describe('errorReporter', () => {
+    afterEach(() => {
+      BootRpcExceptionFilter.errorReporter = undefined;
+    });
+
+    it('calls errorReporter when set and exception is an Error', () => {
+      const reporter = vi.fn();
+      BootRpcExceptionFilter.errorReporter = reporter;
+
+      const error = new Error('rpc fail');
+      filter.catch(error, {} as unknown);
+
+      expect(reporter).toHaveBeenCalledTimes(1);
+      expect(reporter).toHaveBeenCalledWith(error, {
+        statusCode: 500,
+        service: 'test-service',
+        contextType: 'rpc',
+      });
+    });
   });
 });
 

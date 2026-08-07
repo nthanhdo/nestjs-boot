@@ -62,6 +62,12 @@ export class BootRpcExceptionFilter {
   private readonly logger = new Logger('BootRpcExceptionFilter');
   private readonly serviceName?: string;
 
+  /**
+   * Optional error reporter callback — called for every caught RPC exception.
+   * Set this to integrate Sentry, Datadog, etc. without subclassing.
+   */
+  static errorReporter?: (error: Error, context: { statusCode: number; service?: string; contextType: string }) => void;
+
   constructor(options?: { serviceName?: string }) {
     this.serviceName = options?.serviceName;
   }
@@ -73,6 +79,19 @@ export class BootRpcExceptionFilter {
       `RPC error [${envelope.statusCode}]: ${envelope.message}`,
       exception instanceof Error ? exception.stack : undefined,
     );
+
+    // Call error reporter if configured
+    if (BootRpcExceptionFilter.errorReporter && exception instanceof Error) {
+      try {
+        BootRpcExceptionFilter.errorReporter(exception, {
+          statusCode: envelope.statusCode,
+          service: this.serviceName,
+          contextType: 'rpc',
+        });
+      } catch {
+        // Never let reporter crash the filter
+      }
+    }
 
     return throwError(() => envelope);
   }

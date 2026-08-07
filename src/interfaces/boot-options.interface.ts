@@ -135,6 +135,11 @@ export interface BootOptions {
   queue?: import('../queue/interfaces').QueueOptions;
   /** Event bus configuration (memory or Redis pub/sub) */
   events?: import('../events/interfaces').EventBusOptions;
+  /** Monitoring hooks (Sentry, Datadog, etc.) — set callbacks without subclassing filters */
+  monitoring?: {
+    /** Called for every caught exception in HTTP and RPC filters */
+    errorReporter?: (error: Error, context: Record<string, unknown>) => void;
+  };
   /** Correlation ID middleware configuration */
   correlation?: {
     /** Header name (default: 'X-Correlation-Id') */

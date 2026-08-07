@@ -20,6 +20,18 @@ export interface CreateTestAppOptions extends Partial<BootOptions> {
    * ```
    */
   overrideProviders?: Provider[];
+
+  /**
+   * When true, returns a `beforeEachClean` function that drops all collections
+   * in the in-memory MongoDB. Call it in your `beforeEach` hook for test isolation.
+   *
+   * ```ts
+   * const ctx = await createTestApp(AppModule, { autoClean: true });
+   * beforeEach(() => ctx.beforeEachClean());
+   * afterAll(() => ctx.cleanup());
+   * ```
+   */
+  autoClean?: boolean;
 }
 
 /**
@@ -36,6 +48,8 @@ export interface TestAppContext {
   mongoConnection: Connection | undefined;
   /** Call this in `afterAll` to stop memory server + close app */
   cleanup: () => Promise<void>;
+  /** When `autoClean: true`, call this in `beforeEach` to drop all collections */
+  beforeEachClean: () => Promise<void>;
 }
 
 /**
@@ -70,8 +84,8 @@ export async function createTestApp(
   const mongoServer = await MongoMemoryServer.create();
   const mongoUri = mongoServer.getUri();
 
-  // Separate overrideProviders from BootOptions overrides
-  const { overrideProviders, ...bootOverrides } = overrides ?? {};
+  // Separate overrideProviders and autoClean from BootOptions overrides
+  const { overrideProviders, autoClean, ...bootOverrides } = overrides ?? {};
 
   // Merge test defaults with user overrides
   const testOptions: BootOptions = {
@@ -138,12 +152,20 @@ export async function createTestApp(
       await mongoServer.stop();
     };
 
+    const beforeEachClean = async () => {
+      if (autoClean && mongoConnection) {
+        const { cleanDatabase } = await import('./clean-database');
+        await cleanDatabase(mongoConnection);
+      }
+    };
+
     return {
       app,
       module: moduleRef,
       mongoUri,
       mongoConnection,
       cleanup,
+      beforeEachClean,
     };
   }
 
@@ -164,11 +186,19 @@ export async function createTestApp(
     await mongoServer.stop();
   };
 
+  const beforeEachClean = async () => {
+    if (autoClean && mongoConnection) {
+      const { cleanDatabase } = await import('./clean-database');
+      await cleanDatabase(mongoConnection);
+    }
+  };
+
   return {
     app,
     module: app as unknown as TestingModule,
     mongoUri,
     mongoConnection,
     cleanup,
+    beforeEachClean,
   };
 }

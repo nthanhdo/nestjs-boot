@@ -123,6 +123,11 @@ describe('Integration test helpers', () => {
     expect(users[0].name).toBe('Alice');
   });
 
+  it('createTestApp with autoClean returns beforeEachClean function', () => {
+    // beforeEachClean should exist on the context
+    expect(ctx.beforeEachClean).toBeInstanceOf(Function);
+  });
+
   it('cleanDatabase removes all data', async () => {
     // Seed first
     await seedDatabase(connection, {

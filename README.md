@@ -1,16 +1,19 @@
 # nestjs-boot
 
-> Production-ready NestJS microservice framework. One config, zero wiring.
+> Production-ready NestJS microservice framework. One config object, zero wiring.
 
 [![npm version](https://img.shields.io/npm/v/nestjs-boot.svg)](https://www.npmjs.com/package/nestjs-boot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/nthanhdo/nestjs-boot/actions/workflows/ci.yml/badge.svg)](https://github.com/nthanhdo/nestjs-boot/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-258%20passing-brightgreen.svg)](#)
 
-`nestjs-boot` is a runtime package (not a template). You call `createApp(AppModule, config)` and it auto-wires databases, cache, auth, gRPC transports, queues, events, health checks, metrics, tracing, and more — based on what you configure.
+## What is nestjs-boot?
+
+`nestjs-boot` is a **runtime package** (not a template or boilerplate). You install it as a dependency, call `createApp(AppModule, config)`, and it auto-wires databases, cache, auth, gRPC transports, queues, events, health checks, metrics, tracing, and more -- based on what you configure. Your `AppModule` stays clean with only business logic. Every module is optional: omit a config section and that module is not loaded.
 
 ## Getting Started
 
-### Option 1: Create a new project
+### Option 1: Create a new project (interactive CLI)
 
 ```bash
 npx nestjs-boot new my-service
@@ -19,7 +22,14 @@ npm install
 npm run start:dev
 ```
 
-### Option 2: Clone and run the example (10-service microservice architecture)
+The CLI prompts for database (MongoDB, PostgreSQL, MySQL, DynamoDB, Elasticsearch), cache (Redis, Memcached), auth (JWT), and transport (HTTP, gRPC, TCP, NATS, RabbitMQ). Or pass flags directly:
+
+```bash
+npx nestjs-boot new my-service --db=postgres --cache=redis --auth=jwt --transport=grpc
+npx nestjs-boot new my-service -y  # accept all defaults (MongoDB + Redis + JWT + HTTP)
+```
+
+### Option 2: Run the 10-service example
 
 ```bash
 git clone https://github.com/nthanhdo/nestjs-boot.git
@@ -27,69 +37,7 @@ cd nestjs-boot/examples/microservices
 docker-compose up --build
 ```
 
-This starts 10 services + MongoDB + Redis:
-
-| Service | HTTP | gRPC | What it demonstrates |
-|---------|------|------|---------------------|
-| API Gateway | [:3000](http://localhost:3000) | — | JWT auth, correlation ID, response envelope, 9 gRPC clients |
-| Auth Service | :3003 | :5001 | `BootJwtService`, bcrypt, user management |
-| Product Service | :3002 | :5002 | L1+L2 cache, reader/writer split |
-| Order Service | :3001 | :5003 | Database, gRPC server |
-| Notification Service | :3004 | :5004 | EventBus (`@OnEvent`), BullMQ queue (`@Processor`) |
-| File Service | :3005 | :5005 | File upload, disk storage, metadata in MongoDB |
-| Scheduler Service | :3006 | :5006 | Cron-like jobs via BullMQ repeatable queues |
-| Blog Service | :3007 | :5007 | Article CRUD with Redis-cached reads |
-| Fulfillment Service | :3008 | :5008 | EventBus + Queue pipeline, order fulfillment |
-| Campaign Service | :3009 | :5009 | Promo campaigns, EventBus lifecycle |
-| MongoDB | :27017 | — | |
-| Redis | :6379 | — | |
-
-### Try it
-
-```bash
-# Register
-curl -s -X POST http://localhost:3000/auth/register \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"test@test.com","password":"123456","name":"Test User"}'
-
-# Login (save the accessToken)
-TOKEN=$(curl -s -X POST http://localhost:3000/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"test@test.com","password":"123456"}' | jq -r '.data.accessToken')
-
-# Create a product
-curl -s -X POST http://localhost:3000/products \
-  -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"name":"Wireless Mouse","price":29.99,"category":"electronics","stock":150}'
-
-# Create a blog article
-curl -s -X POST http://localhost:3000/blog/articles \
-  -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"title":"Hello World","content":"First post!","tags":["intro"],"authorId":"user-123"}'
-
-# Create a campaign
-curl -s -X POST http://localhost:3000/campaigns \
-  -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"name":"Summer Sale","promoCode":"SUMMER20","discountPercent":20,"startDate":"2026-08-01T00:00:00Z","endDate":"2026-08-31T23:59:59Z"}'
-
-# Create an order (triggers Fulfillment + Notification)
-curl -s -X POST http://localhost:3000/orders \
-  -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"userId":"user-123","items":[{"productId":"<id>","quantity":2,"price":29.99}],"promoCode":"SUMMER20"}'
-
-# Schedule a job
-curl -s -X POST http://localhost:3000/scheduler/jobs \
-  -H 'Content-Type: application/json' \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"name":"daily-report","cron":"0 9 * * *","handler":"generateDailyReport"}'
-
-# Health check
-curl -s http://localhost:3000/health | jq
-```
+This starts 10 services + MongoDB + Redis. See [examples/microservices/](examples/microservices/) for full details.
 
 ## Architecture
 
@@ -147,7 +95,81 @@ graph LR
 
 All 10 services communicate via **gRPC**. Each uses `createApp()` with different feature combinations. Infrastructure (MongoDB + Redis) is shared.
 
-See [`examples/microservices/`](examples/microservices/) for per-service details, gRPC method tables, and API routes.
+## `createApp()` -- How It Works
+
+**Before** -- manual wiring (~40 lines of infrastructure per service):
+
+```ts
+@Module({
+  imports: [
+    MongooseModule.forRootAsync({ connectionName: 'master_writer', useFactory: () => ({ uri: '...' }) }),
+    MongooseModule.forRootAsync({ connectionName: 'master_reader', useFactory: () => ({ uri: '...' }) }),
+    CacheModule.register({ store: redisStore, url: '...' }),
+    ConfigModule.forRoot({ validationSchema: Joi.object({ /* ... */ }) }),
+    TerminusModule.forRoot(),
+    // + interceptors, filters, health indicators ...
+  ],
+})
+export class AppModule {}
+```
+
+**After** -- one config object in `main.ts`:
+
+```ts
+import { createApp } from 'nestjs-boot';
+import { AppModule } from './app.module';
+
+const app = await createApp(AppModule, {
+  database: {
+    connections: {
+      master: { writerUri: process.env.MONGO_URI!, readerUri: process.env.MONGO_READER_URI },
+    },
+  },
+  cache: { redis: { url: process.env.REDIS_URL! }, defaultTtl: 300 },
+  health: { enabled: true },
+  response: { envelope: true },
+});
+
+await app.listen(3000);
+```
+
+`createApp()` validates config via Joi, creates only the modules you configure, applies global interceptors/filters, connects microservice transports, enables shutdown hooks, and in dev mode prints a config summary. Your `AppModule` stays clean -- just business logic.
+
+### Boot Sequence
+
+```mermaid
+flowchart TD
+    A["createApp(AppModule, options)"] --> B0[Load .env files<br/>BOOT_ENV / NODE_ENV profiles]
+    B0 --> B1[Validate config via Joi]
+    B1 --> B{options.tracing?}
+    B -->|Yes| C[initTracing -- BEFORE NestFactory]
+    B -->|No| D[ ]
+    C --> D
+    D --> E[Build BootModule dynamically]
+    E --> F{database?}
+    E --> G{cache?}
+    E --> H{auth?}
+    E --> I{transport?}
+    E --> J{events?}
+    E --> K{queue?}
+    E --> L2{metrics?}
+    E --> L3{logging?}
+    F -->|Yes| F1[+ DatabaseModule]
+    G -->|Yes| G1[+ CacheModule]
+    H -->|Yes| H1[+ AuthModule]
+    I -->|Yes| I1[+ TransportModule<br/>+ CorrelationModule<br/>+ RpcModule]
+    J -->|Yes| J1[+ EventBusModule]
+    K -->|Yes| K1[+ QueueModule]
+    L2 -->|Yes| L21[+ MetricsModule]
+    L3 -->|Yes| L31[+ LoggingModule]
+    F1 & G1 & H1 & I1 & J1 & K1 & L21 & L31 --> L[NestFactory.create<br/>with DI error enrichment]
+    L --> M[Apply global guards /<br/>interceptors / filters]
+    M --> N{transport configured?}
+    N -->|Yes| O[connectTransports +<br/>startAllMicroservices]
+    N -->|No| P[ ]
+    O --> Q[Config dump in dev +<br/>return app]
+    P --> Q
+```
 
 ### Request Flow
 
@@ -188,74 +210,6 @@ sequenceDiagram
     GW-->>C: { data: Order }
 ```
 
-## How `createApp()` Works
-
-```mermaid
-flowchart TD
-    A["createApp(AppModule, options)"] --> B{options.tracing?}
-    B -->|Yes| C[initTracing — BEFORE NestFactory]
-    B -->|No| D[ ]
-    C --> D
-    D --> E[Build BootModule dynamically]
-    E --> F{database?}
-    E --> G{cache?}
-    E --> H{auth?}
-    E --> I{transport?}
-    E --> J{events?}
-    E --> K{queue?}
-    F -->|Yes| F1[+ DatabaseModule]
-    G -->|Yes| G1[+ CacheModule]
-    H -->|Yes| H1[+ AuthModule]
-    I -->|Yes| I1[+ TransportModule<br/>+ CorrelationModule]
-    J -->|Yes| J1[+ EventBusModule]
-    K -->|Yes| K1[+ QueueModule]
-    F1 & G1 & H1 & I1 & J1 & K1 --> L[NestFactory.create]
-    L --> M[Apply global guards /<br/>interceptors / filters]
-    M --> N{transport configured?}
-    N -->|Yes| O[connectTransports +<br/>startAllMicroservices]
-    N -->|No| P[ ]
-    O --> Q[return app]
-    P --> Q
-```
-
-**Before** — manual wiring (~40 lines of infrastructure per service):
-
-```ts
-@Module({
-  imports: [
-    MongooseModule.forRootAsync({ connectionName: 'master_writer', useFactory: () => ({ uri: '...' }) }),
-    MongooseModule.forRootAsync({ connectionName: 'master_reader', useFactory: () => ({ uri: '...' }) }),
-    CacheModule.register({ store: redisStore, url: '...' }),
-    ConfigModule.forRoot({ validationSchema: Joi.object({ /* ... */ }) }),
-    TerminusModule.forRoot(),
-    // + interceptors, filters, health indicators ...
-  ],
-})
-export class AppModule {}
-```
-
-**After** — one config object in `main.ts`:
-
-```ts
-import { createApp } from 'nestjs-boot';
-import { AppModule } from './app.module';
-
-const app = await createApp(AppModule, {
-  database: {
-    connections: {
-      master: { writerUri: process.env.MONGO_URI!, readerUri: process.env.MONGO_READER_URI },
-    },
-  },
-  cache: { redis: { url: process.env.REDIS_URL! }, defaultTtl: 300 },
-  health: { enabled: true },
-  response: { envelope: true },
-});
-
-await app.listen(3000);
-```
-
-`createApp()` validates config via Joi, creates only the modules you configure, applies global interceptors/filters, connects microservice transports, and enables shutdown hooks. Your `AppModule` stays clean — just business logic.
-
 ## Modules
 
 ### Database
@@ -271,102 +225,333 @@ database: {
 }
 ```
 
-Register schemas with `DatabaseModule.forFeature('master', [{ name: 'Product', schema: ProductSchema }])`. Use `BaseRepository<T>` for CRUD with automatic reader/writer routing, or `CachedBaseRepository<T>` for cache-aside on top.
+Register schemas with `DatabaseModule.forFeature('master', [{ name: 'Product', schema: ProductSchema }])`.
+
+- **`BaseRepository<T>`** -- data-access layer with automatic reader/writer routing, pagination, and `findAll`/`findById`/`create`/`update`/`delete` methods.
+- **`CachedBaseRepository<T>`** -- extends `BaseRepository` with cache-aside pattern on top.
+- **`CrudService<T>`** -- abstract service layer with lifecycle hooks (`beforeCreate`, `afterCreate`, `beforeUpdate`, `afterUpdate`, `beforeDelete`, `afterDelete`). Extend it, override hooks for business logic (slugify, emit events, validate).
+- **`@InjectConnection('master')`** -- inject a named Mongoose connection directly.
 
 ### Cache
 
-L1 in-memory LRU + optional L2 Redis. Size-aware routing (>1MB goes to L2 only).
+L1 in-memory LRU + optional L2 Redis. Size-aware routing (>1MB goes to L2 only). Optional Memcached adapter for L1.
 
 ```ts
 cache: { redis: { url: 'redis://localhost:6379' }, defaultTtl: 300 }
+// or with Memcached as L1:
+cache: { memcached: { servers: 'localhost:11211' }, redis: { url: 'redis://...' }, defaultTtl: 300 }
 ```
 
-Inject with `@InjectCache()` and use `getOrSet(key, factory, { ttl, l2Ttl })`.
+Inject with `@InjectCache()` and use `MultiCacheService`:
+
+```ts
+const result = await this.cache.getOrSet('product:123', () => this.db.findById(id), { ttl: 300 });
+```
+
+Adapters: `MemoryCacheAdapter`, `RedisCacheAdapter`, `MemcachedCacheAdapter`.
 
 ### Auth
 
-JWT signing/verification with access + refresh tokens, API key validation, RBAC guards.
+JWT signing/verification with access + refresh tokens, API key validation, RBAC guards, token revocation support.
 
 ```ts
 auth: {
   jwt: { secret: '...', signOptions: { expiresIn: '15m' }, refreshSecret: '...', refreshExpiresIn: '7d' },
+  apiKey: { enabled: true, validate: async (key) => isValid(key) },
   rbac: { enabled: true },
 }
 ```
 
-Use `BootJwtService` for `sign()`, `verify()`, `signRefresh()`, `verifyRefresh()`. Guards: `JwtAuthGuard`, `RolesGuard`, `@Roles('admin')`, `@Public()`.
+**Services and guards:**
+- `BootJwtService` -- `sign()`, `verify()`, `signRefresh()`, `verifyRefresh()`, `revoke()`
+- `JwtAuthGuard` -- auto-validates Bearer tokens
+- `ApiKeyGuard` -- validates API keys via custom callback
+- `RolesGuard` + `PermissionsGuard` -- RBAC enforcement
 
-### gRPC Transport
+**Decorators:**
+- `@Roles('admin', 'manager')` -- route requires any of these roles
+- `@Permissions('product:read', 'product:write')` -- route requires all permissions
+- `@Public()` -- skip all auth guards
+- `@CurrentUser()` -- extract user from request, or `@CurrentUser('id')` for a specific field
 
-Config-driven gRPC server and client connections.
+### Transport
+
+Config-driven hybrid HTTP + gRPC (or TCP/NATS/RabbitMQ) with typed service clients.
 
 ```ts
-// Server
+// Server (backend service)
 transport: { grpc: { url: '0.0.0.0:5000', package: 'product', protoPath: 'product.proto' } }
 
-// Clients (in gateway)
-transport: { clients: { PRODUCT_SERVICE: { transport: 'grpc', options: { url: 'product:5000', ... } } } }
+// Clients (gateway)
+transport: {
+  clients: {
+    PRODUCT_SERVICE: { transport: 'grpc', options: { url: 'product:5000', package: 'product', protoPath: 'product.proto' } },
+  },
+}
 ```
 
-### EventBus
-
-In-process or Redis pub/sub event system with typed events.
+**`ServiceClient<T>`** -- typed wrapper around NestJS `ClientProxy` with auto-correlation ID forwarding and auth propagation:
 
 ```ts
-events: { transport: 'redis', redis: { url: 'redis://localhost:6379' } }
+interface ProductService {
+  findOne(data: { id: string }): Product;
+  create(data: CreateProductDto): Product;
+}
+
+const client = new ServiceClient<ProductService>(proxy);
+const product = await client.call('findOne', { id: '123' }); // type-safe, autocomplete
 ```
 
-Extend `BootEvent`, emit via `EventBusService.emit(event)`, subscribe with `@OnEvent(MyEvent)`.
+Inject with `@InjectClient('PRODUCT_SERVICE')` or `@InjectGrpcClient('PRODUCT_SERVICE')`.
 
-### Queue
+### Observability
 
-BullMQ job queue with decorator-driven processors.
+**Metrics** -- Prometheus endpoint with HTTP request tracking:
 
 ```ts
-queue: { driver: 'bullmq', redis: { url: 'redis://localhost:6379' } }
+metrics: { enabled: true, path: '/metrics', prefix: 'myapp_', defaultMetrics: true }
 ```
 
-`QueueService.addJob(queue, name, data)` to enqueue. `@Processor('queue')` + `@Process('job')` to handle. `@OnFailed()`, `@OnCompleted()` for lifecycle hooks.
-
-### Health
-
-Auto-detects configured drivers (MongoDB, Redis) and registers health indicators.
+**Logging** -- Structured pino logging with request timing:
 
 ```ts
-health: { enabled: true, path: '/health' }
+logging: { level: 'info', pretty: true, redact: ['req.headers.authorization'] }
 ```
 
-### Response Envelope
-
-Wraps responses in `{ statusCode, message, data }`. Detects paginated results. Global exception filter included.
+**Tracing** -- OpenTelemetry distributed tracing (must init before NestFactory -- `createApp` handles this automatically):
 
 ```ts
-response: { envelope: true, errorHandler: true }
+tracing: { exporter: 'otlp', endpoint: 'http://jaeger:4318', sampleRate: 0.1 }
 ```
 
-### Correlation ID
+**`@BootTrace('ServiceName.method')`** -- method decorator that auto-creates an OpenTelemetry span. Attaches correlation ID. No-op passthrough if `@opentelemetry/api` is not installed.
 
-Propagates `X-Correlation-Id` across services via middleware + AsyncLocalStorage.
+**Correlation ID** -- `X-Correlation-Id` propagated across services via middleware + `AsyncLocalStorage`:
 
 ```ts
 correlation: { header: 'X-Correlation-Id' }
 ```
 
-### Metrics
-
-Prometheus endpoint with HTTP request tracking. Config: `metrics: { path: '/metrics', prefix: 'myapp_' }`.
-
-### Logging
-
-Structured pino logging with request timing. Config: `logging: { level: 'info', pretty: true }`.
-
-### Tracing
-
-OpenTelemetry distributed tracing. Config: `tracing: { exporter: 'otlp', endpoint: '...', sampleRate: 0.1 }`.
+Use `getCorrelationId()` / `setCorrelationId()` / `runWithCorrelationId()` anywhere.
 
 ### Resilience
 
-`@CircuitBreaker()`, `@Retry()`, `@Timeout()` decorators. Config: `resilience: { timeout: { default: 5000 } }`.
+```ts
+resilience: { circuitBreaker: { failureThreshold: 5, resetTimeout: 30000 }, timeout: { default: 5000 } }
+```
+
+- **`@CircuitBreakerDecorator()`** -- wraps method with circuit breaker (closed/open/half-open states)
+- **`@Retry({ attempts: 3, delay: 1000, backoff: 'exponential' })`** -- automatic retries with backoff
+- **`@Timeout(5000)`** -- per-method or global timeout via `TimeoutInterceptor`
+- **`CircuitBreaker`** class -- standalone circuit breaker for manual use
+
+### Error Handling
+
+- **`AllExceptionsFilter`** -- global HTTP exception filter with structured error responses
+- **`BootRpcExceptionFilter`** -- gRPC exception filter with HTTP-to-gRPC status code mapping
+- **`BootException`** -- extends `HttpException` with a stable machine-readable `code` field and `details` array:
+
+```ts
+throw new BootException('Product not found', {
+  code: 'PRODUCT_NOT_FOUND',
+  status: 404,
+  details: [{ sku: 'ABC123' }],
+});
+```
+
+- **`isRetryable(error)`** -- checks if an RPC error is safe to retry (network errors, timeouts, resource exhaustion)
+- **Monitoring hooks** -- plug in Sentry/Datadog without subclassing filters:
+
+```ts
+monitoring: {
+  errorReporter: (error, context) => Sentry.captureException(error, { extra: context }),
+}
+```
+
+### Queue and Events
+
+**Queue** -- BullMQ job queue with decorator-driven processors:
+
+```ts
+queue: {
+  driver: 'bullmq',
+  redis: { url: 'redis://localhost:6379' },
+  defaultOptions: { attempts: 3, backoff: { type: 'exponential', delay: 1000 } },
+}
+```
+
+```ts
+// Enqueue
+await this.queueService.addJob('notifications', 'send-email', { to: 'user@example.com' });
+
+// Process
+@Processor('notifications')
+class NotificationProcessor {
+  @Process('send-email')
+  async handle(job) { /* ... */ }
+
+  @OnFailed()
+  async onFailed(job, error) { /* ... */ }
+
+  @OnCompleted()
+  async onCompleted(job) { /* ... */ }
+}
+```
+
+**Events** -- in-process or Redis pub/sub event bus with typed events:
+
+```ts
+events: { transport: 'redis', redis: { url: 'redis://localhost:6379' } }
+```
+
+```ts
+// Define
+class OrderCreatedEvent extends BootEvent {
+  constructor(public readonly orderId: string) {
+    super();
+  }
+}
+
+// Emit
+this.eventBus.emit(new OrderCreatedEvent('order-123'));
+
+// Listen
+@OnEvent(OrderCreatedEvent)
+async handleOrderCreated(event: OrderCreatedEvent) { /* ... */ }
+```
+
+### Config
+
+- **`BootConfigModule.register(options)`** -- sync config registration with Joi validation
+- **`BootConfigModule.registerAsync(asyncOptions)`** -- async config loading from Vault, AWS Secrets Manager, etc.:
+
+```ts
+BootConfigModule.registerAsync({
+  imports: [VaultModule],
+  inject: [VaultService],
+  useFactory: async (vault: VaultService) => {
+    const secrets = await vault.getSecrets('my-service');
+    return { database: { connections: { master: { writerUri: secrets.MONGO_URI } } } };
+  },
+})
+```
+
+- **`BootConfigService`** -- typed access with dot-notation paths and autocomplete:
+
+```ts
+const uri = configService.get<string>('database.connections.master.writerUri');
+const all = configService.getAll();           // full BootOptions
+const schema = configService.getSchema();     // Joi schema description
+configService.getOrThrow('auth.jwt.secret');  // throws if missing
+```
+
+- **Environment profiles** -- `.env` loaded automatically, `.env.{BOOT_ENV || NODE_ENV}` overrides
+- **Config dump** -- in dev mode, `createApp()` logs a sanitized summary of active modules (credentials redacted)
+
+### Health
+
+Auto-detects configured drivers (MongoDB, Redis) and registers health indicators:
+
+```ts
+health: { enabled: true, path: '/health' }
+```
+
+Built-in indicators: `DatabaseHealthIndicator`, `RedisHealthIndicator`. Uses `@nestjs/terminus` under the hood.
+
+### Graceful Shutdown
+
+```ts
+shutdown: { timeout: 10000, signals: ['SIGTERM', 'SIGINT'] }
+```
+
+Drains in-flight requests, closes database connections, and flushes queues before exit.
+
+### Inter-Service Auth
+
+Propagate auth context (JWT tokens, API keys) across service boundaries via `AsyncLocalStorage`:
+
+```ts
+interServiceAuth: { propagation: true, serviceToken: 'internal-service-secret' }
+```
+
+`AuthPropagationInterceptor` captures incoming auth and makes it available via `getAuthContext()`. `ServiceClient<T>` auto-forwards auth headers in gRPC calls.
+
+### Testing
+
+- **`createTestApp(options)`** -- spin up a fully configured NestJS app for integration tests with real or in-memory databases
+- **`createFactory<T>(defaults)`** -- test data factories with override support:
+
+```ts
+const userFactory = createFactory<User>({ name: 'Test User', email: 'test@test.com' });
+const user = userFactory.build({ name: 'Custom' }); // { name: 'Custom', email: 'test@test.com' }
+const users = userFactory.buildMany(5);
+```
+
+- **`createTestClient(app)`** -- HTTP test client wrapping supertest with typed responses:
+
+```ts
+const client = createTestClient(app);
+const res = await client.get('/products').expect(200);
+```
+
+- **`ContractVerifier`** -- verify gRPC service contracts against proto definitions
+- **`createMockGrpcService(definition)`** -- mock gRPC services for unit tests
+- **`seedDatabase(model, fixtures)`** / **`cleanDatabase(model)`** -- test data lifecycle helpers
+
+### DI Error Enrichment
+
+When `NestFactory.create()` fails due to dependency injection errors, `createApp()` catches the error and prints actionable guidance:
+
+```
++==============================================================+
+|  nestjs-boot: Dependency Injection Error Detected            |
++==============================================================+
+
+  UNRESOLVED DEPENDENCY
+
+   Modules involved: ProductModule
+   Providers: CacheService
+
+   FIX:
+   Ensure CacheService is provided and exported:
+   1. Check that the module providing it is imported
+   2. Check that CacheService is in providers AND exports
+   3. If from a dynamic module, ensure .register() is called
+
+   Debug commands:
+     - Set NEST_DEBUG=true for the full dependency tree
+     - Run: npx nestjs-boot graph
+```
+
+## CLI
+
+### `npx nestjs-boot new <project-name>`
+
+Interactive project scaffolding with 5 database types, 3 cache options, JWT auth, and 5 transport types.
+
+```bash
+npx nestjs-boot new my-service              # interactive prompts
+npx nestjs-boot new my-service --grpc       # with gRPC transport
+npx nestjs-boot new my-service -y           # all defaults (MongoDB + Redis + JWT + HTTP)
+npx nestjs-boot new my-service --db=postgres --cache=memcached --transport=nats
+```
+
+### `npx nestjs-boot g resource <name>`
+
+Generate a CRUD resource (module, controller, service, schema, DTOs):
+
+```bash
+npx nestjs-boot g resource product          # full CRUD resource
+npx nestjs-boot g resource product --minimal  # minimal scaffold
+```
+
+### `npx nestjs-boot graph`
+
+Visualize module dependency graph as a Mermaid diagram. Detects circular dependencies.
+
+```bash
+npx nestjs-boot graph                       # outputs Mermaid diagram to stdout
+```
 
 ## Full Config Reference
 
@@ -376,20 +561,21 @@ interface BootOptions {
     connections: Record<string, {
       writerUri: string;
       readerUri?: string;
-      options?: MongooseConnectionOptions;
+      options?: MongooseConnectionOptions;  // pool size, auth, TLS, read preference, etc.
     }>;
   };
   cache?: {
     redis?: { url: string };
-    defaultTtl?: number;           // seconds (default: 300)
+    memcached?: { servers: string };        // e.g., 'host1:11211,host2:11211'
+    defaultTtl?: number;                    // seconds (default: 300)
   };
   response?: {
-    envelope?: boolean;            // default: false
-    errorHandler?: boolean;        // default: true
+    envelope?: boolean;                     // wrap in { statusCode, message, data } (default: false)
+    errorHandler?: boolean;                 // global AllExceptionsFilter (default: true)
   };
   health?: {
-    enabled?: boolean;             // default: true
-    path?: string;                 // default: '/health'
+    enabled?: boolean;                      // default: true
+    path?: string;                          // default: '/health'
   };
   auth?: {
     jwt?: {
@@ -432,6 +618,10 @@ interface BootOptions {
   };
   shutdown?: { timeout?: number; signals?: string[] };
   interServiceAuth?: { propagation?: boolean; serviceToken?: string };
+  monitoring?: {
+    errorReporter?: (error: Error, context: Record<string, unknown>) => void;
+  };
+  logger?: boolean | unknown;               // NestJS logger option
 }
 ```
 
@@ -442,36 +632,60 @@ Every top-level section is optional. Omitted sections = that module is not loade
 Use any module without `createApp()`:
 
 ```ts
-import { DatabaseModule, CacheModule } from 'nestjs-boot';
+import { DatabaseModule, CacheModule, AuthModule } from 'nestjs-boot';
 
 @Module({
   imports: [
     DatabaseModule.register({ connections: { master: { writerUri: '...' } } }),
     CacheModule.register({ redis: { url: '...' }, defaultTtl: 600 }),
+    AuthModule.register({ jwt: { secret: '...' } }),
   ],
 })
 export class AppModule {}
 ```
 
-## CLI
+## Examples
 
-```bash
-npx nestjs-boot new my-service          # Scaffold a new project
-npx nestjs-boot new my-service --grpc   # With gRPC transport
-```
+- **[10-service microservice architecture](examples/microservices/)** -- full production-like setup with API Gateway, 9 backend services, gRPC, EventBus, BullMQ queues, MongoDB, Redis
+- **[Learning skeleton](examples/learning/)** -- minimal starter for understanding nestjs-boot concepts
+
+## Web Generator
+
+Interactive browser-based project generator with visual config builder.
+
+See [`packages/web-generator/`](packages/web-generator/)
+
+## Admin Dashboard
+
+Real-time admin dashboard for monitoring nestjs-boot services.
+
+See [`packages/admin-dashboard/`](packages/admin-dashboard/)
 
 ## Optional Peer Dependencies
 
 Install only what you use:
 
 ```bash
-npm install ioredis           # Redis L2 cache
-npm install bullmq            # Queue module
-npm install pino pino-pretty  # Logging module
-npm install prom-client       # Metrics module
-npm install @nestjs/terminus  # Health checks
-npm install @opentelemetry/sdk-node  # Tracing
+npm install mongoose @nestjs/mongoose    # Database module
+npm install ioredis                      # Redis L2 cache
+npm install memjs                        # Memcached L1 cache
+npm install bullmq                       # Queue module
+npm install pino pino-pretty             # Logging module
+npm install prom-client                  # Metrics module
+npm install @nestjs/terminus             # Health checks
+npm install @opentelemetry/sdk-node @opentelemetry/api  # Tracing
+npm install @grpc/grpc-js @grpc/proto-loader            # gRPC transport
+npm install @nestjs/microservices        # Transport module
 ```
+
+## Roadmap (v0.2)
+
+- OAuth2 / OpenID Connect guard
+- WebSocket transport guard
+- Grafana dashboard templates
+- Secrets manager adapters (AWS, GCP, Azure, Vault)
+- PostgreSQL / TypeORM database adapter
+- Rate limiting module
 
 ## Contributing
 
@@ -479,7 +693,8 @@ npm install @opentelemetry/sdk-node  # Tracing
 git clone https://github.com/nthanhdo/nestjs-boot.git
 cd nestjs-boot
 npm install
-npm test
+npm test           # 258 tests
+npm run build      # CJS + ESM + DTS
 ```
 
 ## License

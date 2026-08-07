@@ -25,7 +25,7 @@ export {
   bootOptionsSchema,
   validateBootOptions,
 } from './config';
-export type { BootConfigAsyncOptions } from './config';
+export type { BootConfigAsyncOptions, BootConfigPath } from './config';
 
 // --- Database ---
 export {

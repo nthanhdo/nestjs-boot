@@ -10,8 +10,26 @@ import { TracingOptions } from './interfaces';
  * All @opentelemetry/* packages are optional. If not installed,
  * logs a warning and returns silently (no crash).
  */
+/** @internal — track whether NestFactory has been invoked */
+let _nestFactoryInvoked = false;
+
+/** @internal — called by createApp to mark NestFactory as invoked */
+export function markNestFactoryInvoked(): void {
+  _nestFactoryInvoked = true;
+}
+
 export function initTracing(options: TracingOptions): void {
   if (options.enabled === false) return;
+
+  // Init-order guard: warn if NestFactory was already called
+  if (_nestFactoryInvoked) {
+    console.warn(
+      '[nestjs-boot] WARNING: initTracing() called AFTER NestFactory.create(). ' +
+        'OTel SDK must initialize BEFORE NestFactory to properly instrument HTTP/gRPC/DB modules. ' +
+        'If you see missing spans, this is likely the cause. ' +
+        'When using createApp(), this is handled automatically.',
+    );
+  }
 
   let NodeSDK: any;
   try {

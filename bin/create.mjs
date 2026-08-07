@@ -201,6 +201,7 @@ function createProject(config) {
     { tpl: '.eslintrc.cjs.tpl',      out: '.eslintrc.cjs' },
     { tpl: '.prettierrc.tpl',        out: '.prettierrc' },
     { tpl: 'Dockerfile.tpl',         out: 'Dockerfile' },
+    { tpl: '.dockerignore.tpl',      out: '.dockerignore' },
     { tpl: 'docker-compose.yml.tpl', out: 'docker-compose.yml' },
     { tpl: 'vitest.config.ts.tpl',   out: 'vitest.config.ts' },
     { tpl: 'app.e2e-spec.ts.tpl',    out: 'test/app.e2e-spec.ts' },
@@ -275,7 +276,181 @@ function printNextSteps(config) {
 
 // ── Main ────────────────────────────────────────────────────────────
 
+// ── Resource generator ─────────────────────────────────────────────
+
+function generateResource(name) {
+  const pascal = name.charAt(0).toUpperCase() + name.slice(1);
+  const lower = name.toLowerCase();
+  const dir = join(process.cwd(), 'src', lower);
+
+  if (existsSync(dir)) {
+    console.error(pc.red(`Error: directory "src/${lower}" already exists.`));
+    process.exit(1);
+  }
+
+  mkdirSync(dir, { recursive: true });
+
+  // Schema
+  writeFile(join(dir, `${lower}.schema.ts`), `import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
+
+@Schema({ timestamps: true })
+export class ${pascal} extends Document {
+  @Prop({ required: true })
+  name: string;
+}
+
+export const ${pascal}Schema = SchemaFactory.createForClass(${pascal});
+`);
+
+  // DTO
+  writeFile(join(dir, `${lower}.dto.ts`), `export class Create${pascal}Dto {
+  name: string;
+}
+
+export class Update${pascal}Dto {
+  name?: string;
+}
+`);
+
+  // Service
+  writeFile(join(dir, `${lower}.service.ts`), `import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { ${pascal} } from './${lower}.schema';
+import { Create${pascal}Dto, Update${pascal}Dto } from './${lower}.dto';
+
+@Injectable()
+export class ${pascal}Service {
+  constructor(
+    @InjectModel(${pascal}.name) private readonly model: Model<${pascal}>,
+  ) {}
+
+  async create(dto: Create${pascal}Dto): Promise<${pascal}> {
+    return this.model.create(dto);
+  }
+
+  async findAll(): Promise<${pascal}[]> {
+    return this.model.find().exec();
+  }
+
+  async findById(id: string): Promise<${pascal} | null> {
+    return this.model.findById(id).exec();
+  }
+
+  async update(id: string, dto: Update${pascal}Dto): Promise<${pascal} | null> {
+    return this.model.findByIdAndUpdate(id, dto, { new: true }).exec();
+  }
+
+  async remove(id: string): Promise<${pascal} | null> {
+    return this.model.findByIdAndDelete(id).exec();
+  }
+}
+`);
+
+  // Controller
+  writeFile(join(dir, `${lower}.controller.ts`), `import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+import { ${pascal}Service } from './${lower}.service';
+import { Create${pascal}Dto, Update${pascal}Dto } from './${lower}.dto';
+
+@Controller('${lower}s')
+export class ${pascal}Controller {
+  constructor(private readonly service: ${pascal}Service) {}
+
+  @Post()
+  create(@Body() dto: Create${pascal}Dto) {
+    return this.service.create(dto);
+  }
+
+  @Get()
+  findAll() {
+    return this.service.findAll();
+  }
+
+  @Get(':id')
+  findById(@Param('id') id: string) {
+    return this.service.findById(id);
+  }
+
+  @Put(':id')
+  update(@Param('id') id: string, @Body() dto: Update${pascal}Dto) {
+    return this.service.update(id, dto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.service.remove(id);
+  }
+}
+`);
+
+  // Module
+  writeFile(join(dir, `${lower}.module.ts`), `import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { ${pascal}, ${pascal}Schema } from './${lower}.schema';
+import { ${pascal}Service } from './${lower}.service';
+import { ${pascal}Controller } from './${lower}.controller';
+
+@Module({
+  imports: [
+    MongooseModule.forFeature([{ name: ${pascal}.name, schema: ${pascal}Schema }]),
+  ],
+  controllers: [${pascal}Controller],
+  providers: [${pascal}Service],
+  exports: [${pascal}Service],
+})
+export class ${pascal}Module {}
+`);
+
+  // Spec
+  writeFile(join(dir, `${lower}.spec.ts`), `import { describe, it, expect } from 'vitest';
+import { ${pascal}Service } from './${lower}.service';
+
+describe('${pascal}Service', () => {
+  it('should be defined', () => {
+    expect(${pascal}Service).toBeDefined();
+  });
+});
+`);
+
+  console.log('');
+  console.log(pc.green(pc.bold(`Resource "${lower}" generated!`)));
+  console.log('');
+  const files = [
+    `src/${lower}/${lower}.schema.ts`,
+    `src/${lower}/${lower}.dto.ts`,
+    `src/${lower}/${lower}.service.ts`,
+    `src/${lower}/${lower}.controller.ts`,
+    `src/${lower}/${lower}.module.ts`,
+    `src/${lower}/${lower}.spec.ts`,
+  ];
+  for (const f of files) {
+    console.log(`  ${pc.dim('created')} ${f}`);
+  }
+  console.log('');
+  console.log(`  ${pc.cyan('Next:')} import ${pascal}Module in your AppModule.`);
+  console.log('');
+}
+
+// ── Main ────────────────────────────────────────────────────────────
+
 const args = process.argv.slice(2);
+
+// Handle `g resource <name>` subcommand
+if (args[0] === 'g' || args[0] === 'generate') {
+  if (args[1] === 'resource' && args[2]) {
+    const resourceName = args[2];
+    if (!/^[a-z][a-z0-9-]*$/.test(resourceName)) {
+      console.error(pc.red('Error: resource name must be lowercase alphanumeric with hyphens.'));
+      process.exit(1);
+    }
+    generateResource(resourceName);
+    process.exit(0);
+  } else {
+    console.error(pc.red('Usage: nestjs-boot g resource <name>'));
+    process.exit(1);
+  }
+}
 
 if (args.length === 0) {
   usage();

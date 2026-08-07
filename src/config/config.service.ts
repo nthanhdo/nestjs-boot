@@ -3,6 +3,21 @@ import { BootOptions } from '../interfaces/boot-options.interface';
 import { BOOT_OPTIONS } from './constants';
 
 /**
+ * Utility type to generate dot-notation paths from a nested object type.
+ * Provides autocomplete for `config.get('database.connections.master.writerUri')`.
+ */
+type PathsOf<T, Prefix extends string = ''> = T extends Record<string, any>
+  ? {
+      [K in keyof T & string]: T[K] extends Record<string, any>
+        ? `${Prefix}${K}` | PathsOf<T[K], `${Prefix}${K}.`>
+        : `${Prefix}${K}`;
+    }[keyof T & string]
+  : never;
+
+/** Known config paths derived from BootOptions interface. */
+export type BootConfigPath = PathsOf<BootOptions>;
+
+/**
  * Typed access to the validated BootOptions config.
  * Supports dot-notation paths: `config.get('database.connections.master.writerUri')`
  */
@@ -16,8 +31,10 @@ export class BootConfigService {
   /**
    * Get a config value by dot-notation path.
    * Returns `undefined` if the path doesn't exist.
+   *
+   * Supports autocomplete for known BootOptions paths.
    */
-  get<T = unknown>(path: string): T | undefined {
+  get<T = unknown>(path: BootConfigPath | (string & {})): T | undefined {
     const segments = path.split('.');
     let current: unknown = this.options;
 
@@ -35,7 +52,7 @@ export class BootConfigService {
    * Get a config value by dot-notation path.
    * Throws if the path doesn't exist.
    */
-  getOrThrow<T = unknown>(path: string): T {
+  getOrThrow<T = unknown>(path: BootConfigPath | (string & {})): T {
     const value = this.get<T>(path);
     if (value === undefined) {
       throw new Error(`[nestjs-boot] Config path "${path}" is not defined`);

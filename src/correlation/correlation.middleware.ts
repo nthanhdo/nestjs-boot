@@ -30,11 +30,14 @@ export class CorrelationIdMiddleware implements NestMiddleware {
     const incoming = req.headers[headerLower] as string | undefined;
     const correlationId = incoming || this.generator();
 
+    // Extract W3C traceparent header for OTel trace continuation
+    const traceparent = req.headers['traceparent'] as string | undefined;
+
     // Set on response header
     res.setHeader(this.header, correlationId);
 
     // Run the rest of the request inside AsyncLocalStorage context
-    correlationStorage.run({ correlationId }, () => {
+    correlationStorage.run({ correlationId, traceparent }, () => {
       next();
     });
   }

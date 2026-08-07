@@ -50,6 +50,21 @@ export class MetricsService implements OnModuleInit {
     if (this.options.defaultMetrics !== false) {
       promClient.collectDefaultMetrics({ register: this.registry, prefix: this.prefix });
     }
+
+    // Register boot_health_status gauge
+    this.gauge('boot_health_status', 'Health check status (1=healthy, 0=unhealthy)', ['indicator']);
+  }
+
+  /**
+   * Update health status gauge for a specific indicator.
+   * Called by health check integration.
+   *
+   * @param indicator - Health indicator name (e.g., 'database', 'redis')
+   * @param healthy - true = 1 (healthy), false = 0 (unhealthy)
+   */
+  setHealthStatus(indicator: string, healthy: boolean): void {
+    const gauge = this.gauge('boot_health_status', 'Health check status (1=healthy, 0=unhealthy)', ['indicator']);
+    gauge.labels(indicator).set(healthy ? 1 : 0);
   }
 
   /**

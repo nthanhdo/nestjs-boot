@@ -17,7 +17,7 @@ export class JwtAuthGuard implements CanActivate {
     @Inject(AUTH_OPTIONS) private readonly authOptions: AuthOptions,
   ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     // Check @Public()
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
@@ -34,9 +34,19 @@ export class JwtAuthGuard implements CanActivate {
     const token = authHeader.slice(7);
     try {
       const decoded = jwt.verify(token, this.authOptions.jwt!.secret);
+
+      // Check token revocation if configured
+      if (this.authOptions.jwt!.isRevoked) {
+        const revoked = await this.authOptions.jwt!.isRevoked(decoded);
+        if (revoked) {
+          throw new UnauthorizedException('Token has been revoked');
+        }
+      }
+
       request.user = decoded;
       return true;
-    } catch {
+    } catch (err) {
+      if (err instanceof UnauthorizedException) throw err;
       throw new UnauthorizedException('Invalid or expired token');
     }
   }

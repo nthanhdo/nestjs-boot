@@ -29,6 +29,39 @@ import { BootLogger } from './logging/boot-logger';
 import { BootRpcExceptionFilter } from './rpc/rpc-exception.filter';
 
 /**
+ * Load .env files using dotenv.
+ * Supports environment profiles: `.env.{BOOT_ENV || NODE_ENV}` overrides `.env`.
+ */
+function loadEnvFiles(): void {
+  let dotenv: any;
+  try {
+    dotenv = require('dotenv');
+  } catch {
+    // dotenv not installed — skip env file loading
+    return;
+  }
+
+  const { existsSync } = require('fs');
+  const { resolve } = require('path');
+  const cwd = process.cwd();
+
+  // Load base .env first (lower priority)
+  const baseEnv = resolve(cwd, '.env');
+  if (existsSync(baseEnv)) {
+    dotenv.config({ path: baseEnv });
+  }
+
+  // Load environment-specific .env file (higher priority — overwrites base)
+  const env = process.env.BOOT_ENV || process.env.NODE_ENV;
+  if (env) {
+    const envFile = resolve(cwd, `.env.${env}`);
+    if (existsSync(envFile)) {
+      dotenv.config({ path: envFile, override: true });
+    }
+  }
+}
+
+/**
  * createApp() — the soul of nestjs-boot.
  *
  * Takes a user's AppModule + a single BootOptions config object,
@@ -46,6 +79,9 @@ export async function createApp(
   AppModule: Type<unknown>,
   options: BootOptions,
 ): Promise<INestApplication> {
+  // 0. Load .env files (dotenv) — environment-specific overrides
+  loadEnvFiles();
+
   // 1. Validate options via Joi
   const validated = validateBootOptions(options);
 
@@ -169,6 +205,14 @@ export async function createApp(
   // 10. Enable shutdown hooks
   if (validated.shutdown !== undefined) {
     app.enableShutdownHooks();
+  }
+
+  // 11. Surface NEST_DEBUG hint in dev
+  if (process.env.NODE_ENV !== 'production' && !process.env.NEST_DEBUG) {
+    const { Logger: NestLogger } = require('@nestjs/common');
+    new NestLogger('nestjs-boot').log(
+      'TIP: Set NEST_DEBUG=true for detailed dependency resolution logs',
+    );
   }
 
   return app;

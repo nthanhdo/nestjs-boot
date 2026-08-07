@@ -70,4 +70,32 @@ export class AuthModule {
       exports,
     };
   }
+
+  /**
+   * If @nestjs/swagger is installed, configure Bearer auth on the Swagger document.
+   * Call after SwaggerModule.createDocument():
+   *
+   * ```ts
+   * const document = SwaggerModule.createDocument(app, config);
+   * configureSwaggerAuth(document);
+   * ```
+   */
+  static configureSwaggerAuth(document: any): void {
+    try {
+      require('@nestjs/swagger'); // Verify swagger is installed
+      // Add security scheme to the document directly
+      if (!document.components) document.components = {};
+      if (!document.components.securitySchemes) document.components.securitySchemes = {};
+      document.components.securitySchemes['bearer'] = {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      };
+      // Add global security requirement
+      if (!document.security) document.security = [];
+      document.security.push({ bearer: [] });
+    } catch {
+      // @nestjs/swagger not installed — skip silently
+    }
+  }
 }

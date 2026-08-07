@@ -80,6 +80,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.7.0",
+    "dotenv": "^16.6.1",
     "joi": "^17.0.0",
     "jsonwebtoken": "^9.0.3",
     "picocolors": "^1.1.1"

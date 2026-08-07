@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+.env
+.env.local
+coverage
+*.md
+.eslintrc.*
+.prettierrc
+vitest.config.ts
+test

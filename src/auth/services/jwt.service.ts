@@ -38,8 +38,8 @@ export class BootJwtService {
   }
 
   /** Verify and decode an access token. Throws on invalid/expired. */
-  verify(token: string): Record<string, any> {
-    return jwt.verify(token, this.secret) as Record<string, any>;
+  verify<T = Record<string, any>>(token: string): T {
+    return jwt.verify(token, this.secret) as T;
   }
 
   /** Sign a refresh token (uses refreshSecret if configured, else main secret). */
@@ -48,7 +48,22 @@ export class BootJwtService {
   }
 
   /** Verify a refresh token. Throws on invalid/expired. */
-  verifyRefresh(token: string): Record<string, any> {
-    return jwt.verify(token, this.refreshSecret) as Record<string, any>;
+  verifyRefresh<T = Record<string, any>>(token: string): T {
+    return jwt.verify(token, this.refreshSecret) as T;
+  }
+
+  /**
+   * Rotate a refresh token: verify the old one, issue a new access + refresh pair.
+   * The old refresh token's payload (minus iat/exp/nbf) is re-signed.
+   * Throws if oldToken is invalid/expired.
+   */
+  rotateRefreshToken(oldToken: string): { accessToken: string; refreshToken: string } {
+    const decoded = this.verifyRefresh(oldToken);
+    // Strip JWT-specific claims to get clean payload
+    const { iat, exp, nbf, jti, ...payload } = decoded as Record<string, any>;
+    return {
+      accessToken: this.sign(payload),
+      refreshToken: this.signRefresh(payload),
+    };
   }
 }

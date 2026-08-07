@@ -3,6 +3,8 @@ export interface JwtAuthOptions {
   signOptions?: { expiresIn?: string | number; algorithm?: string };
   refreshSecret?: string;
   refreshExpiresIn?: string | number;
+  /** Optional token revocation check. Called after JWT verify succeeds. */
+  isRevoked?: (payload: any) => Promise<boolean>;
 }
 
 export interface ApiKeyAuthOptions {

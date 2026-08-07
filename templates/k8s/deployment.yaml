@@ -43,3 +43,7 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]

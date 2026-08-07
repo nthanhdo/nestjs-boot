@@ -39,14 +39,16 @@ export function deserializeRpcError(error: unknown): HttpException {
   }
 
   if (isRpcErrorEnvelope(error)) {
-    const { statusCode, message, error: errorType, details, correlationId } = error;
+    const { statusCode, message, error: errorType, code, details, causes, correlationId } = error as any;
 
     return new HttpException(
       {
         statusCode,
         message,
         error: errorType,
+        ...(code ? { code } : {}),
         ...(details ? { details } : {}),
+        ...(causes ? { causes } : {}),
         ...(correlationId ? { correlationId } : {}),
       },
       statusCode,
@@ -84,6 +86,26 @@ export function deserializeRpcError(error: unknown): HttpException {
     );
   }
 
+  // Check if it's an envelope with causes (error hop chain)
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    Array.isArray((error as any).causes)
+  ) {
+    const envelope = error as any;
+    const httpStatus = envelope.statusCode ?? HttpStatus.INTERNAL_SERVER_ERROR;
+    return new HttpException(
+      {
+        statusCode: httpStatus,
+        message: envelope.message ?? 'Unknown RPC error',
+        error: envelope.error ?? 'RpcError',
+        ...(envelope.code ? { code: envelope.code } : {}),
+        ...(envelope.causes ? { causes: envelope.causes } : {}),
+      },
+      httpStatus,
+    );
+  }
+
   // Fallback: unknown shape
   const message =
     error instanceof Error
@@ -100,4 +122,37 @@ export function deserializeRpcError(error: unknown): HttpException {
     },
     HttpStatus.INTERNAL_SERVER_ERROR,
   );
+}
+
+/** HTTP status codes that indicate a retryable error. */
+const RETRYABLE_STATUS_CODES = new Set([408, 429, 503, 504]);
+
+/**
+ * Check if an error is retryable based on its HTTP status code.
+ * Retryable codes: 408 (Timeout), 429 (Too Many Requests), 503 (Service Unavailable), 504 (Gateway Timeout).
+ *
+ * Works with HttpException, RpcErrorEnvelope, or plain objects with statusCode.
+ *
+ * ```ts
+ * catchError((err) => {
+ *   if (isRetryable(err)) {
+ *     return retry({ count: 3, delay: 1000 })(source);
+ *   }
+ *   throw deserializeRpcError(err);
+ * })
+ * ```
+ */
+export function isRetryable(error: unknown): boolean {
+  if (error instanceof HttpException) {
+    return RETRYABLE_STATUS_CODES.has(error.getStatus());
+  }
+
+  if (typeof error === 'object' && error !== null) {
+    const statusCode = (error as any).statusCode ?? (error as any).status;
+    if (typeof statusCode === 'number') {
+      return RETRYABLE_STATUS_CODES.has(statusCode);
+    }
+  }
+
+  return false;
 }

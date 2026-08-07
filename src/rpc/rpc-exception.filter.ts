@@ -16,7 +16,11 @@ export interface RpcErrorEnvelope {
   statusCode: number;
   message: string;
   error: string;
+  /** Stable machine-readable error code (e.g., 'PRODUCT_NOT_FOUND') */
+  code?: string;
   details?: unknown[];
+  /** Upstream error chain — preserved when deserializing RPC errors */
+  causes?: RpcErrorEnvelope[];
   correlationId?: string;
   timestamp: string;
   service?: string;
@@ -79,6 +83,7 @@ export class BootRpcExceptionFilter {
     let message = 'Internal Server Error';
     let error = 'InternalServerError';
     let details: unknown[] | undefined;
+    let code: string | undefined;
 
     if (exception instanceof HttpException) {
       statusCode = exception.getStatus();
@@ -97,6 +102,13 @@ export class BootRpcExceptionFilter {
         if (resp.error && typeof resp.error === 'string') {
           error = resp.error;
         }
+        if (typeof resp.code === 'string') {
+          code = resp.code;
+        }
+      }
+      // Check for BootException code property
+      if ((exception as any).code && typeof (exception as any).code === 'string') {
+        code = (exception as any).code;
       }
     } else if (isRpcExceptionLike(exception)) {
       const rpcError = exception.getError();
@@ -121,6 +133,7 @@ export class BootRpcExceptionFilter {
       statusCode,
       message,
       error,
+      ...(code ? { code } : {}),
       ...(details ? { details } : {}),
       ...(correlationId ? { correlationId } : {}),
       timestamp: new Date().toISOString(),

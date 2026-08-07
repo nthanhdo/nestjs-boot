@@ -45,8 +45,9 @@ export type { PaginatedResult, FindAllOptions, ModelDefinition } from './databas
 export {
   ResponseInterceptor,
   AllExceptionsFilter,
+  BootException,
 } from './common';
-export type { ResponseEnvelope, ErrorResponse } from './common';
+export type { ResponseEnvelope, ErrorResponse, BootExceptionOptions } from './common';
 
 // --- Health ---
 export {
@@ -67,6 +68,7 @@ export {
   Roles,
   Permissions,
   Public,
+  CurrentUser,
   AUTH_OPTIONS,
   ROLES_KEY,
   PERMISSIONS_KEY,
@@ -77,6 +79,8 @@ export {
 export {
   CorrelationModule,
   CorrelationIdMiddleware,
+  CorrelationInterceptor,
+  withCorrelationId,
   getCorrelationId,
   setCorrelationId,
   runWithCorrelationId,
@@ -112,6 +116,7 @@ export type { InterServiceAuthOptions, AuthContext } from './inter-service-auth'
 export {
   TransportModule,
   connectTransports,
+  ServiceClient,
   InjectClient,
   InjectGrpcClient,
   getClientToken,
@@ -133,6 +138,7 @@ export {
   RpcModule,
   BootRpcExceptionFilter,
   deserializeRpcError,
+  isRetryable,
   GrpcStatus,
   httpStatusToGrpc,
   grpcStatusToHttp,
@@ -145,6 +151,7 @@ export {
   TracingModule,
   TracingService,
   initTracing,
+  BootTrace,
   TRACING_OPTIONS,
 } from './tracing';
 export type { TracingOptions } from './tracing';
@@ -237,6 +244,8 @@ export {
   createTestApp,
   seedDatabase,
   cleanDatabase,
+  createFactory,
+  createTestClient,
 } from './testing';
 export type {
   ResponseFactory,
@@ -246,4 +255,8 @@ export type {
   ContractDefinition,
   VerificationResult,
   TestAppContext,
+  CreateTestAppOptions,
+  TestFactory,
+  TestClient,
+  TestResponse,
 } from './testing';

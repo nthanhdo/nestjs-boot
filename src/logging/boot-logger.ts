@@ -54,11 +54,32 @@ export class BootLogger implements LoggerService {
     this.pinoInstance = pinoFactory(pinoOptions);
   }
 
+  private getTraceId(): string | undefined {
+    try {
+      // Try to read traceId from OpenTelemetry active span if available
+      const otelApi = require('@opentelemetry/api');
+      const activeSpan = otelApi.trace.getActiveSpan?.();
+      if (activeSpan) {
+        const spanContext = activeSpan.spanContext?.();
+        if (spanContext?.traceId) {
+          return spanContext.traceId;
+        }
+      }
+    } catch {
+      // @opentelemetry/api not installed — no traceId
+    }
+    return undefined;
+  }
+
   private buildPayload(context?: string): Record<string, unknown> {
     const payload: Record<string, unknown> = {};
     const correlationId = getCorrelationId();
     if (correlationId) {
       payload.correlationId = correlationId;
+    }
+    const traceId = this.getTraceId();
+    if (traceId) {
+      payload.traceId = traceId;
     }
     if (context) {
       payload.context = context;

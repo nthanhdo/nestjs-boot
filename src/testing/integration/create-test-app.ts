@@ -1,6 +1,26 @@
-import { Type } from '@nestjs/common';
+import { Type, Provider } from '@nestjs/common';
 import { INestApplication } from '@nestjs/common';
+import { TestingModule } from '@nestjs/testing';
+import { Connection } from 'mongoose';
 import { BootOptions } from '../../interfaces/boot-options.interface';
+
+/**
+ * Options for createTestApp beyond BootOptions overrides.
+ */
+export interface CreateTestAppOptions extends Partial<BootOptions> {
+  /**
+   * Override DI providers — useful for mocking services in integration tests.
+   *
+   * ```ts
+   * createTestApp(AppModule, {
+   *   overrideProviders: [
+   *     { provide: EmailService, useValue: { send: vi.fn() } },
+   *   ],
+   * })
+   * ```
+   */
+  overrideProviders?: Provider[];
+}
 
 /**
  * Result of `createTestApp()` — includes cleanup handle.
@@ -9,9 +29,11 @@ export interface TestAppContext {
   /** The NestJS application instance */
   app: INestApplication;
   /** The root testing module */
-  module: unknown;
+  module: TestingModule;
   /** The in-memory MongoDB URI (for direct Mongoose access if needed) */
   mongoUri: string;
+  /** The Mongoose connection to the in-memory database */
+  mongoConnection: Connection | undefined;
   /** Call this in `afterAll` to stop memory server + close app */
   cleanup: () => Promise<void>;
 }
@@ -38,7 +60,7 @@ export interface TestAppContext {
  */
 export async function createTestApp(
   AppModule: Type<unknown>,
-  overrides?: Partial<BootOptions>,
+  overrides?: CreateTestAppOptions,
 ): Promise<TestAppContext> {
   // Dynamic imports — these are devDependencies
   const { MongoMemoryServer } = await import('mongodb-memory-server');
@@ -47,6 +69,9 @@ export async function createTestApp(
   // Start in-memory MongoDB
   const mongoServer = await MongoMemoryServer.create();
   const mongoUri = mongoServer.getUri();
+
+  // Separate overrideProviders from BootOptions overrides
+  const { overrideProviders, ...bootOverrides } = overrides ?? {};
 
   // Merge test defaults with user overrides
   const testOptions: BootOptions = {
@@ -58,22 +83,81 @@ export async function createTestApp(
     cache: undefined, // No cache by default in tests
     health: { enabled: false },
     logger: false, // Silent
-    ...overrides,
+    ...bootOverrides,
     // If overrides include database, use override connections but default master to in-memory URI
-    ...(overrides?.database
+    ...(bootOverrides?.database
       ? {
           database: {
             connections: {
               master: { writerUri: mongoUri },
-              ...overrides.database.connections,
+              ...bootOverrides.database.connections,
             },
           },
         }
       : {}),
   };
 
+  // If overrideProviders are specified, we need to use TestingModule approach
+  if (overrideProviders && overrideProviders.length > 0) {
+    const { Test } = await import('@nestjs/testing');
+    const { validateBootOptions } = await import('../../config/validators');
+    const { BootConfigModule } = await import('../../config/config.module');
+
+    const validated = validateBootOptions(testOptions);
+
+    let builder = Test.createTestingModule({
+      imports: [BootConfigModule.register(validated), AppModule],
+    });
+
+    for (const provider of overrideProviders) {
+      const prov = provider as any;
+      if (prov.provide && prov.useValue !== undefined) {
+        builder = builder.overrideProvider(prov.provide).useValue(prov.useValue);
+      } else if (prov.provide && prov.useFactory) {
+        builder = builder.overrideProvider(prov.provide).useFactory({ factory: prov.useFactory });
+      } else if (prov.provide && prov.useClass) {
+        builder = builder.overrideProvider(prov.provide).useClass(prov.useClass);
+      }
+    }
+
+    const moduleRef = await builder.compile();
+    const app = moduleRef.createNestApplication();
+    await app.init();
+
+    // Try to get Mongoose connection
+    let mongoConnection: Connection | undefined;
+    try {
+      const mongoose = await import('mongoose');
+      mongoConnection = mongoose.connection;
+    } catch {
+      // mongoose not available
+    }
+
+    const cleanup = async () => {
+      await app.close();
+      await mongoServer.stop();
+    };
+
+    return {
+      app,
+      module: moduleRef,
+      mongoUri,
+      mongoConnection,
+      cleanup,
+    };
+  }
+
   const app = await createApp(AppModule, testOptions);
   await app.init();
+
+  // Try to get Mongoose connection
+  let mongoConnection: Connection | undefined;
+  try {
+    const mongoose = await import('mongoose');
+    mongoConnection = mongoose.connection;
+  } catch {
+    // mongoose not available
+  }
 
   const cleanup = async () => {
     await app.close();
@@ -82,8 +166,9 @@ export async function createTestApp(
 
   return {
     app,
-    module: app,
+    module: app as unknown as TestingModule,
     mongoUri,
+    mongoConnection,
     cleanup,
   };
 }

@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from 'async_hooks';
 
 interface CorrelationStore {
   correlationId: string;
+  traceparent?: string;
 }
 
 const storage = new AsyncLocalStorage<CorrelationStore>();
@@ -29,6 +30,13 @@ export function setCorrelationId(id: string): void {
  */
 export function runWithCorrelationId<T>(id: string, fn: () => T): T {
   return storage.run({ correlationId: id }, fn);
+}
+
+/**
+ * Get the current W3C traceparent from AsyncLocalStorage context.
+ */
+export function getTraceparent(): string | undefined {
+  return storage.getStore()?.traceparent;
 }
 
 /** @internal — exposed for middleware use */

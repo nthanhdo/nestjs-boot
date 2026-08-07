@@ -95,6 +95,11 @@ export class ShutdownService implements OnApplicationShutdown {
               else resolve();
             });
           });
+          // Drain keep-alive connections (Node 18.2+)
+          if (typeof server.closeAllConnections === 'function') {
+            server.closeAllConnections();
+            this.logger.log('Phase 2: Keep-alive connections drained');
+          }
           this.logger.log('Phase 2: HTTP server closed');
         }
       }

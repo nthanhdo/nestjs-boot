@@ -3,15 +3,27 @@ import {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
+  Inject,
+  Optional,
+  LoggerService,
   Logger,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { getCorrelationId } from '../correlation/correlation.storage';
+import { BootLogger } from './boot-logger';
+
+const BOOT_LOGGER_TOKEN = 'BOOT_LOGGER';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
-  private readonly logger = new Logger('HTTP');
+  private readonly logger: LoggerService;
+
+  constructor(
+    @Optional() @Inject(BOOT_LOGGER_TOKEN) bootLogger?: BootLogger,
+  ) {
+    this.logger = bootLogger ?? new Logger('HTTP');
+  }
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     if (context.getType() !== 'http') {

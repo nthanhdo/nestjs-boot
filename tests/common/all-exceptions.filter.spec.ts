@@ -7,6 +7,7 @@ function createMockHost(url = '/test') {
   const status = vi.fn().mockReturnValue({ json });
   return {
     host: {
+      getType: () => 'http',
       switchToHttp: () => ({
         getRequest: () => ({ url }),
         getResponse: () => ({ status }),

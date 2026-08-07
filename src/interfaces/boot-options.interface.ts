@@ -135,6 +135,8 @@ export interface BootOptions {
   queue?: import('../queue/interfaces').QueueOptions;
   /** Event bus configuration (memory or Redis pub/sub) */
   events?: import('../events/interfaces').EventBusOptions;
+  /** Module layer enforcement (opt-in — validates import direction at boot) */
+  layers?: import('../layers/layer-config').LayerOptions;
   /** Monitoring hooks (Sentry, Datadog, etc.) — set callbacks without subclassing filters */
   monitoring?: {
     /** Called for every caught exception in HTTP and RPC filters */

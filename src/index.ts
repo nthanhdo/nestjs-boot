@@ -203,6 +203,14 @@ export type {
 export { parseDiError, formatDiError } from './di/di-error-handler';
 export type { DiErrorInfo } from './di/di-error-handler';
 
+// --- Contracts (interface-based DI) ---
+export { createContract, InjectContract, provideContract, provideContractFactory, validateContracts } from './contracts';
+export type { Contract, ContractType } from './contracts';
+
+// --- Layers ---
+export { Layer, LAYER_KEY, ModuleLayer, validateLayers } from './layers';
+export type { LayerViolation, LayerValidationResult, LayerOptions } from './layers';
+
 // --- createApp ---
 export { createApp } from './create-app';
 

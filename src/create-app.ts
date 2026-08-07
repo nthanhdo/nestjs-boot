@@ -28,6 +28,8 @@ import { LoggingInterceptor } from './logging/logging.interceptor';
 import { BootLogger } from './logging/boot-logger';
 import { BootRpcExceptionFilter } from './rpc/rpc-exception.filter';
 import { parseDiError, formatDiError } from './di/di-error-handler';
+import { scanForCircularDepWarnings } from './di/circular-dep-scanner';
+import { validateLayers } from './layers/layer-enforcer';
 
 /**
  * Load .env files using dotenv.
@@ -166,6 +168,11 @@ export async function createApp(
     throw error;
   }
 
+  // 5b. Dev-mode: scan for circular dependency risks (non-blocking)
+  if (process.env.NODE_ENV !== 'production') {
+    scanForCircularDepWarnings(app);
+  }
+
   // 6. Set app logger to BootLogger if logging configured
   if (validated.logging) {
     const logger = app.get(BootLogger);
@@ -233,7 +240,12 @@ export async function createApp(
     );
   }
 
-  // 12. Config dump in dev mode — instant "this package is professional" signal
+  // 12. Layer enforcement (opt-in)
+  if (validated.layers?.enabled) {
+    validateLayers(app, validated.layers);
+  }
+
+  // 13. Config dump in dev mode — instant "this package is professional" signal
   if (process.env.NODE_ENV !== 'production') {
     logConfigSummary(validated);
   }

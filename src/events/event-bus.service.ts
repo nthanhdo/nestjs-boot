@@ -1,12 +1,19 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { BootEvent } from './boot-event';
-import { EventBusOptions, OnEventOptions } from './interfaces';
+import { EventBusOptions, OnEventOptions, EmitAndWaitOptions } from './interfaces';
 
 interface HandlerEntry {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   eventClass: new (...args: any[]) => BootEvent;
   handler: (event: BootEvent) => Promise<void> | void;
   options: OnEventOptions;
+}
+
+interface QueryHandlerEntry {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  queryClass: new (...args: any[]) => BootEvent;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  handler: (query: BootEvent) => Promise<any> | any;
 }
 
 /**
@@ -19,6 +26,7 @@ interface HandlerEntry {
 export class EventBusService implements OnModuleDestroy {
   private readonly logger = new Logger('EventBusService');
   private readonly handlers: HandlerEntry[] = [];
+  private readonly queryHandlers = new Map<string, QueryHandlerEntry>();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private redisPublisher: any = null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -133,6 +141,93 @@ export class EventBusService implements OnModuleDestroy {
     if (promises.length > 0) {
       await Promise.all(promises);
     }
+  }
+
+  /**
+   * Register a handler for a query class (request/reply pattern).
+   * Only ONE handler per query class is allowed — queries expect a single response.
+   * @internal — used by EventBusModule during module init to wire @OnQuery decorators.
+   */
+  registerQueryHandler(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    queryClass: new (...args: any[]) => BootEvent,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    handler: (query: BootEvent) => Promise<any> | any,
+  ): void {
+    const name = queryClass.name;
+    if (this.queryHandlers.has(name)) {
+      this.logger.warn(
+        `Query handler for "${name}" is being overwritten. Only one handler per query is allowed.`,
+      );
+    }
+    this.queryHandlers.set(name, { queryClass, handler });
+  }
+
+  /**
+   * Emit a query and wait for the handler to return a result.
+   *
+   * This is the KEY method for breaking circular dependencies when you need
+   * a return value. Instead of injecting ServiceB directly (which creates a
+   * circular dep), emit a query and let ServiceB's module handle it.
+   *
+   * @example
+   * ```ts
+   * // In OrderService (no import of UserModule needed):
+   * const user = await this.eventBus.emitAndWait<User>(
+   *   new GetUserByIdQuery(userId),
+   *   { timeout: 5000 }
+   * );
+   * ```
+   *
+   * @throws Error if no handler is registered or if the handler does not respond within the timeout
+   */
+  async emitAndWait<T = unknown>(
+    query: BootEvent,
+    options?: EmitAndWaitOptions,
+  ): Promise<T> {
+    const queryClassName = query.constructor.name;
+    const timeout = options?.timeout ?? 5000;
+
+    const entry = this.queryHandlers.get(queryClassName);
+    if (!entry) {
+      throw new Error(
+        `No handler registered for query "${queryClassName}". ` +
+        `Did you forget to use @OnQuery(${queryClassName}) in a provider? ` +
+        `The provider's module must be imported somewhere in the app.`,
+      );
+    }
+
+    return new Promise<T>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(
+          new Error(
+            `Query "${queryClassName}" timed out after ${timeout}ms. ` +
+            `The handler may be stuck or performing a long-running operation.`,
+          ),
+        );
+      }, timeout);
+
+      try {
+        const result = entry.handler(query);
+        if (result instanceof Promise) {
+          result
+            .then((val) => {
+              clearTimeout(timer);
+              resolve(val as T);
+            })
+            .catch((err) => {
+              clearTimeout(timer);
+              reject(err);
+            });
+        } else {
+          clearTimeout(timer);
+          resolve(result as T);
+        }
+      } catch (err) {
+        clearTimeout(timer);
+        reject(err);
+      }
+    });
   }
 
   async onModuleDestroy(): Promise<void> {

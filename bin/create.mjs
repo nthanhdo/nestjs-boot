@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, readdirSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
@@ -582,142 +582,255 @@ describe('${pascal}Service', () => {
   console.log('');
 }
 
-// ── Module dependency graph ────────────────────────────────────────
+// ── Module dependency graph (Proposal 3: full analyzer) ───────────
 
-function generateGraph() {
-  const { readdirSync, statSync } = require('fs');
-
-  // Look for compiled JS in dist/, fall back to src/
-  let searchDir = join(process.cwd(), 'dist');
-  let ext = '.js';
-  if (!existsSync(searchDir)) {
-    searchDir = join(process.cwd(), 'src');
-    ext = '.ts';
+function generateGraph(cliArgs) {
+  // Parse graph-specific flags
+  const flags = { strict: false, output: null, format: 'mermaid', project: process.cwd() };
+  for (const arg of cliArgs) {
+    if (arg === '--strict') flags.strict = true;
+    else if (arg === '--format=json' || arg === '--json') flags.format = 'json';
+    else if (arg.startsWith('--output=')) flags.output = arg.slice('--output='.length);
+    else if (arg.startsWith('--project=')) flags.project = arg.slice('--project='.length);
   }
 
+  // --- Inline implementations (no compiled TS dependency) ---
+
+  // Tarjan's SCC cycle detection
+  function detectCycles(nodes, edges) {
+    const adj = new Map();
+    for (const node of nodes) adj.set(node, []);
+    for (const { from, to } of edges) {
+      if (adj.has(from) && adj.has(to)) adj.get(from).push(to);
+    }
+
+    let idx = 0;
+    const stack = [];
+    const onStack = new Set();
+    const indices = new Map();
+    const lowlinks = new Map();
+    const sccs = [];
+
+    function strongconnect(v) {
+      indices.set(v, idx);
+      lowlinks.set(v, idx);
+      idx++;
+      stack.push(v);
+      onStack.add(v);
+
+      for (const w of (adj.get(v) || [])) {
+        if (!indices.has(w)) {
+          strongconnect(w);
+          lowlinks.set(v, Math.min(lowlinks.get(v), lowlinks.get(w)));
+        } else if (onStack.has(w)) {
+          lowlinks.set(v, Math.min(lowlinks.get(v), indices.get(w)));
+        }
+      }
+
+      if (lowlinks.get(v) === indices.get(v)) {
+        const scc = [];
+        let w;
+        do {
+          w = stack.pop();
+          onStack.delete(w);
+          scc.push(w);
+        } while (w !== v);
+        if (scc.length > 1) {
+          scc.reverse();
+          sccs.push(scc);
+        }
+      }
+    }
+
+    for (const node of nodes) {
+      if (!indices.has(node)) strongconnect(node);
+    }
+    return sccs;
+  }
+
+  // Walk directory for module files
+  function walkDir(dir, ext) {
+    const results = [];
+    if (!existsSync(dir)) return results;
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      if (entry === 'node_modules' || entry === '.git') continue;
+      try {
+        const stat = statSync(full);
+        if (stat.isDirectory()) results.push(...walkDir(full, ext));
+        else if (entry.endsWith(`.module${ext}`)) results.push(full);
+      } catch { /* skip */ }
+    }
+    return results;
+  }
+
+  // Parse @Module metadata from a file
+  function parseModuleFile(filePath) {
+    const content = readFileSync(filePath, 'utf-8');
+    const classMatch = content.match(/(?:export\s+)?class\s+(\w+Module)\b/);
+    if (!classMatch) return null;
+    const name = classMatch[1];
+    const decoratorMatch = content.match(/@Module\s*\(\s*\{([\s\S]*?)\}\s*\)/);
+    if (!decoratorMatch) return { name, filePath, imports: [], exports: [], providers: [] };
+
+    const block = decoratorMatch[1];
+    function extractArray(key) {
+      const regex = new RegExp(`${key}\\s*:\\s*\\[([\\s\\S]*?)\\]`);
+      const match = block.match(regex);
+      if (!match) return [];
+      const refs = match[1].match(/\b(\w+(?:Module|Service|Guard|Interceptor|Pipe|Filter))\b/g) || [];
+      return [...new Set(refs.filter(r => r !== name))];
+    }
+
+    return {
+      name, filePath,
+      imports: extractArray('imports').filter(i => i.endsWith('Module')),
+      exports: extractArray('exports'),
+      providers: extractArray('providers'),
+    };
+  }
+
+  // Analyze
+  let searchDir = join(flags.project, 'src');
+  let ext = '.ts';
   if (!existsSync(searchDir)) {
-    console.error(pc.red('Error: no dist/ or src/ directory found. Run from your project root.'));
+    searchDir = join(flags.project, 'dist');
+    ext = '.js';
+  }
+  if (!existsSync(searchDir)) {
+    console.error(pc.red('Error: no src/ or dist/ directory found. Run from your NestJS project root, or use --project=<path>.'));
     process.exit(1);
   }
 
-  // Recursively find all module files
-  const moduleFiles = [];
-  function walk(dir) {
-    for (const entry of readdirSync(dir)) {
-      const full = join(dir, entry);
-      if (statSync(full).isDirectory()) {
-        if (entry === 'node_modules' || entry === '.git') continue;
-        walk(full);
-      } else if (entry.endsWith(`.module${ext}`)) {
-        moduleFiles.push(full);
-      }
-    }
-  }
-  walk(searchDir);
-
+  const moduleFiles = walkDir(searchDir, ext);
   if (moduleFiles.length === 0) {
     console.log(pc.yellow('No module files found.'));
     process.exit(0);
   }
 
-  // Parse @Module({ imports: [...] }) from each file
-  const graph = new Map(); // moduleName -> [importedModuleNames]
-  const moduleNameRegex = /(?:export\s+)?class\s+(\w+Module)\b/g;
-  const importsRegex = /imports\s*:\s*\[([\s\S]*?)\]/g;
-
+  const modules = [];
   for (const file of moduleFiles) {
-    const content = readFileSync(file, 'utf-8');
-    let nameMatch;
-    moduleNameRegex.lastIndex = 0;
-    while ((nameMatch = moduleNameRegex.exec(content))) {
-      const moduleName = nameMatch[1];
-      const imports = [];
+    const mod = parseModuleFile(file);
+    if (mod) modules.push(mod);
+  }
 
-      importsRegex.lastIndex = 0;
-      let impMatch;
-      while ((impMatch = importsRegex.exec(content))) {
-        const block = impMatch[1];
-        // Extract module names from imports block
-        const refs = block.match(/(\w+Module)(?:\.(?:register|forRoot|forFeature|forRootAsync))?/g) || [];
-        for (const ref of refs) {
-          const cleanName = ref.replace(/\..*/, '');
-          if (cleanName !== moduleName) {
-            imports.push(cleanName);
-          }
-        }
-      }
-
-      graph.set(moduleName, [...new Set(imports)]);
+  const knownModules = new Set(modules.map(m => m.name));
+  const edges = [];
+  for (const mod of modules) {
+    for (const imp of mod.imports) {
+      if (knownModules.has(imp)) edges.push({ from: mod.name, to: imp });
     }
   }
 
-  // Detect cycles
-  const cycles = [];
-  const visited = new Set();
-  const stack = new Set();
+  const cycles = detectCycles(modules.map(m => m.name), edges);
 
-  function dfs(node, path) {
-    if (stack.has(node)) {
-      const cycleStart = path.indexOf(node);
-      cycles.push(path.slice(cycleStart).concat(node));
-      return;
+  // Stats
+  const fanOut = new Map();
+  const fanIn = new Map();
+  for (const mod of modules) { fanOut.set(mod.name, 0); fanIn.set(mod.name, 0); }
+  for (const e of edges) {
+    fanOut.set(e.from, (fanOut.get(e.from) || 0) + 1);
+    fanIn.set(e.to, (fanIn.get(e.to) || 0) + 1);
+  }
+  let maxFanOut = { module: '', count: 0 };
+  let maxFanIn = { module: '', count: 0 };
+  for (const [m, c] of fanOut) { if (c > maxFanOut.count) maxFanOut = { module: m, count: c }; }
+  for (const [m, c] of fanIn) { if (c > maxFanIn.count) maxFanIn = { module: m, count: c }; }
+
+  const stats = {
+    totalModules: modules.length,
+    totalEdges: edges.length,
+    maxFanOut, maxFanIn,
+    cycleCount: cycles.length,
+  };
+
+  const result = { modules, edges, cycles, stats };
+
+  // --- Output ---
+
+  if (flags.format === 'json') {
+    const jsonOutput = JSON.stringify({
+      modules: modules.map(m => ({ name: m.name, filePath: m.filePath, imports: m.imports, exports: m.exports, providers: m.providers })),
+      edges, cycles, stats,
+    }, null, 2);
+    if (flags.output) {
+      writeFileSync(flags.output, jsonOutput, 'utf-8');
+      console.log(pc.green(`JSON written to ${flags.output}`));
+    } else {
+      console.log(jsonOutput);
     }
-    if (visited.has(node)) return;
-    visited.add(node);
-    stack.add(node);
-    path.push(node);
-    for (const dep of (graph.get(node) || [])) {
-      dfs(dep, [...path]);
-    }
-    stack.delete(node);
+    if (flags.strict && cycles.length > 0) process.exit(1);
+    return;
   }
 
-  for (const node of graph.keys()) {
-    dfs(node, []);
+  // Mermaid output
+  const mermaidLines = ['graph TD'];
+  const nodesWithEdges = new Set();
+  for (const e of edges) { nodesWithEdges.add(e.from); nodesWithEdges.add(e.to); }
+  for (const mod of modules) {
+    if (!nodesWithEdges.has(mod.name)) mermaidLines.push(`    ${mod.name}[${mod.name}]`);
   }
-
-  // Output Mermaid diagram
-  console.log('');
-  console.log(pc.bold('Module Dependency Graph (Mermaid)'));
-  console.log('');
-  console.log('```mermaid');
-  console.log('graph TD');
-
-  for (const [mod, deps] of graph.entries()) {
-    if (deps.length === 0) {
-      console.log(`  ${mod}`);
-    }
-    for (const dep of deps) {
-      console.log(`  ${mod} --> ${dep}`);
-    }
+  for (const e of edges) mermaidLines.push(`    ${e.from} --> ${e.to}`);
+  const cycleNodes = new Set(cycles.flat());
+  for (const node of cycleNodes) {
+    mermaidLines.push(`    style ${node} fill:#ef4444,stroke:#dc2626,color:#fff`);
   }
+  const mermaidStr = mermaidLines.join('\n');
 
-  console.log('```');
+  // Build full output
+  let output = '';
+  output += `\n  ${pc.bold('nestjs-boot')} — Module Dependency Graph\n\n`;
+  output += `  Modules: ${stats.totalModules} | Edges: ${stats.totalEdges} | Cycles: ${stats.cycleCount}\n`;
 
-  // Report cycles
   if (cycles.length > 0) {
-    console.log('');
-    console.log(pc.red(pc.bold(`⚠ ${cycles.length} circular dependency(ies) detected:`)));
+    output += '\n';
     for (const cycle of cycles) {
-      console.log(pc.red(`  ${cycle.join(' → ')}`));
+      output += pc.red(`  ⚠ Cycle detected:\n`);
+      output += pc.red(`    ${cycle.join(' → ')} → ${cycle[0]}\n`);
     }
-    console.log('');
-    console.log(pc.yellow('Fix: use forwardRef() or extract shared logic into a SharedModule.'));
-    console.log(pc.yellow('Read: docs/guides/di-best-practices.md'));
-  } else {
-    console.log('');
-    console.log(pc.green('✓ No circular dependencies detected.'));
   }
-  console.log('');
+
+  output += '\n  Stats:\n';
+  if (maxFanOut.module) output += `    Max fan-out: ${maxFanOut.module} (${maxFanOut.count} imports)\n`;
+  if (maxFanIn.module) output += `    Max fan-in:  ${maxFanIn.module} (imported by ${maxFanIn.count} modules)\n`;
+
+  output += `\n  Mermaid diagram:\n\n`;
+  output += '  ```mermaid\n';
+  output += mermaidStr.split('\n').map(l => '  ' + l).join('\n') + '\n';
+  output += '  ```\n';
+
+  if (flags.output) {
+    // Write raw mermaid to file (no color codes)
+    const fileContent = `# Module Dependency Graph\n\nModules: ${stats.totalModules} | Edges: ${stats.totalEdges} | Cycles: ${stats.cycleCount}\n\n`
+      + (cycles.length > 0 ? cycles.map(c => `⚠ Cycle: ${c.join(' → ')} → ${c[0]}`).join('\n') + '\n\n' : '')
+      + '```mermaid\n' + mermaidStr + '\n```\n';
+    writeFileSync(flags.output, fileContent, 'utf-8');
+    console.log(pc.green(`Graph written to ${flags.output}`));
+  } else {
+    console.log(output);
+  }
+
+  if (cycles.length > 0) {
+    console.log(pc.yellow('  Fix: use forwardRef() or extract shared logic into a SharedModule.'));
+    console.log(pc.yellow('  Read: docs/guides/di-best-practices.md'));
+    console.log('');
+  } else {
+    console.log(pc.green('  ✓ No circular dependencies detected.'));
+    console.log('');
+  }
+
+  if (flags.strict && cycles.length > 0) {
+    process.exit(1);
+  }
 }
 
 // ── Main ────────────────────────────────────────────────────────────
 
 const args = process.argv.slice(2);
 
-// Handle `graph` subcommand — module dependency graph
+// Handle `graph` subcommand — module dependency graph analyzer
 if (args[0] === 'graph') {
-  generateGraph();
+  generateGraph(args.slice(1));
   process.exit(0);
 }
 

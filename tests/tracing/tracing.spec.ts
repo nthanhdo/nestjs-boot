@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import Module from 'module';
 import { Test } from '@nestjs/testing';
 import { TracingService } from '../../src/tracing/tracing.service';
 import { TracingModule } from '../../src/tracing/tracing.module';
@@ -10,21 +11,29 @@ import * as correlationStorage from '../../src/correlation/correlation.storage';
 // -------------------------------------------------------
 describe('initTracing', () => {
   it('does not crash when @opentelemetry/sdk-node is not installed', () => {
-    // Mock require to throw for OTel packages
+    // Mock require to throw for OTel packages (simulate not installed)
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const originalRequire = Module.prototype.require;
+    const mockRequire = function (this: any, id: string) {
+      if (id.includes('@opentelemetry')) {
+        throw new Error(`Cannot find module '${id}'`);
+      }
+      return originalRequire.call(this, id);
+    };
+    Module.prototype.require = mockRequire as any;
 
-    // initTracing uses require() internally — in test env the packages
-    // are not installed, so it should warn and return gracefully.
-    expect(() =>
-      initTracing({ exporter: 'console' }),
-    ).not.toThrow();
+    try {
+      expect(() =>
+        initTracing({ exporter: 'console' }),
+      ).not.toThrow();
 
-    // Should have logged a warning about missing package
-    expect(warnSpy).toHaveBeenCalledWith(
-      expect.stringContaining('not installed'),
-    );
-
-    warnSpy.mockRestore();
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('not installed'),
+      );
+    } finally {
+      Module.prototype.require = originalRequire;
+      warnSpy.mockRestore();
+    }
   });
 
   it('returns immediately when enabled is false', () => {

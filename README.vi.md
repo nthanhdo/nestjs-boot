@@ -9,13 +9,13 @@
 
 > [English version](README.md)
 
-## nestjs-boot la gi?
+## nestjs-boot là gì?
 
-`nestjs-boot` la mot **runtime package** (khong phai template hay boilerplate). Ban cai no nhu dependency, goi `createApp(AppModule, config)`, va no tu dong wire database, cache, auth, transport, queue, event, health check, metrics, tracing, va nhieu thu khac — dua tren nhung gi ban cau hinh. Moi module deu optional: bo qua phan config = module do khong duoc load. `AppModule` cua ban chi co business logic.
+`nestjs-boot` là một **runtime package** (không phải template hay boilerplate). Bạn cài nó như dependency, gọi `createApp(AppModule, config)`, và nó tự động wire database, cache, auth, transport, queue, event, health check, metrics, tracing, và nhiều thứ khác — dựa trên những gì bạn cấu hình. Mọi module đều optional: bỏ qua phần config = module đó không được load. `AppModule` của bạn chỉ có business logic.
 
-## Bat Dau Nhanh
+## Bắt Đầu Nhanh
 
-### Cach 1: Tao project moi (CLI tuong tac)
+### Cách 1: Tạo project mới (CLI tương tác)
 
 ```bash
 npx nestjs-boot new my-service
@@ -24,21 +24,21 @@ npm install
 npm run start:dev
 ```
 
-CLI se hoi ban chon database (MongoDB, PostgreSQL, MySQL, DynamoDB, Elasticsearch), cache (Redis, Memcached), auth (JWT), va transport (HTTP, gRPC, TCP, NATS, RabbitMQ). Hoac truyen flags truc tiep:
+CLI sẽ hỏi bạn chọn database (MongoDB, PostgreSQL, MySQL, DynamoDB, Elasticsearch), cache (Redis, Memcached), auth (JWT), và transport (HTTP, gRPC, TCP, NATS, RabbitMQ). Hoặc truyền flags trực tiếp:
 
 ```bash
 npx nestjs-boot new my-service --db=postgres --cache=redis --auth=jwt --transport=grpc
-npx nestjs-boot new my-service -y  # mac dinh: MongoDB + Redis + JWT + HTTP
+npx nestjs-boot new my-service -y  # mặc định: MongoDB + Redis + JWT + HTTP
 ```
 
-Thu nghiem:
+Thử nghiệm:
 
 ```bash
-curl http://localhost:3000/health       # kiem tra suc khoe
+curl http://localhost:3000/health       # kiểm tra sức khỏe
 curl http://localhost:3000/metrics      # Prometheus metrics
 ```
 
-### Cach 2: Chay vi du 10 services
+### Cách 2: Chạy ví dụ 10 services
 
 ```bash
 git clone https://github.com/nthanhdo/nestjs-boot.git
@@ -46,9 +46,9 @@ cd nestjs-boot/examples/microservices
 docker-compose up --build
 ```
 
-Khoi dong 10 services + MongoDB + Redis giao tiep qua gRPC. Xem chi tiet tai [examples/microservices/](examples/microservices/).
+Khởi động 10 services + MongoDB + Redis giao tiếp qua gRPC. Xem chi tiết tại [examples/microservices/](examples/microservices/).
 
-## Kien Truc
+## Kiến Trúc
 
 ```mermaid
 graph LR
@@ -63,13 +63,13 @@ graph LR
             ORD[Order<br/>:5003]
         end
 
-        subgraph evented ["Huong Su Kien"]
+        subgraph evented ["Hướng Sự Kiện"]
             NOTIF[Notification<br/>:5004]
             FULFILL[Fulfillment<br/>:5008]
             CAMP[Campaign<br/>:5009]
         end
 
-        subgraph content ["Noi Dung & Van Hanh"]
+        subgraph content ["Nội Dung & Vận Hành"]
             FILE[File<br/>:5005]
             BLOG[Blog<br/>:5007]
             SCHED[Scheduler<br/>:5006]
@@ -102,9 +102,9 @@ graph LR
     style REDIS fill:#dc2626,stroke:#b91c1c,color:#fff
 ```
 
-## `createApp()` -- Cach Hoat Dong
+## `createApp()` -- Cách Hoạt Động
 
-**Truoc** -- wire thu cong (~40 dong infrastructure moi service):
+**Trước** -- wire thủ công (~40 dòng infrastructure mỗi service):
 
 ```ts
 @Module({
@@ -120,7 +120,7 @@ graph LR
 export class AppModule {}
 ```
 
-**Sau** -- mot config object trong `main.ts`:
+**Sau** -- một config object trong `main.ts`:
 
 ```ts
 import { createApp } from 'nestjs-boot';
@@ -141,17 +141,17 @@ const app = await createApp(AppModule, {
 await app.listen(3000);
 ```
 
-### Trinh Tu Khoi Dong
+### Trình Tự Khởi Động
 
 ```mermaid
 flowchart TD
     A["createApp(AppModule, options)"] --> B0[Load file .env<br/>theo BOOT_ENV / NODE_ENV]
-    B0 --> B1[Validate config bang Joi]
+    B0 --> B1[Validate config bằng Joi]
     B1 --> B{options.tracing?}
-    B -->|Co| C[initTracing -- TRUOC NestFactory]
-    B -->|Khong| D[ ]
+    B -->|Có| C[initTracing -- TRƯỚC NestFactory]
+    B -->|Không| D[ ]
     C --> D
-    D --> E[Build BootModule dong]
+    D --> E[Build BootModule động]
     E --> F{database?}
     E --> G{cache?}
     E --> H{auth?}
@@ -160,28 +160,28 @@ flowchart TD
     E --> K{queue?}
     E --> L2{metrics?}
     E --> L3{logging?}
-    F -->|Co| F1[+ DatabaseModule]
-    G -->|Co| G1[+ CacheModule]
-    H -->|Co| H1[+ AuthModule]
-    I -->|Co| I1[+ TransportModule<br/>+ CorrelationModule<br/>+ RpcModule]
-    J -->|Co| J1[+ EventBusModule]
-    K -->|Co| K1[+ QueueModule]
-    L2 -->|Co| L21[+ MetricsModule]
-    L3 -->|Co| L31[+ LoggingModule]
-    F1 & G1 & H1 & I1 & J1 & K1 & L21 & L31 --> L[NestFactory.create<br/>voi DI error enrichment]
-    L --> M[Ap dung global guards /<br/>interceptors / filters]
-    M --> N{transport da cau hinh?}
-    N -->|Co| O[connectTransports +<br/>startAllMicroservices]
-    N -->|Khong| P[ ]
-    O --> Q[Config dump trong dev +<br/>tra ve app]
+    F -->|Có| F1[+ DatabaseModule]
+    G -->|Có| G1[+ CacheModule]
+    H -->|Có| H1[+ AuthModule]
+    I -->|Có| I1[+ TransportModule<br/>+ CorrelationModule<br/>+ RpcModule]
+    J -->|Có| J1[+ EventBusModule]
+    K -->|Có| K1[+ QueueModule]
+    L2 -->|Có| L21[+ MetricsModule]
+    L3 -->|Có| L31[+ LoggingModule]
+    F1 & G1 & H1 & I1 & J1 & K1 & L21 & L31 --> L[NestFactory.create<br/>với DI error enrichment]
+    L --> M[Áp dụng global guards /<br/>interceptors / filters]
+    M --> N{transport đã cấu hình?}
+    N -->|Có| O[connectTransports +<br/>startAllMicroservices]
+    N -->|Không| P[ ]
+    O --> Q[Config dump trong dev +<br/>trả về app]
     P --> Q
 ```
 
-## Cac Module
+## Các Module
 
 ### Database
 
-Ket noi nhieu MongoDB voi tu dong chia doc/ghi (reader/writer split). `BaseRepository<T>` cung cap CRUD + phan trang voi tu dong dinh tuyen ket noi. `CachedBaseRepository<T>` them cache-aside. `CrudService<T>` co lifecycle hooks (`beforeCreate`, `afterCreate`, v.v.). `UnitOfWork` ho tro MongoDB transactions. `Specification<T>` cho composable query filters.
+Kết nối nhiều MongoDB với tự động chia đọc/ghi (reader/writer split). `BaseRepository<T>` cung cấp CRUD + phân trang với tự động định tuyến kết nối. `CachedBaseRepository<T>` thêm cache-aside. `CrudService<T>` có lifecycle hooks (`beforeCreate`, `afterCreate`, v.v.). `UnitOfWork` hỗ trợ MongoDB transactions. `Specification<T>` cho composable query filters.
 
 ```ts
 database: {
@@ -192,13 +192,13 @@ database: {
 }
 ```
 
-**Migration:** `MigrationRunner` voi `_migrations` collection theo doi trang thai. CLI: `npx nestjs-boot migrate`, `migrate:create`, `migrate:rollback`, `migrate:status`.
+**Migration:** `MigrationRunner` với `_migrations` collection theo dõi trạng thái. CLI: `npx nestjs-boot migrate`, `migrate:create`, `migrate:rollback`, `migrate:status`.
 
 ### Cache
 
-L1 in-memory LRU + L2 Redis (tuy chon). Dinh tuyen theo kich thuoc (>1MB chi luu L2). Ho tro Memcached cho L1. `MultiCacheService` cung cap `getOrSet()`, `del()`, `delByPrefix()`.
+L1 in-memory LRU + L2 Redis (tùy chọn). Định tuyến theo kích thước (>1MB chỉ lưu L2). Hỗ trợ Memcached cho L1. `MultiCacheService` cung cấp `getOrSet()`, `del()`, `delByPrefix()`.
 
-**Nang cao:** `CacheStampedeGuard` (chong thundering herd — chi 1 request goi DB khi cache het han), `CacheWarmer` (lam nong cache khi khoi dong), `TaggedCacheService` (vo hieu theo tag), `CacheStats` (thong ke hit rate).
+**Nâng cao:** `CacheStampedeGuard` (chống thundering herd — chỉ 1 request gọi DB khi cache hết hạn), `CacheWarmer` (làm nóng cache khi khởi động), `TaggedCacheService` (vô hiệu theo tag), `CacheStats` (thống kê hit rate).
 
 ```ts
 cache: { redis: { url: 'redis://localhost:6379' }, defaultTtl: 300 }
@@ -206,12 +206,12 @@ cache: { redis: { url: 'redis://localhost:6379' }, defaultTtl: 300 }
 
 ### Auth
 
-Bo xac thuc day du: JWT (access + refresh + thu hoi token), API key, RBAC (`@Roles`, `@Permissions`), `@Public()`, `@CurrentUser()`.
+Bộ xác thực đầy đủ: JWT (access + refresh + thu hồi token), API key, RBAC (`@Roles`, `@Permissions`), `@Public()`, `@CurrentUser()`.
 
-- **Social/OAuth2:** `SocialAuthModule` voi `GoogleStrategy` va `GitHubStrategy`.
-- **TOTP:** `TotpService` cho xac thuc 2 yeu to (tao secret, xac minh token).
-- **Session:** `SessionAuthModule` voi `SessionStore` co the thay the va `@Session()`.
-- **WebSocket:** `WsJwtGuard` cho ket noi WebSocket co xac thuc.
+- **Social/OAuth2:** `SocialAuthModule` với `GoogleStrategy` và `GitHubStrategy`.
+- **TOTP:** `TotpService` cho xác thực 2 yếu tố (tạo secret, xác minh token).
+- **Session:** `SessionAuthModule` với `SessionStore` có thể thay thế và `@Session()`.
+- **WebSocket:** `WsJwtGuard` cho kết nối WebSocket có xác thực.
 - **Token lifecycle:** `signPasswordReset()`, `signEmailVerification()`, `rotateRefreshToken()`.
 
 ```ts
@@ -224,7 +224,7 @@ auth: {
 
 ### Transport
 
-Cau hinh hybrid HTTP + gRPC/TCP/NATS/RabbitMQ. `ServiceClient<T>` cung cap goi RPC type-safe voi tu dong chuyen tiep correlation ID. `createResilientClient()` boc client voi circuit breaker + retry. `ServiceDiscoveryHook` ho tro phan giai service dong.
+Cấu hình hybrid HTTP + gRPC/TCP/NATS/RabbitMQ. `ServiceClient<T>` cung cấp gọi RPC type-safe với tự động chuyển tiếp correlation ID. `createResilientClient()` bọc client với circuit breaker + retry. `ServiceDiscoveryHook` hỗ trợ phân giải service động.
 
 ```ts
 transport: {
@@ -235,12 +235,12 @@ transport: {
 }
 ```
 
-### Quan Sat (Observability)
+### Quan Sát (Observability)
 
-- **Metrics:** Prometheus endpoint qua `MetricsModule`. Tu dong do HTTP, DB, Cache, Queue.
-- **Logging:** Pino co cau truc qua `LoggingModule`. Tu dong gan correlationId vao moi log.
-- **Tracing:** OpenTelemetry qua `TracingModule`. `@BootTrace('ten')` tu dong tao span. `initTracing()` chay truoc NestFactory.
-- **Correlation:** `X-Correlation-Id` lan truyen giua cac service qua `AsyncLocalStorage`.
+- **Metrics:** Prometheus endpoint qua `MetricsModule`. Tự động đo HTTP, DB, Cache, Queue.
+- **Logging:** Pino có cấu trúc qua `LoggingModule`. Tự động gắn correlationId vào mọi log.
+- **Tracing:** OpenTelemetry qua `TracingModule`. `@BootTrace('tên')` tự động tạo span. `initTracing()` chạy trước NestFactory.
+- **Correlation:** `X-Correlation-Id` lan truyền giữa các service qua `AsyncLocalStorage`.
 - **Grafana:** 3 dashboard templates (HTTP overview, service health, microservice overview) + alert rules.
 
 ```ts
@@ -249,92 +249,92 @@ logging: { level: 'info', pretty: true, redact: ['req.headers.authorization'] },
 tracing: { exporter: 'otlp', endpoint: 'http://jaeger:4318', sampleRate: 0.1 },
 ```
 
-### Kha Nang Phuc Hoi (Resilience)
+### Khả Năng Phục Hồi (Resilience)
 
-`@CircuitBreaker()` boc method voi may trang thai dong/mo/nua-mo. `@Retry({ attempts: 3, backoff: 'exponential' })` tu dong thu lai. `@Timeout(5000)` gioi han thoi gian moi method.
+`@CircuitBreaker()` bọc method với máy trạng thái đóng/mở/nửa-mở. `@Retry({ attempts: 3, backoff: 'exponential' })` tự động thử lại. `@Timeout(5000)` giới hạn thời gian mỗi method.
 
-### Xu Ly Loi
+### Xử Lý Lỗi
 
-`AllExceptionsFilter` cho loi HTTP co cau truc. `BootRpcExceptionFilter` cho gRPC voi anh xa trang thai HTTP↔gRPC. `BootException` them truong `code` + `details` on dinh. `MongooseErrorInterceptor` chuyen doi loi duplicate-key va validation. `toProblemDetails()` xuat theo RFC 9457. `ErrorReporter` tich hop Sentry/Datadog. `errorBoundary()` boc goi async voi fallback.
+`AllExceptionsFilter` cho lỗi HTTP có cấu trúc. `BootRpcExceptionFilter` cho gRPC với ánh xạ trạng thái HTTP↔gRPC. `BootException` thêm trường `code` + `details` ổn định. `MongooseErrorInterceptor` chuyển đổi lỗi duplicate-key và validation. `toProblemDetails()` xuất theo RFC 9457. `ErrorReporter` tích hợp Sentry/Datadog. `errorBoundary()` bọc gọi async với fallback.
 
 ```ts
-throw new BootException('Khong tim thay', { code: ErrorCodes.NOT_FOUND, status: 404 });
+throw new BootException('Không tìm thấy', { code: ErrorCodes.NOT_FOUND, status: 404 });
 ```
 
-### Queue & Su Kien
+### Queue & Sự Kiện
 
-- **Queue:** BullMQ voi `@Processor`, `@Process`, `@OnFailed`, `@OnCompleted`. `QueueService.addJob()` de them vao hang doi.
-- **Su kien:** Event bus trong process hoac Redis pub/sub. `BootEvent` cho fire-and-forget. `BootQuery` cho request/response (`emitAndWait`).
+- **Queue:** BullMQ với `@Processor`, `@Process`, `@OnFailed`, `@OnCompleted`. `QueueService.addJob()` để thêm vào hàng đợi.
+- **Sự kiện:** Event bus trong process hoặc Redis pub/sub. `BootEvent` cho fire-and-forget. `BootQuery` cho request/response (`emitAndWait`).
 
 ### CQRS & Event Sourcing
 
-- **CommandBus:** Dinh tuyen 1:1 command toi handler qua `@CommandHandler`.
-- **AggregateRoot:** Pattern DDD voi `apply()`, `loadFromHistory()`, quan ly version.
+- **CommandBus:** Định tuyến 1:1 command tới handler qua `@CommandHandler`.
+- **AggregateRoot:** Pattern DDD với `apply()`, `loadFromHistory()`, quản lý version.
 - **EventStore:** MongoDB + memory adapter, interface cho EventStoreDB/Kafka.
-- **Projection:** `@OnDomainEvent` xay dung read model tu dong khi stream.
-- **Outbox:** Ghi event vao DB cung transaction, publish bat dong bo — dam bao at-least-once.
-- **Saga:** `defineSaga()` builder voi bu tru nguoc (reverse compensations).
+- **Projection:** `@OnDomainEvent` xây dựng read model tự động khi stream.
+- **Outbox:** Ghi event vào DB cùng transaction, publish bất đồng bộ — đảm bảo at-least-once.
+- **Saga:** `defineSaga()` builder với bù trừ ngược (reverse compensations).
 
-### Cau Hinh
+### Cấu Hình
 
-Joi validation, `.env` + `.env.{BOOT_ENV}` profiles, `BootConfigService` truy cap kieu dot-notation. Load bat dong bo qua `registerAsync()`. Adapter: `AwsSecretsAdapter`, `VaultAdapter`, `EnvFileAdapter`. `ConfigWatcher` cho dev hot-reload. `generateConfigDocs()` xuat tai lieu config.
+Joi validation, `.env` + `.env.{BOOT_ENV}` profiles, `BootConfigService` truy cập kiểu dot-notation. Load bất đồng bộ qua `registerAsync()`. Adapter: `AwsSecretsAdapter`, `VaultAdapter`, `EnvFileAdapter`. `ConfigWatcher` cho dev hot-reload. `generateConfigDocs()` xuất tài liệu config.
 
-### An Toan DI (Dependency Injection)
+### An Toàn DI (Dependency Injection)
 
-- **Lam giau loi:** `parseDiError()` + `formatDiError()` bien loi DI kho hieu thanh huong dan sua cu the.
-- **Contract:** `createContract<T>()` dinh nghia DI token dua tren interface. Tranh circular dep.
-- **Phan tich do thi:** `analyzeModules()` + `detectCycles()` (Tarjan's SCC) + `renderMermaid()`.
-- **Lop module:** `@Layer(ModuleLayer.DOMAIN)` + `validateLayers()` ngan import nguoc.
+- **Làm giàu lỗi:** `parseDiError()` + `formatDiError()` biến lỗi DI khó hiểu thành hướng dẫn sửa cụ thể.
+- **Contract:** `createContract<T>()` định nghĩa DI token dựa trên interface. Tránh circular dep.
+- **Phân tích đồ thị:** `analyzeModules()` + `detectCycles()` (Tarjan's SCC) + `renderMermaid()`.
+- **Lớp module:** `@Layer(ModuleLayer.DOMAIN)` + `validateLayers()` ngăn import ngược.
 
 ### Multi-tenancy
 
-3 chien luoc cach ly: row-level (chung collection, filter theo `tenantId`), schema-level (prefix collection), database-level (connection rieng moi tenant). `TenantAwareRepository` tu dong scope query. `@CurrentTenant()` decorator.
+3 chiến lược cách ly: row-level (chung collection, filter theo `tenantId`), schema-level (prefix collection), database-level (connection riêng mỗi tenant). `TenantAwareRepository` tự động scope query. `@CurrentTenant()` decorator.
 
 ### API Versioning
 
-URI / header / media-type versioning. `@DeprecatedVersion('2027-01-01')` them header Sunset.
+URI / header / media-type versioning. `@DeprecatedVersion('2027-01-01')` thêm header Sunset.
 
 ### Swagger/OpenAPI
 
-Tu dong cau hinh tu `package.json`. Them auth scheme khi AuthModule duoc cau hinh. `@ApiPaginated`, `@ApiErrorResponses`, `AutoApiProperties()`.
+Tự động cấu hình từ `package.json`. Thêm auth scheme khi AuthModule được cấu hình. `@ApiPaginated`, `@ApiErrorResponses`, `AutoApiProperties()`.
 
 ### WebSocket
 
-Redis adapter cho scaling nhieu instance. `BootWsGateway` base class. `WsCorrelationInterceptor` gan correlationId moi message.
+Redis adapter cho scaling nhiều instance. `BootWsGateway` base class. `WsCorrelationInterceptor` gắn correlationId mọi message.
 
-### Thanh Toan (Webhooks)
+### Thanh Toán (Webhooks)
 
-Xac minh signature Stripe/PayPal (HMAC-SHA256). `IdempotencyGuard` ngan xu ly trung. Custom provider qua interface.
+Xác minh signature Stripe/PayPal (HMAC-SHA256). `IdempotencyGuard` ngăn xử lý trùng. Custom provider qua interface.
 
-### Luu Tru File
+### Lưu Trữ File
 
-Adapter: local / S3 / GCS. `FileValidationPipe` kiem tra mime + size truoc upload. `getSignedUrl()` cho URL tam thoi.
+Adapter: local / S3 / GCS. `FileValidationPipe` kiểm tra mime + size trước upload. `getSignedUrl()` cho URL tạm thời.
 
-### Kiem Thu (Testing)
+### Kiểm Thử (Testing)
 
-`createTestSuite()` — quan ly lifecycle day du. `createFactory<T>()` — factory voi traits, sequence, `afterCreate` hook. `createTestClient()` — supertest voi typed response. `createGrpcTestClient()` — test gRPC in-process. `createMessageDispatcher()` — test message pattern. `ContractVerifier` — xac minh contract. `expectSnapshot()` — snapshot testing. `createTestJwt()` + `MockAuthModule` — auth test helper.
+`createTestSuite()` — quản lý lifecycle đầy đủ. `createFactory<T>()` — factory với traits, sequence, `afterCreate` hook. `createTestClient()` — supertest với typed response. `createGrpcTestClient()` — test gRPC in-process. `createMessageDispatcher()` — test message pattern. `ContractVerifier` — xác minh contract. `expectSnapshot()` — snapshot testing. `createTestJwt()` + `MockAuthModule` — auth test helper.
 
 ### Health & Shutdown
 
-Health tu dong phat hien driver (MongoDB, Redis). Tra 503 khi dang shutdown. `ShutdownModule` drain request, dong ket noi, flush queue. Nhan biet K8s voi preStop delay.
+Health tự động phát hiện driver (MongoDB, Redis). Trả 503 khi đang shutdown. `ShutdownModule` drain request, đóng kết nối, flush queue. Nhận biết K8s với preStop delay.
 
-## Lenh CLI
+## Lệnh CLI
 
 ```bash
-npx nestjs-boot new <ten>                    # tao project moi (tuong tac)
-npx nestjs-boot new <ten> -y                 # mac dinh, khong hoi
-npx nestjs-boot new <ten> --db=postgres      # chon database
-npx nestjs-boot g resource <ten>             # tao CRUD resource
-npx nestjs-boot g resource <ten> --grpc      # resource voi gRPC
-npx nestjs-boot graph                        # do thi dependency (Mermaid)
-npx nestjs-boot graph --strict               # thoat 1 neu co cycle (CI)
-npx nestjs-boot migrate                      # chay migration
-npx nestjs-boot migrate:create <ten>         # tao migration moi
-npx nestjs-boot migrate:rollback             # rollback migration cuoi
-npx nestjs-boot migrate:status               # trang thai migration
+npx nestjs-boot new <tên>                    # tạo project mới (tương tác)
+npx nestjs-boot new <tên> -y                 # mặc định, không hỏi
+npx nestjs-boot new <tên> --db=postgres      # chọn database
+npx nestjs-boot g resource <tên>             # tạo CRUD resource
+npx nestjs-boot g resource <tên> --grpc      # resource với gRPC
+npx nestjs-boot graph                        # đồ thị dependency (Mermaid)
+npx nestjs-boot graph --strict               # thoát 1 nếu có cycle (CI)
+npx nestjs-boot migrate                      # chạy migration
+npx nestjs-boot migrate:create <tên>         # tạo migration mới
+npx nestjs-boot migrate:rollback             # rollback migration cuối
+npx nestjs-boot migrate:status               # trạng thái migration
 ```
 
-## Cau Hinh Day Du
+## Cấu Hình Đầy Đủ
 
 ```ts
 interface BootOptions {
@@ -366,31 +366,31 @@ interface BootOptions {
 }
 ```
 
-Moi phan deu optional. Bo qua = module khong duoc load.
+Mọi phần đều optional. Bỏ qua = module không được load.
 
-## Huong Dan
+## Hướng Dẫn
 
-- [Ngan Chan Circular Dependency](docs/guides/circular-dependency-prevention.md)
-- [Thuc Hanh Tot DI](docs/guides/di-best-practices.md)
-- [Huong Dan Kiem Thu](docs/guides/testing-guide.md)
-- [Chon Transport](docs/guides/transport-selection.md)
+- [Ngăn Chặn Circular Dependency](docs/guides/circular-dependency-prevention.md)
+- [Thực Hành Tốt DI](docs/guides/di-best-practices.md)
+- [Hướng Dẫn Kiểm Thử](docs/guides/testing-guide.md)
+- [Chọn Transport](docs/guides/transport-selection.md)
 - [Auth & Rate Limiting](docs/guides/auth-rate-limiting.md)
 - [Checklist Production](docs/guides/production-checklist.md)
-- [Luu Y Serverless](docs/guides/serverless-considerations.md)
+- [Lưu Ý Serverless](docs/guides/serverless-considerations.md)
 
-## Vi Du
+## Ví Dụ
 
-- **[Kien truc 10 microservices](examples/microservices/)** — API Gateway + 9 services, gRPC, EventBus, BullMQ
-- **[Skeleton hoc tap](examples/learning/)** — 12 bai hoc, 10 bai tap, loi giai day du
+- **[Kiến trúc 10 microservices](examples/microservices/)** — API Gateway + 9 services, gRPC, EventBus, BullMQ
+- **[Skeleton học tập](examples/learning/)** — 12 bài học, 10 bài tập, lời giải đầy đủ
 
-## Cong Cu
+## Công Cụ
 
-- **[Web Generator](packages/web-generator/)** — tao project trong trinh duyet, xuat ZIP
-- **[Admin Dashboard](packages/admin-dashboard/)** — quan ly va giam sat truc quan
+- **[Web Generator](packages/web-generator/)** — tạo project trong trình duyệt, xuất ZIP
+- **[Admin Dashboard](packages/admin-dashboard/)** — quản lý và giám sát trực quan
 
-## Su Dung Doc Lap
+## Sử Dụng Độc Lập
 
-Dung bat ky module nao ma khong can `createApp()`:
+Dùng bất kỳ module nào mà không cần `createApp()`:
 
 ```ts
 import { DatabaseModule, CacheModule, AuthModule } from 'nestjs-boot';
@@ -405,7 +405,7 @@ import { DatabaseModule, CacheModule, AuthModule } from 'nestjs-boot';
 export class AppModule {}
 ```
 
-## Dong Gop
+## Đóng Góp
 
 ```bash
 git clone https://github.com/nthanhdo/nestjs-boot.git
@@ -415,6 +415,6 @@ npm test           # 507 tests
 npm run build      # CJS + ESM + DTS
 ```
 
-## Giay Phep
+## Giấy Phép
 
 [MIT](LICENSE)

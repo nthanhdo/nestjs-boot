@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>nestjs-boot — Visualize Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/flow.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div style="display:flex;align-items:center;">
+      <h1>nestjs-boot</h1>
+      <span class="subtitle">Interactive Flow Visualizer</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:.75rem;">
+      <div class="speed-control">
+        <label for="speed-slider">Speed</label>
+        <input type="range" id="speed-slider" min="0.25" max="3" step="0.25" value="1">
+        <span id="speed-label">1x</span>
+      </div>
+      <button class="ctrl-btn" id="global-pause">⏸ Pause</button>
+    </div>
+  </header>
+
+  <!-- Tab Navigation -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="boot">🚀 Boot Sequence</button>
+    <button class="tab-btn" data-tab="request">🔄 Request Flow</button>
+    <button class="tab-btn" data-tab="event">📡 Event Flow</button>
+    <button class="tab-btn" data-tab="grpc">🔗 gRPC Inter-Service</button>
+    <button class="tab-btn" data-tab="cqrs">📚 CQRS / Event Sourcing</button>
+    <button class="tab-btn" data-tab="deps">🗺️ Module Dependencies</button>
+  </nav>
+
+  <!-- ═══════════════════════════════════════════════════
+       Section 1: Boot Sequence
+       ═══════════════════════════════════════════════════ -->
+  <section id="section-boot" class="flow-section active">
+    <h2 class="section-title">Boot Sequence Flow</h2>
+    <p class="section-desc">
+      Animated step-by-step visualization of <code style="color:var(--brand);">createApp()</code>.
+      Each step lights up in sequence. Toggle modules to see how the boot composition changes.
+    </p>
+
+    <div class="controls">
+      <button class="ctrl-btn" id="boot-play">▶ Play</button>
+      <div class="toggle-group">
+        <input type="checkbox" id="boot-db" checked><label for="boot-db">Database</label>
+      </div>
+      <div class="toggle-group">
+        <input type="checkbox" id="boot-cache" checked><label for="boot-cache">Cache</label>
+      </div>
+      <div class="toggle-group">
+        <input type="checkbox" id="boot-auth" checked><label for="boot-auth">Auth</label>
+      </div>
+      <div class="toggle-group">
+        <input type="checkbox" id="boot-events" checked><label for="boot-events">Events</label>
+      </div>
+      <div class="toggle-group">
+        <input type="checkbox" id="boot-grpc"><label for="boot-grpc">gRPC</label>
+      </div>
+      <div class="toggle-group">
+        <input type="checkbox" id="boot-cqrs"><label for="boot-cqrs">CQRS</label>
+      </div>
+    </div>
+
+    <div class="flow-canvas" id="boot-canvas" style="height:420px;"></div>
+    <div class="boot-progress"><div class="boot-progress-bar"></div></div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════
+       Section 2: Request Flow
+       ═══════════════════════════════════════════════════ -->
+  <section id="section-request" class="flow-section">
+    <h2 class="section-title">Request Flow</h2>
+    <p class="section-desc">
+      Animated request lifecycle through the middleware stack. Toggle cache hit/miss or error path to see different routes.
+    </p>
+
+    <div class="controls">
+      <button class="ctrl-btn" id="req-play">▶ Play</button>
+      <div class="toggle-group">
+        <input type="checkbox" id="req-cache-hit"><label for="req-cache-hit">Cache Hit</label>
+      </div>
+      <div class="toggle-group">
+        <input type="checkbox" id="req-error"><label for="req-error">Error Path (401)</label>
+      </div>
+    </div>
+
+    <div class="flow-canvas" id="request-canvas" style="height:420px;"></div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════
+       Section 3: Event Flow
+       ═══════════════════════════════════════════════════ -->
+  <section id="section-event" class="flow-section">
+    <h2 class="section-title">Event Flow</h2>
+    <p class="section-desc">
+      Watch domain events propagate from emission through the EventBus to multiple subscribers via fan-out.
+    </p>
+
+    <div class="controls">
+      <button class="ctrl-btn" id="event-play">▶ Play</button>
+    </div>
+
+    <div class="flow-canvas" id="event-canvas" style="height:440px;"></div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════
+       Section 4: gRPC Inter-Service
+       ═══════════════════════════════════════════════════ -->
+  <section id="section-grpc" class="flow-section">
+    <h2 class="section-title">gRPC Inter-Service Flow</h2>
+    <p class="section-desc">
+      Two-service communication over gRPC with automatic correlation ID and auth metadata injection.
+    </p>
+
+    <div class="controls">
+      <button class="ctrl-btn" id="grpc-play">▶ Play</button>
+      <button class="ctrl-btn" id="grpc-cb-toggle">Toggle Circuit Breaker</button>
+      <div class="cb-indicator">
+        <span class="cb-dot closed"></span>
+        <span id="cb-label">Closed</span>
+      </div>
+    </div>
+
+    <div class="flow-canvas" id="grpc-canvas" style="height:380px;"></div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════
+       Section 5: CQRS / Event Sourcing
+       ═══════════════════════════════════════════════════ -->
+  <section id="section-cqrs" class="flow-section">
+    <h2 class="section-title">CQRS / Event Sourcing Flow</h2>
+    <p class="section-desc">
+      Command → Handler → Aggregate → EventStore → fan-out to Projection, Outbox, and Snapshot.
+      Watch the event version increment with each cycle.
+    </p>
+
+    <div class="controls">
+      <button class="ctrl-btn" id="cqrs-play">▶ Play</button>
+      <span style="font-size:.8rem;color:var(--text-dim);">Event version:</span>
+      <span class="ev-version" id="ev-version">v0</span>
+    </div>
+
+    <div class="flow-canvas" id="cqrs-canvas" style="height:440px;"></div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════
+       Section 6: Module Dependency Map
+       ═══════════════════════════════════════════════════ -->
+  <section id="section-deps" class="flow-section">
+    <h2 class="section-title">Module Dependency Map</h2>
+    <p class="section-desc">
+      Interactive graph of 55+ modules. Click a module to highlight its dependencies and dependants.
+      Pan by dragging empty space. Filter by category or search.
+    </p>
+
+    <div class="controls">
+      <input type="text" class="dep-search" id="dep-search" placeholder="Search modules...">
+      <button class="ctrl-btn dep-cat-btn" data-cat="core">Core</button>
+      <button class="ctrl-btn dep-cat-btn" data-cat="database">Database</button>
+      <button class="ctrl-btn dep-cat-btn" data-cat="cache">Cache</button>
+      <button class="ctrl-btn dep-cat-btn" data-cat="auth">Auth</button>
+      <button class="ctrl-btn dep-cat-btn" data-cat="transport">Transport</button>
+      <button class="ctrl-btn dep-cat-btn" data-cat="event">Event</button>
+      <button class="ctrl-btn dep-cat-btn" data-cat="observe">Observe</button>
+      <button class="ctrl-btn dep-cat-btn" data-cat="cqrs">CQRS</button>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--cat-core)"></div>Core</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--cat-database)"></div>Database</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--cat-cache)"></div>Cache</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--cat-auth)"></div>Auth</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--cat-transport)"></div>Transport</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--cat-event)"></div>Event</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--cat-observe)"></div>Observe</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--cat-cqrs)"></div>CQRS</div>
+    </div>
+
+    <div class="dep-map">
+      <canvas id="dep-canvas"></canvas>
+    </div>
+  </section>
+
+  <!-- Detail Panel (shared) -->
+  <div class="detail-overlay"></div>
+  <div class="detail-panel">
+    <button class="close-btn">&times;</button>
+    <h3></h3>
+    <p></p>
+    <code></code>
+  </div>
+
+  <script src="js/flow.js"></script>
+</body>
+</html>

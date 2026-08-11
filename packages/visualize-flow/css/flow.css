@@ -150,6 +150,20 @@ body {
   margin-top: .15rem;
 }
 
+/* Decision diamond node */
+.flow-node.diamond {
+  min-width: 60px;
+  padding: .4rem .6rem;
+  transform: rotate(45deg);
+  border-radius: .25rem;
+  border-color: var(--yellow);
+}
+.flow-node.diamond .node-icon,
+.flow-node.diamond .node-label {
+  transform: rotate(-45deg);
+  display: block;
+}
+
 /* Node colour variants */
 .flow-node[data-cat="core"]      { --node-color: var(--cat-core);      --glow-rgb: 14,165,233; }
 .flow-node[data-cat="database"]  { --node-color: var(--cat-database);  --glow-rgb: 16,185,129; }
@@ -161,6 +175,7 @@ body {
 .flow-node[data-cat="cqrs"]      { --node-color: var(--cat-cqrs);      --glow-rgb: 99,102,241; }
 .flow-node[data-cat="success"]   { --node-color: var(--green);          --glow-rgb: 16,185,129; }
 .flow-node[data-cat="error"]     { --node-color: var(--red);            --glow-rgb: 239,68,68; }
+.flow-node[data-cat="decision"]  { --node-color: var(--yellow);         --glow-rgb: 245,158,11; }
 
 /* ---------- SVG Connectors ---------- */
 .flow-canvas svg.connectors {
@@ -168,13 +183,57 @@ body {
   width: 100%; height: 100%;
   pointer-events: none; z-index: 1;
 }
-.connector-line {
-  fill: none; stroke: var(--border); stroke-width: 2;
-  stroke-dasharray: 6 4;
+
+/* Connector path styles */
+.connector-path {
+  fill: none;
+  stroke: rgba(100,116,139,0.35);
+  stroke-width: 2;
+  stroke-dasharray: 8 4;
+  animation: flow-dash 1s linear infinite;
 }
-.connector-line.active {
+
+@keyframes flow-dash {
+  to { stroke-dashoffset: -12; }
+}
+
+.connector-path.active {
   stroke: var(--brand);
-  filter: drop-shadow(0 0 4px rgba(14,165,233,.4));
+  stroke-width: 3;
+  filter: drop-shadow(0 0 6px var(--brand));
+}
+
+.connector-path.return-path {
+  stroke: rgba(239,68,68,0.5);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 8;
+  animation: flow-dash-reverse 1.2s linear infinite;
+}
+
+@keyframes flow-dash-reverse {
+  to { stroke-dashoffset: 12; }
+}
+
+.connector-path.optional-path {
+  stroke: rgba(100,116,139,0.25);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 6;
+}
+
+.connector-path.branch-upper {
+  stroke: rgba(16,185,129,0.5);
+}
+.connector-path.branch-lower {
+  stroke: rgba(245,158,11,0.5);
+}
+.connector-path.fan-out {
+  stroke: rgba(236,72,153,0.45);
+  stroke-width: 2;
+}
+.connector-path.glow {
+  filter: drop-shadow(0 0 6px currentColor);
+  stroke-width: 3;
+  opacity: 1;
 }
 
 /* ---------- Animated Packet ---------- */

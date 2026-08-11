@@ -22,23 +22,21 @@
         <input type="range" id="speed-slider" min="0.25" max="3" step="0.25" value="1">
         <span id="speed-label">1x</span>
       </div>
-      <button class="ctrl-btn" id="global-pause">⏸ Pause</button>
+      <button class="ctrl-btn" id="global-pause">&#x23F8; Pause</button>
     </div>
   </header>
 
   <!-- Tab Navigation -->
   <nav class="tab-bar">
-    <button class="tab-btn active" data-tab="boot">🚀 Boot Sequence</button>
-    <button class="tab-btn" data-tab="request">🔄 Request Flow</button>
-    <button class="tab-btn" data-tab="event">📡 Event Flow</button>
-    <button class="tab-btn" data-tab="grpc">🔗 gRPC Inter-Service</button>
-    <button class="tab-btn" data-tab="cqrs">📚 CQRS / Event Sourcing</button>
-    <button class="tab-btn" data-tab="deps">🗺️ Module Dependencies</button>
+    <button class="tab-btn active" data-tab="boot">&#x1F680; Boot Sequence</button>
+    <button class="tab-btn" data-tab="request">&#x1F504; Request Flow</button>
+    <button class="tab-btn" data-tab="event">&#x1F4E1; Event Flow</button>
+    <button class="tab-btn" data-tab="grpc">&#x1F517; gRPC Inter-Service</button>
+    <button class="tab-btn" data-tab="cqrs">&#x1F4DA; CQRS / Event Sourcing</button>
+    <button class="tab-btn" data-tab="deps">&#x1F5FA;&#xFE0F; Module Dependencies</button>
   </nav>
 
-  <!-- ═══════════════════════════════════════════════════
-       Section 1: Boot Sequence
-       ═══════════════════════════════════════════════════ -->
+  <!-- Section 1: Boot Sequence -->
   <section id="section-boot" class="flow-section active">
     <h2 class="section-title">Boot Sequence Flow</h2>
     <p class="section-desc">
@@ -47,7 +45,7 @@
     </p>
 
     <div class="controls">
-      <button class="ctrl-btn" id="boot-play">▶ Play</button>
+      <button class="ctrl-btn" id="boot-play">&#x25B6; Play</button>
       <div class="toggle-group">
         <input type="checkbox" id="boot-db" checked><label for="boot-db">Database</label>
       </div>
@@ -72,9 +70,7 @@
     <div class="boot-progress"><div class="boot-progress-bar"></div></div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════════
-       Section 2: Request Flow
-       ═══════════════════════════════════════════════════ -->
+  <!-- Section 2: Request Flow -->
   <section id="section-request" class="flow-section">
     <h2 class="section-title">Request Flow</h2>
     <p class="section-desc">
@@ -82,7 +78,7 @@
     </p>
 
     <div class="controls">
-      <button class="ctrl-btn" id="req-play">▶ Play</button>
+      <button class="ctrl-btn" id="req-play">&#x25B6; Play</button>
       <div class="toggle-group">
         <input type="checkbox" id="req-cache-hit"><label for="req-cache-hit">Cache Hit</label>
       </div>
@@ -94,9 +90,7 @@
     <div class="flow-canvas" id="request-canvas" style="height:420px;"></div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════════
-       Section 3: Event Flow
-       ═══════════════════════════════════════════════════ -->
+  <!-- Section 3: Event Flow -->
   <section id="section-event" class="flow-section">
     <h2 class="section-title">Event Flow</h2>
     <p class="section-desc">
@@ -104,15 +98,13 @@
     </p>
 
     <div class="controls">
-      <button class="ctrl-btn" id="event-play">▶ Play</button>
+      <button class="ctrl-btn" id="event-play">&#x25B6; Play</button>
     </div>
 
     <div class="flow-canvas" id="event-canvas" style="height:440px;"></div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════════
-       Section 4: gRPC Inter-Service
-       ═══════════════════════════════════════════════════ -->
+  <!-- Section 4: gRPC Inter-Service -->
   <section id="section-grpc" class="flow-section">
     <h2 class="section-title">gRPC Inter-Service Flow</h2>
     <p class="section-desc">
@@ -120,7 +112,7 @@
     </p>
 
     <div class="controls">
-      <button class="ctrl-btn" id="grpc-play">▶ Play</button>
+      <button class="ctrl-btn" id="grpc-play">&#x25B6; Play</button>
       <button class="ctrl-btn" id="grpc-cb-toggle">Toggle Circuit Breaker</button>
       <div class="cb-indicator">
         <span class="cb-dot closed"></span>
@@ -131,18 +123,16 @@
     <div class="flow-canvas" id="grpc-canvas" style="height:380px;"></div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════════
-       Section 5: CQRS / Event Sourcing
-       ═══════════════════════════════════════════════════ -->
+  <!-- Section 5: CQRS / Event Sourcing -->
   <section id="section-cqrs" class="flow-section">
     <h2 class="section-title">CQRS / Event Sourcing Flow</h2>
     <p class="section-desc">
-      Command → Handler → Aggregate → EventStore → fan-out to Projection, Outbox, and Snapshot.
+      Command &rarr; Handler &rarr; Aggregate &rarr; EventStore &rarr; fan-out to Projection, Outbox, and Snapshot.
       Watch the event version increment with each cycle.
     </p>
 
     <div class="controls">
-      <button class="ctrl-btn" id="cqrs-play">▶ Play</button>
+      <button class="ctrl-btn" id="cqrs-play">&#x25B6; Play</button>
       <span style="font-size:.8rem;color:var(--text-dim);">Event version:</span>
       <span class="ev-version" id="ev-version">v0</span>
     </div>
@@ -150,9 +140,7 @@
     <div class="flow-canvas" id="cqrs-canvas" style="height:440px;"></div>
   </section>
 
-  <!-- ═══════════════════════════════════════════════════
-       Section 6: Module Dependency Map
-       ═══════════════════════════════════════════════════ -->
+  <!-- Section 6: Module Dependency Map -->
   <section id="section-deps" class="flow-section">
     <h2 class="section-title">Module Dependency Map</h2>
     <p class="section-desc">

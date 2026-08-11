@@ -1,65 +1,191 @@
 /* ============================================
-   nestjs-boot Visualize Flow — Interactivity
+   nestjs-boot Visualize Flow — All Flows Engine
    ============================================ */
 
 (function () {
   'use strict';
 
-  // ── State ──
   let activeTab = 'boot';
   let animSpeed = 1;
-  let animRunning = true;
-  let activeAnimations = [];
 
-  // ── DOM helpers ──
   const $ = (s, ctx = document) => ctx.querySelector(s);
   const $$ = (s, ctx = document) => [...ctx.querySelectorAll(s)];
 
-  // ── Tab switching ──
-  function initTabs() {
-    $$('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.dataset.tab;
-        if (id === activeTab) return;
-        activeTab = id;
-        $$('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
-        $$('.flow-section').forEach(s => s.classList.toggle('active', s.id === `section-${id}`));
-        stopAllAnimations();
-        startSectionAnimation(id);
-      });
+  // ══════════════════════════════════════════
+  // Flow Rendering Engine (responsive, flexbox)
+  // ══════════════════════════════════════════
+
+  /**
+   * Render a horizontal flow inside a canvas element.
+   * nodes: Array of { id, icon, label, cat, timing?, classes? }
+   * arrows between consecutive nodes are auto-generated.
+   * Options:
+   *   branches: Array of { afterId, paths: [{ label, nodes, arrowClass }] }
+   *   rejoinId: node id where branches rejoin
+   */
+  function renderFlow(canvasId, nodes, options = {}) {
+    const canvas = $(`#${canvasId}`);
+    if (!canvas) return;
+    canvas.innerHTML = '';
+
+    const row = document.createElement('div');
+    row.className = 'flow-row';
+
+    nodes.forEach((n, i) => {
+      // Insert arrow before node (except first)
+      if (i > 0) {
+        const arrow = document.createElement('span');
+        arrow.className = `flow-arrow ${n.arrowClass || ''}`;
+        arrow.textContent = '\u2192';
+        row.appendChild(arrow);
+      }
+
+      // Check if there's a branch point after this node
+      const branch = options.branches?.find(b => b.afterId === n.id);
+
+      const el = createNodeEl(n);
+      row.appendChild(el);
+
+      if (branch) {
+        const branchContainer = document.createElement('div');
+        branchContainer.className = 'flow-branch';
+        branchContainer.style.marginLeft = '4px';
+
+        branch.paths.forEach(path => {
+          const pathRow = document.createElement('div');
+          pathRow.className = 'flow-row';
+          pathRow.style.fontSize = '.7rem';
+
+          if (path.label) {
+            const lbl = document.createElement('span');
+            lbl.className = `branch-label ${path.labelClass || ''}`;
+            lbl.textContent = path.label;
+            pathRow.appendChild(lbl);
+          }
+
+          path.nodes.forEach((pn, pi) => {
+            if (pi > 0 || path.label) {
+              const a = document.createElement('span');
+              a.className = `flow-arrow ${path.arrowClass || 'branch-arrow'}`;
+              a.textContent = '\u2192';
+              pathRow.appendChild(a);
+            }
+            pathRow.appendChild(createNodeEl(pn));
+          });
+
+          branchContainer.appendChild(pathRow);
+        });
+
+        // Arrow into branch
+        const ba = document.createElement('span');
+        ba.className = 'flow-arrow branch-arrow';
+        ba.textContent = '\u2192';
+        row.appendChild(ba);
+        row.appendChild(branchContainer);
+
+        // If rejoin, add rejoin nodes
+        if (options.rejoinAfterBranch && branch === options.branches[options.branches.length - 1]) {
+          options.rejoinAfterBranch.forEach(rn => {
+            const ra = document.createElement('span');
+            ra.className = 'flow-arrow';
+            ra.textContent = '\u2192';
+            row.appendChild(ra);
+            row.appendChild(createNodeEl(rn));
+          });
+        }
+      }
     });
+
+    canvas.appendChild(row);
+
+    // Additional rows (for multi-row flows)
+    if (options.extraRows) {
+      options.extraRows.forEach(er => {
+        const extraRow = document.createElement('div');
+        extraRow.className = 'flow-row';
+        extraRow.style.paddingLeft = er.indent ? `${er.indent}px` : '0';
+        if (er.prefix) {
+          const pfx = document.createElement('span');
+          pfx.className = `branch-label ${er.prefixClass || ''}`;
+          pfx.textContent = er.prefix;
+          extraRow.appendChild(pfx);
+        }
+        er.nodes.forEach((n, i) => {
+          if (i > 0 || er.prefix) {
+            const a = document.createElement('span');
+            a.className = `flow-arrow ${er.arrowClass || ''}`;
+            a.textContent = '\u2192';
+            extraRow.appendChild(a);
+          }
+          extraRow.appendChild(createNodeEl(n));
+        });
+        canvas.appendChild(extraRow);
+      });
+    }
   }
 
-  // ── Detail panel ──
+  function createNodeEl(n) {
+    const el = document.createElement('div');
+    el.className = `flow-node ${n.classes || ''}`;
+    if (n.cat) el.dataset.cat = n.cat;
+    if (n.id) el.dataset.id = n.id;
+    el.innerHTML =
+      (n.icon ? `<span class="node-icon">${n.icon}</span>` : '') +
+      `<span class="node-label">${n.label}</span>` +
+      (n.timing ? `<span class="node-timing">${n.timing}</span>` : '');
+    if (n.detail) {
+      el.addEventListener('click', () => openDetail(n.detail));
+    }
+    return el;
+  }
+
+  // Shorthand node constructors
+  const N = (label, cat, icon, extra) => ({ label, cat, icon, ...extra });
+
+  // ══════════════════════════════════════════
+  // Detail Panel
+  // ══════════════════════════════════════════
   const detailData = {
-    'env-load':     { title: '.env Load', desc: 'Reads .env files using dotenv. Supports .env, .env.local, .env.{NODE_ENV}. Variables available via ConfigService.', code: 'ConfigModule.forRoot({\n  envFilePath: [".env.local", ".env"],\n  isGlobal: true,\n})' },
-    'joi-validate': { title: 'Joi Validation', desc: 'Validates ALL environment variables at startup. App refuses to boot if required vars are missing — fail fast, not at runtime.', code: 'validationSchema: Joi.object({\n  DATABASE_URL: Joi.string().required(),\n  REDIS_URL: Joi.string().optional(),\n  PORT: Joi.number().default(3000),\n})' },
-    'otel-init':    { title: 'OpenTelemetry Init', desc: 'Initializes tracing SDK before NestJS boots. Spans, metrics, and logs are collected from the first request.', code: 'OTelModule.forRoot({\n  serviceName: "order-service",\n  exporter: "otlp",\n  endpoint: "http://jaeger:4318",\n})' },
-    'boot-module':  { title: 'Build BootModule', desc: 'BootModule composes all feature modules based on config flags. If database=false, DatabaseModule is excluded entirely — zero overhead.', code: 'BootModule.register({\n  database: true,\n  cache: true,\n  auth: true,\n  events: true,\n  grpc: false,\n  cqrs: false,\n})' },
-    'nest-create':  { title: 'NestFactory.create()', desc: 'Creates the NestJS application instance with the composed BootModule. Logger, CORS, and platform adapter configured here.', code: 'const app = await NestFactory.create(\n  BootModule,\n  { logger: otelLogger }\n);' },
-    'apply-globals':{ title: 'Apply Globals', desc: 'Registers global pipes (validation), filters (exception), interceptors (timeout, transform), and guards (auth, RBAC).', code: 'app.useGlobalPipes(new ValidationPipe());\napp.useGlobalFilters(new AllExceptionsFilter());\napp.useGlobalInterceptors(\n  new TimeoutInterceptor(),\n  new TransformInterceptor(),\n);' },
-    'connect-transport': { title: 'Connect Transports', desc: 'Connects microservice transports — gRPC, Redis, NATS. Each transport gets its own correlation ID propagation.', code: 'app.connectMicroservice({\n  transport: Transport.GRPC,\n  options: {\n    url: "0.0.0.0:5000",\n    package: "order",\n    protoPath: "order.proto",\n  },\n});' },
-    'ready':        { title: 'Ready!', desc: 'Application is listening. Health endpoints active. Readiness probe returns 200. Boot time logged via OTel span.', code: 'await app.startAllMicroservices();\nawait app.listen(PORT);\n// Ready in 847ms' },
-    'correlation':  { title: 'Correlation ID', desc: 'Every request gets a unique correlation ID (UUID v4). Propagated through all downstream calls, logs, and events for full traceability.', code: '@Injectable()\nexport class CorrelationInterceptor {\n  intercept(ctx, next) {\n    const id = ctx.getRequest().headers["x-correlation-id"]\n      ?? randomUUID();\n    CorrelationService.set(id);\n    return next.handle();\n  }\n}' },
-    'auth-guard':   { title: 'Auth Guard', desc: 'JWT validation guard. Extracts and verifies Bearer token. Attaches decoded user to request context. 401 on invalid/expired token.', code: '@Injectable()\nexport class JwtAuthGuard extends AuthGuard("jwt") {\n  canActivate(context) {\n    return super.canActivate(context);\n  }\n}' },
-    'rbac-guard':   { title: 'RBAC Guard', desc: 'Role-based access control. Checks user roles against route requirements. @Roles("admin", "manager") decorator defines access.', code: '@Roles("admin", "manager")\n@UseGuards(RbacGuard)\n@Get("orders")\nasync findAll() { ... }' },
-    'timeout':      { title: 'Timeout Interceptor', desc: 'Wraps handler in a timeout (default 30s). Returns 408 if exceeded. Configurable per-route via @Timeout() decorator.', code: '@Injectable()\nexport class TimeoutInterceptor {\n  intercept(ctx, next) {\n    const ms = reflector.get(TIMEOUT_KEY) ?? 30000;\n    return next.handle().pipe(\n      timeout(ms),\n      catchError(err =>\n        err instanceof TimeoutError\n          ? throwError(() => new RequestTimeoutException())\n          : throwError(() => err)\n      ),\n    );\n  }\n}' },
-    'controller':   { title: 'Controller', desc: 'Route handler. Validates DTO via class-validator, delegates to service layer. Returns raw data — envelope interceptor wraps it.', code: '@Post()\nasync create(@Body() dto: CreateOrderDto) {\n  return this.orderService.create(dto);\n}' },
-    'service':      { title: 'Service', desc: 'Business logic layer. Orchestrates cache, database, events. Transactional when needed. Returns domain objects.', code: '@Injectable()\nexport class OrderService {\n  async create(dto: CreateOrderDto) {\n    const order = await this.repo.save(dto);\n    this.eventBus.emit(new OrderCreated(order));\n    await this.cache.del("orders:list");\n    return order;\n  }\n}' },
-    'cache-check':  { title: 'Cache Layer', desc: 'Redis-backed cache with TTL. @Cacheable() decorator for automatic cache-aside pattern. Invalidation via @CacheEvict().', code: '@Cacheable({ key: "order:{id}", ttl: 300 })\nasync findOne(id: string) {\n  return this.repo.findById(id);\n}\n\n@CacheEvict({ key: "order:{id}" })\nasync update(id, dto) { ... }' },
-    'database':     { title: 'Database', desc: 'MongoDB via Mongoose or PostgreSQL via TypeORM/Prisma. Connection pooling, read replicas, and query logging built in.', code: '@InjectModel(Order)\nprivate orderModel: Model<Order>;\n\nasync findById(id: string) {\n  return this.orderModel\n    .findById(id)\n    .lean()\n    .exec();\n}' },
-    'envelope':     { title: 'Response Envelope', desc: 'Wraps all responses in a standard envelope: { success, data, meta, timestamp, correlationId }. Consistent API contract.', code: '{\n  "success": true,\n  "data": { "id": "ord_123", ... },\n  "meta": { "page": 1, "total": 42 },\n  "timestamp": "2026-08-06T...",\n  "correlationId": "uuid-here"\n}' },
-    'event-emit':   { title: 'Event Emission', desc: 'Service emits domain event via EventBus. Event carries full payload + metadata (correlationId, timestamp, causationId).', code: 'this.eventBus.emit(\n  new OrderCreatedEvent({\n    orderId: order.id,\n    items: order.items,\n    total: order.total,\n  })\n);' },
-    'event-handler':{ title: '@OnEvent Handler', desc: 'Subscribers listen via @OnEvent decorator. Each handler runs independently — one failure does not block others.', code: '@OnEvent("order.created")\nasync handleOrderCreated(event: OrderCreatedEvent) {\n  await this.sendConfirmation(event.orderId);\n}' },
-    'grpc-client':  { title: 'ServiceClient<T>', desc: 'Type-safe gRPC client. Auto-generated from .proto files. Correlation ID and auth token injected into gRPC metadata automatically.', code: '@Injectable()\nexport class ProductClient {\n  @GrpcClient("PRODUCT_PACKAGE")\n  private client: ProductServiceClient;\n\n  findOne(id: string) {\n    return this.client.findOne({ id });\n  }\n}' },
-    'grpc-handler': { title: 'RPC Handler', desc: 'Server-side gRPC handler. Receives call with metadata, processes request, returns typed response. Interceptors apply here too.', code: '@GrpcMethod("ProductService", "FindOne")\nasync findOne(data: ProductById, metadata: Metadata) {\n  const correlationId = metadata.get("x-correlation-id")[0];\n  return this.productService.findOne(data.id);\n}' },
-    'command-bus':  { title: 'CommandBus', desc: 'Dispatches commands to their respective handlers. Commands are imperative — "CreateOrder", "UpdateInventory". One command = one handler.', code: 'await this.commandBus.execute(\n  new CreateOrderCommand({\n    userId: user.id,\n    items: dto.items,\n  })\n);' },
-    'cmd-handler':  { title: 'Command Handler', desc: 'Handles a specific command. Loads aggregate, applies business rules, emits domain events. Transactional boundary.', code: '@CommandHandler(CreateOrderCommand)\nexport class CreateOrderHandler {\n  async execute(cmd: CreateOrderCommand) {\n    const order = new OrderAggregate();\n    order.create(cmd.userId, cmd.items);\n    await this.repo.save(order);\n  }\n}' },
-    'aggregate':    { title: 'AggregateRoot', desc: 'Domain object that applies events to itself. Events are uncommitted until persisted. Enforces invariants before applying.', code: 'export class OrderAggregate extends AggregateRoot {\n  create(userId, items) {\n    this.apply(new OrderCreatedEvent({\n      orderId: this.id,\n      userId, items,\n      version: this.version + 1,\n    }));\n  }\n}' },
-    'event-store':  { title: 'EventStore', desc: 'Append-only log of domain events. Each event is immutable with a version number. Source of truth for aggregate state.', code: 'await this.eventStore.append({\n  streamId: `order-${orderId}`,\n  events: aggregate.getUncommittedEvents(),\n  expectedVersion: aggregate.version,\n});' },
-    'projection':   { title: 'Projection (Read Model)', desc: 'Builds denormalized read models from events. Optimized for queries. Eventually consistent with write side.', code: '@EventHandler(OrderCreatedEvent)\nasync project(event: OrderCreatedEvent) {\n  await this.readDb.upsert({\n    id: event.orderId,\n    status: "created",\n    total: event.total,\n    updatedAt: event.timestamp,\n  });\n}' },
-    'outbox':       { title: 'Outbox Pattern', desc: 'Events persisted alongside aggregate in same transaction. Background poller publishes to message broker. Guarantees at-least-once delivery.', code: '// Same transaction:\nawait session.withTransaction(async () => {\n  await this.repo.save(order);\n  await this.outbox.insert(events);\n});\n// Poller:\nconst pending = await this.outbox.findPending();\nawait this.broker.publish(pending);\nawait this.outbox.markPublished(pending);' },
-    'snapshot':     { title: 'Snapshot', desc: 'Periodically saves aggregate state to avoid replaying all events. Loaded on aggregate reconstruction, then replays only events after snapshot.', code: 'if (aggregate.version % 50 === 0) {\n  await this.snapshotStore.save({\n    streamId: aggregate.id,\n    version: aggregate.version,\n    state: aggregate.toSnapshot(),\n  });\n}' },
+    'env-load':     { title: '.env Load', desc: 'Reads .env files using dotenv. Supports .env, .env.local, .env.{NODE_ENV}.', code: 'BOOT_ENV=production\nNODE_ENV=production\n# Loads: .env → .env.production → .env.local' },
+    'joi-validate': { title: 'Joi Validation', desc: 'Validates ALL environment variables at startup. Fail fast, not at runtime.', code: 'validationSchema: Joi.object({\n  DATABASE_URL: Joi.string().required(),\n  PORT: Joi.number().default(3000),\n})' },
+    'otel-init':    { title: 'OpenTelemetry Init', desc: 'Initializes tracing SDK before NestJS boots so spans are collected from first request.', code: 'initTracing({\n  serviceName: "order-service",\n  exporter: "otlp",\n  endpoint: "http://jaeger:4318",\n})' },
+    'boot-module':  { title: 'Build BootModule', desc: 'Composes all feature modules based on config. Omitted config = module excluded.', code: 'BootModule.register({\n  database: true,\n  cache: true,\n  auth: true,\n})' },
+    'nest-create':  { title: 'NestFactory.create()', desc: 'Creates NestJS app with composed BootModule + DI error enrichment.', code: 'const app = await NestFactory.create(\n  BootModule,\n  { logger: bootLogger }\n);' },
+    'apply-globals':{ title: 'Apply Globals', desc: 'Global pipes, filters, interceptors, and guards.', code: 'app.useGlobalPipes(new ValidationPipe());\napp.useGlobalFilters(new AllExceptionsFilter());\napp.useGlobalInterceptors(new TimeoutInterceptor());' },
+    'connect-transport': { title: 'Connect Transports', desc: 'gRPC, Redis, NATS microservice transports.', code: 'app.connectMicroservice({\n  transport: Transport.GRPC,\n  options: { url: "0.0.0.0:5000" },\n});' },
+    'jwt-login':    { title: 'JWT Login', desc: 'Validates credentials, signs access + refresh tokens.', code: 'const { access, refresh } = await authService.login({\n  email, password\n});\n// access: 15m, refresh: 7d' },
+    'jwt-refresh':  { title: 'JWT Refresh', desc: 'Verifies refresh token, rotates, returns new pair.', code: 'const tokens = await authService.refresh(refreshToken);\n// Old refresh token is revoked' },
+    'revocation':   { title: 'Token Revocation', desc: 'Guard checks isRevoked callback before accepting token.', code: 'jwt: {\n  secret: "...",\n  isRevoked: async (token) => {\n    return await redis.exists(`revoked:${token.jti}`);\n  }\n}' },
+    'oauth2':       { title: 'OAuth2/Social Login', desc: 'Google/GitHub strategy redirects, callback extracts profile.', code: '@UseGuards(AuthGuard("google"))\n@Get("auth/google/callback")\nasync googleCallback(@Req() req) {\n  return req.user; // SocialProfile\n}' },
+    'apikey':       { title: 'API Key Validation', desc: 'Extracts key from header, validates via callback.', code: 'apiKey: {\n  enabled: true,\n  header: "X-API-Key",\n  validate: async (key) => isValid(key)\n}' },
+    'rbac':         { title: 'RBAC Check', desc: 'Extracts user roles, compares with @Roles() decorator.', code: '@Roles("admin", "manager")\n@UseGuards(RbacGuard)\n@Get("orders")\nasync findAll() { ... }' },
+    'session':      { title: 'Session Auth', desc: 'Cookie → session store lookup → validate.', code: '@UseGuards(SessionGuard)\n@Get("profile")\nasync getProfile(@Session() session) {\n  return session.user;\n}' },
+    'totp':         { title: 'TOTP 2FA', desc: 'After password login, require TOTP code verification.', code: 'const secret = totpService.generateSecret();\nconst valid = totpService.verify(token, secret);\n// valid → issue JWT' },
+    'rw-split':     { title: 'Reader/Writer Split', desc: 'Read queries route to replica, writes to primary.', code: 'connections: {\n  master: {\n    writerUri: "mongodb://primary:27017",\n    readerUri: "mongodb://replica:27017"\n  }\n}' },
+    'cached-repo':  { title: 'CachedRepository', desc: 'L1 (memory) → L2 (Redis) → DB → write-back to cache.', code: '@Injectable()\nexport class ProductRepo extends CachedBaseRepository<Product> {\n  // findById checks L1 → L2 → DB automatically\n}' },
+    'uow':          { title: 'Unit of Work', desc: 'Start transaction, run operations, commit or rollback.', code: 'await unitOfWork.run(async (session) => {\n  await orderRepo.save(order, { session });\n  await inventoryRepo.decrement(sku, { session });\n});' },
+    'stampede':     { title: 'Cache Stampede Prevention', desc: 'Lock prevents multiple concurrent DB calls for same key.', code: 'cache.getOrSet("product:123", async () => {\n  return db.findById("123");\n}, { lock: true, ttl: 300 });' },
+    'grpc-lifecycle': { title: 'gRPC Call', desc: 'ServiceClient auto-injects correlation + auth into gRPC metadata.', code: 'const product = await this.productClient.findOne({\n  id: "prod_123"\n});\n// Correlation ID + JWT auto-injected' },
+    'resilient':    { title: 'ResilientClient', desc: 'Wraps calls with timeout → retry → circuit breaker.', code: 'const client = createResilientClient(productClient, {\n  timeout: 5000,\n  retry: { attempts: 3, backoff: "exponential" },\n  circuitBreaker: { failureThreshold: 5 },\n});' },
+    'inter-auth':   { title: 'Inter-Service Auth', desc: 'Auth context flows via AsyncLocalStorage across services.', code: 'interServiceAuth: {\n  propagation: true,\n  serviceToken: "internal-secret"\n}' },
+    'event-bus':    { title: 'EventBus', desc: 'In-memory or Redis pub/sub. Fire-and-forget or request/response.', code: 'this.eventBus.emit(\n  new OrderCreatedEvent({ orderId, total })\n);\n// All @OnEvent("order.created") handlers fire' },
+    'emit-wait':    { title: 'emitAndWait', desc: 'Query pattern: emit event, wait for single handler response.', code: 'const result = await this.eventBus.emitAndWait(\n  new GetInventoryQuery({ sku: "ABC" })\n);\n// Returns handler result' },
+    'cqrs':         { title: 'CQRS Cycle', desc: 'Command → Bus → Handler → Aggregate → EventStore.', code: 'await this.commandBus.execute(\n  new CreateOrderCommand({ userId, items })\n);\n// Handler loads aggregate, applies events' },
+    'outbox':       { title: 'Outbox Pattern', desc: 'Events persisted in same transaction, polled and published.', code: 'await session.withTransaction(async () => {\n  await this.repo.save(order);\n  await this.outbox.insert(events);\n});\n// Poller publishes pending events' },
+    'saga':         { title: 'Saga Orchestration', desc: 'Multi-step process with compensation on failure.', code: 'saga.step("reserve", reserveInventory, cancelReservation)\n  .step("charge", chargePayment, refundPayment)\n  .step("ship", createShipment, cancelShipment)\n  .execute();' },
+    'correlation':  { title: 'Correlation ID', desc: 'UUID propagated via AsyncLocalStorage across all calls.', code: 'const id = req.headers["x-correlation-id"] ?? uuid();\nCorrelationService.set(id);\n// Available everywhere via getCorrelationId()' },
+    'tracing':      { title: 'Tracing', desc: 'OpenTelemetry spans auto-created via @BootTrace decorator.', code: '@BootTrace("findProduct")\nasync findOne(id: string) {\n  // Span auto-created with timing + attributes\n}' },
+    'metrics':      { title: 'Metrics', desc: 'Prometheus counters + histograms exposed at /metrics.', code: 'metrics: {\n  enabled: true,\n  path: "/metrics",\n  prefix: "myapp_"\n}\n// http_request_duration_seconds, etc.' },
+    'logging':      { title: 'Structured Logging', desc: 'Pino JSON logs with correlation, trace, and redaction.', code: 'logging: {\n  level: "info",\n  pretty: true,\n  redact: ["req.headers.authorization"]\n}' },
+    'error-report': { title: 'Error Reporting', desc: 'ErrorReporter hooks into Sentry/Datadog for exceptions.', code: 'monitoring: {\n  errorReporter: (error, context) => {\n    Sentry.captureException(error, { extra: context });\n  }\n}' },
+    'tenant':       { title: 'Tenant Resolution', desc: 'Extract tenant from header, subdomain, or path segment.', code: '// X-Tenant-Id header → AsyncLocalStorage\n// OR subdomain: acme.app.com → "acme"\n// OR path: /api/acme/... → "acme"' },
+    'file-upload':  { title: 'File Upload', desc: 'Validate → generate key → adapter.save → metadata.', code: 'const result = await fileService.upload(file, {\n  maxSize: "10MB",\n  allowedTypes: ["image/*"],\n  adapter: "s3", // or "local", "gcs"\n});' },
+    'webhook':      { title: 'Webhook Verification', desc: 'HMAC signature verify → normalize → deduplicate → handle.', code: 'const valid = webhookService.verify(\n  payload,\n  signature,\n  secret\n);\n// Checks idempotency key for dedup' },
+    'shutdown':     { title: 'Graceful Shutdown', desc: 'SIGTERM → drain → close connections → exit.', code: 'shutdown: {\n  timeout: 10000,\n  signals: ["SIGTERM", "SIGINT"]\n}\n// Health returns 503 during drain' },
+    'circular-dep': { title: 'Circular Dep Detection', desc: 'parseDiError turns cryptic errors into fix suggestions.', code: '// Boot error:\n// "Circular dependency: A → B → C → A"\n// Fix: Use forwardRef() or extract shared interface' },
+    'contract':     { title: 'Contract Injection', desc: 'Interface-based DI with createContract<T>().', code: 'const PAYMENT = createContract<PaymentService>();\n\n// Provider:\nprovideContract(PAYMENT, StripePaymentService)\n\n// Consumer:\n@Inject(PAYMENT) private payment: PaymentService' },
+    'module-graph': { title: 'Module Graph', desc: 'Tarjan SCC algorithm detects circular dependencies.', code: 'const graph = analyzeModules(AppModule);\nconst cycles = detectCycles(graph);\nconsole.log(renderMermaid(graph));' },
+    'layer-valid':  { title: 'Layer Validation', desc: '@Layer decorator prevents upward dependencies.', code: '@Layer(ModuleLayer.INFRASTRUCTURE)\nexport class DatabaseModule {}\n\n@Layer(ModuleLayer.APPLICATION)\nexport class OrderModule {}\n// Infra importing Application → ERROR' },
   };
 
   function openDetail(key) {
@@ -79,826 +205,1045 @@
     $('.detail-overlay').classList.remove('open');
   }
 
-  function initDetailPanel() {
-    $('.detail-overlay').addEventListener('click', closeDetail);
-    $('.close-btn', $('.detail-panel')).addEventListener('click', closeDetail);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
-  }
-
-  // ── Animation engine ──
-  function stopAllAnimations() {
-    activeAnimations.forEach(id => cancelAnimationFrame(id));
-    activeAnimations = [];
-    $$('.packet').forEach(p => p.remove());
-    $$('.packet-label').forEach(l => l.remove());
-    $$('.flow-node.lit').forEach(n => n.classList.remove('lit'));
-    $$('.ripple').forEach(r => r.remove());
-    // Reset connector glow
-    $$('.connector-path.glow').forEach(p => p.classList.remove('glow'));
-  }
-
-  function animatePacketAlongNodes(canvas, nodeIds, options = {}) {
-    const {
-      packetClass = '',
-      label = '',
-      duration = 2000,
-      onStep = null,
-      loop = true,
-      onComplete = null,
-    } = options;
-
-    const packet = createPacket(canvas);
-    const labelEl = createPacketLabel(canvas);
-
-    if (packetClass) { packet.className = `packet moving ${packetClass}`; }
-    else { packet.className = 'packet moving'; }
-    if (label) { labelEl.textContent = label; labelEl.classList.add('visible'); }
-
-    const nodes = nodeIds.map(id => canvas.querySelector(`[data-id="${id}"]`)).filter(Boolean);
-    if (nodes.length < 2) return;
-
-    const positions = nodes.map(n => ({
-      x: n.offsetLeft + n.offsetWidth / 2,
-      y: n.offsetTop + n.offsetHeight / 2,
-    }));
-
-    let seg = 0;
-    const segDur = (duration / (positions.length - 1)) / animSpeed;
-    let startTime = null;
-
-    function step(ts) {
-      if (!animRunning) { const id = requestAnimationFrame(step); activeAnimations.push(id); return; }
-      if (!startTime) startTime = ts;
-      const elapsed = ts - startTime;
-      const t = Math.min(elapsed / segDur, 1);
-
-      const from = positions[seg];
-      const to = positions[seg + 1];
-      const x = from.x + (to.x - from.x) * easeInOut(t);
-      const y = from.y + (to.y - from.y) * easeInOut(t);
-
-      packet.style.left = `${x - 5}px`;
-      packet.style.top = `${y - 5}px`;
-      labelEl.style.left = `${x + 10}px`;
-      labelEl.style.top = `${y - 18}px`;
-
-      // Glow the connector path segment
-      glowConnectorSegment(canvas, nodeIds[seg], nodeIds[seg + 1]);
-
-      // Light up current target node
-      if (t > 0.5) {
-        const targetNode = nodes[seg + 1];
-        if (targetNode && !targetNode.classList.contains('lit')) {
-          targetNode.classList.add('lit');
-          if (onStep) onStep(seg + 1, nodeIds[seg + 1]);
-        }
-      }
-
-      if (t >= 1) {
-        seg++;
-        startTime = null;
-        if (seg >= positions.length - 1) {
-          if (onComplete) onComplete();
-          if (loop) {
-            seg = 0;
-            nodes.forEach(n => n.classList.remove('lit'));
-            unglowAll(canvas);
-            setTimeout(() => {
-              const id = requestAnimationFrame(step);
-              activeAnimations.push(id);
-            }, 1000 / animSpeed);
-            return;
-          } else {
-            packet.remove();
-            labelEl.remove();
-            return;
-          }
-        }
-      }
-
-      const id = requestAnimationFrame(step);
-      activeAnimations.push(id);
-    }
-
-    const id = requestAnimationFrame(step);
-    activeAnimations.push(id);
-  }
-
-  function easeInOut(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
-
-  function createPacket(canvas) {
-    const el = document.createElement('div');
-    el.className = 'packet';
-    canvas.appendChild(el);
-    return el;
-  }
-  function createPacketLabel(canvas) {
-    const el = document.createElement('div');
-    el.className = 'packet-label';
-    canvas.appendChild(el);
-    return el;
-  }
-
-  // ── SVG Connector System ──
-  function getNodeCenter(canvas, id) {
-    const el = canvas.querySelector(`[data-id="${id}"]`);
-    if (!el) return null;
-    return {
-      x: el.offsetLeft + el.offsetWidth / 2,
-      y: el.offsetTop + el.offsetHeight / 2,
-      left: el.offsetLeft,
-      right: el.offsetLeft + el.offsetWidth,
-      top: el.offsetTop,
-      bottom: el.offsetTop + el.offsetHeight,
-      w: el.offsetWidth,
-      h: el.offsetHeight,
-    };
-  }
-
-  function getAnchor(fromRect, toRect) {
-    // Determine best anchor points (right->left for horizontal, bottom->top for vertical)
-    const dx = toRect.x - fromRect.x;
-    const dy = toRect.y - fromRect.y;
-
-    let fx, fy, tx, ty;
-    if (Math.abs(dx) > Math.abs(dy)) {
-      // Horizontal flow
-      if (dx > 0) {
-        fx = fromRect.right; fy = fromRect.y;
-        tx = toRect.left; ty = toRect.y;
-      } else {
-        fx = fromRect.left; fy = fromRect.y;
-        tx = toRect.right; ty = toRect.y;
-      }
-    } else {
-      // Vertical flow
-      if (dy > 0) {
-        fx = fromRect.x; fy = fromRect.bottom;
-        tx = toRect.x; ty = toRect.top;
-      } else {
-        fx = fromRect.x; fy = fromRect.top;
-        tx = toRect.x; ty = toRect.bottom;
-      }
-    }
-    return { fx, fy, tx, ty };
-  }
-
-  function makeBezierPath(fx, fy, tx, ty) {
-    const dx = tx - fx;
-    const dy = ty - fy;
-    const cx = Math.abs(dx) * 0.4;
-    const cy = Math.abs(dy) * 0.4;
-
-    let c1x, c1y, c2x, c2y;
-    if (Math.abs(dx) > Math.abs(dy)) {
-      // Horizontal dominant
-      c1x = fx + cx; c1y = fy;
-      c2x = tx - cx; c2y = ty;
-    } else {
-      // Vertical dominant
-      c1x = fx; c1y = fy + cy;
-      c2x = tx; c2y = ty - cy;
-    }
-    return `M ${fx},${fy} C ${c1x},${c1y} ${c2x},${c2y} ${tx},${ty}`;
-  }
-
-  function ensureSvg(canvas) {
-    let svg = canvas.querySelector('svg.connectors');
-    if (!svg) {
-      svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.classList.add('connectors');
-      canvas.insertBefore(svg, canvas.firstChild);
-    }
-    return svg;
-  }
-
-  function ensureDefs(svg) {
-    let defs = svg.querySelector('defs');
-    if (!defs) {
-      defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-      svg.prepend(defs);
-
-      // Arrow marker — default (slate)
-      addArrowMarker(defs, 'arrow', 'rgba(100,116,139,0.6)');
-      // Arrow marker — brand (blue)
-      addArrowMarker(defs, 'arrow-brand', '#0ea5e9');
-      // Arrow marker — green
-      addArrowMarker(defs, 'arrow-green', '#10b981');
-      // Arrow marker — yellow
-      addArrowMarker(defs, 'arrow-yellow', '#f59e0b');
-      // Arrow marker — pink (event)
-      addArrowMarker(defs, 'arrow-pink', '#ec4899');
-      // Arrow marker — red (return)
-      addArrowMarker(defs, 'arrow-red', '#ef4444');
-      // Arrow marker — purple
-      addArrowMarker(defs, 'arrow-purple', '#8b5cf6');
-      // Arrow marker — teal
-      addArrowMarker(defs, 'arrow-teal', '#14b8a6');
-      // Arrow marker — cqrs
-      addArrowMarker(defs, 'arrow-cqrs', '#6366f1');
-    }
-    return defs;
-  }
-
-  function addArrowMarker(defs, id, color) {
-    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-    marker.setAttribute('id', id);
-    marker.setAttribute('viewBox', '0 0 10 10');
-    marker.setAttribute('refX', '10');
-    marker.setAttribute('refY', '5');
-    marker.setAttribute('markerWidth', '8');
-    marker.setAttribute('markerHeight', '8');
-    marker.setAttribute('orient', 'auto-start-reverse');
-    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-    poly.setAttribute('points', '0,1 10,5 0,9');
-    poly.setAttribute('fill', color);
-    marker.appendChild(poly);
-    defs.appendChild(marker);
-  }
-
-  function createPath(svg, d, cssClass, arrowId, dataFrom, dataTo) {
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', d);
-    path.setAttribute('class', `connector-path ${cssClass}`);
-    path.setAttribute('marker-end', `url(#${arrowId || 'arrow'})`);
-    if (dataFrom) path.setAttribute('data-from', dataFrom);
-    if (dataTo) path.setAttribute('data-to', dataTo);
-    svg.appendChild(path);
-    return path;
-  }
-
-  function glowConnectorSegment(canvas, fromId, toId) {
-    const svg = canvas.querySelector('svg.connectors');
-    if (!svg) return;
-    const paths = svg.querySelectorAll('.connector-path');
-    paths.forEach(p => {
-      if (p.getAttribute('data-from') === fromId && p.getAttribute('data-to') === toId) {
-        p.classList.add('glow');
-      }
-    });
-  }
-
-  function unglowAll(canvas) {
-    const svg = canvas.querySelector('svg.connectors');
-    if (!svg) return;
-    svg.querySelectorAll('.connector-path.glow').forEach(p => p.classList.remove('glow'));
-  }
-
-  /**
-   * drawFlowPaths — the main connector drawing function.
-   * connections: Array of { from, to, type, arrow, cssClass }
-   *   type: 'solid' | 'return' | 'optional' | 'fan-out' | 'branch-upper' | 'branch-lower'
-   *   arrow: marker id (default 'arrow')
-   */
-  function drawFlowPaths(canvas, connections) {
-    const svg = ensureSvg(canvas);
-    ensureDefs(svg);
-
-    // Clear old paths (keep defs)
-    svg.querySelectorAll('.connector-path').forEach(p => p.remove());
-
-    requestAnimationFrame(() => {
-      connections.forEach(conn => {
-        const targets = Array.isArray(conn.to) ? conn.to : [conn.to];
-        targets.forEach(toId => {
-          const fromRect = getNodeCenter(canvas, conn.from);
-          const toRect = getNodeCenter(canvas, toId);
-          if (!fromRect || !toRect) return;
-
-          const { fx, fy, tx, ty } = getAnchor(fromRect, toRect);
-          const d = makeBezierPath(fx, fy, tx, ty);
-          const cssClass = conn.cssClass || conn.type || '';
-          const arrowId = conn.arrow || 'arrow';
-          createPath(svg, d, cssClass, arrowId, conn.from, toId);
-        });
+  // ══════════════════════════════════════════
+  // Tab System
+  // ══════════════════════════════════════════
+  function initTabs() {
+    $$('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.tab;
+        if (id === activeTab) return;
+        activeTab = id;
+        $$('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+        $$('.flow-section').forEach(s => s.classList.toggle('active', s.id === `section-${id}`));
       });
     });
   }
 
-  // ── Section: Boot Sequence ──
-  function initBootSequence() {
+  // ══════════════════════════════════════════
+  // SECTION 1: Boot & Config
+  // ══════════════════════════════════════════
+  function initBootSection() {
+    // Sub-flow 1: createApp boot sequence
+    const bootNodes = [
+      { id: 'env-load', icon: '\uD83D\uDCC4', label: '.env Load', cat: 'core', timing: '~12ms', detail: 'env-load' },
+      { id: 'joi-validate', icon: '\u2705', label: 'Joi Validate', cat: 'core', timing: '~8ms', detail: 'joi-validate' },
+      { id: 'otel-init', icon: '\uD83D\uDCE1', label: 'OTel Init', cat: 'observe', timing: '~45ms', detail: 'otel-init' },
+      { id: 'boot-module', icon: '\uD83D\uDCE6', label: 'BootModule', cat: 'core', timing: '~120ms', detail: 'boot-module' },
+      { id: 'nest-create', icon: '\uD83C\uDFD7\uFE0F', label: 'NestFactory', cat: 'core', timing: '~350ms', detail: 'nest-create' },
+      { id: 'apply-globals', icon: '\uD83C\uDF10', label: 'Globals', cat: 'auth', timing: '~15ms', detail: 'apply-globals' },
+      { id: 'connect-transport', icon: '\uD83D\uDD0C', label: 'Transports', cat: 'transport', timing: '~200ms', detail: 'connect-transport' },
+      { id: 'ready', icon: '\uD83D\uDE80', label: 'Ready!', cat: 'success', timing: '~847ms', classes: 'success-node' },
+    ];
+    renderFlow('boot-canvas', bootNodes);
+
+    // Optional modules display
+    const optModules = [
+      { toggle: 'boot-db', label: 'DatabaseModule', cat: 'database' },
+      { toggle: 'boot-cache', label: 'CacheModule', cat: 'cache' },
+      { toggle: 'boot-auth', label: 'AuthModule', cat: 'auth' },
+      { toggle: 'boot-events', label: 'EventBusModule', cat: 'event' },
+      { toggle: 'boot-queue', label: 'QueueModule', cat: 'core' },
+      { toggle: 'boot-grpc', label: 'GrpcModule', cat: 'transport' },
+      { toggle: 'boot-metrics', label: 'MetricsModule', cat: 'observe' },
+      { toggle: 'boot-logging', label: 'LoggingModule', cat: 'observe' },
+      { toggle: 'boot-cqrs', label: 'CQRSModule', cat: 'cqrs' },
+    ];
+
     const canvas = $('#boot-canvas');
-    if (!canvas) return;
+    const optRow = document.createElement('div');
+    optRow.className = 'flow-row';
+    optRow.style.flexWrap = 'wrap';
+    optRow.style.marginTop = '8px';
+    optRow.style.gap = '6px';
 
-    const steps = [
-      { id: 'env-load', icon: '📄', label: '.env Load', timing: '~12ms', cat: 'core', x: 50, y: 180 },
-      { id: 'joi-validate', icon: '✅', label: 'Joi Validate', timing: '~8ms', cat: 'core', x: 200, y: 180 },
-      { id: 'otel-init', icon: '📡', label: 'OTel Init', timing: '~45ms', cat: 'observe', x: 350, y: 180 },
-      { id: 'boot-module', icon: '📦', label: 'BootModule', timing: '~120ms', cat: 'core', x: 500, y: 180 },
-      { id: 'nest-create', icon: '🏗️', label: 'NestFactory', timing: '~350ms', cat: 'core', x: 650, y: 180 },
-      { id: 'apply-globals', icon: '🌐', label: 'Globals', timing: '~15ms', cat: 'auth', x: 800, y: 180 },
-      { id: 'connect-transport', icon: '🔌', label: 'Transports', timing: '~200ms', cat: 'transport', x: 950, y: 180 },
-      { id: 'ready', icon: '🚀', label: 'Ready!', timing: '~847ms total', cat: 'success', x: 1100, y: 180 },
-    ];
+    const lbl = document.createElement('span');
+    lbl.className = 'branch-label';
+    lbl.textContent = 'Conditional:';
+    lbl.style.marginRight = '4px';
+    optRow.appendChild(lbl);
 
-    const optionalModules = [
-      { id: 'db-module', label: 'DatabaseModule', cat: 'database', toggle: 'boot-db', x: 420, y: 60 },
-      { id: 'cache-module', label: 'CacheModule', cat: 'cache', toggle: 'boot-cache', x: 560, y: 60 },
-      { id: 'auth-module', label: 'AuthModule', cat: 'auth', toggle: 'boot-auth', x: 420, y: 300 },
-      { id: 'event-module', label: 'EventModule', cat: 'event', toggle: 'boot-events', x: 560, y: 300 },
-      { id: 'grpc-module', label: 'GrpcModule', cat: 'transport', toggle: 'boot-grpc', x: 700, y: 60 },
-      { id: 'cqrs-module', label: 'CQRSModule', cat: 'cqrs', toggle: 'boot-cqrs', x: 700, y: 300 },
-    ];
+    optModules.forEach(m => {
+      const el = document.createElement('div');
+      el.className = 'flow-node dashed';
+      el.dataset.cat = m.cat;
+      el.dataset.toggle = m.toggle;
+      el.innerHTML = `<span class="node-label">${m.label}</span>`;
+      el.style.display = $(`#${m.toggle}`)?.checked ? '' : 'none';
+      optRow.appendChild(el);
 
-    renderNodes(canvas, steps);
-    renderOptionalNodes(canvas, optionalModules);
-
-    // Build connections
-    function rebuildBootConnections() {
-      const conns = [];
-      // Main chain
-      for (let i = 0; i < steps.length - 1; i++) {
-        conns.push({ from: steps[i].id, to: steps[i + 1].id, arrow: 'arrow-brand' });
-      }
-      // Optional module connections to boot-module
-      optionalModules.forEach(m => {
-        const cb = $(`#${m.toggle}`);
-        if (cb && cb.checked) {
-          conns.push({
-            from: m.id,
-            to: 'boot-module',
-            type: 'optional-path',
-            arrow: m.cat === 'database' ? 'arrow-green' :
-                   m.cat === 'cache' ? 'arrow-yellow' :
-                   m.cat === 'auth' ? 'arrow-purple' :
-                   m.cat === 'event' ? 'arrow-pink' :
-                   m.cat === 'transport' ? 'arrow-teal' :
-                   m.cat === 'cqrs' ? 'arrow-cqrs' : 'arrow',
-          });
-        }
-      });
-      drawFlowPaths(canvas, conns);
-    }
-
-    rebuildBootConnections();
-
-    // Toggle handlers
-    optionalModules.forEach(m => {
       const cb = $(`#${m.toggle}`);
-      if (cb) {
-        cb.addEventListener('change', () => {
-          const node = canvas.querySelector(`[data-id="${m.id}"]`);
-          if (node) node.style.display = cb.checked ? 'block' : 'none';
-          rebuildBootConnections();
-        });
-      }
+      if (cb) cb.addEventListener('change', () => { el.style.display = cb.checked ? '' : 'none'; });
     });
+    canvas.appendChild(optRow);
 
-    steps.forEach(s => {
-      const node = canvas.querySelector(`[data-id="${s.id}"]`);
-      if (node) node.addEventListener('click', () => openDetail(s.id));
-    });
-
-    const playBtn = $('#boot-play');
-    if (playBtn) {
-      playBtn.addEventListener('click', () => {
-        stopAllAnimations();
-        $$('.flow-node', canvas).forEach(n => n.classList.remove('lit'));
-        const bar = $('.boot-progress-bar');
-        if (bar) bar.style.width = '0';
-        rebuildBootConnections();
-        animateBootSequence(canvas, steps, bar);
-      });
-    }
-  }
-
-  function animateBootSequence(canvas, steps, progressBar) {
-    const ids = steps.map(s => s.id);
-    const total = ids.length;
-    animatePacketAlongNodes(canvas, ids, {
-      label: 'createApp()',
-      duration: 4000,
-      loop: true,
-      onStep: (idx) => {
-        if (progressBar) {
-          progressBar.style.width = `${((idx + 1) / total) * 100}%`;
-        }
-      },
-    });
-  }
-
-  // ── Section: Request Flow ──
-  function initRequestFlow() {
-    const canvas = $('#request-canvas');
-    if (!canvas) return;
-
-    const nodes = [
-      { id: 'req-client', icon: '👤', label: 'Client', cat: 'core', x: 30, y: 180 },
-      { id: 'correlation', icon: '🔗', label: 'Correlation ID', cat: 'observe', x: 150, y: 180 },
-      { id: 'auth-guard', icon: '🔒', label: 'Auth Guard', cat: 'auth', x: 280, y: 180 },
-      { id: 'rbac-guard', icon: '🛡️', label: 'RBAC Guard', cat: 'auth', x: 400, y: 180 },
-      { id: 'timeout', icon: '⏱️', label: 'Timeout', cat: 'observe', x: 520, y: 180 },
-      { id: 'controller', icon: '🎯', label: 'Controller', cat: 'core', x: 640, y: 180 },
-      { id: 'service', icon: '⚙️', label: 'Service', cat: 'core', x: 760, y: 180 },
-      { id: 'req-decision', icon: '?', label: 'Cache?', cat: 'decision', x: 870, y: 180 },
-      { id: 'cache-check', icon: '💨', label: 'Cache', cat: 'cache', x: 970, y: 90 },
-      { id: 'database', icon: '🗄️', label: 'Database', cat: 'database', x: 970, y: 270 },
-      { id: 'envelope', icon: '📨', label: 'Envelope', cat: 'core', x: 1070, y: 180 },
-      { id: 'res-client', icon: '👤', label: 'Response', cat: 'success', x: 1170, y: 180 },
-    ];
-
-    renderNodes(canvas, nodes);
-
-    function rebuildRequestPaths(cacheHit) {
-      const conns = [
-        // Main pipeline
-        { from: 'req-client', to: 'correlation', arrow: 'arrow-brand' },
-        { from: 'correlation', to: 'auth-guard', arrow: 'arrow-brand' },
-        { from: 'auth-guard', to: 'rbac-guard', arrow: 'arrow-purple' },
-        { from: 'rbac-guard', to: 'timeout', arrow: 'arrow-brand' },
-        { from: 'timeout', to: 'controller', arrow: 'arrow-brand' },
-        { from: 'controller', to: 'service', arrow: 'arrow-brand' },
-        { from: 'service', to: 'req-decision', arrow: 'arrow-brand' },
-        // Branch: cache (upper)
-        { from: 'req-decision', to: 'cache-check', cssClass: 'branch-upper', arrow: 'arrow-green' },
-        // Branch: database (lower)
-        { from: 'req-decision', to: 'database', cssClass: 'branch-lower', arrow: 'arrow-yellow' },
-        // Rejoin
-        { from: 'cache-check', to: 'envelope', cssClass: 'branch-upper', arrow: 'arrow-green' },
-        { from: 'database', to: 'envelope', cssClass: 'branch-lower', arrow: 'arrow-yellow' },
-        // Continue
-        { from: 'envelope', to: 'res-client', arrow: 'arrow-green' },
-        // Return path
-        { from: 'res-client', to: 'req-client', type: 'return-path', arrow: 'arrow-red' },
-      ];
-      drawFlowPaths(canvas, conns);
-    }
-
-    rebuildRequestPaths(false);
-
-    nodes.forEach(s => {
-      const node = canvas.querySelector(`[data-id="${s.id}"]`);
-      if (node) node.addEventListener('click', () => openDetail(s.id));
-    });
-
-    const cacheToggle = $('#req-cache-hit');
-    const errorToggle = $('#req-error');
-
-    if (cacheToggle) {
-      cacheToggle.addEventListener('change', () => {
-        stopAllAnimations();
-        $$('.flow-node', canvas).forEach(n => n.classList.remove('lit'));
-        rebuildRequestPaths(cacheToggle.checked);
-        startRequestAnimation(canvas, cacheToggle.checked);
-      });
-    }
-
-    if (errorToggle) {
-      errorToggle.addEventListener('change', () => {
-        stopAllAnimations();
-        $$('.flow-node', canvas).forEach(n => n.classList.remove('lit'));
-        if (errorToggle.checked) {
-          rebuildRequestPaths(false);
-          animatePacketAlongNodes(canvas, ['req-client', 'correlation', 'auth-guard'], {
-            packetClass: 'error', label: '401 Unauthorized', duration: 1500, loop: true,
-          });
-        } else {
-          rebuildRequestPaths(cacheToggle?.checked);
-          startRequestAnimation(canvas, cacheToggle?.checked);
-        }
-      });
-    }
-
-    const playBtn = $('#req-play');
-    if (playBtn) {
-      playBtn.addEventListener('click', () => {
-        stopAllAnimations();
-        $$('.flow-node', canvas).forEach(n => n.classList.remove('lit'));
-        rebuildRequestPaths(cacheToggle?.checked);
-        startRequestAnimation(canvas, cacheToggle?.checked);
-      });
-    }
-  }
-
-  function startRequestAnimation(canvas, cacheHit) {
-    const path = cacheHit
-      ? ['req-client', 'correlation', 'auth-guard', 'rbac-guard', 'timeout', 'controller', 'service', 'req-decision', 'cache-check', 'envelope', 'res-client']
-      : ['req-client', 'correlation', 'auth-guard', 'rbac-guard', 'timeout', 'controller', 'service', 'req-decision', 'database', 'envelope', 'res-client'];
-    const label = cacheHit ? 'GET /orders (cache hit)' : 'GET /orders (cache miss)';
-    animatePacketAlongNodes(canvas, path, {
-      packetClass: 'success', label, duration: 5000, loop: true,
+    // Sub-flow 2: Module conditional loading overview
+    renderFlow('module-loading-canvas', [
+      { icon: '\u2699\uFE0F', label: 'BootOptions', cat: 'core' },
+    ], {
+      branches: [{
+        afterId: undefined,
+        paths: []
+      }],
+      extraRows: [
+        { prefix: 'database?', prefixClass: 'yes', nodes: [
+          { label: 'Yes', cat: 'decision', classes: 'diamond-inline' },
+          { icon: '\uD83D\uDDC4\uFE0F', label: 'DatabaseModule', cat: 'database' },
+          { label: 'MongooseModule', cat: 'database' },
+          { label: 'RepositoryModule', cat: 'database' },
+        ]},
+        { prefix: 'cache?', prefixClass: 'yes', nodes: [
+          { label: 'Yes', cat: 'decision', classes: 'diamond-inline' },
+          { label: 'RedisModule', cat: 'cache' },
+          { label: 'CacheModule', cat: 'cache' },
+        ]},
+        { prefix: 'auth?', prefixClass: 'yes', nodes: [
+          { label: 'Yes', cat: 'decision', classes: 'diamond-inline' },
+          { label: 'AuthModule', cat: 'auth' },
+          { label: 'JwtModule', cat: 'auth' },
+          { label: 'RbacModule', cat: 'auth' },
+        ]},
+        { prefix: 'transport?', prefixClass: 'yes', nodes: [
+          { label: 'Yes', cat: 'decision', classes: 'diamond-inline' },
+          { label: 'TransportModule', cat: 'transport' },
+          { label: 'CorrelationModule', cat: 'observe' },
+          { label: 'RpcModule', cat: 'transport' },
+        ]},
+        { prefix: 'events?', prefixClass: 'yes', nodes: [
+          { label: 'Yes', cat: 'decision', classes: 'diamond-inline' },
+          { label: 'EventBusModule', cat: 'event' },
+        ]},
+        { prefix: 'queue?', prefixClass: 'yes', nodes: [
+          { label: 'Yes', cat: 'decision', classes: 'diamond-inline' },
+          { label: 'QueueModule (BullMQ)', cat: 'core' },
+        ]},
+        { prefix: 'metrics?', prefixClass: 'yes', nodes: [
+          { label: 'Yes', cat: 'decision', classes: 'diamond-inline' },
+          { label: 'MetricsModule', cat: 'observe' },
+        ]},
+        { prefix: 'logging?', prefixClass: 'yes', nodes: [
+          { label: 'Yes', cat: 'decision', classes: 'diamond-inline' },
+          { label: 'LoggingModule (pino)', cat: 'observe' },
+        ]},
+        { prefix: 'tracing?', prefixClass: 'yes', nodes: [
+          { label: 'Yes', cat: 'decision', classes: 'diamond-inline' },
+          { label: 'TracingModule', cat: 'observe' },
+        ]},
+        { prefix: 'resilience?', prefixClass: 'yes', nodes: [
+          { label: 'Yes', cat: 'decision', classes: 'diamond-inline' },
+          { label: 'CircuitBreakerModule', cat: 'transport' },
+          { label: 'RetryModule', cat: 'transport' },
+        ]},
+        { prefix: 'health?', prefixClass: 'yes', nodes: [
+          { label: 'Yes', cat: 'decision', classes: 'diamond-inline' },
+          { label: 'HealthModule', cat: 'core' },
+        ]},
+        { prefix: 'shutdown?', prefixClass: 'yes', nodes: [
+          { label: 'Yes', cat: 'decision', classes: 'diamond-inline' },
+          { label: 'ShutdownModule', cat: 'core' },
+        ]},
+        { prefix: 'interServiceAuth?', prefixClass: 'yes', nodes: [
+          { label: 'Yes', cat: 'decision', classes: 'diamond-inline' },
+          { label: 'AuthPropagationModule', cat: 'auth' },
+        ]},
+        { prefix: 'monitoring?', prefixClass: 'yes', nodes: [
+          { label: 'Yes', cat: 'decision', classes: 'diamond-inline' },
+          { label: 'ErrorReporter', cat: 'observe' },
+        ]},
+        { prefix: 'correlation?', prefixClass: 'yes', nodes: [
+          { label: 'Yes', cat: 'decision', classes: 'diamond-inline' },
+          { label: 'CorrelationModule', cat: 'observe' },
+        ]},
+      ],
     });
   }
 
-  // ── Section: Event Flow ──
-  function initEventFlow() {
-    const canvas = $('#event-canvas');
-    if (!canvas) return;
+  // ══════════════════════════════════════════
+  // SECTION 2: Request & Response
+  // ══════════════════════════════════════════
+  function initRequestSection() {
+    // HTTP lifecycle
+    renderFlow('http-lifecycle-canvas', [
+      { icon: '\uD83D\uDC64', label: 'Client', cat: 'core' },
+      { icon: '\uD83D\uDD17', label: 'Correlation ID', cat: 'observe', detail: 'correlation' },
+      { icon: '\uD83D\uDD12', label: 'Auth Guard', cat: 'auth' },
+      { icon: '\uD83D\uDEE1\uFE0F', label: 'RBAC Guard', cat: 'auth', detail: 'rbac' },
+      { icon: '\u23F1\uFE0F', label: 'Timeout', cat: 'observe' },
+      { icon: '\uD83C\uDFAF', label: 'Controller', cat: 'core' },
+      { icon: '\u2699\uFE0F', label: 'Service', cat: 'core' },
+      { icon: '\uD83D\uDCA8', label: 'Cache Check', cat: 'cache' },
+      { icon: '\uD83D\uDDC4\uFE0F', label: 'Database', cat: 'database' },
+      { icon: '\uD83D\uDCE8', label: 'Envelope', cat: 'core' },
+      { icon: '\u2705', label: 'Response', cat: 'success', classes: 'success-node' },
+    ]);
 
-    const nodes = [
-      { id: 'event-source', icon: '⚙️', label: 'OrderService.create()', cat: 'core', x: 80, y: 200 },
-      { id: 'event-bus', icon: '📢', label: 'EventBus.emit()', cat: 'event', x: 350, y: 200 },
-      { id: 'evt-notification', icon: '📧', label: 'NotificationService', cat: 'transport', x: 650, y: 70 },
-      { id: 'evt-fulfillment', icon: '📦', label: 'FulfillmentService', cat: 'core', x: 650, y: 200 },
-      { id: 'evt-analytics', icon: '📊', label: 'AnalyticsService', cat: 'observe', x: 650, y: 330 },
-    ];
-
-    renderNodes(canvas, nodes);
-
-    // Draw all connectors: source -> bus, bus -> 3 subscribers
-    const conns = [
-      { from: 'event-source', to: 'event-bus', arrow: 'arrow-pink' },
-      { from: 'event-bus', to: 'evt-notification', cssClass: 'fan-out', arrow: 'arrow-teal' },
-      { from: 'event-bus', to: 'evt-fulfillment', cssClass: 'fan-out', arrow: 'arrow-brand' },
-      { from: 'event-bus', to: 'evt-analytics', cssClass: 'fan-out', arrow: 'arrow-yellow' },
-    ];
-    drawFlowPaths(canvas, conns);
-
-    nodes.forEach(s => {
-      const node = canvas.querySelector(`[data-id="${s.id}"]`);
-      if (node) node.addEventListener('click', () => openDetail(s.id === 'event-source' ? 'event-emit' : s.id === 'event-bus' ? 'event-emit' : 'event-handler'));
+    // Cache hit vs miss
+    renderFlow('cache-paths-canvas', [
+      { icon: '\u2699\uFE0F', label: 'Service', cat: 'core' },
+      { icon: '\u2753', label: 'Cache?', cat: 'decision', classes: 'diamond-inline' },
+    ], {
+      extraRows: [
+        { prefix: 'HIT', prefixClass: 'hit', nodes: [
+          { icon: '\uD83D\uDCA8', label: 'L1/L2 Cache', cat: 'cache' },
+          { icon: '\uD83D\uDCE8', label: 'Envelope', cat: 'core' },
+          { icon: '\u2705', label: 'Response', cat: 'success', classes: 'success-node' },
+        ], arrowClass: 'success-arrow' },
+        { prefix: 'MISS', prefixClass: 'miss', nodes: [
+          { icon: '\uD83D\uDDC4\uFE0F', label: 'Database', cat: 'database' },
+          { icon: '\uD83D\uDCA8', label: 'Write-back Cache', cat: 'cache' },
+          { icon: '\uD83D\uDCE8', label: 'Envelope', cat: 'core' },
+          { icon: '\u2705', label: 'Response', cat: 'success', classes: 'success-node' },
+        ]},
+      ],
     });
 
-    const playBtn = $('#event-play');
-    if (playBtn) {
-      playBtn.addEventListener('click', () => {
-        stopAllAnimations();
-        $$('.flow-node', canvas).forEach(n => n.classList.remove('lit'));
-        startEventAnimation(canvas);
-      });
-    }
-  }
-
-  function startEventAnimation(canvas) {
-    animatePacketAlongNodes(canvas, ['event-source', 'event-bus'], {
-      label: 'OrderCreatedEvent', duration: 1200, loop: false,
-      onComplete: () => {
-        const busNode = canvas.querySelector('[data-id="event-bus"]');
-        if (busNode) {
-          const ripple = document.createElement('div');
-          ripple.className = 'ripple';
-          ripple.style.left = `${busNode.offsetLeft + busNode.offsetWidth / 2}px`;
-          ripple.style.top = `${busNode.offsetTop + busNode.offsetHeight / 2}px`;
-          canvas.appendChild(ripple);
-          setTimeout(() => ripple.remove(), 1200);
-        }
-
-        const targets = ['evt-notification', 'evt-fulfillment', 'evt-analytics'];
-        targets.forEach((t, i) => {
-          setTimeout(() => {
-            const p = createPacket(canvas);
-            p.className = 'packet moving';
-
-            const from = canvas.querySelector('[data-id="event-bus"]');
-            const to = canvas.querySelector(`[data-id="${t}"]`);
-            if (!from || !to) return;
-
-            const fx = from.offsetLeft + from.offsetWidth / 2;
-            const fy = from.offsetTop + from.offsetHeight / 2;
-            const tx = to.offsetLeft + to.offsetWidth / 2;
-            const ty = to.offsetTop + to.offsetHeight / 2;
-
-            // Glow the fan-out path
-            glowConnectorSegment(canvas, 'event-bus', t);
-
-            let start = null;
-            function step(ts) {
-              if (!start) start = ts;
-              const progress = Math.min((ts - start) / (800 / animSpeed), 1);
-              const x = fx + (tx - fx) * easeInOut(progress);
-              const y = fy + (ty - fy) * easeInOut(progress);
-              p.style.left = `${x - 5}px`;
-              p.style.top = `${y - 5}px`;
-
-              if (progress >= 1) {
-                to.classList.add('lit');
-                p.remove();
-                if (i === targets.length - 1) {
-                  setTimeout(() => {
-                    $$('.flow-node', canvas).forEach(n => n.classList.remove('lit'));
-                    unglowAll(canvas);
-                    startEventAnimation(canvas);
-                  }, 1500 / animSpeed);
-                }
-                return;
-              }
-              const id = requestAnimationFrame(step);
-              activeAnimations.push(id);
-            }
-            const id = requestAnimationFrame(step);
-            activeAnimations.push(id);
-          }, i * 200);
-        });
-      },
-    });
-  }
-
-  // ── Section: gRPC Flow ──
-  function initGrpcFlow() {
-    const canvas = $('#grpc-canvas');
-    if (!canvas) return;
-
-    const nodes = [
-      { id: 'grpc-gateway', icon: '🌐', label: 'API Gateway', cat: 'core', x: 30, y: 160 },
-      { id: 'grpc-client', icon: '📡', label: 'ServiceClient<T>', cat: 'transport', x: 170, y: 160 },
-      { id: 'grpc-corr', icon: '🔗', label: 'Correlation Inject', cat: 'observe', x: 340, y: 80 },
-      { id: 'grpc-auth', icon: '🔒', label: 'Auth Inject', cat: 'auth', x: 340, y: 240 },
-      { id: 'grpc-call', icon: '📞', label: 'gRPC Call', cat: 'transport', x: 510, y: 160 },
-      { id: 'grpc-service', icon: '⚙️', label: 'Product Service', cat: 'core', x: 670, y: 160 },
-      { id: 'grpc-handler', icon: '🎯', label: 'RPC Handler', cat: 'core', x: 830, y: 160 },
-      { id: 'grpc-cache', icon: '💨', label: 'Cache', cat: 'cache', x: 970, y: 80 },
-      { id: 'grpc-db', icon: '🗄️', label: 'Database', cat: 'database', x: 970, y: 240 },
-      { id: 'grpc-response', icon: '📨', label: 'Response', cat: 'success', x: 1100, y: 160 },
-    ];
-
-    renderNodes(canvas, nodes);
-
-    const conns = [
-      // Forward path
-      { from: 'grpc-gateway', to: 'grpc-client', arrow: 'arrow-brand' },
-      { from: 'grpc-client', to: 'grpc-corr', arrow: 'arrow-yellow' },
-      { from: 'grpc-client', to: 'grpc-auth', arrow: 'arrow-purple' },
-      { from: 'grpc-corr', to: 'grpc-call', arrow: 'arrow-teal' },
-      { from: 'grpc-auth', to: 'grpc-call', arrow: 'arrow-teal' },
-      { from: 'grpc-call', to: 'grpc-service', arrow: 'arrow-teal' },
-      { from: 'grpc-service', to: 'grpc-handler', arrow: 'arrow-brand' },
-      // Fan-out from handler
-      { from: 'grpc-handler', to: 'grpc-cache', cssClass: 'branch-upper', arrow: 'arrow-green' },
-      { from: 'grpc-handler', to: 'grpc-db', cssClass: 'branch-lower', arrow: 'arrow-yellow' },
-      // To response
-      { from: 'grpc-cache', to: 'grpc-response', arrow: 'arrow-green' },
-      { from: 'grpc-db', to: 'grpc-response', arrow: 'arrow-green' },
-      // Return path: response back to gateway
-      { from: 'grpc-response', to: 'grpc-gateway', type: 'return-path', arrow: 'arrow-red' },
-    ];
-    drawFlowPaths(canvas, conns);
-
-    nodes.forEach(s => {
-      const node = canvas.querySelector(`[data-id="${s.id}"]`);
-      if (node) node.addEventListener('click', () => openDetail(s.id.replace('grpc-', '') === 'client' ? 'grpc-client' : s.id.replace('grpc-', '') === 'handler' ? 'grpc-handler' : s.id));
+    // Error paths
+    renderFlow('error-paths-canvas', [
+      { icon: '\uD83D\uDC64', label: 'Client Request', cat: 'core' },
+    ], {
+      extraRows: [
+        { prefix: '401', prefixClass: 'no', nodes: [
+          { label: 'Auth Guard', cat: 'auth' },
+          { label: 'Invalid/missing token', cat: 'error', classes: 'error-node' },
+          { label: '401 Unauthorized', cat: 'error', classes: 'error-node' },
+        ], arrowClass: 'error-arrow' },
+        { prefix: '403', prefixClass: 'no', nodes: [
+          { label: 'RBAC Guard', cat: 'auth' },
+          { label: 'Insufficient roles', cat: 'error', classes: 'error-node' },
+          { label: '403 Forbidden', cat: 'error', classes: 'error-node' },
+        ], arrowClass: 'error-arrow' },
+        { prefix: '404', prefixClass: 'no', nodes: [
+          { label: 'Controller', cat: 'core' },
+          { label: 'Entity not found', cat: 'error', classes: 'error-node' },
+          { label: '404 Not Found', cat: 'error', classes: 'error-node' },
+        ], arrowClass: 'error-arrow' },
+        { prefix: '408', prefixClass: 'no', nodes: [
+          { label: 'TimeoutInterceptor', cat: 'observe' },
+          { label: 'Handler exceeds limit', cat: 'error', classes: 'error-node' },
+          { label: '408 Timeout', cat: 'error', classes: 'error-node' },
+        ], arrowClass: 'error-arrow' },
+        { prefix: '500', prefixClass: 'no', nodes: [
+          { label: 'Service / DB', cat: 'core' },
+          { label: 'Unhandled exception', cat: 'error', classes: 'error-node' },
+          { label: 'AllExceptionsFilter', cat: 'error', classes: 'error-node' },
+          { label: '500 Internal', cat: 'error', classes: 'error-node' },
+        ], arrowClass: 'error-arrow' },
+      ],
     });
 
-    // Circuit breaker
-    const cbStates = ['closed', 'half', 'open'];
-    let cbIdx = 0;
-    const cbBtn = $('#grpc-cb-toggle');
-    if (cbBtn) {
-      cbBtn.addEventListener('click', () => {
-        cbIdx = (cbIdx + 1) % 3;
-        const dot = $('.cb-dot');
-        const lbl = $('#cb-label');
-        dot.className = `cb-dot ${cbStates[cbIdx]}`;
-        lbl.textContent = cbStates[cbIdx].charAt(0).toUpperCase() + cbStates[cbIdx].slice(1);
-      });
-    }
-
-    const playBtn = $('#grpc-play');
-    if (playBtn) {
-      playBtn.addEventListener('click', () => {
-        stopAllAnimations();
-        $$('.flow-node', canvas).forEach(n => n.classList.remove('lit'));
-        // Forward animation
-        animatePacketAlongNodes(canvas,
-          ['grpc-gateway', 'grpc-client', 'grpc-call', 'grpc-service', 'grpc-handler', 'grpc-db', 'grpc-response'],
-          {
-            label: 'FindProduct(id)',
-            duration: 4000,
-            loop: false,
-            packetClass: 'success',
-            onComplete: () => {
-              // Return animation
-              setTimeout(() => {
-                animatePacketAlongNodes(canvas,
-                  ['grpc-response', 'grpc-gateway'],
-                  {
-                    label: 'Response',
-                    duration: 1500,
-                    loop: false,
-                    packetClass: 'error',
-                    onComplete: () => {
-                      setTimeout(() => {
-                        $$('.flow-node', canvas).forEach(n => n.classList.remove('lit'));
-                        unglowAll(canvas);
-                        $('#grpc-play')?.click();
-                      }, 1000 / animSpeed);
-                    },
-                  }
-                );
-              }, 300);
-            },
-          }
-        );
-      });
-    }
-  }
-
-  // ── Section: CQRS Flow ──
-  function initCqrsFlow() {
-    const canvas = $('#cqrs-canvas');
-    if (!canvas) return;
-
-    const nodes = [
-      { id: 'cqrs-cmd', icon: '📝', label: 'Command', cat: 'cqrs', x: 50, y: 200 },
-      { id: 'cqrs-bus', icon: '🚌', label: 'CommandBus', cat: 'cqrs', x: 200, y: 200 },
-      { id: 'cqrs-handler', icon: '⚙️', label: 'Handler', cat: 'cqrs', x: 350, y: 200 },
-      { id: 'cqrs-agg', icon: '🧩', label: 'AggregateRoot', cat: 'cqrs', x: 520, y: 200 },
-      { id: 'cqrs-store', icon: '📚', label: 'EventStore', cat: 'database', x: 700, y: 200 },
-      { id: 'cqrs-proj', icon: '📊', label: 'Projection', cat: 'core', x: 920, y: 90 },
-      { id: 'cqrs-outbox', icon: '📤', label: 'Outbox', cat: 'event', x: 920, y: 200 },
-      { id: 'cqrs-snap', icon: '📸', label: 'Snapshot', cat: 'cache', x: 920, y: 310 },
-    ];
-
-    renderNodes(canvas, nodes);
-
-    const conns = [
-      // Main chain
-      { from: 'cqrs-cmd', to: 'cqrs-bus', arrow: 'arrow-cqrs' },
-      { from: 'cqrs-bus', to: 'cqrs-handler', arrow: 'arrow-cqrs' },
-      { from: 'cqrs-handler', to: 'cqrs-agg', arrow: 'arrow-cqrs' },
-      { from: 'cqrs-agg', to: 'cqrs-store', arrow: 'arrow-green' },
-      // Fan-out from event store
-      { from: 'cqrs-store', to: 'cqrs-proj', cssClass: 'fan-out', arrow: 'arrow-brand' },
-      { from: 'cqrs-store', to: 'cqrs-outbox', cssClass: 'fan-out', arrow: 'arrow-pink' },
-      { from: 'cqrs-store', to: 'cqrs-snap', cssClass: 'fan-out', arrow: 'arrow-yellow' },
-    ];
-    drawFlowPaths(canvas, conns);
-
-    nodes.forEach(s => {
-      const node = canvas.querySelector(`[data-id="${s.id}"]`);
-      if (node) {
-        const key = s.id.replace('cqrs-', '');
-        const detailKey = {
-          cmd: 'command-bus', bus: 'command-bus', handler: 'cmd-handler',
-          agg: 'aggregate', store: 'event-store', proj: 'projection',
-          outbox: 'outbox', snap: 'snapshot',
-        }[key] || key;
-        node.addEventListener('click', () => openDetail(detailKey));
-      }
+    // Validation pipe rejection
+    renderFlow('validation-canvas', [
+      { icon: '\uD83D\uDC64', label: 'Client', cat: 'core' },
+      { icon: '\uD83D\uDD12', label: 'Auth Guard', cat: 'auth' },
+      { icon: '\uD83D\uDCCB', label: 'ValidationPipe', cat: 'core' },
+      { icon: '\u2718', label: 'DTO invalid', cat: 'error', classes: 'error-node' },
+      { icon: '\uD83D\uDCE8', label: '400 Bad Request', cat: 'error', classes: 'error-node' },
+    ], {
+      extraRows: [
+        { prefix: 'Response:', nodes: [
+          { label: '{ statusCode: 400, message: ["field must be..."], error: "Bad Request" }', cat: 'error', classes: 'error-node' },
+        ]},
+      ],
     });
 
-    let version = 0;
-    const versionEl = $('#ev-version');
-
-    const playBtn = $('#cqrs-play');
-    if (playBtn) {
-      playBtn.addEventListener('click', () => {
-        stopAllAnimations();
-        version = 0;
-        if (versionEl) versionEl.textContent = `v${version}`;
-        $$('.flow-node', canvas).forEach(n => n.classList.remove('lit'));
-        animateCqrsFlow(canvas, versionEl);
-      });
-    }
-  }
-
-  function animateCqrsFlow(canvas, versionEl) {
-    let version = parseInt((versionEl?.textContent || 'v0').replace('v', '')) || 0;
-    animatePacketAlongNodes(canvas, ['cqrs-cmd', 'cqrs-bus', 'cqrs-handler', 'cqrs-agg', 'cqrs-store'], {
-      label: 'CreateOrderCommand', duration: 3000, loop: false,
-      onStep: (idx) => {
-        if (idx === 4 && versionEl) {
-          version++;
-          versionEl.textContent = `v${version}`;
-        }
-      },
-      onComplete: () => {
-        const targets = ['cqrs-proj', 'cqrs-outbox', 'cqrs-snap'];
-        targets.forEach((t, i) => {
-          setTimeout(() => {
-            const from = canvas.querySelector('[data-id="cqrs-store"]');
-            const to = canvas.querySelector(`[data-id="${t}"]`);
-            if (!from || !to) return;
-
-            const p = createPacket(canvas);
-            p.className = 'packet moving';
-
-            const fx = from.offsetLeft + from.offsetWidth / 2;
-            const fy = from.offsetTop + from.offsetHeight / 2;
-            const tx = to.offsetLeft + to.offsetWidth / 2;
-            const ty = to.offsetTop + to.offsetHeight / 2;
-
-            glowConnectorSegment(canvas, 'cqrs-store', t);
-
-            let start = null;
-            function step(ts) {
-              if (!start) start = ts;
-              const progress = Math.min((ts - start) / (600 / animSpeed), 1);
-              p.style.left = `${fx + (tx - fx) * easeInOut(progress) - 5}px`;
-              p.style.top = `${fy + (ty - fy) * easeInOut(progress) - 5}px`;
-              if (progress >= 1) {
-                to.classList.add('lit');
-                p.remove();
-                if (i === targets.length - 1) {
-                  setTimeout(() => {
-                    $$('.flow-node', canvas).forEach(n => n.classList.remove('lit'));
-                    unglowAll(canvas);
-                    animateCqrsFlow(canvas, versionEl);
-                  }, 1500 / animSpeed);
-                }
-                return;
-              }
-              const id = requestAnimationFrame(step);
-              activeAnimations.push(id);
-            }
-            const id = requestAnimationFrame(step);
-            activeAnimations.push(id);
-          }, i * 150);
-        });
-      },
+    // Response envelope
+    renderFlow('envelope-canvas', [
+      { icon: '\u2699\uFE0F', label: 'Handler returns data', cat: 'core' },
+      { icon: '\uD83D\uDCE8', label: 'TransformInterceptor', cat: 'core' },
+      { label: 'Wrap in envelope', cat: 'core' },
+    ], {
+      extraRows: [
+        { prefix: 'Output:', nodes: [
+          { label: '{ success, data, meta, timestamp, correlationId }', cat: 'success', classes: 'success-node' },
+        ]},
+      ],
     });
   }
 
-  // ── Section: Module Dependency Map ──
+  // ══════════════════════════════════════════
+  // SECTION 3: Auth Flows
+  // ══════════════════════════════════════════
+  function initAuthSection() {
+    // JWT Login
+    renderFlow('jwt-login-canvas', [
+      { icon: '\uD83D\uDC64', label: 'Client', cat: 'core' },
+      { icon: '\uD83D\uDCE7', label: 'POST /auth/login', cat: 'core' },
+      { icon: '\uD83D\uDD12', label: 'Validate credentials', cat: 'auth', detail: 'jwt-login' },
+      { icon: '\u2705', label: 'User found + password match', cat: 'success', classes: 'success-node' },
+      { icon: '\uD83D\uDD11', label: 'Sign access token', cat: 'auth' },
+      { icon: '\uD83D\uDD11', label: 'Sign refresh token', cat: 'auth' },
+      { icon: '\uD83D\uDCE8', label: '{ access, refresh }', cat: 'success', classes: 'success-node' },
+    ]);
+
+    // JWT Refresh
+    renderFlow('jwt-refresh-canvas', [
+      { icon: '\uD83D\uDC64', label: 'Client', cat: 'core' },
+      { icon: '\uD83D\uDD04', label: 'POST /auth/refresh', cat: 'core' },
+      { icon: '\uD83D\uDD12', label: 'Verify refresh token', cat: 'auth', detail: 'jwt-refresh' },
+      { icon: '\uD83D\uDEAB', label: 'Revoke old refresh', cat: 'auth' },
+      { icon: '\uD83D\uDD11', label: 'Sign new access', cat: 'auth' },
+      { icon: '\uD83D\uDD11', label: 'Sign new refresh', cat: 'auth' },
+      { icon: '\uD83D\uDCE8', label: '{ access, refresh }', cat: 'success', classes: 'success-node' },
+    ]);
+
+    // Token revocation
+    renderFlow('token-revoke-canvas', [
+      { icon: '\uD83D\uDC64', label: 'Request', cat: 'core' },
+      { icon: '\uD83D\uDD12', label: 'JwtAuthGuard', cat: 'auth' },
+      { icon: '\uD83D\uDD0D', label: 'isRevoked(token)', cat: 'auth', detail: 'revocation' },
+    ], {
+      extraRows: [
+        { prefix: 'Not revoked', prefixClass: 'yes', nodes: [
+          { icon: '\u2705', label: 'Accept', cat: 'success', classes: 'success-node' },
+          { label: 'Continue to controller', cat: 'core' },
+        ], arrowClass: 'success-arrow' },
+        { prefix: 'Revoked', prefixClass: 'no', nodes: [
+          { icon: '\u274C', label: 'Reject', cat: 'error', classes: 'error-node' },
+          { label: '401 Unauthorized', cat: 'error', classes: 'error-node' },
+        ], arrowClass: 'error-arrow' },
+      ],
+    });
+
+    // OAuth2 Social
+    renderFlow('oauth-canvas', [
+      { icon: '\uD83D\uDC64', label: 'User', cat: 'core' },
+      { icon: '\uD83C\uDF10', label: 'GET /auth/google', cat: 'core' },
+      { icon: '\u21AA\uFE0F', label: 'Redirect to Google', cat: 'transport', detail: 'oauth2' },
+      { icon: '\uD83C\uDF10', label: 'Google consent', cat: 'transport' },
+      { icon: '\u21A9\uFE0F', label: 'Callback + code', cat: 'core' },
+      { icon: '\uD83D\uDC64', label: 'SocialProfile', cat: 'auth' },
+      { icon: '\u2699\uFE0F', label: 'findOrCreate user', cat: 'core' },
+      { icon: '\uD83D\uDD11', label: 'Sign JWT', cat: 'auth' },
+      { icon: '\uD83D\uDCE8', label: '{ access, refresh }', cat: 'success', classes: 'success-node' },
+    ]);
+
+    // API Key
+    renderFlow('apikey-canvas', [
+      { icon: '\uD83D\uDC64', label: 'Client', cat: 'core' },
+      { icon: '\uD83D\uDCE9', label: 'X-API-Key header', cat: 'core' },
+      { icon: '\uD83D\uDD0D', label: 'Extract key', cat: 'auth', detail: 'apikey' },
+      { icon: '\u2699\uFE0F', label: 'validate(key)', cat: 'auth' },
+    ], {
+      extraRows: [
+        { prefix: 'Valid', prefixClass: 'yes', nodes: [
+          { icon: '\u2705', label: 'Accept', cat: 'success', classes: 'success-node' },
+          { label: 'Continue to controller', cat: 'core' },
+        ], arrowClass: 'success-arrow' },
+        { prefix: 'Invalid', prefixClass: 'no', nodes: [
+          { icon: '\u274C', label: '401 Unauthorized', cat: 'error', classes: 'error-node' },
+        ], arrowClass: 'error-arrow' },
+      ],
+    });
+
+    // RBAC
+    renderFlow('rbac-canvas', [
+      { icon: '\uD83D\uDC64', label: 'Authenticated user', cat: 'auth' },
+      { icon: '\uD83D\uDCCB', label: 'Extract roles from JWT', cat: 'auth', detail: 'rbac' },
+      { icon: '\uD83C\uDFAF', label: '@Roles() metadata', cat: 'core' },
+      { icon: '\u2696\uFE0F', label: 'Compare roles', cat: 'auth' },
+    ], {
+      extraRows: [
+        { prefix: 'Match', prefixClass: 'yes', nodes: [
+          { icon: '\u2705', label: 'Allow', cat: 'success', classes: 'success-node' },
+        ], arrowClass: 'success-arrow' },
+        { prefix: 'No match', prefixClass: 'no', nodes: [
+          { icon: '\u274C', label: '403 Forbidden', cat: 'error', classes: 'error-node' },
+        ], arrowClass: 'error-arrow' },
+      ],
+    });
+
+    // Session auth
+    renderFlow('session-canvas', [
+      { icon: '\uD83C\uDF6A', label: 'Cookie', cat: 'core', detail: 'session' },
+      { icon: '\uD83D\uDD0D', label: 'Extract session ID', cat: 'auth' },
+      { icon: '\uD83D\uDDC4\uFE0F', label: 'SessionStore.get()', cat: 'cache' },
+      { icon: '\u2699\uFE0F', label: 'Validate session', cat: 'auth' },
+    ], {
+      extraRows: [
+        { prefix: 'Valid', prefixClass: 'yes', nodes: [
+          { label: '@Session() injected', cat: 'success', classes: 'success-node' },
+          { label: 'Continue', cat: 'core' },
+        ], arrowClass: 'success-arrow' },
+        { prefix: 'Expired/Invalid', prefixClass: 'no', nodes: [
+          { label: '401 Unauthorized', cat: 'error', classes: 'error-node' },
+        ], arrowClass: 'error-arrow' },
+      ],
+    });
+
+    // TOTP 2FA
+    renderFlow('totp-canvas', [
+      { icon: '\uD83D\uDC64', label: 'User', cat: 'core', detail: 'totp' },
+      { icon: '\uD83D\uDD12', label: 'Login (email+pass)', cat: 'auth' },
+      { icon: '\u2705', label: 'Credentials valid', cat: 'success', classes: 'success-node' },
+      { icon: '\u2753', label: '2FA enabled?', cat: 'decision', classes: 'diamond-inline' },
+    ], {
+      extraRows: [
+        { prefix: 'Yes', prefixClass: 'yes', nodes: [
+          { label: 'Require TOTP code', cat: 'auth' },
+          { label: 'User submits code', cat: 'core' },
+          { label: 'TotpService.verify()', cat: 'auth' },
+          { icon: '\u2705', label: 'Access granted', cat: 'success', classes: 'success-node' },
+        ]},
+        { prefix: 'No', prefixClass: 'no', nodes: [
+          { icon: '\u2705', label: 'Access granted directly', cat: 'success', classes: 'success-node' },
+        ], arrowClass: 'success-arrow' },
+      ],
+    });
+  }
+
+  // ══════════════════════════════════════════
+  // SECTION 4: Database & Cache
+  // ══════════════════════════════════════════
+  function initDbCacheSection() {
+    // Reader/Writer split
+    renderFlow('rw-split-canvas', [
+      { icon: '\u2699\uFE0F', label: 'Service', cat: 'core' },
+      { icon: '\u2753', label: 'Read or Write?', cat: 'decision', classes: 'diamond-inline', detail: 'rw-split' },
+    ], {
+      extraRows: [
+        { prefix: 'READ', prefixClass: 'hit', nodes: [
+          { label: 'readerUri', cat: 'database' },
+          { icon: '\uD83D\uDDC4\uFE0F', label: 'Replica', cat: 'database' },
+        ], arrowClass: 'success-arrow' },
+        { prefix: 'WRITE', prefixClass: 'miss', nodes: [
+          { label: 'writerUri', cat: 'database' },
+          { icon: '\uD83D\uDDC4\uFE0F', label: 'Primary', cat: 'database' },
+        ]},
+      ],
+    });
+
+    // Multi-connection
+    renderFlow('multi-conn-canvas', [
+      { icon: '\u2699\uFE0F', label: 'Service', cat: 'core' },
+      { icon: '\uD83D\uDD17', label: 'Connection name', cat: 'core' },
+    ], {
+      extraRows: [
+        { prefix: 'master', prefixClass: 'yes', nodes: [
+          { label: 'writerUri + readerUri', cat: 'database' },
+          { label: 'Main app DB', cat: 'database' },
+        ]},
+        { prefix: 'analytics', prefixClass: 'yes', nodes: [
+          { label: 'writerUri only', cat: 'database' },
+          { label: 'Metrics DB', cat: 'database' },
+        ]},
+        { prefix: 'logs', prefixClass: 'yes', nodes: [
+          { label: 'writerUri only', cat: 'database' },
+          { label: 'Log DB', cat: 'database' },
+        ]},
+      ],
+    });
+
+    // BaseRepository CRUD
+    renderFlow('base-repo-canvas', [
+      { icon: '\u2699\uFE0F', label: 'CrudService', cat: 'core' },
+      { icon: '\uD83D\uDCDA', label: 'BaseRepository<T>', cat: 'database' },
+    ], {
+      extraRows: [
+        { prefix: 'create()', nodes: [{ label: 'beforeCreate hook', cat: 'core' }, { label: 'model.create()', cat: 'database' }, { label: 'afterCreate hook', cat: 'core' }] },
+        { prefix: 'findById()', nodes: [{ label: 'reader connection', cat: 'database' }, { label: 'model.findById().lean()', cat: 'database' }] },
+        { prefix: 'update()', nodes: [{ label: 'beforeUpdate hook', cat: 'core' }, { label: 'writer connection', cat: 'database' }, { label: 'afterUpdate hook', cat: 'core' }] },
+        { prefix: 'delete()', nodes: [{ label: 'beforeDelete hook', cat: 'core' }, { label: 'model.deleteOne()', cat: 'database' }, { label: 'afterDelete hook', cat: 'core' }] },
+        { prefix: 'paginate()', nodes: [{ label: 'reader connection', cat: 'database' }, { label: '{ items, total, page, pages }', cat: 'database' }] },
+      ],
+    });
+
+    // CachedRepository
+    renderFlow('cached-repo-canvas', [
+      { icon: '\uD83D\uDD0D', label: 'findById(id)', cat: 'core', detail: 'cached-repo' },
+      { icon: '\uD83D\uDCA8', label: 'L1 Memory', cat: 'cache' },
+    ], {
+      extraRows: [
+        { prefix: 'L1 HIT', prefixClass: 'hit', nodes: [{ icon: '\u2705', label: 'Return', cat: 'success', classes: 'success-node' }], arrowClass: 'success-arrow' },
+        { prefix: 'L1 MISS', prefixClass: 'miss', nodes: [
+          { icon: '\uD83D\uDCA8', label: 'L2 Redis', cat: 'cache' },
+        ]},
+        { prefix: 'L2 HIT', prefixClass: 'hit', indent: 40, nodes: [
+          { label: 'Write-back L1', cat: 'cache' },
+          { icon: '\u2705', label: 'Return', cat: 'success', classes: 'success-node' },
+        ], arrowClass: 'success-arrow' },
+        { prefix: 'L2 MISS', prefixClass: 'miss', indent: 40, nodes: [
+          { icon: '\uD83D\uDDC4\uFE0F', label: 'Database', cat: 'database' },
+          { label: 'Write-back L1+L2', cat: 'cache' },
+          { icon: '\u2705', label: 'Return', cat: 'success', classes: 'success-node' },
+        ]},
+      ],
+    });
+
+    // Unit of Work
+    renderFlow('uow-canvas', [
+      { icon: '\u2699\uFE0F', label: 'Service', cat: 'core', detail: 'uow' },
+      { icon: '\uD83D\uDD12', label: 'Start transaction', cat: 'database' },
+      { icon: '\u2699\uFE0F', label: 'Operation 1', cat: 'core' },
+      { icon: '\u2699\uFE0F', label: 'Operation 2', cat: 'core' },
+      { icon: '\u2699\uFE0F', label: 'Operation N', cat: 'core' },
+    ], {
+      extraRows: [
+        { prefix: 'Success', prefixClass: 'yes', nodes: [
+          { icon: '\u2705', label: 'Commit', cat: 'success', classes: 'success-node' },
+        ], arrowClass: 'success-arrow' },
+        { prefix: 'Error', prefixClass: 'no', nodes: [
+          { icon: '\u274C', label: 'Rollback', cat: 'error', classes: 'error-node' },
+        ], arrowClass: 'error-arrow' },
+      ],
+    });
+
+    // Migration
+    renderFlow('migration-canvas', [
+      { icon: '\uD83D\uDCBB', label: 'migrate:run', cat: 'core' },
+      { icon: '\uD83D\uDD0D', label: 'Check _migrations', cat: 'database' },
+      { icon: '\uD83D\uDCC4', label: 'Find pending', cat: 'database' },
+      { icon: '\u2699\uFE0F', label: 'Run up()', cat: 'core' },
+      { icon: '\uD83D\uDCDD', label: 'Record in _migrations', cat: 'database' },
+      { icon: '\u2705', label: 'Done', cat: 'success', classes: 'success-node' },
+    ]);
+
+    // Specification pattern
+    renderFlow('spec-canvas', [
+      { icon: '\uD83D\uDD0D', label: 'Spec: isActive()', cat: 'core' },
+      { label: '+', cat: 'core' },
+      { icon: '\uD83D\uDD0D', label: 'Spec: hasCategory(cat)', cat: 'core' },
+      { label: '+', cat: 'core' },
+      { icon: '\uD83D\uDD0D', label: 'Spec: priceRange(min,max)', cat: 'core' },
+      { icon: '\u2699\uFE0F', label: 'Compose filters', cat: 'core' },
+      { icon: '\uD83D\uDDC4\uFE0F', label: 'Execute query', cat: 'database' },
+      { icon: '\u2705', label: 'Filtered results', cat: 'success', classes: 'success-node' },
+    ]);
+
+    // Multi-layer cache lookup
+    renderFlow('cache-lookup-canvas', [
+      { icon: '\uD83D\uDD0D', label: 'cache.get(key)', cat: 'core' },
+      { icon: '\uD83D\uDCA8', label: 'L1 Memory LRU', cat: 'cache' },
+    ], {
+      extraRows: [
+        { prefix: 'L1 HIT', prefixClass: 'hit', nodes: [{ icon: '\u2705', label: 'Return (fastest)', cat: 'success', classes: 'success-node' }], arrowClass: 'success-arrow' },
+        { prefix: 'L1 MISS', prefixClass: 'miss', nodes: [
+          { icon: '\uD83D\uDCA8', label: 'L2 Redis', cat: 'cache' },
+        ]},
+        { prefix: 'L2 HIT', prefixClass: 'hit', indent: 40, nodes: [{ icon: '\u2705', label: 'Return + promote to L1', cat: 'success', classes: 'success-node' }], arrowClass: 'success-arrow' },
+        { prefix: 'L2 MISS', prefixClass: 'miss', indent: 40, nodes: [{ icon: '\u274C', label: 'MISS (caller fetches)', cat: 'error', classes: 'error-node' }], arrowClass: 'error-arrow' },
+      ],
+    });
+
+    // Write-through
+    renderFlow('cache-write-canvas', [
+      { icon: '\u270F\uFE0F', label: 'cache.set(key, value)', cat: 'core' },
+      { icon: '\u2753', label: 'Size check', cat: 'decision', classes: 'diamond-inline' },
+    ], {
+      extraRows: [
+        { prefix: '<1MB', prefixClass: 'yes', nodes: [
+          { label: 'Write L1 + L2', cat: 'cache' },
+          { icon: '\u2705', label: 'Both layers updated', cat: 'success', classes: 'success-node' },
+        ], arrowClass: 'success-arrow' },
+        { prefix: '>1MB', prefixClass: 'miss', nodes: [
+          { label: 'Write L2 only', cat: 'cache' },
+          { label: '(skip L1 — too large)', cat: 'cache' },
+        ]},
+      ],
+    });
+
+    // Stampede prevention
+    renderFlow('stampede-canvas', [
+      { icon: '\uD83D\uDD0D', label: 'getOrSet(key, factory)', cat: 'core', detail: 'stampede' },
+      { icon: '\uD83D\uDCA8', label: 'Check cache', cat: 'cache' },
+    ], {
+      extraRows: [
+        { prefix: 'HIT', prefixClass: 'hit', nodes: [{ icon: '\u2705', label: 'Return cached', cat: 'success', classes: 'success-node' }], arrowClass: 'success-arrow' },
+        { prefix: 'MISS', prefixClass: 'miss', nodes: [
+          { icon: '\uD83D\uDD12', label: 'Acquire lock', cat: 'cache' },
+          { icon: '\u2699\uFE0F', label: 'Run factory()', cat: 'core' },
+          { label: 'Store result', cat: 'cache' },
+          { icon: '\uD83D\uDD13', label: 'Release lock', cat: 'cache' },
+          { icon: '\u2705', label: 'Distribute to waiters', cat: 'success', classes: 'success-node' },
+        ]},
+      ],
+    });
+
+    // Cache warming
+    renderFlow('cache-warm-canvas', [
+      { icon: '\uD83D\uDE80', label: 'App startup', cat: 'core' },
+      { icon: '\uD83D\uDDC4\uFE0F', label: 'Load hot keys list', cat: 'database' },
+      { icon: '\u2699\uFE0F', label: 'Fetch values', cat: 'core' },
+      { icon: '\uD83D\uDCA8', label: 'Pre-populate L1+L2', cat: 'cache' },
+      { icon: '\u2705', label: 'Cache warm', cat: 'success', classes: 'success-node' },
+      { icon: '\uD83D\uDE80', label: 'Ready (cold-start free)', cat: 'success', classes: 'success-node' },
+    ]);
+
+    // Tag invalidation
+    renderFlow('tag-invalidate-canvas', [
+      { icon: '\uD83C\uDFF7\uFE0F', label: 'invalidateTag("products")', cat: 'core' },
+      { icon: '\uD83D\uDD0D', label: 'Find all keys with tag', cat: 'cache' },
+      { icon: '\uD83D\uDDD1\uFE0F', label: 'Delete matching keys', cat: 'cache' },
+      { icon: '\u2705', label: 'Tag cleared', cat: 'success', classes: 'success-node' },
+    ]);
+
+    // getOrSet
+    renderFlow('get-or-set-canvas', [
+      { icon: '\uD83D\uDD0D', label: 'cache.getOrSet(key, fn, ttl)', cat: 'core' },
+      { icon: '\uD83D\uDCA8', label: 'Try cache', cat: 'cache' },
+    ], {
+      extraRows: [
+        { prefix: 'EXISTS', prefixClass: 'hit', nodes: [{ icon: '\u2705', label: 'Return cached value', cat: 'success', classes: 'success-node' }], arrowClass: 'success-arrow' },
+        { prefix: 'NOT EXISTS', prefixClass: 'miss', nodes: [
+          { icon: '\u2699\uFE0F', label: 'Call fn()', cat: 'core' },
+          { label: 'cache.set(key, result, ttl)', cat: 'cache' },
+          { icon: '\u2705', label: 'Return fresh value', cat: 'success', classes: 'success-node' },
+        ]},
+      ],
+    });
+  }
+
+  // ══════════════════════════════════════════
+  // SECTION 5: Transport & Communication
+  // ══════════════════════════════════════════
+  function initTransportSection() {
+    // gRPC lifecycle
+    renderFlow('grpc-lifecycle-canvas', [
+      { icon: '\uD83C\uDF10', label: 'API Gateway', cat: 'core', detail: 'grpc-lifecycle' },
+      { icon: '\uD83D\uDCE1', label: 'ServiceClient<T>', cat: 'transport' },
+      { icon: '\uD83D\uDD17', label: 'Inject correlation', cat: 'observe' },
+      { icon: '\uD83D\uDD12', label: 'Inject auth', cat: 'auth' },
+      { icon: '\uD83D\uDCE6', label: 'gRPC metadata', cat: 'transport' },
+      { icon: '\uD83D\uDCE1', label: 'Send over wire', cat: 'transport' },
+      { icon: '\u2699\uFE0F', label: 'Remote service', cat: 'core' },
+      { icon: '\uD83C\uDFAF', label: 'RPC Handler', cat: 'core' },
+      { icon: '\uD83D\uDCE8', label: 'Serialize response', cat: 'transport' },
+      { icon: '\u2705', label: 'Deserialize at caller', cat: 'success', classes: 'success-node' },
+    ]);
+
+    // ResilientClient
+    renderFlow('resilient-canvas', [
+      { icon: '\uD83D\uDCE1', label: 'ResilientClient', cat: 'transport', detail: 'resilient' },
+      { icon: '\u23F1\uFE0F', label: 'Timeout check', cat: 'observe' },
+      { icon: '\uD83D\uDD04', label: 'Retry logic', cat: 'transport' },
+      { icon: '\u26A1', label: 'Circuit breaker', cat: 'transport' },
+    ], {
+      extraRows: [
+        { prefix: 'CLOSED', prefixClass: 'yes', nodes: [
+          { label: 'Send request', cat: 'transport' },
+          { icon: '\u2705', label: 'Response', cat: 'success', classes: 'success-node' },
+        ], arrowClass: 'success-arrow' },
+        { prefix: 'OPEN', prefixClass: 'no', nodes: [
+          { label: 'Fail fast (no call)', cat: 'error', classes: 'error-node' },
+        ], arrowClass: 'error-arrow' },
+        { prefix: 'HALF-OPEN', prefixClass: 'miss', nodes: [
+          { label: 'Allow 1 test call', cat: 'transport' },
+          { label: 'Success \u2192 CLOSED / Fail \u2192 OPEN', cat: 'decision', classes: 'diamond-inline' },
+        ]},
+      ],
+    });
+
+    // Inter-service auth
+    renderFlow('inter-auth-canvas', [
+      { icon: '\uD83D\uDC64', label: 'Incoming request', cat: 'core', detail: 'inter-auth' },
+      { icon: '\uD83D\uDD12', label: 'AuthPropagationInterceptor', cat: 'auth' },
+      { icon: '\uD83D\uDCE5', label: 'Extract JWT/API key', cat: 'auth' },
+      { icon: '\uD83D\uDCE6', label: 'AsyncLocalStorage.set()', cat: 'observe' },
+      { icon: '\u2699\uFE0F', label: 'Business logic', cat: 'core' },
+      { icon: '\uD83D\uDCE1', label: 'Outgoing RPC call', cat: 'transport' },
+      { icon: '\uD83D\uDD12', label: 'buildAuthHeaders()', cat: 'auth' },
+      { icon: '\uD83D\uDCE8', label: 'Auth injected in metadata', cat: 'success', classes: 'success-node' },
+    ]);
+
+    // RPC error handling
+    renderFlow('rpc-error-canvas', [
+      { icon: '\u2699\uFE0F', label: 'Remote handler throws', cat: 'core' },
+      { icon: '\u26A0\uFE0F', label: 'BootRpcExceptionFilter', cat: 'error', classes: 'error-node' },
+      { icon: '\uD83D\uDCE6', label: 'Serialize to gRPC status', cat: 'transport' },
+      { icon: '\uD83D\uDCE1', label: 'Transport', cat: 'transport' },
+      { icon: '\uD83D\uDCE5', label: 'Deserialize at caller', cat: 'transport' },
+      { icon: '\uD83D\uDCA5', label: 'Re-throw as HttpException', cat: 'error', classes: 'error-node' },
+    ], {
+      extraRows: [
+        { prefix: 'Status map:', nodes: [
+          { label: 'NOT_FOUND \u2192 404', cat: 'error', classes: 'error-node' },
+          { label: 'PERMISSION_DENIED \u2192 403', cat: 'error', classes: 'error-node' },
+          { label: 'UNAVAILABLE \u2192 503', cat: 'error', classes: 'error-node' },
+          { label: 'INTERNAL \u2192 500', cat: 'error', classes: 'error-node' },
+        ]},
+      ],
+    });
+  }
+
+  // ══════════════════════════════════════════
+  // SECTION 6: Events & CQRS
+  // ══════════════════════════════════════════
+  function initEventsSection() {
+    // Event fan-out
+    renderFlow('event-fanout-canvas', [
+      { icon: '\u2699\uFE0F', label: 'Service.create()', cat: 'core' },
+      { icon: '\uD83D\uDCE2', label: 'EventBus.emit()', cat: 'event', detail: 'event-bus' },
+    ], {
+      extraRows: [
+        { prefix: 'memory', prefixClass: 'yes', nodes: [
+          { icon: '\uD83D\uDCE7', label: 'NotificationHandler', cat: 'transport' },
+        ]},
+        { prefix: 'memory', prefixClass: 'yes', nodes: [
+          { icon: '\uD83D\uDCE6', label: 'FulfillmentHandler', cat: 'core' },
+        ]},
+        { prefix: 'Redis pub', prefixClass: 'yes', nodes: [
+          { icon: '\uD83D\uDCCA', label: 'AnalyticsHandler', cat: 'observe' },
+        ]},
+        { prefix: 'Redis pub', prefixClass: 'yes', nodes: [
+          { icon: '\uD83D\uDDC4\uFE0F', label: 'AuditLogHandler', cat: 'observe' },
+        ]},
+      ],
+    });
+
+    // emitAndWait
+    renderFlow('emit-wait-canvas', [
+      { icon: '\u2699\uFE0F', label: 'Caller', cat: 'core', detail: 'emit-wait' },
+      { icon: '\uD83D\uDCE2', label: 'emitAndWait(query)', cat: 'event' },
+      { icon: '\u2699\uFE0F', label: '@OnQuery handler', cat: 'core' },
+      { icon: '\uD83D\uDCE8', label: 'Return result', cat: 'success', classes: 'success-node' },
+      { icon: '\u2B05\uFE0F', label: 'Resolve to caller', cat: 'core' },
+    ]);
+
+    // CQRS full cycle
+    renderFlow('cqrs-canvas', [
+      { icon: '\uD83D\uDCDD', label: 'Command', cat: 'cqrs', detail: 'cqrs' },
+      { icon: '\uD83D\uDE8C', label: 'CommandBus', cat: 'cqrs' },
+      { icon: '\u2699\uFE0F', label: 'Handler', cat: 'cqrs' },
+      { icon: '\uD83E\uDDE9', label: 'AggregateRoot', cat: 'cqrs' },
+      { icon: '\uD83D\uDCDA', label: 'EventStore', cat: 'database' },
+    ], {
+      extraRows: [
+        { prefix: 'Fan-out:', nodes: [
+          { icon: '\uD83D\uDCCA', label: 'Projection (read model)', cat: 'core' },
+        ]},
+        { prefix: '', nodes: [
+          { icon: '\uD83D\uDCE4', label: 'Outbox (publish)', cat: 'event' },
+        ]},
+        { prefix: '', nodes: [
+          { icon: '\uD83D\uDCF8', label: 'Snapshot (every N events)', cat: 'cache' },
+        ]},
+      ],
+    });
+
+    // Event replay
+    renderFlow('event-replay-canvas', [
+      { icon: '\uD83D\uDCDA', label: 'EventStore', cat: 'database' },
+      { icon: '\u23EA', label: 'ReplayService', cat: 'core' },
+      { icon: '\uD83D\uDCCA', label: 'Projection 1 rebuild', cat: 'core' },
+    ], {
+      extraRows: [
+        { prefix: '', nodes: [
+          { icon: '\uD83D\uDCCA', label: 'Projection 2 rebuild', cat: 'core' },
+        ]},
+        { prefix: '', nodes: [
+          { icon: '\uD83D\uDCCA', label: 'Projection N rebuild', cat: 'core' },
+        ]},
+        { prefix: 'Result:', nodes: [
+          { icon: '\u2705', label: 'Read models fully reconstructed from events', cat: 'success', classes: 'success-node' },
+        ], arrowClass: 'success-arrow' },
+      ],
+    });
+
+    // Outbox pattern
+    renderFlow('outbox-canvas', [
+      { icon: '\u2699\uFE0F', label: 'Service', cat: 'core', detail: 'outbox' },
+      { icon: '\uD83D\uDD12', label: 'Begin transaction', cat: 'database' },
+      { icon: '\uD83D\uDDC4\uFE0F', label: 'Save aggregate', cat: 'database' },
+      { icon: '\uD83D\uDCE4', label: 'Insert outbox events', cat: 'event' },
+      { icon: '\u2705', label: 'Commit', cat: 'success', classes: 'success-node' },
+    ], {
+      extraRows: [
+        { prefix: 'Background:', nodes: [
+          { icon: '\u23F0', label: 'Poller', cat: 'core' },
+          { label: 'Find pending events', cat: 'event' },
+          { label: 'Publish to broker', cat: 'transport' },
+          { label: 'Mark as published', cat: 'event' },
+        ]},
+      ],
+    });
+
+    // Saga
+    renderFlow('saga-canvas', [
+      { icon: '\uD83C\uDFAD', label: 'Saga start', cat: 'event', detail: 'saga' },
+      { icon: '\u2699\uFE0F', label: 'Step 1: Reserve', cat: 'core' },
+      { icon: '\u2699\uFE0F', label: 'Step 2: Charge', cat: 'core' },
+      { icon: '\u2699\uFE0F', label: 'Step 3: Ship', cat: 'core' },
+    ], {
+      extraRows: [
+        { prefix: 'All OK', prefixClass: 'yes', nodes: [
+          { icon: '\u2705', label: 'Saga complete', cat: 'success', classes: 'success-node' },
+        ], arrowClass: 'success-arrow' },
+        { prefix: 'Step 3 fails', prefixClass: 'no', nodes: [
+          { icon: '\u274C', label: 'Compensate Step 2', cat: 'error', classes: 'error-node' },
+          { icon: '\u274C', label: 'Compensate Step 1', cat: 'error', classes: 'error-node' },
+          { label: 'Saga rolled back', cat: 'error', classes: 'error-node' },
+        ], arrowClass: 'error-arrow' },
+      ],
+    });
+  }
+
+  // ══════════════════════════════════════════
+  // SECTION 7: Observability
+  // ══════════════════════════════════════════
+  function initObserveSection() {
+    // Correlation ID propagation
+    renderFlow('correlation-canvas', [
+      { icon: '\uD83D\uDC64', label: 'HTTP Request', cat: 'core', detail: 'correlation' },
+      { icon: '\uD83D\uDD17', label: 'X-Correlation-Id header', cat: 'observe' },
+      { icon: '\uD83D\uDCE6', label: 'AsyncLocalStorage', cat: 'observe' },
+      { icon: '\uD83D\uDCDD', label: 'All logs tagged', cat: 'observe' },
+      { icon: '\uD83D\uDCE1', label: 'Outgoing RPC', cat: 'transport' },
+      { icon: '\uD83D\uDD17', label: 'Inject into metadata', cat: 'observe' },
+      { icon: '\u2699\uFE0F', label: 'Downstream service', cat: 'core' },
+      { icon: '\uD83D\uDD17', label: 'Same correlation ID', cat: 'success', classes: 'success-node' },
+    ]);
+
+    // Trace span lifecycle
+    renderFlow('tracing-canvas', [
+      { icon: '\uD83D\uDE80', label: 'initTracing()', cat: 'observe', detail: 'tracing' },
+      { icon: '\u2699\uFE0F', label: 'Auto-instrument HTTP', cat: 'observe' },
+      { icon: '\u2699\uFE0F', label: 'Auto-instrument DB', cat: 'observe' },
+      { icon: '\uD83C\uDFAF', label: '@BootTrace spans', cat: 'observe' },
+      { icon: '\uD83D\uDCE1', label: 'OTLP Exporter', cat: 'transport' },
+      { icon: '\uD83D\uDCCA', label: 'Jaeger / Tempo', cat: 'observe' },
+    ]);
+
+    // Metrics collection
+    renderFlow('metrics-canvas', [
+      { icon: '\uD83D\uDC64', label: 'HTTP Request', cat: 'core', detail: 'metrics' },
+      { icon: '\uD83D\uDCCA', label: 'HttpMetricsInterceptor', cat: 'observe' },
+      { icon: '\uD83D\uDDC4\uFE0F', label: 'DbMetricsInterceptor', cat: 'observe' },
+      { icon: '\uD83D\uDCA8', label: 'CacheMetricsInterceptor', cat: 'observe' },
+      { icon: '\u2699\uFE0F', label: 'counter++ / histogram', cat: 'observe' },
+      { icon: '\uD83C\uDF10', label: '/metrics endpoint', cat: 'core' },
+      { icon: '\uD83D\uDCCA', label: 'Prometheus scrape', cat: 'observe' },
+    ]);
+
+    // Structured logging
+    renderFlow('logging-canvas', [
+      { icon: '\uD83D\uDC64', label: 'Request', cat: 'core', detail: 'logging' },
+      { icon: '\uD83D\uDCDD', label: 'LoggingInterceptor', cat: 'observe' },
+      { icon: '\u2699\uFE0F', label: 'BootLogger', cat: 'observe' },
+    ], {
+      extraRows: [
+        { prefix: 'Fields:', nodes: [
+          { label: 'correlationId', cat: 'observe' },
+          { label: 'traceId', cat: 'observe' },
+          { label: 'context', cat: 'observe' },
+          { label: 'duration', cat: 'observe' },
+        ]},
+        { prefix: 'Output:', nodes: [
+          { label: 'JSON \u2192 stdout (pino)', cat: 'observe' },
+          { label: 'Redacted fields excluded', cat: 'observe' },
+        ]},
+      ],
+    });
+
+    // Error reporting
+    renderFlow('error-reporting-canvas', [
+      { icon: '\uD83D\uDCA5', label: 'Exception thrown', cat: 'error', classes: 'error-node', detail: 'error-report' },
+      { icon: '\u26A0\uFE0F', label: 'AllExceptionsFilter', cat: 'core' },
+      { icon: '\uD83D\uDCE1', label: 'ErrorReporter callback', cat: 'observe' },
+    ], {
+      extraRows: [
+        { prefix: 'Targets:', nodes: [
+          { label: 'Sentry', cat: 'observe' },
+          { label: 'Datadog', cat: 'observe' },
+          { label: 'Custom webhook', cat: 'observe' },
+        ]},
+      ],
+    });
+  }
+
+  // ══════════════════════════════════════════
+  // SECTION 8: Platform
+  // ══════════════════════════════════════════
+  function initPlatformSection() {
+    // Tenant resolution
+    renderFlow('tenant-resolve-canvas', [
+      { icon: '\uD83D\uDC64', label: 'Request', cat: 'core', detail: 'tenant' },
+      { icon: '\u2699\uFE0F', label: 'TenantMiddleware', cat: 'platform' },
+    ], {
+      extraRows: [
+        { prefix: 'Header', prefixClass: 'yes', nodes: [{ label: 'X-Tenant-Id: acme', cat: 'platform' }] },
+        { prefix: 'Subdomain', prefixClass: 'yes', nodes: [{ label: 'acme.app.com', cat: 'platform' }] },
+        { prefix: 'Path', prefixClass: 'yes', nodes: [{ label: '/api/acme/...', cat: 'platform' }] },
+        { prefix: '', nodes: [
+          { icon: '\uD83D\uDCE6', label: 'AsyncLocalStorage.set(tenant)', cat: 'observe' },
+          { icon: '\u2705', label: 'tenantId available everywhere', cat: 'success', classes: 'success-node' },
+        ], arrowClass: 'success-arrow' },
+      ],
+    });
+
+    // Row isolation
+    renderFlow('row-isolation-canvas', [
+      { icon: '\u2699\uFE0F', label: 'Repository.find()', cat: 'core' },
+      { icon: '\uD83D\uDD12', label: 'Auto-add tenantId filter', cat: 'platform' },
+      { icon: '\uD83D\uDDC4\uFE0F', label: 'Query: { ...filter, tenantId }', cat: 'database' },
+      { icon: '\u2705', label: 'Scoped results only', cat: 'success', classes: 'success-node' },
+    ]);
+
+    // DB isolation
+    renderFlow('db-isolation-canvas', [
+      { icon: '\uD83D\uDC64', label: 'Request (tenant: acme)', cat: 'core' },
+      { icon: '\uD83D\uDD12', label: 'Resolve tenant', cat: 'platform' },
+      { icon: '\uD83D\uDD17', label: 'Connection pool manager', cat: 'database' },
+      { icon: '\uD83D\uDDC4\uFE0F', label: 'acme_db (dedicated)', cat: 'database' },
+    ], {
+      extraRows: [
+        { prefix: 'Other tenant:', nodes: [
+          { icon: '\uD83D\uDDC4\uFE0F', label: 'globex_db (isolated)', cat: 'database' },
+        ]},
+      ],
+    });
+
+    // File upload
+    renderFlow('file-upload-canvas', [
+      { icon: '\uD83D\uDC64', label: 'Client upload', cat: 'core', detail: 'file-upload' },
+      { icon: '\u2705', label: 'Validate (type, size)', cat: 'core' },
+      { icon: '\uD83D\uDD11', label: 'Generate key', cat: 'core' },
+      { icon: '\uD83D\uDDC4\uFE0F', label: 'adapter.save()', cat: 'database' },
+    ], {
+      extraRows: [
+        { prefix: 'Adapters:', nodes: [
+          { label: 'Local disk', cat: 'database' },
+          { label: 'S3', cat: 'transport' },
+          { label: 'GCS', cat: 'transport' },
+        ]},
+        { prefix: '', nodes: [
+          { icon: '\uD83D\uDCDD', label: 'Store metadata', cat: 'database' },
+          { icon: '\uD83D\uDD17', label: 'Return URL', cat: 'success', classes: 'success-node' },
+        ], arrowClass: 'success-arrow' },
+      ],
+    });
+
+    // Webhook verification
+    renderFlow('webhook-canvas', [
+      { icon: '\uD83D\uDCE9', label: 'Receive webhook', cat: 'core', detail: 'webhook' },
+      { icon: '\uD83D\uDD0D', label: 'Extract signature', cat: 'auth' },
+      { icon: '\uD83D\uDD12', label: 'HMAC verify', cat: 'auth' },
+      { icon: '\u2699\uFE0F', label: 'Normalize payload', cat: 'core' },
+      { icon: '\uD83D\uDD0D', label: 'Deduplicate (idempotency)', cat: 'core' },
+      { icon: '\uD83C\uDFAF', label: 'Handler', cat: 'core' },
+      { icon: '\u2705', label: '200 OK', cat: 'success', classes: 'success-node' },
+    ]);
+
+    // Migration CLI
+    renderFlow('migration-cli-canvas', [
+      { icon: '\uD83D\uDCBB', label: 'migrate:create name', cat: 'core' },
+      { icon: '\uD83D\uDCC4', label: 'Generate migration file', cat: 'core' },
+      { icon: '\u270F\uFE0F', label: 'Edit up() / down()', cat: 'core' },
+      { icon: '\uD83D\uDCBB', label: 'migrate:run', cat: 'core' },
+      { icon: '\uD83D\uDDC4\uFE0F', label: '_migrations updated', cat: 'database' },
+      { icon: '\u2705', label: 'Schema migrated', cat: 'success', classes: 'success-node' },
+    ]);
+
+    // Resource generation
+    renderFlow('resource-gen-canvas', [
+      { icon: '\uD83D\uDCBB', label: 'nestjs-boot g resource product', cat: 'core' },
+      { icon: '\u2699\uFE0F', label: 'Template engine', cat: 'core' },
+    ], {
+      extraRows: [
+        { prefix: 'Generated:', nodes: [
+          { label: 'product.module.ts', cat: 'core' },
+          { label: 'product.controller.ts', cat: 'core' },
+          { label: 'product.service.ts', cat: 'core' },
+        ]},
+        { prefix: '', nodes: [
+          { label: 'product.schema.ts', cat: 'database' },
+          { label: 'create-product.dto.ts', cat: 'core' },
+          { label: 'update-product.dto.ts', cat: 'core' },
+        ]},
+      ],
+    });
+
+    // Graceful shutdown
+    renderFlow('shutdown-canvas', [
+      { icon: '\uD83D\uDED1', label: 'SIGTERM', cat: 'error', classes: 'error-node', detail: 'shutdown' },
+      { icon: '\u26D4', label: 'Stop accepting new', cat: 'core' },
+      { icon: '\uD83C\uDFE5', label: 'Health \u2192 503', cat: 'core' },
+      { icon: '\u23F3', label: 'Drain in-flight', cat: 'core' },
+      { icon: '\uD83D\uDD12', label: 'Close DB connections', cat: 'database' },
+      { icon: '\uD83D\uDCA8', label: 'Flush queues', cat: 'cache' },
+      { icon: '\uD83D\uDCE1', label: 'Close transports', cat: 'transport' },
+      { icon: '\u2705', label: 'Exit 0', cat: 'success', classes: 'success-node' },
+    ]);
+  }
+
+  // ══════════════════════════════════════════
+  // SECTION 9: DI & Architecture
+  // ══════════════════════════════════════════
+  function initDiSection() {
+    // Circular dep detection
+    renderFlow('circular-dep-canvas', [
+      { icon: '\uD83D\uDE80', label: 'Boot', cat: 'core', detail: 'circular-dep' },
+      { icon: '\u274C', label: 'DI error thrown', cat: 'error', classes: 'error-node' },
+      { icon: '\u2699\uFE0F', label: 'parseDiError()', cat: 'di' },
+      { icon: '\u2699\uFE0F', label: 'formatDiError()', cat: 'di' },
+      { icon: '\uD83D\uDCCB', label: 'Actionable message', cat: 'success', classes: 'success-node' },
+    ], {
+      extraRows: [
+        { prefix: 'Output:', nodes: [
+          { label: '"A \u2192 B \u2192 C \u2192 A: use forwardRef() in B"', cat: 'di' },
+        ]},
+      ],
+    });
+
+    // Contract injection
+    renderFlow('contract-canvas', [
+      { icon: '\uD83D\uDCDC', label: 'createContract<T>()', cat: 'di', detail: 'contract' },
+      { icon: '\uD83D\uDD11', label: 'DI token created', cat: 'di' },
+      { icon: '\u2699\uFE0F', label: 'provideContract(token, impl)', cat: 'di' },
+      { icon: '\uD83D\uDCE6', label: 'Module registers provider', cat: 'core' },
+    ], {
+      extraRows: [
+        { prefix: 'Consumer:', nodes: [
+          { label: '@Inject(token)', cat: 'di' },
+          { label: 'Gets concrete implementation', cat: 'success', classes: 'success-node' },
+        ], arrowClass: 'success-arrow' },
+        { prefix: 'Startup:', nodes: [
+          { label: 'validateContracts()', cat: 'di' },
+          { label: 'Catch missing bindings', cat: 'error', classes: 'error-node' },
+        ]},
+      ],
+    });
+
+    // Module graph analysis
+    renderFlow('module-graph-canvas', [
+      { icon: '\uD83D\uDD0D', label: 'analyzeModules(AppModule)', cat: 'di', detail: 'module-graph' },
+      { icon: '\uD83D\uDD78\uFE0F', label: 'Build dependency graph', cat: 'di' },
+      { icon: '\u2699\uFE0F', label: 'Tarjan SCC algorithm', cat: 'di' },
+      { icon: '\uD83D\uDD0D', label: 'Detect cycles', cat: 'di' },
+    ], {
+      extraRows: [
+        { prefix: 'No cycles:', prefixClass: 'yes', nodes: [
+          { icon: '\u2705', label: 'Graph is DAG', cat: 'success', classes: 'success-node' },
+          { label: 'renderMermaid(graph)', cat: 'di' },
+        ], arrowClass: 'success-arrow' },
+        { prefix: 'Cycles found:', prefixClass: 'no', nodes: [
+          { icon: '\u274C', label: 'Report SCCs', cat: 'error', classes: 'error-node' },
+          { label: 'Exit 1 (--strict)', cat: 'error', classes: 'error-node' },
+        ], arrowClass: 'error-arrow' },
+      ],
+    });
+
+    // Layer validation
+    renderFlow('layer-validate-canvas', [
+      { icon: '\uD83D\uDCCF', label: '@Layer(INFRASTRUCTURE)', cat: 'di', detail: 'layer-valid' },
+      { icon: '\uD83D\uDCCF', label: '@Layer(APPLICATION)', cat: 'di' },
+      { icon: '\uD83D\uDCCF', label: '@Layer(PRESENTATION)', cat: 'di' },
+    ], {
+      extraRows: [
+        { prefix: 'validateLayers():', nodes: [
+          { label: 'Check import directions', cat: 'di' },
+        ]},
+        { prefix: 'INFRA \u2192 APP', prefixClass: 'no', nodes: [
+          { icon: '\u274C', label: 'BLOCKED (upward dep)', cat: 'error', classes: 'error-node' },
+        ], arrowClass: 'error-arrow' },
+        { prefix: 'APP \u2192 INFRA', prefixClass: 'yes', nodes: [
+          { icon: '\u2705', label: 'OK (downward dep)', cat: 'success', classes: 'success-node' },
+        ], arrowClass: 'success-arrow' },
+      ],
+    });
+  }
+
+  // ══════════════════════════════════════════
+  // SECTION 10: Module Dependency Map (canvas)
+  // ══════════════════════════════════════════
   const moduleData = [
     { id: 'BootModule', cat: 'core', deps: ['ConfigModule', 'LoggerModule', 'HealthModule'] },
     { id: 'ConfigModule', cat: 'core', deps: [] },
@@ -991,52 +1336,21 @@
 
     function layoutNodes() {
       const cats = {};
-      moduleData.forEach(m => {
-        if (!cats[m.cat]) cats[m.cat] = [];
-        cats[m.cat].push(m);
-      });
-
+      moduleData.forEach(m => { if (!cats[m.cat]) cats[m.cat] = []; cats[m.cat].push(m); });
       const catOrder = ['core', 'database', 'cache', 'auth', 'transport', 'event', 'observe', 'cqrs'];
       const colWidth = W / 4;
       const rowHeight = 36;
       let col = 0;
       nodes = [];
-
       catOrder.forEach(cat => {
         const mods = cats[cat] || [];
         const cx = (col % 4) * colWidth + colWidth / 2;
         let startY = Math.floor(col / 4) * (rowHeight * 10) + 50;
-
         mods.forEach((m, i) => {
-          nodes.push({
-            ...m,
-            x: cx + (Math.random() - 0.5) * 40,
-            y: startY + i * rowHeight,
-            w: 130, h: 26,
-            color: catColors[cat],
-          });
+          nodes.push({ ...m, x: cx + (Math.random() - 0.5) * 40, y: startY + i * rowHeight, w: 130, h: 26, color: catColors[cat] });
         });
         col++;
       });
-    }
-
-    function drawArrow(fromX, fromY, toX, toY, color, lineWidth) {
-      // Draw line
-      ctx.beginPath();
-      ctx.moveTo(fromX, fromY);
-      ctx.lineTo(toX, toY);
-      ctx.stroke();
-
-      // Draw arrowhead
-      const angle = Math.atan2(toY - fromY, toX - fromX);
-      const headLen = 8;
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.moveTo(toX, toY);
-      ctx.lineTo(toX - headLen * Math.cos(angle - Math.PI / 6), toY - headLen * Math.sin(angle - Math.PI / 6));
-      ctx.lineTo(toX - headLen * Math.cos(angle + Math.PI / 6), toY - headLen * Math.sin(angle + Math.PI / 6));
-      ctx.closePath();
-      ctx.fill();
     }
 
     function draw() {
@@ -1044,31 +1358,33 @@
       ctx.save();
       ctx.translate(panX, panY);
 
-      // Draw edges with arrows
+      // Edges
       nodes.forEach(node => {
         const m = moduleData.find(mm => mm.id === node.id);
         if (!m) return;
         m.deps.forEach(depId => {
           const dep = nodes.find(n => n.id === depId);
           if (!dep) return;
-
           const isHighlighted = selectedId && (selectedId === node.id || selectedId === depId);
-          const isFiltered = searchTerm && !searchTerm.startsWith('::cat::') && (
-            node.id.toLowerCase().includes(searchTerm) || dep.id.toLowerCase().includes(searchTerm)
-          );
-          const isCatMatch = searchTerm && searchTerm.startsWith('::cat::') && (
-            node.cat === searchTerm.replace('::cat::', '') || dep.cat === searchTerm.replace('::cat::', '')
-          );
+          const isFiltered = searchTerm && !searchTerm.startsWith('::cat::') && (node.id.toLowerCase().includes(searchTerm) || dep.id.toLowerCase().includes(searchTerm));
+          const isCatMatch = searchTerm && searchTerm.startsWith('::cat::') && (node.cat === searchTerm.replace('::cat::', '') || dep.cat === searchTerm.replace('::cat::', ''));
           const dimmed = (selectedId || searchTerm) && !isHighlighted && !isFiltered && !isCatMatch;
-
           const color = dimmed ? 'rgba(30,30,42,.3)' : isHighlighted ? node.color : 'rgba(30,30,42,.6)';
           ctx.strokeStyle = color;
           ctx.lineWidth = isHighlighted ? 2 : 1;
-          drawArrow(node.x, node.y, dep.x, dep.y, color, isHighlighted ? 2 : 1);
+          ctx.beginPath(); ctx.moveTo(node.x, node.y); ctx.lineTo(dep.x, dep.y); ctx.stroke();
+          // Arrowhead
+          const angle = Math.atan2(dep.y - node.y, dep.x - node.x);
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.moveTo(dep.x, dep.y);
+          ctx.lineTo(dep.x - 8 * Math.cos(angle - Math.PI / 6), dep.y - 8 * Math.sin(angle - Math.PI / 6));
+          ctx.lineTo(dep.x - 8 * Math.cos(angle + Math.PI / 6), dep.y - 8 * Math.sin(angle + Math.PI / 6));
+          ctx.closePath(); ctx.fill();
         });
       });
 
-      // Draw nodes
+      // Nodes
       nodes.forEach(node => {
         const isSelected = selectedId === node.id;
         const isDep = selectedId && moduleData.find(m => m.id === selectedId)?.deps.includes(node.id);
@@ -1078,47 +1394,32 @@
         const isHovered = hoveredId === node.id;
         const highlight = isSelected || isDep || isDepOf || isSearchMatch || isCatMatch;
         const dimmed = (selectedId || searchTerm) && !highlight;
+        const x = node.x - node.w / 2, y = node.y - node.h / 2;
 
-        const x = node.x - node.w / 2;
-        const y = node.y - node.h / 2;
-
-        if (highlight || isHovered) {
-          ctx.shadowColor = node.color;
-          ctx.shadowBlur = 12;
-        }
-
+        if (highlight || isHovered) { ctx.shadowColor = node.color; ctx.shadowBlur = 12; }
         ctx.fillStyle = dimmed ? 'rgba(17,17,24,.4)' : '#111118';
         ctx.strokeStyle = dimmed ? 'rgba(30,30,42,.3)' : highlight ? node.color : 'rgba(30,30,42,.8)';
         ctx.lineWidth = highlight ? 2 : 1;
-        ctx.beginPath();
-        ctx.roundRect(x, y, node.w, node.h, 4);
-        ctx.fill();
-        ctx.stroke();
+        ctx.beginPath(); ctx.roundRect(x, y, node.w, node.h, 4); ctx.fill(); ctx.stroke();
         ctx.shadowBlur = 0;
 
         ctx.fillStyle = dimmed ? 'rgba(100,116,139,.3)' : highlight ? '#fff' : '#94a3b8';
         ctx.font = '11px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.fillText(node.id.replace('Module', ''), node.x, node.y);
 
         ctx.fillStyle = dimmed ? 'rgba(100,100,100,.2)' : node.color;
-        ctx.beginPath();
-        ctx.arc(x + 8, node.y, 3, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(x + 8, node.y, 3, 0, Math.PI * 2); ctx.fill();
       });
 
       ctx.restore();
     }
 
     function hitTest(mx, my) {
-      const x = mx - panX;
-      const y = my - panY;
+      const x = mx - panX, y = my - panY;
       for (let i = nodes.length - 1; i >= 0; i--) {
         const n = nodes[i];
-        if (x >= n.x - n.w / 2 && x <= n.x + n.w / 2 && y >= n.y - n.h / 2 && y <= n.y + n.h / 2) {
-          return n.id;
-        }
+        if (x >= n.x - n.w / 2 && x <= n.x + n.w / 2 && y >= n.y - n.h / 2 && y <= n.y + n.h / 2) return n.id;
       }
       return null;
     }
@@ -1128,7 +1429,6 @@
       const id = hitTest(e.clientX - rect.left, e.clientY - rect.top);
       selectedId = selectedId === id ? null : id;
       draw();
-
       if (selectedId) {
         const m = moduleData.find(mm => mm.id === selectedId);
         if (m) {
@@ -1137,7 +1437,7 @@
           const panel = $('.detail-panel');
           panel.querySelector('h3').textContent = selectedId;
           panel.querySelector('p').textContent = `Category: ${m.cat}\nDependencies: ${deps}\nUsed by: ${dependants}`;
-          panel.querySelector('code').textContent = `// ${selectedId}\nimport { ${selectedId} } from '@nestjs-boot/${m.cat}';\n\n@Module({\n  imports: [${deps !== 'none' ? deps : ''}],\n})\nexport class ${selectedId} {}`;
+          panel.querySelector('code').textContent = `import { ${selectedId} } from 'nestjs-boot';\n\n@Module({\n  imports: [${deps !== 'none' ? deps : ''}],\n})\nexport class ${selectedId} {}`;
           panel.classList.add('open');
           $('.detail-overlay').classList.add('open');
         }
@@ -1147,26 +1447,17 @@
     canvasEl.addEventListener('mousemove', e => {
       const rect = canvasEl.getBoundingClientRect();
       const id = hitTest(e.clientX - rect.left, e.clientY - rect.top);
-      if (id !== hoveredId) {
-        hoveredId = id;
-        canvasEl.style.cursor = id ? 'pointer' : 'grab';
-        draw();
-      }
-
+      if (id !== hoveredId) { hoveredId = id; canvasEl.style.cursor = id ? 'pointer' : 'grab'; draw(); }
       if (isDragging) {
-        panX += e.clientX - dragStart.x;
-        panY += e.clientY - dragStart.y;
-        dragStart = { x: e.clientX, y: e.clientY };
-        draw();
+        panX += e.clientX - dragStart.x; panY += e.clientY - dragStart.y;
+        dragStart = { x: e.clientX, y: e.clientY }; draw();
       }
     });
 
     canvasEl.addEventListener('mousedown', e => {
       const rect = canvasEl.getBoundingClientRect();
       if (!hitTest(e.clientX - rect.left, e.clientY - rect.top)) {
-        isDragging = true;
-        dragStart = { x: e.clientX, y: e.clientY };
-        canvasEl.style.cursor = 'grabbing';
+        isDragging = true; dragStart = { x: e.clientX, y: e.clientY }; canvasEl.style.cursor = 'grabbing';
       }
     });
     canvasEl.addEventListener('mouseup', () => { isDragging = false; canvasEl.style.cursor = 'grab'; });
@@ -1174,69 +1465,25 @@
 
     const searchInput = $('#dep-search');
     if (searchInput) {
-      searchInput.addEventListener('input', e => {
-        searchTerm = e.target.value.toLowerCase();
-        selectedId = null;
-        draw();
-      });
+      searchInput.addEventListener('input', e => { searchTerm = e.target.value.toLowerCase(); selectedId = null; draw(); });
     }
 
     $$('.dep-cat-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const cat = btn.dataset.cat;
-        if (btn.classList.contains('active')) {
-          btn.classList.remove('active');
-          searchTerm = '';
-        } else {
-          $$('.dep-cat-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          searchTerm = '::cat::' + cat;
-          selectedId = null;
-        }
+        if (btn.classList.contains('active')) { btn.classList.remove('active'); searchTerm = ''; }
+        else { $$('.dep-cat-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); searchTerm = '::cat::' + cat; selectedId = null; }
         draw();
       });
     });
 
-    resize();
-    layoutNodes();
-    draw();
+    resize(); layoutNodes(); draw();
     window.addEventListener('resize', () => { resize(); layoutNodes(); draw(); });
   }
 
-  // ── Render helpers ──
-  function renderNodes(canvas, nodes) {
-    nodes.forEach(n => {
-      const el = document.createElement('div');
-      el.className = 'flow-node' + (n.diamond ? ' diamond' : '');
-      el.dataset.id = n.id;
-      el.dataset.cat = n.cat;
-      el.style.left = `${n.x}px`;
-      el.style.top = `${n.y}px`;
-      el.innerHTML = `
-        ${n.icon ? `<span class="node-icon">${n.icon}</span>` : ''}
-        <span class="node-label">${n.label}</span>
-        ${n.timing ? `<span class="node-timing">${n.timing}</span>` : ''}
-      `;
-      canvas.appendChild(el);
-    });
-  }
-
-  function renderOptionalNodes(canvas, nodes) {
-    nodes.forEach(n => {
-      const el = document.createElement('div');
-      el.className = 'flow-node';
-      el.dataset.id = n.id;
-      el.dataset.cat = n.cat;
-      el.style.left = `${n.x}px`;
-      el.style.top = `${n.y}px`;
-      el.style.display = $(`#${n.toggle}`)?.checked ? 'block' : 'none';
-      el.style.borderStyle = 'dashed';
-      el.innerHTML = `<span class="node-label">${n.label}</span>`;
-      canvas.appendChild(el);
-    });
-  }
-
-  // ── Speed control ──
+  // ══════════════════════════════════════════
+  // Speed control
+  // ══════════════════════════════════════════
   function initSpeedControl() {
     const slider = $('#speed-slider');
     const label = $('#speed-label');
@@ -1248,54 +1495,29 @@
     }
   }
 
-  // ── Pause/play ──
-  function initPlayPause() {
-    const btn = $('#global-pause');
-    if (btn) {
-      btn.addEventListener('click', () => {
-        animRunning = !animRunning;
-        btn.textContent = animRunning ? '\u23F8 Pause' : '\u25B6 Play';
-      });
-    }
-  }
-
-  // ── Start section animation ──
-  function startSectionAnimation(id) {
-    switch (id) {
-      case 'boot':
-        const bar = $('.boot-progress-bar');
-        if (bar) bar.style.width = '0';
-        setTimeout(() => $('#boot-play')?.click(), 300);
-        break;
-      case 'request':
-        setTimeout(() => $('#req-play')?.click(), 300);
-        break;
-      case 'event':
-        setTimeout(() => $('#event-play')?.click(), 300);
-        break;
-      case 'grpc':
-        setTimeout(() => $('#grpc-play')?.click(), 300);
-        break;
-      case 'cqrs':
-        setTimeout(() => $('#cqrs-play')?.click(), 300);
-        break;
-    }
-  }
-
-  // ── Init ──
+  // ══════════════════════════════════════════
+  // Init
+  // ══════════════════════════════════════════
   document.addEventListener('DOMContentLoaded', () => {
     initTabs();
-    initDetailPanel();
-    initSpeedControl();
-    initPlayPause();
-    initBootSequence();
-    initRequestFlow();
-    initEventFlow();
-    initGrpcFlow();
-    initCqrsFlow();
-    initDependencyMap();
 
-    // Auto-play boot sequence
-    setTimeout(() => startSectionAnimation('boot'), 500);
+    // Detail panel
+    $('.detail-overlay').addEventListener('click', closeDetail);
+    $('.close-btn', $('.detail-panel')).addEventListener('click', closeDetail);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
+
+    initSpeedControl();
+
+    // Render all sections
+    initBootSection();
+    initRequestSection();
+    initAuthSection();
+    initDbCacheSection();
+    initTransportSection();
+    initEventsSection();
+    initObserveSection();
+    initPlatformSection();
+    initDiSection();
+    initDependencyMap();
   });
 })();

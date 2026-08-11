@@ -22,131 +22,352 @@
         <input type="range" id="speed-slider" min="0.25" max="3" step="0.25" value="1">
         <span id="speed-label">1x</span>
       </div>
-      <button class="ctrl-btn" id="global-pause">&#x23F8; Pause</button>
     </div>
   </header>
 
   <!-- Tab Navigation -->
   <nav class="tab-bar">
-    <button class="tab-btn active" data-tab="boot">&#x1F680; Boot Sequence</button>
-    <button class="tab-btn" data-tab="request">&#x1F504; Request Flow</button>
-    <button class="tab-btn" data-tab="event">&#x1F4E1; Event Flow</button>
-    <button class="tab-btn" data-tab="grpc">&#x1F517; gRPC Inter-Service</button>
-    <button class="tab-btn" data-tab="cqrs">&#x1F4DA; CQRS / Event Sourcing</button>
-    <button class="tab-btn" data-tab="deps">&#x1F5FA;&#xFE0F; Module Dependencies</button>
+    <button class="tab-btn active" data-tab="boot">Boot &amp; Config</button>
+    <button class="tab-btn" data-tab="request">Request &amp; Response</button>
+    <button class="tab-btn" data-tab="auth">Auth Flows</button>
+    <button class="tab-btn" data-tab="dbcache">Database &amp; Cache</button>
+    <button class="tab-btn" data-tab="transport">Transport &amp; Comms</button>
+    <button class="tab-btn" data-tab="events">Events &amp; CQRS</button>
+    <button class="tab-btn" data-tab="observe">Observability</button>
+    <button class="tab-btn" data-tab="platform">Platform</button>
+    <button class="tab-btn" data-tab="di">DI &amp; Architecture</button>
+    <button class="tab-btn" data-tab="deps">Module Map</button>
   </nav>
 
-  <!-- Section 1: Boot Sequence -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 1: Boot & Config -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
   <section id="section-boot" class="flow-section active">
-    <h2 class="section-title">Boot Sequence Flow</h2>
-    <p class="section-desc">
-      Animated step-by-step visualization of <code style="color:var(--brand);">createApp()</code>.
-      Each step lights up in sequence. Toggle modules to see how the boot composition changes.
-    </p>
+    <h2 class="section-title">Boot &amp; Config</h2>
+    <p class="section-desc">The <code style="color:var(--brand);">createApp()</code> boot sequence and conditional module loading.</p>
 
-    <div class="controls">
-      <button class="ctrl-btn" id="boot-play">&#x25B6; Play</button>
-      <div class="toggle-group">
-        <input type="checkbox" id="boot-db" checked><label for="boot-db">Database</label>
+    <!-- Sub-flow 1: createApp full boot -->
+    <div class="sub-flow" id="sf-boot-sequence">
+      <div class="sub-flow-title"><span class="sf-icon">&#x1F680;</span> createApp() Full Boot Sequence</div>
+      <div class="sub-flow-desc">env &rarr; validate &rarr; OTel &rarr; build modules &rarr; create &rarr; globals &rarr; transports &rarr; ready</div>
+      <div class="controls">
+        <div class="toggle-group"><input type="checkbox" id="boot-db" checked><label for="boot-db">Database</label></div>
+        <div class="toggle-group"><input type="checkbox" id="boot-cache" checked><label for="boot-cache">Cache</label></div>
+        <div class="toggle-group"><input type="checkbox" id="boot-auth" checked><label for="boot-auth">Auth</label></div>
+        <div class="toggle-group"><input type="checkbox" id="boot-events" checked><label for="boot-events">Events</label></div>
+        <div class="toggle-group"><input type="checkbox" id="boot-queue"><label for="boot-queue">Queue</label></div>
+        <div class="toggle-group"><input type="checkbox" id="boot-grpc"><label for="boot-grpc">gRPC</label></div>
+        <div class="toggle-group"><input type="checkbox" id="boot-metrics"><label for="boot-metrics">Metrics</label></div>
+        <div class="toggle-group"><input type="checkbox" id="boot-logging"><label for="boot-logging">Logging</label></div>
+        <div class="toggle-group"><input type="checkbox" id="boot-cqrs"><label for="boot-cqrs">CQRS</label></div>
       </div>
-      <div class="toggle-group">
-        <input type="checkbox" id="boot-cache" checked><label for="boot-cache">Cache</label>
-      </div>
-      <div class="toggle-group">
-        <input type="checkbox" id="boot-auth" checked><label for="boot-auth">Auth</label>
-      </div>
-      <div class="toggle-group">
-        <input type="checkbox" id="boot-events" checked><label for="boot-events">Events</label>
-      </div>
-      <div class="toggle-group">
-        <input type="checkbox" id="boot-grpc"><label for="boot-grpc">gRPC</label>
-      </div>
-      <div class="toggle-group">
-        <input type="checkbox" id="boot-cqrs"><label for="boot-cqrs">CQRS</label>
-      </div>
+      <div class="flow-canvas" id="boot-canvas"></div>
+      <div class="boot-progress"><div class="boot-progress-bar"></div></div>
     </div>
 
-    <div class="flow-canvas" id="boot-canvas" style="height:420px;"></div>
-    <div class="boot-progress"><div class="boot-progress-bar"></div></div>
+    <!-- Sub-flow 2: Module Conditional Loading -->
+    <div class="sub-flow" id="sf-module-loading">
+      <div class="sub-flow-title"><span class="sf-icon">&#x2699;</span> Module Conditional Loading</div>
+      <div class="sub-flow-desc">Each config section controls whether its module is loaded. Omit a section = module excluded = zero overhead.</div>
+      <div class="flow-canvas" id="module-loading-canvas"></div>
+    </div>
   </section>
 
-  <!-- Section 2: Request Flow -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 2: Request & Response -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
   <section id="section-request" class="flow-section">
-    <h2 class="section-title">Request Flow</h2>
-    <p class="section-desc">
-      Animated request lifecycle through the middleware stack. Toggle cache hit/miss or error path to see different routes.
-    </p>
+    <h2 class="section-title">Request &amp; Response</h2>
+    <p class="section-desc">HTTP request lifecycle, cache paths, error paths, and response envelope.</p>
 
-    <div class="controls">
-      <button class="ctrl-btn" id="req-play">&#x25B6; Play</button>
-      <div class="toggle-group">
-        <input type="checkbox" id="req-cache-hit"><label for="req-cache-hit">Cache Hit</label>
+    <!-- Sub-flow 1: HTTP Request Lifecycle -->
+    <div class="sub-flow" id="sf-http-lifecycle">
+      <div class="sub-flow-title"><span class="sf-icon">&#x1F504;</span> HTTP Request Lifecycle</div>
+      <div class="sub-flow-desc">correlation &rarr; auth &rarr; RBAC &rarr; timeout &rarr; controller &rarr; service &rarr; cache &rarr; DB &rarr; envelope &rarr; response</div>
+      <div class="flow-canvas" id="http-lifecycle-canvas"></div>
+    </div>
+
+    <!-- Sub-flow 2: Cache Hit vs Miss -->
+    <div class="sub-flow" id="sf-cache-paths">
+      <div class="sub-flow-title"><span class="sf-icon">&#x1F4A8;</span> Cache Hit vs Cache Miss</div>
+      <div class="flow-canvas" id="cache-paths-canvas"></div>
+    </div>
+
+    <!-- Sub-flow 3: Error Paths -->
+    <div class="sub-flow" id="sf-error-paths">
+      <div class="sub-flow-title"><span class="sf-icon">&#x26A0;</span> Error Paths</div>
+      <div class="sub-flow-desc">401 Unauthorized, 403 Forbidden, 404 Not Found, 408 Timeout, 500 Internal</div>
+      <div class="flow-canvas" id="error-paths-canvas"></div>
+    </div>
+
+    <!-- Sub-flow 4: Validation Pipe Rejection -->
+    <div class="sub-flow" id="sf-validation">
+      <div class="sub-flow-title"><span class="sf-icon">&#x2718;</span> Validation Pipe Rejection</div>
+      <div class="flow-canvas" id="validation-canvas"></div>
+    </div>
+
+    <!-- Sub-flow 5: Response Envelope -->
+    <div class="sub-flow" id="sf-envelope">
+      <div class="sub-flow-title"><span class="sf-icon">&#x1F4E8;</span> Response Envelope Wrapping</div>
+      <div class="flow-canvas" id="envelope-canvas"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 3: Auth Flows -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section id="section-auth" class="flow-section">
+    <h2 class="section-title">Auth Flows</h2>
+    <p class="section-desc">JWT, OAuth2, API key, RBAC, session, and TOTP 2FA authentication flows.</p>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F511;</span> JWT Login</div>
+      <div class="sub-flow-desc">credentials &rarr; validate &rarr; sign access + refresh &rarr; return tokens</div>
+      <div class="flow-canvas" id="jwt-login-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F504;</span> JWT Refresh</div>
+      <div class="sub-flow-desc">refresh token &rarr; verify &rarr; rotate &rarr; new pair</div>
+      <div class="flow-canvas" id="jwt-refresh-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F6AB;</span> Token Revocation Check</div>
+      <div class="sub-flow-desc">request &rarr; guard &rarr; isRevoked callback &rarr; accept/reject</div>
+      <div class="flow-canvas" id="token-revoke-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F310;</span> OAuth2 / Social Login</div>
+      <div class="sub-flow-desc">redirect &rarr; callback &rarr; SocialProfile &rarr; user handler</div>
+      <div class="flow-canvas" id="oauth-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F5DD;</span> API Key Validation</div>
+      <div class="flow-canvas" id="apikey-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F6E1;</span> RBAC Check</div>
+      <div class="sub-flow-desc">extract roles &rarr; compare with route requirements</div>
+      <div class="flow-canvas" id="rbac-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F36A;</span> Session Auth</div>
+      <div class="sub-flow-desc">cookie &rarr; session store &rarr; validate</div>
+      <div class="flow-canvas" id="session-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F510;</span> TOTP 2FA</div>
+      <div class="sub-flow-desc">login &rarr; require TOTP &rarr; verify &rarr; access granted</div>
+      <div class="flow-canvas" id="totp-canvas"></div></div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 4: Database & Cache -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section id="section-dbcache" class="flow-section">
+    <h2 class="section-title">Database &amp; Cache</h2>
+    <p class="section-desc">Reader/writer split, multi-layer cache, stampede prevention, and more.</p>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F4DA;</span> Reader / Writer Split</div>
+      <div class="flow-canvas" id="rw-split-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F517;</span> Multi-Connection Selection</div>
+      <div class="flow-canvas" id="multi-conn-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x2699;</span> BaseRepository CRUD</div>
+      <div class="flow-canvas" id="base-repo-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F4A8;</span> CachedRepository Flow</div>
+      <div class="sub-flow-desc">check cache L1 &rarr; L2 &rarr; DB &rarr; write-back</div>
+      <div class="flow-canvas" id="cached-repo-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F4E6;</span> Unit of Work</div>
+      <div class="sub-flow-desc">start transaction &rarr; operations &rarr; commit/rollback</div>
+      <div class="flow-canvas" id="uow-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F4C4;</span> Migration Flow</div>
+      <div class="sub-flow-desc">check _migrations &rarr; run pending &rarr; record</div>
+      <div class="flow-canvas" id="migration-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F50D;</span> Specification Pattern</div>
+      <div class="flow-canvas" id="spec-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F4A8;</span> Multi-Layer Cache Lookup</div>
+      <div class="sub-flow-desc">L1 memory &rarr; L2 Redis &rarr; miss</div>
+      <div class="flow-canvas" id="cache-lookup-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x270F;</span> Cache Write-Through</div>
+      <div class="sub-flow-desc">set &rarr; L1 + L2, size-aware routing</div>
+      <div class="flow-canvas" id="cache-write-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F512;</span> Cache Stampede Prevention</div>
+      <div class="sub-flow-desc">lock &rarr; single factory call &rarr; distribute result</div>
+      <div class="flow-canvas" id="stampede-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x2600;</span> Cache Warming</div>
+      <div class="sub-flow-desc">startup &rarr; pre-populate &rarr; ready</div>
+      <div class="flow-canvas" id="cache-warm-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F3F7;</span> Tag Invalidation</div>
+      <div class="sub-flow-desc">invalidate tag &rarr; find all tagged keys &rarr; delete</div>
+      <div class="flow-canvas" id="tag-invalidate-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F4E5;</span> getOrSet Pattern</div>
+      <div class="flow-canvas" id="get-or-set-canvas"></div></div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 5: Transport & Communication -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section id="section-transport" class="flow-section">
+    <h2 class="section-title">Transport &amp; Communication</h2>
+    <p class="section-desc">gRPC, ResilientClient, inter-service auth, and RPC error handling.</p>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F4E1;</span> gRPC Call Lifecycle</div>
+      <div class="sub-flow-desc">ServiceClient &rarr; inject correlation + auth &rarr; gRPC metadata &rarr; send &rarr; receive &rarr; deserialize</div>
+      <div class="flow-canvas" id="grpc-lifecycle-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F6E1;</span> ResilientClient</div>
+      <div class="sub-flow-desc">timeout check &rarr; retry logic &rarr; circuit breaker &rarr; send</div>
+      <div class="controls">
+        <div class="cb-indicator"><span class="cb-dot closed"></span><span id="cb-label">Closed</span></div>
       </div>
-      <div class="toggle-group">
-        <input type="checkbox" id="req-error"><label for="req-error">Error Path (401)</label>
+      <div class="flow-canvas" id="resilient-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F510;</span> Inter-Service Auth Propagation</div>
+      <div class="sub-flow-desc">extract from incoming &rarr; AsyncLocalStorage &rarr; inject into outgoing</div>
+      <div class="flow-canvas" id="inter-auth-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x26A0;</span> RPC Error Handling</div>
+      <div class="sub-flow-desc">catch &rarr; serialize &rarr; transport &rarr; deserialize &rarr; re-throw as HttpException</div>
+      <div class="flow-canvas" id="rpc-error-canvas"></div></div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 6: Events & CQRS -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section id="section-events" class="flow-section">
+    <h2 class="section-title">Events &amp; CQRS</h2>
+    <p class="section-desc">Event bus, CQRS cycle, sagas, outbox pattern, and event replay.</p>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F4E2;</span> Event Emit + Fan-out</div>
+      <div class="sub-flow-desc">emit &rarr; EventBus &rarr; memory/Redis &rarr; handlers</div>
+      <div class="flow-canvas" id="event-fanout-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x2753;</span> emitAndWait Query Pattern</div>
+      <div class="sub-flow-desc">emit &rarr; single handler &rarr; return result</div>
+      <div class="flow-canvas" id="emit-wait-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F4DA;</span> CQRS Full Cycle</div>
+      <div class="sub-flow-desc">command &rarr; bus &rarr; handler &rarr; aggregate &rarr; apply event &rarr; EventStore</div>
+      <div class="controls">
+        <span style="font-size:.75rem;color:var(--text-dim);">Event version:</span>
+        <span class="ev-version" id="ev-version">v0</span>
       </div>
-    </div>
+      <div class="flow-canvas" id="cqrs-canvas"></div></div>
 
-    <div class="flow-canvas" id="request-canvas" style="height:420px;"></div>
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x23EA;</span> Event Replay</div>
+      <div class="sub-flow-desc">EventStore &rarr; replay service &rarr; projections rebuild</div>
+      <div class="flow-canvas" id="event-replay-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F4E4;</span> Outbox Pattern</div>
+      <div class="sub-flow-desc">same-transaction persist &rarr; background poll &rarr; publish &rarr; mark done</div>
+      <div class="flow-canvas" id="outbox-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F3AD;</span> Saga Orchestration</div>
+      <div class="sub-flow-desc">step1 &rarr; step2 &rarr; step3 &rarr; if fail &rarr; compensate reverse</div>
+      <div class="flow-canvas" id="saga-canvas"></div></div>
   </section>
 
-  <!-- Section 3: Event Flow -->
-  <section id="section-event" class="flow-section">
-    <h2 class="section-title">Event Flow</h2>
-    <p class="section-desc">
-      Watch domain events propagate from emission through the EventBus to multiple subscribers via fan-out.
-    </p>
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 7: Observability -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section id="section-observe" class="flow-section">
+    <h2 class="section-title">Observability</h2>
+    <p class="section-desc">Correlation ID propagation, tracing, metrics, structured logging, and error reporting.</p>
 
-    <div class="controls">
-      <button class="ctrl-btn" id="event-play">&#x25B6; Play</button>
-    </div>
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F517;</span> Correlation ID Propagation</div>
+      <div class="sub-flow-desc">HTTP header &rarr; AsyncLocalStorage &rarr; logs &rarr; outgoing calls &rarr; downstream</div>
+      <div class="flow-canvas" id="correlation-canvas"></div></div>
 
-    <div class="flow-canvas" id="event-canvas" style="height:440px;"></div>
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F50D;</span> Trace Span Lifecycle</div>
+      <div class="sub-flow-desc">initTracing &rarr; auto-instrument &rarr; spans &rarr; exporter &rarr; Jaeger</div>
+      <div class="flow-canvas" id="tracing-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F4CA;</span> Metrics Collection</div>
+      <div class="sub-flow-desc">interceptor &rarr; counter/histogram &rarr; /metrics &rarr; Prometheus scrape</div>
+      <div class="flow-canvas" id="metrics-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F4DD;</span> Structured Logging</div>
+      <div class="sub-flow-desc">request &rarr; BootLogger &rarr; correlationId + traceId + context &rarr; JSON &rarr; stdout</div>
+      <div class="flow-canvas" id="logging-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F6A8;</span> Error Reporting</div>
+      <div class="sub-flow-desc">exception &rarr; filter &rarr; ErrorReporter callback &rarr; Sentry/Datadog</div>
+      <div class="flow-canvas" id="error-reporting-canvas"></div></div>
   </section>
 
-  <!-- Section 4: gRPC Inter-Service -->
-  <section id="section-grpc" class="flow-section">
-    <h2 class="section-title">gRPC Inter-Service Flow</h2>
-    <p class="section-desc">
-      Two-service communication over gRPC with automatic correlation ID and auth metadata injection.
-    </p>
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 8: Platform -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section id="section-platform" class="flow-section">
+    <h2 class="section-title">Platform</h2>
+    <p class="section-desc">Multi-tenancy, file upload, webhooks, migrations, and graceful shutdown.</p>
 
-    <div class="controls">
-      <button class="ctrl-btn" id="grpc-play">&#x25B6; Play</button>
-      <button class="ctrl-btn" id="grpc-cb-toggle">Toggle Circuit Breaker</button>
-      <div class="cb-indicator">
-        <span class="cb-dot closed"></span>
-        <span id="cb-label">Closed</span>
-      </div>
-    </div>
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F3E2;</span> Tenant Resolution</div>
+      <div class="sub-flow-desc">request &rarr; middleware &rarr; extract from header/subdomain/path &rarr; AsyncLocalStorage</div>
+      <div class="flow-canvas" id="tenant-resolve-canvas"></div></div>
 
-    <div class="flow-canvas" id="grpc-canvas" style="height:380px;"></div>
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F512;</span> Row-Level Isolation</div>
+      <div class="sub-flow-desc">query &rarr; auto-add tenantId filter &rarr; scoped results</div>
+      <div class="flow-canvas" id="row-isolation-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F4BE;</span> Database-Level Isolation</div>
+      <div class="sub-flow-desc">tenant &rarr; connection pool &rarr; dedicated DB</div>
+      <div class="flow-canvas" id="db-isolation-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F4C1;</span> File Upload</div>
+      <div class="sub-flow-desc">validate &rarr; generate key &rarr; adapter.save &rarr; store metadata &rarr; return URL</div>
+      <div class="flow-canvas" id="file-upload-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F517;</span> Webhook Verification</div>
+      <div class="sub-flow-desc">receive &rarr; extract signature &rarr; HMAC verify &rarr; normalize &rarr; deduplicate &rarr; handler</div>
+      <div class="flow-canvas" id="webhook-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F4BB;</span> Migration CLI</div>
+      <div class="sub-flow-desc">migrate:create &rarr; edit &rarr; migrate:run &rarr; _migrations updated</div>
+      <div class="flow-canvas" id="migration-cli-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F3ED;</span> Resource Generation</div>
+      <div class="sub-flow-desc">CLI &rarr; template render &rarr; write files</div>
+      <div class="flow-canvas" id="resource-gen-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F6D1;</span> Graceful Shutdown</div>
+      <div class="sub-flow-desc">SIGTERM &rarr; stop accepting &rarr; drain in-flight &rarr; close connections &rarr; exit</div>
+      <div class="flow-canvas" id="shutdown-canvas"></div></div>
   </section>
 
-  <!-- Section 5: CQRS / Event Sourcing -->
-  <section id="section-cqrs" class="flow-section">
-    <h2 class="section-title">CQRS / Event Sourcing Flow</h2>
-    <p class="section-desc">
-      Command &rarr; Handler &rarr; Aggregate &rarr; EventStore &rarr; fan-out to Projection, Outbox, and Snapshot.
-      Watch the event version increment with each cycle.
-    </p>
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 9: DI & Architecture -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <section id="section-di" class="flow-section">
+    <h2 class="section-title">DI &amp; Architecture</h2>
+    <p class="section-desc">Circular dependency detection, contract injection, module graph analysis, and layer validation.</p>
 
-    <div class="controls">
-      <button class="ctrl-btn" id="cqrs-play">&#x25B6; Play</button>
-      <span style="font-size:.8rem;color:var(--text-dim);">Event version:</span>
-      <span class="ev-version" id="ev-version">v0</span>
-    </div>
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F504;</span> Circular Dependency Detection</div>
+      <div class="sub-flow-desc">boot failure &rarr; parseDiError &rarr; actionable message</div>
+      <div class="flow-canvas" id="circular-dep-canvas"></div></div>
 
-    <div class="flow-canvas" id="cqrs-canvas" style="height:440px;"></div>
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F4DC;</span> Contract Injection</div>
+      <div class="sub-flow-desc">define contract &rarr; provide implementation &rarr; inject via token</div>
+      <div class="flow-canvas" id="contract-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F578;</span> Module Graph Analysis</div>
+      <div class="sub-flow-desc">scan source &rarr; build graph &rarr; Tarjan SCC &rarr; detect cycles</div>
+      <div class="flow-canvas" id="module-graph-canvas"></div></div>
+
+    <div class="sub-flow"><div class="sub-flow-title"><span class="sf-icon">&#x1F4CF;</span> Layer Validation</div>
+      <div class="sub-flow-desc">read @Layer metadata &rarr; check import direction &rarr; warn/throw</div>
+      <div class="flow-canvas" id="layer-validate-canvas"></div></div>
   </section>
 
-  <!-- Section 6: Module Dependency Map -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 10: Module Dependency Map -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
   <section id="section-deps" class="flow-section">
     <h2 class="section-title">Module Dependency Map</h2>
-    <p class="section-desc">
-      Interactive graph of 55+ modules. Click a module to highlight its dependencies and dependants.
-      Pan by dragging empty space. Filter by category or search.
-    </p>
+    <p class="section-desc">Interactive graph of 55+ modules. Click to highlight dependencies. Pan by dragging.</p>
 
     <div class="controls">
       <input type="text" class="dep-search" id="dep-search" placeholder="Search modules...">

@@ -124,11 +124,13 @@
     }
   }
 
+  let _nodeAutoId = 0;
   function createNodeEl(n) {
+    if (!n.id) n.id = `auto-${_nodeAutoId++}`;
     const el = document.createElement('div');
     el.className = `flow-node ${n.classes || ''}`;
     if (n.cat) el.dataset.cat = n.cat;
-    if (n.id) el.dataset.id = n.id;
+    el.dataset.id = n.id;
     el.innerHTML =
       (n.icon ? `<span class="node-icon">${n.icon}</span>` : '') +
       `<span class="node-label">${n.label}</span>` +
@@ -1496,6 +1498,375 @@
   }
 
   // ══════════════════════════════════════════
+  // Animation Engine
+  // ══════════════════════════════════════════
+
+  let paused = false;
+  const activeAnimations = [];
+
+  function easeInOut(t) {
+    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  }
+
+  /**
+   * Animate a glowing packet traveling through flow nodes inside a canvas.
+   * Reads actual DOM positions (works with flexbox responsive layout).
+   *
+   * @param {string} canvasId - ID of the .flow-canvas element
+   * @param {string[]} nodeIds - data-id values of nodes to traverse (in order)
+   * @param {object} options - { label, duration, loop, packetClass, onStep, onComplete }
+   * @returns {{ stop: Function }} handle to cancel
+   */
+  function animateFlow(canvasId, nodeIds, options = {}) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return { stop() {} };
+
+    // Collect nodes from data-id attributes
+    const nodes = nodeIds.map(id => canvas.querySelector(`[data-id="${id}"]`)).filter(Boolean);
+    if (nodes.length < 2) return { stop() {} };
+
+    // Ensure positioning context
+    canvas.style.position = 'relative';
+
+    // Create packet element
+    const packet = document.createElement('div');
+    packet.className = `packet ${options.packetClass || ''}`;
+    packet.style.display = 'none';
+    canvas.appendChild(packet);
+
+    // Optional label
+    let labelEl = null;
+    if (options.label) {
+      labelEl = document.createElement('div');
+      labelEl.className = 'packet-label';
+      labelEl.textContent = options.label;
+      canvas.appendChild(labelEl);
+    }
+
+    let cancelled = false;
+    let currentSeg = 0;
+    let startTime = null;
+    const totalDuration = options.duration || 3000;
+    const segDuration = totalDuration / (nodes.length - 1);
+
+    function getNodeCenter(node) {
+      const rect = node.getBoundingClientRect();
+      const canvasRect = canvas.getBoundingClientRect();
+      return {
+        x: rect.left - canvasRect.left + rect.width / 2 + canvas.scrollLeft,
+        y: rect.top - canvasRect.top + rect.height / 2 + canvas.scrollTop,
+      };
+    }
+
+    // Find arrow elements between consecutive nodes
+    function getArrowBetween(nodeA, nodeB) {
+      let el = nodeA.nextElementSibling;
+      while (el && el !== nodeB) {
+        if (el.classList.contains('flow-arrow')) return el;
+        el = el.nextElementSibling;
+      }
+      return null;
+    }
+
+    function dimLitNodes() {
+      nodes.forEach(n => {
+        n.classList.remove('lit');
+        n.classList.add('lit-fade');
+        setTimeout(() => n.classList.remove('lit-fade'), 800);
+      });
+      // Clear active arrows
+      canvas.querySelectorAll('.flow-arrow.active').forEach(a => a.classList.remove('active'));
+    }
+
+    function step(timestamp) {
+      if (cancelled) return;
+      if (paused) { startTime = null; requestAnimationFrame(step); return; }
+      if (!startTime) startTime = timestamp;
+
+      const elapsed = timestamp - startTime;
+      const effectiveDuration = segDuration / animSpeed;
+      const t = Math.min(elapsed / effectiveDuration, 1);
+
+      const from = getNodeCenter(nodes[currentSeg]);
+      const to = getNodeCenter(nodes[currentSeg + 1]);
+
+      const x = from.x + (to.x - from.x) * easeInOut(t);
+      const y = from.y + (to.y - from.y) * easeInOut(t);
+
+      packet.style.left = `${x - 4}px`;
+      packet.style.top = `${y - 4}px`;
+      packet.style.display = 'block';
+
+      if (labelEl) {
+        labelEl.style.left = `${x + 12}px`;
+        labelEl.style.top = `${y - 14}px`;
+        labelEl.style.display = 'block';
+      }
+
+      // Activate the arrow between current pair
+      const arrow = getArrowBetween(nodes[currentSeg], nodes[currentSeg + 1]);
+      if (arrow && t > 0.1) arrow.classList.add('active');
+
+      // Highlight source node immediately
+      if (t > 0.05) nodes[currentSeg].classList.add('lit');
+      // Highlight target node near arrival
+      if (t > 0.8) {
+        nodes[currentSeg + 1].classList.add('lit');
+        if (options.onStep) options.onStep(nodeIds[currentSeg + 1]);
+      }
+
+      if (t >= 1) {
+        currentSeg++;
+        startTime = null;
+
+        if (currentSeg >= nodes.length - 1) {
+          if (options.loop && !cancelled) {
+            currentSeg = 0;
+            setTimeout(() => {
+              dimLitNodes();
+              if (!cancelled) requestAnimationFrame(step);
+            }, 1200);
+          } else {
+            // Keep lit for 2s then dim
+            setTimeout(() => {
+              dimLitNodes();
+              cleanup();
+              if (options.onComplete) options.onComplete();
+            }, 2000);
+          }
+          return;
+        }
+      }
+
+      requestAnimationFrame(step);
+    }
+
+    function cleanup() {
+      if (packet.parentNode) packet.remove();
+      if (labelEl && labelEl.parentNode) labelEl.remove();
+      const idx = activeAnimations.indexOf(handle);
+      if (idx !== -1) activeAnimations.splice(idx, 1);
+    }
+
+    const handle = {
+      stop() {
+        cancelled = true;
+        dimLitNodes();
+        cleanup();
+      }
+    };
+    activeAnimations.push(handle);
+    requestAnimationFrame(step);
+    return handle;
+  }
+
+  /**
+   * Animate a sequence of sub-flows one after another.
+   * @param {Array<{canvasId: string, nodeIds: string[], options?: object}>} flows
+   * @returns {{ stop: Function }}
+   */
+  function animateFlowSequence(flows, index) {
+    if (index === undefined) index = 0;
+    if (index >= flows.length) return { stop() {} };
+    const f = flows[index];
+    const opts = { ...(f.options || {}), loop: false };
+    let handle;
+    opts.onComplete = () => {
+      handle = animateFlowSequence(flows, index + 1);
+    };
+    handle = animateFlow(f.canvasId, f.nodeIds, opts);
+    return { stop() { if (handle) handle.stop(); } };
+  }
+
+  function stopAllAnimations() {
+    while (activeAnimations.length) activeAnimations[0].stop();
+  }
+
+  // ══════════════════════════════════════════
+  // Sub-flow Definitions (node IDs per canvas)
+  // ══════════════════════════════════════════
+
+  // We need data-id on nodes. renderFlow already sets data-id from node.id.
+  // For nodes without explicit id, we'll use indices. But let's define flows
+  // only for nodes that have id set in the init functions above.
+
+  // We'll collect all flow definitions per section and wire play buttons.
+  // For canvases where nodes don't have data-id, we auto-assign during render.
+
+  // Section flow definitions — built after DOM render
+  const sectionFlows = {};
+
+  function collectFlowNodeIds(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return [];
+    // Collect all nodes with data-id in DOM order (first row only for main flow)
+    const firstRow = canvas.querySelector('.flow-row');
+    if (!firstRow) return [];
+    return [...firstRow.querySelectorAll('.flow-node[data-id]')].map(n => n.dataset.id);
+  }
+
+  function collectAllFlowNodeIds(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return [];
+    return [...canvas.querySelectorAll('.flow-node[data-id]')].map(n => n.dataset.id);
+  }
+
+  function buildSectionFlows() {
+    sectionFlows.boot = [
+      { canvasId: 'boot-canvas', nodeIds: ['env-load','joi-validate','otel-init','boot-module','nest-create','apply-globals','connect-transport','ready'], options: { label: 'createApp()', duration: 4000 } },
+      { canvasId: 'module-loading-canvas', nodeIds: collectAllFlowNodeIds('module-loading-canvas').slice(0, 8), options: { label: 'Module loading', duration: 3000 } },
+    ];
+    sectionFlows.request = [
+      { canvasId: 'http-lifecycle-canvas', nodeIds: collectFlowNodeIds('http-lifecycle-canvas'), options: { label: 'GET /api/orders', duration: 5000 } },
+      { canvasId: 'cache-paths-canvas', nodeIds: collectFlowNodeIds('cache-paths-canvas'), options: { duration: 2000 } },
+      { canvasId: 'error-paths-canvas', nodeIds: collectAllFlowNodeIds('error-paths-canvas').slice(0, 4), options: { label: 'Error', duration: 2000, packetClass: 'error' } },
+      { canvasId: 'validation-canvas', nodeIds: collectFlowNodeIds('validation-canvas'), options: { label: 'Validation', duration: 2500, packetClass: 'error' } },
+      { canvasId: 'envelope-canvas', nodeIds: collectFlowNodeIds('envelope-canvas'), options: { label: 'Envelope', duration: 2000 } },
+    ];
+    sectionFlows.auth = [
+      { canvasId: 'jwt-login-canvas', nodeIds: collectFlowNodeIds('jwt-login-canvas'), options: { label: 'JWT Login', duration: 3500, packetClass: 'success' } },
+      { canvasId: 'jwt-refresh-canvas', nodeIds: collectFlowNodeIds('jwt-refresh-canvas'), options: { label: 'Refresh', duration: 3000 } },
+      { canvasId: 'token-revoke-canvas', nodeIds: collectFlowNodeIds('token-revoke-canvas'), options: { label: 'Revoke check', duration: 2000 } },
+      { canvasId: 'oauth-canvas', nodeIds: collectFlowNodeIds('oauth-canvas'), options: { label: 'OAuth2', duration: 4000 } },
+      { canvasId: 'apikey-canvas', nodeIds: collectFlowNodeIds('apikey-canvas'), options: { label: 'API Key', duration: 2000 } },
+      { canvasId: 'rbac-canvas', nodeIds: collectFlowNodeIds('rbac-canvas'), options: { label: 'RBAC', duration: 2000 } },
+      { canvasId: 'session-canvas', nodeIds: collectFlowNodeIds('session-canvas'), options: { label: 'Session', duration: 2000 } },
+      { canvasId: 'totp-canvas', nodeIds: collectFlowNodeIds('totp-canvas'), options: { label: '2FA', duration: 2500 } },
+    ];
+    sectionFlows.dbcache = [
+      { canvasId: 'rw-split-canvas', nodeIds: collectFlowNodeIds('rw-split-canvas'), options: { label: 'R/W Split', duration: 2000 } },
+      { canvasId: 'multi-conn-canvas', nodeIds: collectFlowNodeIds('multi-conn-canvas'), options: { duration: 2000 } },
+      { canvasId: 'base-repo-canvas', nodeIds: collectFlowNodeIds('base-repo-canvas'), options: { label: 'CRUD', duration: 2000 } },
+      { canvasId: 'cached-repo-canvas', nodeIds: collectFlowNodeIds('cached-repo-canvas'), options: { label: 'Cached Repo', duration: 2500 } },
+      { canvasId: 'uow-canvas', nodeIds: collectFlowNodeIds('uow-canvas'), options: { label: 'UoW', duration: 2500 } },
+      { canvasId: 'migration-canvas', nodeIds: collectFlowNodeIds('migration-canvas'), options: { label: 'Migration', duration: 3000 } },
+      { canvasId: 'spec-canvas', nodeIds: collectFlowNodeIds('spec-canvas'), options: { label: 'Spec', duration: 3000 } },
+      { canvasId: 'cache-lookup-canvas', nodeIds: collectFlowNodeIds('cache-lookup-canvas'), options: { label: 'Cache Lookup', duration: 2000 } },
+      { canvasId: 'cache-write-canvas', nodeIds: collectFlowNodeIds('cache-write-canvas'), options: { label: 'Write-through', duration: 2000 } },
+      { canvasId: 'stampede-canvas', nodeIds: collectFlowNodeIds('stampede-canvas'), options: { label: 'Stampede', duration: 2500 } },
+      { canvasId: 'cache-warm-canvas', nodeIds: collectFlowNodeIds('cache-warm-canvas'), options: { label: 'Warming', duration: 3000, packetClass: 'success' } },
+      { canvasId: 'tag-invalidate-canvas', nodeIds: collectFlowNodeIds('tag-invalidate-canvas'), options: { label: 'Invalidate', duration: 2000, packetClass: 'error' } },
+      { canvasId: 'get-or-set-canvas', nodeIds: collectFlowNodeIds('get-or-set-canvas'), options: { label: 'getOrSet', duration: 2000 } },
+    ];
+    sectionFlows.transport = [
+      { canvasId: 'grpc-lifecycle-canvas', nodeIds: collectFlowNodeIds('grpc-lifecycle-canvas'), options: { label: 'gRPC Call', duration: 5000 } },
+      { canvasId: 'resilient-canvas', nodeIds: collectFlowNodeIds('resilient-canvas'), options: { label: 'Resilient', duration: 3000 } },
+      { canvasId: 'inter-auth-canvas', nodeIds: collectFlowNodeIds('inter-auth-canvas'), options: { label: 'Auth Propagation', duration: 4000 } },
+      { canvasId: 'rpc-error-canvas', nodeIds: collectFlowNodeIds('rpc-error-canvas'), options: { label: 'RPC Error', duration: 3000, packetClass: 'error' } },
+    ];
+    sectionFlows.events = [
+      { canvasId: 'event-fanout-canvas', nodeIds: collectFlowNodeIds('event-fanout-canvas'), options: { label: 'Event Emit', duration: 2500 } },
+      { canvasId: 'emit-wait-canvas', nodeIds: collectFlowNodeIds('emit-wait-canvas'), options: { label: 'emitAndWait', duration: 2500 } },
+      { canvasId: 'cqrs-canvas', nodeIds: collectFlowNodeIds('cqrs-canvas'), options: { label: 'CQRS', duration: 3000 } },
+      { canvasId: 'event-replay-canvas', nodeIds: collectFlowNodeIds('event-replay-canvas'), options: { label: 'Replay', duration: 2500 } },
+      { canvasId: 'outbox-canvas', nodeIds: collectFlowNodeIds('outbox-canvas'), options: { label: 'Outbox', duration: 3000 } },
+      { canvasId: 'saga-canvas', nodeIds: collectFlowNodeIds('saga-canvas'), options: { label: 'Saga', duration: 3000 } },
+    ];
+    sectionFlows.observe = [
+      { canvasId: 'correlation-canvas', nodeIds: collectFlowNodeIds('correlation-canvas'), options: { label: 'Correlation ID', duration: 4000 } },
+      { canvasId: 'tracing-canvas', nodeIds: collectFlowNodeIds('tracing-canvas'), options: { label: 'Tracing', duration: 3000 } },
+      { canvasId: 'metrics-canvas', nodeIds: collectFlowNodeIds('metrics-canvas'), options: { label: 'Metrics', duration: 3500 } },
+      { canvasId: 'logging-canvas', nodeIds: collectFlowNodeIds('logging-canvas'), options: { label: 'Logging', duration: 2500 } },
+      { canvasId: 'error-reporting-canvas', nodeIds: collectFlowNodeIds('error-reporting-canvas'), options: { label: 'Error Report', duration: 2500, packetClass: 'error' } },
+    ];
+    sectionFlows.platform = [
+      { canvasId: 'tenant-resolve-canvas', nodeIds: collectFlowNodeIds('tenant-resolve-canvas'), options: { label: 'Tenant', duration: 2500 } },
+      { canvasId: 'row-isolation-canvas', nodeIds: collectFlowNodeIds('row-isolation-canvas'), options: { label: 'Row Isolation', duration: 2000 } },
+      { canvasId: 'db-isolation-canvas', nodeIds: collectFlowNodeIds('db-isolation-canvas'), options: { label: 'DB Isolation', duration: 2500 } },
+      { canvasId: 'file-upload-canvas', nodeIds: collectFlowNodeIds('file-upload-canvas'), options: { label: 'Upload', duration: 3000 } },
+      { canvasId: 'webhook-canvas', nodeIds: collectFlowNodeIds('webhook-canvas'), options: { label: 'Webhook', duration: 3500 } },
+      { canvasId: 'migration-cli-canvas', nodeIds: collectFlowNodeIds('migration-cli-canvas'), options: { label: 'Migrate CLI', duration: 3000 } },
+      { canvasId: 'resource-gen-canvas', nodeIds: collectFlowNodeIds('resource-gen-canvas'), options: { label: 'Generate', duration: 2500 } },
+      { canvasId: 'shutdown-canvas', nodeIds: collectFlowNodeIds('shutdown-canvas'), options: { label: 'Shutdown', duration: 4000, packetClass: 'error' } },
+    ];
+    sectionFlows.di = [
+      { canvasId: 'circular-dep-canvas', nodeIds: collectFlowNodeIds('circular-dep-canvas'), options: { label: 'Circular Dep', duration: 2500, packetClass: 'error' } },
+      { canvasId: 'contract-canvas', nodeIds: collectFlowNodeIds('contract-canvas'), options: { label: 'Contract', duration: 2500 } },
+      { canvasId: 'module-graph-canvas', nodeIds: collectFlowNodeIds('module-graph-canvas'), options: { label: 'Graph Analysis', duration: 3000 } },
+      { canvasId: 'layer-validate-canvas', nodeIds: collectFlowNodeIds('layer-validate-canvas'), options: { label: 'Layer Check', duration: 2500 } },
+    ];
+  }
+
+  // Add play buttons to every sub-flow title + "Play All" per section
+  function addPlayButtons() {
+    // Per sub-flow: add individual play button
+    document.querySelectorAll('.sub-flow').forEach(sf => {
+      const canvas = sf.querySelector('.flow-canvas');
+      if (!canvas || !canvas.id) return;
+      const titleEl = sf.querySelector('.sub-flow-title');
+      if (!titleEl) return;
+
+      const btn = document.createElement('button');
+      btn.className = 'play-btn';
+      btn.textContent = '\u25B6 Play';
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const nodeIds = collectFlowNodeIds(canvas.id);
+        if (nodeIds.length < 2) return;
+        // Find matching flow def for label/options
+        let opts = { duration: 3000 };
+        for (const secKey in sectionFlows) {
+          const match = sectionFlows[secKey].find(f => f.canvasId === canvas.id);
+          if (match) { opts = { ...match.options }; break; }
+        }
+        animateFlow(canvas.id, nodeIds, opts);
+      });
+      titleEl.appendChild(btn);
+    });
+
+    // Per section: add "Play All" button
+    document.querySelectorAll('.flow-section').forEach(section => {
+      const sectionId = section.id.replace('section-', '');
+      if (sectionId === 'deps') return; // Module map has no packet animation
+      const flows = sectionFlows[sectionId];
+      if (!flows || flows.length === 0) return;
+
+      const titleEl = section.querySelector('.section-title');
+      if (!titleEl) return;
+      const btn = document.createElement('button');
+      btn.className = 'play-btn';
+      btn.textContent = '\u25B6 Play All';
+      btn.style.fontSize = '.75rem';
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        stopAllAnimations();
+        animateFlowSequence(flows, 0);
+      });
+      titleEl.appendChild(btn);
+    });
+  }
+
+  // Auto-play first sub-flow on tab switch
+  function initTabAutoPlay() {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tabId = btn.dataset.tab;
+        if (tabId === 'deps') return;
+        stopAllAnimations();
+        const flows = sectionFlows[tabId];
+        if (flows && flows.length > 0) {
+          // Small delay for section fade-in
+          setTimeout(() => {
+            const f = flows[0];
+            animateFlow(f.canvasId, f.nodeIds, { ...f.options, loop: false });
+          }, 400);
+        }
+      });
+    });
+  }
+
+  // Pause button
+  function initPauseButton() {
+    const btn = document.getElementById('pause-btn');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      paused = !paused;
+      btn.textContent = paused ? '\u25B6 Resume' : '\u23F8 Pause';
+      btn.classList.toggle('active', paused);
+    });
+  }
+
+  // ══════════════════════════════════════════
   // Init
   // ══════════════════════════════════════════
   document.addEventListener('DOMContentLoaded', () => {
@@ -1519,5 +1890,19 @@
     initPlatformSection();
     initDiSection();
     initDependencyMap();
+
+    // Build flow definitions after all sections are rendered
+    buildSectionFlows();
+    addPlayButtons();
+    initTabAutoPlay();
+    initPauseButton();
+
+    // Auto-play boot section on load
+    setTimeout(() => {
+      const bootFlows = sectionFlows.boot;
+      if (bootFlows && bootFlows.length > 0) {
+        animateFlow(bootFlows[0].canvasId, bootFlows[0].nodeIds, { ...bootFlows[0].options, loop: false });
+      }
+    }, 600);
   });
 })();

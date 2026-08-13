@@ -179,7 +179,9 @@ flowchart TD
 
 ### Database
 
-Multi-connection MongoDB with automatic reader/writer split. `BaseRepository<T>` provides CRUD + pagination with automatic connection routing. `CachedBaseRepository<T>` adds cache-aside on top. `CrudService<T>` provides lifecycle hooks (`beforeCreate`, `afterCreate`, etc.).
+Multi-connection MongoDB with automatic reader/writer split. `BaseRepository<T>` provides CRUD + pagination with automatic connection routing. `CachedBaseRepository<T>` adds cache-aside on top. `CrudService<T>` provides lifecycle hooks (`beforeCreate`, `afterCreate`, etc.). `UnitOfWork` supports MongoDB transactions. `Specification<T>` enables composable query filters.
+
+**Migrations:** `MigrationRunner` with `_migrations` collection tracking state. CLI: `npx nestjs-boot migrate`, `migrate:create`, `migrate:rollback`, `migrate:status`.
 
 ```ts
 database: {
@@ -193,6 +195,8 @@ database: {
 ### Cache
 
 L1 in-memory LRU + optional L2 Redis. Size-aware routing (>1MB goes to L2 only). Optional Memcached adapter for L1. `MultiCacheService` provides `getOrSet()`, `del()`, `delByPrefix()`.
+
+**Advanced:** `CacheStampedeGuard` (prevents thundering herd -- only one request hits DB when cache expires), `CacheWarmer` (pre-warms cache at startup), `TaggedCacheService` (invalidate by tag), `CacheStats` (hit rate statistics).
 
 ```ts
 cache: { redis: { url: 'redis://localhost:6379' }, defaultTtl: 300 }
@@ -270,6 +274,67 @@ throw new BootException('Not found', { code: ErrorCodes.NOT_FOUND, status: 404 }
 ```ts
 queue: { driver: 'bullmq', redis: { url: 'redis://localhost:6379' } },
 events: { transport: 'redis', redis: { url: 'redis://localhost:6379' } },
+```
+
+### CQRS & Event Sourcing
+
+- **CommandBus:** 1:1 command-to-handler routing via `@CommandHandler`.
+- **AggregateRoot:** DDD pattern with `apply()`, `loadFromHistory()`, version management.
+- **EventStore:** MongoDB + memory adapter, interface for EventStoreDB/Kafka.
+- **Projection:** `@OnDomainEvent` builds read models automatically when streaming.
+- **Outbox:** Writes events to DB in the same transaction, publishes asynchronously -- guarantees at-least-once delivery.
+- **Saga:** `defineSaga()` builder with reverse compensations.
+
+```ts
+cqrs: { eventStore: 'mongodb', outbox: { enabled: true } }
+```
+
+### Multi-tenancy
+
+3 isolation strategies: row-level (shared collection, filter by `tenantId`), schema-level (prefixed collections), database-level (separate connection per tenant). `TenantAwareRepository` auto-scopes queries. `@CurrentTenant()` decorator.
+
+```ts
+tenancy: { strategy: 'header', isolation: 'row' }
+```
+
+### API Versioning
+
+URI / header / media-type versioning. `@DeprecatedVersion('2027-01-01')` adds a Sunset header.
+
+```ts
+versioning: { type: 'uri', defaultVersion: '1' }
+```
+
+### Swagger/OpenAPI
+
+Auto-configured from `package.json`. Adds auth schemes when AuthModule is configured. `@ApiPaginated`, `@ApiErrorResponses`, `AutoApiProperties()`. Enabled by default in dev, disabled in prod.
+
+```ts
+swagger: { enabled: true, path: '/docs' }
+```
+
+### WebSocket
+
+Redis adapter for multi-instance scaling. `BootWsGateway` base class. `WsCorrelationInterceptor` attaches correlationId to every message. Supports Socket.IO (default) or native `ws`.
+
+```ts
+websocket: { adapter: 'socket.io', redis: { url: 'redis://localhost:6379' } }
+```
+
+### Payments & Webhooks
+
+Stripe/PayPal signature verification (HMAC-SHA256). `IdempotencyGuard` prevents duplicate processing. Custom providers via interface. Requires `rawBody: true` on NestFactory.
+
+```ts
+webhooks: { providers: { stripe: { secret: process.env.STRIPE_WEBHOOK_SECRET! } } }
+```
+
+### File Storage
+
+Driver abstraction: `local` (zero deps) | `s3` (requires `@aws-sdk/client-s3`) | `gcs` (requires `@google-cloud/storage`). `FileValidationPipe` checks mime + size before upload. `getSignedUrl()` for temporary URLs.
+
+```ts
+storage: { driver: 's3', s3: { bucket: 'my-bucket', region: 'us-east-1' } }
 ```
 
 ### Config
@@ -430,6 +495,42 @@ interface BootOptions {
     errorReporter?: (error: Error, context: Record<string, unknown>) => void;
   };
   logger?: boolean | unknown;
+  versioning?: {
+    type: 'uri' | 'header' | 'media-type';
+    defaultVersion?: string;
+  };
+  tenancy?: {
+    strategy: 'header' | 'subdomain' | 'path';
+    isolation: 'database' | 'schema' | 'row';
+  };
+  swagger?: {
+    enabled?: boolean;                       // default: true in dev, false in prod
+    path?: string;                           // default: '/docs'
+    title?: string;
+  };
+  websocket?: {
+    adapter?: 'socket.io' | 'ws';
+    redis?: { url: string };
+  };
+  webhooks?: {
+    providers: Record<string, { secret: string }>;
+  };
+  storage?: {
+    driver: 'local' | 's3' | 'gcs';
+    local?: { root: string };
+    s3?: { bucket: string; region: string };
+    gcs?: { bucket: string; projectId: string };
+  };
+  cqrs?: {
+    eventStore: 'mongodb' | 'memory';
+    snapshotStore?: string;
+    outbox?: { enabled: boolean };
+  };
+  layers?: {
+    enabled?: boolean;                       // module layer enforcement
+    strict?: boolean;                        // exit on violation
+  };
+  lazy?: boolean;                            // defer DB/cache connections until first request (serverless)
 }
 ```
 

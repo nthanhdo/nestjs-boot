@@ -6,6 +6,7 @@ export interface ApiTestConfig {
   endpoints: EndpointConfig[];
   outputDir?: string;
   categories?: MutationCategory[];
+  methods?: MethodCategory[];
 }
 
 export interface AuthConfig {
@@ -43,7 +44,7 @@ export interface RecordedResponse {
 export interface TestCase {
   id: string;
   name: string;
-  category: MutationCategory;
+  category: TestCategory;
   description: string;
   request: {
     method: string;
@@ -57,6 +58,11 @@ export interface TestCase {
     bodyContains?: string[];
     bodyNotContains?: string[];
     headerPresent?: string[];
+    maxDuration?: number;
+    matchesSpec?: {
+      fields: Record<string, { type: string; required: boolean }>;
+      specPath: string;
+    };
   };
   mutation: string;
 }
@@ -81,6 +87,12 @@ export interface TestSuite {
 
 export type MutationCategory = 'auth' | 'body' | 'params' | 'headers' | 'edge' | 'method';
 
+export type MethodCategory = 'crud' | 'contract' | 'smoke' | 'regression' | 'status-codes'
+  | 'flow' | 'parameterized' | 'rate-limit' | 'pagination' | 'auth-matrix' | 'cors'
+  | 'security' | 'performance' | 'spec-drift' | 'boundary' | 'negative';
+
+export type TestCategory = MutationCategory | MethodCategory;
+
 export interface FieldMeta {
   name: string;
   path: string;
@@ -99,3 +111,10 @@ export interface MutationModule {
   name: MutationCategory;
   generate(endpoint: EndpointConfig, happyCase: RecordedResponse, schema: PayloadSchema | null, config: ApiTestConfig): TestCase[];
 }
+
+// ── Tier 3: Advanced method configs ──
+
+export type { PairwiseConfig, PairwiseParameter } from './methods/pairwise.js';
+export type { FuzzConfig, FuzzField, FuzzSeverity, FuzzResult } from './methods/fuzzing.js';
+export type { StateMachineConfig, StateTransition, StateMachineTestCase } from './methods/state-machine.js';
+export type { LoadTestConfig } from './methods/load-test.js';

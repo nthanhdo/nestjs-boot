@@ -1,5 +1,5 @@
 import * as readline from 'node:readline';
-import type { ApiTestConfig, AuthConfig, EndpointConfig, HttpMethod, MutationCategory } from './types.js';
+import type { ApiTestConfig, AuthConfig, EndpointConfig, HttpMethod, MethodCategory, MutationCategory } from './types.js';
 import { getColors, safeJsonParse } from './utils.js';
 
 // ── Clack-compatible fallback using readline ──
@@ -262,6 +262,19 @@ export async function runWizard(existingConfig?: ApiTestConfig): Promise<ApiTest
   });
   if (p.isCancel(categories)) return null;
 
+  // 7. Test methods
+  const methods = await p.multiselect<MethodCategory>({
+    message: 'Test methods?',
+    options: [
+      { value: 'crud', label: 'CRUD Lifecycle (create → read → update → delete → verify)', selected: true },
+      { value: 'contract', label: 'Contract (schema validation)', selected: true },
+      { value: 'smoke', label: 'Smoke (quick non-5xx check)', selected: true },
+      { value: 'regression', label: 'Regression (baseline snapshot diff)', selected: true },
+      { value: 'status-codes', label: 'Status Codes (400/401/403/404/405/409/422/429)', selected: true },
+    ],
+  });
+  if (p.isCancel(methods)) return null;
+
   const outputDir = await p.text({
     message: 'Output directory?',
     defaultValue: './api-tests',
@@ -279,6 +292,7 @@ export async function runWizard(existingConfig?: ApiTestConfig): Promise<ApiTest
     console.log(`    ${c.bold(ep.method)} ${ep.path}${ep.description ? ` — ${ep.description}` : ''}`);
   }
   console.log(`  Categories: ${c.cyan((categories as MutationCategory[]).join(', '))}`);
+  console.log(`  Methods: ${c.cyan((methods as MethodCategory[]).join(', '))}`);
   console.log(`  Output: ${c.cyan(outputDir as string)}\n`);
 
   const proceed = await p.confirm({ message: 'Record happy cases and generate tests?' });
@@ -297,6 +311,7 @@ export async function runWizard(existingConfig?: ApiTestConfig): Promise<ApiTest
     endpoints,
     outputDir: outputDir as string,
     categories: categories as MutationCategory[],
+    methods: methods as MethodCategory[],
   };
 }
 

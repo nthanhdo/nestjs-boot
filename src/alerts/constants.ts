@@ -1,0 +1,3 @@
+export const ALERT_OPTIONS = Symbol('ALERT_OPTIONS');
+export const DEFAULT_CHECK_INTERVAL = 30_000;
+export const DEFAULT_COOLDOWN = 300_000;

@@ -203,4 +203,16 @@ export interface BootOptions {
    * EventStore backends: 'mongodb' (default, uses DatabaseModule) | 'memory' (testing).
    */
   cqrs?: import('../cqrs/interfaces').CqrsOptions;
+  /**
+   * Deploy lifecycle hooks (PP22).
+   * Config-driven pre/post boot hooks for env validation, dependency checks,
+   * migration integration, and K8s readiness gates.
+   */
+  deploy?: import('../deploy/interfaces').DeployOptions;
+  /**
+   * Alert notification system.
+   * Routes metric-based alerts to Slack, Discord, PagerDuty, webhooks, or console.
+   * Integrates with MetricsService for periodic threshold checks.
+   */
+  alerts?: import('../alerts/interfaces').AlertOptions;
 }

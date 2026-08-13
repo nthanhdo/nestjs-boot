@@ -35,6 +35,11 @@ import { TenancyModule } from './tenancy/tenancy.module';
 import { setupSwagger } from './swagger/swagger.setup';
 import { WebSocketModule } from './websocket/websocket.module';
 import { CqrsModule } from './cqrs/cqrs.module';
+import { DeployHooksModule } from './deploy/deploy.module';
+import { DeployService } from './deploy/deploy.service';
+import { DeployContext } from './deploy/interfaces';
+import { EnvValidationHook } from './deploy/hooks/env-validation.hook';
+import { ReadinessGateHook } from './deploy/hooks/readiness-gate.hook';
 
 /**
  * Load .env files using dotenv.
@@ -146,6 +151,17 @@ function buildBootModule(
     imports.push(CqrsModule.register(validated.cqrs));
   }
 
+  // PP22: Deploy Lifecycle Hooks
+  if (validated.deploy?.enabled !== false) {
+    imports.push(DeployHooksModule.register(validated.deploy ?? {}));
+  }
+
+  // Alert Notifications
+  if (validated.alerts) {
+    const { AlertModule } = require('./alerts/alert.module');
+    imports.push(AlertModule.register(validated.alerts));
+  }
+
   // PP13: API Versioning
   if (validated.versioning) {
     imports.push(VersioningModule.register(validated.versioning));
@@ -242,6 +258,36 @@ export async function createApp(
     initTracing(validated.tracing);
   }
 
+  // 2.5. Deploy preStart phase — runs before NestFactory.create
+  if (validated.deploy?.enabled !== false && validated.deploy) {
+    const { Logger: NestLogger } = require('@nestjs/common');
+    const preStartService = new DeployService();
+    const deployContext: DeployContext = {
+      phase: 'preStart',
+      environment: process.env.NODE_ENV || 'development',
+      version: process.env.APP_VERSION || '0.0.0',
+      startTime: new Date(),
+      logger: new NestLogger('DeployHooks'),
+      config: validated,
+    };
+
+    // Register built-in preStart hooks
+    if (validated.deploy.requiredEnvVars?.length) {
+      preStartService.registerHook(new EnvValidationHook(validated.deploy.requiredEnvVars));
+    }
+
+    // Register user-provided hooks for preStart
+    if (validated.deploy.hooks) {
+      for (const hook of validated.deploy.hooks) {
+        if (hook.phase === 'preStart') {
+          preStartService.registerHook(hook);
+        }
+      }
+    }
+
+    await preStartService.executePhase('preStart', deployContext);
+  }
+
   // 3. Build infrastructure module
   const BootWrappedModule = buildBootModule(AppModule, validated);
 
@@ -327,6 +373,43 @@ export async function createApp(
   // 14. Swagger/OpenAPI
   if (validated.swagger !== undefined) {
     setupSwagger(app, validated.swagger, !!validated.auth);
+  }
+
+  // 15. Deploy postStart + healthGate phases
+  if (validated.deploy?.enabled !== false && validated.deploy) {
+    try {
+      const deployService = app.get(DeployService);
+      const { Logger: NestLogger } = require('@nestjs/common');
+      const deployContext: DeployContext = {
+        phase: 'postStart',
+        environment: process.env.NODE_ENV || 'development',
+        version: process.env.APP_VERSION || '0.0.0',
+        startTime: new Date(),
+        logger: new NestLogger('DeployHooks'),
+        config: validated,
+      };
+
+      // Register user-provided hooks for postStart/healthGate
+      if (validated.deploy.hooks) {
+        for (const hook of validated.deploy.hooks) {
+          if (hook.phase !== 'preStart') {
+            deployService.registerHook(hook);
+          }
+        }
+      }
+
+      // Register built-in readiness gate if configured
+      if (validated.deploy.readinessDelay !== undefined) {
+        deployService.registerHook(
+          new ReadinessGateHook({ delayMs: validated.deploy.readinessDelay }),
+        );
+      }
+
+      await deployService.executePhase('postStart', deployContext);
+      await deployService.executePhase('healthGate', { ...deployContext, phase: 'healthGate' });
+    } catch {
+      // DeployHooksModule not available — skip
+    }
   }
 
   return app;

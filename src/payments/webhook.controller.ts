@@ -34,7 +34,7 @@ export class WebhookController {
 
   constructor(
     @Inject(WEBHOOK_OPTIONS) private readonly options: WebhookModuleOptions,
-    @Inject(IDEMPOTENCY_STORE) private readonly store: Map<string, boolean>,
+    @Inject(IDEMPOTENCY_STORE) private readonly store: Map<string, number>,
   ) {
     // Register built-in providers from config
     if (options.providers.stripe) {
@@ -45,7 +45,7 @@ export class WebhookController {
     }
     if (options.providers.paypal) {
       this.providerMap.set('paypal', {
-        provider: new PayPalWebhookProvider(),
+        provider: new PayPalWebhookProvider({ verifyFn: options.providers.paypal.verifyFn }),
         secret: options.providers.paypal.secret,
       });
     }
@@ -125,17 +125,47 @@ export class WebhookController {
     return headers[headerName];
   }
 
+  /** Maximum dedup entries before eviction of oldest */
+  private static readonly MAX_STORE_SIZE = 10_000;
+  /** TTL for dedup entries (5 minutes) */
+  private static readonly STORE_TTL_MS = 300_000;
+
+  /**
+   * Evict expired entries, then trim to MAX_STORE_SIZE by removing oldest.
+   */
+  private evictStore(): void {
+    const now = Date.now();
+    for (const [k, v] of this.store) {
+      if (now - v > WebhookController.STORE_TTL_MS) {
+        this.store.delete(k);
+      }
+    }
+    let excess = this.store.size - WebhookController.MAX_STORE_SIZE;
+    if (excess > 0) {
+      for (const k of this.store.keys()) {
+        if (excess-- <= 0) break;
+        this.store.delete(k);
+      }
+    }
+  }
+
   /**
    * Idempotency check — skip duplicate events by event.id.
    * Uses in-memory Map (or MongoDB if wired in future).
    */
   private async dispatchIfNew(event: WebhookEvent): Promise<void> {
-    if (this.store.has(event.id)) {
-      this.logger.debug(`Duplicate webhook event skipped: ${event.id}`);
-      return;
+    const cachedAt = this.store.get(event.id);
+    if (cachedAt !== undefined) {
+      if (Date.now() - cachedAt > WebhookController.STORE_TTL_MS) {
+        this.store.delete(event.id);
+      } else {
+        this.logger.debug(`Duplicate webhook event skipped: ${event.id}`);
+        return;
+      }
     }
 
-    this.store.set(event.id, true);
+    this.evictStore();
+    this.store.set(event.id, Date.now());
 
     try {
       await this.options.handler(event);

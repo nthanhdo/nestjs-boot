@@ -42,7 +42,7 @@ export class WebhookModule {
         },
         {
           provide: IDEMPOTENCY_STORE,
-          useValue: new Map<string, boolean>(),
+          useValue: new Map<string, number>(),
         },
       ],
     };

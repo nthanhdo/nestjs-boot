@@ -38,8 +38,30 @@ interface CachedResponse {
 @Injectable()
 export class IdempotencyGuard implements CanActivate {
   private readonly logger = new Logger(IdempotencyGuard.name);
+
+  /** Maximum entries before eviction of oldest items */
+  private static readonly MAX_SIZE = 10_000;
+
   // Shared in-memory store — survives the lifetime of the module instance
   private static readonly cache = new Map<string, CachedResponse>();
+
+  /**
+   * Evict expired entries, then trim to MAX_SIZE by removing oldest (first-inserted) entries.
+   */
+  private static evict(): void {
+    const now = Date.now();
+    for (const [k, v] of IdempotencyGuard.cache) {
+      if (now >= v.expiresAt) IdempotencyGuard.cache.delete(k);
+    }
+    // If still over limit, remove oldest (Map iteration order = insertion order)
+    let excess = IdempotencyGuard.cache.size - IdempotencyGuard.MAX_SIZE;
+    if (excess > 0) {
+      for (const k of IdempotencyGuard.cache.keys()) {
+        if (excess-- <= 0) break;
+        IdempotencyGuard.cache.delete(k);
+      }
+    }
+  }
 
   constructor(private readonly reflector: Reflector) {}
 
@@ -84,6 +106,7 @@ export class IdempotencyGuard implements CanActivate {
     // Intercept response to cache it
     const originalJson = res.json.bind(res);
     res.json = (body: unknown): import('express').Response => {
+      IdempotencyGuard.evict();
       IdempotencyGuard.cache.set(key, {
         statusCode: res.statusCode,
         body,

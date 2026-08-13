@@ -48,15 +48,47 @@ export class StripeWebhookProvider implements WebhookProvider {
 }
 
 /**
+ * Configuration for PayPal webhook provider.
+ */
+export interface PayPalWebhookConfig {
+  /**
+   * Optional custom verification function. PayPal uses certificate-based RSA
+   * verification (not HMAC), so production deployments should provide their own
+   * verifyFn using `@paypal/paypal-server-sdk` or the PayPal REST API
+   * `POST /v1/notifications/verify-webhook-signature`.
+   *
+   * When provided, this function is used instead of the built-in HMAC fallback.
+   */
+  verifyFn?: (payload: Buffer, signature: string, secret: string) => boolean;
+}
+
+/**
  * PayPal webhook provider.
  *
- * PayPal uses HMAC-SHA256 over the raw body.
- * The transmission-sig header contains the base64-encoded signature.
+ * @deprecated The built-in HMAC-SHA256 verification is a simplified placeholder.
+ * PayPal actually uses certificate-based RSA verification. Provide a custom
+ * `verifyFn` via {@link PayPalWebhookConfig} for production use, e.g. using
+ * `@paypal/paypal-server-sdk` or the PayPal webhook verification REST API.
  */
 export class PayPalWebhookProvider implements WebhookProvider {
   name = 'paypal';
+  private readonly verifyFn?: (payload: Buffer, signature: string, secret: string) => boolean;
+
+  constructor(config?: PayPalWebhookConfig) {
+    this.verifyFn = config?.verifyFn;
+  }
 
   verifySignature(payload: Buffer, signature: string, secret: string): boolean {
+    if (this.verifyFn) {
+      return this.verifyFn(payload, signature, secret);
+    }
+
+    console.warn(
+      '[nestjs-boot] PayPalWebhookProvider: using simplified HMAC verification. ' +
+      'PayPal uses certificate-based RSA verification in production. ' +
+      'Provide a verifyFn for proper verification.',
+    );
+
     try {
       const expected = createHmac('sha256', secret).update(payload).digest('base64');
       const sigBuf = Buffer.from(signature, 'base64');

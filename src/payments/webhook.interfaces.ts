@@ -33,7 +33,7 @@ export interface WebhookProvider {
 export interface WebhookModuleOptions {
   providers: {
     stripe?: { secret: string; path?: string };
-    paypal?: { secret: string; path?: string };
+    paypal?: { secret: string; path?: string; verifyFn?: (payload: Buffer, signature: string, secret: string) => boolean };
   };
   /** Called for every verified, deduplicated event */
   handler: (event: WebhookEvent) => Promise<void>;

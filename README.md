@@ -4,9 +4,8 @@
 
 [![npm version](https://img.shields.io/npm/v/nestjs-boot.svg)](https://www.npmjs.com/package/nestjs-boot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CI](https://github.com/nthanhdo/nestjs-boot/actions/workflows/ci.yml/badge.svg)](https://github.com/nthanhdo/nestjs-boot/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-411%20passing-brightgreen.svg)](#)
-[![Modules](https://img.shields.io/badge/modules-40%2B-blue.svg)](#modules)
+[![Tests](https://img.shields.io/badge/tests-507%20passing-brightgreen.svg)](#)
+[![Modules](https://img.shields.io/badge/modules-55%2B-blue.svg)](#modules)
 
 ## What is nestjs-boot?
 
@@ -477,8 +476,6 @@ export class AppModule {}
 
 ## Roadmap
 
-- OAuth2 / OpenID Connect guard
-- Grafana dashboard templates
 - PostgreSQL / TypeORM database adapter
 - Rate limiting module
 - WebSocket transport improvements
@@ -507,7 +504,7 @@ npm install otpauth                          # TOTP 2FA
 git clone https://github.com/nthanhdo/nestjs-boot.git
 cd nestjs-boot
 npm install
-npm test           # 411 tests
+npm test           # 507 tests
 npm run build      # CJS + ESM + DTS
 ```
 

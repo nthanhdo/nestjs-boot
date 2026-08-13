@@ -1,6 +1,24 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { QueueOptions } from './interfaces';
 
+/** Minimal shape for a BullMQ Queue (optional dep) */
+interface BullQueue {
+  add(name: string, data: unknown, opts?: unknown): Promise<unknown>;
+  addBulk(jobs: { name: string; data: unknown; opts?: unknown }[]): Promise<unknown[]>;
+  close(): Promise<void>;
+}
+
+/** Minimal shape for a BullMQ Worker (optional dep) */
+interface BullWorker {
+  on(event: string, handler: (...args: unknown[]) => void): void;
+  close(): Promise<void>;
+}
+
+/** Minimal shape for an ioredis connection (optional dep) */
+interface RedisConnection {
+  quit(): Promise<void>;
+}
+
 /**
  * QueueService — manages BullMQ queues and provides job-adding methods.
  *
@@ -10,14 +28,10 @@ import { QueueOptions } from './interfaces';
 @Injectable()
 export class QueueService implements OnModuleDestroy {
   private readonly logger = new Logger('QueueService');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private readonly queues = new Map<string, any>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private readonly workers = new Map<string, any>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private bullmq: any = null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private connection: any = null;
+  private readonly queues = new Map<string, BullQueue>();
+  private readonly workers = new Map<string, BullWorker>();
+  private bullmq: Record<string, unknown> | null = null;
+  private connection: RedisConnection | null = null;
 
   constructor(private readonly options: QueueOptions) {
     try {
@@ -30,35 +44,35 @@ export class QueueService implements OnModuleDestroy {
 
     if (this.bullmq && options.redis?.url) {
       const IORedis = require('ioredis');
-      this.connection = new IORedis(options.redis.url, { maxRetriesPerRequest: null });
+      this.connection = new IORedis(options.redis.url, { maxRetriesPerRequest: null }) as RedisConnection;
     }
   }
 
   /**
    * Get or create a BullMQ Queue by name.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getQueue(name: string): any {
+  getQueue(name: string): BullQueue {
     if (!this.bullmq) {
       throw new Error('bullmq is not installed. Install it to use QueueService.');
     }
 
     if (!this.queues.has(name)) {
-      const queue = new this.bullmq.Queue(name, {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const QueueCtor = (this.bullmq as Record<string, new (...args: unknown[]) => BullQueue>).Queue;
+      const queue = new QueueCtor(name, {
         connection: this.connection,
         defaultJobOptions: this.options.defaultOptions,
       });
       this.queues.set(name, queue);
     }
 
-    return this.queues.get(name);
+    return this.queues.get(name)!;
   }
 
   /**
    * Add a single job to a named queue.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async addJob(queueName: string, jobName: string, data: any, opts?: any): Promise<any> {
+  async addJob(queueName: string, jobName: string, data: unknown, opts?: unknown): Promise<unknown> {
     const queue = this.getQueue(queueName);
     return queue.add(jobName, data, opts);
   }
@@ -68,10 +82,8 @@ export class QueueService implements OnModuleDestroy {
    */
   async addBulk(
     queueName: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    jobs: { name: string; data: any; opts?: any }[],
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): Promise<any[]> {
+    jobs: { name: string; data: unknown; opts?: unknown }[],
+  ): Promise<unknown[]> {
     const queue = this.getQueue(queueName);
     return queue.addBulk(jobs);
   }
@@ -82,25 +94,24 @@ export class QueueService implements OnModuleDestroy {
    */
   registerWorker(
     queueName: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    processor: (job: any) => Promise<any>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    handlers?: { onFailed?: (job: any, error: Error) => void; onCompleted?: (job: any, result: any) => void },
+    processor: (job: unknown) => Promise<unknown>,
+    handlers?: { onFailed?: (job: unknown, error: Error) => void; onCompleted?: (job: unknown, result: unknown) => void },
   ): void {
     if (!this.bullmq) {
       this.logger.warn('bullmq not installed — cannot register worker.');
       return;
     }
 
-    const worker = new this.bullmq.Worker(queueName, processor, {
+    const WorkerCtor = (this.bullmq as Record<string, new (...args: unknown[]) => BullWorker>).Worker;
+    const worker = new WorkerCtor(queueName, processor, {
       connection: this.connection,
     });
 
     if (handlers?.onFailed) {
-      worker.on('failed', handlers.onFailed);
+      worker.on('failed', handlers.onFailed as (...args: unknown[]) => void);
     }
     if (handlers?.onCompleted) {
-      worker.on('completed', handlers.onCompleted);
+      worker.on('completed', handlers.onCompleted as (...args: unknown[]) => void);
     }
 
     this.workers.set(queueName, worker);

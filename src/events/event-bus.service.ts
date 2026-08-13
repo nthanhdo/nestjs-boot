@@ -2,18 +2,24 @@ import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { BootEvent } from './boot-event';
 import { EventBusOptions, OnEventOptions, EmitAndWaitOptions } from './interfaces';
 
+/** Minimal shape for an ioredis client used for pub/sub (optional dep) */
+interface RedisPubSubClient {
+  publish(channel: string, message: string): Promise<number>;
+  subscribe(channel: string): Promise<void>;
+  unsubscribe(channel: string): Promise<void>;
+  on(event: string, handler: (...args: unknown[]) => void): void;
+  quit(): Promise<void>;
+}
+
 interface HandlerEntry {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  eventClass: new (...args: any[]) => BootEvent;
+  eventClass: new (...args: unknown[]) => BootEvent;
   handler: (event: BootEvent) => Promise<void> | void;
   options: OnEventOptions;
 }
 
 interface QueryHandlerEntry {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  queryClass: new (...args: any[]) => BootEvent;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  handler: (query: BootEvent) => Promise<any> | any;
+  queryClass: new (...args: unknown[]) => BootEvent;
+  handler: (query: BootEvent) => Promise<unknown> | unknown;
 }
 
 /**
@@ -27,10 +33,8 @@ export class EventBusService implements OnModuleDestroy {
   private readonly logger = new Logger('EventBusService');
   private readonly handlers: HandlerEntry[] = [];
   private readonly queryHandlers = new Map<string, QueryHandlerEntry>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private redisPublisher: any = null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private redisSubscriber: any = null;
+  private redisPublisher: RedisPubSubClient | null = null;
+  private redisSubscriber: RedisPubSubClient | null = null;
   private readonly redisChannel = 'boot:events';
 
   /** Whether this service owns the Redis clients (and should close them on destroy) */
@@ -40,16 +44,16 @@ export class EventBusService implements OnModuleDestroy {
     if (options.transport === 'redis') {
       // Prefer injected Redis clients over creating new ones
       if (options.redisClient) {
-        this.redisPublisher = options.redisClient.publisher;
-        this.redisSubscriber = options.redisClient.subscriber;
+        this.redisPublisher = options.redisClient.publisher as RedisPubSubClient;
+        this.redisSubscriber = options.redisClient.subscriber as RedisPubSubClient;
         this.ownsRedisClients = false;
         this.setupRedisSubscriber();
         this.logger.log('EventBus Redis transport connected (injected client)');
       } else if (options.redis?.url) {
         try {
           const IORedis = require('ioredis');
-          this.redisPublisher = new IORedis(options.redis.url);
-          this.redisSubscriber = new IORedis(options.redis.url);
+          this.redisPublisher = new IORedis(options.redis.url) as RedisPubSubClient;
+          this.redisSubscriber = new IORedis(options.redis.url) as RedisPubSubClient;
           this.ownsRedisClients = true;
           this.setupRedisSubscriber();
           this.logger.log('EventBus Redis transport connected');
@@ -63,10 +67,10 @@ export class EventBusService implements OnModuleDestroy {
   }
 
   private setupRedisSubscriber(): void {
-    this.redisSubscriber.subscribe(this.redisChannel);
-    this.redisSubscriber.on('message', (_channel: string, message: string) => {
+    this.redisSubscriber!.subscribe(this.redisChannel);
+    this.redisSubscriber!.on('message', (_channel: unknown, message: unknown) => {
       try {
-        const parsed = JSON.parse(message);
+        const parsed = JSON.parse(message as string);
         this.invokeHandlers(parsed.eventClassName, parsed.data);
       } catch (err) {
         this.logger.error('Failed to process Redis event message', err);
@@ -79,8 +83,7 @@ export class EventBusService implements OnModuleDestroy {
    * @internal — used by EventBusModule during module init to wire @OnEvent decorators.
    */
   registerHandler(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    eventClass: new (...args: any[]) => BootEvent,
+    eventClass: new (...args: unknown[]) => BootEvent,
     handler: (event: BootEvent) => Promise<void> | void,
     options: OnEventOptions = {},
   ): void {
@@ -125,8 +128,7 @@ export class EventBusService implements OnModuleDestroy {
   /**
    * Invoke local handlers matching the event class name.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private async invokeHandlers(eventClassName: string, eventData: any, awaitAll = false): Promise<void> {
+  private async invokeHandlers(eventClassName: string, eventData: BootEvent | Record<string, unknown>, awaitAll = false): Promise<void> {
     const matching = this.handlers.filter(
       (h) => h.eventClass.name === eventClassName,
     );
@@ -137,7 +139,7 @@ export class EventBusService implements OnModuleDestroy {
 
     for (const entry of matching) {
       try {
-        const result = entry.handler(eventData);
+        const result = entry.handler(eventData as BootEvent);
         if (result instanceof Promise) {
           if (awaitAll || !entry.options.async) {
             promises.push(result);
@@ -164,10 +166,8 @@ export class EventBusService implements OnModuleDestroy {
    * @internal — used by EventBusModule during module init to wire @OnQuery decorators.
    */
   registerQueryHandler(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    queryClass: new (...args: any[]) => BootEvent,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    handler: (query: BootEvent) => Promise<any> | any,
+    queryClass: new (...args: unknown[]) => BootEvent,
+    handler: (query: BootEvent) => Promise<unknown> | unknown,
   ): void {
     const name = queryClass.name;
     if (this.queryHandlers.has(name)) {

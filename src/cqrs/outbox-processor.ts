@@ -2,6 +2,29 @@ import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/commo
 import { EventBusService } from '../events/event-bus.service';
 import { BootEvent } from '../events/boot-event';
 
+/** Minimal shape for a MongoDB collection (optional dep — mongodb/mongoose) */
+interface MongoCollection {
+  createIndex(spec: Record<string, number>): Promise<unknown>;
+  find(filter: Record<string, unknown>): { sort(s: Record<string, number>): { limit(n: number): { toArray(): Promise<OutboxEntry[]> } } };
+  insertOne(doc: unknown, options?: Record<string, unknown>): Promise<unknown>;
+  updateOne(filter: Record<string, unknown>, update: Record<string, unknown>): Promise<unknown>;
+}
+
+/** Minimal shape for a MongoDB Db instance */
+interface MongoDb {
+  collection(name: string): MongoCollection;
+}
+
+/** Minimal shape for a MongoDB connection (e.g. mongoose.Connection or MongoClient) */
+interface MongoConnection {
+  db: MongoDb;
+}
+
+/** Minimal shape for a MongoDB client session */
+interface MongoSession {
+  [key: string]: unknown;
+}
+
 /**
  * Outbox entry as persisted in the `outbox` collection.
  */
@@ -59,14 +82,12 @@ export interface OutboxEntry {
 @Injectable()
 export class OutboxProcessor implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger('OutboxProcessor');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private db: any;
+  private db!: MongoDb;
   private timer: ReturnType<typeof setInterval> | null = null;
   private processing = false;
 
   constructor(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private readonly connection: any,
+    private readonly connection: MongoConnection,
     private readonly eventBus: EventBusService,
     private readonly pollInterval: number,
     private readonly maxRetries: number,
@@ -167,8 +188,7 @@ export class OutboxProcessor implements OnModuleInit, OnModuleDestroy {
   async persistToOutbox(
     type: string,
     data: Record<string, unknown>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    options?: { session?: any; correlationId?: string },
+    options?: { session?: MongoSession; correlationId?: string },
   ): Promise<void> {
     const entry: Omit<OutboxEntry, '_id'> = {
       type,

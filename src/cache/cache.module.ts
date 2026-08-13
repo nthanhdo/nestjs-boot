@@ -1,4 +1,4 @@
-import { DynamicModule, Global, Logger, Module, OnModuleDestroy } from '@nestjs/common';
+import { DynamicModule, Global, Logger, Module, OnModuleDestroy, Provider } from '@nestjs/common';
 import { CacheOptions } from '../interfaces/boot-options.interface';
 import { MemoryCacheAdapter } from './adapters/memory-cache.adapter';
 import { MemcachedCacheAdapter } from './adapters/memcached-cache.adapter';
@@ -29,13 +29,11 @@ import { CacheStats } from './cache-stats';
 @Module({})
 export class CacheModule implements OnModuleDestroy {
   private static logger = new Logger('CacheModule');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private static redisClient: any = null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private static memcachedClient: any = null;
+  private static redisClient: { quit(): Promise<void> } | null = null;
+  private static memcachedClient: { close(): void } | null = null;
 
   static register(options: CacheOptions): DynamicModule {
-    const providers = [
+    const providers: Provider[] = [
       {
         provide: CACHE_OPTIONS,
         useValue: options,
@@ -101,20 +99,20 @@ export class CacheModule implements OnModuleDestroy {
         provide: CacheWarmer.name,
         useFactory: (cacheService: MultiCacheService) => new CacheWarmer(cacheService),
         inject: [CACHE_SERVICE],
-      } as any,
+      },
       {
         provide: TaggedCacheService.name,
         useFactory: (cacheService: MultiCacheService) => new TaggedCacheService(cacheService),
         inject: [CACHE_SERVICE],
-      } as any,
-      CacheStats as any,
+      },
+      CacheStats,
     );
 
     return {
       module: CacheModule,
       global: true,
       providers,
-      exports: [CACHE_SERVICE, CacheWarmer.name, TaggedCacheService.name, CacheStats as any],
+      exports: [CACHE_SERVICE, CacheWarmer.name, TaggedCacheService.name, CacheStats],
     };
   }
 

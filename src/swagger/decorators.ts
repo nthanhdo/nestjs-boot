@@ -5,7 +5,7 @@
  * they return a no-op decorator so application code doesn't need guards.
  */
 
-function tryLoadSwagger(): any | null {
+function tryLoadSwagger(): Record<string, unknown> | null {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require('@nestjs/swagger');
@@ -15,7 +15,8 @@ function tryLoadSwagger(): any | null {
 }
 
 /** No-op class/method decorator used when @nestjs/swagger is absent */
-const noop = (): any => (_target: any, _key?: any, _descriptor?: any) => _descriptor;
+const noop = (): ClassDecorator & MethodDecorator =>
+  (_target: object, _key?: string | symbol, _descriptor?: PropertyDescriptor) => _descriptor as undefined;
 
 /**
  * @ApiTag — apply a controller-level tag for Swagger grouping.
@@ -29,8 +30,8 @@ const noop = (): any => (_target: any, _key?: any, _descriptor?: any) => _descri
  */
 export function ApiTag(tag: string): ClassDecorator {
   const swagger = tryLoadSwagger();
-  if (!swagger) return noop() as any;
-  return swagger.ApiTags(tag);
+  if (!swagger) return noop() as ClassDecorator;
+  return (swagger.ApiTags as (tag: string) => ClassDecorator)(tag);
 }
 
 /**
@@ -45,11 +46,11 @@ export function ApiTag(tag: string): ClassDecorator {
  */
 export function ApiResponse(
   status: number,
-  type?: new (...args: any[]) => any,
+  type?: new (...args: unknown[]) => unknown,
 ): MethodDecorator {
   const swagger = tryLoadSwagger();
-  if (!swagger) return noop() as any;
-  return swagger.ApiResponse({ status, type });
+  if (!swagger) return noop() as MethodDecorator;
+  return (swagger.ApiResponse as (opts: { status: number; type?: unknown }) => MethodDecorator)({ status, type });
 }
 
 /**
@@ -62,20 +63,20 @@ export function ApiResponse(
  * findAll() {}
  * ```
  */
-export function ApiPaginated(itemType: new (...args: any[]) => any): MethodDecorator {
+export function ApiPaginated(itemType: new (...args: unknown[]) => unknown): MethodDecorator {
   const swagger = tryLoadSwagger();
-  if (!swagger) return noop() as any;
+  if (!swagger) return noop() as MethodDecorator;
 
-  const { ApiExtraModels, ApiOkResponse, getSchemaPath } = swagger;
+  const { ApiExtraModels, ApiOkResponse, getSchemaPath } = swagger as Record<string, (...args: unknown[]) => MethodDecorator>;
   // Compose: @ApiExtraModels + @ApiOkResponse with inline paginated shape
-  return (target: any, key: string | symbol, descriptor: PropertyDescriptor) => {
+  return (target: object, key: string | symbol, descriptor: PropertyDescriptor) => {
     ApiExtraModels(itemType)(target, key, descriptor);
-    ApiOkResponse({
+    (ApiOkResponse as unknown as (opts: Record<string, unknown>) => MethodDecorator)({
       schema: {
         properties: {
           data: {
             type: 'array',
-            items: { $ref: getSchemaPath(itemType) },
+            items: { $ref: (getSchemaPath as unknown as (t: unknown) => string)(itemType) },
           },
           total: { type: 'number', example: 100 },
           page: { type: 'number', example: 1 },
@@ -101,9 +102,9 @@ export function ApiPaginated(itemType: new (...args: any[]) => any): MethodDecor
  */
 export function ApiErrorResponses(): MethodDecorator {
   const swagger = tryLoadSwagger();
-  if (!swagger) return noop() as any;
+  if (!swagger) return noop() as MethodDecorator;
 
-  const { ApiResponse: NestApiResponse } = swagger;
+  const { ApiResponse: NestApiResponse } = swagger as Record<string, (opts: Record<string, unknown>) => MethodDecorator>;
   const errorShape = (description: string) => ({
     schema: {
       properties: {
@@ -115,7 +116,7 @@ export function ApiErrorResponses(): MethodDecorator {
     description,
   });
 
-  return (target: any, key: string | symbol, descriptor: PropertyDescriptor) => {
+  return (target: object, key: string | symbol, descriptor: PropertyDescriptor) => {
     NestApiResponse({ status: 400, ...errorShape('Bad Request') })(target, key, descriptor);
     NestApiResponse({ status: 401, ...errorShape('Unauthorized') })(target, key, descriptor);
     NestApiResponse({ status: 403, ...errorShape('Forbidden') })(target, key, descriptor);

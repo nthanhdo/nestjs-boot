@@ -271,9 +271,132 @@ export async function runWizard(existingConfig?: ApiTestConfig): Promise<ApiTest
       { value: 'smoke', label: 'Smoke (quick non-5xx check)', selected: true },
       { value: 'regression', label: 'Regression (baseline snapshot diff)', selected: true },
       { value: 'status-codes', label: 'Status Codes (400/401/403/404/405/409/422/429)', selected: true },
+      { value: 'flow', label: 'Flow (multi-step workflows with variable extraction)' },
+      { value: 'parameterized', label: 'Parameterized (data-driven tests from inline/CSV/JSON)' },
+      { value: 'rate-limit', label: 'Rate Limit (burst requests → 429 verification)' },
+      { value: 'pagination', label: 'Pagination (page/cursor/limit boundary tests)' },
+      { value: 'auth-matrix', label: 'Auth Matrix (role-based access control matrix)' },
+      { value: 'cors', label: 'CORS (preflight, origin validation, security headers)' },
+      { value: 'security', label: 'Security (SQLi, NoSQLi, CMDi, SSTI, path traversal, header injection)' },
+      { value: 'performance', label: 'Performance (p50/p95/p99 response time thresholds)' },
+      { value: 'spec-drift', label: 'Spec Drift (live API vs OpenAPI spec divergence)' },
+      { value: 'boundary', label: 'Boundary (min/max/overflow per field type)' },
+      { value: 'negative', label: 'Negative (malformed requests, wrong content-type, deep nesting)' },
     ],
   });
   if (p.isCancel(methods)) return null;
+
+  // 8. Flow wizard (if flow selected)
+  let flowConfigs: import('./methods/flow.js').FlowConfig[] | undefined;
+  if ((methods as MethodCategory[]).includes('flow')) {
+    const addFlow = await p.confirm({ message: 'Define a multi-step flow?' });
+    if (addFlow && !p.isCancel(addFlow)) {
+      flowConfigs = [];
+      let moreFlows = true;
+      while (moreFlows) {
+        const flowName = await p.text({ message: 'Flow name?', placeholder: 'User lifecycle' });
+        if (p.isCancel(flowName)) break;
+        const steps: import('./methods/flow.js').FlowStep[] = [];
+        let moreSteps = true;
+        while (moreSteps) {
+          const stepName = await p.text({ message: 'Step name?', placeholder: 'Register user' });
+          if (p.isCancel(stepName)) break;
+          const stepMethod = await p.select<string>({
+            message: 'Step method?',
+            options: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map(m => ({ value: m, label: m })),
+          });
+          if (p.isCancel(stepMethod)) break;
+          const stepPath = await p.text({ message: 'Step path?', placeholder: '/users' });
+          if (p.isCancel(stepPath)) break;
+          const stepBodyStr = await p.text({ message: 'Body JSON? (optional, use {{var}})', defaultValue: '' });
+          const stepBody = stepBodyStr && (stepBodyStr as string).trim() ? safeJsonParse(stepBodyStr as string) ?? stepBodyStr : undefined;
+          const extractStr = await p.text({ message: 'Extract variables? (key=body.path, comma-separated)', defaultValue: '' });
+          let extract: Record<string, string> | undefined;
+          if (extractStr && (extractStr as string).trim()) {
+            extract = {};
+            for (const pair of (extractStr as string).split(',')) {
+              const [k, ...rest] = pair.split('=');
+              if (k) extract[k.trim()] = rest.join('=').trim();
+            }
+          }
+          const expectStatus = await p.text({ message: 'Expected status?', defaultValue: '200' });
+          const statuses = (expectStatus as string).split(',').map(s => parseInt(s.trim(), 10));
+          steps.push({
+            name: stepName as string,
+            method: stepMethod as string,
+            path: stepPath as string,
+            body: stepBody as any,
+            extract,
+            expect: { status: statuses.length === 1 ? statuses[0] : statuses },
+          });
+          moreSteps = await p.confirm({ message: 'Add another step?' }) as boolean;
+          if (p.isCancel(moreSteps)) break;
+        }
+        if (steps.length > 0) {
+          flowConfigs.push({ name: flowName as string, steps });
+        }
+        moreFlows = await p.confirm({ message: 'Add another flow?' }) as boolean;
+        if (p.isCancel(moreFlows)) break;
+      }
+    }
+  }
+
+  // 9. Parameterized wizard (if selected)
+  let parameterizedDataSource: string | undefined;
+  if ((methods as MethodCategory[]).includes('parameterized')) {
+    const addParam = await p.confirm({ message: 'Add parameterized data?' });
+    if (addParam && !p.isCancel(addParam)) {
+      const source = await p.select<string>({
+        message: 'Data source?',
+        options: [
+          { value: 'inline', label: 'Inline JSON array' },
+          { value: 'csv', label: 'CSV file path' },
+          { value: 'json', label: 'JSON file path' },
+        ],
+      });
+      if (!p.isCancel(source)) {
+        parameterizedDataSource = source as string;
+      }
+    }
+  }
+
+  // 10. Auth matrix wizard (if selected)
+  let authMatrixConfig: import('./methods/auth-matrix.js').AuthMatrixConfig | undefined;
+  if ((methods as MethodCategory[]).includes('auth-matrix')) {
+    const addMatrix = await p.confirm({ message: 'Define role-based access matrix?' });
+    if (addMatrix && !p.isCancel(addMatrix)) {
+      const roles: import('./methods/auth-matrix.js').AuthMatrixRole[] = [];
+      let moreRoles = true;
+      while (moreRoles) {
+        const roleName = await p.text({ message: 'Role name?', placeholder: 'admin' });
+        if (p.isCancel(roleName)) break;
+        const roleToken = await p.text({ message: `Token for ${roleName}?` });
+        if (p.isCancel(roleToken)) break;
+        roles.push({ name: roleName as string, token: roleToken as string });
+        moreRoles = await p.confirm({ message: 'Add another role?' }) as boolean;
+        if (p.isCancel(moreRoles)) break;
+      }
+      const matrix: import('./methods/auth-matrix.js').AuthMatrixEntry[] = [];
+      if (roles.length > 0) {
+        let moreEntries = true;
+        while (moreEntries) {
+          const ep = await p.text({ message: 'Endpoint? (e.g. "GET /users")', placeholder: 'GET /users' });
+          if (p.isCancel(ep)) break;
+          const allowed = await p.multiselect<string>({
+            message: `Allowed roles for ${ep}?`,
+            options: roles.map(r => ({ value: r.name, label: r.name })),
+          });
+          if (p.isCancel(allowed)) break;
+          matrix.push({ endpoint: ep as string, allowedRoles: allowed as string[] });
+          moreEntries = await p.confirm({ message: 'Add another endpoint to matrix?' }) as boolean;
+          if (p.isCancel(moreEntries)) break;
+        }
+      }
+      if (roles.length > 0 && matrix.length > 0) {
+        authMatrixConfig = { roles, matrix };
+      }
+    }
+  }
 
   const outputDir = await p.text({
     message: 'Output directory?',

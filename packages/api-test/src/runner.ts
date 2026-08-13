@@ -1,6 +1,9 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { diffBaseline, loadBaseline } from './methods/regression.js';
+import { substituteVariables } from './methods/flow.js';
+import type { FlowTestCase } from './methods/flow.js';
+import type { RateLimitTestCase } from './methods/rate-limit.js';
 import type { ContractSchema } from './methods/contract.js';
 import type { RegressionTestCase } from './methods/regression.js';
 import type { TestCase, TestResult, TestSuite } from './types.js';
@@ -83,6 +86,38 @@ export async function runTestCase(testCase: TestCase): Promise<TestResult> {
           passed = false;
           reason = `Body contains forbidden string: "${needle}"`;
           break;
+        }
+      }
+    }
+
+    // Performance: maxDuration check
+    if (passed && testCase.expect.maxDuration) {
+      if (result.duration > testCase.expect.maxDuration) {
+        passed = false;
+        reason = `Duration ${result.duration}ms exceeds threshold ${testCase.expect.maxDuration}ms`;
+      }
+    }
+
+    // Spec-drift: matchesSpec check
+    if (passed && testCase.expect.matchesSpec) {
+      const specFields = testCase.expect.matchesSpec.fields;
+      if (typeof result.body === 'object' && result.body !== null && !Array.isArray(result.body)) {
+        const responseKeys = new Set(Object.keys(result.body as Record<string, unknown>));
+        for (const [fieldName, fieldDef] of Object.entries(specFields)) {
+          if (fieldDef.required && !responseKeys.has(fieldName)) {
+            passed = false;
+            reason = `Spec drift: required field "${fieldName}" missing from response`;
+            break;
+          }
+        }
+        if (passed) {
+          for (const key of responseKeys) {
+            if (!(key in specFields)) {
+              passed = false;
+              reason = `Spec drift: response field "${key}" not in spec`;
+              break;
+            }
+          }
         }
       }
     }

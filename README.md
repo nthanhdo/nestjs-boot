@@ -556,7 +556,8 @@ Detailed documentation for specific topics:
 ## Tools
 
 - **[Web Generator](packages/web-generator/)** -- interactive browser-based project generator with visual config builder
-- **[Admin Dashboard](packages/admin-dashboard/)** -- real-time monitoring dashboard for nestjs-boot services
+- **[Admin Dashboard](packages/admin-dashboard/)** -- visual GUI for project generation, module exploration, architecture diagrams, and interactive learning
+- **[Visualize Flow](packages/visualize-flow/)** -- static animated flow diagrams for all nestjs-boot subsystems (boot, auth, cache, CQRS, observability, and more) — open `index.html` directly in a browser
 
 ## Standalone Usage
 

@@ -179,7 +179,8 @@ export class PaymentGateway {
 `ServiceDiscoveryHook` is an interface for dynamic URL resolution. Implement it with Consul, Kubernetes DNS, environment variables, or any registry.
 
 ```ts
-import { ServiceDiscoveryHook, fromResolverFn, staticUrl } from 'nestjs-boot';
+import { ServiceDiscoveryHook } from 'nestjs-boot';
+import { fromResolverFn, staticUrl } from 'nestjs-boot/transport';
 
 // Environment variable resolution
 class EnvDiscovery implements ServiceDiscoveryHook {
@@ -222,7 +223,7 @@ If `resolve()` throws at startup, module initialization fails fast with a descri
 Preserves error context across RPC hops. When a downstream call fails, it enriches the error with the service name, correlation ID, and upstream call chain.
 
 ```ts
-import { ErrorContextInterceptor } from 'nestjs-boot';
+import { ErrorContextInterceptor } from 'nestjs-boot/transport';
 
 // Global registration
 const app = await NestFactory.create(AppModule);
@@ -236,7 +237,7 @@ app.useGlobalInterceptors(
 Structured RPC error with traceable context:
 
 ```ts
-import { BootRpcException } from 'nestjs-boot';
+import { BootRpcException } from 'nestjs-boot/transport';
 
 try {
   await orderClient.call('findOrder', { id: '123' });

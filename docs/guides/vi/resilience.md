@@ -209,3 +209,96 @@ async fetchData(id: string) { ... }
 - Luôn cung cấp predicate `retryOn` cho lời gọi HTTP. Thử lại 400 Bad Request chỉ lãng phí thời gian và tài nguyên.
 - Kết hợp circuit breaker + retry cho dependency bên ngoài, timeout cho SLA cấp request.
 - Giám sát chuyển đổi trạng thái circuit breaker trong log (class ghi log `CLOSED -> OPEN` v.v. qua NestJS Logger).
+
+## Observability cho Circuit Breaker
+
+Khi `prom-client` được cài đặt, circuit breaker tự động cung cấp ba metric Prometheus:
+
+### Các metric
+
+| Metric | Kiểu | Label | Mô tả |
+|--------|------|-------|-------|
+| `boot_circuit_breaker_state` | Gauge | `name`, `state` | Trạng thái hiện tại (0=closed, 1=open, 2=half_open) |
+| `boot_circuit_breaker_transitions_total` | Counter | `name`, `from`, `to` | Số lần chuyển đổi trạng thái |
+| `boot_circuit_breaker_failures_total` | Counter | `name` | Tổng số lỗi |
+
+Metric được đăng ký trên registry toàn cục của `prom-client` và tồn tại qua nhiều lần khởi tạo. Nếu `prom-client` chưa cài đặt, tất cả thao tác metric là no-op.
+
+### CircuitBreakerStateChangeEvent
+
+Khi có `EventBus`, mỗi lần chuyển đổi trạng thái phát ra một `CircuitBreakerStateChangeEvent`:
+
+```ts
+import { CircuitBreakerStateChangeEvent } from 'nestjs-boot/resilience';
+
+export class CircuitBreakerStateChangeEvent {
+  breakerName: string;          // định danh breaker
+  previousState: CircuitBreakerState;  // 'CLOSED' | 'OPEN' | 'HALF_OPEN'
+  newState: CircuitBreakerState;
+  failureCount: number;         // số lỗi hiện tại
+}
+```
+
+Event kế thừa `BootEvent` và được phát fire-and-forget (không chặn breaker).
+
+### Xử lý thay đổi trạng thái
+
+Dùng `@OnEvent` để xử lý chuyển đổi trạng thái breaker:
+
+```ts
+import { OnEvent } from '@nestjs/event-emitter';
+import { CircuitBreakerStateChangeEvent } from 'nestjs-boot/resilience';
+
+@Injectable()
+export class BreakerAlertHandler {
+  constructor(private readonly alerts: AlertService) {}
+
+  @OnEvent(CircuitBreakerStateChangeEvent)
+  async handleBreakerChange(event: CircuitBreakerStateChangeEvent) {
+    if (event.newState === 'OPEN') {
+      await this.alerts.sendAlert({
+        severity: 'critical',
+        title: `Circuit breaker "${event.breakerName}" đã mở`,
+        message: `Breaker kích hoạt sau ${event.failureCount} lỗi`,
+        timestamp: new Date(),
+      });
+    }
+
+    if (event.newState === 'CLOSED' && event.previousState === 'HALF_OPEN') {
+      await this.alerts.sendAlert({
+        severity: 'info',
+        title: `Circuit breaker "${event.breakerName}" đã phục hồi`,
+        message: 'Breaker đóng — service đã healthy trở lại',
+        timestamp: new Date(),
+      });
+    }
+  }
+}
+```
+
+### Dashboard Grafana
+
+Ví dụ PromQL query cho dashboard circuit breaker:
+
+```promql
+# Trạng thái hiện tại mỗi breaker (dùng value mapping: 0=Closed, 1=Open, 2=Half-Open)
+boot_circuit_breaker_state{state="OPEN"}
+
+# Tỷ lệ chuyển đổi (mỗi 5 phút)
+rate(boot_circuit_breaker_transitions_total[5m])
+
+# Tỷ lệ lỗi mỗi breaker
+rate(boot_circuit_breaker_failures_total[5m])
+
+# Cảnh báo: breaker mở hơn 2 phút
+boot_circuit_breaker_state{state="OPEN"} == 1
+# for: 2m
+# severity: critical
+```
+
+## Xem thêm
+
+- [Alerts](alerts.md) — kết nối thay đổi trạng thái breaker với thông báo Slack/PagerDuty
+- [Transport & Microservices](transport-microservices.md) — `ResilientServiceClient` bọc các mẫu này cho lời gọi liên service
+- [Transport Selection Guide](transport-selection.md) — khi nào thêm resilience theo loại transport
+- [Error Handling](error-handling.md) — `CircuitBreakerOpenError` và mẫu error boundary

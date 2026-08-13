@@ -218,8 +218,97 @@ async fetchData(id: string) { ... }
 - **Timeout + retry interaction** — If the `@Timeout` on a controller is shorter than `maxAttempts * maxDelay`, the timeout fires before retries complete. Set the route timeout to exceed the worst-case retry duration.
 - **Circuit breaker per-instance, not global** — Each decorated method gets its own `CircuitBreaker` instance. If you have 10 pods, each has an independent breaker. A failing dependency must trip the breaker on each pod separately.
 
+## Circuit Breaker Observability
+
+When `prom-client` is installed, the circuit breaker automatically exposes three Prometheus metrics:
+
+### Metrics
+
+| Metric | Type | Labels | Description |
+|--------|------|--------|-------------|
+| `boot_circuit_breaker_state` | Gauge | `name`, `state` | Current state (0=closed, 1=open, 2=half_open) |
+| `boot_circuit_breaker_transitions_total` | Counter | `name`, `from`, `to` | State transition count |
+| `boot_circuit_breaker_failures_total` | Counter | `name` | Total failure count |
+
+Metrics are registered on the global `prom-client` registry and survive multiple instantiations. If `prom-client` is not installed, all metric operations are no-ops.
+
+### CircuitBreakerStateChangeEvent
+
+When an `EventBus` is available, each state transition emits a `CircuitBreakerStateChangeEvent`:
+
+```ts
+import { CircuitBreakerStateChangeEvent } from 'nestjs-boot/resilience';
+
+export class CircuitBreakerStateChangeEvent {
+  breakerName: string;          // breaker identifier
+  previousState: CircuitBreakerState;  // 'CLOSED' | 'OPEN' | 'HALF_OPEN'
+  newState: CircuitBreakerState;
+  failureCount: number;         // current failure count
+}
+```
+
+The event extends `BootEvent` and is emitted fire-and-forget (does not block the breaker).
+
+### Reacting to State Changes
+
+Use `@OnEvent` to handle breaker transitions:
+
+```ts
+import { OnEvent } from '@nestjs/event-emitter';
+import { CircuitBreakerStateChangeEvent } from 'nestjs-boot/resilience';
+
+@Injectable()
+export class BreakerAlertHandler {
+  constructor(private readonly alerts: AlertService) {}
+
+  @OnEvent(CircuitBreakerStateChangeEvent)
+  async handleBreakerChange(event: CircuitBreakerStateChangeEvent) {
+    if (event.newState === 'OPEN') {
+      await this.alerts.sendAlert({
+        severity: 'critical',
+        title: `Circuit breaker "${event.breakerName}" opened`,
+        message: `Breaker tripped after ${event.failureCount} failures`,
+        timestamp: new Date(),
+      });
+    }
+
+    if (event.newState === 'CLOSED' && event.previousState === 'HALF_OPEN') {
+      await this.alerts.sendAlert({
+        severity: 'info',
+        title: `Circuit breaker "${event.breakerName}" recovered`,
+        message: 'Breaker closed — service is healthy again',
+        timestamp: new Date(),
+      });
+    }
+  }
+}
+```
+
+### Grafana Dashboard
+
+Example PromQL queries for a circuit breaker dashboard:
+
+```promql
+# Current state per breaker (use value mapping: 0=Closed, 1=Open, 2=Half-Open)
+boot_circuit_breaker_state{state="OPEN"}
+
+# Transition rate (per 5m)
+rate(boot_circuit_breaker_transitions_total[5m])
+
+# Failure rate per breaker
+rate(boot_circuit_breaker_failures_total[5m])
+
+# Alert: breaker open for more than 2 minutes
+boot_circuit_breaker_state{state="OPEN"} == 1
+# for: 2m
+# severity: critical
+```
+
+A sample Grafana dashboard JSON is available at `docs/dashboards/circuit-breaker.json` (if provisioned).
+
 ## See also
 
+- [Alerts](alerts.md) — wire breaker state changes to Slack/PagerDuty notifications
 - [Transport & Microservices](transport-microservices.md) — `ResilientServiceClient` wraps these patterns for inter-service calls
 - [Transport Selection Guide](transport-selection.md) — when to add resilience per transport type
 - [Error Handling](error-handling.md) — `CircuitBreakerOpenError` and error boundary patterns

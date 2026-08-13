@@ -1,5 +1,7 @@
 # Swagger / OpenAPI
 
+> **TL;DR** — Add `swagger: { path: '/api/docs' }` to BootOptions. Bearer and API key security schemes are added automatically. Use `@ApiTag`, `@ApiPaginated`, `@ApiErrorResponses`, and `@AutoApiProperties` to document endpoints with minimal boilerplate. All decorators no-op gracefully when `@nestjs/swagger` is not installed.
+
 `setupSwagger()` auto-configures Swagger UI with Bearer/ApiKey security, pagination schemas, and error response docs. Gracefully no-ops when `@nestjs/swagger` is not installed.
 
 ## Setup

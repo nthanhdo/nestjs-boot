@@ -7,10 +7,14 @@ nestjs-boot includes a complete CQRS and event sourcing module: a CommandBus for
 Register `CqrsModule` in your BootOptions or as a standalone module:
 
 ```ts
-import { BootModule } from 'nestjs-boot';
+import { createApp } from 'nestjs-boot';
 
-BootModule.register({
-  database: { uri: 'mongodb://localhost/myapp' },
+const app = await createApp(AppModule, {
+  database: {
+    connections: {
+      master: { writerUri: 'mongodb://localhost:27017/myapp' },
+    },
+  },
   cqrs: {
     eventStore: 'mongodb',       // 'mongodb' | 'memory'
     snapshotStore: 'mongodb',    // optional
@@ -293,3 +297,8 @@ Marks a method as a handler for a specific domain event type within a projection
 - Set `snapshotFrequency` based on your aggregate's event volume; 100 is a reasonable default
 - Build projections as separate, independently replayable read models
 - Use `replayAll` to backfill new projections after deploying them
+
+## See also
+
+- [Event Bus](events.md) — simpler pub/sub for in-process communication (no persistence)
+- [Database](database.md) — `UnitOfWork` for MongoDB transactions used with the outbox pattern

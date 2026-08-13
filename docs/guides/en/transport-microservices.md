@@ -1,5 +1,7 @@
 # Transport and Microservices
 
+> **TL;DR** — `TransportModule` registers named client proxies for gRPC, TCP, NATS, and RabbitMQ. Use `ServiceClient<T>` for typed calls with auto-propagated correlation IDs. Wrap any client with `createResilientClient` to add timeout, retry, and circuit breaker. `ErrorContextInterceptor` preserves error context across RPC hops.
+
 Inter-service communication with `TransportModule` (gRPC, TCP, NATS, RabbitMQ), typed service clients, resilience patterns (timeout, retry, circuit breaker), service discovery, and cross-service error propagation.
 
 ## TransportModule Setup
@@ -324,3 +326,10 @@ catchError((err) => {
 5. **Keep timeouts tight** (2-5s for synchronous calls). A slow downstream should not cascade.
 6. **Use `isRetryable()`** to avoid retrying client errors (400, 403, 404) — only retry transient failures.
 7. **Service discovery** keeps transport config environment-agnostic. Use `fromResolverFn()` for simple cases, implement `ServiceDiscoveryHook` for Consul/K8s.
+
+## See also
+
+- [Transport Selection Guide](transport-selection.md) — decision matrix for choosing the right transport
+- [Resilience](resilience.md) — circuit breaker, retry, and timeout as standalone decorators
+- [Inter-Service Auth](inter-service-auth.md) — propagate JWT/API keys across service calls
+- [Testing Guide](testing-guide.md) — `createGrpcTestClient` and `createMessageDispatcher` for testing

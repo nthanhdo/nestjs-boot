@@ -1,5 +1,7 @@
 # Multi-Tenancy
 
+> **TL;DR** — Extract tenant ID from header, subdomain, or path. Choose row isolation (shared collections), schema isolation (prefixed collections), or database isolation (separate databases). `TenantAwareRepository` auto-scopes all CRUD. Use `@TenantRequired()` to enforce tenant context on routes. This is an **advanced** module for SaaS applications.
+
 nestjs-boot provides opt-in multi-tenancy with pluggable tenant extraction strategies, three data isolation models, and auto-scoped repositories. The module has zero effect on applications that do not configure it.
 
 ## Setup
@@ -255,3 +257,9 @@ The `@TenantScoped()` decorator is informational, signaling that a route's queri
 - For background jobs, wrap processing in `runWithTenant(tenantId, fn)` to establish the tenant context outside of HTTP middleware.
 - Test tenant isolation rigorously. A filter bug in row isolation can expose data across tenants. Write tests that create data for tenant A and assert tenant B cannot read it.
 - Use `@TenantRequired()` on all tenant-specific routes and leave public endpoints (health checks, landing pages) undecorated.
+
+## See also
+
+- [Database](database.md) — `BaseRepository` that `TenantAwareRepository` extends
+- [Authentication](authentication.md) — JWT claims can carry tenant ID for the custom resolver pattern
+- [Testing Guide](testing-guide.md) — use `runWithTenant` to test tenant-scoped logic

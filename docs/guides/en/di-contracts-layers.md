@@ -184,7 +184,7 @@ const cycles = detectCycles(
 ### renderMermaid / renderJson
 
 ```ts
-import { renderMermaid, renderJson } from 'nestjs-boot';
+import { renderMermaid, renderJson } from 'nestjs-boot/graph';
 
 const graph = analyzeModules('.');
 console.log(renderMermaid(graph));
@@ -231,13 +231,10 @@ Detected error types: `'circular'` (circular dependency) and `'unresolved'` (mis
 
 ### scanForCircularDepWarnings
 
-Post-boot scanner that warns about mutual imports and god-modules (>10 imports). Dev-mode only, non-blocking.
+Post-boot scanner that warns about mutual imports and god-modules (>10 imports). Dev-mode only, non-blocking. This runs automatically inside `createApp()` when `NODE_ENV !== 'production'` — no manual call needed.
 
-```ts
-import { scanForCircularDepWarnings } from 'nestjs-boot';
-
-const app = await createApp(AppModule, options);
-scanForCircularDepWarnings(app);
+```
+// Output you may see in dev mode:
 // [nestjs-boot:di] Mutual import detected: UserModule <-> OrderModule...
 // [nestjs-boot:di] Module "AppModule" imports 14 modules. Consider splitting...
 ```

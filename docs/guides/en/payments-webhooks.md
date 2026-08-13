@@ -1,5 +1,7 @@
 # Payments & Webhooks
 
+> **TL;DR** — `WebhookModule` handles Stripe and PayPal webhook signature verification, normalizes events to a unified shape, and deduplicates by event ID. Use `@Idempotent` on your own endpoints to cache responses by `Idempotency-Key` header. Requires `rawBody: true` in NestFactory.
+
 `WebhookModule` handles payment webhook verification, event normalization, and idempotent request processing for Stripe, PayPal, and custom providers.
 
 ## Setup

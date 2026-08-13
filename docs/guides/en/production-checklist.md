@@ -1,5 +1,7 @@
 # Production Readiness Checklist
 
+> **TL;DR** — Pre-deploy checklist covering security (JWT secrets, algorithm pinning, rate limiting), database (replica sets, indexes), cache (Redis persistence), health probes, graceful shutdown, observability, resilience, payments, Docker, and environment config.
+
 Use this checklist before every production deployment of a nestjs-boot service.
 Each item includes a brief explanation of why it matters.
 

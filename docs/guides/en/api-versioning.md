@@ -1,5 +1,7 @@
 # API Versioning
 
+> **TL;DR** — Add `versioning: { type: 'uri' }` to BootOptions. Use `@ApiVersion('2')` on controllers and `@DeprecatedVersion('2026-12-31')` to mark old versions with automatic `Sunset` headers.
+
 `VersioningModule` adds URI, header, or media-type API versioning with automatic response headers and deprecation tracking.
 
 ## Setup

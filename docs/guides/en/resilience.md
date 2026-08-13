@@ -215,3 +215,9 @@ async fetchData(id: string) { ... }
 - **Retrying non-idempotent operations** — Without a `retryOn` predicate, `@Retry` retries all errors including 400/403/404. Always filter to transient errors only.
 - **Timeout + retry interaction** — If the `@Timeout` on a controller is shorter than `maxAttempts * maxDelay`, the timeout fires before retries complete. Set the route timeout to exceed the worst-case retry duration.
 - **Circuit breaker per-instance, not global** — Each decorated method gets its own `CircuitBreaker` instance. If you have 10 pods, each has an independent breaker. A failing dependency must trip the breaker on each pod separately.
+
+## See also
+
+- [Transport & Microservices](transport-microservices.md) — `ResilientServiceClient` wraps these patterns for inter-service calls
+- [Transport Selection Guide](transport-selection.md) — when to add resilience per transport type
+- [Error Handling](error-handling.md) — `CircuitBreakerOpenError` and error boundary patterns

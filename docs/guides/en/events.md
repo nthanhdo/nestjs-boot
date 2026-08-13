@@ -5,15 +5,15 @@ nestjs-boot provides an in-process (or Redis-distributed) event bus for typed pu
 ## Setup
 
 ```ts
-import { BootModule } from 'nestjs-boot';
+import { createApp } from 'nestjs-boot';
 
 // In-memory (single process)
-BootModule.register({
+const app = await createApp(AppModule, {
   events: { transport: 'memory' },
 });
 
 // Redis (cross-service)
-BootModule.register({
+const app = await createApp(AppModule, {
   events: {
     transport: 'redis',
     redis: { url: 'redis://localhost:6379' },

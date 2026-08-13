@@ -1,6 +1,6 @@
 # Inter-Service Auth — nestjs-boot
 
-> Automatically propagate JWT tokens and API keys across microservice boundaries.
+> **TL;DR** — `InterServiceAuthModule` automatically captures JWT/API key from incoming requests via `AsyncLocalStorage` and makes them available for outgoing calls via `buildAuthHeaders()` (HTTP) or `injectAuthIntoPayload()` (message transports). Use `runWithAuthContext()` for background jobs.
 
 ---
 

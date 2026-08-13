@@ -1,5 +1,7 @@
 # Rate Limiting Auth Endpoints
 
+> **TL;DR** — Use `@nestjs/throttler` (not built-in) for rate limiting. Apply `ThrottlerGuard` per-controller on auth routes, not globally. Set stricter limits on `/login` and `/forgot-password` than on `/refresh`.
+
 nestjs-boot does not ship a rate limiter (keeps scope tight). Use `@nestjs/throttler` — the official NestJS solution.
 
 ## Setup

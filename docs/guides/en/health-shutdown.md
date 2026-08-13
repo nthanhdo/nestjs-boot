@@ -1,5 +1,7 @@
 # Health Checks and Graceful Shutdown
 
+> **TL;DR** — `HealthModule` auto-detects your database and Redis and registers health indicators at `GET /health`. `ShutdownModule` orchestrates ordered teardown: health returns 503, in-flight requests drain, then the process exits. Designed for Kubernetes rolling deployments with zero downtime.
+
 nestjs-boot provides auto-detecting health checks and an ordered graceful shutdown system designed for Kubernetes rolling deployments.
 
 ## HealthModule
@@ -7,10 +9,14 @@ nestjs-boot provides auto-detecting health checks and an ordered graceful shutdo
 `HealthModule` auto-detects configured infrastructure and registers the appropriate health indicators. Built on `@nestjs/terminus`.
 
 ```ts
-import { BootModule } from 'nestjs-boot';
+import { createApp } from 'nestjs-boot';
 
-BootModule.register({
-  database: { uri: 'mongodb://localhost/myapp' },
+const app = await createApp(AppModule, {
+  database: {
+    connections: {
+      master: { writerUri: 'mongodb://localhost:27017/myapp' },
+    },
+  },
   cache: { redis: { url: 'redis://localhost:6379' } },
   health: { path: '/health' },  // default: '/health'
 });

@@ -48,11 +48,7 @@ runWithCorrelationId('job-abc-123', () => {
 
 ### W3C Traceparent
 
-The middleware automatically extracts the `traceparent` header and feeds it into OpenTelemetry context propagation when `@opentelemetry/api` is installed. Access it with:
-
-```ts
-import { getTraceparent } from 'nestjs-boot/correlation';
-```
+The middleware automatically extracts the `traceparent` header and feeds it into OpenTelemetry context propagation when `@opentelemetry/api` is installed. The traceparent is stored internally and made available to the tracing module automatically.
 
 ### Response Header Interceptor
 
@@ -346,3 +342,9 @@ app.useGlobalInterceptors(app.get(LoggingInterceptor));
 - Use `prom-client` prefix option to namespace metrics per service and avoid collisions in a shared Prometheus instance.
 - Set `sampleRate` to `0.1` or lower in production to control trace volume and cost.
 - Use `redact` in LoggingModule to prevent sensitive data (tokens, passwords) from appearing in logs.
+
+## See also
+
+- [Error Handling](error-handling.md) — `ErrorReporter` for Sentry/Datadog integration
+- [Production Checklist](production-checklist.md) — observability configuration checklist
+- [Health Checks & Graceful Shutdown](health-shutdown.md) — health endpoint for K8s probes

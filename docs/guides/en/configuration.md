@@ -8,7 +8,7 @@ The `BootOptions` interface is the single config object passed to `createApp()`.
 
 ```ts
 import { createApp } from 'nestjs-boot';
-import { BootOptions } from 'nestjs-boot/interfaces/boot-options.interface';
+import type { BootOptions } from 'nestjs-boot';
 
 const config: BootOptions = {
   database: { /* ... */ },
@@ -87,7 +87,7 @@ interface ConfigSource {
 Loads key-value pairs from a `.env` file using dotenv.
 
 ```ts
-import { EnvFileAdapter } from 'nestjs-boot/config/adapters';
+import { EnvFileAdapter } from 'nestjs-boot/config';
 
 const source = new EnvFileAdapter('.env');
 const values = await source.load();
@@ -99,7 +99,7 @@ const values = await source.load();
 Loads secrets from HashiCorp Vault KV v1/v2. Uses the Vault HTTP API directly — no SDK dependency.
 
 ```ts
-import { VaultAdapter } from 'nestjs-boot/config/adapters';
+import { VaultAdapter } from 'nestjs-boot/config';
 
 const source = new VaultAdapter({
   url: 'http://vault.internal:8200',
@@ -120,7 +120,7 @@ const secrets = await source.load();
 Loads secrets from AWS Secrets Manager. Requires `@aws-sdk/client-secrets-manager`.
 
 ```ts
-import { AwsSecretsAdapter } from 'nestjs-boot/config/adapters';
+import { AwsSecretsAdapter } from 'nestjs-boot/config';
 
 const source = new AwsSecretsAdapter({
   secretId: 'my-service/prod',
@@ -139,8 +139,8 @@ IAM permission required: `secretsmanager:GetSecretValue` on the target secret AR
 ### Merging multiple sources
 
 ```ts
-import { mergeConfigs } from 'nestjs-boot/config/config-merger';
-import { EnvFileAdapter, VaultAdapter, AwsSecretsAdapter } from 'nestjs-boot/config/adapters';
+import { mergeConfigs } from 'nestjs-boot/config';
+import { EnvFileAdapter, VaultAdapter, AwsSecretsAdapter } from 'nestjs-boot/config';
 
 const merged = await mergeConfigs([
   new EnvFileAdapter('.env'),                    // lowest priority
@@ -202,7 +202,7 @@ export class MyService {
 Dev-only file watcher that logs a restart reminder when `.env` changes. Does **not** hot-reload config (too risky with DI container).
 
 ```ts
-import { createDevConfigWatcher } from 'nestjs-boot/config/config-watcher';
+import { createDevConfigWatcher } from 'nestjs-boot/config';
 
 // main.ts — dev only
 if (process.env.NODE_ENV !== 'production') {

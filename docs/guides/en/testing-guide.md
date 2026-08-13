@@ -1,6 +1,6 @@
 # Testing Guide — nestjs-boot
 
-> Complete reference for testing utilities in nestjs-boot.
+> **TL;DR** — `createTestApp` gives you an in-memory MongoDB app. `createTestSuite` wraps everything (app + client + factory) with lifecycle methods. `createTestClient` is an envelope-aware HTTP client. `createTestJwt` and `MockAuthModule` handle auth in tests. All utilities import from `nestjs-boot/testing`.
 
 ## Setup
 
@@ -366,3 +366,9 @@ await cleanDatabase(connection);
 | `seedDatabase` | Bulk insert fixture data |
 | `cleanDatabase` | Drop all collections |
 | `createMockGrpcService` | Mock gRPC service object from response factories |
+
+## See also
+
+- [Authentication](authentication.md) — JWT and API key setup that `createTestJwt` and `MockAuthModule` mock
+- [Database](database.md) — `BaseRepository` and `CachedBaseRepository` that `createTestApp` initializes
+- [Transport & Microservices](transport-microservices.md) — `createGrpcTestClient` and `createMessageDispatcher` for microservice testing

@@ -1,5 +1,7 @@
 # WebSocket
 
+> **TL;DR** — Socket.IO with optional Redis adapter for multi-instance scaling. Extend `BootWsGateway` for built-in connection logging, room auto-join (`@WsRoom`), broadcasting (`@WsBroadcast`), and auth enforcement (`@WsAuthRequired`). Correlation tracking included via `WsCorrelationInterceptor`.
+
 `WebSocketModule` provides production-ready WebSocket support with Socket.IO, optional Redis pub/sub for multi-instance scaling, room management, auth guards, and correlation tracking.
 
 ## Setup

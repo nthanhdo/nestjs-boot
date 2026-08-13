@@ -1,5 +1,7 @@
 # Migrating from Plain NestJS to nestjs-boot
 
+> **TL;DR** — Replace `NestFactory.create` with `createApp(AppModule, {})` -- your existing modules stay untouched. Then adopt database, auth, cache, observability, and resilience modules one at a time, removing your custom implementations as you go.
+
 This guide walks you through adopting nestjs-boot in an existing NestJS project.
 Each phase is independent — adopt only what you need, in any order.
 

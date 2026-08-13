@@ -1,5 +1,7 @@
 # File Storage
 
+> **TL;DR** — Unified file storage with local, S3, and GCS adapters. `StorageService` provides `upload`, `download`, `delete`, `getSignedUrl`. `FileValidationPipe` validates MIME types and size at the controller level. Files are stored with UUID keys for collision-free paths.
+
 `StorageModule` provides a unified file storage abstraction with local filesystem, AWS S3, and Google Cloud Storage adapters, plus file validation and path traversal protection.
 
 ## Setup

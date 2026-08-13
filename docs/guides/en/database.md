@@ -180,7 +180,7 @@ Cache keys follow the pattern `{collectionName}:{method}:{md5(args)}`. All write
 Composable, reusable query filters using the Specification pattern. Each specification produces a Mongoose `FilterQuery`.
 
 ```ts
-import { Specification } from 'nestjs-boot';
+import { Specification } from 'nestjs-boot/database';
 import { FilterQuery } from 'mongoose';
 
 class IsActiveSpec extends Specification<Product> {

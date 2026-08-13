@@ -1,5 +1,7 @@
 # Session, Social Login, and TOTP (2FA)
 
+> **TL;DR** — Three standalone auth modules: `SessionAuthModule` for cookie-based sessions with pluggable stores, `SocialAuthModule` for Google/GitHub OAuth with normalized profiles, and `TotpModule` for TOTP 2FA with backup codes. All complement JWT auth and can be combined freely.
+
 Three standalone auth modules that complement JWT authentication: cookie-based sessions, OAuth social login, and TOTP two-factor authentication.
 
 ## Session Authentication

@@ -1,7 +1,7 @@
 {
   "name": "nestjs-boot",
   "version": "0.1.0",
-  "description": "Spring Boot auto-configuration for NestJS — multi-database connections, reader/writer split, multi-layer cache. One config object, zero wiring.",
+  "description": "Spring Boot auto-configuration for NestJS \u2014 multi-database connections, reader/writer split, multi-layer cache. One config object, zero wiring.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -10,6 +10,146 @@
       "types": "./dist/index.d.ts",
       "require": "./dist/index.js",
       "import": "./dist/index.mjs"
+    },
+    "./auth": {
+      "types": "./dist/auth/index.d.ts",
+      "require": "./dist/auth/index.js",
+      "import": "./dist/auth/index.mjs"
+    },
+    "./cache": {
+      "types": "./dist/cache/index.d.ts",
+      "require": "./dist/cache/index.js",
+      "import": "./dist/cache/index.mjs"
+    },
+    "./common": {
+      "types": "./dist/common/index.d.ts",
+      "require": "./dist/common/index.js",
+      "import": "./dist/common/index.mjs"
+    },
+    "./config": {
+      "types": "./dist/config/index.d.ts",
+      "require": "./dist/config/index.js",
+      "import": "./dist/config/index.mjs"
+    },
+    "./contracts": {
+      "types": "./dist/contracts/index.d.ts",
+      "require": "./dist/contracts/index.js",
+      "import": "./dist/contracts/index.mjs"
+    },
+    "./correlation": {
+      "types": "./dist/correlation/index.d.ts",
+      "require": "./dist/correlation/index.js",
+      "import": "./dist/correlation/index.mjs"
+    },
+    "./cqrs": {
+      "types": "./dist/cqrs/index.d.ts",
+      "require": "./dist/cqrs/index.js",
+      "import": "./dist/cqrs/index.mjs"
+    },
+    "./database": {
+      "types": "./dist/database/index.d.ts",
+      "require": "./dist/database/index.js",
+      "import": "./dist/database/index.mjs"
+    },
+    "./events": {
+      "types": "./dist/events/index.d.ts",
+      "require": "./dist/events/index.js",
+      "import": "./dist/events/index.mjs"
+    },
+    "./graph": {
+      "types": "./dist/graph/index.d.ts",
+      "require": "./dist/graph/index.js",
+      "import": "./dist/graph/index.mjs"
+    },
+    "./health": {
+      "types": "./dist/health/index.d.ts",
+      "require": "./dist/health/index.js",
+      "import": "./dist/health/index.mjs"
+    },
+    "./inter-service-auth": {
+      "types": "./dist/inter-service-auth/index.d.ts",
+      "require": "./dist/inter-service-auth/index.js",
+      "import": "./dist/inter-service-auth/index.mjs"
+    },
+    "./layers": {
+      "types": "./dist/layers/index.d.ts",
+      "require": "./dist/layers/index.js",
+      "import": "./dist/layers/index.mjs"
+    },
+    "./logging": {
+      "types": "./dist/logging/index.d.ts",
+      "require": "./dist/logging/index.js",
+      "import": "./dist/logging/index.mjs"
+    },
+    "./metrics": {
+      "types": "./dist/metrics/index.d.ts",
+      "require": "./dist/metrics/index.js",
+      "import": "./dist/metrics/index.mjs"
+    },
+    "./payments": {
+      "types": "./dist/payments/index.d.ts",
+      "require": "./dist/payments/index.js",
+      "import": "./dist/payments/index.mjs"
+    },
+    "./queue": {
+      "types": "./dist/queue/index.d.ts",
+      "require": "./dist/queue/index.js",
+      "import": "./dist/queue/index.mjs"
+    },
+    "./resilience": {
+      "types": "./dist/resilience/index.d.ts",
+      "require": "./dist/resilience/index.js",
+      "import": "./dist/resilience/index.mjs"
+    },
+    "./rpc": {
+      "types": "./dist/rpc/index.d.ts",
+      "require": "./dist/rpc/index.js",
+      "import": "./dist/rpc/index.mjs"
+    },
+    "./shutdown": {
+      "types": "./dist/shutdown/index.d.ts",
+      "require": "./dist/shutdown/index.js",
+      "import": "./dist/shutdown/index.mjs"
+    },
+    "./storage": {
+      "types": "./dist/storage/index.d.ts",
+      "require": "./dist/storage/index.js",
+      "import": "./dist/storage/index.mjs"
+    },
+    "./swagger": {
+      "types": "./dist/swagger/index.d.ts",
+      "require": "./dist/swagger/index.js",
+      "import": "./dist/swagger/index.mjs"
+    },
+    "./tenancy": {
+      "types": "./dist/tenancy/index.d.ts",
+      "require": "./dist/tenancy/index.js",
+      "import": "./dist/tenancy/index.mjs"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "require": "./dist/testing/index.js",
+      "import": "./dist/testing/index.mjs"
+    },
+    "./tracing": {
+      "types": "./dist/tracing/index.d.ts",
+      "require": "./dist/tracing/index.js",
+      "import": "./dist/tracing/index.mjs"
+    },
+    "./transport": {
+      "types": "./dist/transport/index.d.ts",
+      "require": "./dist/transport/index.js",
+      "import": "./dist/transport/index.mjs"
+    },
+    "./versioning": {
+      "types": "./dist/versioning/index.d.ts",
+      "require": "./dist/versioning/index.js",
+      "import": "./dist/versioning/index.mjs"
+    },
+    "./websocket": {
+      "types": "./dist/websocket/index.d.ts",
+      "require": "./dist/websocket/index.js",
+      "import": "./dist/websocket/index.mjs"
     }
   },
   "bin": {
@@ -48,6 +188,10 @@
     "url": "https://github.com/nthanhdo/nestjs-boot.git"
   },
   "peerDependencies": {
+    "@aws-sdk/client-s3": ">=3.0.0",
+    "@aws-sdk/client-secrets-manager": ">=3.0.0",
+    "@aws-sdk/s3-request-presigner": ">=3.0.0",
+    "@google-cloud/storage": ">=6.0.0",
     "@grpc/grpc-js": "^1.9.0",
     "@grpc/proto-loader": "^0.7.0",
     "@nestjs/common": "^10.0.0 || ^11.0.0",
@@ -56,21 +200,41 @@
     "@nestjs/mongoose": "^10.0.0 || ^11.0.0",
     "@nestjs/swagger": "^7.0.0 || ^8.0.0",
     "@nestjs/terminus": "^10.0.0 || ^11.0.0",
-    "mongoose": "^7.0.0 || ^8.0.0",
+    "@nestjs/websockets": "^10.0.0 || ^11.0.0",
+    "@opentelemetry/api": ">=1.0.0",
+    "@opentelemetry/auto-instrumentations-node": ">=0.36.0",
+    "@opentelemetry/exporter-jaeger": ">=1.0.0",
+    "@opentelemetry/exporter-trace-otlp-http": ">=0.36.0",
+    "@opentelemetry/exporter-zipkin": ">=1.0.0",
+    "@opentelemetry/sdk-node": ">=0.36.0",
+    "@opentelemetry/sdk-trace-base": ">=1.0.0",
+    "@socket.io/redis-adapter": ">=8.0.0",
+    "bullmq": ">=5.0.0",
+    "class-validator": ">=0.14.0",
+    "ioredis": ">=5.0.0",
     "jsonwebtoken": "^9.0.0",
-    "rxjs": "^7.0.0"
+    "memjs": ">=1.3.0",
+    "mongoose": "^7.0.0 || ^8.0.0",
+    "otpauth": ">=9.0.0",
+    "passport-github2": ">=0.1.0",
+    "passport-google-oauth20": ">=2.0.0",
+    "pino": ">=8.0.0",
+    "pino-pretty": ">=10.0.0",
+    "prom-client": ">=14.0.0",
+    "rxjs": "^7.0.0",
+    "socket.io": ">=4.0.0"
   },
   "peerDependenciesMeta": {
-    "mongoose": {
+    "@aws-sdk/client-s3": {
       "optional": true
     },
-    "@nestjs/mongoose": {
+    "@aws-sdk/client-secrets-manager": {
       "optional": true
     },
-    "@nestjs/terminus": {
+    "@aws-sdk/s3-request-presigner": {
       "optional": true
     },
-    "@nestjs/microservices": {
+    "@google-cloud/storage": {
       "optional": true
     },
     "@grpc/grpc-js": {
@@ -79,29 +243,88 @@
     "@grpc/proto-loader": {
       "optional": true
     },
+    "@nestjs/microservices": {
+      "optional": true
+    },
+    "@nestjs/mongoose": {
+      "optional": true
+    },
     "@nestjs/swagger": {
       "optional": true
     },
+    "@nestjs/terminus": {
+      "optional": true
+    },
+    "@nestjs/websockets": {
+      "optional": true
+    },
+    "@opentelemetry/api": {
+      "optional": true
+    },
+    "@opentelemetry/auto-instrumentations-node": {
+      "optional": true
+    },
+    "@opentelemetry/exporter-jaeger": {
+      "optional": true
+    },
+    "@opentelemetry/exporter-trace-otlp-http": {
+      "optional": true
+    },
+    "@opentelemetry/exporter-zipkin": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-node": {
+      "optional": true
+    },
+    "@opentelemetry/sdk-trace-base": {
+      "optional": true
+    },
+    "@socket.io/redis-adapter": {
+      "optional": true
+    },
+    "bullmq": {
+      "optional": true
+    },
+    "class-validator": {
+      "optional": true
+    },
+    "ioredis": {
+      "optional": true
+    },
     "jsonwebtoken": {
+      "optional": true
+    },
+    "memjs": {
+      "optional": true
+    },
+    "mongoose": {
+      "optional": true
+    },
+    "otpauth": {
+      "optional": true
+    },
+    "passport-github2": {
+      "optional": true
+    },
+    "passport-google-oauth20": {
+      "optional": true
+    },
+    "pino": {
+      "optional": true
+    },
+    "pino-pretty": {
+      "optional": true
+    },
+    "prom-client": {
+      "optional": true
+    },
+    "socket.io": {
       "optional": true
     }
   },
   "dependencies": {
     "dotenv": "^16.6.1",
     "joi": "^17.0.0"
-  },
-  "optionalDependencies": {
-    "@clack/prompts": "^1.7.0",
-    "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/sdk-node": "^0.52.0",
-    "bullmq": "^5.0.0",
-    "ioredis": "^5.0.0",
-    "memjs": "^1.3.0",
-    "otpauth": "^9.0.0",
-    "pino": "^9.0.0",
-    "picocolors": "^1.1.1",
-    "pino-pretty": "^11.0.0",
-    "prom-client": "^15.0.0"
   },
   "devDependencies": {
     "@nestjs/common": "^10.4.0",

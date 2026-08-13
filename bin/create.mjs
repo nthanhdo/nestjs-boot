@@ -86,6 +86,7 @@ ${pc.bold('Options:')}
   --auth=<type>       Auth: jwt, none
   --transport=<type>  Transport: http, grpc, tcp, nats, rabbitmq
   --ci=<provider>     CI/CD: github (generates .github/workflows/ci.yml), gitlab (.gitlab-ci.yml)
+  --iac=<cloud>       IaC: aws (ECS Fargate + DocumentDB + ElastiCache), gcp (Cloud Run + Atlas + Memorystore)
   --observability     Include Prometheus config, Grafana dashboards, Jaeger, Loki docker-compose
   -y, --yes           Accept all defaults (no prompts)
   -h, --help          Show this help message
@@ -94,6 +95,7 @@ ${pc.bold('Examples:')}
   npx nestjs-boot new my-service
   npx nestjs-boot new my-service --db=mongodb --cache=redis --auth=jwt --transport=grpc
   npx nestjs-boot new my-service --ci=github
+  npx nestjs-boot new my-service --iac=aws
   npx nestjs-boot new my-service --observability
   npx nestjs-boot new my-service -y
 `);
@@ -138,6 +140,24 @@ function loadTemplate(name) {
 function writeFile(filePath, content) {
   mkdirSync(dirname(filePath), { recursive: true });
   writeFileSync(filePath, content, 'utf-8');
+}
+
+function copyDirRecursive(src, dest) {
+  const copied = [];
+  if (!existsSync(src)) return copied;
+  mkdirSync(dest, { recursive: true });
+  for (const entry of readdirSync(src)) {
+    const srcPath = join(src, entry);
+    const destPath = join(dest, entry);
+    const stat = statSync(srcPath);
+    if (stat.isDirectory()) {
+      copied.push(...copyDirRecursive(srcPath, destPath));
+    } else {
+      copyFileSync(srcPath, destPath);
+      copied.push(destPath);
+    }
+  }
+  return copied;
 }
 
 // ── Interactive prompts ─────────────────────────────────────────────
@@ -258,6 +278,19 @@ function createProject(config) {
     }
   }
 
+  // Add IaC templates if --iac flag is set
+  const iacProvider = config.iac;
+  if (iacProvider === 'aws' || iacProvider === 'gcp') {
+    const iacSrc = join(TEMPLATES_DIR, 'terraform', iacProvider);
+    const iacDest = join(projectDir, 'infrastructure');
+    const iacReadmeSrc = join(TEMPLATES_DIR, 'terraform', 'README.md');
+    const copiedPaths = copyDirRecursive(iacSrc, iacDest);
+    // Also copy the shared README
+    if (existsSync(iacReadmeSrc)) {
+      copyFileSync(iacReadmeSrc, join(iacDest, 'README.md'));
+    }
+  }
+
   const createdFiles = [];
   for (const { tpl, out } of files) {
     const template = loadTemplate(tpl);
@@ -312,6 +345,13 @@ function printNextSteps(config) {
   console.log('');
   console.log(`  Your service: ${pc.cyan('http://localhost:3000')}`);
   console.log(`  Health check: ${pc.cyan('http://localhost:3000/health')}`);
+
+  if (config.iac) {
+    console.log('');
+    console.log(`  Infrastructure: ${pc.cyan(`cd ${name}/infrastructure`)}`);
+    console.log(`    ${pc.cyan('terraform init && terraform plan')}  ${pc.dim(`# Preview ${config.iac.toUpperCase()} resources`)}`);
+  }
+
   console.log('');
 }
 

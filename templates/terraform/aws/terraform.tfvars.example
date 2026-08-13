@@ -1,0 +1,16 @@
+# ─── Required ───────────────────────────────────────────────────────
+project_name          = "my-nestjs-app"
+environment           = "dev"
+docdb_master_password = "CHANGE_ME_use_a_strong_password"
+
+# ─── Optional overrides ────────────────────────────────────────────
+# aws_region           = "us-east-1"
+# availability_zones   = ["us-east-1a", "us-east-1b"]
+# app_cpu              = 256
+# app_memory           = 512
+# desired_count        = 2
+# min_capacity         = 1
+# max_capacity         = 4
+# docdb_instance_class = "db.t3.medium"
+# redis_node_type      = "cache.t3.micro"
+# alert_email          = "ops@example.com"

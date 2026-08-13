@@ -1,0 +1,19 @@
+# ─── Required ───────────────────────────────────────────────────────
+project_name     = "my-nestjs-app"
+environment      = "dev"
+gcp_project_id   = "my-gcp-project-123"
+atlas_public_key = "ATLAS_PUBLIC_KEY"
+atlas_private_key = "ATLAS_PRIVATE_KEY"
+atlas_org_id     = "ATLAS_ORG_ID"
+atlas_db_password = "CHANGE_ME_use_a_strong_password"
+
+# ─── Optional overrides ────────────────────────────────────────────
+# gcp_region           = "us-central1"
+# cloud_run_cpu        = "1"
+# cloud_run_memory     = "512Mi"
+# min_instances        = 0
+# max_instances        = 4
+# atlas_cluster_tier   = "M0"
+# redis_tier           = "BASIC"
+# redis_memory_size_gb = 1
+# alert_email          = "ops@example.com"

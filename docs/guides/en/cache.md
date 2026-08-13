@@ -61,7 +61,7 @@ The core cache service. Injected globally via the `CACHE_SERVICE` token.
 
 ```ts
 import { Injectable, Inject } from '@nestjs/common';
-import { CACHE_SERVICE } from 'nestjs-boot/cache/constants';
+import { CACHE_SERVICE } from 'nestjs-boot/cache';
 import { MultiCacheService } from 'nestjs-boot';
 
 @Injectable()

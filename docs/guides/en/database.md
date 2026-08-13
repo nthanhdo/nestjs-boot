@@ -225,7 +225,7 @@ Wraps multiple repository operations in a MongoDB transaction. Requires a replic
 
 ```ts
 import { Injectable } from '@nestjs/common';
-import { UnitOfWork } from 'nestjs-boot';
+import { UnitOfWork } from 'nestjs-boot/database';
 
 @Injectable()
 export class OrderService {

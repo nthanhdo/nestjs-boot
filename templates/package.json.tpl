@@ -25,23 +25,6 @@
     "@nestjs/mongoose": "^10.1.0",
     "mongoose": "^8.0.0",
 {{/eq}}
-{{#eq dbType "postgres"}}
-    "@nestjs/typeorm": "^10.0.0",
-    "typeorm": "^0.3.0",
-    "pg": "^8.12.0",
-{{/eq}}
-{{#eq dbType "mysql"}}
-    "@nestjs/typeorm": "^10.0.0",
-    "typeorm": "^0.3.0",
-    "mysql2": "^3.9.0",
-{{/eq}}
-{{#eq dbType "dynamodb"}}
-    "dynamoose": "^4.0.0",
-{{/eq}}
-{{#eq dbType "elasticsearch"}}
-    "@nestjs/elasticsearch": "^10.0.0",
-    "@elastic/elasticsearch": "^8.13.0",
-{{/eq}}
 {{#eq cacheType "redis"}}
     "ioredis": "^5.4.0",
 {{/eq}}

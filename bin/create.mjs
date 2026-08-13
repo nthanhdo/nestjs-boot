@@ -19,12 +19,10 @@ const PKG = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-
 
 // ── Option definitions ──────────────────────────────────────────────
 
+// Only MongoDB is supported by BootOptions/DatabaseModule at runtime.
+// TODO: Multi-DB support (PostgreSQL, MySQL, DynamoDB, Elasticsearch) is on the roadmap.
 const DB_OPTIONS = [
   { value: 'mongodb',        label: 'MongoDB (Mongoose)',    hint: 'default' },
-  { value: 'postgres',       label: 'PostgreSQL (TypeORM)' },
-  { value: 'mysql',          label: 'MySQL (TypeORM)' },
-  { value: 'dynamodb',       label: 'DynamoDB (dynamoose)' },
-  { value: 'elasticsearch',  label: 'Elasticsearch' },
   { value: 'none',           label: 'None' },
 ];
 
@@ -83,7 +81,7 @@ ${pc.bold('nestjs-boot')} ${pc.dim(`v${PKG.version}`)}
 ${pc.bold('Usage:')} nestjs-boot new <project-name> [options]
 
 ${pc.bold('Options:')}
-  --db=<type>         Database: mongodb, postgres, mysql, dynamodb, elasticsearch, none
+  --db=<type>         Database: mongodb, none
   --cache=<type>      Cache: redis, memcached, none
   --auth=<type>       Auth: jwt, none
   --transport=<type>  Transport: http, grpc, tcp, nats, rabbitmq
@@ -94,7 +92,7 @@ ${pc.bold('Options:')}
 
 ${pc.bold('Examples:')}
   npx nestjs-boot new my-service
-  npx nestjs-boot new my-service --db=postgres --cache=redis --auth=jwt --transport=grpc
+  npx nestjs-boot new my-service --db=mongodb --cache=redis --auth=jwt --transport=grpc
   npx nestjs-boot new my-service --ci=github
   npx nestjs-boot new my-service --observability
   npx nestjs-boot new my-service -y
@@ -298,7 +296,7 @@ function printNextSteps(config) {
   const { name, db, cache } = config;
 
   const dockerServices = [];
-  if (db !== 'none') dockerServices.push(db === 'mongodb' ? 'MongoDB' : db === 'postgres' ? 'PostgreSQL' : db === 'mysql' ? 'MySQL' : db === 'dynamodb' ? 'DynamoDB Local' : 'Elasticsearch');
+  if (db !== 'none') dockerServices.push('MongoDB');
   if (cache !== 'none') dockerServices.push(cache === 'redis' ? 'Redis' : 'Memcached');
 
   console.log('');

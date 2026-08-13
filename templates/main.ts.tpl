@@ -13,39 +13,6 @@ async function bootstrap() {
       },
     },
 {{/eq}}
-{{#eq dbType "postgres"}}
-    database: {
-      type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432', 10),
-      database: process.env.DB_NAME || '{{name}}',
-      username: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASS || 'postgres',
-    },
-{{/eq}}
-{{#eq dbType "mysql"}}
-    database: {
-      type: 'mysql',
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '3306', 10),
-      database: process.env.DB_NAME || '{{name}}',
-      username: process.env.DB_USER || 'root',
-      password: process.env.DB_PASS || 'root',
-    },
-{{/eq}}
-{{#eq dbType "dynamodb"}}
-    database: {
-      type: 'dynamodb',
-      region: process.env.AWS_REGION || 'us-east-1',
-      endpoint: process.env.DYNAMODB_ENDPOINT || 'http://localhost:8000',
-    },
-{{/eq}}
-{{#eq dbType "elasticsearch"}}
-    database: {
-      type: 'elasticsearch',
-      node: process.env.ELASTICSEARCH_URL || 'http://localhost:9200',
-    },
-{{/eq}}
 {{#if cache}}
 {{#eq cacheType "redis"}}
     cache: {

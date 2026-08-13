@@ -9,31 +9,6 @@ NODE_ENV=development
 # MongoDB
 MONGO_URI=mongodb://localhost:27017/{{name}}
 {{/eq}}
-{{#eq dbType "postgres"}}
-# PostgreSQL
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME={{name}}
-DB_USER=postgres
-DB_PASS=postgres
-{{/eq}}
-{{#eq dbType "mysql"}}
-# MySQL
-DB_HOST=localhost
-DB_PORT=3306
-DB_NAME={{name}}
-DB_USER=root
-DB_PASS=root
-{{/eq}}
-{{#eq dbType "dynamodb"}}
-# DynamoDB
-AWS_REGION=us-east-1
-DYNAMODB_ENDPOINT=http://localhost:8000
-{{/eq}}
-{{#eq dbType "elasticsearch"}}
-# Elasticsearch
-ELASTICSEARCH_URL=http://localhost:9200
-{{/eq}}
 
 {{#eq cacheType "redis"}}
 # Redis (cache)

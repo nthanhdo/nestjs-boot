@@ -268,41 +268,4 @@ const total = profiler.getTotalMs();
 
 ## 5. Best Practices
 
-### Barrel File Gotcha
-
-Barrel files (`index.ts`) that re-export from multiple modules cause eager resolution of all exports, which can trigger circular imports. Import directly from the source file:
-
-```ts
-import { UserService } from '../shared/user.service';  // safe
-import { UserService } from '../shared';                // risky barrel
-```
-
-### SharedModule Pattern
-
-Group stateless services into a `SharedModule` instead of duplicating providers:
-
-```ts
-@Module({
-  imports: [DatabaseModule, CacheModule],
-  providers: [UserService, ProductService],
-  exports: [UserService, ProductService],
-})
-export class SharedModule {}
-```
-
-### forwardRef — Last Resort
-
-`forwardRef()` is a code smell indicating two modules depend on each other. Prefer:
-
-1. Extract shared logic into a third module
-2. Use events (`EventBusModule`) for decoupling
-3. Use contracts (`createContract`) for interface-based injection
-
-### How createApp() Prevents Circular Deps
-
-- Infrastructure modules are `@Global()` and registered once at root
-- No cross-module provider sharing
-- Config is centralized in `BootConfigModule`
-- Guards and interceptors are global via `app.useGlobalInterceptors()`
-
-Debug with: `NEST_DEBUG=true npm run start:dev`
+For DI best practices (barrel file gotcha, SharedModule pattern, `forwardRef` alternatives, and how `createApp()` prevents circular deps), see the [Circular Dependency Prevention Guide](circular-dependency-prevention.md).

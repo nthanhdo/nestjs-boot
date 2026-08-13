@@ -1,11 +1,11 @@
 # Event Bus
 
-nestjs-boot provides an in-process (or Redis-distributed) event bus for typed publish/subscribe and request/reply patterns. Unlike the CQRS DomainEvent system (which is for event sourcing and persistence), the EventBus is for real-time in-process communication and breaking circular dependencies between modules.
+nestjs-boot provides an in-process (or Redis-distributed) event bus for typed publish/subscribe and request/reply patterns. Unlike the [CQRS DomainEvent system](cqrs-event-sourcing.md) (which is for event sourcing and persistence), the EventBus is for real-time in-process communication and breaking circular dependencies between modules.
 
 ## Setup
 
 ```ts
-import { BootModule } from '@nestjs-boot/core';
+import { BootModule } from 'nestjs-boot';
 
 // In-memory (single process)
 BootModule.register({
@@ -24,7 +24,7 @@ BootModule.register({
 Or standalone:
 
 ```ts
-import { EventBusModule } from '@nestjs-boot/events';
+import { EventBusModule } from 'nestjs-boot/events';
 
 EventBusModule.register({ transport: 'memory' })
 ```
@@ -38,7 +38,7 @@ You can also inject a pre-created Redis client (e.g., shared from CacheModule) v
 Base class for all typed events. Automatically captures a `timestamp` and `correlationId` (from AsyncLocalStorage if the correlation module is loaded).
 
 ```ts
-import { BootEvent } from '@nestjs-boot/events';
+import { BootEvent } from 'nestjs-boot/events';
 
 class OrderCreatedEvent extends BootEvent {
   constructor(
@@ -53,7 +53,7 @@ class OrderCreatedEvent extends BootEvent {
 `EventBusService` provides three emission methods:
 
 ```ts
-import { EventBusService } from '@nestjs-boot/events';
+import { EventBusService } from 'nestjs-boot/events';
 
 @Injectable()
 class OrderService {
@@ -85,7 +85,7 @@ With Redis transport, both methods publish to the `boot:events` channel in addit
 Marks a method as a handler for a specific event class:
 
 ```ts
-import { OnEvent } from '@nestjs-boot/events';
+import { OnEvent } from 'nestjs-boot/events';
 
 @Injectable()
 class NotificationService {
@@ -113,7 +113,7 @@ Multiple handlers can subscribe to the same event class (fan-out).
 ### Define a Query
 
 ```ts
-import { BootQuery } from '@nestjs-boot/events';
+import { BootQuery } from 'nestjs-boot/events';
 
 class GetUserByIdQuery extends BootQuery<User> {
   constructor(public readonly userId: string) { super(); }
@@ -123,7 +123,7 @@ class GetUserByIdQuery extends BootQuery<User> {
 ### Handle the Query
 
 ```ts
-import { OnQuery } from '@nestjs-boot/events';
+import { OnQuery } from 'nestjs-boot/events';
 
 @Injectable()
 class UserQueryHandler {
@@ -213,3 +213,9 @@ If `ioredis` is not installed when using Redis transport, the service logs a war
 - Keep query handlers fast; set appropriate timeouts for slow operations
 - Define event and query classes in a shared contracts module to avoid coupling
 - Prefer memory transport for single-process apps; use Redis only when you need cross-service distribution
+
+## See also
+
+- [Circular Dependency Prevention](circular-dependency-prevention.md) — event bus patterns to eliminate circular deps
+- [CQRS & Event Sourcing](cqrs-event-sourcing.md) — `DomainEvent` for persistent event sourcing (different from EventBus)
+- [Queue (BullMQ)](queue.md) — for durable job processing (vs EventBus fire-and-forget)

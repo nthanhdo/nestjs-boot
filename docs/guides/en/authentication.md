@@ -1,5 +1,7 @@
 # Authentication
 
+> **TL;DR** — Register `AuthModule` once with your JWT secret. You get global `JwtAuthGuard`, `@Public()` bypass, `@CurrentUser()` extraction, refresh token rotation, password reset, email verification, API key auth, and WebSocket auth — all from one config object.
+
 JWT-based authentication with `AuthModule`, including token signing/verification, refresh token rotation, password reset, email verification, API key auth, and WebSocket support.
 
 ## Setup
@@ -237,3 +239,11 @@ SwaggerModule.setup('api', app, document);
 4. **Implement `isRevoked`** for logout / force-sign-out by checking a token blacklist (Redis SET of JTI values).
 5. **Purpose-scoped tokens** (`signPasswordReset`, `signEmailVerification`) embed a `purpose` claim that is checked on verification — a password reset token cannot be used as an access token.
 6. **Never store JWTs in localStorage** on the client. Use httpOnly cookies or in-memory storage.
+
+## See also
+
+- [Authorization (RBAC)](authorization.md) — role and permission guards on top of JWT auth
+- [Rate Limiting Auth](auth-rate-limiting.md) — throttle login and reset endpoints
+- [Session, Social Login & TOTP](session-social-totp.md) — cookie sessions, OAuth, and 2FA
+- [Inter-Service Auth](inter-service-auth.md) — propagate tokens across microservices
+- [Testing Guide](testing-guide.md) — `createTestJwt`, `MockAuthModule` for test auth

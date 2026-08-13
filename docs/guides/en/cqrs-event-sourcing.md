@@ -7,7 +7,7 @@ nestjs-boot includes a complete CQRS and event sourcing module: a CommandBus for
 Register `CqrsModule` in your BootOptions or as a standalone module:
 
 ```ts
-import { BootModule } from '@nestjs-boot/core';
+import { BootModule } from 'nestjs-boot';
 
 BootModule.register({
   database: { uri: 'mongodb://localhost/myapp' },
@@ -38,7 +38,7 @@ Routes commands to their registered handlers with strict 1:1 routing (one comman
 Commands are imperative, present-tense, and implement `ICommand`:
 
 ```ts
-import { ICommand } from '@nestjs-boot/cqrs';
+import { ICommand } from 'nestjs-boot/cqrs';
 
 class CreateOrderCommand implements ICommand {
   readonly type = 'CreateOrder';
@@ -52,7 +52,7 @@ class CreateOrderCommand implements ICommand {
 ### Define a Handler
 
 ```ts
-import { CommandHandler, ICommandHandler } from '@nestjs-boot/cqrs';
+import { CommandHandler, ICommandHandler } from 'nestjs-boot/cqrs';
 
 @CommandHandler(CreateOrderCommand)
 class CreateOrderHandler implements ICommandHandler<CreateOrderCommand> {
@@ -67,7 +67,7 @@ class CreateOrderHandler implements ICommandHandler<CreateOrderCommand> {
 ### Execute a Command
 
 ```ts
-import { CommandBus } from '@nestjs-boot/cqrs';
+import { CommandBus } from 'nestjs-boot/cqrs';
 
 @Injectable()
 class OrderController {
@@ -88,7 +88,7 @@ If no handler is registered for a command type, `execute` throws with a descript
 The DDD building block for event-sourced aggregates. Aggregates accumulate state by applying domain events. Events are collected as "uncommitted" until the repository persists them.
 
 ```ts
-import { AggregateRoot } from '@nestjs-boot/cqrs';
+import { AggregateRoot } from 'nestjs-boot/cqrs';
 
 class Order extends AggregateRoot {
   private status = 'draft';
@@ -147,7 +147,7 @@ class Order extends AggregateRoot {
 Base class for all domain events. Events are immutable, past-tense records of state changes. Each event automatically captures `occurredAt` timestamp and `correlationId` (from AsyncLocalStorage if the correlation module is loaded).
 
 ```ts
-import { DomainEvent } from '@nestjs-boot/cqrs';
+import { DomainEvent } from 'nestjs-boot/cqrs';
 
 class OrderCreatedEvent extends DomainEvent {
   readonly type = 'OrderCreated';
@@ -229,7 +229,7 @@ The processor polls every `pollInterval` ms (default 1000), processes up to 100 
 Rebuilds read models by replaying stored events through projection instances.
 
 ```ts
-import { EventReplayService } from '@nestjs-boot/cqrs';
+import { EventReplayService } from 'nestjs-boot/cqrs';
 
 const result = await replayService.replayAll([orderSummaryProjection]);
 console.log(result);

@@ -1,5 +1,7 @@
 # Getting Started
 
+> **TL;DR** — `npm install nestjs-boot`, call `createApp(AppModule, {})`, and you get health checks, error handling, and env loading out of the box. Add config sections (database, cache, auth, etc.) to enable more modules — omit a section and it costs zero.
+
 ## What is nestjs-boot?
 
 nestjs-boot is a **runtime package** (not a boilerplate). You install it into any NestJS project and call `createApp()` with a single config object. It auto-wires infrastructure modules — database, cache, auth, health checks, logging, tracing, metrics — based on which config sections you provide. Omit a section and that module is not loaded.
@@ -145,3 +147,10 @@ When you call `createApp(AppModule, options)`, the following happens in order:
 - **Missing peer dependencies** — nestjs-boot loads peers on demand. If you configure `cache.redis` without installing `ioredis`, it falls back to L1 only with a warning.
 - **MongoDB URI format** — `writerUri` must start with `mongodb://` or `mongodb+srv://`. Validation rejects other formats.
 - **Redis URI format** — must start with `redis://` or `rediss://`.
+
+## See also
+
+- [Configuration](configuration.md) — full BootOptions reference and config adapters
+- [CLI Reference](cli-reference.md) — scaffold a complete project with `npx nestjs-boot new`
+- [Migration from NestJS](migration-from-nestjs.md) — adopt nestjs-boot in an existing project
+- [Production Checklist](production-checklist.md) — before you deploy

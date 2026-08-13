@@ -97,3 +97,8 @@ interface VersioningOptions {
 - Set a concrete `Sunset` date when deprecating a version so clients can plan migration.
 - Keep `defaultVersion` at `'1'` and explicitly decorate newer controllers with `@ApiVersion('2')`.
 - Avoid supporting more than 2 active versions simultaneously to limit maintenance cost.
+
+## Common Pitfalls
+
+- **Unversioned routes shadow versioned ones** — A controller without `@ApiVersion()` matches all versions. If you add a versioned controller for the same path, the unversioned one may still win depending on registration order.
+- **Media-type strategy requires `Accept` header parsing** — Clients must send `Accept: application/json;version=2`. If your API gateway strips or rewrites `Accept`, version detection breaks.

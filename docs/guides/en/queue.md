@@ -1,5 +1,7 @@
 # Queue (BullMQ)
 
+> **TL;DR** — Register `QueueModule` with a Redis URL, create named queues with `registerQueue()`, enqueue jobs with `QueueService.addJob()`, and process them with `@Processor`/`@Process` decorators. Supports bulk operations, retry with backoff, and automatic cleanup on shutdown.
+
 nestjs-boot provides a config-driven queue abstraction over BullMQ with decorator-based processors, bulk operations, and automatic cleanup on shutdown.
 
 ## Setup
@@ -139,3 +141,9 @@ const queue = this.queueService.getQueue('email');
 - Name your jobs (`addJob('queue', 'job-name', data)`) so processors can route by type and dashboards show meaningful labels.
 - BullMQ and ioredis are optional dependencies. If not installed, QueueService logs a warning and all methods throw with a clear message.
 - QueueService implements `OnModuleDestroy` and automatically closes all workers, queues, and the shared Redis connection on shutdown.
+
+## See also
+
+- [Event Bus](events.md) — for in-process pub/sub (no persistence); use queues when you need durable job processing
+- [Observability](observability.md) — `QueueMetrics` for Prometheus queue depth and job duration metrics
+- [Resilience](resilience.md) — retry and circuit breaker patterns for external API calls within processors

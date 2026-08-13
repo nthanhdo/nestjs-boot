@@ -1,5 +1,7 @@
 # Cache
 
+> **TL;DR** — Configure `cache.redis` in BootOptions to get a two-layer cache (L1 in-memory + L2 Redis). Use `getOrSet` for cache-aside, `CacheStampedeGuard` for hot keys, `TaggedCacheService` for group invalidation, and `CacheWarmer` for startup pre-population.
+
 ## Overview
 
 The `CacheModule` provides multi-layer caching with size-aware routing, stampede protection, tag-based invalidation, pre-warming, and hit/miss statistics.
@@ -304,3 +306,9 @@ export class MonitoringService {
 - **Tag index growth** — tag indexes have a 24-hour TTL. If you set thousands of keys with the same tag without ever calling `invalidateTag`, the index array grows. Call `invalidateTag` periodically.
 - **CacheStats is opt-in** — `CacheStats` does not automatically track hits/misses. You must call `recordHit`/`recordMiss` in your code. It is a measurement tool, not middleware.
 - **Memcached without memjs** — configuring `memcached.servers` without installing `memjs` falls back to in-memory LRU silently (with a warning log).
+
+## See also
+
+- [Database](database.md) — `CachedBaseRepository` for automatic cache-aside on repositories
+- [Observability](observability.md) — `CacheMetricsInterceptor` for Prometheus cache metrics
+- [Production Checklist](production-checklist.md) — Redis persistence and eviction policy settings

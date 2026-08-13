@@ -209,3 +209,9 @@ async fetchData(id: string) { ... }
 - Always provide a `retryOn` predicate for HTTP calls. Retrying a 400 Bad Request wastes time and resources.
 - Combine circuit breaker + retry for external dependencies, timeout for request-level SLA enforcement.
 - Monitor circuit breaker state transitions in logs (the class logs `CLOSED -> OPEN` etc. via NestJS Logger).
+
+## Common Pitfalls
+
+- **Retrying non-idempotent operations** — Without a `retryOn` predicate, `@Retry` retries all errors including 400/403/404. Always filter to transient errors only.
+- **Timeout + retry interaction** — If the `@Timeout` on a controller is shorter than `maxAttempts * maxDelay`, the timeout fires before retries complete. Set the route timeout to exceed the worst-case retry duration.
+- **Circuit breaker per-instance, not global** — Each decorated method gets its own `CircuitBreaker` instance. If you have 10 pods, each has an independent breaker. A failing dependency must trip the breaker on each pod separately.

@@ -138,3 +138,9 @@ const metrics = WsCorrelationInterceptor.getMetrics();
 - Override `onConnect` to validate JWT claims rather than just checking token presence.
 - Monitor `WsCorrelationInterceptor.getMetrics()` for connection/message volume.
 - Keep room names deterministic (e.g., `order:{orderId}`) for targeted broadcasts.
+
+## Common Pitfalls
+
+- **Missing Redis adapter in multi-instance** — Without `@socket.io/redis-adapter`, broadcasts only reach clients connected to the same instance. Install the adapter for any deployment with more than one pod.
+- **`@WsAuthRequired` only checks token presence** — It does not verify the JWT. Override `onConnect` to call `jwt.verify()` for real authentication.
+- **CORS not configured** — Socket.IO requires explicit CORS origin. Without `cors.origin`, browser clients receive opaque connection failures.

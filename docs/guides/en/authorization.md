@@ -1,5 +1,7 @@
 # Authorization (RBAC)
 
+> **TL;DR** — Enable `rbac` in `AuthModule` to get global `RolesGuard` and `PermissionsGuard`. Use `@Roles('admin')` (ANY match) and `@Permissions('product:write')` (ALL match) on routes. Routes without decorators are open to authenticated users.
+
 Role-based and permission-based access control via `RolesGuard` and `PermissionsGuard`, activated through `AuthModule`'s RBAC configuration.
 
 ## Setup
@@ -164,3 +166,14 @@ health() {
 3. **Keep role/permission strings lowercase and namespaced** (e.g. `order:cancel`, `report:export`).
 4. **Routes without decorators are open** (to authenticated users). Be explicit — add `@Roles()` or `@Permissions()` to every sensitive route.
 5. **Test both positive and negative cases.** Verify that a user without the required role/permission receives a 403.
+
+## Common Pitfalls
+
+- **Forgetting unauthenticated routes are open** — Routes without `@Roles()` or `@Permissions()` are accessible to any authenticated user. Audit routes regularly.
+- **Roles in JWT not refreshed** — Changing a user's roles in the database does not affect existing JWTs. Use short access token TTLs or implement `isRevoked`.
+- **`@Permissions()` requires ALL, `@Roles()` requires ANY** — This asymmetry is intentional but often confused. `@Roles('admin', 'manager')` = OR; `@Permissions('read', 'write')` = AND.
+
+## See also
+
+- [Authentication](authentication.md) — JWT setup that feeds into RBAC guards
+- [Testing Guide](testing-guide.md) — `createTestJwt` with roles/permissions for testing guards

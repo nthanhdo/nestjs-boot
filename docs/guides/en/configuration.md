@@ -1,5 +1,7 @@
 # Configuration
 
+> **TL;DR** — Pass a single `BootOptions` object to `createApp()`. Every section is optional — omit it and that module is not loaded. Use `BootConfigService` for typed runtime access. Load secrets from Vault or AWS via built-in config adapters.
+
 ## BootOptions reference
 
 The `BootOptions` interface is the single config object passed to `createApp()`. Every section is optional — omit a section and that module is not loaded.
@@ -250,3 +252,8 @@ Config validation uses Joi and runs at boot via `validateBootOptions()`. Validat
 - **Source order matters** — in `mergeConfigs()`, later sources override earlier ones. Put your most authoritative source last.
 - **ConfigWatcher in production** — throws an error. Always guard with `NODE_ENV !== 'production'`.
 - **AWS SDK missing** — `AwsSecretsAdapter` throws a clear error if `@aws-sdk/client-secrets-manager` is not installed. It does not silently fall back.
+
+## See also
+
+- [Getting Started](getting-started.md) — minimal setup and boot sequence
+- [Production Checklist](production-checklist.md) — config validation in CI and secrets management

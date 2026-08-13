@@ -1,5 +1,7 @@
 # Error Handling
 
+> **TL;DR** — Throw `BootException` with a stable `code` for client-safe errors. `AllExceptionsFilter` catches everything and produces structured JSON. Use `errorBoundary` at service boundaries, `MongooseErrorInterceptor` for DB errors, and `ErrorReporter` for Sentry/Datadog integration.
+
 nestjs-boot provides a layered error handling system: structured exceptions with stable codes, global filters, response envelopes, Mongoose error transformation, error boundaries, and optional RFC 7807 Problem Details output.
 
 ## BootException
@@ -7,7 +9,7 @@ nestjs-boot provides a layered error handling system: structured exceptions with
 `BootException` extends `HttpException` with a stable `code` field that clients can switch on, decoupled from human-readable messages that may change between versions.
 
 ```ts
-import { BootException } from '@nestjs-boot/common';
+import { BootException } from 'nestjs-boot/common';
 
 throw new BootException('Product not found', {
   code: 'PRODUCT_NOT_FOUND',
@@ -28,7 +30,7 @@ Options: `code` (string), `status` (number, default 500), `details` (unknown[]).
 A centralized registry of stable machine-readable error codes. These are plain string constants (not enums) so they serialize cleanly to JSON and survive tree-shaking.
 
 ```ts
-import { BootException, ErrorCodes } from '@nestjs-boot/common';
+import { BootException, ErrorCodes } from 'nestjs-boot/common';
 
 throw new BootException('Token has expired', {
   code: ErrorCodes.AUTH_TOKEN_EXPIRED,
@@ -47,7 +49,7 @@ A global catch-all filter that produces structured JSON error responses with tim
 ```ts
 // app.module.ts
 import { APP_FILTER } from '@nestjs/core';
-import { AllExceptionsFilter } from '@nestjs-boot/common';
+import { AllExceptionsFilter } from 'nestjs-boot/common';
 
 @Module({
   providers: [
@@ -77,7 +79,7 @@ The filter handles HTTP, RPC, and WebSocket contexts. For RPC, it rethrows the e
 Wire external monitoring (Sentry, Datadog) without subclassing:
 
 ```ts
-import { ErrorReporter } from '@nestjs-boot/common';
+import { ErrorReporter } from 'nestjs-boot/common';
 import * as Sentry from '@sentry/node';
 
 ErrorReporter.configure({
@@ -95,7 +97,7 @@ Wraps successful responses in a unified envelope. Opt in via `APP_INTERCEPTOR`:
 
 ```ts
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { ResponseInterceptor } from '@nestjs-boot/common';
+import { ResponseInterceptor } from 'nestjs-boot/common';
 
 providers: [
   { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
@@ -130,7 +132,7 @@ Two usage patterns:
 { provide: APP_INTERCEPTOR, useClass: MongooseErrorInterceptor }
 
 // Per-service — targeted handling
-import { transformMongooseError } from '@nestjs-boot/common';
+import { transformMongooseError } from 'nestjs-boot/common';
 
 async create(dto: CreateUserDto) {
   try {
@@ -146,7 +148,7 @@ async create(dto: CreateUserDto) {
 Wraps operations with consistent error handling. Catches errors, wraps them in BootException with a stable code, and either rethrows or returns a fallback.
 
 ```ts
-import { errorBoundary, errorBoundarySync } from '@nestjs-boot/common';
+import { errorBoundary, errorBoundarySync } from 'nestjs-boot/common';
 
 // Rethrow as BootException (default)
 const order = await errorBoundary(
@@ -174,7 +176,7 @@ Options: `code` (required), `status` (default 500), `fallback` (return instead o
 Opt-in RFC 7807/9457 compliant error format via `toProblemDetails()`:
 
 ```ts
-import { toProblemDetails } from '@nestjs-boot/common';
+import { toProblemDetails } from 'nestjs-boot/common';
 
 const pd = toProblemDetails(exception, '/api/orders/123');
 // {
@@ -199,3 +201,9 @@ The function accepts `BootException`, `HttpException`, or the serialized `ErrorR
 - Wire `ErrorReporter` in `main.ts` before the app starts listening
 - Use the `code` field (not `message`) for client-side error handling logic
 - Keep `AllExceptionsFilter` as the outermost filter; layer interceptors inside it
+
+## See also
+
+- [Observability](observability.md) — correlation IDs and tracing that enrich error context
+- [Transport & Microservices](transport-microservices.md) — `BootRpcException` for cross-service errors
+- [Resilience](resilience.md) — circuit breaker and retry for handling upstream failures

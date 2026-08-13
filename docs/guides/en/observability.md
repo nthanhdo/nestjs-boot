@@ -1,5 +1,7 @@
 # Observability
 
+> **TL;DR** — Four opt-in pillars: correlation IDs (AsyncLocalStorage), OpenTelemetry tracing (`@BootTrace`), Prometheus metrics (counters/histograms/gauges), and structured logging (pino). Register in order: Correlation -> Tracing -> Logging -> Metrics. All degrade gracefully when peer deps are missing.
+
 nestjs-boot provides four integrated observability pillars: distributed tracing (OpenTelemetry), Prometheus metrics, structured logging (pino), and request correlation IDs. All four are opt-in with graceful no-op fallbacks when peer dependencies are absent.
 
 ## Correlation IDs

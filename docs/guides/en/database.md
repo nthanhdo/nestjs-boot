@@ -1,5 +1,7 @@
 # Database
 
+> **TL;DR** — Config-driven MongoDB with automatic reader/writer split. Use `BaseRepository` for CRUD with pagination, `CachedBaseRepository` for cache-aside, `Specification` for composable queries, `UnitOfWork` for transactions, and `MigrationModule` for schema migrations.
+
 ## Overview
 
 The `DatabaseModule` provides config-driven MongoDB with multi-connection support and automatic reader/writer split. Built on `@nestjs/mongoose` and Mongoose.
@@ -313,3 +315,9 @@ Applied migrations are tracked in the `_migrations` collection. The runner stops
 - **Unknown connection name** — `DatabaseModule.forFeature('typo', [...])` throws immediately with the list of registered connections.
 - **Cache invalidation scope** — `CachedBaseRepository` invalidates the entire collection prefix on any write. This is correct but aggressive. For fine-grained invalidation, use `TaggedCacheService` instead.
 - **Migration `down()` missing** — `rollback()` skips migrations without a `down()` method (status: `skipped`). Always implement `down()` for reversible migrations.
+
+## See also
+
+- [Cache](cache.md) — multi-layer caching that pairs with `CachedBaseRepository`
+- [Testing Guide](testing-guide.md) — in-memory MongoDB for tests via `createTestApp`
+- [Multi-Tenancy](multi-tenancy.md) — `TenantAwareRepository` for auto-scoped queries

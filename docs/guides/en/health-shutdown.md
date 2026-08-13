@@ -7,7 +7,7 @@ nestjs-boot provides auto-detecting health checks and an ordered graceful shutdo
 `HealthModule` auto-detects configured infrastructure and registers the appropriate health indicators. Built on `@nestjs/terminus`.
 
 ```ts
-import { BootModule } from '@nestjs-boot/core';
+import { BootModule } from 'nestjs-boot';
 
 BootModule.register({
   database: { uri: 'mongodb://localhost/myapp' },
@@ -44,7 +44,7 @@ During graceful shutdown, the endpoint returns **503 Service Unavailable** immed
 Registers the graceful shutdown system. Add it to your module imports:
 
 ```ts
-import { ShutdownModule } from '@nestjs-boot/shutdown';
+import { ShutdownModule } from 'nestjs-boot/shutdown';
 
 ShutdownModule.register({
   timeout: 25000,           // max wait before force-exit (default: 30000)
@@ -73,7 +73,7 @@ When a signal is received, `ShutdownService` orchestrates an ordered teardown:
 Tracks the count of currently in-flight HTTP requests. Used by the shutdown system to decide when draining is complete.
 
 ```ts
-import { InFlightTracker } from '@nestjs-boot/shutdown';
+import { InFlightTracker } from 'nestjs-boot/shutdown';
 
 @Injectable()
 export class RequestTrackingInterceptor implements NestInterceptor {

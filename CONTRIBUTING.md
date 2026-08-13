@@ -25,13 +25,13 @@ Open an issue with the `enhancement` label. Describe the use case, not just the 
    ```
 3. **Install** dependencies:
    ```bash
-   pnpm install
+   npm install
    ```
 4. **Implement** your changes — see Code Style below.
 5. **Test** — all tests must pass and new features need test coverage:
    ```bash
-   pnpm test
-   pnpm test:cov   # coverage must not drop
+   npm test
+   npm run test:cov   # coverage must not drop
    ```
 6. **Commit** using [Conventional Commits](https://www.conventionalcommits.org/):
    ```
@@ -44,17 +44,17 @@ Open an issue with the `enhancement` label. Describe the use case, not just the 
 
 ### PR Requirements
 
-- [ ] All existing tests pass (`pnpm test`)
+- [ ] All existing tests pass (`npm test`)
 - [ ] New code has corresponding tests
 - [ ] TypeScript strict mode — no `any`, no type suppressions without explanation
-- [ ] No new lint errors (`pnpm lint`)
+- [ ] No new lint errors (`npm run lint`)
 - [ ] Docs updated if public API changed
 
 ## Code Style
 
 - **Language:** TypeScript strict (`"strict": true`)
-- **Formatter:** Prettier (auto on save / `pnpm format`)
-- **Linter:** ESLint (`pnpm lint`)
+- **Formatter:** Prettier (auto on save / `npm run format`)
+- **Linter:** ESLint (`npm run lint`)
 - **Imports:** absolute from package root, no relative `../../..` depth > 2
 - **Naming:** `camelCase` for variables/functions, `PascalCase` for classes/interfaces, `UPPER_SNAKE` for constants
 - **Modules:** each module in its own directory with barrel `index.ts`
@@ -63,10 +63,10 @@ Open an issue with the `enhancement` label. Describe the use case, not just the 
 ## Development Setup
 
 ```bash
-pnpm install
-pnpm build          # compile
-pnpm test           # run all tests
-pnpm test:watch     # watch mode
+npm install
+npm run build          # compile
+npm test           # run all tests
+npm test:watch     # watch mode
 ```
 
 ## Questions?

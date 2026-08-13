@@ -4,7 +4,7 @@
 
 [![npm version](https://img.shields.io/npm/v/nestjs-boot.svg)](https://www.npmjs.com/package/nestjs-boot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-507%20passing-brightgreen.svg)](#)
+[![Tests](https://img.shields.io/badge/tests-541%20passing-brightgreen.svg)](#)
 [![Modules](https://img.shields.io/badge/modules-55%2B-blue.svg)](#modules)
 
 > [English version](README.md)
@@ -310,6 +310,25 @@ Xác minh signature Stripe/PayPal (HMAC-SHA256). `IdempotencyGuard` ngăn xử l
 
 Adapter: local / S3 / GCS. `FileValidationPipe` kiểm tra mime + size trước upload. `getSignedUrl()` cho URL tạm thời.
 
+### Cảnh Báo (Alerts)
+
+Thông báo cảnh báo đa kênh: Console, Webhook, Slack, Discord, PagerDuty. `AlertService` đánh giá điều kiện `AlertRule` và gửi `AlertPayload` đến các kênh đã cấu hình. Interface `AlertChannel` có thể mở rộng cho tích hợp tùy chỉnh.
+
+```ts
+alerts: {
+  channels: [{ type: 'slack', webhookUrl: process.env.SLACK_WEBHOOK! }],
+  rules: [{ metric: 'error_rate', threshold: 0.05, channels: ['slack'] }],
+}
+```
+
+### Triển Khai (Deploy)
+
+Hook vòng đời triển khai: `@OnDeploy('pre-start')` đăng ký hook theo phase. Hook có sẵn: `EnvValidationHook` (xác thực biến môi trường bắt buộc), `DependencyCheckHook` (kiểm tra kết nối service bên ngoài), `ReadinessGateHook` (chặn traffic cho đến khi sẵn sàng). `DeployService` điều phối hook theo `DEPLOY_PHASE_ORDER`.
+
+```ts
+deploy: { hooks: [EnvValidationHook, DependencyCheckHook, ReadinessGateHook] }
+```
+
 ### Kiểm Thử (Testing)
 
 `createTestSuite()` — quản lý lifecycle đầy đủ. `createFactory<T>()` — factory với traits, sequence, `afterCreate` hook. `createTestClient()` — supertest với typed response. `createGrpcTestClient()` — test gRPC in-process. `createMessageDispatcher()` — test message pattern. `ContractVerifier` — xác minh contract. `expectSnapshot()` — snapshot testing. `createTestJwt()` + `MockAuthModule` — auth test helper.
@@ -411,7 +430,7 @@ export class AppModule {}
 git clone https://github.com/nthanhdo/nestjs-boot.git
 cd nestjs-boot
 npm install
-npm test           # 507 tests
+npm test           # 541 tests
 npm run build      # CJS + ESM + DTS
 ```
 

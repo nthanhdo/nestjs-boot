@@ -625,7 +625,7 @@ npm install otpauth                          # TOTP 2FA
 git clone https://github.com/nthanhdo/nestjs-boot.git
 cd nestjs-boot
 npm install
-npm test           # 507 tests
+npm test           # 541 tests
 npm run build      # CJS + ESM + DTS
 ```
 

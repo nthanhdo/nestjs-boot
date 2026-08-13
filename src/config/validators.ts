@@ -75,9 +75,9 @@ export const bootOptionsSchema = Joi.object({
         expiresIn: Joi.alternatives().try(Joi.string(), Joi.number()).optional(),
         algorithm: Joi.string().optional(),
       }).optional(),
-      refreshSecret: Joi.string().optional(),
+      refreshSecret: Joi.string().min(32).optional().label('jwt.refreshSecret (min 32 chars for HMAC-SHA256)'),
       refreshExpiresIn: Joi.alternatives().try(Joi.string(), Joi.number()).optional(),
-      resetSecret: Joi.string().optional(),
+      resetSecret: Joi.string().min(32).optional().label('jwt.resetSecret (min 32 chars for HMAC-SHA256)'),
     }).optional(),
     apiKey: Joi.object({
       enabled: Joi.boolean().required(),

@@ -4,8 +4,14 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, readd
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
-import * as p from '@clack/prompts';
-import pc from 'picocolors';
+let p, pc;
+try {
+  p = await import('@clack/prompts');
+  pc = (await import('picocolors')).default;
+} catch {
+  console.error('Missing dependencies. Run: npm install @clack/prompts picocolors');
+  process.exit(1);
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_DIR = join(__dirname, '..', 'templates');

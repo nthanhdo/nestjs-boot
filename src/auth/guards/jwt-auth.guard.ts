@@ -33,7 +33,10 @@ export class JwtAuthGuard implements CanActivate {
 
     const token = authHeader.slice(7);
     try {
-      const decoded = jwt.verify(token, this.authOptions.jwt!.secret);
+      const algorithm = this.authOptions.jwt!.signOptions?.algorithm ?? 'HS256';
+      const decoded = jwt.verify(token, this.authOptions.jwt!.secret, {
+        algorithms: [algorithm as jwt.Algorithm],
+      });
 
       // Check token revocation if configured
       if (this.authOptions.jwt!.isRevoked) {

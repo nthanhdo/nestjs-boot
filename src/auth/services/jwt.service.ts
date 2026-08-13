@@ -11,8 +11,11 @@ import { AuthOptions } from '../interfaces';
 export class BootJwtService {
   private readonly secret: string;
   private readonly signOpts: jwt.SignOptions;
+  private readonly algorithm: jwt.Algorithm;
   private readonly refreshSecret: string;
   private readonly refreshSignOpts: jwt.SignOptions;
+  /** Separate secret for password-reset and email-verification tokens. */
+  private readonly resetSecret: string;
 
   constructor(@Inject(AUTH_OPTIONS) authOptions: AuthOptions) {
     const jwtOpts = authOptions.jwt!;
@@ -21,11 +24,13 @@ export class BootJwtService {
     if (jwtOpts.signOptions?.expiresIn) {
       this.signOpts.expiresIn = jwtOpts.signOptions.expiresIn as jwt.SignOptions['expiresIn'];
     }
+    this.algorithm = (jwtOpts.signOptions?.algorithm as jwt.Algorithm) ?? 'HS256';
     if (jwtOpts.signOptions?.algorithm) {
       this.signOpts.algorithm = jwtOpts.signOptions.algorithm as jwt.Algorithm;
     }
 
     this.refreshSecret = jwtOpts.refreshSecret ?? jwtOpts.secret;
+    this.resetSecret = jwtOpts.resetSecret ?? jwtOpts.secret;
     this.refreshSignOpts = {};
     if (jwtOpts.refreshExpiresIn) {
       this.refreshSignOpts.expiresIn = jwtOpts.refreshExpiresIn as jwt.SignOptions['expiresIn'];
@@ -39,7 +44,7 @@ export class BootJwtService {
 
   /** Verify and decode an access token. Throws on invalid/expired. */
   verify<T = Record<string, any>>(token: string): T {
-    return jwt.verify(token, this.secret) as T;
+    return jwt.verify(token, this.secret, { algorithms: [this.algorithm] }) as T;
   }
 
   /** Sign a refresh token (uses refreshSecret if configured, else main secret). */
@@ -49,7 +54,7 @@ export class BootJwtService {
 
   /** Verify a refresh token. Throws on invalid/expired. */
   verifyRefresh<T = Record<string, any>>(token: string): T {
-    return jwt.verify(token, this.refreshSecret) as T;
+    return jwt.verify(token, this.refreshSecret, { algorithms: [this.algorithm] }) as T;
   }
 
   /**
@@ -70,6 +75,7 @@ export class BootJwtService {
   /**
    * Sign a password reset token. Short-lived (default 15m).
    * Includes a purpose claim to prevent misuse as an access token.
+   * Uses resetSecret (isolated from access/refresh tokens).
    */
   signPasswordReset(userId: string, options?: { expiresIn?: string }): string {
     const signOpts: jwt.SignOptions = {
@@ -77,7 +83,7 @@ export class BootJwtService {
     };
     return jwt.sign(
       { sub: userId, purpose: 'password-reset' },
-      this.secret,
+      this.resetSecret,
       signOpts,
     );
   }
@@ -87,7 +93,7 @@ export class BootJwtService {
    * Throws if invalid, expired, or wrong purpose.
    */
   verifyPasswordReset(token: string): { sub: string; purpose: string } {
-    const decoded = jwt.verify(token, this.secret) as Record<string, any>;
+    const decoded = jwt.verify(token, this.resetSecret, { algorithms: [this.algorithm] }) as Record<string, any>;
     if (decoded.purpose !== 'password-reset') {
       throw new Error('Invalid token purpose: expected password-reset');
     }
@@ -96,7 +102,7 @@ export class BootJwtService {
 
   /**
    * Sign an email verification token with the email embedded.
-   * Default expiry: 24h.
+   * Default expiry: 24h. Uses resetSecret (isolated from access/refresh tokens).
    */
   signEmailVerification(email: string, options?: { expiresIn?: string }): string {
     const signOpts: jwt.SignOptions = {
@@ -104,7 +110,7 @@ export class BootJwtService {
     };
     return jwt.sign(
       { email, purpose: 'email-verification' },
-      this.secret,
+      this.resetSecret,
       signOpts,
     );
   }
@@ -114,7 +120,7 @@ export class BootJwtService {
    * Returns the email. Throws if invalid, expired, or wrong purpose.
    */
   verifyEmailVerification(token: string): { email: string; purpose: string } {
-    const decoded = jwt.verify(token, this.secret) as Record<string, any>;
+    const decoded = jwt.verify(token, this.resetSecret, { algorithms: [this.algorithm] }) as Record<string, any>;
     if (decoded.purpose !== 'email-verification') {
       throw new Error('Invalid token purpose: expected email-verification');
     }

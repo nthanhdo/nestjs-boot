@@ -1,6 +1,7 @@
 import { defineConfig } from 'tsup';
 
 const modules = [
+  'alerts',
   'auth',
   'cache',
   'common',
@@ -9,6 +10,7 @@ const modules = [
   'correlation',
   'cqrs',
   'database',
+  'deploy',
   'events',
   'graph',
   'health',

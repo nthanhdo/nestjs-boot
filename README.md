@@ -4,7 +4,7 @@
 
 [![npm version](https://img.shields.io/npm/v/nestjs-boot.svg)](https://www.npmjs.com/package/nestjs-boot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-507%20passing-brightgreen.svg)](#)
+[![Tests](https://img.shields.io/badge/tests-541%20passing-brightgreen.svg)](#)
 [![Modules](https://img.shields.io/badge/modules-55%2B-blue.svg)](#modules)
 
 ## What is nestjs-boot?
@@ -337,6 +337,25 @@ Driver abstraction: `local` (zero deps) | `s3` (requires `@aws-sdk/client-s3`) |
 storage: { driver: 's3', s3: { bucket: 'my-bucket', region: 'us-east-1' } }
 ```
 
+### Alerts
+
+Multi-channel alert notifications: Console, Webhook, Slack, Discord, PagerDuty. `AlertService` evaluates `AlertRule` conditions and dispatches `AlertPayload` to configured channels. Pluggable `AlertChannel` interface for custom integrations.
+
+```ts
+alerts: {
+  channels: [{ type: 'slack', webhookUrl: process.env.SLACK_WEBHOOK! }],
+  rules: [{ metric: 'error_rate', threshold: 0.05, channels: ['slack'] }],
+}
+```
+
+### Deploy
+
+Deploy lifecycle hooks: `@OnDeploy('pre-start')` registers phase-aware hooks. Built-in hooks: `EnvValidationHook` (validates required env vars), `DependencyCheckHook` (verifies external service connectivity), `ReadinessGateHook` (blocks traffic until ready). `DeployService` orchestrates hooks in `DEPLOY_PHASE_ORDER`.
+
+```ts
+deploy: { hooks: [EnvValidationHook, DependencyCheckHook, ReadinessGateHook] }
+```
+
 ### Config
 
 Joi validation, `.env` + `.env.{BOOT_ENV}` profiles, `BootConfigService` with typed dot-notation access. Async loading via `BootConfigModule.registerAsync()`. Secret adapters: `AwsSecretsAdapter`, `VaultAdapter`, `EnvFileAdapter`. `mergeConfigs()` for multi-source composition. `ConfigWatcher` for dev hot-reload. `generateConfigDocs()` outputs config schema docs.
@@ -540,13 +559,13 @@ Every top-level section is optional. Omitted sections = that module is not loade
 
 Detailed documentation for specific topics:
 
-- [Circular Dependency Prevention](docs/guides/circular-dependency-prevention.md) -- patterns to avoid circular imports
-- [DI Best Practices](docs/guides/di-best-practices.md) -- contract-based DI, layer enforcement, graph analysis
-- [Testing Guide](docs/guides/testing-guide.md) -- factories, suites, snapshots, gRPC testing, message dispatching
-- [Transport Selection](docs/guides/transport-selection.md) -- when to use gRPC vs TCP vs NATS vs RabbitMQ
-- [Auth & Rate Limiting](docs/guides/auth-rate-limiting.md) -- JWT lifecycle, API key rotation, guard composition
-- [Production Checklist](docs/guides/production-checklist.md) -- health checks, shutdown, metrics, tracing, security
-- [Serverless Considerations](docs/guides/serverless-considerations.md) -- cold start, connection pooling, stateless auth
+- [Circular Dependency Prevention](docs/guides/en/circular-dependency-prevention.md) -- patterns to avoid circular imports
+- [DI Best Practices](docs/guides/en/di-best-practices.md) -- contract-based DI, layer enforcement, graph analysis
+- [Testing Guide](docs/guides/en/testing-guide.md) -- factories, suites, snapshots, gRPC testing, message dispatching
+- [Transport Selection](docs/guides/en/transport-selection.md) -- when to use gRPC vs TCP vs NATS vs RabbitMQ
+- [Auth & Rate Limiting](docs/guides/en/auth-rate-limiting.md) -- JWT lifecycle, API key rotation, guard composition
+- [Production Checklist](docs/guides/en/production-checklist.md) -- health checks, shutdown, metrics, tracing, security
+- [Serverless Considerations](docs/guides/en/serverless-considerations.md) -- cold start, connection pooling, stateless auth
 
 ## Examples
 

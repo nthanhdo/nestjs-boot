@@ -11,6 +11,11 @@
       "require": "./dist/index.js",
       "import": "./dist/index.mjs"
     },
+    "./alerts": {
+      "types": "./dist/alerts/index.d.ts",
+      "require": "./dist/alerts/index.js",
+      "import": "./dist/alerts/index.mjs"
+    },
     "./auth": {
       "types": "./dist/auth/index.d.ts",
       "require": "./dist/auth/index.js",
@@ -50,6 +55,11 @@
       "types": "./dist/database/index.d.ts",
       "require": "./dist/database/index.js",
       "import": "./dist/database/index.mjs"
+    },
+    "./deploy": {
+      "types": "./dist/deploy/index.d.ts",
+      "require": "./dist/deploy/index.js",
+      "import": "./dist/deploy/index.mjs"
     },
     "./events": {
       "types": "./dist/events/index.d.ts",

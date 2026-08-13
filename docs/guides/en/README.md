@@ -77,6 +77,17 @@
 | [Production Checklist](production-checklist.md) | Pre-deploy checklist: security, database, cache, health, observability |
 | [Serverless Considerations](serverless-considerations.md) | Cold start analysis, when to use (and not use) nestjs-boot on Lambda |
 
+## Infrastructure & Deployment
+
+| Guide | Description |
+|-------|-------------|
+| [Alerts](alerts.md) | Multi-channel alert notifications (Slack, Discord, PagerDuty, Webhook) |
+| [Container Deployment](container-deployment.md) | Docker, docker-compose.prod, CI docker build & push |
+| [Deploy Hooks](deploy-hooks.md) | Lifecycle hooks for deploy phases (env validation, dependency checks, readiness gates) |
+| [Deployment Strategies](deployment-strategies.md) | Blue-green, canary, rolling deployments |
+| [Infrastructure as Code](infrastructure-as-code.md) | Terraform templates for cloud infrastructure |
+| [Load Balancing](load-balancing.md) | Nginx load balancing configuration |
+
 ## Reading Order for New Developers
 
 1. **[Getting Started](getting-started.md)** — understand what nestjs-boot is and get a working app

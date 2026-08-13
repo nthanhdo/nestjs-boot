@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Alerts module** — multi-channel alert notifications (Console, Webhook, Slack, Discord, PagerDuty) with rule-based evaluation
+- **Deploy hooks module** — lifecycle hooks for deploy phases (`@OnDeploy`), built-in `EnvValidationHook`, `DependencyCheckHook`, `ReadinessGateHook`
+- **Circuit breaker observability** — `CircuitBreakerObservability` + `CircuitBreakerStateChangeEvent` for monitoring state transitions
+- **Terraform templates** — infrastructure-as-code guide for cloud provisioning
+- **Nginx load balancing** — load balancing configuration guide
+- **Container deployment** — Docker production setup with `docker-compose.prod` and CI docker build+push guide
+- **541 tests** across all modules (up from 506)
+
 ## [0.1.0] — 2026-08-13
 
 ### Added

@@ -1,5 +1,7 @@
 # Event Bus
 
+> **TL;DR** — Typed publish/subscribe with `emit` (fire-and-forget) and `emitAsync` (wait for all handlers). Use `emitAndWait` with `BootQuery` for request/reply -- the primary pattern for breaking circular dependencies between modules.
+
 nestjs-boot provides an in-process (or Redis-distributed) event bus for typed publish/subscribe and request/reply patterns. Unlike the [CQRS DomainEvent system](cqrs-event-sourcing.md) (which is for event sourcing and persistence), the EventBus is for real-time in-process communication and breaking circular dependencies between modules.
 
 ## Setup

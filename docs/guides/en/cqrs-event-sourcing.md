@@ -1,5 +1,7 @@
 # CQRS and Event Sourcing
 
+> **TL;DR** — Full CQRS + event sourcing: `CommandBus` for command routing, `AggregateRoot` for event-sourced aggregates, pluggable `EventStore` (MongoDB or memory), `SnapshotStore` for long-lived aggregates, `OutboxProcessor` for guaranteed delivery, and `EventReplayService` for rebuilding read models. This is an **advanced** module -- start with the [Event Bus](events.md) for simple pub/sub.
+
 nestjs-boot includes a complete CQRS and event sourcing module: a CommandBus for command routing, AggregateRoot for event-sourced aggregates, pluggable EventStore and SnapshotStore backends, an OutboxProcessor for guaranteed delivery, and an EventReplayService for rebuilding read models.
 
 ## Setup

@@ -1,5 +1,7 @@
 # Resilience
 
+> **TL;DR** — Three decorator-based resilience patterns: `@CircuitBreakerDecorator` (prevent cascading failures), `@Retry` (exponential/fixed backoff), and `@Timeout` (per-route request limits). Stack them on a single method for layered fault tolerance.
+
 nestjs-boot provides three resilience patterns as decorators: circuit breaker, retry with backoff, and timeout. They can be combined on the same method for layered fault tolerance.
 
 ## Circuit Breaker

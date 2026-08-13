@@ -232,6 +232,8 @@ export {
   Retry,
   Timeout,
   TimeoutInterceptor,
+  CircuitBreakerObservability,
+  CircuitBreakerStateChangeEvent,
   CIRCUIT_BREAKER_OPTIONS,
   TIMEOUT_KEY,
   RESILIENCE_OPTIONS,
@@ -447,3 +449,41 @@ export { StorageModule, StorageService, FileValidationPipe, InjectStorage } from
 export { LocalAdapter, S3Adapter, GCSAdapter } from './storage';
 export { STORAGE_SERVICE, STORAGE_OPTIONS, STORAGE_ADAPTER } from './storage';
 export type { StorageAdapter, StorageModuleOptions, StorageResult, UploadedFile } from './storage';
+
+// --- Deploy Lifecycle (PP22) ---
+export {
+  DeployHooksModule,
+  DeployService,
+  OnDeploy,
+  DEPLOY_OPTIONS,
+  DEPLOY_PHASE_ORDER,
+  EnvValidationHook,
+  DependencyCheckHook,
+  ReadinessGateHook,
+} from './deploy';
+export type {
+  DeployHook,
+  DeployPhase,
+  DeployContext,
+  DeployOptions,
+  DeployHookMetadata,
+} from './deploy';
+
+// --- Alert Notifications ---
+export {
+  AlertModule,
+  AlertService,
+  ConsoleChannel,
+  WebhookChannel,
+  SlackChannel,
+  DiscordChannel,
+  PagerDutyChannel,
+  ALERT_OPTIONS,
+} from './alerts';
+export type {
+  AlertChannel,
+  AlertPayload,
+  AlertRule,
+  AlertOptions,
+  AlertChannelConfig,
+} from './alerts';

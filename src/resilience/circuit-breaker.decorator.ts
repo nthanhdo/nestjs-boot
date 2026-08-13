@@ -1,5 +1,6 @@
 import { CircuitBreaker } from './circuit-breaker';
 import type { CircuitBreakerOptions } from './interfaces';
+import type { CircuitBreakerObservability } from './circuit-breaker-observability';
 
 /**
  * Method decorator that wraps an async method with a circuit breaker.
@@ -7,8 +8,9 @@ import type { CircuitBreakerOptions } from './interfaces';
  */
 export function CircuitBreakerDecorator(
   options?: CircuitBreakerOptions,
+  observability?: CircuitBreakerObservability,
 ): MethodDecorator {
-  const breaker = new CircuitBreaker(options);
+  const breaker = new CircuitBreaker(options, observability);
 
   return (
     _target: object,

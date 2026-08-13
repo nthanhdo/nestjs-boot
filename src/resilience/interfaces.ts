@@ -1,4 +1,6 @@
 export interface CircuitBreakerOptions {
+  /** Name for this circuit breaker (used in metrics labels, default: 'default') */
+  name?: string;
   /** Number of failures before opening the circuit (default: 5) */
   failureThreshold?: number;
   /** Time in ms before transitioning from OPEN to HALF_OPEN (default: 30000) */

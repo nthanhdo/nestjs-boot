@@ -5,6 +5,7 @@ import {
   DEFAULT_RESET_TIMEOUT,
   DEFAULT_HALF_OPEN_MAX,
 } from './constants';
+import type { CircuitBreakerObservability } from './circuit-breaker-observability';
 
 export class CircuitBreakerOpenError extends Error {
   constructor(message = 'Circuit breaker is OPEN') {
@@ -23,11 +24,18 @@ export class CircuitBreaker {
   private readonly failureThreshold: number;
   private readonly resetTimeout: number;
   private readonly halfOpenMax: number;
+  private readonly name: string;
+  private readonly observability?: CircuitBreakerObservability;
 
-  constructor(options: CircuitBreakerOptions = {}) {
+  constructor(options: CircuitBreakerOptions = {}, observability?: CircuitBreakerObservability) {
     this.failureThreshold = options.failureThreshold ?? DEFAULT_FAILURE_THRESHOLD;
     this.resetTimeout = options.resetTimeout ?? DEFAULT_RESET_TIMEOUT;
     this.halfOpenMax = options.halfOpenMax ?? DEFAULT_HALF_OPEN_MAX;
+    this.name = options.name ?? 'default';
+    this.observability = observability;
+
+    // Set initial state metric
+    this.observability?.onStateChange(this.name, 'CLOSED', 'CLOSED', 0);
   }
 
   getState(): CircuitBreakerState {
@@ -78,6 +86,7 @@ export class CircuitBreaker {
 
   private onFailure(): void {
     this.failureCount++;
+    this.observability?.onFailure(this.name);
     if (this.state === 'HALF_OPEN') {
       this.transitionTo('OPEN');
       return;
@@ -89,10 +98,12 @@ export class CircuitBreaker {
 
   private transitionTo(newState: CircuitBreakerState): void {
     if (this.state === newState) return;
-    this.logger.log(`Circuit breaker: ${this.state} → ${newState}`);
+    const previousState = this.state;
+    this.logger.log(`Circuit breaker: ${previousState} → ${newState}`);
     this.state = newState;
     if (newState === 'OPEN') {
       this.nextAttemptTime = Date.now() + this.resetTimeout;
     }
+    this.observability?.onStateChange(this.name, previousState, newState, this.failureCount);
   }
 }

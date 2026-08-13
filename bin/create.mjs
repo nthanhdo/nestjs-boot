@@ -241,6 +241,8 @@ function createProject(config) {
     { tpl: 'k8s/hpa.yaml',                     out: 'k8s/hpa.yaml' },
     { tpl: 'k8s/ingress.yaml',                 out: 'k8s/ingress.yaml' },
     { tpl: 'docker-compose.override.yml.tpl',  out: 'docker-compose.override.yml' },
+    { tpl: 'docker-compose.prod.yml.tpl',     out: 'docker-compose.prod.yml' },
+    { tpl: 'nginx.conf.tpl',                  out: 'nginx.conf' },
   ];
 
   // Add proto file if gRPC
@@ -291,12 +293,29 @@ function createProject(config) {
     }
   }
 
+  // Copy deploy scripts
+  const SCRIPTS_DIR = join(__dirname, '..', 'scripts');
+  const deployScripts = ['deploy.sh', 'build-push.sh'];
+  for (const script of deployScripts) {
+    const src = join(SCRIPTS_DIR, script);
+    if (existsSync(src)) {
+      const dest = join(projectDir, 'scripts', script);
+      mkdirSync(dirname(dest), { recursive: true });
+      copyFileSync(src, dest);
+      try { execSync(`chmod +x "${dest}"`); } catch { /* Windows */ }
+    }
+  }
+
   const createdFiles = [];
   for (const { tpl, out } of files) {
     const template = loadTemplate(tpl);
     const rendered = renderTemplate(template, vars);
     writeFile(join(projectDir, out), rendered);
     createdFiles.push(out);
+  }
+
+  for (const script of deployScripts) {
+    createdFiles.push(`scripts/${script}`);
   }
 
   // Copy .env.example → .env

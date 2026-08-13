@@ -165,11 +165,54 @@ export async function runSuites(suites: TestSuite[], options: RunOptions = {}): 
     const label = `${suite.endpoint.method} ${suite.endpoint.path}`;
     console.log(c.bold(`  ${label} (${cases.length} cases)`));
 
+    // Flow variable context — shared across flow steps
+    const flowVars: Record<string, string> = {};
+
     for (const tc of cases) {
       if (failed && options.bail) break;
 
+      // Flow: substitute variables in URL/body/headers before execution
+      const flowTc = tc as FlowTestCase;
+      if (flowTc.flowName !== undefined && Object.keys(flowVars).length > 0) {
+        tc.request.url = substituteVariables(tc.request.url, flowVars);
+        if (tc.request.body && typeof tc.request.body === 'string') {
+          tc.request.body = substituteVariables(tc.request.body, flowVars);
+        } else if (tc.request.body && typeof tc.request.body === 'object') {
+          tc.request.body = JSON.parse(substituteVariables(JSON.stringify(tc.request.body), flowVars));
+        }
+        for (const [k, v] of Object.entries(tc.request.headers)) {
+          tc.request.headers[k] = substituteVariables(v, flowVars);
+        }
+      }
+
+      // Rate limit: burst N requests, check last one
+      const rlTc = tc as RateLimitTestCase;
+      if (rlTc.burstCount > 1 && rlTc.sequential) {
+        let lastResult: TestResult | undefined;
+        for (let i = 0; i < rlTc.burstCount; i++) {
+          lastResult = await runTestCase(tc);
+          if (lastResult.actual.status === 429) break;
+        }
+        if (lastResult) {
+          results.push(lastResult);
+          const icon = lastResult.passed ? c.green('PASS') : c.red('FAIL');
+          const detail = lastResult.passed ? '' : ` — ${c.dim(lastResult.reason || '')}`;
+          console.log(`    ${icon} ${tc.name}${detail}`);
+          if (!lastResult.passed) failed = true;
+        }
+        continue;
+      }
+
       const result = await runTestCase(tc);
       results.push(result);
+
+      // Flow: extract variables from response
+      if (flowTc.extractVariables && result.passed && result.actual.body) {
+        for (const [varName, jsonPath] of Object.entries(flowTc.extractVariables)) {
+          const val = extractJsonPath(result.actual.body, jsonPath);
+          if (val !== undefined) flowVars[varName] = String(val);
+        }
+      }
 
       const icon = result.passed ? c.green('PASS') : c.red('FAIL');
       const detail = result.passed ? '' : ` — ${c.dim(result.reason || '')}`;
@@ -237,6 +280,19 @@ function validateSchema(body: unknown, schema: ContractSchema, path = '$'): stri
   }
 
   return errors;
+}
+
+/**
+ * Extract a value from an object using a dot-separated path like "body.data.id".
+ */
+function extractJsonPath(obj: unknown, path: string): unknown {
+  const parts = path.replace(/^body\./, '').split('.');
+  let current: any = obj;
+  for (const part of parts) {
+    if (current === null || current === undefined) return undefined;
+    current = current[part];
+  }
+  return current;
 }
 
 export function loadSuites(dir: string): TestSuite[] {

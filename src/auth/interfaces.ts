@@ -3,6 +3,8 @@ export interface JwtAuthOptions {
   signOptions?: { expiresIn?: string | number; algorithm?: string };
   refreshSecret?: string;
   refreshExpiresIn?: string | number;
+  /** Separate secret for password-reset / email-verification tokens. Defaults to main secret. */
+  resetSecret?: string;
   /** Optional token revocation check. Called after JWT verify succeeds. */
   isRevoked?: (payload: any) => Promise<boolean>;
 }

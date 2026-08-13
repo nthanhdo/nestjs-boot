@@ -69,13 +69,15 @@ export const bootOptionsSchema = Joi.object({
   logger: Joi.any().optional(),
   auth: Joi.object({
     jwt: Joi.object({
-      secret: Joi.string().min(8).required(),
+      // 32 chars = 256 bits, the minimum key length for HMAC-SHA256 (RFC 2104 / NIST SP 800-117)
+      secret: Joi.string().min(32).required().label('jwt.secret (min 32 chars for HMAC-SHA256)'),
       signOptions: Joi.object({
         expiresIn: Joi.alternatives().try(Joi.string(), Joi.number()).optional(),
         algorithm: Joi.string().optional(),
       }).optional(),
       refreshSecret: Joi.string().optional(),
       refreshExpiresIn: Joi.alternatives().try(Joi.string(), Joi.number()).optional(),
+      resetSecret: Joi.string().optional(),
     }).optional(),
     apiKey: Joi.object({
       enabled: Joi.boolean().required(),

@@ -1,9 +1,24 @@
 import { CanActivate, ExecutionContext, Injectable, Inject, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import * as jwt from 'jsonwebtoken';
+import type { Algorithm } from 'jsonwebtoken';
 import { AUTH_OPTIONS } from '../constants';
 import { IS_PUBLIC_KEY } from '../constants';
 import { AuthOptions } from '../interfaces';
+
+// Lazy-load jsonwebtoken to avoid hard dependency at import time
+let _jwt: typeof import('jsonwebtoken') | undefined;
+function getJwt(): typeof import('jsonwebtoken') {
+  if (!_jwt) {
+    try {
+      _jwt = require('jsonwebtoken');
+    } catch {
+      throw new Error(
+        'jsonwebtoken is required by JwtAuthGuard. Install it: npm i jsonwebtoken',
+      );
+    }
+  }
+  return _jwt!;
+}
 
 /**
  * JwtAuthGuard — verifies Bearer token from Authorization header.
@@ -34,8 +49,8 @@ export class JwtAuthGuard implements CanActivate {
     const token = authHeader.slice(7);
     try {
       const algorithm = this.authOptions.jwt!.signOptions?.algorithm ?? 'HS256';
-      const decoded = jwt.verify(token, this.authOptions.jwt!.secret, {
-        algorithms: [algorithm as jwt.Algorithm],
+      const decoded = getJwt().verify(token, this.authOptions.jwt!.secret, {
+        algorithms: [algorithm as Algorithm],
       });
 
       // Check token revocation if configured

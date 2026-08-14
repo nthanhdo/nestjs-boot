@@ -34,20 +34,7 @@ export { EnvFileAdapter } from './config';
 export { AwsSecretsAdapter } from './config';
 export { VaultAdapter } from './config';
 
-// --- Database ---
-export {
-  DatabaseModule,
-  BaseRepository,
-  CachedBaseRepository,
-  InjectConnection,
-  createConnectionModules,
-  DATABASE_CONNECTION_PREFIX,
-  getWriterToken,
-  getReaderToken,
-  getWriterConnectionName,
-  getReaderConnectionName,
-} from './database';
-export type { PaginatedResult, FindAllOptions, ModelDefinition } from './database';
+// --- Database --- (use subpath import: nestjs-boot/database)
 
 // --- Common ---
 export {
@@ -64,13 +51,7 @@ export {
 } from './common';
 export type { ResponseEnvelope, ErrorResponse, BootExceptionOptions, CrudPaginatedResult, CrudFindAllOptions } from './common';
 
-// --- Health ---
-export {
-  HealthModule,
-  HealthController,
-  DatabaseHealthIndicator,
-  RedisHealthIndicator,
-} from './health';
+// --- Health --- (use subpath import: nestjs-boot/health)
 
 // --- Auth ---
 export {
@@ -343,40 +324,7 @@ export {
 } from './events';
 export type { EventBusOptions, OnEventOptions } from './events';
 
-// --- Testing ---
-export {
-  createMockGrpcService,
-  ContractVerifier,
-  createTestApp,
-  createTestSuite,
-  seedDatabase,
-  cleanDatabase,
-  createFactory,
-  createTestClient,
-  createGrpcTestClient,
-  createMessageDispatcher,
-  createTestJwt,
-  createTestApiKey,
-  createAuthenticatedRequest,
-  MockAuthModule,
-  TEST_SECRET,
-  expectSnapshot,
-  stripVolatileFields,
-} from './testing';
-export type {
-  ResponseFactory,
-  ServiceDefinition,
-  SchemaLike,
-  ContractMethod,
-  ContractDefinition,
-  VerificationResult,
-  TestAppContext,
-  CreateTestAppOptions,
-  TestFactory,
-  TestClient,
-  TestResponse,
-  CreateTestJwtOptions,
-} from './testing';
+// --- Testing --- (use subpath import: nestjs-boot/testing)
 
 // --- Versioning (PP13) ---
 export { VersioningModule } from './versioning';
@@ -404,9 +352,7 @@ export {
 export { TENANCY_OPTIONS, TENANT_REQUIRED_KEY, TENANT_SCOPED_KEY } from './tenancy';
 
 
-// --- Migration System (PP15) ---
-export { MigrationModule, MigrationRunner } from './database';
-export type { Migration, MigrationResult, MigrationStatus, MigrationModuleOptions } from './database';
+// --- Migration System (PP15) --- (use subpath import: nestjs-boot/database)
 
 // --- Swagger/OpenAPI (PP16) ---
 export { SwaggerModule, setupSwagger, SWAGGER_OPTIONS } from './swagger';

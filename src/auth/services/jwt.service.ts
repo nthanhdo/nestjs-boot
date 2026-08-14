@@ -1,7 +1,22 @@
 import { Injectable, Inject } from '@nestjs/common';
-import * as jwt from 'jsonwebtoken';
+import type * as jwtTypes from 'jsonwebtoken';
 import { AUTH_OPTIONS } from '../constants';
 import { AuthOptions } from '../interfaces';
+
+// Lazy-load jsonwebtoken to avoid hard dependency at import time
+let _jwt: typeof import('jsonwebtoken') | undefined;
+function getJwt(): typeof import('jsonwebtoken') {
+  if (!_jwt) {
+    try {
+      _jwt = require('jsonwebtoken');
+    } catch {
+      throw new Error(
+        'jsonwebtoken is required by BootJwtService. Install it: npm i jsonwebtoken',
+      );
+    }
+  }
+  return _jwt!;
+}
 
 /**
  * BootJwtService — pure JWT utility. No user model, no sessions, no database.
@@ -10,10 +25,10 @@ import { AuthOptions } from '../interfaces';
 @Injectable()
 export class BootJwtService {
   private readonly secret: string;
-  private readonly signOpts: jwt.SignOptions;
-  private readonly algorithm: jwt.Algorithm;
+  private readonly signOpts: jwtTypes.SignOptions;
+  private readonly algorithm: jwtTypes.Algorithm;
   private readonly refreshSecret: string;
-  private readonly refreshSignOpts: jwt.SignOptions;
+  private readonly refreshSignOpts: jwtTypes.SignOptions;
   /** Separate secret for password-reset and email-verification tokens. */
   private readonly resetSecret: string;
 
@@ -22,39 +37,39 @@ export class BootJwtService {
     this.secret = jwtOpts.secret;
     this.signOpts = {};
     if (jwtOpts.signOptions?.expiresIn) {
-      this.signOpts.expiresIn = jwtOpts.signOptions.expiresIn as jwt.SignOptions['expiresIn'];
+      this.signOpts.expiresIn = jwtOpts.signOptions.expiresIn as jwtTypes.SignOptions['expiresIn'];
     }
-    this.algorithm = (jwtOpts.signOptions?.algorithm as jwt.Algorithm) ?? 'HS256';
+    this.algorithm = (jwtOpts.signOptions?.algorithm as jwtTypes.Algorithm) ?? 'HS256';
     if (jwtOpts.signOptions?.algorithm) {
-      this.signOpts.algorithm = jwtOpts.signOptions.algorithm as jwt.Algorithm;
+      this.signOpts.algorithm = jwtOpts.signOptions.algorithm as jwtTypes.Algorithm;
     }
 
     this.refreshSecret = jwtOpts.refreshSecret ?? jwtOpts.secret;
     this.resetSecret = jwtOpts.resetSecret ?? jwtOpts.secret;
     this.refreshSignOpts = {};
     if (jwtOpts.refreshExpiresIn) {
-      this.refreshSignOpts.expiresIn = jwtOpts.refreshExpiresIn as jwt.SignOptions['expiresIn'];
+      this.refreshSignOpts.expiresIn = jwtOpts.refreshExpiresIn as jwtTypes.SignOptions['expiresIn'];
     }
   }
 
   /** Sign an access token with arbitrary payload. */
   sign(payload: Record<string, any>): string {
-    return jwt.sign(payload, this.secret, this.signOpts);
+    return getJwt().sign(payload, this.secret, this.signOpts);
   }
 
   /** Verify and decode an access token. Throws on invalid/expired. */
   verify<T = Record<string, any>>(token: string): T {
-    return jwt.verify(token, this.secret, { algorithms: [this.algorithm] }) as T;
+    return getJwt().verify(token, this.secret, { algorithms: [this.algorithm] }) as T;
   }
 
   /** Sign a refresh token (uses refreshSecret if configured, else main secret). */
   signRefresh(payload: Record<string, any>): string {
-    return jwt.sign(payload, this.refreshSecret, this.refreshSignOpts);
+    return getJwt().sign(payload, this.refreshSecret, this.refreshSignOpts);
   }
 
   /** Verify a refresh token. Throws on invalid/expired. */
   verifyRefresh<T = Record<string, any>>(token: string): T {
-    return jwt.verify(token, this.refreshSecret, { algorithms: [this.algorithm] }) as T;
+    return getJwt().verify(token, this.refreshSecret, { algorithms: [this.algorithm] }) as T;
   }
 
   /**
@@ -78,8 +93,9 @@ export class BootJwtService {
    * Uses resetSecret (isolated from access/refresh tokens).
    */
   signPasswordReset(userId: string, options?: { expiresIn?: string }): string {
-    const signOpts: jwt.SignOptions = {
-      expiresIn: (options?.expiresIn ?? '15m') as jwt.SignOptions['expiresIn'],
+    const jwt = getJwt();
+    const signOpts: jwtTypes.SignOptions = {
+      expiresIn: (options?.expiresIn ?? '15m') as jwtTypes.SignOptions['expiresIn'],
     };
     return jwt.sign(
       { sub: userId, purpose: 'password-reset' },
@@ -93,7 +109,7 @@ export class BootJwtService {
    * Throws if invalid, expired, or wrong purpose.
    */
   verifyPasswordReset(token: string): { sub: string; purpose: string } {
-    const decoded = jwt.verify(token, this.resetSecret, { algorithms: [this.algorithm] }) as Record<string, any>;
+    const decoded = getJwt().verify(token, this.resetSecret, { algorithms: [this.algorithm] }) as Record<string, any>;
     if (decoded.purpose !== 'password-reset') {
       throw new Error('Invalid token purpose: expected password-reset');
     }
@@ -105,8 +121,9 @@ export class BootJwtService {
    * Default expiry: 24h. Uses resetSecret (isolated from access/refresh tokens).
    */
   signEmailVerification(email: string, options?: { expiresIn?: string }): string {
-    const signOpts: jwt.SignOptions = {
-      expiresIn: (options?.expiresIn ?? '24h') as jwt.SignOptions['expiresIn'],
+    const jwt = getJwt();
+    const signOpts: jwtTypes.SignOptions = {
+      expiresIn: (options?.expiresIn ?? '24h') as jwtTypes.SignOptions['expiresIn'],
     };
     return jwt.sign(
       { email, purpose: 'email-verification' },
@@ -120,7 +137,7 @@ export class BootJwtService {
    * Returns the email. Throws if invalid, expired, or wrong purpose.
    */
   verifyEmailVerification(token: string): { email: string; purpose: string } {
-    const decoded = jwt.verify(token, this.resetSecret, { algorithms: [this.algorithm] }) as Record<string, any>;
+    const decoded = getJwt().verify(token, this.resetSecret, { algorithms: [this.algorithm] }) as Record<string, any>;
     if (decoded.purpose !== 'email-verification') {
       throw new Error('Invalid token purpose: expected email-verification');
     }

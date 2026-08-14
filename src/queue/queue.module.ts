@@ -128,7 +128,7 @@ export class QueueModule implements OnModuleInit {
         // Wrap processor to filter by job name if specified
         const rawHandler = processHandler;
         const processor = processJobName
-          ? async (job: unknown) => {
+          ? async (job: unknown): Promise<unknown> => {
               const jobObj = job as { name?: string };
               if (jobObj.name === processJobName) {
                 return rawHandler(job);

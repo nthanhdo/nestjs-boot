@@ -1,4 +1,4 @@
-import { join, resolve } from 'path';
+import { resolve } from 'path';
 import { StorageAdapter, UploadedFile, StorageResult } from '../storage.interface';
 import { generateStorageKey } from '../storage.utils';
 

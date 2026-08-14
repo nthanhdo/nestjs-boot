@@ -3,43 +3,87 @@ import { NestFactory } from '@nestjs/core';
 import { INestApplication } from '@nestjs/common';
 import { BootConfigModule } from './config/config.module';
 import { validateBootOptions } from './config/validators';
-import { DatabaseModule } from './database/database.module';
-import { CacheModule } from './cache/cache.module';
-import { HealthModule } from './health/health.module';
-import { AuthModule } from './auth/auth.module';
-import { CorrelationModule } from './correlation/correlation.module';
-import { ShutdownModule } from './shutdown/shutdown.module';
-import { TransportModule } from './transport/transport.module';
-import { InterServiceAuthModule } from './inter-service-auth/inter-service-auth.module';
-import { RpcModule } from './rpc/rpc.module';
-import { connectTransports } from './transport/transport.factory';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { BootOptions } from './interfaces/boot-options.interface';
-import { MetricsModule } from './metrics/metrics.module';
-import { LoggingModule } from './logging/logging.module';
-import { TracingModule } from './tracing/tracing.module';
-import { initTracing } from './tracing/init-tracing';
-import { QueueModule } from './queue/queue.module';
-import { EventBusModule } from './events/event-bus.module';
-import { TimeoutInterceptor } from './resilience/timeout.interceptor';
-import { HttpMetricsInterceptor } from './metrics/http-metrics.interceptor';
-import { LoggingInterceptor } from './logging/logging.interceptor';
-import { BootLogger } from './logging/boot-logger';
-import { BootRpcExceptionFilter } from './rpc/rpc-exception.filter';
 import { parseDiError, formatDiError } from './di/di-error-handler';
 import { scanForCircularDepWarnings } from './di/circular-dep-scanner';
 import { validateLayers } from './layers/layer-enforcer';
-import { VersioningModule } from './versioning/versioning.module';
-import { TenancyModule } from './tenancy/tenancy.module';
-import { setupSwagger } from './swagger/swagger.setup';
-import { WebSocketModule } from './websocket/websocket.module';
-import { CqrsModule } from './cqrs/cqrs.module';
-import { DeployHooksModule } from './deploy/deploy.module';
-import { DeployService } from './deploy/deploy.service';
-import { DeployContext } from './deploy/interfaces';
-import { EnvValidationHook } from './deploy/hooks/env-validation.hook';
-import { ReadinessGateHook } from './deploy/hooks/readiness-gate.hook';
+
+// --- Lazy loaders for optional heavy modules ---
+// These are loaded on-demand so consumers don't need peer deps they don't use.
+
+function lazyDatabase() {
+  return require('./database/database.module').DatabaseModule;
+}
+function lazyCache() {
+  return require('./cache/cache.module').CacheModule;
+}
+function lazyHealth() {
+  return require('./health/health.module').HealthModule;
+}
+function lazyAuth() {
+  return require('./auth/auth.module').AuthModule;
+}
+function lazyCorrelation() {
+  return require('./correlation/correlation.module').CorrelationModule;
+}
+function lazyShutdown() {
+  return require('./shutdown/shutdown.module').ShutdownModule;
+}
+function lazyTransport() {
+  return require('./transport/transport.module').TransportModule;
+}
+function lazyInterServiceAuth() {
+  return require('./inter-service-auth/inter-service-auth.module').InterServiceAuthModule;
+}
+function lazyRpc() {
+  return require('./rpc/rpc.module').RpcModule;
+}
+function lazyConnectTransports() {
+  return require('./transport/transport.factory').connectTransports;
+}
+function lazyMetrics() {
+  return require('./metrics/metrics.module').MetricsModule;
+}
+function lazyLogging() {
+  return require('./logging/logging.module').LoggingModule;
+}
+function lazyTracing() {
+  return require('./tracing/tracing.module').TracingModule;
+}
+function lazyInitTracing() {
+  return require('./tracing/init-tracing').initTracing;
+}
+function lazyQueue() {
+  return require('./queue/queue.module').QueueModule;
+}
+function lazyEventBus() {
+  return require('./events/event-bus.module').EventBusModule;
+}
+function lazyCqrs() {
+  return require('./cqrs/cqrs.module').CqrsModule;
+}
+function lazyVersioning() {
+  return require('./versioning/versioning.module').VersioningModule;
+}
+function lazyTenancy() {
+  return require('./tenancy/tenancy.module').TenancyModule;
+}
+function lazyWebSocket() {
+  return require('./websocket/websocket.module').WebSocketModule;
+}
+function lazyDeploy() {
+  return {
+    DeployHooksModule: require('./deploy/deploy.module').DeployHooksModule,
+    DeployService: require('./deploy/deploy.service').DeployService,
+    EnvValidationHook: require('./deploy/hooks/env-validation.hook').EnvValidationHook,
+    ReadinessGateHook: require('./deploy/hooks/readiness-gate.hook').ReadinessGateHook,
+  };
+}
+function lazySwagger() {
+  return require('./swagger/swagger.setup').setupSwagger;
+}
 
 /**
  * Load .env files using dotenv.
@@ -100,60 +144,60 @@ function buildBootModule(
 
   // W0 modules
   if (validated.database) {
-    imports.push(DatabaseModule.register(validated.database));
+    imports.push(lazyDatabase().register(validated.database));
   }
   if (validated.cache) {
-    imports.push(CacheModule.register(validated.cache));
+    imports.push(lazyCache().register(validated.cache));
   }
   if (validated.health?.enabled !== false) {
-    imports.push(HealthModule.register(validated));
+    imports.push(lazyHealth().register(validated));
   }
   if (validated.auth) {
-    imports.push(AuthModule.register(validated.auth));
+    imports.push(lazyAuth().register(validated.auth));
   }
 
   // W1 modules
   if (validated.correlation || validated.transport) {
-    imports.push(CorrelationModule.register(validated.correlation));
+    imports.push(lazyCorrelation().register(validated.correlation));
   }
   if (validated.shutdown) {
-    imports.push(ShutdownModule.register(validated.shutdown));
+    imports.push(lazyShutdown().register(validated.shutdown));
   }
   if (validated.transport) {
-    imports.push(TransportModule.register(validated.transport));
-    imports.push(RpcModule.register());
+    imports.push(lazyTransport().register(validated.transport));
+    imports.push(lazyRpc().register());
   }
   if (validated.interServiceAuth) {
-    imports.push(InterServiceAuthModule.register(validated.interServiceAuth));
+    imports.push(lazyInterServiceAuth().register(validated.interServiceAuth));
   }
 
   // W2 modules
   if (validated.metrics) {
-    imports.push(MetricsModule.register(validated.metrics));
+    imports.push(lazyMetrics().register(validated.metrics));
   }
   if (validated.logging) {
-    imports.push(LoggingModule.register(validated.logging));
+    imports.push(lazyLogging().register(validated.logging));
   }
   if (validated.tracing) {
-    imports.push(TracingModule.register(validated.tracing));
+    imports.push(lazyTracing().register(validated.tracing));
   }
 
   // W3 modules
   if (validated.queue) {
-    imports.push(QueueModule.register(validated.queue));
+    imports.push(lazyQueue().register(validated.queue));
   }
   if (validated.events) {
-    imports.push(EventBusModule.register(validated.events));
+    imports.push(lazyEventBus().register(validated.events));
   }
 
   // PP21: CQRS + Event Sourcing
   if (validated.cqrs) {
-    imports.push(CqrsModule.register(validated.cqrs));
+    imports.push(lazyCqrs().register(validated.cqrs));
   }
 
   // PP22: Deploy Lifecycle Hooks
   if (validated.deploy?.enabled !== false) {
-    imports.push(DeployHooksModule.register(validated.deploy ?? {}));
+    imports.push(lazyDeploy().DeployHooksModule.register(validated.deploy ?? {}));
   }
 
   // Alert Notifications
@@ -164,17 +208,17 @@ function buildBootModule(
 
   // PP13: API Versioning
   if (validated.versioning) {
-    imports.push(VersioningModule.register(validated.versioning));
+    imports.push(lazyVersioning().register(validated.versioning));
   }
 
   // PP14: Multi-tenancy
   if (validated.tenancy) {
-    imports.push(TenancyModule.register(validated.tenancy));
+    imports.push(lazyTenancy().register(validated.tenancy));
   }
 
   // PP17: WebSocket Scaling
   if (validated.websocket) {
-    imports.push(WebSocketModule.register(validated.websocket));
+    imports.push(lazyWebSocket().register(validated.websocket));
   }
 
   // PP19: Payment Webhooks
@@ -205,11 +249,13 @@ function applyGlobals(app: INestApplication, validated: BootOptions): void {
   }
   if (validated.resilience?.timeout) {
     const { Reflector } = require('@nestjs/core');
+    const { TimeoutInterceptor } = require('./resilience/timeout.interceptor');
     const reflector = app.get(Reflector);
     app.useGlobalInterceptors(new TimeoutInterceptor(reflector, validated.resilience));
   }
   if (validated.metrics) {
     try {
+      const { HttpMetricsInterceptor } = require('./metrics/http-metrics.interceptor');
       const httpMetrics = app.get(HttpMetricsInterceptor);
       app.useGlobalInterceptors(httpMetrics);
     } catch {
@@ -218,6 +264,7 @@ function applyGlobals(app: INestApplication, validated: BootOptions): void {
   }
   if (validated.logging) {
     try {
+      const { LoggingInterceptor } = require('./logging/logging.interceptor');
       const loggingInterceptor = app.get(LoggingInterceptor);
       app.useGlobalInterceptors(loggingInterceptor);
     } catch {
@@ -228,6 +275,7 @@ function applyGlobals(app: INestApplication, validated: BootOptions): void {
   // Filters + monitoring hooks
   if (validated.monitoring?.errorReporter) {
     AllExceptionsFilter.errorReporter = validated.monitoring.errorReporter;
+    const { BootRpcExceptionFilter } = require('./rpc/rpc-exception.filter');
     BootRpcExceptionFilter.errorReporter = validated.monitoring.errorReporter;
   }
   if (validated.response?.errorHandler !== false) {
@@ -235,6 +283,7 @@ function applyGlobals(app: INestApplication, validated: BootOptions): void {
   }
   if (validated.transport) {
     try {
+      const { BootRpcExceptionFilter } = require('./rpc/rpc-exception.filter');
       const rpcFilter = app.get(BootRpcExceptionFilter);
       app.useGlobalFilters(rpcFilter);
     } catch {
@@ -255,14 +304,15 @@ export async function createApp(
 
   // 2. Init tracing FIRST — OTel SDK must patch before NestFactory imports modules
   if (validated.tracing) {
-    initTracing(validated.tracing);
+    lazyInitTracing()(validated.tracing);
   }
 
   // 2.5. Deploy preStart phase — runs before NestFactory.create
   if (validated.deploy?.enabled !== false && validated.deploy) {
     const { Logger: NestLogger } = require('@nestjs/common');
-    const preStartService = new DeployService();
-    const deployContext: DeployContext = {
+    const deploy = lazyDeploy();
+    const preStartService = new deploy.DeployService();
+    const deployContext: import('./deploy/interfaces').DeployContext = {
       phase: 'preStart',
       environment: process.env.NODE_ENV || 'development',
       version: process.env.APP_VERSION || '0.0.0',
@@ -273,7 +323,7 @@ export async function createApp(
 
     // Register built-in preStart hooks
     if (validated.deploy.requiredEnvVars?.length) {
-      preStartService.registerHook(new EnvValidationHook(validated.deploy.requiredEnvVars));
+      preStartService.registerHook(new deploy.EnvValidationHook(validated.deploy.requiredEnvVars));
     }
 
     // Register user-provided hooks for preStart
@@ -313,7 +363,7 @@ export async function createApp(
 
   // 5. Enable NestJS API versioning if configured
   if (validated.versioning) {
-    const { VersioningModule: VM } = require('./versioning/versioning.module');
+    const VM = lazyVersioning();
     const nestVersioningType = VM.getNestVersioningType(validated.versioning.type ?? 'uri');
     const versioningConfig: Record<string, unknown> = { type: nestVersioningType };
     if (validated.versioning.defaultVersion) {
@@ -335,6 +385,7 @@ export async function createApp(
 
   // 7. Set app logger
   if (validated.logging) {
+    const { BootLogger } = require('./logging/boot-logger');
     const logger = app.get(BootLogger);
     app.useLogger(logger);
   }
@@ -344,7 +395,7 @@ export async function createApp(
 
   // 9. Connect microservice transports
   if (validated.transport) {
-    await connectTransports(app, validated.transport);
+    await lazyConnectTransports()(app, validated.transport);
   }
 
   // 10. Enable shutdown hooks
@@ -372,15 +423,16 @@ export async function createApp(
 
   // 14. Swagger/OpenAPI
   if (validated.swagger !== undefined) {
-    setupSwagger(app, validated.swagger, !!validated.auth);
+    lazySwagger()(app, validated.swagger, !!validated.auth);
   }
 
   // 15. Deploy postStart + healthGate phases
   if (validated.deploy?.enabled !== false && validated.deploy) {
     try {
-      const deployService = app.get(DeployService);
+      const deploy = lazyDeploy();
+      const deployService = app.get(deploy.DeployService);
       const { Logger: NestLogger } = require('@nestjs/common');
-      const deployContext: DeployContext = {
+      const deployContext: import('./deploy/interfaces').DeployContext = {
         phase: 'postStart',
         environment: process.env.NODE_ENV || 'development',
         version: process.env.APP_VERSION || '0.0.0',
@@ -401,7 +453,7 @@ export async function createApp(
       // Register built-in readiness gate if configured
       if (validated.deploy.readinessDelay !== undefined) {
         deployService.registerHook(
-          new ReadinessGateHook({ delayMs: validated.deploy.readinessDelay }),
+          new deploy.ReadinessGateHook({ delayMs: validated.deploy.readinessDelay }),
         );
       }
 

@@ -19,7 +19,7 @@ Open an issue with the `enhancement` label. Describe the use case, not just the 
 ## Submitting Pull Requests
 
 1. **Fork** the repository and clone your fork.
-2. **Branch** from `master`:
+2. **Branch** from `main`:
    ```bash
    git checkout -b feat/your-feature-name
    ```
@@ -39,7 +39,7 @@ Open an issue with the `enhancement` label. Describe the use case, not just the 
    fix(auth): resolve JWT refresh race condition
    docs: update README example
    ```
-7. **Push** and open a PR against `master`.
+7. **Push** and open a PR against `main`.
 8. Fill in the PR template — describe what changed and why.
 
 ### PR Requirements
@@ -71,4 +71,4 @@ npm test:watch     # watch mode
 
 ## Questions?
 
-Open a [Discussion](https://github.com/nthanhdo/nestjs-boot/discussions) or tag `@nthanhdo` in an issue.
+Open an [issue](https://github.com/nthanhdo/nestjs-boot/issues) or tag `@nthanhdo` in an existing one.

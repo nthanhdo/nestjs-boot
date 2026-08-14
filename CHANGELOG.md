@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Container deployment** — Docker production setup with `docker-compose.prod` and CI docker build+push guide
 - **541 tests** across all modules (up from 506)
 
-## [0.1.0] — 2026-08-13
+## [0.1.0] — 2026-08-13 (unreleased, no Git tag)
 
 ### Added
 
@@ -59,5 +59,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Roadmap cleaned up, deps restructured for optional peer dependencies
 - Architecture Mermaid diagram: LR layout, color-coded, reduced clutter
 
-[Unreleased]: https://github.com/nthanhdo/nestjs-boot/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/nthanhdo/nestjs-boot/releases/tag/v0.1.0
+[Unreleased]: https://github.com/nthanhdo/nestjs-boot/compare/main...HEAD

@@ -4,7 +4,7 @@
 
 [![npm version](https://img.shields.io/npm/v/nestjs-boot.svg)](https://www.npmjs.com/package/nestjs-boot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-541%20passing-brightgreen.svg)](#)
+[![Tests](https://img.shields.io/badge/tests-541%20passing-brightgreen.svg)](https://github.com/nthanhdo/nestjs-boot/actions)
 [![Modules](https://img.shields.io/badge/modules-55%2B-blue.svg)](#modules)
 
 ## What is nestjs-boot?
@@ -22,10 +22,10 @@ npm install
 npm run start:dev
 ```
 
-The CLI prompts for database (MongoDB, PostgreSQL, MySQL, DynamoDB, Elasticsearch), cache (Redis, Memcached), auth (JWT), and transport (HTTP, gRPC, TCP, NATS, RabbitMQ). Or pass flags:
+The CLI prompts for database (MongoDB or None), cache (Redis, Memcached), auth (JWT), and transport (HTTP, gRPC, TCP, NATS, RabbitMQ). Or pass flags:
 
 ```bash
-npx nestjs-boot new my-service --db=postgres --cache=redis --auth=jwt --transport=grpc
+npx nestjs-boot new my-service --db=mongodb --cache=redis --auth=jwt --transport=grpc
 npx nestjs-boot new my-service -y  # defaults: MongoDB + Redis + JWT + HTTP
 ```
 
@@ -416,13 +416,13 @@ await suite.teardown();
 
 ### `npx nestjs-boot new <name>`
 
-Interactive project scaffolding. Supports 5 database types, cache, auth, and 5 transport options.
+Interactive project scaffolding. Supports MongoDB (or None) for database, cache, auth, and 5 transport options.
 
 ```bash
 npx nestjs-boot new my-service              # interactive prompts
 npx nestjs-boot new my-service --grpc       # with gRPC transport
 npx nestjs-boot new my-service -y           # all defaults
-npx nestjs-boot new my-service --db=postgres --cache=memcached --transport=nats
+npx nestjs-boot new my-service --db=mongodb --cache=memcached --transport=nats
 ```
 
 ### `npx nestjs-boot g resource <name>`

@@ -31,7 +31,7 @@ export class LocalAdapter implements StorageAdapter {
   async upload(file: UploadedFile): Promise<StorageResult> {
     const { mkdir, writeFile } = await import('fs/promises');
     const key = generateStorageKey(file.originalName, file.folder);
-    const dest = join(this.uploadDir, key);
+    const dest = this.safePath(key);
 
     // Ensure parent directory exists
     const { dirname } = await import('path');

@@ -56,7 +56,7 @@ export class GoogleStrategy {
 
   private init(): void {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+       
       const { Strategy } = require('passport-google-oauth20');
       this.strategy = new Strategy(
         {
@@ -110,7 +110,7 @@ export class GitHubStrategy {
 
   private init(): void {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+       
       const { Strategy } = require('passport-github2');
       this.strategy = new Strategy(
         {

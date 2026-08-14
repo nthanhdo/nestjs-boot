@@ -19,9 +19,9 @@ export function createRedisAdapterFactory(
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+     
     const { createAdapter } = require('@socket.io/redis-adapter');
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+     
     const Redis = require('ioredis');
 
     const pubClient = new Redis(options.redis.url);

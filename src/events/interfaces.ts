@@ -6,7 +6,7 @@ export interface EventBusOptions {
    * When provided, the EventBus reuses this client instead of creating its own ioredis connection.
    * This allows sharing a Redis client from CacheModule or another source.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   redisClient?: { publisher: any; subscriber: any };
 }
 

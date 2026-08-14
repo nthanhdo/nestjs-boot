@@ -46,7 +46,7 @@ export class CacheModule implements OnModuleDestroy {
 
           if (options.memcached?.servers) {
             try {
-              // eslint-disable-next-line @typescript-eslint/no-var-requires
+               
               const memjs = require('memjs');
               // Clean up previous client if register() called multiple times (e.g. testing)
               if (CacheModule.memcachedClient) {
@@ -71,7 +71,7 @@ export class CacheModule implements OnModuleDestroy {
 
           if (options.redis?.url) {
             try {
-              // eslint-disable-next-line @typescript-eslint/no-var-requires
+               
               const Redis = require('ioredis');
               // Clean up previous client if register() called multiple times (e.g. testing)
               if (CacheModule.redisClient) {

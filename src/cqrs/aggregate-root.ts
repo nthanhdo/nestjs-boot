@@ -108,7 +108,7 @@ export abstract class AggregateRoot {
    * Override to restore aggregate state from a snapshot payload.
    * Only needed when using SnapshotStore.
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   protected restoreFromSnapshot(_state: unknown): void {
     // Default: no-op. Override in subclass if using snapshots.
   }

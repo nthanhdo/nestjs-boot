@@ -8,7 +8,7 @@ import { generateStorageKey } from '../storage.utils';
  * Install: `npm install @google-cloud/storage`
  */
 export class GCSAdapter implements StorageAdapter {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   private bucket: any;
   private readonly bucketName: string;
 
@@ -19,7 +19,7 @@ export class GCSAdapter implements StorageAdapter {
   }) {
     this.bucketName = options.bucket;
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+       
       const { Storage } = require('@google-cloud/storage');
       const storageOptions: Record<string, unknown> = {
         projectId: options.projectId,

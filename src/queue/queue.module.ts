@@ -63,7 +63,7 @@ export class QueueModule implements OnModuleInit {
   /**
    * Register a specific named queue. Use after `register()` to create dedicated queues.
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   static registerQueue(name: string, _options?: Partial<QueueOptions>): DynamicModule {
     const token = `${QUEUE_PREFIX}${name}`;
 

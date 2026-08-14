@@ -53,7 +53,7 @@ export abstract class BootWsGateway
   protected readonly logger = new Logger(this.constructor.name);
   protected reflector = new Reflector();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   afterInit(server: any): void {
     this.logger.log(`Gateway initialized: ${this.constructor.name}`);
     this.onInit(server);
@@ -105,7 +105,7 @@ export abstract class BootWsGateway
   }
 
   // Lifecycle hooks — override in subclass as needed
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   protected onInit(_server: any): void {}
   protected onConnect(_client: BootSocket): void {}
   protected onDisconnect(_client: BootSocket): void {}

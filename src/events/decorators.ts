@@ -2,7 +2,7 @@ import { SetMetadata } from '@nestjs/common';
 import { ON_EVENT_METADATA, ON_QUERY_METADATA } from './constants';
 import { OnEventOptions } from './interfaces';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 type EventClass = new (...args: any[]) => any;
 
 /**

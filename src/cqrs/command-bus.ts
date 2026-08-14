@@ -48,7 +48,7 @@ export const COMMAND_HANDLER_METADATA = 'CQRS_COMMAND_HANDLER';
  * Each command type must have exactly one handler.
  */
 export function CommandHandler(command: Type<ICommand>): ClassDecorator {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   return (target: any) => {
     Reflect.defineMetadata(COMMAND_HANDLER_METADATA, command, target);
     return target;

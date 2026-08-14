@@ -44,7 +44,7 @@ export class CqrsModule {
   private static readonly logger = new Logger('CqrsModule');
 
   static register(options: CqrsOptions): DynamicModule {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const providers: any[] = [
       { provide: CQRS_OPTIONS, useValue: options },
       {

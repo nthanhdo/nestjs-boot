@@ -7,7 +7,7 @@
 
 function tryLoadSwagger(): Record<string, unknown> | null {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     return require('@nestjs/swagger');
   } catch {
     return null;

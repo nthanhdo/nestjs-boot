@@ -8,7 +8,7 @@ import { generateStorageKey } from '../storage.utils';
  * Install: `npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner`
  */
 export class S3Adapter implements StorageAdapter {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   private client: any;
   private readonly bucket: string;
   private readonly region: string;
@@ -29,7 +29,7 @@ export class S3Adapter implements StorageAdapter {
     this.endpoint = options.endpoint;
 
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+       
       const { S3Client } = require('@aws-sdk/client-s3');
       const clientConfig: Record<string, unknown> = { region: this.region };
       if (options.accessKeyId && options.secretAccessKey) {
@@ -51,7 +51,7 @@ export class S3Adapter implements StorageAdapter {
   }
 
   async upload(file: UploadedFile): Promise<StorageResult> {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+     
     const { PutObjectCommand } = require('@aws-sdk/client-s3');
     const key = generateStorageKey(file.originalName, file.folder);
 
@@ -76,7 +76,7 @@ export class S3Adapter implements StorageAdapter {
   }
 
   async download(key: string): Promise<Buffer> {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+     
     const { GetObjectCommand } = require('@aws-sdk/client-s3');
     const response = await this.client.send(
       new GetObjectCommand({ Bucket: this.bucket, Key: key }),
@@ -89,13 +89,13 @@ export class S3Adapter implements StorageAdapter {
   }
 
   async delete(key: string): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+     
     const { DeleteObjectCommand } = require('@aws-sdk/client-s3');
     await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key }));
   }
 
   async exists(key: string): Promise<boolean> {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+     
     const { HeadObjectCommand } = require('@aws-sdk/client-s3');
     try {
       await this.client.send(new HeadObjectCommand({ Bucket: this.bucket, Key: key }));
@@ -113,9 +113,9 @@ export class S3Adapter implements StorageAdapter {
   }
 
   async getSignedUrl(key: string, expiresIn = 3600): Promise<string> {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+     
     const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+     
     const { GetObjectCommand } = require('@aws-sdk/client-s3');
     return getSignedUrl(
       this.client,

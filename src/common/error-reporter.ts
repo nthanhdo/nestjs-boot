@@ -123,7 +123,7 @@ export class ErrorReporter {
   private static extractTraceId(): string | undefined {
     try {
       // Dynamic import so there is no hard OTel dependency at compile time
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
+       
       const api = require('@opentelemetry/api') as typeof import('@opentelemetry/api');
       const span = api.trace.getActiveSpan();
       if (!span) return undefined;

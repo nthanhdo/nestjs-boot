@@ -20,10 +20,10 @@ export class UnsupportedOperationError extends Error {
  *   or consider Redis L2 for prefix-based invalidation.
  */
 export class MemcachedCacheAdapter implements CacheAdapter {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   private readonly client: any;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   constructor(memcachedClient: any) {
     this.client = memcachedClient;
   }
@@ -78,7 +78,7 @@ export class MemcachedCacheAdapter implements CacheAdapter {
   /**
    * Get the underlying memjs client for lifecycle management.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   getClient(): any {
     return this.client;
   }

@@ -18,7 +18,7 @@ export function scanForCircularDepWarnings(app: INestApplication): void {
 
   try {
     // Access NestJS internal ModulesContainer
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const container = (app as any).container;
     if (!container) return;
 

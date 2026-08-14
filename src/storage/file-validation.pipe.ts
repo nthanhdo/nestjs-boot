@@ -38,7 +38,7 @@ export interface FileValidationOptions {
 export class FileValidationPipe implements PipeTransform {
   constructor(private readonly validationOptions: FileValidationOptions = {}) {}
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   transform(file: any | undefined, _metadata: ArgumentMetadata) {
     const required = this.validationOptions.required ?? true;
 

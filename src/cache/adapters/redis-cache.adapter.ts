@@ -5,10 +5,10 @@ import { CacheAdapter } from '../interfaces';
  * ioredis is an optional dependency — this adapter is only instantiated when redis config is provided.
  */
 export class RedisCacheAdapter implements CacheAdapter {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   private readonly client: any;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   constructor(redisClient: any) {
     this.client = redisClient;
   }
@@ -64,7 +64,7 @@ export class RedisCacheAdapter implements CacheAdapter {
   /**
    * Get the underlying Redis client for lifecycle management.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   getClient(): any {
     return this.client;
   }

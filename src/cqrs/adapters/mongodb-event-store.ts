@@ -17,7 +17,7 @@ import { EventStore, ConcurrencyError } from '../interfaces';
  */
 export class MongoDBEventStore implements EventStore {
   private readonly logger = new Logger('MongoDBEventStore');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   private db: any;
   private initialized = false;
 
@@ -121,7 +121,7 @@ export class MongoDBEventStore implements EventStore {
   async getEvents(streamId: string, fromVersion?: number): Promise<StoredEvent[]> {
     await this.ensureInitialized();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const filter: any = { streamId };
     if (fromVersion !== undefined) {
       filter.version = { $gt: fromVersion };
@@ -137,7 +137,7 @@ export class MongoDBEventStore implements EventStore {
   async getAllEvents(fromPosition?: number): Promise<StoredEvent[]> {
     await this.ensureInitialized();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const filter: any = {};
     if (fromPosition !== undefined) {
       filter.position = { $gt: fromPosition };

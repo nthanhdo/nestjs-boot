@@ -6,7 +6,7 @@ import { SwaggerOptions } from './interfaces';
  */
 function readPackageJson(): { name?: string; version?: string } {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     return require(`${process.cwd()}/package.json`);
   } catch {
     return {};
@@ -19,7 +19,7 @@ function readPackageJson(): { name?: string; version?: string } {
  */
 function tryLoadSwagger(): any | null {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     return require('@nestjs/swagger');
   } catch {
     return null;

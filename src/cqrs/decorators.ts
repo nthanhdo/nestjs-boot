@@ -34,7 +34,7 @@ export const ON_DOMAIN_EVENT_METADATA = 'CQRS_ON_DOMAIN_EVENT';
  * ```
  */
 export function Projection(name: string): ClassDecorator {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   return (target: any) => {
     Reflect.defineMetadata(PROJECTION_METADATA, name, target);
     return target;

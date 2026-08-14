@@ -40,7 +40,7 @@ export class CacheStampedeGuard {
    * In-process inflight map: key → Promise<T> of the factory currently running.
    * All concurrent callers in the same process share this Promise — zero polling.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   private readonly inflight = new Map<string, Promise<any>>();
 
   constructor(private readonly cache: MultiCacheService) {}

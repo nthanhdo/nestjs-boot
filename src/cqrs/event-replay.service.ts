@@ -98,7 +98,7 @@ export class EventReplayService {
 
       for (const { projection, methodName, projectionName } of handlers) {
         try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           await (projection as any)[methodName](event);
           projectionCounts[projectionName]++;
         } catch (err) {

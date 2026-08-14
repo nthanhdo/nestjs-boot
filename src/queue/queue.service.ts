@@ -57,7 +57,7 @@ export class QueueService implements OnModuleDestroy {
     }
 
     if (!this.queues.has(name)) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+       
       const QueueCtor = (this.bullmq as Record<string, new (...args: unknown[]) => BullQueue>).Queue;
       const queue = new QueueCtor(name, {
         connection: this.connection,

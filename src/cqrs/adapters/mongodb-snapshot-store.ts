@@ -9,11 +9,11 @@ import { SnapshotStore } from '../interfaces';
  */
 export class MongoDBSnapshotStore implements SnapshotStore {
   private readonly logger = new Logger('MongoDBSnapshotStore');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   private db: any;
   private initialized = false;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   constructor(private readonly connection: any) {}
 
   private async ensureInitialized(): Promise<void> {

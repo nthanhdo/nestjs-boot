@@ -26,14 +26,14 @@ export function AutoApiProperties(): ClassDecorator {
   let swagger: any;
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     swagger = require('@nestjs/swagger');
   } catch {
     return (_target: any) => {};
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     require('class-validator');
   } catch {
     // class-validator absent — nothing to introspect

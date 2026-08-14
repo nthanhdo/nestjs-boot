@@ -35,7 +35,7 @@ export class TransportModule {
     if (options.clients) {
       let ClientProxyFactory: any;
       try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
+         
         const microservices = require('@nestjs/microservices');
         ClientProxyFactory = microservices.ClientProxyFactory;
       } catch {

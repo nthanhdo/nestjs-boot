@@ -5,405 +5,519 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bubble Sort — Sắp xếp nổi bọt</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',sans-serif;background:#080c14;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+  :root {
+    --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+    --text: #eef1f8; --muted: #8899bb;
+    --default-top: #5b8def; --default-bot: #2c5aa0;
+    --compare-top: #ff5e7a; --compare-bot: #c0143c; --compare-glow: rgba(255,94,122,0.65);
+    --swap-top: #ffb347; --swap-bot: #e67e22; --swap-glow: rgba(255,179,71,0.6);
+    --sorted-top: #2ecc71; --sorted-bot: #1a9c54; --sorted-glow: rgba(46,204,113,0.4);
+    --accent: #a78bfa; --yellow: #ffd43b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  body::before { content:''; position: fixed; inset: 0; background: radial-gradient(ellipse at 25% 15%, rgba(91,141,239,0.07) 0%, transparent 55%), radial-gradient(ellipse at 75% 85%, rgba(167,139,250,0.05) 0%, transparent 55%); pointer-events: none; }
 
-/* Grid background */
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(99,102,241,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,.04) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;z-index:0}
+  /* HEADER */
+  header { background: var(--surface); padding: 10px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); z-index: 2; }
+  header h1 { font-size: 1.15rem; font-weight: 700; background: linear-gradient(135deg,#a78bfa,#7c5ce7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .badge { background: linear-gradient(135deg,#7c5ce7,#a78bfa); color: #fff; padding: 2px 10px; border-radius: 12px; font-size: .68rem; font-weight: 700; }
+  .complexity { display: flex; gap: 6px; margin-left: auto; }
+  .cx { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 9px; font-size: .72rem; color: var(--muted); }
+  .cx span { color: var(--yellow); font-weight: 700; }
 
-header{background:linear-gradient(135deg,#0f1525,#1a1d2e);padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #2d3148;position:relative;z-index:1}
-header h1{font-size:1.1rem;color:#a78bfa;text-shadow:0 0 20px rgba(167,139,250,.4)}
-.badge{background:#312e81;color:#c4b5fd;padding:2px 8px;border-radius:4px;font-size:.75rem}
-.complexity{display:flex;gap:8px;margin-left:auto}
-.cx{background:#1e293b;border:1px solid #334155;border-radius:4px;padding:2px 8px;font-size:.75rem;color:#94a3b8}
-.cx span{color:#fbbf24}
+  /* MAIN */
+  main { flex: 1; display: flex; overflow: hidden; z-index: 1; min-height: 0; }
 
-main{flex:1;display:flex;overflow:hidden;position:relative;z-index:1}
-#viz{width:60%;background:transparent;position:relative;display:flex;flex-direction:column}
-#bar-area{flex:1;position:relative;padding:10px 20px 0}
-#bars-container{position:absolute;bottom:0;left:20px;right:20px;top:10px;display:flex;align-items:flex-end;gap:3px}
+  /* LEFT VIZ */
+  #viz { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
-/* Bar wraps are positioned, so transform translateX works for sliding */
-.bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;cursor:default}
-.bar{width:100%;border-radius:4px 4px 0 0;background:linear-gradient(to top,#1d4ed8,#60a5fa);transition:background .2s,box-shadow .2s;position:relative;overflow:hidden}
+  /* COMPARE DISPLAY */
+  #compare-display { text-align: center; padding: 10px 20px; min-height: 56px; display: flex; align-items: center; justify-content: center; gap: 12px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .cd-idle { color: var(--muted); font-size: .95rem; }
+  .cd-box { display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 10px; font-size: 1.2rem; font-weight: 800; color: #fff; transition: all 0.3s; }
+  .cd-box.left { background: linear-gradient(135deg,var(--compare-top),var(--compare-bot)); box-shadow: 0 0 16px var(--compare-glow); }
+  .cd-box.right { background: linear-gradient(135deg,var(--compare-top),var(--compare-bot)); box-shadow: 0 0 16px var(--compare-glow); }
+  .cd-op { font-size: 1.5rem; color: var(--yellow); text-shadow: 0 0 10px rgba(255,212,59,0.5); }
+  .cd-tag { padding: 4px 12px; border-radius: 6px; font-size: .82rem; font-weight: 700; color: #fff; animation: fadeIn 0.25s ease; }
+  .cd-tag.swap { background: linear-gradient(135deg,var(--swap-top),var(--swap-bot)); box-shadow: 0 0 10px var(--swap-glow); }
+  .cd-tag.ok { background: linear-gradient(135deg,var(--sorted-top),var(--sorted-bot)); box-shadow: 0 0 10px var(--sorted-glow); }
+  .cd-arrow { font-size: 1.4rem; animation: arrowBounce 0.5s ease infinite; }
+  .cd-arrow.swap { color: var(--swap-top); }
+  .cd-arrow.ok { color: var(--sorted-top); }
 
-/* Shimmer overlay on bar */
-.bar::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.15) 50%,transparent 60%);background-size:200% 100%;opacity:0}
+  /* EXPLANATION PANEL (inside viz) */
+  #explain-viz {
+    padding: 10px 24px; min-height: 52px;
+    background: linear-gradient(135deg, rgba(21,29,50,0.95), rgba(28,39,68,0.9));
+    border-bottom: 1px solid var(--border);
+    font-size: .88rem; line-height: 1.55; color: var(--text);
+    display: flex; align-items: center; gap: 12px;
+    backdrop-filter: blur(4px);
+  }
+  #explain-viz .step-icon {
+    flex-shrink: 0; width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    transition: all 0.3s;
+  }
+  #explain-viz .step-icon.compare { background: rgba(255,94,122,0.15); border: 1px solid rgba(255,94,122,0.3); }
+  #explain-viz .step-icon.swap { background: rgba(255,179,71,0.15); border: 1px solid rgba(255,179,71,0.3); }
+  #explain-viz .step-icon.sorted { background: rgba(46,204,113,0.15); border: 1px solid rgba(46,204,113,0.3); }
+  #explain-viz .step-icon.pass { background: rgba(167,139,250,0.15); border: 1px solid rgba(167,139,250,0.3); }
+  #explain-viz .step-icon.info { background: rgba(91,141,239,0.15); border: 1px solid rgba(91,141,239,0.3); }
+  #explain-text { flex: 1; }
+  #explain-text b { color: var(--yellow); }
+  #explain-text code { background: var(--surface2); padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: .8rem; color: var(--accent); }
+  #step-counter { font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-.bar-val{font-size:10px;color:#94a3b8;margin-top:3px;line-height:1;font-weight:600;transition:color .2s}
+  /* BAR AREA */
+  #bar-area { flex: 1; position: relative; padding: 14px 32px 0; }
+  #bars-container { position: absolute; bottom: 40px; left: 32px; right: 32px; top: 14px; display: flex; align-items: flex-end; gap: 3px; }
 
-.bar.comparing{background:linear-gradient(to top,#991b1b,#ef4444);box-shadow:0 0 16px rgba(239,68,68,.6),0 0 4px rgba(239,68,68,.8);animation:pulse .5s ease-in-out infinite}
-.bar.comparing+.bar-val,.bar-wrap:has(.bar.comparing) .bar-val{color:#fca5a5}
-.bar.swapping{background:linear-gradient(to top,#c2410c,#f97316);box-shadow:0 0 20px rgba(249,115,22,.7)}
-.bar.sorted{background:linear-gradient(to top,#065f46,#34d399);box-shadow:0 0 8px rgba(52,211,153,.2)}
-.bar.sorted::after{animation:shimmer 2s linear infinite;opacity:1}
+  /* BARS */
+  .bar-wrap { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; }
+  .bar {
+    width: 100%; border-radius: 5px 5px 1px 1px;
+    background: linear-gradient(180deg,var(--default-top),var(--default-bot));
+    position: relative; overflow: hidden; min-height: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12);
+    transition: box-shadow 0.3s;
+  }
+  .bar::before { content:''; position: absolute; top:0; left:0; width: 45%; height: 100%; background: linear-gradient(90deg,rgba(255,255,255,0.1),transparent); border-radius: 5px 0 0 1px; }
+  .bar::after { content:''; position: absolute; inset: 0; background: linear-gradient(105deg,transparent 25%,rgba(255,255,255,0.22) 50%,transparent 75%); background-size: 300% 100%; opacity: 0; border-radius: inherit; }
+  .bar-val-inside { position: absolute; top: 5px; left: 0; right: 0; text-align: center; font-size: 12px; font-weight: 800; color: rgba(255,255,255,0.95); text-shadow: 0 1px 3px rgba(0,0,0,0.6); z-index: 2; pointer-events: none; }
+  .bar-idx { font-size: 10px; color: var(--muted); margin-top: 3px; font-variant-numeric: tabular-nums; transition: all 0.3s; }
 
-/* Pass progress bar */
-#pass-progress-wrap{height:3px;background:#1e293b;position:relative;overflow:hidden}
-#pass-progress{height:100%;background:linear-gradient(90deg,#6366f1,#a78bfa);width:0%;transition:width .3s ease;box-shadow:0 0 8px rgba(99,102,241,.5)}
+  /* Pointer arrows under bars */
+  #pointers { position: absolute; bottom: 2px; left: 32px; right: 32px; height: 22px; }
+  .ptr {
+    position: absolute; bottom: 0;
+    padding: 1px 5px; border-radius: 3px;
+    font-size: 10px; font-weight: 800; color: #fff;
+    transition: left 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s;
+    opacity: 0; white-space: nowrap;
+  }
+  .ptr::before { content:'▲'; display: block; text-align: center; font-size: 8px; line-height: 1; margin-bottom: 1px; }
+  .ptr-j { background: var(--compare-bot); }
+  .ptr-j1 { background: #d63384; }
 
-#legend{display:flex;gap:12px;padding:6px 20px;background:rgba(17,24,39,.8);font-size:.72rem;backdrop-filter:blur(4px)}
-.leg{display:flex;align-items:center;gap:5px}
-.leg-dot{width:10px;height:10px;border-radius:2px}
-.leg-dot.comparing{background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,.6)}
-.leg-dot.sorted{background:#34d399}
+  /* BAR STATES */
+  .bar.comparing { background: linear-gradient(180deg,var(--compare-top),var(--compare-bot)); box-shadow: 0 0 22px var(--compare-glow), 0 0 44px rgba(255,94,122,0.12), inset 0 1px 0 rgba(255,255,255,0.2); animation: barPulse 0.5s ease-in-out infinite; }
+  .bar-wrap:has(.bar.comparing) .bar-idx { color: var(--compare-top); font-weight: 700; font-size: 11px; }
+  .bar.swapping { background: linear-gradient(180deg,var(--swap-top),var(--swap-bot)); box-shadow: 0 0 26px var(--swap-glow), 0 0 50px rgba(255,179,71,0.1), inset 0 1px 0 rgba(255,255,255,0.25); }
+  .bar-wrap:has(.bar.swapping) .bar-idx { color: var(--swap-top); font-weight: 700; }
+  .bar.sorted { background: linear-gradient(180deg,var(--sorted-top),var(--sorted-bot)); box-shadow: 0 0 10px var(--sorted-glow), inset 0 1px 0 rgba(255,255,255,0.12); }
+  .bar.sorted::after { animation: shimmer 2.5s linear infinite; opacity: 1; }
+  .bar-wrap:has(.bar.sorted) .bar-idx { color: var(--sorted-top); }
 
-#code-panel{width:40%;background:#0f1525;border-left:1px solid #2d3148;display:flex;flex-direction:column}
-.panel-title{padding:8px 14px;background:#0a0f1e;font-size:.8rem;color:#8b92c4;border-bottom:1px solid #2d3148}
-#code{flex:1;overflow-y:auto;padding:10px 0;font-family:'Courier New',monospace;font-size:.82rem;line-height:1.8}
-.code-line{padding:2px 14px;color:#8b92c4;white-space:pre;cursor:default;transition:background .2s,color .2s;border-left:3px solid transparent}
-.code-line.active{background:linear-gradient(90deg,rgba(251,191,36,.12),transparent);color:#fde68a;border-left-color:#fbbf24}
-.code-line.comment{color:#3d4a5c}
-#explain{padding:10px 14px;background:#080c14;border-top:1px solid #2d3148;font-size:.8rem;color:#94a3b8;min-height:56px;line-height:1.5}
+  /* Sorted boundary */
+  #sorted-boundary { position: absolute; top: 0; bottom: 40px; width: 2px; background: var(--sorted-top); box-shadow: 0 0 8px var(--sorted-glow); z-index: 4; transition: left 0.4s ease; display: none; }
+  #sorted-boundary::after { content:'sorted ▸'; position: absolute; top: 4px; left: 6px; font-size: 9px; color: var(--sorted-top); font-weight: 700; white-space: nowrap; letter-spacing: 0.5px; }
 
-#controls{background:linear-gradient(135deg,#0f1525,#111827);padding:8px 16px;display:flex;align-items:center;gap:10px;border-top:1px solid #1e293b;flex-wrap:wrap;position:relative;z-index:1}
-button{background:#3730a3;color:#e2e8f0;border:1px solid #4338ca;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:.82rem;transition:all .2s}
-button:hover{background:#4338ca;box-shadow:0 0 12px rgba(99,102,241,.3)}
-button:disabled{background:#1e293b;color:#4b5563;cursor:not-allowed;border-color:#2d3748;box-shadow:none}
-#btn-play{background:#065f46;border-color:#059669}
-#btn-play:hover{background:#059669;box-shadow:0 0 12px rgba(5,150,105,.4)}
-#stats{display:flex;gap:12px;margin-left:auto;font-size:.8rem}
-.stat{background:#1e293b;padding:4px 10px;border-radius:6px;border:1px solid #2d3748}
-.stat span{color:#f59e0b;font-weight:700;font-variant-numeric:tabular-nums}
-label{font-size:.78rem;color:#64748b}
-input[type=range]{accent-color:#6366f1;width:90px}
-select{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:4px 6px;font-size:.78rem}
-#pass-info{background:#1e293b;padding:4px 10px;border-radius:6px;font-size:.8rem;color:#a78bfa;border:1px solid #3730a3}
+  /* Bubble particles */
+  .bubble-particle {
+    position: absolute; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(circle, rgba(255,179,71,0.7), transparent);
+    animation: bubbleRise 0.7s ease-out forwards;
+    z-index: 10;
+  }
 
-@keyframes pulse{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.08);transform-origin:bottom}}
-@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
-@keyframes glow{0%,100%{box-shadow:0 0 5px rgba(239,68,68,.3)}50%{box-shadow:0 0 20px rgba(239,68,68,.8)}}
-@keyframes dropIn{0%{transform:translateY(-30px);opacity:0}100%{transform:translateY(0);opacity:1}}
-@keyframes bubbleFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-@keyframes counterTick{0%{transform:scale(1)}50%{transform:scale(1.3);color:#f59e0b}100%{transform:scale(1)}}
+  /* BOTTOM BAR */
+  #bottom-bar { display: flex; align-items: center; background: var(--surface); border-top: 1px solid var(--border); }
+  #legend { flex: 1; display: flex; gap: 16px; padding: 7px 24px; font-size: .74rem; color: var(--muted); }
+  .leg { display: flex; align-items: center; gap: 6px; }
+  .leg-dot { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.08); }
+  #progress-wrap { width: 180px; height: 5px; background: var(--surface2); border-radius: 3px; margin-right: 20px; overflow: hidden; }
+  #progress-bar { height: 100%; width: 0%; border-radius: 3px; background: linear-gradient(90deg,var(--accent),var(--sorted-top)); transition: width 0.4s; box-shadow: 0 0 6px rgba(167,139,250,0.4); }
+
+  /* RIGHT CODE PANEL */
+  #code-panel { width: 340px; min-width: 300px; background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+  .panel-title { padding: 10px 14px; background: var(--surface2); font-size: .78rem; font-weight: 600; color: var(--accent); border-bottom: 1px solid var(--border); }
+  #code { flex: 1; overflow-y: auto; padding: 10px 0; font-family: 'SF Mono','Fira Code',Consolas,monospace; font-size: .82rem; line-height: 2; }
+  .code-line { padding: 0 14px; color: #5a6d8e; white-space: pre; border-left: 3px solid transparent; transition: all 0.2s; }
+  .code-line.comment { color: #3a4d6e; font-style: italic; }
+  .code-line.active { background: linear-gradient(90deg,rgba(255,212,59,0.1),transparent); color: var(--yellow); border-left-color: var(--yellow); font-weight: 600; }
+
+  /* ALGO INSIGHT (right panel bottom) */
+  #insight {
+    padding: 12px 14px; background: var(--bg); border-top: 1px solid var(--border);
+    font-size: .8rem; line-height: 1.5; color: var(--muted);
+  }
+  #insight .insight-title { color: var(--accent); font-weight: 700; font-size: .72rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  #insight b { color: var(--text); }
+
+  /* CONTROLS */
+  #controls { background: var(--surface); padding: 8px 24px; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--border); z-index: 2; flex-wrap: wrap; }
+  button { border: none; border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: .8rem; font-weight: 600; transition: all 0.2s; }
+  button:active { transform: scale(0.95); }
+  button:disabled { background: var(--surface2)!important; color: #3a4d6e!important; cursor: not-allowed; }
+  #btn-play { background: linear-gradient(135deg,#00b894,#05c46b); color: #fff; box-shadow: 0 2px 10px rgba(5,196,107,0.25); min-width: 85px; }
+  #btn-step { background: linear-gradient(135deg,#7c5ce7,#a78bfa); color: #fff; }
+  #btn-reset,#btn-new { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  label { font-size: .76rem; color: var(--muted); }
+  input[type=range] { accent-color: var(--accent); width: 85px; }
+  select { background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 5px; padding: 3px 6px; font-size: .76rem; }
+  #stats { display: flex; gap: 8px; margin-left: auto; }
+  .stat { background: var(--surface2); padding: 4px 10px; border-radius: 6px; font-size: .8rem; color: var(--muted); border: 1px solid var(--border); }
+  .stat span { color: var(--yellow); font-weight: 800; font-variant-numeric: tabular-nums; }
+  #pass-info { background: rgba(124,92,231,0.12); border: 1px solid rgba(124,92,231,0.3); padding: 4px 10px; border-radius: 6px; font-size: .82rem; color: var(--accent); font-weight: 700; }
+
+  /* KEYFRAMES */
+  @keyframes barPulse { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(1.04)} }
+  @keyframes shimmer { 0%{background-position:-300% center} 100%{background-position:300% center} }
+  @keyframes dropIn { 0%{transform:scaleY(0);opacity:0;transform-origin:bottom} 70%{transform:scaleY(1.03);opacity:1} 100%{transform:scaleY(1);opacity:1} }
+  @keyframes celebrate { 0%,100%{transform:scaleY(1)} 40%{transform:scaleY(1.08)} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes arrowBounce { 0%,100%{transform:translateX(0)} 50%{transform:translateX(4px)} }
+  @keyframes bubbleRise { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-60px) scale(0.3)} }
+  @keyframes passWave { 0%{box-shadow:0 0 0 0 var(--sorted-glow)} 100%{box-shadow:0 0 0 8px transparent} }
 </style>
 </head>
 <body>
 <header>
-  <h1>🫧 Bubble Sort — Sắp xếp nổi bọt</h1>
-  <span class="badge">Module 2</span>
+  <h1>🫧 Bubble Sort</h1>
+  <span class="badge">SORTING</span>
   <div class="complexity">
-    <div class="cx">Best: <span>O(n)</span></div>
-    <div class="cx">Avg: <span>O(n²)</span></div>
-    <div class="cx">Worst: <span>O(n²)</span></div>
-    <div class="cx">Space: <span>O(1)</span></div>
-    <div class="cx">Stable: <span>✓</span></div>
+    <div class="cx">Best <span>O(n)</span></div>
+    <div class="cx">Avg <span>O(n²)</span></div>
+    <div class="cx">Worst <span>O(n²)</span></div>
+    <div class="cx">Space <span>O(1)</span></div>
   </div>
 </header>
 <main>
   <div id="viz">
+    <div id="compare-display"><span class="cd-idle">Nhấn Play để bắt đầu trình diễn thuật toán</span></div>
+
+    <div id="explain-viz">
+      <div class="step-icon info">💡</div>
+      <div id="explain-text">Bubble Sort so sánh từng cặp phần tử kề nhau và hoán đổi nếu sai thứ tự. Phần tử lớn nhất sẽ "nổi bọt" về cuối mảng sau mỗi pass.</div>
+      <div id="step-counter"></div>
+    </div>
+
     <div id="bar-area">
       <div id="bars-container"></div>
+      <div id="sorted-boundary"></div>
+      <div id="pointers">
+        <div class="ptr ptr-j" id="ptr-j">j</div>
+        <div class="ptr ptr-j1" id="ptr-j1">j+1</div>
+      </div>
     </div>
-    <div id="pass-progress-wrap"><div id="pass-progress"></div></div>
-    <div id="legend">
-      <div class="leg"><div class="leg-dot" style="background:linear-gradient(to top,#1d4ed8,#60a5fa)"></div>Chưa sắp xếp</div>
-      <div class="leg"><div class="leg-dot comparing"></div>Đang so sánh (glow)</div>
-      <div class="leg"><div class="leg-dot" style="background:#f97316"></div>Đang hoán đổi</div>
-      <div class="leg"><div class="leg-dot sorted"></div>Đã sắp xếp</div>
+
+    <div id="bottom-bar">
+      <div id="legend">
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(180deg,var(--default-top),var(--default-bot))"></div>Chưa xếp</div>
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(180deg,var(--compare-top),var(--compare-bot));box-shadow:0 0 6px var(--compare-glow)"></div>So sánh</div>
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(180deg,var(--swap-top),var(--swap-bot));box-shadow:0 0 6px var(--swap-glow)"></div>Swap</div>
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(180deg,var(--sorted-top),var(--sorted-bot));box-shadow:0 0 6px var(--sorted-glow)"></div>Đã xếp ✓</div>
+      </div>
+      <div id="progress-wrap"><div id="progress-bar"></div></div>
     </div>
   </div>
+
   <div id="code-panel">
-    <div class="panel-title">📄 Code — Bubble Sort (tối ưu với cờ early exit)</div>
+    <div class="panel-title">📝 Bubble Sort</div>
     <div id="code"></div>
-    <div id="explain">👋 Nhấn Play để bắt đầu!</div>
+    <div id="insight">
+      <div class="insight-title">💡 Tại sao gọi là "Nổi bọt"?</div>
+      Giống bọt khí trong nước, phần tử <b>lớn nhất</b> sẽ dần "nổi" lên vị trí cuối mảng sau mỗi lượt duyệt (pass).
+    </div>
   </div>
 </main>
 <div id="controls">
   <button id="btn-play">▶ Play</button>
   <button id="btn-step">⏭ Step</button>
   <button id="btn-reset">↺ Reset</button>
-  <button id="btn-new">🎲 Mảng mới</button>
-  <label>Tốc độ: <input type="range" id="speed" min="1" max="10" value="5"></label>
-  <label>Kích thước: <select id="size-sel">
-    <option value="10">10</option><option value="16" selected>16</option>
-    <option value="24">24</option><option value="32">32</option><option value="40">40</option>
-  </select></label>
-  <div id="pass-info">Pass: 0</div>
+  <button id="btn-new">🎲 Mới</button>
+  <label>Speed <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <label>Size <select id="size-sel"><option value="10">10</option><option value="16" selected>16</option><option value="24">24</option><option value="32">32</option></select></label>
+  <div id="pass-info">Pass —</div>
   <div id="stats">
-    <div class="stat">So sánh: <span id="s-cmp">0</span></div>
-    <div class="stat">Hoán đổi: <span id="s-swap">0</span></div>
-    <div class="stat">Truy cập: <span id="s-acc">0</span></div>
+    <div class="stat">Cmp <span id="s-cmp">0</span></div>
+    <div class="stat">Swap <span id="s-swap">0</span></div>
   </div>
 </div>
 
 <script>
-const CODE = [
-  {t:'function bubbleSort(arr) {',l:0},
-  {t:'  const n = arr.length;',l:0},
-  {t:'  for (let i = 0; i < n - 1; i++) {',l:1},
-  {t:'    let swapped = false;  // cờ tối ưu',l:1},
-  {t:'    for (let j = 0; j < n - 1 - i; j++) {',l:2},
-  {t:'      // So sánh hai phần tử kề nhau',l:2},
-  {t:'      if (arr[j] > arr[j+1]) {',l:2},
-  {t:'        // Hoán đổi nếu sai thứ tự',l:3},
-  {t:'        [arr[j], arr[j+1]] = [arr[j+1], arr[j]];',l:3},
-  {t:'        swapped = true;',l:3},
-  {t:'      }',l:2},
-  {t:'    }',l:2},
-  {t:'    // Không có swap → đã sắp xếp xong!',l:1},
-  {t:'    if (!swapped) break;',l:1},
-  {t:'  }',l:0},
-  {t:'  return arr;',l:0},
-  {t:'}',l:0},
+const CODE_LINES = [
+  'function bubbleSort(arr) {',
+  '  const n = arr.length;',
+  '  for (let i = 0; i < n-1; i++) {',
+  '    let swapped = false;',
+  '    for (let j = 0; j < n-1-i; j++) {',
+  '      if (arr[j] > arr[j+1]) {',
+  '        swap(arr[j], arr[j+1]);',
+  '        swapped = true;',
+  '      }',
+  '    }',
+  '    if (!swapped) break;',
+  '  }',
+  '  return arr;',
+  '}',
 ];
 
-const EXPLAINS = {
-  2:`🔄 Vòng lặp ngoài (pass <b id="pi"></b>): mỗi pass đẩy phần tử lớn nhất về cuối.`,
-  3:`🚩 Khởi tạo cờ <code>swapped = false</code>. Nếu không có swap nào → mảng đã sắp xếp!`,
-  4:`👁 Vòng lặp trong: duyệt từ đầu đến vị trí chưa sắp xếp.`,
-  6:`🔴 So sánh <b>arr[j]</b> và <b>arr[j+1]</b>. Nếu sai thứ tự → hoán đổi.`,
-  8:`🫧 Hoán đổi! Phần tử lớn hơn <b>nổi bọt</b> sang phải.`,
-  13:`✅ <b>Early termination!</b> Không có hoán đổi → mảng đã sắp xếp. Dừng sớm!`,
-};
-
 let arr=[], steps=[], stepIdx=0, playing=false, timer=null;
-let cmp=0, swap=0, acc=0;
-// Track the actual array state for DOM-based animation
-let currentArr=[];
+let cmpCount=0, swapCount=0, sortedFrom=Infinity, awaitingSwap=false;
+let passSwapCount=0;
 
-function buildCode(){
-  const el=document.getElementById('code');
-  el.innerHTML=CODE.map((c,i)=>`<div class="code-line${c.t.trim().startsWith('//')?' comment':''}" data-i="${i}">${c.t}</div>`).join('');
+function buildCode() {
+  document.getElementById('code').innerHTML = CODE_LINES.map((l,i) =>
+    `<div class="code-line${l.trim().startsWith('//')?' comment':''}" data-i="${i}">${l}</div>`
+  ).join('');
+}
+function hl(i) {
+  document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));
+  if (i>=0) document.querySelector(`[data-i="${i}"]`)?.classList.add('active');
 }
 
-function highlightLine(i){
-  document.querySelectorAll('.code-line').forEach(el=>el.classList.remove('active'));
-  if(i>=0) document.querySelector(`[data-i="${i}"]`)?.classList.add('active');
+function setExplain(icon, iconClass, html) {
+  const ic = document.querySelector('#explain-viz .step-icon');
+  ic.textContent = icon;
+  ic.className = 'step-icon ' + iconClass;
+  document.getElementById('explain-text').innerHTML = html;
+  document.getElementById('step-counter').textContent = `${stepIdx}/${steps.length}`;
 }
 
-function setExplain(key,extra=''){
-  document.getElementById('explain').innerHTML=(EXPLAINS[key]||'')+extra;
+function setInsight(title, html) {
+  document.getElementById('insight').innerHTML = `<div class="insight-title">${title}</div>${html}`;
 }
 
-function genArray(){
-  const n=+document.getElementById('size-sel').value;
-  arr=Array.from({length:n},()=>Math.floor(Math.random()*90)+10);
+function genArray() {
+  const n = +document.getElementById('size-sel').value;
+  arr = Array.from({length:n}, ()=>Math.floor(Math.random()*80)+15);
 }
 
-function buildSteps(){
-  steps=[];
-  const a=[...arr];
-  const n=a.length;
-  steps.push({type:'init',arr:[...a]});
-  for(let i=0;i<n-1;i++){
-    steps.push({type:'pass',pass:i,line:2,arr:[...a]});
-    steps.push({type:'flag',line:3,arr:[...a]});
+function buildSteps() {
+  steps=[]; const a=[...arr], n=a.length;
+  steps.push({type:'init', arr:[...a]});
+  for (let i=0; i<n-1; i++) {
+    steps.push({type:'pass', pass:i, arr:[...a]});
     let swapped=false;
-    for(let j=0;j<n-1-i;j++){
-      steps.push({type:'compare',j,sortedFrom:n-1-i+1,line:6,pass:i,arr:[...a]});
-      if(a[j]>a[j+1]){
-        steps.push({type:'swap',j,line:8,arr:[...a]});
+    for (let j=0; j<n-1-i; j++) {
+      steps.push({type:'compare', j, arr:[...a], pass:i});
+      if (a[j]>a[j+1]) {
+        steps.push({type:'swap', j, v1:a[j], v2:a[j+1], arr:[...a], pass:i});
         [a[j],a[j+1]]=[a[j+1],a[j]];
-        steps.push({type:'afterswap',j,arr:[...a],line:9});
+        steps.push({type:'after', j, arr:[...a]});
         swapped=true;
-      }else{
-        steps.push({type:'noswap',j,arr:[...a],line:6});
+      } else {
+        steps.push({type:'ok', j, v1:a[j], v2:a[j+1], arr:[...a]});
       }
     }
-    if(!swapped){steps.push({type:'early',line:13,arr:[...a]});break;}
-    steps.push({type:'sorted_right',from:n-1-i,arr:[...a],line:13});
+    if (!swapped) { steps.push({type:'early', arr:[...a]}); break; }
+    steps.push({type:'pass-done', from:n-1-i, arr:[...a], pass:i, max:a[n-1-i]});
   }
-  steps.push({type:'done',arr:[...a]});
+  steps.push({type:'done', arr:[...a]});
 }
 
-// Build bars DOM once, update via class + style changes
-function buildBarsDOM(a){
-  const con=document.getElementById('bars-container');
-  con.innerHTML='';
-  currentArr=[...a];
-  const max=Math.max(...a);
-  a.forEach((v,i)=>{
-    const wrap=document.createElement('div');
-    wrap.className='bar-wrap';
-    wrap.dataset.idx=i;
-    const bar=document.createElement('div');
-    bar.className='bar';
-    bar.style.height=Math.round((v/max)*100)+'%';
-    bar.style.animation='dropIn .4s ease both';
-    bar.style.animationDelay=(i*0.02)+'s';
-    const val=document.createElement('div');
-    val.className='bar-val';
-    val.textContent=v;
+function buildBarsDOM(a) {
+  const con = document.getElementById('bars-container');
+  con.innerHTML = '';
+  const max = Math.max(...a);
+  a.forEach((v,i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'bar-wrap';
+    const bar = document.createElement('div');
+    bar.className = 'bar';
+    bar.style.height = Math.round((v/max)*100)+'%';
+    bar.style.animation = `dropIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both`;
+    bar.style.animationDelay = (i*20)+'ms';
+    const valIn = document.createElement('div');
+    valIn.className = 'bar-val-inside';
+    valIn.textContent = v;
+    bar.appendChild(valIn);
+    const idx = document.createElement('div');
+    idx.className = 'bar-idx';
+    idx.textContent = i;
     wrap.appendChild(bar);
-    wrap.appendChild(val);
+    wrap.appendChild(idx);
     con.appendChild(wrap);
   });
 }
 
-function updateBarClasses(compareIdxs, swapIdxs, sortedFrom){
-  const wraps=document.querySelectorAll('.bar-wrap');
-  const n=wraps.length;
-  wraps.forEach((wrap,i)=>{
-    const bar=wrap.querySelector('.bar');
-    bar.className='bar';
-    if(sortedFrom!==undefined && i>=sortedFrom) bar.classList.add('sorted');
-    else if(swapIdxs&&swapIdxs.includes(i)) bar.classList.add('swapping');
-    else if(compareIdxs&&compareIdxs.includes(i)) bar.classList.add('comparing');
+function updateBars(comparing, swapping) {
+  const wraps = document.querySelectorAll('.bar-wrap');
+  wraps.forEach((wrap,i) => {
+    const bar = wrap.querySelector('.bar');
+    bar.classList.remove('comparing','swapping','sorted');
+    if (i >= sortedFrom) bar.classList.add('sorted');
+    else if (swapping?.includes(i)) bar.classList.add('swapping');
+    else if (comparing?.includes(i)) bar.classList.add('comparing');
   });
+  const bd = document.getElementById('sorted-boundary');
+  if (sortedFrom < Infinity && sortedFrom < arr.length) {
+    const w = [...wraps];
+    if (w[sortedFrom]) { bd.style.display='block'; bd.style.left=(w[sortedFrom].offsetLeft-4)+'px'; }
+  } else { bd.style.display='none'; }
 }
 
-// Animate DOM swap of two adjacent bar-wraps using translateX
-function animateSwap(j, callback){
-  const wraps=document.querySelectorAll('.bar-wrap');
-  const bar1=wraps[j], bar2=wraps[j+1];
-  if(!bar1||!bar2){callback&&callback();return;}
-  const gap=bar2.offsetLeft - bar1.offsetLeft;
-  const dur=Math.max(120, 420 - document.getElementById('speed').value*30);
-  const ease='cubic-bezier(0.4,0,0.2,1)';
-  bar1.style.transition=`transform ${dur}ms ${ease}`;
-  bar2.style.transition=`transform ${dur}ms ${ease}`;
-  bar1.style.transform=`translateX(${gap}px)`;
-  bar2.style.transform=`translateX(${-gap}px)`;
-  bar1.style.zIndex=2;
-  bar2.style.zIndex=1;
+function showPointers(j) {
+  const wraps = [...document.querySelectorAll('.bar-wrap')];
+  const pj = document.getElementById('ptr-j');
+  const pj1 = document.getElementById('ptr-j1');
+  if (j < 0 || j >= wraps.length-1) { pj.style.opacity='0'; pj1.style.opacity='0'; return; }
+  const w1=wraps[j], w2=wraps[j+1];
+  pj.style.opacity='1'; pj.style.left=(w1.offsetLeft + w1.offsetWidth/2 - 10)+'px';
+  pj1.style.opacity='1'; pj1.style.left=(w2.offsetLeft + w2.offsetWidth/2 - 12)+'px';
+}
 
+function showCompare(v1, v2, type) {
+  const d = document.getElementById('compare-display');
+  if (type==='idle') { d.innerHTML=`<span class="cd-idle">Nhấn Play để bắt đầu trình diễn thuật toán</span>`; return; }
+  if (type==='done') { d.innerHTML=`<span style="color:var(--sorted-top);font-size:1.2rem;font-weight:700">🎉 Sắp xếp hoàn tất — ${cmpCount} so sánh, ${swapCount} hoán đổi</span>`; return; }
+  if (type==='pass') { d.innerHTML=`<span style="color:var(--accent);font-size:1rem">🔄 Bắt đầu duyệt mảng...</span>`; return; }
+  if (type==='pass-done') { d.innerHTML=`<span style="color:var(--sorted-top);font-size:1rem">✅ Pass hoàn tất — <b style="color:var(--yellow)">${v1}</b> đã về đúng vị trí</span>`; return; }
+
+  const isSwap = v1 > v2;
+  d.innerHTML = `
+    <span class="cd-box left">${v1}</span>
+    <span class="cd-op">${isSwap ? '>' : '≤'}</span>
+    <span class="cd-box right">${v2}</span>
+    <span class="cd-arrow ${isSwap?'swap':'ok'}">${isSwap?'⇄':'—'}</span>
+    <span class="cd-tag ${isSwap?'swap':'ok'}">${isSwap?'SWAP!':'OK ✓'}</span>
+  `;
+}
+
+function spawnBubbles(j) {
+  const wraps = [...document.querySelectorAll('.bar-wrap')];
+  if (!wraps[j]) return;
+  const rect = wraps[j].getBoundingClientRect();
+  const area = document.getElementById('bar-area').getBoundingClientRect();
+  for (let i=0; i<4; i++) {
+    const p = document.createElement('div');
+    p.className = 'bubble-particle';
+    const size = 6 + Math.random()*8;
+    p.style.width = size+'px'; p.style.height = size+'px';
+    p.style.left = (rect.left - area.left + Math.random()*rect.width) + 'px';
+    p.style.top = (rect.top - area.top + rect.height*0.3) + 'px';
+    document.getElementById('bar-area').appendChild(p);
+    setTimeout(()=>p.remove(), 750);
+  }
+}
+
+function animateSwap(j, cb) {
+  const wraps = [...document.querySelectorAll('.bar-wrap')];
+  const a=wraps[j], b=wraps[j+1];
+  if (!a||!b) { cb?.(); return; }
+  const dist = b.offsetLeft - a.offsetLeft;
+  const dur = Math.max(150, 480 - document.getElementById('speed').value*33);
+  a.style.transition = `transform ${dur}ms cubic-bezier(0.4,0,0.2,1)`;
+  b.style.transition = `transform ${dur}ms cubic-bezier(0.4,0,0.2,1)`;
+  a.style.transform = `translateX(${dist}px)`;
+  b.style.transform = `translateX(${-dist}px)`;
+  a.style.zIndex='3'; b.style.zIndex='2';
   setTimeout(()=>{
-    bar1.style.transition='none';
-    bar2.style.transition='none';
-    bar1.style.transform='';
-    bar2.style.transform='';
-    bar1.style.zIndex='';
-    bar2.style.zIndex='';
-    // Swap DOM position
-    const parent=bar1.parentNode;
-    // bar1 is at j, bar2 at j+1. Move bar1 after bar2.
-    parent.insertBefore(bar2,bar1);
-    callback&&callback();
-  }, dur+20);
+    a.style.transition='none'; b.style.transition='none';
+    a.style.transform=''; b.style.transform='';
+    a.style.zIndex=''; b.style.zIndex='';
+    a.parentNode.insertBefore(b,a);
+    [...document.querySelectorAll('.bar-wrap')].forEach((w,i)=>w.querySelector('.bar-idx').textContent=i);
+    cb?.();
+  }, dur+30);
 }
 
-let sortedFrom=Infinity;
-let pendingSwapCallback=null;
-let awaitingSwap=false;
-
-function applyStep(s){
-  if(!s) return;
-  const a=s.arr;
-  highlightLine(s.line>=0?s.line:-1);
-  if(s.pass!==undefined){
-    document.getElementById('pass-info').textContent=`Pass: ${s.pass+1}`;
-    const n=arr.length;
-    document.getElementById('pass-progress').style.width=((s.pass/(n-1))*100)+'%';
+function applyStep(s) {
+  if (!s) return;
+  if (s.pass!==undefined) {
+    document.getElementById('pass-info').textContent=`Pass ${s.pass+1}`;
+    document.getElementById('progress-bar').style.width=((s.pass+1)/(arr.length-1)*100)+'%';
   }
-
-  if(s.type==='init'){
-    sortedFrom=Infinity;
-    buildBarsDOM(a);
-  }
-  else if(s.type==='pass'){
-    setExplain(2);
-    updateBarClasses(null,null,sortedFrom<Infinity?sortedFrom:undefined);
-  }
-  else if(s.type==='flag'){setExplain(3);}
-  else if(s.type==='compare'){
-    cmp++;
-    document.getElementById('s-cmp').textContent=cmp;
-    setExplain(6);
-    updateBarClasses([s.j,s.j+1],null,sortedFrom<Infinity?sortedFrom:undefined);
-  }
-  else if(s.type==='swap'){
-    swap++;acc+=2;
-    document.getElementById('s-swap').textContent=swap;
-    document.getElementById('s-acc').textContent=acc;
-    setExplain(8);
-    // Animate physical swap
-    awaitingSwap=true;
-    if(playing) stopPlay();
-    updateBarClasses(null,[s.j,s.j+1],sortedFrom<Infinity?sortedFrom:undefined);
-    animateSwap(s.j,()=>{
-      awaitingSwap=false;
-      // resume from afterswap step
-      if(stepIdx<steps.length&&steps[stepIdx].type==='afterswap'){
-        applyStep(steps[stepIdx++]);
-      }
-      if(playing) continuePlay();
-    });
-    return; // don't advance yet
-  }
-  else if(s.type==='afterswap'){
-    updateBarClasses(null,null,sortedFrom<Infinity?sortedFrom:undefined);
-  }
-  else if(s.type==='noswap'){
-    updateBarClasses(null,null,sortedFrom<Infinity?sortedFrom:undefined);
-  }
-  else if(s.type==='sorted_right'){
-    sortedFrom=s.from;
-    updateBarClasses(null,null,sortedFrom);
-  }
-  else if(s.type==='early'){
-    setExplain(13);
-    sortedFrom=0;
-    updateBarClasses(null,null,0);
-  }
-  else if(s.type==='done'){
-    sortedFrom=0;
-    updateBarClasses(null,null,0);
-    document.getElementById('explain').textContent='🎉 Sắp xếp hoàn tất!';
-    document.getElementById('pass-progress').style.width='100%';
-    stopPlay();
+  switch(s.type) {
+    case 'init':
+      sortedFrom=Infinity; buildBarsDOM(s.arr); showCompare(0,0,'idle'); hl(-1);
+      showPointers(-1);
+      setExplain('💡','info','Bubble Sort so sánh từng cặp phần tử kề nhau và hoán đổi nếu sai thứ tự. Phần tử lớn nhất "nổi bọt" về cuối sau mỗi pass.');
+      setInsight('💡 Tại sao gọi là "Nổi bọt"?','Giống bọt khí trong nước, phần tử <b>lớn nhất</b> dần "nổi" lên vị trí cuối mảng sau mỗi lượt duyệt.');
+      break;
+    case 'pass':
+      passSwapCount=0;
+      hl(2);
+      showCompare(0,0,'pass');
+      showPointers(-1);
+      updateBars();
+      setExplain('🔄','pass',`<b>Pass ${s.pass+1}</b> — Duyệt mảng từ trái sang phải. So sánh từng cặp kề nhau, đẩy phần tử lớn nhất về cuối.`);
+      setInsight(`📊 Pass ${s.pass+1}/${arr.length-1}`,`Sau pass này, phần tử lớn nhất trong vùng chưa sắp xếp sẽ "nổi bọt" về đúng vị trí cuối. Đã có <b>${arr.length-1-sortedFrom+1 < 0 ? 0 : (sortedFrom===Infinity?0:arr.length-sortedFrom)}</b> phần tử đã xếp đúng.`);
+      break;
+    case 'compare':
+      cmpCount++; document.getElementById('s-cmp').textContent=cmpCount;
+      hl(5);
+      updateBars([s.j,s.j+1]);
+      showPointers(s.j);
+      showCompare(s.arr[s.j], s.arr[s.j+1], 'compare');
+      const willSwap = s.arr[s.j] > s.arr[s.j+1];
+      setExplain('🔍','compare',`So sánh vị trí <b>[${s.j}]=${s.arr[s.j]}</b> và <b>[${s.j+1}]=${s.arr[s.j+1]}</b>. ${willSwap ? `<b>${s.arr[s.j]} > ${s.arr[s.j+1]}</b> → sai thứ tự, cần hoán đổi!` : `<b>${s.arr[s.j]} ≤ ${s.arr[s.j+1]}</b> → đúng thứ tự, bỏ qua.`}`);
+      break;
+    case 'swap':
+      swapCount++; passSwapCount++;
+      document.getElementById('s-swap').textContent=swapCount;
+      hl(6);
+      updateBars(null,[s.j,s.j+1]);
+      showCompare(s.v1, s.v2, 'compare');
+      spawnBubbles(s.j);
+      setExplain('🫧','swap',`Hoán đổi! <b>${s.v1}</b> ⇄ <b>${s.v2}</b>. Phần tử lớn hơn (${s.v1}) "nổi bọt" sang phải.`);
+      setInsight('🫧 Đang nổi bọt...',`Phần tử <b>${s.v1}</b> đang di chuyển về phía bên phải. Sau pass này nó có thể tiếp tục "nổi" thêm nếu vẫn lớn hơn các phần tử kế tiếp.`);
+      awaitingSwap=true;
+      if (playing) clearTimeout(timer);
+      animateSwap(s.j, ()=>{
+        awaitingSwap=false;
+        if (stepIdx<steps.length && steps[stepIdx].type==='after') applyStep(steps[stepIdx++]);
+        if (playing) timer=setTimeout(tick, getDelay());
+      });
+      return;
+    case 'after':
+      updateBars(); hl(7);
+      break;
+    case 'ok':
+      hl(5); updateBars(); showPointers(s.j);
+      break;
+    case 'pass-done':
+      sortedFrom=s.from; hl(10); updateBars();
+      showCompare(s.max, 0, 'pass-done');
+      showPointers(-1);
+      setExplain('✅','sorted',`Pass ${s.pass+1} hoàn tất! <b>${passSwapCount}</b> lần hoán đổi. Phần tử <b>${s.max}</b> đã về đúng vị trí cuối (index ${s.from}).`);
+      setInsight(`✅ Kết quả Pass ${s.pass+1}`,`Phần tử lớn nhất <b>${s.max}</b> đã "nổi bọt" về vị trí ${s.from}. Vùng xanh lá (bên phải) = đã sắp xếp đúng, không cần xét nữa. Tiếp tục pass ${s.pass+2}...`);
+      break;
+    case 'early':
+      sortedFrom=0; hl(10); updateBars(); showPointers(-1);
+      showCompare(0,0,'done');
+      setExplain('⚡','sorted',`<b>Early termination!</b> Pass vừa rồi không có hoán đổi nào → mảng đã sắp xếp xong. Dừng sớm thay vì tiếp tục duyệt vô nghĩa!`);
+      setInsight('⚡ Tối ưu Early Exit',`Cờ <code>swapped = false</code> giúp phát hiện mảng đã sắp xếp sớm. Best case O(n) xảy ra khi mảng đã gần đúng thứ tự — chỉ cần 1 pass duy nhất!`);
+      break;
+    case 'done':
+      sortedFrom=0; updateBars(); showPointers(-1);
+      showCompare(0,0,'done');
+      hl(12);
+      document.getElementById('progress-bar').style.width='100%';
+      stopPlay();
+      setExplain('🎉','sorted',`Hoàn tất! Tổng cộng <b>${cmpCount}</b> so sánh và <b>${swapCount}</b> hoán đổi.`);
+      setInsight('📈 Phân tích',`Với ${arr.length} phần tử: <b>${cmpCount}</b> so sánh (worst case = ${(arr.length*(arr.length-1)/2)}). Bubble Sort đơn giản nhưng chậm với dữ liệu lớn. Merge Sort/Quick Sort nhanh hơn: O(n log n).`);
+      document.querySelectorAll('.bar').forEach((b,i)=>{b.style.animation=`celebrate 0.5s ease ${i*30}ms`});
+      break;
   }
 }
 
-function getDelay(){return Math.round(1100-document.getElementById('speed').value*100);}
-
-function continuePlay(){
-  playing=true;
-  document.getElementById('btn-play').textContent='⏸ Pause';
-  tick();
-}
-
-function tick(){
-  if(awaitingSwap) return;
-  if(stepIdx>=steps.length){stopPlay();return;}
-  applyStep(steps[stepIdx++]);
-  if(playing&&!awaitingSwap) timer=setTimeout(tick,getDelay());
-}
-
-function startPlay(){
-  if(stepIdx>=steps.length) reset();
-  playing=true;
-  document.getElementById('btn-play').textContent='⏸ Pause';
-  tick();
-}
-function stopPlay(){
-  playing=false;
-  clearTimeout(timer);
-  document.getElementById('btn-play').textContent='▶ Play';
-}
-function reset(){
-  stopPlay();awaitingSwap=false;stepIdx=0;cmp=0;swap=0;acc=0;sortedFrom=Infinity;
+function getDelay() { return Math.round(1200 - document.getElementById('speed').value*110); }
+function tick() { if(awaitingSwap) return; if(stepIdx>=steps.length){stopPlay();return;} applyStep(steps[stepIdx++]); if(playing&&!awaitingSwap) timer=setTimeout(tick,getDelay()); }
+function startPlay() { if(stepIdx>=steps.length) reset(); playing=true; document.getElementById('btn-play').textContent='⏸ Pause'; tick(); }
+function stopPlay() { playing=false; clearTimeout(timer); document.getElementById('btn-play').textContent='▶ Play'; }
+function reset() {
+  stopPlay(); awaitingSwap=false; stepIdx=0; cmpCount=0; swapCount=0; sortedFrom=Infinity; passSwapCount=0;
   buildSteps();
-  document.getElementById('s-cmp').textContent=0;
-  document.getElementById('s-swap').textContent=0;
-  document.getElementById('s-acc').textContent=0;
-  document.getElementById('pass-info').textContent='Pass: 0';
-  document.getElementById('pass-progress').style.width='0%';
-  highlightLine(-1);
-  buildBarsDOM(arr);
-  document.getElementById('explain').textContent='👋 Nhấn Play để bắt đầu!';
-}
-
-function animateStat(id){
-  const el=document.getElementById(id);
-  el.style.animation='none';
-  el.offsetHeight;
-  el.style.animation='counterTick .3s ease';
+  document.getElementById('s-cmp').textContent='0'; document.getElementById('s-swap').textContent='0';
+  document.getElementById('pass-info').textContent='Pass —';
+  document.getElementById('progress-bar').style.width='0%';
+  hl(-1); buildBarsDOM(arr); showCompare(0,0,'idle'); showPointers(-1);
+  setExplain('💡','info','Bubble Sort so sánh từng cặp phần tử kề nhau và hoán đổi nếu sai thứ tự. Phần tử lớn nhất "nổi bọt" về cuối sau mỗi pass.');
+  setInsight('💡 Tại sao gọi là "Nổi bọt"?','Giống bọt khí trong nước, phần tử <b>lớn nhất</b> dần "nổi" lên vị trí cuối mảng sau mỗi lượt duyệt.');
 }
 
 document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
-document.getElementById('btn-step').onclick=()=>{
-  stopPlay();
-  if(awaitingSwap) return;
-  if(stepIdx<steps.length) applyStep(steps[stepIdx++]);
-};
+document.getElementById('btn-step').onclick=()=>{stopPlay();if(!awaitingSwap&&stepIdx<steps.length)applyStep(steps[stepIdx++]);};
 document.getElementById('btn-reset').onclick=reset;
 document.getElementById('btn-new').onclick=()=>{genArray();reset();};
 document.getElementById('size-sel').onchange=()=>{genArray();reset();};
 
-buildCode();
-genArray();
-reset();
+buildCode(); genArray(); reset();
 </script>
 </body>
 </html>

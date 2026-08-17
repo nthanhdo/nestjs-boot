@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SE Mindset — Lộ trình 5 Phases</title>
+<style>
+  :root { --bg:#0b1120; --surface:#131a2e; --surface2:#1a2340; --border:#2a3a5c; --text:#eef1f8; --muted:#8899bb; --accent:#a78bfa; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+  body::before { content:''; position:fixed; inset:0; background:radial-gradient(ellipse at 30% 10%,rgba(108,92,231,0.06) 0%,transparent 50%),radial-gradient(ellipse at 70% 90%,rgba(232,67,147,0.04) 0%,transparent 50%); pointer-events:none; }
+  .container { max-width:900px; margin:0 auto; padding:40px 24px 80px; position:relative; z-index:1; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+
+  .back { display:inline-block; margin-bottom:24px; font-size:.85rem; color:var(--muted); }
+  .back:hover { color:var(--accent); }
+
+  h1 { font-size:2rem; font-weight:800; margin-bottom:8px;
+    background:linear-gradient(135deg,#e84393,#a78bfa,#0984e3);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .subtitle { color:var(--muted); font-size:.95rem; line-height:1.7; margin-bottom:32px; }
+  .subtitle b { color:var(--text); }
+
+  /* Phase roadmap */
+  .roadmap { display:flex; gap:4px; margin-bottom:40px; flex-wrap:wrap; align-items:center; }
+  .rm-phase { padding:10px 16px; border-radius:10px; font-size:.78rem; font-weight:700; border:1px solid var(--border); color:var(--muted); transition:all 0.2s; cursor:pointer; text-align:center; min-width:100px; }
+  .rm-phase:hover { border-color:var(--accent); color:var(--accent); }
+  .rm-phase.active { color:#fff; border-color:transparent; }
+  .rm-arrow { color:var(--border); font-size:1.2rem; }
+
+  /* Phase section */
+  .phase { margin-bottom:40px; }
+  .phase-header { display:flex; align-items:center; gap:12px; margin-bottom:6px; }
+  .phase-badge { padding:4px 12px; border-radius:8px; font-size:.72rem; font-weight:800; color:#fff; letter-spacing:0.5px; }
+  .phase-title { font-size:1.2rem; font-weight:700; }
+  .phase-desc { color:var(--muted); font-size:.85rem; line-height:1.6; margin-bottom:14px; padding-left:0; }
+  .phase-desc b { color:var(--text); }
+
+  .lessons { display:flex; flex-direction:column; gap:8px; }
+  .lesson {
+    background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:14px 16px; display:flex; align-items:center; gap:14px;
+    text-decoration:none!important; color:var(--text); transition:all 0.2s;
+  }
+  .lesson:hover { border-color:var(--accent); background:var(--surface2); transform:translateX(4px); }
+  .lesson-num { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:.72rem; font-weight:800; color:#fff; flex-shrink:0; }
+  .lesson-body { flex:1; }
+  .lesson-title { font-size:.9rem; font-weight:600; }
+  .lesson-sub { font-size:.72rem; color:var(--muted); margin-top:2px; }
+  .lesson-arrow { color:var(--border); transition:all 0.2s; }
+  .lesson:hover .lesson-arrow { color:var(--accent); transform:translateX(3px); }
+
+  .p1 { background:linear-gradient(135deg,#e17055,#fab1a0); }
+  .p2 { background:linear-gradient(135deg,#fdcb6e,#f39c12); }
+  .p3 { background:linear-gradient(135deg,#00b894,#55efc4); }
+  .p4 { background:linear-gradient(135deg,#0984e3,#74b9ff); }
+  .p5 { background:linear-gradient(135deg,#6c5ce7,#a29bfe); }
+
+  /* Transformation */
+  .transform { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:24px 28px; margin-top:40px; }
+  .transform h2 { font-size:1rem; color:var(--accent); margin-bottom:14px; }
+  .tf-row { display:flex; align-items:center; gap:12px; margin-bottom:8px; font-size:.88rem; }
+  .tf-before { color:var(--muted); flex:1; text-align:right; }
+  .tf-arrow { color:var(--accent); font-weight:800; }
+  .tf-after { color:var(--text); font-weight:600; flex:1; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="../index.html" class="back">← Teaching Hub</a>
+
+  <h1>🧠 Software Engineering Mindset</h1>
+  <p class="subtitle">
+    <b>19 bài trình diễn interactive</b> — 5 giai đoạn chuyển hóa tư duy.<br>
+    Từ "biết code" → "biết giải quyết vấn đề bằng software".
+  </p>
+
+  <div class="roadmap">
+    <div class="rm-phase active p1" onclick="document.getElementById('ph1').scrollIntoView({behavior:'smooth'})">Phase 1<br>THINK</div>
+    <div class="rm-arrow">→</div>
+    <div class="rm-phase active p2" onclick="document.getElementById('ph2').scrollIntoView({behavior:'smooth'})">Phase 2<br>BUILD</div>
+    <div class="rm-arrow">→</div>
+    <div class="rm-phase active p3" onclick="document.getElementById('ph3').scrollIntoView({behavior:'smooth'})">Phase 3<br>ENGINEER</div>
+    <div class="rm-arrow">→</div>
+    <div class="rm-phase active p4" onclick="document.getElementById('ph4').scrollIntoView({behavior:'smooth'})">Phase 4<br>PRODUCTION</div>
+    <div class="rm-arrow">→</div>
+    <div class="rm-phase active p5" onclick="document.getElementById('ph5').scrollIntoView({behavior:'smooth'})">Phase 5<br>PROFESSIONAL</div>
+  </div>
+
+  <!-- Phase 1 -->
+  <div class="phase" id="ph1">
+    <div class="phase-header"><div class="phase-badge p1">PHASE 1</div><div class="phase-title">THINK — Tư duy nền tảng</div></div>
+    <p class="phase-desc">Trước khi viết bất kỳ dòng code nào, sinh viên cần biết <b>cách tư duy</b>: chia nhỏ vấn đề, nhận diện pattern, hiểu trade-off, và viết code sạch. 4 bài này là nền móng cho tất cả những gì phía sau.</p>
+    <div class="lessons">
+      <a class="lesson" href="phase-1-think/01-computational-thinking.html"><div class="lesson-num p1">01</div><div class="lesson-body"><div class="lesson-title">Computational Thinking — Tư duy tính toán</div><div class="lesson-sub">Decomposition · Abstraction · Pattern Recognition · Edge Cases · Trade-off</div></div><div class="lesson-arrow">→</div></a>
+      <a class="lesson" href="phase-1-think/02-programming-thinking.html"><div class="lesson-num p1">02</div><div class="lesson-body"><div class="lesson-title">Programming Thinking — Tư duy lập trình</div><div class="lesson-sub">Data & State · Control Flow · Module · Interface · Side Effects</div></div><div class="lesson-arrow">→</div></a>
+      <a class="lesson" href="phase-1-think/03-clean-code.html"><div class="lesson-num p1">03</div><div class="lesson-body"><div class="lesson-title">Clean Code & Code Quality</div><div class="lesson-sub">SOLID · DRY · KISS · YAGNI · Code Smells · Refactoring · Tech Debt</div></div><div class="lesson-arrow">→</div></a>
+      <a class="lesson" href="phase-1-think/04-design-pattern.html"><div class="lesson-num p1">04</div><div class="lesson-body"><div class="lesson-title">Design Patterns</div><div class="lesson-sub">Factory · Observer · Strategy · Adapter · Decorator · Anti-patterns</div></div><div class="lesson-arrow">→</div></a>
+    </div>
+  </div>
+
+  <!-- Phase 2 -->
+  <div class="phase" id="ph2">
+    <div class="phase-header"><div class="phase-badge p2">PHASE 2</div><div class="phase-title">BUILD — Xây dựng hệ thống</div></div>
+    <p class="phase-desc">Áp dụng tư duy vào việc <b>thiết kế và xây dựng</b>: từ UI nhất quán (Design System) → kiến trúc phần mềm → database → API. Kết thúc phase này, sinh viên thiết kế được 1 hệ thống hoàn chỉnh trên giấy.</p>
+    <div class="lessons">
+      <a class="lesson" href="phase-2-build/05-design-system.html"><div class="lesson-num p2">05</div><div class="lesson-body"><div class="lesson-title">Design System</div><div class="lesson-sub">Tokens · Typography · Components · Responsive · Accessibility</div></div><div class="lesson-arrow">→</div></a>
+      <a class="lesson" href="phase-2-build/06-architecture.html"><div class="lesson-num p2">06</div><div class="lesson-body"><div class="lesson-title">Software Architecture</div><div class="lesson-sub">Layered · Clean · Microservices · Event-driven · Trade-offs</div></div><div class="lesson-arrow">→</div></a>
+      <a class="lesson" href="phase-2-build/07-database-thinking.html"><div class="lesson-num p2">07</div><div class="lesson-body"><div class="lesson-title">Database Thinking</div><div class="lesson-sub">ERD · Normalization · Index · ACID · N+1 · SQL vs NoSQL</div></div><div class="lesson-arrow">→</div></a>
+      <a class="lesson" href="phase-2-build/08-api-fundamentals.html"><div class="lesson-num p2">08</div><div class="lesson-body"><div class="lesson-title">API & Backend Fundamentals</div><div class="lesson-sub">REST · HTTP · JWT · Pagination · Validation · Idempotency</div></div><div class="lesson-arrow">→</div></a>
+    </div>
+  </div>
+
+  <!-- Phase 3 -->
+  <div class="phase" id="ph3">
+    <div class="phase-header"><div class="phase-badge p3">PHASE 3</div><div class="phase-title">ENGINEER — Kỹ năng kỹ sư</div></div>
+    <p class="phase-desc">Xây xong thì phải <b>kiểm thử, debug, bảo mật, và thiết kế cho scale</b>. Phase này biến "developer" thành "engineer" — người chịu trách nhiệm về chất lượng và độ tin cậy của hệ thống.</p>
+    <div class="lessons">
+      <a class="lesson" href="phase-3-engineer/09-testing.html"><div class="lesson-num p3">09</div><div class="lesson-body"><div class="lesson-title">Testing — Kiểm thử</div><div class="lesson-sub">Unit · Integration · E2E · TDD · Mock/Stub · Coverage</div></div><div class="lesson-arrow">→</div></a>
+      <a class="lesson" href="phase-3-engineer/10-debugging.html"><div class="lesson-num p3">10</div><div class="lesson-body"><div class="lesson-title">Debugging & Root Cause Analysis</div><div class="lesson-sub">5 Whys · Stack Trace · Git Bisect · Profiling</div></div><div class="lesson-arrow">→</div></a>
+      <a class="lesson" href="phase-3-engineer/11-git-workflow.html"><div class="lesson-num p3">11</div><div class="lesson-body"><div class="lesson-title">Git & Development Workflow</div><div class="lesson-sub">Branch · PR · Code Review · Merge · Semantic Versioning</div></div><div class="lesson-arrow">→</div></a>
+      <a class="lesson" href="phase-3-engineer/12-security.html"><div class="lesson-num p3">12</div><div class="lesson-body"><div class="lesson-title">Security Mindset</div><div class="lesson-sub">OWASP Top 10 · JWT · Injection · Path Traversal · CTF</div></div><div class="lesson-arrow">→</div></a>
+      <a class="lesson" href="phase-3-engineer/13-system-design.html"><div class="lesson-num p3">13</div><div class="lesson-body"><div class="lesson-title">System Design</div><div class="lesson-sub">Scaling · Caching · Queue · CAP · Circuit Breaker</div></div><div class="lesson-arrow">→</div></a>
+    </div>
+  </div>
+
+  <!-- Phase 4 -->
+  <div class="phase" id="ph4">
+    <div class="phase-header"><div class="phase-badge p4">PHASE 4</div><div class="phase-title">PRODUCTION — Triển khai thực tế</div></div>
+    <p class="phase-desc">Code trên máy ≠ code trên production. Phase này dạy cách <b>đóng gói, tự động hóa, triển khai</b> và sử dụng AI như công cụ tăng tốc — không phải thay thế tư duy.</p>
+    <div class="lessons">
+      <a class="lesson" href="phase-4-production/14-devops.html"><div class="lesson-num p4">14</div><div class="lesson-body"><div class="lesson-title">DevOps & CI/CD</div><div class="lesson-sub">Docker · GitHub Actions · Deploy · Monitoring · Rollback</div></div><div class="lesson-arrow">→</div></a>
+      <a class="lesson" href="phase-4-production/15-ai-programming.html"><div class="lesson-num p4">15</div><div class="lesson-body"><div class="lesson-title">AI-assisted Programming</div><div class="lesson-sub">Prompting · Verification · Hallucination · Ownership</div></div><div class="lesson-arrow">→</div></a>
+    </div>
+  </div>
+
+  <!-- Phase 5 -->
+  <div class="phase" id="ph5">
+    <div class="phase-header"><div class="phase-badge p5">PHASE 5</div><div class="phase-title">PROFESSIONAL — Chuyên nghiệp</div></div>
+    <p class="phase-desc">Kỹ năng cuối cùng biến "developer" thành "professional engineer": <b>làm việc nhóm, hiểu product, viết docs, truyền đạt technical knowledge</b>. Kết thúc bằng Capstone Project và chuẩn bị career.</p>
+    <div class="lessons">
+      <a class="lesson" href="phase-5-professional/16-engineering-workflow.html"><div class="lesson-num p5">16</div><div class="lesson-body"><div class="lesson-title">Engineering Workflow</div><div class="lesson-sub">Agile · Scrum · Estimation · RFC · ADR · Communication</div></div><div class="lesson-arrow">→</div></a>
+      <a class="lesson" href="phase-5-professional/17-product-thinking.html"><div class="lesson-num p5">17</div><div class="lesson-body"><div class="lesson-title">Product Thinking</div><div class="lesson-sub">User Problem · MVP · Metrics · Cost vs Value · Trade-off</div></div><div class="lesson-arrow">→</div></a>
+      <a class="lesson" href="phase-5-professional/18-documentation.html"><div class="lesson-num p5">18</div><div class="lesson-body"><div class="lesson-title">Documentation & Communication</div><div class="lesson-sub">README · API Docs · C4 · Sequence Diagram · ADR</div></div><div class="lesson-arrow">→</div></a>
+      <a class="lesson" href="phase-5-professional/19-capstone-overview.html"><div class="lesson-num p5">19</div><div class="lesson-body"><div class="lesson-title">Capstone & Career Preparation</div><div class="lesson-sub">Final Project · CV · Interview · Open Source · Learning Path</div></div><div class="lesson-arrow">→</div></a>
+    </div>
+  </div>
+
+  <!-- Transformation -->
+  <div class="transform">
+    <h2>🎓 Mục tiêu chuyển hóa</h2>
+    <div class="tf-row"><div class="tf-before">"Em biết code"</div><div class="tf-arrow">→</div><div class="tf-after">"Em biết giải quyết vấn đề bằng software"</div></div>
+    <div class="tf-row"><div class="tf-before">"Code chạy"</div><div class="tf-arrow">→</div><div class="tf-after">"Code đúng"</div></div>
+    <div class="tf-row"><div class="tf-before">"Feature hoạt động"</div><div class="tf-arrow">→</div><div class="tf-after">"Feature maintainable"</div></div>
+    <div class="tf-row"><div class="tf-before">"Em làm được"</div><div class="tf-arrow">→</div><div class="tf-after">"Em giải thích được tại sao"</div></div>
+    <div class="tf-row"><div class="tf-before">"AI viết code cho em"</div><div class="tf-arrow">→</div><div class="tf-after">"Em dùng AI nhưng vẫn kiểm soát kết quả"</div></div>
+  </div>
+</div>
+</body>
+</html>

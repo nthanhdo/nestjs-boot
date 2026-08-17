@@ -30,6 +30,27 @@
   .tip::before{content:'💡';position:absolute;left:14px;top:14px;font-size:1.1rem}
   .warning{background:#2d1a0d;border:1px solid #9e4f1e;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
   .warning::before{content:'⚠️';position:absolute;left:14px;top:14px;font-size:1.1rem}
+
+  /* ── Sticky Nav ── */
+  .nav-bar{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #30363d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .nav-links{display:flex;gap:8px;flex-wrap:wrap}
+  .nav-link{color:#8b949e;text-decoration:none;font-size:.8rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s;white-space:nowrap}
+  .nav-link:hover{color:#58a6ff;border-color:#58a6ff}
+  .nav-link.current{color:#58a6ff;border-color:#58a6ff;background:#0d1a2d}
+  .nav-center{font-size:.8rem;color:#484f58}
+
+  /* Prerequisites */
+  .prereq{background:#1a0d2d;border:1px solid #6e40c9;border-radius:8px;padding:14px 16px;margin:0 0 32px;display:flex;align-items:flex-start;gap:10px}
+  .prereq-icon{font-size:1.1rem;flex-shrink:0;margin-top:2px}
+  .prereq-label{font-size:.78rem;font-weight:700;color:#bc8cff;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .prereq-links{display:flex;flex-wrap:wrap;gap:6px}
+  .prereq-link{font-size:.78rem;padding:2px 8px;border-radius:8px;background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e;text-decoration:none;transition:background .2s}
+  .prereq-link:hover{background:#1f4a9e}
+
+  /* Cross-references */
+  .xref{display:inline;font-size:.8rem;padding:1px 7px;border-radius:6px;background:#0d2d1a;color:#3fb950;border:1px solid #238636;text-decoration:none;white-space:nowrap;transition:background .2s}
+  .xref:hover{background:#238636;color:#fff}
+
   /* Infinity Loop */
   .infinity-wrap{display:flex;justify-content:center;margin:32px 0}
   .infinity-svg{width:100%;max-width:700px}
@@ -44,7 +65,6 @@
   .term-line{margin:2px 0;white-space:pre}
   .term-prompt{color:#3fb950}
   .term-output{color:#c9d1d9}
-  .term-comment{color:#8b949e}
   .cursor{display:inline-block;width:8px;height:14px;background:#58a6ff;animation:blink 1s infinite}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
   /* Container vs VM */
@@ -97,14 +117,6 @@
   .metric-label{font-size:.78rem;color:#8b949e;margin-top:4px}
   .metric-trend{font-size:.8rem;margin-top:4px}
   .trend-up{color:#3fb950}
-  .trend-down{color:#ff7b72}
-  /* Exercise */
-  .exercise{background:#0d1a2d;border:1px solid #1f4a9e;border-radius:12px;padding:24px;margin:32px 0}
-  .exercise h3{color:#58a6ff;margin-bottom:12px}
-  .checklist{list-style:none;padding:0}
-  .checklist li{padding:8px 0;color:#c9d1d9;display:flex;align-items:flex-start;gap:10px;border-bottom:1px solid #21262d;font-size:.9rem}
-  .checklist li:last-child{border-bottom:none}
-  .ch{color:#3fb950;flex-shrink:0;margin-top:2px}
   /* Compose diagram */
   .compose-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
   .service-box{background:#161b22;border:2px solid #30363d;border-radius:10px;padding:16px;text-align:center;position:relative}
@@ -121,6 +133,28 @@
   .env-stg{border-color:#f0883e}
   .env-prod{border-color:#ff7b72}
   .section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
+
+  /* Exercises */
+  .exercises{margin:48px 0}
+  .exercises-title{font-size:1.2rem;color:#79c0ff;margin-bottom:24px;padding-left:12px;border-left:3px solid #58a6ff}
+  .ex-card{border-radius:12px;padding:20px 24px;margin:16px 0}
+  .ex-green{background:#0a1f0a;border:1px solid #238636}
+  .ex-yellow{background:#1f1a0a;border:1px solid #9e6c1e}
+  .ex-red{background:#1f0a0a;border:1px solid #9e1e1e}
+  .ex-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .ex-diff{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
+  .diff-green{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .diff-yellow{background:#3b2a0d;color:#d4a843;border:1px solid #9e6c1e}
+  .diff-red{background:#3b0d0d;color:#ff7b72;border:1px solid #9e1e1e}
+  .ex-num{font-size:.8rem;font-weight:700;color:#8b949e}
+  .ex-title{font-size:.95rem;font-weight:700;color:#c9d1d9}
+  .ex-desc{font-size:.88rem;color:#8b949e;margin-top:4px}
+  .ex-solution{margin-top:12px}
+  .ex-sol-toggle{background:none;border:1px solid #30363d;color:#8b949e;border-radius:6px;padding:4px 12px;font-size:.75rem;cursor:pointer;transition:all .2s}
+  .ex-sol-toggle:hover{border-color:#58a6ff;color:#58a6ff}
+  .ex-sol-body{display:none;margin-top:10px;padding:12px;background:#0d1117;border-radius:8px;font-size:.83rem;color:#c9d1d9;line-height:1.6}
+  .ex-sol-body.open{display:block}
+
   @media(max-width:600px){
     .compare-grid,.strategy-grid,.dashboard{grid-template-columns:1fr}
     .compose-grid{grid-template-columns:1fr}
@@ -130,6 +164,17 @@
 </style>
 </head>
 <body>
+
+<!-- STICKY NAV -->
+<nav class="nav-bar">
+  <div class="nav-links">
+    <a class="nav-link" href="../phase-3-engineer/13-system-design.html">← Bài 13: System Design</a>
+    <span class="nav-link current">Bài 14: DevOps</span>
+    <a class="nav-link" href="15-ai-programming.html">Bài 15: AI Programming →</a>
+  </div>
+  <div class="nav-center">Phase 4 — Production</div>
+</nav>
+
 <div class="container">
   <div style="margin-bottom:20px">
     <span class="badge badge-orange">Phase 4</span>
@@ -139,9 +184,22 @@
   <h1>DevOps</h1>
   <p class="subtitle">Bridge Between Development và Operations — từ code đến production một cách tự động và đáng tin cậy.</p>
 
+  <!-- PREREQUISITES -->
+  <div class="prereq">
+    <div class="prereq-icon">📚</div>
+    <div>
+      <div class="prereq-label">Kiến thức cần có trước</div>
+      <div class="prereq-links">
+        <a class="prereq-link" href="../phase-3-engineer/11-git-workflow.html">Bài 11: Git</a>
+        <a class="prereq-link" href="../phase-3-engineer/09-testing.html">Bài 9: Testing</a>
+        <a class="prereq-link" href="../phase-3-engineer/13-system-design.html">Bài 13: System Design</a>
+      </div>
+    </div>
+  </div>
+
   <!-- INFINITY LOOP -->
   <h2>1. DevOps là gì?</h2>
-  <p>DevOps = <strong>Dev</strong>elopment + <strong>Op</strong>eration<strong>s</strong>. Không chỉ là tool, mà là <em>văn hóa</em> và <em>quy trình</em> — phá bỏ bức tường giữa team viết code và team vận hành.</p>
+  <p>DevOps = <strong>Dev</strong>elopment + <strong>Op</strong>eration<strong>s</strong>. Không chỉ là tool, mà là <em>văn hóa</em> và <em>quy trình</em> — phá bỏ bức tường giữa team viết code và team vận hành. Đây là kỹ năng thiết yếu để đưa code từ máy local đến <a class="xref" href="../phase-3-engineer/13-system-design.html">system production</a> đã thiết kế ở Bài 13.</p>
 
   <div class="infinity-wrap">
     <svg class="infinity-svg" viewBox="0 0 700 220" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -150,33 +208,27 @@
           <path d="M0,0 L8,4 L0,8 Z" fill="#58a6ff"/>
         </marker>
       </defs>
-      <!-- Left loop (Dev) -->
       <ellipse cx="230" cy="110" rx="170" ry="85" stroke="#3fb950" stroke-width="2.5" stroke-dasharray="6 3" opacity="0.4"/>
-      <!-- Right loop (Ops) -->
       <ellipse cx="470" cy="110" rx="170" ry="85" stroke="#f0883e" stroke-width="2.5" stroke-dasharray="6 3" opacity="0.4"/>
-      <!-- Infinity path animated -->
       <path d="M350,110 C350,60 180,30 130,75 C80,120 130,175 200,155 C270,135 350,60 350,110 C350,160 480,195 550,155 C620,115 570,45 500,65 C430,85 350,160 350,110Z"
             stroke="#58a6ff" stroke-width="3" fill="none">
         <animate attributeName="stroke-dasharray" from="0,2000" to="2000,0" dur="3s" fill="freeze"/>
       </path>
-      <!-- Labels -->
       <text x="175" y="50" fill="#3fb950" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="600">PLAN</text>
       <text x="110" y="110" fill="#3fb950" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="600">CODE</text>
       <text x="175" y="175" fill="#3fb950" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="600">BUILD</text>
       <text x="280" y="80" fill="#79c0ff" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="600">TEST</text>
-      <!-- Ops side -->
       <text x="420" y="50" fill="#f0883e" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="600">RELEASE</text>
       <text x="570" y="110" fill="#f0883e" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="600">DEPLOY</text>
       <text x="520" y="175" fill="#f0883e" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="600">OPERATE</text>
       <text x="350" y="185" fill="#bc8cff" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="600">MONITOR</text>
-      <!-- Center labels -->
       <text x="230" y="108" fill="#c9d1d9" font-size="11" text-anchor="middle" font-family="sans-serif" opacity="0.7">DEV</text>
       <text x="470" y="108" fill="#c9d1d9" font-size="11" text-anchor="middle" font-family="sans-serif" opacity="0.7">OPS</text>
     </svg>
   </div>
 
   <div class="tip">
-    <strong>Tại sao cần DevOps?</strong> Trước đây: Dev viết code →던qua cho Ops → Ops than phiền "code này không chạy được trên server". DevOps xóa bỏ câu "works on my machine" bằng cách tự động hóa toàn bộ pipeline.
+    <strong>Tại sao cần DevOps?</strong> Trước đây: Dev viết code → đưa qua cho Ops → Ops than phiền "code này không chạy được trên server". DevOps xóa bỏ câu "works on my machine" bằng cách tự động hóa toàn bộ pipeline.
   </div>
 
   <hr class="section-divider">
@@ -223,7 +275,7 @@
 
   <!-- DOCKER -->
   <h2>3. Docker — Containers vs VMs</h2>
-  <p>Docker đóng gói ứng dụng cùng với <em>mọi thứ nó cần</em> — code, runtime, thư viện, config — thành một unit nhất quán chạy ở bất cứ đâu.</p>
+  <p>Docker đóng gói ứng dụng cùng với <em>mọi thứ nó cần</em> — code, runtime, thư viện, config — thành một unit nhất quán chạy ở bất cứ đâu. Container = building block của bất kỳ <a class="xref" href="../phase-3-engineer/13-system-design.html">system design</a> hiện đại.</p>
 
   <div class="compare-grid">
     <div class="compare-box vm">
@@ -250,7 +302,7 @@
 
   <!-- DOCKERFILE -->
   <h2>4. Dockerfile — Multi-stage Build</h2>
-  <p>Mỗi lệnh trong Dockerfile tạo một <strong>layer</strong>. Layer không thay đổi được cache lại → build nhanh hơn.</p>
+  <p>Mỗi lệnh trong Dockerfile tạo một <strong>layer</strong>. Layer không thay đổi được cache lại → build nhanh hơn. Viết Dockerfile tốt là bước đầu tiên để <a class="xref" href="../phase-3-engineer/09-testing.html">test code</a> của bạn trong CI.</p>
 
   <div class="card">
     <h3>Layer Caching Visualization</h3>
@@ -314,7 +366,7 @@
 
   <!-- DOCKER COMPOSE -->
   <h2>5. Docker Compose — Multi-container</h2>
-  <p>Một ứng dụng thực tế cần nhiều services. Docker Compose orchestrate chúng bằng một file YAML.</p>
+  <p>Một ứng dụng thực tế cần nhiều services. Docker Compose orchestrate chúng bằng một file YAML. Cực kỳ hữu ích khi chạy local stack tương tự production.</p>
 
   <div class="compose-grid">
     <div class="service-box" style="border-color:#3fb950">
@@ -365,7 +417,7 @@
 
   <!-- CI/CD -->
   <h2>6. CI/CD Pipeline</h2>
-  <p><strong>CI</strong> (Continuous Integration) = merge code thường xuyên, tự động test. <strong>CD</strong> (Continuous Delivery/Deployment) = tự động deploy lên môi trường.</p>
+  <p><strong>CI</strong> (Continuous Integration) = merge code thường xuyên, tự động test (<a class="xref" href="../phase-3-engineer/09-testing.html">Bài 9 Testing</a> là cơ sở). <strong>CD</strong> (Continuous Delivery/Deployment) = tự động deploy lên môi trường.</p>
 
   <div class="pipeline">
     <div class="pipe-stage">
@@ -457,7 +509,7 @@
       <div style="color:#8b949e;font-size:.75rem">real users</div>
     </div>
   </div>
-  <div class="warning">Không bao giờ hardcode secrets (API key, password DB) vào code. Dùng environment variables và secrets manager (AWS Secrets Manager, GitHub Secrets, .env files chỉ local).</div>
+  <div class="warning">Không bao giờ hardcode secrets (API key, password DB) vào code. Dùng environment variables và secrets manager (AWS Secrets Manager, GitHub Secrets, .env files chỉ local). Liên quan mật thiết với <a class="xref" href="../phase-3-engineer/11-git-workflow.html">Git .gitignore</a> — Bài 11.</div>
 
   <hr class="section-divider">
 
@@ -538,30 +590,135 @@
   };
 }</div>
 
-  <hr class="section-divider">
-
-  <!-- EXERCISE -->
-  <div class="exercise">
-    <h3>🎯 Exercise: Deploy App với Docker + CI/CD</h3>
-    <p style="color:#8b949e;margin-bottom:16px;font-size:.9rem">Thực hành: deploy NestJS app từ đầu đến production</p>
-    <ul class="checklist">
-      <li><span class="ch">①</span>Viết <code>Dockerfile</code> với multi-stage build (builder + runner)</li>
-      <li><span class="ch">②</span>Viết <code>docker-compose.yml</code> với app + MongoDB + Redis</li>
-      <li><span class="ch">③</span>Test local: <code>docker-compose up --build</code> → app chạy ở :3000</li>
-      <li><span class="ch">④</span>Tạo <code>.github/workflows/deploy.yml</code> với triggers + build + test steps</li>
-      <li><span class="ch">⑤</span>Push lên GitHub → xem Actions tab → confirm pipeline green ✅</li>
-      <li><span class="ch">⑥</span>Thêm <code>/health</code> endpoint trả về status + timestamp</li>
-      <li><span class="ch">⑦</span><em>Bonus:</em> Cấu hình rolling deployment strategy</li>
-    </ul>
-  </div>
-
   <div class="tip">
     <strong>Key Takeaway:</strong> DevOps không phải về tools — mà về <em>culture of automation</em>. Bất cứ thứ gì làm tay nhiều hơn 2 lần → tự động hóa nó.
   </div>
 
+  <!-- ── EXERCISES ── -->
+  <hr class="section-divider">
+  <div class="exercises">
+    <div class="exercises-title">🎯 Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header">
+        <span class="ex-diff diff-green">🟢 Dễ</span>
+        <span class="ex-num">Bài 1</span>
+      </div>
+      <div class="ex-title">Viết Dockerfile multi-stage cho Node.js app</div>
+      <div class="ex-desc">Tạo một Dockerfile với 2 stage: <code>builder</code> (compile TypeScript) và <code>runner</code> (chỉ chứa dist + node_modules). Verify image size nhỏ hơn single-stage.</div>
+      <div class="ex-solution">
+        <button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">
+          <strong>Gợi ý:</strong><br>
+          1. Stage 1 <code>AS builder</code>: FROM node:20-alpine, COPY package*.json, RUN npm ci, COPY . ., RUN npm run build<br>
+          2. Stage 2 <code>AS runner</code>: FROM node:20-alpine, COPY --from=builder /app/dist, COPY --from=builder /app/node_modules<br>
+          3. Kiểm tra: <code>docker build -t myapp . && docker images myapp</code> — so sánh size<br>
+          4. Single-stage thường ~400MB, multi-stage ~80–120MB
+        </div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header">
+        <span class="ex-diff diff-green">🟢 Dễ</span>
+        <span class="ex-num">Bài 2</span>
+      </div>
+      <div class="ex-title">Viết docker-compose.yml: app + MongoDB + Redis</div>
+      <div class="ex-desc">Tạo file compose cho NestJS app với MongoDB và Redis. App phải kết nối được cả hai service. Chạy <code>docker-compose up</code> và verify app healthy.</div>
+      <div class="ex-solution">
+        <button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">
+          <strong>Gợi ý:</strong><br>
+          1. services: app (build: .), mongo (image: mongo:7), redis (image: redis:7-alpine)<br>
+          2. app depends_on: [mongo, redis]<br>
+          3. Env vars: MONGO_URI=mongodb://mongo:27017/db, REDIS_URL=redis://redis:6379<br>
+          4. volumes: mongo_data:/data/db để persist data<br>
+          5. Test: <code>docker-compose up -d && curl localhost:3000/health</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header">
+        <span class="ex-diff diff-yellow">🟡 Trung bình</span>
+        <span class="ex-num">Bài 3</span>
+      </div>
+      <div class="ex-title">GitHub Actions: CI pipeline (install → lint → test → build)</div>
+      <div class="ex-desc">Tạo <code>.github/workflows/ci.yml</code> trigger khi push vào bất kỳ branch. Pipeline: checkout → setup node → npm ci → lint → test → build. Pipeline phải green.</div>
+      <div class="ex-solution">
+        <button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">
+          <strong>Gợi ý:</strong><br>
+          on: push: branches: ['**'] — trigger mọi branch<br>
+          steps: actions/checkout@v4 → actions/setup-node@v4 (node-version: '20') → npm ci → npm run lint → npm test → npm run build<br>
+          Thêm cache: actions/cache@v3 với key: node-modules-${{ hashFiles('package-lock.json') }}<br>
+          Verify: Push lên GitHub → Actions tab → xem pipeline chạy
+        </div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header">
+        <span class="ex-diff diff-yellow">🟡 Trung bình</span>
+        <span class="ex-num">Bài 4</span>
+      </div>
+      <div class="ex-title">Debugging deploy: container crash → đọc logs → fix</div>
+      <div class="ex-desc">Cố tình tạo lỗi trong app (ví dụ: sai MONGO_URI). Build Docker image, chạy container, quan sát crash. Dùng <code>docker logs</code> để tìm nguyên nhân và fix.</div>
+      <div class="ex-solution">
+        <button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">
+          <strong>Workflow debug:</strong><br>
+          1. <code>docker-compose up -d</code> → app exit<br>
+          2. <code>docker-compose ps</code> → xem status<br>
+          3. <code>docker-compose logs app</code> → đọc error message<br>
+          4. Common errors: MongoServerError (sai URI), ECONNREFUSED (service chưa ready → thêm healthcheck + depends_on condition)<br>
+          5. Fix → <code>docker-compose down && docker-compose up -d --build</code>
+        </div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header">
+        <span class="ex-diff diff-red">🔴 Khó</span>
+        <span class="ex-num">Bài 5</span>
+      </div>
+      <div class="ex-title">Full pipeline: push code → CI green → Docker build → deploy → health check</div>
+      <div class="ex-desc">Xây dựng pipeline đầu đủ: code thay đổi → CI chạy tests → build Docker image → push lên registry → SSH vào server (hoặc dùng Railway/Render) → pull image mới → verify <code>/health</code> trả 200.</div>
+      <div class="ex-solution">
+        <button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">
+          <strong>Các bước chính:</strong><br>
+          1. Tạo account Docker Hub (free), lưu credentials vào GitHub Secrets<br>
+          2. Workflow: test job → nếu pass → build-push job (docker/login-action + docker/build-push-action)<br>
+          3. Deploy step: ssh-action để chạy docker pull + docker-compose up -d trên VPS, hoặc dùng Render/Railway webhook<br>
+          4. Verify: curl https://your-app.com/health → phải trả {"status":"ok"}<br>
+          5. Bonus: thêm Slack/Discord notification khi deploy fail
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <hr class="section-divider">
+  <div class="card">
+    <h3>📌 Tóm Tắt Bài 14</h3>
+    <ul style="color:#c9d1d9;padding-left:20px;margin-top:8px">
+      <li style="margin:6px 0"><strong>DevOps</strong> = culture + automation, không chỉ tools</li>
+      <li style="margin:6px 0"><strong>Docker</strong> = đóng gói app nhất quán (không còn "works on my machine")</li>
+      <li style="margin:6px 0"><strong>Multi-stage build</strong> = image nhỏ hơn, bảo mật hơn, deploy nhanh hơn</li>
+      <li style="margin:6px 0"><strong>Docker Compose</strong> = orchestrate multi-service local stack</li>
+      <li style="margin:6px 0"><strong>CI/CD</strong> = tự động hóa toàn bộ pipeline từ push đến production</li>
+      <li style="margin:6px 0"><strong>Environment management</strong> = secrets trong env vars, không trong code</li>
+      <li style="margin:6px 0"><strong>Monitoring</strong> = /health endpoint + metrics là must-have của production app</li>
+    </ul>
+  </div>
+
   <div style="text-align:center;margin-top:48px;padding:24px;border-top:1px solid #21262d">
     <p style="color:#8b949e;font-size:.85rem">Bài 14 / Phase 4 — Production</p>
-    <p style="margin-top:8px"><a href="15-ai-programming.html" style="color:#58a6ff;text-decoration:none">Tiếp theo: Bài 15 — AI Programming →</a></p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="../phase-3-engineer/13-system-design.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← Bài 13: System Design</a>
+      <a href="15-ai-programming.html" style="color:#58a6ff;text-decoration:none;font-size:.85rem">Tiếp theo: Bài 15 — AI Programming →</a>
+    </div>
   </div>
 </div>
 
@@ -593,6 +750,12 @@ function typeNext() {
   typeChar();
 }
 setTimeout(typeNext, 800);
+
+function toggleSol(btn) {
+  const body = btn.nextElementSibling;
+  const open = body.classList.toggle('open');
+  btn.textContent = open ? 'Ẩn gợi ý' : 'Xem gợi ý';
+}
 </script>
 </body>
 </html>

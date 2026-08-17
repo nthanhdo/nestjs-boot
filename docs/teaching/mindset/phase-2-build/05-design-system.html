@@ -14,7 +14,21 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 25% 15%, rgba(255,94,122,0.06) 0%, transparent 50%), radial-gradient(ellipse at 75% 85%, rgba(167,139,250,0.05) 0%, transparent 50%); pointer-events:none; z-index:0; }
-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; position: sticky; top: 0; z-index: 100; }
+
+/* TOP NAV */
+.top-nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 24px; position: sticky; top: 0; z-index: 200; }
+.top-nav-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: .82rem; }
+.top-nav-home { color: var(--muted); text-decoration: none; display: flex; align-items: center; gap: 4px; transition: color .2s; }
+.top-nav-home:hover { color: var(--pink); }
+.top-nav-sep { color: var(--border); }
+.top-nav-phase { color: var(--pink); font-weight: 700; }
+.top-nav-pos { color: var(--muted); margin-left: auto; }
+.top-nav-arrows { display: flex; gap: 6px; }
+.top-nav-link { color: var(--muted); text-decoration: none; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; transition: all .2s; font-size: .78rem; }
+.top-nav-link:hover { border-color: var(--pink); color: var(--pink); }
+.top-nav-link.disabled { opacity: .4; pointer-events: none; }
+
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; position: sticky; top: 41px; z-index: 100; }
 .header-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .phase-badge { background: linear-gradient(135deg,#e84393,#ff5e7a); color:#fff; padding: 3px 12px; border-radius: 20px; font-size: .7rem; font-weight: 700; }
 header h1 { font-size: 1.3rem; font-weight: 800; background: linear-gradient(135deg,#ff5e7a,#a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
@@ -51,6 +65,55 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 .dot { width:8px; height:8px; border-radius:50%; background:var(--border); transition:all .3s; cursor:pointer; }
 .dot.active { background:var(--pink); transform:scale(1.3); }
 .dot.done { background:rgba(255,94,122,0.4); }
+
+/* PREREQUISITES */
+.prereq { background: linear-gradient(135deg,rgba(167,139,250,0.08),rgba(167,139,250,0.04)); border: 1px solid rgba(167,139,250,0.3); border-radius: 12px; padding: 16px 20px; margin-bottom: 28px; }
+.prereq-label { font-size: .7rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.prereq-list { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+.prereq-list li a { color: var(--accent); text-decoration: none; font-size: .85rem; background: rgba(167,139,250,0.1); padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(167,139,250,0.3); transition: all .2s; }
+.prereq-list li a:hover { background: rgba(167,139,250,0.2); }
+
+/* CROSS-REF */
+.xref { display: inline; color: var(--pink); text-decoration: none; font-size: .85em; background: rgba(255,94,122,0.1); padding: 1px 7px; border-radius: 10px; border: 1px solid rgba(255,94,122,0.3); white-space: nowrap; transition: all .2s; }
+.xref:hover { background: rgba(255,94,122,0.2); }
+
+/* EXERCISES */
+.exercises { margin-top: 36px; }
+.ex-title { font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.exercise { border-radius: 14px; margin-bottom: 12px; overflow: hidden; }
+.exercise.easy { border: 1px solid rgba(46,204,113,0.4); }
+.exercise.medium { border: 1px solid rgba(255,211,59,0.4); }
+.exercise.hard { border: 1px solid rgba(231,76,60,0.4); }
+.ex-header { padding: 14px 18px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none; transition: background .2s; }
+.exercise.easy .ex-header { background: rgba(46,204,113,0.07); }
+.exercise.medium .ex-header { background: rgba(255,211,59,0.07); }
+.exercise.hard .ex-header { background: rgba(231,76,60,0.07); }
+.ex-header:hover { filter: brightness(1.1); }
+.ex-badge { font-size: .7rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+.exercise.easy .ex-badge { background: rgba(46,204,113,0.2); color: var(--green); }
+.exercise.medium .ex-badge { background: rgba(255,211,59,0.2); color: var(--yellow); }
+.exercise.hard .ex-badge { background: rgba(231,76,60,0.2); color: var(--red); }
+.ex-q { font-size: .9rem; font-weight: 600; flex: 1; }
+.ex-toggle { color: var(--muted); font-size: .8rem; transition: transform .3s; }
+.ex-body { display: none; padding: 0 18px 16px; }
+.ex-body.open { display: block; animation: fadeUp .3s; }
+.ex-solution { background: var(--surface2); border-radius: 10px; padding: 14px; margin-top: 10px; }
+.ex-solution-label { font-size: .7rem; color: var(--muted); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.code-block { background: #0a1020; border-radius: 8px; padding: 14px; font-family: monospace; font-size: .8rem; line-height: 1.8; color: #c9d1d9; overflow-x: auto; margin-top: 8px; border: 1px solid var(--border); }
+.code-block .kw { color: #ff9f7f; }
+.code-block .str { color: #a8d8a8; }
+.code-block .cmt { color: #5a7a6a; }
+.code-block .num { color: #ffd43b; }
+.code-block .fn { color: #7ec8e3; }
+
+/* SUMMARY */
+.summary-box { background: linear-gradient(135deg,rgba(255,94,122,0.08),rgba(167,139,250,0.06)); border: 1px solid rgba(255,94,122,0.3); border-radius: 16px; padding: 28px; margin-top: 36px; }
+.summary-title { font-size: 1.1rem; font-weight: 800; color: var(--pink); margin-bottom: 16px; }
+.summary-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+.summary-item { background: var(--surface2); border-radius: 10px; padding: 12px 14px; font-size: .85rem; display: flex; gap: 8px; align-items: flex-start; }
+.summary-item-icon { flex-shrink: 0; }
+.next-preview { background: linear-gradient(135deg,rgba(91,141,239,0.08),rgba(91,141,239,0.04)); border: 1px solid rgba(91,141,239,0.3); border-radius: 12px; padding: 18px 22px; margin-top: 16px; }
+.next-preview-label { font-size: .7rem; font-weight: 700; color: var(--blue); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
 
 /* DESIGN TOKEN DEMO */
 .token-demo { margin:20px 0; }
@@ -126,6 +189,22 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 </head>
 <body>
 
+<!-- TOP NAVIGATION BAR -->
+<nav class="top-nav">
+  <div class="top-nav-inner">
+    <a href="../../index.html" class="top-nav-home">🏠 Trang chủ</a>
+    <span class="top-nav-sep">/</span>
+    <span class="top-nav-phase">Phase 2: Build</span>
+    <span class="top-nav-sep">/</span>
+    <span style="color:var(--text)">Bài 5 — Design System</span>
+    <span class="top-nav-pos">Bài 1/4 trong Phase 2</span>
+    <div class="top-nav-arrows">
+      <a href="../phase-1-think/04-design-pattern.html" class="top-nav-link">← Bài 4</a>
+      <a href="06-architecture.html" class="top-nav-link">Bài 6 →</a>
+    </div>
+  </div>
+</nav>
+
 <header>
   <div class="header-inner">
     <span class="phase-badge">PHASE 2 · BUILD</span>
@@ -141,10 +220,20 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 
 <!-- SEC 0: What is Design System -->
 <div class="section active" id="sec-0">
+  <div class="prereq">
+    <div class="prereq-label">Yêu cầu trước khi học</div>
+    <ul class="prereq-list">
+      <li><a href="../phase-1-think/01-computational-thinking.html">Bài 1: Computational Thinking</a></li>
+      <li><a href="../phase-1-think/02-programming-thinking.html">Bài 2: Programming Thinking</a></li>
+      <li><a href="../phase-1-think/03-clean-code.html">Bài 3: Clean Code ★</a></li>
+      <li><a href="../phase-1-think/04-design-pattern.html">Bài 4: Design Patterns ★</a></li>
+    </ul>
+  </div>
+
   <div class="section-header">
     <div class="section-num">Khái niệm 01</div>
     <div class="section-title">Design System là gì?</div>
-    <div class="section-desc">Không phải chỉ là "UI đẹp". Design System là ngôn ngữ thiết kế nhất quán giúp scale ứng dụng.</div>
+    <div class="section-desc">Không phải chỉ là "UI đẹp". Design System là ngôn ngữ thiết kế nhất quán giúp scale ứng dụng. Tương tự <a href="../phase-1-think/03-clean-code.html" class="xref">Clean Code Bài 3</a> — đặt convention một lần, dùng mãi mãi.</div>
   </div>
 
   <div class="card">
@@ -192,7 +281,7 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   <div class="takeaway">
     <div class="takeaway-title">🎯 Key Takeaway</div>
     <ul class="takeaway-list">
-      <li>Design System = Single Source of Truth cho UI</li>
+      <li>Design System = Single Source of Truth cho UI — giống DRY principle trong <a href="../phase-1-think/03-clean-code.html" class="xref">Clean Code</a></li>
       <li>Đầu tư ban đầu cao, nhưng tiết kiệm 10× về sau</li>
       <li>Lớn hay nhỏ đều cần — chỉ khác về mức độ phức tạp</li>
     </ul>
@@ -204,7 +293,7 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   <div class="section-header">
     <div class="section-num">Khái niệm 02</div>
     <div class="section-title">Design Tokens</div>
-    <div class="section-desc">Tokens là các "biến thiết kế" — thay đổi 1 token → toàn bộ app cập nhật.</div>
+    <div class="section-desc">Tokens là các "biến thiết kế" — thay đổi 1 token → toàn bộ app cập nhật. Giống CSS variables nhưng có semantic meaning.</div>
   </div>
 
   <div class="card">
@@ -243,7 +332,7 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   <div class="section-header">
     <div class="section-num">Khái niệm 03</div>
     <div class="section-title">Color System</div>
-    <div class="section-desc">Màu sắc có cấu trúc, không phải tùy hứng. Mỗi màu có vai trò rõ ràng.</div>
+    <div class="section-desc">Màu sắc có cấu trúc, không phải tùy hứng. Mỗi màu có vai trò rõ ràng — đây là <strong>consistency</strong> trong <a href="../phase-1-think/03-clean-code.html" class="xref">Clean Code Bài 3</a> áp dụng vào UI.</div>
   </div>
 
   <div class="card">
@@ -305,7 +394,7 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   <div class="section-header">
     <div class="section-num">Khái niệm 04 + 05</div>
     <div class="section-title">Typography & Spacing</div>
-    <div class="section-desc">Font size và spacing cần có hệ thống — không phải số ngẫu nhiên.</div>
+    <div class="section-desc">Font size và spacing cần có hệ thống — không phải số ngẫu nhiên. Đây là nền tảng của <strong>visual consistency</strong>.</div>
   </div>
 
   <div class="card">
@@ -345,14 +434,13 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   <div class="card">
     <div class="card-title">📐 4px Grid Spacing System</div>
     <div class="spacing-demo">
-      <div class="space-row"><div class="space-label">4px · 1</div><div class="space-bar" style="width:4px"></div><div class="space-val">Icon gap, inline spacing</div></div>
-      <div class="space-row"><div class="space-label">8px · 2</div><div class="space-bar" style="width:8px"></div><div class="space-val">Tight element spacing</div></div>
-      <div class="space-row"><div class="space-label">12px · 3</div><div class="space-bar" style="width:12px"></div><div class="space-val">Component inner padding</div></div>
-      <div class="space-row"><div class="space-label">16px · 4</div><div class="space-bar" style="width:16px"></div><div class="space-val">Card padding (default)</div></div>
-      <div class="space-row"><div class="space-label">24px · 6</div><div class="space-bar" style="width:24px"></div><div class="space-val">Section spacing</div></div>
-      <div class="space-row"><div class="space-label">32px · 8</div><div class="space-bar" style="width:32px"></div><div class="space-val">Large section gap</div></div>
-      <div class="space-row"><div class="space-label">48px · 12</div><div class="space-bar" style="width:48px"></div><div class="space-val">Page section divider</div></div>
-      <div class="space-row"><div class="space-label">64px · 16</div><div class="space-bar" style="width:64px"></div><div class="space-val">Hero/feature spacing</div></div>
+      <div class="space-row"><div class="space-label">4px · xs</div><div class="space-bar" style="width:4px"></div><div class="space-val">Icon gap, inline spacing</div></div>
+      <div class="space-row"><div class="space-label">8px · sm</div><div class="space-bar" style="width:8px"></div><div class="space-val">Tight element spacing</div></div>
+      <div class="space-row"><div class="space-label">12px</div><div class="space-bar" style="width:12px"></div><div class="space-val">Component inner padding</div></div>
+      <div class="space-row"><div class="space-label">16px · md</div><div class="space-bar" style="width:16px"></div><div class="space-val">Card padding (default)</div></div>
+      <div class="space-row"><div class="space-label">24px · lg</div><div class="space-bar" style="width:24px"></div><div class="space-val">Section spacing</div></div>
+      <div class="space-row"><div class="space-label">32px · xl</div><div class="space-bar" style="width:32px"></div><div class="space-val">Large section gap</div></div>
+      <div class="space-row"><div class="space-label">48px · xxl</div><div class="space-bar" style="width:48px"></div><div class="space-val">Page section divider</div></div>
     </div>
   </div>
 
@@ -371,7 +459,7 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   <div class="section-header">
     <div class="section-num">Khái niệm 06</div>
     <div class="section-title">Atomic Design</div>
-    <div class="section-desc">Thiết kế component từ nhỏ đến lớn, như nguyên tử kết hợp thành phân tử rồi thành sinh vật.</div>
+    <div class="section-desc">Thiết kế component từ nhỏ đến lớn — giống Composite pattern trong <a href="../phase-1-think/04-design-pattern.html" class="xref">Design Patterns Bài 4</a>.</div>
   </div>
 
   <div class="atomic-flow">
@@ -465,9 +553,9 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   <div class="card">
     <div class="card-title">📱 Responsive — Click để xem layout thay đổi</div>
     <div class="viewport-tabs">
-      <button class="vt active" onclick="setViewport('desktop')">🖥️ Desktop</button>
-      <button class="vt" onclick="setViewport('tablet')">📱 Tablet</button>
-      <button class="vt" onclick="setViewport('mobile')">📲 Mobile</button>
+      <button class="vt active" onclick="setViewport('desktop', event)">🖥️ Desktop</button>
+      <button class="vt" onclick="setViewport('tablet', event)">📱 Tablet</button>
+      <button class="vt" onclick="setViewport('mobile', event)">📲 Mobile</button>
     </div>
     <div class="viewport-frame" id="vpFrame">
       <div class="vf-header">
@@ -506,6 +594,201 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
       <li>Atomic Design: atoms → molecules → organisms</li>
       <li>States: mọi component phải có đủ states</li>
     </ul>
+  </div>
+
+  <!-- EXERCISES -->
+  <div class="exercises">
+    <div class="ex-title">🏋️ Bài tập thực hành</div>
+
+    <div class="exercise easy">
+      <div class="ex-header" onclick="toggleEx(this)">
+        <span class="ex-badge">🟢 Dễ</span>
+        <span class="ex-q">Ex 1: Tạo color palette từ 1 brand color</span>
+        <span class="ex-toggle">▼</span>
+      </div>
+      <div class="ex-body">
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7;margin-bottom:12px;">Cho brand color <code style="background:var(--surface2);padding:1px 6px;border-radius:4px;font-family:monospace">#6c5ce7</code>, tạo palette: primary, secondary, success, warning, danger. Mỗi màu có 3 shade: light, base, dark.</div>
+        <div class="ex-solution">
+          <div class="ex-solution-label">Gợi ý giải</div>
+          <div class="code-block"><span class="cmt">/* Design Tokens — Color Palette */</span>
+<span class="kw">:root</span> {
+  <span class="cmt">/* Primary — brand color */</span>
+  --color-primary-light: <span class="str">#a29bfe</span>;  <span class="cmt">/* lighten 20% */</span>
+  --color-primary:       <span class="str">#6c5ce7</span>;  <span class="cmt">/* base */</span>
+  --color-primary-dark:  <span class="str">#4b3db5</span>;  <span class="cmt">/* darken 20% */</span>
+
+  <span class="cmt">/* Secondary — complementary hue */</span>
+  --color-secondary-light: <span class="str">#fd79a8</span>;
+  --color-secondary:       <span class="str">#e84393</span>;
+  --color-secondary-dark:  <span class="str">#b5006b</span>;
+
+  <span class="cmt">/* Semantic */</span>
+  --color-success: <span class="str">#00b894</span>;
+  --color-warning: <span class="str">#ffd43b</span>;
+  --color-danger:  <span class="str">#d63031</span>;
+}</div>
+          <div style="color:var(--muted);font-size:.8rem;margin-top:10px;line-height:1.6">Tip: dùng <strong>HSL</strong> để tính light/dark: cùng hue + saturation, chỉ thay lightness. Ví dụ: hsl(259, 76%, 72%) → hsl(259, 76%, 55%) → hsl(259, 76%, 40%)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="exercise easy">
+      <div class="ex-header" onclick="toggleEx(this)">
+        <span class="ex-badge">🟢 Dễ</span>
+        <span class="ex-q">Ex 2: Xây 4px spacing scale đầy đủ</span>
+        <span class="ex-toggle">▼</span>
+      </div>
+      <div class="ex-body">
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7;margin-bottom:12px;">Tạo spacing scale theo 4px grid: xs=4, sm=8, md=16, lg=24, xl=32, xxl=48. Viết dưới dạng CSS tokens và Tailwind config.</div>
+        <div class="ex-solution">
+          <div class="ex-solution-label">Giải</div>
+          <div class="code-block"><span class="cmt">/* CSS Custom Properties */</span>
+<span class="kw">:root</span> {
+  --space-1:  <span class="num">4px</span>;   <span class="cmt">/* xs */</span>
+  --space-2:  <span class="num">8px</span>;   <span class="cmt">/* sm */</span>
+  --space-3:  <span class="num">12px</span>;  <span class="cmt">/* sm+ */</span>
+  --space-4:  <span class="num">16px</span>;  <span class="cmt">/* md — card padding */</span>
+  --space-6:  <span class="num">24px</span>;  <span class="cmt">/* lg — section gap */</span>
+  --space-8:  <span class="num">32px</span>;  <span class="cmt">/* xl */</span>
+  --space-12: <span class="num">48px</span>;  <span class="cmt">/* xxl */</span>
+}
+
+<span class="cmt">/* Tailwind config */</span>
+spacing: {
+  <span class="str">'1'</span>:  <span class="str">'4px'</span>,
+  <span class="str">'2'</span>:  <span class="str">'8px'</span>,
+  <span class="str">'4'</span>:  <span class="str">'16px'</span>,
+  <span class="str">'6'</span>:  <span class="str">'24px'</span>,
+  <span class="str">'8'</span>:  <span class="str">'32px'</span>,
+  <span class="str">'12'</span>: <span class="str">'48px'</span>,
+}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="exercise medium">
+      <div class="ex-header" onclick="toggleEx(this)">
+        <span class="ex-badge">🟡 Trung bình</span>
+        <span class="ex-q">Ex 3: Design Button component với 4 variants + 4 states</span>
+        <span class="ex-toggle">▼</span>
+      </div>
+      <div class="ex-body">
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7;margin-bottom:12px;">Thiết kế Button với: variants = primary / secondary / ghost / danger; states = default / hover / active / disabled. Viết CSS cho tất cả 16 trường hợp.</div>
+        <div class="ex-solution">
+          <div class="ex-solution-label">Giải (cấu trúc)</div>
+          <div class="code-block"><span class="cmt">/* Base button */</span>
+.<span class="fn">btn</span> {
+  padding: <span class="num">10px 20px</span>;
+  border-radius: <span class="num">8px</span>;
+  font-weight: <span class="num">600</span>;
+  transition: all <span class="num">.2s</span>;
+  cursor: pointer;
+}
+
+<span class="cmt">/* Variant: Primary */</span>
+.<span class="fn">btn-primary</span> { background: var(--color-primary); color: #fff; }
+.<span class="fn">btn-primary</span>:hover  { background: var(--color-primary-dark); transform: translateY(-1px); }
+.<span class="fn">btn-primary</span>:active { transform: scale(0.97); }
+.<span class="fn">btn-primary</span>:disabled { opacity: .5; cursor: not-allowed; }
+
+<span class="cmt">/* Variant: Ghost */</span>
+.<span class="fn">btn-ghost</span> { background: transparent; border: 1px solid var(--color-primary); color: var(--color-primary); }
+.<span class="fn">btn-ghost</span>:hover { background: rgba(108,92,231,0.1); }
+
+<span class="cmt">/* → Lặp tương tự cho secondary, danger */</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="exercise medium">
+      <div class="ex-header" onclick="toggleEx(this)">
+        <span class="ex-badge">🟡 Trung bình</span>
+        <span class="ex-q">Ex 4: Responsive — 3-column layout → 1-column cho mobile</span>
+        <span class="ex-toggle">▼</span>
+      </div>
+      <div class="ex-body">
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7;margin-bottom:12px;">Chuyển grid 3 columns (desktop) → 2 columns (tablet, &lt;768px) → 1 column (mobile, &lt;480px) với CSS Grid và breakpoints.</div>
+        <div class="ex-solution">
+          <div class="ex-solution-label">Giải</div>
+          <div class="code-block"><span class="cmt">/* Mobile-first approach */</span>
+.<span class="fn">grid</span> {
+  display: grid;
+  grid-template-columns: <span class="num">1fr</span>;  <span class="cmt">/* mobile: 1 col */</span>
+  gap: var(--space-4);
+}
+
+@media (min-width: <span class="num">480px</span>) {
+  .<span class="fn">grid</span> { grid-template-columns: repeat(<span class="num">2</span>, 1fr); }
+}
+
+@media (min-width: <span class="num">768px</span>) {
+  .<span class="fn">grid</span> { grid-template-columns: repeat(<span class="num">3</span>, 1fr); }
+}
+
+<span class="cmt">/* Hoặc dùng CSS Grid auto-fill thông minh hơn: */</span>
+.<span class="fn">grid-smart</span> {
+  grid-template-columns: repeat(auto-fill, minmax(<span class="num">280px</span>, 1fr));
+}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="exercise hard">
+      <div class="ex-header" onclick="toggleEx(this)">
+        <span class="ex-badge">🔴 Khó</span>
+        <span class="ex-q">Ex 5: Xây mini design system cho Todo App</span>
+        <span class="ex-toggle">▼</span>
+      </div>
+      <div class="ex-body">
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7;margin-bottom:12px;">Xây design system hoàn chỉnh cho Todo App: (1) Tokens file (colors, spacing, typography), (2) 3 components: Button + Input + TodoCard, (3) Dark/light theme switching bằng data-theme attribute.</div>
+        <div class="ex-solution">
+          <div class="ex-solution-label">Kiến trúc gợi ý</div>
+          <div class="code-block"><span class="cmt">/* tokens.css — Single source of truth */</span>
+[data-theme=<span class="str">"light"</span>] {
+  --bg: <span class="str">#ffffff</span>;
+  --surface: <span class="str">#f5f5f5</span>;
+  --text: <span class="str">#1a1a2e</span>;
+  --color-primary: <span class="str">#6c5ce7</span>;
+}
+[data-theme=<span class="str">"dark"</span>] {
+  --bg: <span class="str">#0e1525</span>;
+  --surface: <span class="str">#151d32</span>;
+  --text: <span class="str">#eef1f8</span>;
+  --color-primary: <span class="str">#a78bfa</span>;
+}
+
+<span class="cmt">/* JS: toggle theme */</span>
+document.documentElement.dataset.theme =
+  current === <span class="str">'dark'</span> ? <span class="str">'light'</span> : <span class="str">'dark'</span>;
+
+<span class="cmt">/* TodoCard component sử dụng tokens */</span>
+.<span class="fn">todo-card</span> {
+  background: var(--surface);
+  color: var(--text);
+  padding: var(--space-4);
+  border-radius: <span class="num">8px</span>;
+}</div>
+          <div style="color:var(--muted);font-size:.8rem;margin-top:10px;line-height:1.6">Mở rộng: thêm animation khi check todo, loading skeleton state, empty state component.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary-box">
+    <div class="summary-title">📋 Tóm tắt Bài 5 — Design System</div>
+    <div class="summary-grid">
+      <div class="summary-item"><span class="summary-item-icon">🎨</span><span>Tokens = biến thiết kế, thay 1 nơi, update khắp app</span></div>
+      <div class="summary-item"><span class="summary-item-icon">🌈</span><span>Color System: semantic meaning + contrast AA compliance</span></div>
+      <div class="summary-item"><span class="summary-item-icon">📐</span><span>4px spacing grid + modular type scale</span></div>
+      <div class="summary-item"><span class="summary-item-icon">⚛️</span><span>Atomic Design: atoms → molecules → organisms → pages</span></div>
+      <div class="summary-item"><span class="summary-item-icon">🔘</span><span>Component states: default / hover / active / disabled / loading</span></div>
+      <div class="summary-item"><span class="summary-item-icon">📱</span><span>Responsive: mobile-first, breakpoints nhất quán</span></div>
+    </div>
+    <div class="next-preview">
+      <div class="next-preview-label">Tiếp theo — Bài 6: Architecture</div>
+      <div style="color:var(--muted);font-size:.88rem;line-height:1.7">Bạn sẽ học cách tổ chức code ở cấp hệ thống — Layered Architecture, Monolith vs Microservices, Clean Architecture. Design System của Bài 5 là UI layer; Architecture của Bài 6 sẽ kết nối nó với toàn bộ hệ thống.</div>
+    </div>
   </div>
 </div>
 
@@ -562,14 +845,21 @@ function applyTheme(t) {
 }
 applyTheme('brand');
 
-function setViewport(vp) {
+function setViewport(vp, event) {
   const grid = document.getElementById('contentGrid');
   const links = document.getElementById('navLinks');
   document.querySelectorAll('.vt').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
+  if(event && event.target) event.target.classList.add('active');
   if(vp==='desktop') { grid.style.gridTemplateColumns='repeat(3,1fr)'; links.style.display='flex'; }
   else if(vp==='tablet') { grid.style.gridTemplateColumns='repeat(2,1fr)'; links.style.display='flex'; }
   else { grid.style.gridTemplateColumns='1fr'; links.style.display='none'; }
+}
+
+function toggleEx(header) {
+  const body = header.nextElementSibling;
+  const toggle = header.querySelector('.ex-toggle');
+  body.classList.toggle('open');
+  toggle.style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
 }
 </script>
 </body>

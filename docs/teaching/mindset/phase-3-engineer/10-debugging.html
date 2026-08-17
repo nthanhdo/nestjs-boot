@@ -13,7 +13,7 @@
     --blue: #58a6ff; --purple: #bc8cff; --orange: #ffa657;
   }
   body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; }
-  .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; padding-top: 5rem; }
   h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; }
   h2 { font-size: 1.5rem; font-weight: 600; margin: 2.5rem 0 1rem; color: var(--blue); }
   h3 { font-size: 1.05rem; font-weight: 600; margin: 1.2rem 0 0.4rem; color: var(--purple); }
@@ -29,10 +29,60 @@
   .progress-bar { height: 6px; background: var(--bg3); border-radius: 3px; margin: 2rem 0; }
   .progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--orange), var(--red)); width: 0; transition: width 0.3s; }
   .header-meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
-  .exercise { background: linear-gradient(135deg, rgba(88,166,255,0.08), rgba(188,140,255,0.08)); border: 1px solid rgba(88,166,255,0.3); border-radius: 12px; padding: 1.5rem; margin: 2rem 0; }
   .takeaway { background: linear-gradient(135deg, rgba(57,211,83,0.08), rgba(13,17,23,0)); border: 1px solid rgba(57,211,83,0.3); border-radius: 12px; padding: 1.5rem; margin: 2rem 0; }
   .checklist { list-style: none; }
   .checklist li { padding: 0.4rem 0; display: flex; gap: 0.5rem; align-items: flex-start; font-size: 0.9rem; }
+
+  /* Sticky nav */
+  .nav-bar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(13,17,23,0.95); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.6rem 1.5rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  }
+  .nav-phase { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+  .nav-phase strong { color: var(--orange); }
+  .nav-links { display: flex; align-items: center; gap: 0.5rem; }
+  .nav-btn {
+    padding: 0.3rem 0.8rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600;
+    text-decoration: none; border: 1px solid var(--border); color: var(--muted);
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .nav-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .nav-current { font-size: 0.8rem; color: var(--text); font-weight: 600; white-space: nowrap; }
+
+  /* Prerequisites */
+  .prereq { background: rgba(88,166,255,0.06); border: 1px solid rgba(88,166,255,0.25); border-radius: 10px; padding: 1rem 1.2rem; margin: 1rem 0; }
+  .prereq-title { font-size: 0.8rem; font-weight: 700; color: var(--blue); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .prereq a { color: var(--blue); text-decoration: none; font-size: 0.85rem; padding: 0.2rem 0.6rem; background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.3); border-radius: 20px; display: inline-block; margin: 0.2rem; }
+  .prereq a:hover { text-decoration: underline; }
+
+  /* Cross-ref inline */
+  .xref { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.1rem 0.5rem; background: rgba(188,140,255,0.1); border: 1px solid rgba(188,140,255,0.3); border-radius: 4px; font-size: 0.78rem; color: var(--purple); text-decoration: none; vertical-align: middle; }
+  .xref:hover { background: rgba(188,140,255,0.2); }
+
+  /* Exercise cards */
+  .ex-section { margin: 2.5rem 0; }
+  .ex-section-title { font-size: 1.3rem; font-weight: 700; color: var(--orange); margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+  .ex-card { border-radius: 12px; padding: 1.4rem; margin: 1rem 0; }
+  .ex-easy { background: rgba(63,185,80,0.06); border: 2px solid rgba(63,185,80,0.35); }
+  .ex-medium { background: rgba(210,153,34,0.06); border: 2px solid rgba(210,153,34,0.35); }
+  .ex-hard { background: rgba(248,81,73,0.06); border: 2px solid rgba(248,81,73,0.35); }
+  .ex-header { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.8rem; }
+  .ex-num { font-size: 1rem; font-weight: 800; }
+  .ex-diff { font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 20px; }
+  .diff-easy { background: rgba(63,185,80,0.2); color: var(--green); }
+  .diff-medium { background: rgba(210,153,34,0.2); color: var(--yellow); }
+  .diff-hard { background: rgba(248,81,73,0.2); color: var(--red); }
+  .ex-title { font-weight: 700; font-size: 0.95rem; }
+  details summary { cursor: pointer; color: var(--blue); font-size: 0.88rem; margin-top: 0.8rem; }
+  details summary:hover { text-decoration: underline; }
+
+  /* Summary */
+  .summary-card { background: linear-gradient(135deg, rgba(63,185,80,0.08), rgba(88,166,255,0.05)); border: 1px solid rgba(63,185,80,0.3); border-radius: 12px; padding: 1.5rem; margin: 2rem 0; }
+  .summary-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.6rem; margin-top: 1rem; }
+  .summary-item { display: flex; gap: 0.5rem; align-items: flex-start; font-size: 0.88rem; }
 
   /* Flowchart */
   .flow { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 1.5rem 0; }
@@ -54,7 +104,7 @@
   .why-hidden { display: none; margin-top: 0.5rem; padding: 0.5rem; background: var(--bg3); border-radius: 6px; font-size: 0.82rem; color: var(--green); }
   .why-item.active .why-hidden { display: block; }
 
-  /* Tools comparison */
+  /* Tools */
   .tools-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0; }
   .tool-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; }
   .tool-card h4 { margin: 0 0 0.5rem; }
@@ -79,7 +129,6 @@
   .commit-check { background: rgba(88,166,255,0.2); border-color: var(--blue); color: var(--blue); }
   .bisect-arrow { color: var(--muted); font-size: 0.8rem; flex-shrink: 0; }
 
-  /* Bug patterns table */
   table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 1rem 0; }
   th { background: var(--bg3); color: var(--text); padding: 0.6rem 0.8rem; text-align: left; border-bottom: 2px solid var(--border); }
   td { padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
@@ -89,11 +138,31 @@
 </style>
 </head>
 <body>
+
+<!-- Sticky Navigation -->
+<nav class="nav-bar">
+  <div class="nav-phase">
+    <strong>Phase 3: Engineer</strong> &nbsp;·&nbsp; Bài 10/5
+  </div>
+  <div class="nav-links">
+    <a href="09-testing.html" class="nav-btn">← Bài 9</a>
+    <span class="nav-current">🔍 10 · Debugging</span>
+    <a href="11-git-workflow.html" class="nav-btn">Bài 11 →</a>
+  </div>
+</nav>
+
 <div class="container">
 
-  <div class="header-meta">Phase 3: Engineer · Bài 10</div>
+  <div class="header-meta">Phase 3: Engineer · Bài 10 / 5</div>
   <h1>🔍 Debugging</h1>
   <p style="font-size:1.1rem; color: var(--text);">Tìm bug là khoa học, không phải may mắn. Systematic process beats random guessing.</p>
+
+  <!-- Prerequisites -->
+  <div class="prereq">
+    <div class="prereq-title">📚 Điều kiện tiên quyết</div>
+    <a href="09-testing.html">Bài 9 — Testing (khi test fail → debug)</a>
+    <a href="../phase-1-think/02-programming-thinking.html">Bài 2 — Programming Thinking (control flow)</a>
+  </div>
 
   <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
 
@@ -121,7 +190,7 @@
     <div id="flow-root" class="flow-detail"><strong style="color:var(--green)">Tìm được root cause</strong> — không phải symptom. "Server crash" là symptom, "null pointer vì API không validate" là root cause.</div>
     <div class="flow-arrow">↓</div>
     <div class="flow-step" style="background:rgba(63,185,80,0.2); border:1px solid var(--green); color:var(--green);" onclick="toggleFlow('fix')">✅ Fix + Regression Test</div>
-    <div id="flow-fix" class="flow-detail"><strong style="color:var(--green)">Fix rồi viết test</strong> cho case đó — để bug không quay lại. Đây là lúc test tốt nhất vì bạn hiểu case rõ nhất.</div>
+    <div id="flow-fix" class="flow-detail"><strong style="color:var(--green)">Fix rồi viết test</strong> cho case đó — để bug không quay lại. <a href="09-testing.html" class="xref">→ Bài 9: Regression test</a></div>
   </div>
 
   <!-- 5 Whys -->
@@ -258,11 +327,9 @@ curl -X POST /api/order \
 
   <!-- Git Bisect -->
   <h2>🔀 Git Bisect — Binary Search qua commits</h2>
-  <p>"Bug xuất hiện lúc nào?" — Bisect chia đôi history để tìm commit gây ra bug.</p>
+  <p>"Bug xuất hiện lúc nào?" — Bisect chia đôi history để tìm commit gây ra bug. <a href="11-git-workflow.html" class="xref">→ Bài 11: Git workflow chi tiết</a></p>
 
-  <div class="bisect reveal" id="bisect-visual">
-    <!-- rendered by JS -->
-  </div>
+  <div class="bisect reveal" id="bisect-visual"></div>
   <div id="bisect-info" class="card" style="min-height: 60px;"></div>
   <div style="display:flex; gap:0.5rem; margin:0.5rem 0; flex-wrap:wrap;">
     <button onclick="bisectRun()" style="padding:0.5rem 1rem; background:rgba(88,166,255,0.15); border:1px solid var(--blue); border-radius:6px; color:var(--blue); cursor:pointer;">▶️ Chạy Bisect</button>
@@ -314,11 +381,114 @@ curl -X POST /api/order \
 
   <div class="divider"></div>
 
-  <!-- Exercise -->
-  <div class="exercise reveal">
-    <h3>🏋️ Exercise: Production đang lỗi!</h3>
-    <p>Bạn nhận được alert lúc 3am. Chỉ có log này. Tìm root cause và đề xuất fix.</p>
-    <pre><code><span class="err">ERROR [2026-08-14 03:17:42] Unhandled Promise Rejection</span>
+  <!-- ==================== EXERCISES ==================== -->
+  <div class="ex-section">
+    <div class="ex-section-title">🏋️ Exercises — Bài 10: Debugging</div>
+
+    <!-- Ex 1 -->
+    <div class="ex-card ex-easy">
+      <div class="ex-header">
+        <span class="ex-num" style="color:var(--green);">Ex 1</span>
+        <span class="ex-diff diff-easy">🟢 Dễ</span>
+        <span class="ex-title">Đọc stack trace → xác định file và dòng gây lỗi</span>
+      </div>
+      <p style="font-size:0.88rem;">Cho stack trace sau, xác định: (1) Error type là gì? (2) Bug nằm ở file nào, dòng bao nhiêu? (3) Function nào gọi function bị lỗi?</p>
+      <pre><code><span class="err">ReferenceError: orderId is not defined</span>
+    at PaymentService.processPayment (payment.service.ts:89:15)
+    at CheckoutController.checkout (checkout.controller.ts:34:10)
+    at /node_modules/@nestjs/core/router/router-proxy.js:9:17
+    at processTicksAndRejections (node:internal:99:5)</code></pre>
+      <details>
+        <summary>👁️ Xem phân tích</summary>
+        <div style="margin-top:0.8rem; padding:1rem; background:var(--bg3); border-radius:8px; font-size:0.88rem;">
+          <p><strong style="color:var(--red);">Error type:</strong> ReferenceError — biến <code>orderId</code> được dùng nhưng chưa được khai báo.</p>
+          <p><strong style="color:var(--yellow);">Bug location:</strong> <code>payment.service.ts</code> dòng <strong>89</strong>, cột 15.</p>
+          <p><strong style="color:var(--blue);">Caller:</strong> <code>CheckoutController.checkout</code> tại checkout.controller.ts:34. Kiểm tra xem controller có truyền <code>orderId</code> đúng vào service không.</p>
+          <p><strong style="color:var(--green);">Fix direction:</strong> Mở payment.service.ts dòng 89, kiểm tra xem <code>orderId</code> được đến từ đâu — parameter? destructuring? scoping issue?</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- Ex 2 -->
+    <div class="ex-card ex-easy">
+      <div class="ex-header">
+        <span class="ex-num" style="color:var(--green);">Ex 2</span>
+        <span class="ex-diff diff-easy">🟢 Dễ</span>
+        <span class="ex-title">5 Whys: "API trả về 500" → drill down tìm root cause</span>
+      </div>
+      <p style="font-size:0.88rem;">Symptom: <em>"POST /api/orders luôn trả về 500 Internal Server Error sau 14:00 mỗi ngày."</em> Áp dụng 5 Whys để tìm root cause. Viết 5 cặp Why → Because.</p>
+      <details>
+        <summary>👁️ Xem một luồng phân tích mẫu</summary>
+        <div style="margin-top:0.8rem; padding:1rem; background:var(--bg3); border-radius:8px; font-size:0.85rem; color:var(--muted);">
+          <p><strong style="color:var(--red);">Why 1:</strong> API trả 500 → <em>Vì unhandled exception trong OrderService</em></p>
+          <p><strong style="color:var(--orange);">Why 2:</strong> Unhandled exception → <em>Vì DB query throw khi connection pool exhausted</em></p>
+          <p><strong style="color:var(--yellow);">Why 3:</strong> Connection pool exhausted → <em>Vì connections không được release sau query</em></p>
+          <p><strong style="color:var(--blue);">Why 4:</strong> Connections không release → <em>Vì dev dùng raw query trong try block mà thiếu finally { conn.release() }</em></p>
+          <p><strong style="color:var(--green);">Why 5 (Root):</strong> Thiếu finally → <em>Vì không có lint rule / code review checklist về resource cleanup</em></p>
+          <p style="margin-top:0.5rem; color:var(--green);">→ Fix: Thêm ESLint plugin database rules + update PR template với DB connection checklist</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- Ex 3 -->
+    <div class="ex-card ex-medium">
+      <div class="ex-header">
+        <span class="ex-num" style="color:var(--yellow);">Ex 3</span>
+        <span class="ex-diff diff-medium">🟡 Trung bình</span>
+        <span class="ex-title">Network debugging: request trả về 200 nhưng data sai → tìm nguyên nhân</span>
+      </div>
+      <p style="font-size:0.88rem;">API <code>GET /api/products?category=electronics</code> trả về HTTP 200 nhưng response body chứa ALL products (không filter). Liệt kê ít nhất 5 nguyên nhân có thể và cách kiểm tra từng nguyên nhân.</p>
+      <details>
+        <summary>👁️ Xem checklist debug</summary>
+        <div style="margin-top:0.8rem; padding:1rem; background:var(--bg3); border-radius:8px; font-size:0.85rem; color:var(--muted);">
+          <ol style="margin-left:1.2rem;">
+            <li style="padding:0.2rem 0;"><strong style="color:var(--blue);">Query param không được đọc:</strong> log <code>req.query</code> — có nhận được <code>{ category: 'electronics' }</code> không?</li>
+            <li style="padding:0.2rem 0;"><strong style="color:var(--blue);">Filter logic bị skip:</strong> Check if/else condition trong service — có case nào bypass filter?</li>
+            <li style="padding:0.2rem 0;"><strong style="color:var(--yellow);">DB query sai:</strong> Log raw query được tạo ra — WHERE clause có category filter không?</li>
+            <li style="padding:0.2rem 0;"><strong style="color:var(--yellow);">Cache hit:</strong> Redis cache đang serve cached response không có filter. Purge cache và retry.</li>
+            <li style="padding:0.2rem 0;"><strong style="color:var(--red);">Field name mismatch:</strong> DB column là <code>categoryId</code> nhưng query filter <code>category</code> → no match → return all.</li>
+          </ol>
+        </div>
+      </details>
+    </div>
+
+    <!-- Ex 4 -->
+    <div class="ex-card ex-medium">
+      <div class="ex-header">
+        <span class="ex-num" style="color:var(--yellow);">Ex 4</span>
+        <span class="ex-diff diff-medium">🟡 Trung bình</span>
+        <span class="ex-title">Performance debugging: API response 3s → profile tìm bottleneck</span>
+      </div>
+      <p style="font-size:0.88rem;"><code>GET /api/dashboard</code> mất 3 giây. Sử dụng systematic approach để tìm bottleneck. Gợi ý: đo từng layer (network, app logic, DB, external APIs).</p>
+      <details>
+        <summary>👁️ Xem profiling approach</summary>
+        <pre style="margin-top:0.8rem;"><code><span class="cm">// Step 1: Add timing logs</span>
+<span class="kw">async</span> <span class="fn">getDashboard</span>() {
+  <span class="kw">const</span> t0 = <span class="fn">Date</span>.now();
+  <span class="kw">const</span> users = <span class="kw">await</span> <span class="kw">this</span>.userRepo.<span class="fn">count</span>();
+  <span class="fn">console</span>.log(<span class="str">'users count:'</span>, <span class="fn">Date</span>.now() - t0); <span class="cm">// 2800ms! ← bottleneck</span>
+
+  <span class="kw">const</span> t1 = <span class="fn">Date</span>.now();
+  <span class="kw">const</span> orders = <span class="kw">await</span> <span class="kw">this</span>.orderRepo.<span class="fn">findRecent</span>();
+  <span class="fn">console</span>.log(<span class="str">'orders:'</span>, <span class="fn">Date</span>.now() - t1); <span class="cm">// 50ms</span>
+}
+
+<span class="cm">// Step 2: EXPLAIN ANALYZE the slow query</span>
+<span class="cm">// SELECT COUNT(*) FROM users → missing index on status field</span>
+<span class="cm">// Fix: CREATE INDEX idx_users_status ON users(status);</span>
+<span class="cm">// Result: 2800ms → 12ms</span></code></pre>
+      </details>
+    </div>
+
+    <!-- Ex 5 -->
+    <div class="ex-card ex-hard">
+      <div class="ex-header">
+        <span class="ex-num" style="color:var(--red);">Ex 5</span>
+        <span class="ex-diff diff-hard">🔴 Khó</span>
+        <span class="ex-title">Production incident: chỉ có error log, tìm bug và fix</span>
+      </div>
+      <p style="font-size:0.88rem;">Chỉ có log này từ production lúc 3am. Không có reproduce. Phân tích và đề xuất fix + monitoring improvement.</p>
+      <pre><code><span class="err">ERROR [2026-08-14 03:17:42] Unhandled Promise Rejection</span>
 <span class="err">Error: connect ECONNREFUSED 127.0.0.1:5432</span>
     at TCPConnectWrap.afterConnect [as oncomplete] (net.js:1141:16)
 
@@ -328,15 +498,40 @@ curl -X POST /api/order \
 <span class="err">ERROR [03:18:01] Request timeout after 30000ms: POST /api/payments</span>
 <span class="err">ERROR [03:18:01] Request timeout after 30000ms: GET /api/orders</span>
 <span class="cm">--- ALL requests failing now ---</span></code></pre>
-    <details style="margin-top:1rem;">
-      <summary style="cursor:pointer; color:var(--blue);">👁️ Xem phân tích</summary>
-      <div style="margin-top:1rem; padding:1rem; background:var(--bg3); border-radius:8px;">
-        <p><strong style="color:var(--green);">Root cause:</strong> PostgreSQL database ở localhost:5432 không connect được. ECONNREFUSED = DB service đã down.</p>
-        <p><strong style="color:var(--yellow);">Immediate fix:</strong> Kiểm tra DB service status → <code>systemctl status postgresql</code> hoặc <code>docker ps</code>. Restart DB.</p>
-        <p><strong style="color:var(--blue);">Long-term fix:</strong> (1) Health check endpoint, (2) Connection retry với exponential backoff, (3) Circuit breaker, (4) DB monitoring alert trước khi crash.</p>
-        <p><strong style="color:var(--purple);">5 Whys:</strong> DB down → tại sao? Disk full? Out of memory? Scheduled maintenance mà không thông báo? → Tìm tiếp.</p>
-      </div>
-    </details>
+      <details>
+        <summary>👁️ Xem phân tích + action plan</summary>
+        <div style="margin-top:1rem; padding:1rem; background:var(--bg3); border-radius:8px;">
+          <p><strong style="color:var(--green);">Root cause:</strong> PostgreSQL database ở localhost:5432 không connect được. ECONNREFUSED = DB service đã down.</p>
+          <p><strong style="color:var(--yellow);">Immediate fix:</strong> Kiểm tra DB service status → <code>systemctl status postgresql</code> hoặc <code>docker ps</code>. Restart DB.</p>
+          <p><strong style="color:var(--blue);">Long-term fix:</strong></p>
+          <ul style="margin:0.4rem 0 0 1.2rem; color:var(--muted); font-size:0.85rem;">
+            <li>Health check endpoint <code>GET /health</code> → kiểm tra DB connection</li>
+            <li>Connection retry với exponential backoff</li>
+            <li>Circuit breaker cho DB calls</li>
+            <li>Monitoring alert khi DB connection pool &lt; 20%</li>
+          </ul>
+          <p style="margin-top:0.5rem;"><strong style="color:var(--purple);">5 Whys next step:</strong> DB down → tại sao? Disk full? Out of memory? Scheduled maintenance? → Dig deeper.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-card reveal">
+    <h3 style="color:var(--green); margin-top:0;">📋 Tóm tắt Bài 10</h3>
+    <div class="summary-grid">
+      <div class="summary-item">✅ <span>Debugging process: 7 bước có hệ thống</span></div>
+      <div class="summary-item">✅ <span>5 Whys: đào từ symptom đến root cause</span></div>
+      <div class="summary-item">✅ <span>Stack trace: đọc từ trên, tìm dòng project code</span></div>
+      <div class="summary-item">✅ <span>Git bisect: binary search commit gây bug</span></div>
+      <div class="summary-item">✅ <span>Một giả thuyết, một thay đổi, một test</span></div>
+      <div class="summary-item">✅ <span>Sau fix → viết regression test ngay</span></div>
+    </div>
+    <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border); display:flex; gap:1rem; flex-wrap:wrap;">
+      <div style="font-size:0.82rem; color:var(--muted);">🔗 Cross-references:</div>
+      <a href="09-testing.html" class="xref">Bài 9: Test-driven debugging</a>
+      <a href="11-git-workflow.html" class="xref">Bài 11: git bisect</a>
+    </div>
   </div>
 
   <div class="takeaway reveal">
@@ -351,16 +546,20 @@ curl -X POST /api/order \
     </ul>
   </div>
 
+  <!-- Navigation bottom -->
+  <div style="display:flex; justify-content:space-between; margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border);">
+    <a href="09-testing.html" class="nav-btn" style="font-size:0.9rem; padding:0.6rem 1.2rem;">← Bài 9: Testing</a>
+    <a href="11-git-workflow.html" class="nav-btn" style="font-size:0.9rem; padding:0.6rem 1.2rem; border-color:var(--blue); color:var(--blue);">Bài 11: Git Workflow →</a>
+  </div>
+
 </div>
 
 <script>
-// Flow toggle
 function toggleFlow(id) {
   const el = document.getElementById('flow-' + id);
   el.classList.toggle('open');
 }
 
-// Bisect simulation
 const commits = [
   { id: 'a1b2', label: 'c1', state: 'good' },
   { id: 'c3d4', label: 'c2', state: 'good' },
@@ -386,7 +585,6 @@ function renderBisect() {
     const dot = document.createElement('div');
     dot.className = `commit-dot commit-${state}`;
     dot.textContent = commits[i].label;
-    dot.title = commits[i].id;
     el.appendChild(dot);
     if (i < commits.length - 1) {
       const arr = document.createElement('div');
@@ -401,7 +599,6 @@ function bisectRun() {
   if (bisectStep >= bisectSteps.length) return;
   const s = bisectSteps[bisectStep];
   bisectStates[s.check] = s.result === 'bad' ? 'bad' : 'good';
-  // mark as being checked
   document.getElementById('bisect-info').innerHTML = `<p style="color:var(--blue)">${s.info}</p>`;
   bisectStep++;
   renderBisect();
@@ -414,19 +611,17 @@ function bisectReset() {
   bisectStates = [...commits.map(c => c.state)];
   bisectStep = 0;
   renderBisect();
-  document.getElementById('bisect-info').innerHTML = '<p style="color:var(--muted)">Click "Chạy Bisect" để xem Git tìm bug commit bằng binary search.</p><pre style="margin-top:0.5rem; font-size:0.8rem"><code>git bisect start\ngit bisect bad HEAD      # version hiện tại có bug\ngit bisect good v1.0.0   # version này OK\n# Git tự động checkout commit giữa\n# Bạn test, rồi: git bisect good/bad\n# Lặp lại → Git tìm ra commit gây bug</code></pre>';
+  document.getElementById('bisect-info').innerHTML = '<p style="color:var(--muted)">Click "Chạy Bisect" để xem Git tìm bug commit bằng binary search.</p><pre style="margin-top:0.5rem; font-size:0.8rem"><code>git bisect start\ngit bisect bad HEAD\ngit bisect good v1.0.0\n# Git tự checkout commit giữa\n# Bạn test → git bisect good/bad</code></pre>';
 }
 
 bisectReset();
 
-// Progress
 window.addEventListener('scroll', () => {
   const h = document.documentElement;
   const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
   document.getElementById('progress').style.width = pct + '%';
 });
 
-// Reveal
 const observer = new IntersectionObserver(entries => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: 0.1 });

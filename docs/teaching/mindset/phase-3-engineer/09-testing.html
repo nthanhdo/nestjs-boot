@@ -14,7 +14,7 @@
     --cyan: #39d353;
   }
   body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; }
-  .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; padding-top: 5rem; }
   h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; }
   h2 { font-size: 1.5rem; font-weight: 600; margin: 2.5rem 0 1rem; color: var(--blue); }
   h3 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.5rem; color: var(--purple); }
@@ -31,6 +31,59 @@
   .kw { color: var(--purple); } .fn { color: var(--blue); } .str { color: var(--green); }
   .cm { color: var(--muted); } .num { color: var(--orange); }
   .tag { color: var(--red); }
+
+  /* Sticky nav */
+  .nav-bar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(13,17,23,0.95); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.6rem 1.5rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  }
+  .nav-phase { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+  .nav-phase strong { color: var(--orange); }
+  .nav-links { display: flex; align-items: center; gap: 0.5rem; }
+  .nav-btn {
+    padding: 0.3rem 0.8rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600;
+    text-decoration: none; border: 1px solid var(--border); color: var(--muted);
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .nav-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .nav-btn.disabled { opacity: 0.3; pointer-events: none; }
+  .nav-current { font-size: 0.8rem; color: var(--text); font-weight: 600; white-space: nowrap; }
+
+  /* Prerequisites */
+  .prereq { background: rgba(88,166,255,0.06); border: 1px solid rgba(88,166,255,0.25); border-radius: 10px; padding: 1rem 1.2rem; margin: 1rem 0; }
+  .prereq-title { font-size: 0.8rem; font-weight: 700; color: var(--blue); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .prereq a { color: var(--blue); text-decoration: none; font-size: 0.85rem; }
+  .prereq a:hover { text-decoration: underline; }
+  .prereq-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+  /* Cross-ref inline */
+  .xref { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.1rem 0.5rem; background: rgba(188,140,255,0.1); border: 1px solid rgba(188,140,255,0.3); border-radius: 4px; font-size: 0.78rem; color: var(--purple); text-decoration: none; vertical-align: middle; }
+  .xref:hover { background: rgba(188,140,255,0.2); }
+
+  /* Exercise cards */
+  .ex-section { margin: 2.5rem 0; }
+  .ex-section-title { font-size: 1.3rem; font-weight: 700; color: var(--orange); margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+  .ex-card { border-radius: 12px; padding: 1.4rem; margin: 1rem 0; }
+  .ex-easy { background: rgba(63,185,80,0.06); border: 2px solid rgba(63,185,80,0.35); }
+  .ex-medium { background: rgba(210,153,34,0.06); border: 2px solid rgba(210,153,34,0.35); }
+  .ex-hard { background: rgba(248,81,73,0.06); border: 2px solid rgba(248,81,73,0.35); }
+  .ex-header { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.8rem; }
+  .ex-num { font-size: 1rem; font-weight: 800; }
+  .ex-diff { font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 20px; }
+  .diff-easy { background: rgba(63,185,80,0.2); color: var(--green); }
+  .diff-medium { background: rgba(210,153,34,0.2); color: var(--yellow); }
+  .diff-hard { background: rgba(248,81,73,0.2); color: var(--red); }
+  .ex-title { font-weight: 700; font-size: 0.95rem; }
+  details summary { cursor: pointer; color: var(--blue); font-size: 0.88rem; margin-top: 0.8rem; }
+  details summary:hover { text-decoration: underline; }
+
+  /* Summary */
+  .summary-card { background: linear-gradient(135deg, rgba(63,185,80,0.08), rgba(88,166,255,0.05)); border: 1px solid rgba(63,185,80,0.3); border-radius: 12px; padding: 1.5rem; margin: 2rem 0; }
+  .summary-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 0.6rem; margin-top: 1rem; }
+  .summary-item { display: flex; gap: 0.5rem; align-items: flex-start; font-size: 0.88rem; }
 
   /* Pyramid */
   .pyramid { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 2rem 0; }
@@ -98,26 +151,44 @@
   .progress-bar { height: 6px; background: var(--bg3); border-radius: 3px; margin: 2rem 0; }
   .progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--blue), var(--purple)); width: 0; transition: width 1s ease; }
 
-  /* Exercise */
-  .exercise { background: linear-gradient(135deg, rgba(88,166,255,0.08), rgba(188,140,255,0.08)); border: 1px solid rgba(88,166,255,0.3); border-radius: 12px; padding: 1.5rem; margin: 2rem 0; }
-  .exercise h3 { color: var(--blue); margin-top: 0; }
-
   /* Takeaway */
   .takeaway { background: linear-gradient(135deg, rgba(57,211,83,0.08), rgba(13,17,23,0)); border: 1px solid rgba(57,211,83,0.3); border-radius: 12px; padding: 1.5rem; margin: 2rem 0; }
 
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
-
   .header-meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
   .divider { height: 1px; background: var(--border); margin: 3rem 0; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
 </style>
 </head>
 <body>
+
+<!-- Sticky Navigation -->
+<nav class="nav-bar">
+  <div class="nav-phase">
+    <strong>Phase 3: Engineer</strong> &nbsp;·&nbsp; Bài 9/5
+  </div>
+  <div class="nav-links">
+    <a href="../phase-2-build/08-api-fundamentals.html" class="nav-btn">← Bài 8</a>
+    <span class="nav-current">🧪 09 · Testing</span>
+    <a href="10-debugging.html" class="nav-btn">Bài 10 →</a>
+  </div>
+</nav>
+
 <div class="container">
 
-  <div class="header-meta">Phase 3: Engineer · Bài 09</div>
+  <div class="header-meta">Phase 3: Engineer · Bài 09 / 5</div>
   <h1>🧪 Testing Mindset</h1>
   <p style="font-size:1.1rem; color: var(--text);">Tại sao "nó chạy trên máy tôi" không đủ — và cách viết code có thể tin tưởng được.</p>
+
+  <!-- Prerequisites -->
+  <div class="prereq">
+    <div class="prereq-title">📚 Điều kiện tiên quyết</div>
+    <div class="prereq-list">
+      <a href="../phase-1-think/03-clean-code.html" class="badge badge-blue">Bài 3 — Clean Code (testable code)</a>
+      <a href="../phase-2-build/08-api-fundamentals.html" class="badge badge-blue">Bài 8 — API Fundamentals (test endpoints)</a>
+    </div>
+  </div>
 
   <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
 
@@ -161,7 +232,7 @@
 
   <!-- Test Pyramid -->
   <h2>🔺 Test Pyramid</h2>
-  <p>Không phải mọi test đều bình đẳng. Pyramid cho biết <em>bao nhiêu</em> của mỗi loại.</p>
+  <p>Không phải mọi test đều bình đẳng. Pyramid cho biết <em>bao nhiêu</em> của mỗi loại. <a href="../phase-2-build/08-api-fundamentals.html" class="xref">→ Bài 8: API endpoints cần integration test</a></p>
 
   <div class="pyramid reveal">
     <div class="pyramid-level level-e2e" onclick="showPyramidInfo('e2e')">
@@ -183,6 +254,10 @@
 
   <!-- AAA Pattern -->
   <h2>🔬 Unit Test Anatomy: Arrange → Act → Assert</h2>
+  <p>
+    Mọi unit test tốt đều theo pattern AAA.
+    <a href="../phase-1-think/03-clean-code.html" class="xref">→ Bài 3: Clean testable code</a>
+  </p>
   <div class="aaa reveal">
     <div class="aaa-box aaa-arrange">
       <div class="aaa-num">1</div>
@@ -333,34 +408,206 @@
 
   <div class="divider"></div>
 
-  <!-- Exercise -->
-  <div class="exercise reveal">
-    <h3>🏋️ Exercise: Viết Test Cases</h3>
-    <p>Cho hàm sau, viết <strong>5 test cases</strong>: happy path, edge cases, error cases.</p>
-    <pre><code><span class="kw">function</span> <span class="fn">dividePrice</span>(total: <span class="kw">number</span>, people: <span class="kw">number</span>): <span class="kw">number</span> {
-  <span class="kw">return</span> total / people;
-}</code></pre>
-    <ol style="margin: 1rem 0 1rem 1.5rem; color: var(--muted);">
-      <li style="padding: 0.3rem 0;">Happy path: 100 / 4 = 25</li>
-      <li style="padding: 0.3rem 0;">Edge case: 0 / 4 = 0</li>
-      <li style="padding: 0.3rem 0;">Edge case: 100 / 1 = 100</li>
-      <li style="padding: 0.3rem 0;">Error: 100 / 0 → phải throw Error</li>
-      <li style="padding: 0.3rem 0;">Edge case: số lẻ → làm tròn 2 chữ số?</li>
-    </ol>
-    <details style="margin-top: 1rem;">
-      <summary style="cursor: pointer; color: var(--blue);">👁️ Xem gợi ý solution</summary>
-      <pre style="margin-top: 1rem;"><code><span class="fn">describe</span>(<span class="str">'dividePrice'</span>, () => {
-  <span class="fn">it</span>(<span class="str">'divides evenly'</span>, () => <span class="fn">expect</span>(<span class="fn">dividePrice</span>(<span class="num">100</span>, <span class="num">4</span>)).<span class="fn">toBe</span>(<span class="num">25</span>));
-  <span class="fn">it</span>(<span class="str">'handles zero total'</span>, () => <span class="fn">expect</span>(<span class="fn">dividePrice</span>(<span class="num">0</span>, <span class="num">4</span>)).<span class="fn">toBe</span>(<span class="num">0</span>));
-  <span class="fn">it</span>(<span class="str">'handles single person'</span>, () => <span class="fn">expect</span>(<span class="fn">dividePrice</span>(<span class="num">100</span>, <span class="num">1</span>)).<span class="fn">toBe</span>(<span class="num">100</span>));
-  <span class="fn">it</span>(<span class="str">'throws on divide by zero'</span>, () => {
-    <span class="fn">expect</span>(() => <span class="fn">dividePrice</span>(<span class="num">100</span>, <span class="num">0</span>)).<span class="fn">toThrow</span>(<span class="str">'Cannot divide by zero'</span>);
+  <!-- ==================== EXERCISES ==================== -->
+  <div class="ex-section">
+    <div class="ex-section-title">🏋️ Exercises — Bài 09: Testing Mindset</div>
+
+    <!-- Ex 1 -->
+    <div class="ex-card ex-easy">
+      <div class="ex-header">
+        <span class="ex-num" style="color:var(--green);">Ex 1</span>
+        <span class="ex-diff diff-easy">🟢 Dễ</span>
+        <span class="ex-title">Viết 3 unit tests cho hàm calculateDiscount(price, membership)</span>
+      </div>
+      <p style="font-size:0.88rem;">Cho hàm: <code>calculateDiscount(price: number, membership: 'basic' | 'premium' | 'vip'): number</code> — trả về giá sau discount. Basic=5%, Premium=15%, VIP=30%.</p>
+      <p style="font-size:0.88rem;">Viết 3 test cases: 1 cho mỗi membership tier. Dùng Arrange-Act-Assert pattern.</p>
+      <details>
+        <summary>👁️ Xem solution gợi ý</summary>
+        <pre style="margin-top:0.8rem;"><code><span class="fn">describe</span>(<span class="str">'calculateDiscount'</span>, () => {
+  <span class="fn">it</span>(<span class="str">'applies 5% discount for basic membership'</span>, () => {
+    <span class="cm">// Arrange</span>
+    <span class="kw">const</span> price = <span class="num">100</span>;
+    <span class="cm">// Act</span>
+    <span class="kw">const</span> result = <span class="fn">calculateDiscount</span>(price, <span class="str">'basic'</span>);
+    <span class="cm">// Assert</span>
+    <span class="fn">expect</span>(result).<span class="fn">toBe</span>(<span class="num">95</span>);
   });
-  <span class="fn">it</span>(<span class="str">'rounds to 2 decimal places'</span>, () => {
-    <span class="fn">expect</span>(<span class="fn">dividePrice</span>(<span class="num">10</span>, <span class="num">3</span>)).<span class="fn">toBeCloseTo</span>(<span class="num">3.33</span>, <span class="num">2</span>);
+
+  <span class="fn">it</span>(<span class="str">'applies 15% discount for premium membership'</span>, () => {
+    <span class="fn">expect</span>(<span class="fn">calculateDiscount</span>(<span class="num">200</span>, <span class="str">'premium'</span>)).<span class="fn">toBe</span>(<span class="num">170</span>);
+  });
+
+  <span class="fn">it</span>(<span class="str">'applies 30% discount for VIP membership'</span>, () => {
+    <span class="fn">expect</span>(<span class="fn">calculateDiscount</span>(<span class="num">100</span>, <span class="str">'vip'</span>)).<span class="fn">toBe</span>(<span class="num">70</span>);
   });
 });</code></pre>
-    </details>
+      </details>
+    </div>
+
+    <!-- Ex 2 -->
+    <div class="ex-card ex-easy">
+      <div class="ex-header">
+        <span class="ex-num" style="color:var(--green);">Ex 2</span>
+        <span class="ex-diff diff-easy">🟢 Dễ</span>
+        <span class="ex-title">Identify: function nào cần mock, function nào test thật?</span>
+      </div>
+      <p style="font-size:0.88rem;">Phân loại từng function sau — cần mock hay test thật?</p>
+      <pre><code><span class="kw">function</span> <span class="fn">calculateTotal</span>(items: Item[]): number  <span class="cm">// tính tổng giỏ hàng</span>
+<span class="kw">function</span> <span class="fn">sendEmail</span>(to: string, body: string): Promise&lt;void&gt;
+<span class="kw">function</span> <span class="fn">getUserFromDB</span>(id: string): Promise&lt;User&gt;
+<span class="kw">function</span> <span class="fn">validateEmail</span>(email: string): boolean
+<span class="kw">function</span> <span class="fn">uploadToS3</span>(file: Buffer): Promise&lt;string&gt;</code></pre>
+      <details>
+        <summary>👁️ Xem phân tích</summary>
+        <div style="margin-top:0.8rem; padding:1rem; background:var(--bg3); border-radius:8px; font-size:0.88rem;">
+          <p><strong style="color:var(--green);">Test thật (no mock):</strong></p>
+          <ul style="margin:0.4rem 0 0.8rem 1.2rem; color:var(--muted);">
+            <li><code>calculateTotal</code> — pure function, không side effect</li>
+            <li><code>validateEmail</code> — pure function, không dependency</li>
+          </ul>
+          <p><strong style="color:var(--yellow);">Cần mock:</strong></p>
+          <ul style="margin:0.4rem 0 0 1.2rem; color:var(--muted);">
+            <li><code>sendEmail</code> — mock EmailService, không muốn gửi email thật khi test</li>
+            <li><code>getUserFromDB</code> — mock Repository, test DB là integration test riêng</li>
+            <li><code>uploadToS3</code> — mock AWS SDK, không muốn tốn tiền / rate limit</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+
+    <!-- Ex 3 -->
+    <div class="ex-card ex-medium">
+      <div class="ex-header">
+        <span class="ex-num" style="color:var(--yellow);">Ex 3</span>
+        <span class="ex-diff diff-medium">🟡 Trung bình</span>
+        <span class="ex-title">Integration test: test API POST /users với database thật</span>
+      </div>
+      <p style="font-size:0.88rem;">Viết integration test cho endpoint <code>POST /users</code> sử dụng Supertest + TestContainers (MongoDB thật). Test phải verify: user được tạo trong DB, response trả về đúng schema. <a href="../phase-2-build/08-api-fundamentals.html" class="xref">→ Bài 8: API endpoint design</a></p>
+      <details>
+        <summary>👁️ Xem structure gợi ý</summary>
+        <pre style="margin-top:0.8rem;"><code><span class="kw">import</span> * <span class="kw">as</span> request <span class="kw">from</span> <span class="str">'supertest'</span>;
+
+<span class="fn">describe</span>(<span class="str">'POST /users (Integration)'</span>, () => {
+  <span class="kw">let</span> app: INestApplication;
+  <span class="kw">let</span> usersModel: Model&lt;User&gt;;
+
+  <span class="fn">beforeAll</span>(<span class="kw">async</span> () => {
+    <span class="cm">// Setup: NestJS test module với MongoDB memory server</span>
+    <span class="kw">const</span> module = <span class="kw">await</span> Test.<span class="fn">createTestingModule</span>({
+      imports: [AppModule],
+    }).<span class="fn">compile</span>();
+    app = module.<span class="fn">createNestApplication</span>();
+    <span class="kw">await</span> app.<span class="fn">init</span>();
+    usersModel = module.<span class="fn">get</span>(getModelToken(<span class="str">'User'</span>));
+  });
+
+  <span class="fn">afterEach</span>(<span class="kw">async</span> () => {
+    <span class="kw">await</span> usersModel.<span class="fn">deleteMany</span>({}); <span class="cm">// cleanup sau mỗi test</span>
+  });
+
+  <span class="fn">it</span>(<span class="str">'creates user and returns 201 with correct schema'</span>, <span class="kw">async</span> () => {
+    <span class="kw">const</span> res = <span class="kw">await</span> <span class="fn">request</span>(app.<span class="fn">getHttpServer</span>())
+      .<span class="fn">post</span>(<span class="str">'/users'</span>)
+      .<span class="fn">send</span>({ name: <span class="str">'Alice'</span>, email: <span class="str">'alice@example.com'</span> })
+      .<span class="fn">expect</span>(<span class="num">201</span>);
+
+    <span class="fn">expect</span>(res.body).toMatchObject({
+      id: <span class="fn">expect</span>.<span class="fn">any</span>(String),
+      name: <span class="str">'Alice'</span>,
+      email: <span class="str">'alice@example.com'</span>,
+    });
+
+    <span class="cm">// Verify in DB</span>
+    <span class="kw">const</span> inDb = <span class="kw">await</span> usersModel.<span class="fn">findById</span>(res.body.id);
+    <span class="fn">expect</span>(inDb).<span class="fn">toBeTruthy</span>();
+  });
+});</code></pre>
+      </details>
+    </div>
+
+    <!-- Ex 4 -->
+    <div class="ex-card ex-medium">
+      <div class="ex-header">
+        <span class="ex-num" style="color:var(--yellow);">Ex 4</span>
+        <span class="ex-diff diff-medium">🟡 Trung bình</span>
+        <span class="ex-title">Edge cases: liệt kê 8 test cases cho hàm parseDate(input)</span>
+      </div>
+      <p style="font-size:0.88rem;">Hàm <code>parseDate(input: string): Date</code> nhận string, trả về Date. Liệt kê 8 test cases bao gồm happy path và edge cases. Nghĩ như QA engineer.</p>
+      <details>
+        <summary>👁️ Xem 8 test cases</summary>
+        <div style="margin-top:0.8rem; padding:1rem; background:var(--bg3); border-radius:8px; font-size:0.85rem; color:var(--muted);">
+          <ol style="margin-left:1.2rem;">
+            <li style="padding:0.2rem 0;"><strong style="color:var(--green);">Happy:</strong> "2024-01-15" → Date(2024, 0, 15)</li>
+            <li style="padding:0.2rem 0;"><strong style="color:var(--green);">Happy:</strong> "15/01/2024" (DD/MM/YYYY format)</li>
+            <li style="padding:0.2rem 0;"><strong style="color:var(--yellow);">Edge:</strong> "2024-02-29" — leap year, valid</li>
+            <li style="padding:0.2rem 0;"><strong style="color:var(--yellow);">Edge:</strong> "2023-02-29" — not leap year, should throw</li>
+            <li style="padding:0.2rem 0;"><strong style="color:var(--red);">Error:</strong> "" (empty string) → throw InvalidDateError</li>
+            <li style="padding:0.2rem 0;"><strong style="color:var(--red);">Error:</strong> null / undefined → throw</li>
+            <li style="padding:0.2rem 0;"><strong style="color:var(--red);">Error:</strong> "not-a-date" → throw</li>
+            <li style="padding:0.2rem 0;"><strong style="color:var(--yellow);">Edge:</strong> "2024-12-31" (last day of year) → correct</li>
+          </ol>
+        </div>
+      </details>
+    </div>
+
+    <!-- Ex 5 -->
+    <div class="ex-card ex-hard">
+      <div class="ex-header">
+        <span class="ex-num" style="color:var(--red);">Ex 5</span>
+        <span class="ex-diff diff-hard">🔴 Khó</span>
+        <span class="ex-title">TDD: implement hàm validatePassword() theo Red→Green→Refactor</span>
+      </div>
+      <p style="font-size:0.88rem;">Dùng TDD để implement <code>validatePassword(password: string): { valid: boolean; errors: string[] }</code>. Rules: ≥8 ký tự, 1 hoa, 1 thường, 1 số, 1 ký tự đặc biệt. Viết test trước, code sau.</p>
+      <details>
+        <summary>👁️ Xem TDD walkthrough</summary>
+        <pre style="margin-top:0.8rem;"><code><span class="cm">// 🔴 RED: Viết tests trước</span>
+<span class="fn">describe</span>(<span class="str">'validatePassword'</span>, () => {
+  <span class="fn">it</span>(<span class="str">'rejects passwords shorter than 8 chars'</span>, () => {
+    <span class="kw">const</span> result = <span class="fn">validatePassword</span>(<span class="str">'abc'</span>);
+    <span class="fn">expect</span>(result.valid).<span class="fn">toBe</span>(<span class="kw">false</span>);
+    <span class="fn">expect</span>(result.errors).toContain(<span class="str">'Minimum 8 characters'</span>);
+  });
+
+  <span class="fn">it</span>(<span class="str">'accepts valid strong password'</span>, () => {
+    <span class="kw">const</span> result = <span class="fn">validatePassword</span>(<span class="str">'Secure@123'</span>);
+    <span class="fn">expect</span>(result.valid).<span class="fn">toBe</span>(<span class="kw">true</span>);
+    <span class="fn">expect</span>(result.errors).<span class="fn">toHaveLength</span>(<span class="num">0</span>);
+  });
+  <span class="cm">// ... more tests</span>
+});
+
+<span class="cm">// 🟢 GREEN: Implement minimum để pass</span>
+<span class="kw">function</span> <span class="fn">validatePassword</span>(password: <span class="kw">string</span>) {
+  <span class="kw">const</span> errors: <span class="kw">string</span>[] = [];
+  <span class="kw">if</span> (password.length &lt; <span class="num">8</span>) errors.<span class="fn">push</span>(<span class="str">'Minimum 8 characters'</span>);
+  <span class="kw">if</span> (!/<span class="str">[A-Z]</span>/.test(password)) errors.<span class="fn">push</span>(<span class="str">'Need uppercase'</span>);
+  <span class="kw">if</span> (!/<span class="str">[a-z]</span>/.test(password)) errors.<span class="fn">push</span>(<span class="str">'Need lowercase'</span>);
+  <span class="kw">if</span> (!/<span class="str">[0-9]</span>/.test(password)) errors.<span class="fn">push</span>(<span class="str">'Need digit'</span>);
+  <span class="kw">if</span> (!/<span class="str">[!@#$%^&*]</span>/.test(password)) errors.<span class="fn">push</span>(<span class="str">'Need special char'</span>);
+  <span class="kw">return</span> { valid: errors.length === <span class="num">0</span>, errors };
+}
+<span class="cm">// 🔵 REFACTOR: Extract rules array, cleaner code</span></code></pre>
+      </details>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-card reveal">
+    <h3 style="color:var(--green); margin-top:0;">📋 Tóm tắt Bài 09</h3>
+    <div class="summary-grid">
+      <div class="summary-item">✅ <span>Test Pyramid: Unit (70%) → Integration (20%) → E2E (10%)</span></div>
+      <div class="summary-item">✅ <span>AAA Pattern: Arrange, Act, Assert — mọi unit test</span></div>
+      <div class="summary-item">✅ <span>Mock/Stub/Spy để isolate dependencies</span></div>
+      <div class="summary-item">✅ <span>TDD: Red → Green → Refactor cycle</span></div>
+      <div class="summary-item">✅ <span>Coverage là metric, không phải mục tiêu</span></div>
+      <div class="summary-item">✅ <span>Test sau bug fix → regression test</span></div>
+    </div>
+    <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border); display:flex; gap:1rem; flex-wrap:wrap;">
+      <div style="font-size:0.82rem; color:var(--muted);">🔗 Cross-references:</div>
+      <a href="../phase-1-think/03-clean-code.html" class="xref">Bài 3: Clean testable code</a>
+      <a href="../phase-2-build/08-api-fundamentals.html" class="xref">Bài 8: API endpoint testing</a>
+      <a href="10-debugging.html" class="xref">Bài 10: Khi test fail → debug</a>
+    </div>
   </div>
 
   <!-- Takeaway -->
@@ -374,6 +621,12 @@
       <li class="check-yes">Coverage là metric, không phải mục tiêu — test quality quan trọng hơn số %</li>
       <li class="check-yes">TDD giúp design API tốt hơn vì bạn dùng code của mình trước</li>
     </ul>
+  </div>
+
+  <!-- Navigation bottom -->
+  <div style="display:flex; justify-content:space-between; margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border);">
+    <a href="../phase-2-build/08-api-fundamentals.html" class="nav-btn" style="font-size:0.9rem; padding:0.6rem 1.2rem;">← Bài 8: API Fundamentals</a>
+    <a href="10-debugging.html" class="nav-btn" style="font-size:0.9rem; padding:0.6rem 1.2rem; border-color:var(--blue); color:var(--blue);">Bài 10: Debugging →</a>
   </div>
 
 </div>
@@ -392,10 +645,8 @@ function showPyramidInfo(type) {
   el.classList.add('show');
 }
 
-// Mock toggle
 function toggleMock(el) { el.classList.toggle('open'); }
 
-// TDD
 const tddData = {
   red: { color: 'var(--red)', text: '🔴 RED: Viết test cho tính năng chưa tồn tại. Chạy → FAIL. Điều này bình thường! Test fail = xác nhận test đang hoạt động.' },
   green: { color: 'var(--green)', text: '🟢 GREEN: Viết code ĐỦ để test pass — không cần perfect. Chạy lại → PASS. Đừng over-engineer ở bước này.' },
@@ -410,7 +661,6 @@ function activateTDD(type) {
   el.innerHTML = `<p style="color:${d.color}">${d.text}</p>`;
 }
 
-// Gauge
 function setGauge(pct, color) {
   const total = 251;
   const fill = (pct / 100) * total;
@@ -421,14 +671,12 @@ function setGauge(pct, color) {
 }
 setTimeout(() => setGauge(80, '#3fb950'), 500);
 
-// Progress
 window.addEventListener('scroll', () => {
   const h = document.documentElement;
   const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
   document.getElementById('progress').style.width = pct + '%';
 });
 
-// Reveal on scroll
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: 0.1 });

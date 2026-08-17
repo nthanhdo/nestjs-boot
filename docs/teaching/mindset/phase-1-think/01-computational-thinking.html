@@ -15,8 +15,17 @@
 body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 20% 20%, rgba(167,139,250,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(91,141,239,0.05) 0%, transparent 50%); pointer-events:none; z-index:0; }
 
+/* TOP NAV */
+.lesson-nav { background: var(--surface2); border-bottom: 1px solid var(--border); padding: 10px 24px; position: sticky; top: 0; z-index: 200; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.nav-home { color: var(--accent); text-decoration: none; font-weight: 700; font-size: .85rem; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(167,139,250,0.3); transition: all .2s; }
+.nav-home:hover { background: rgba(167,139,250,0.1); }
+.nav-path { color: var(--muted); font-size: .82rem; flex: 1; }
+.nav-prev, .nav-next { color: var(--muted); text-decoration: none; font-size: .82rem; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); transition: all .2s; }
+.nav-prev:hover, .nav-next:hover { color: var(--text); border-color: var(--accent); }
+.nav-prev.disabled { opacity: .4; pointer-events: none; }
+
 /* HEADER */
-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; position: sticky; top: 0; z-index: 100; }
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; z-index: 100; }
 .header-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .phase-badge { background: linear-gradient(135deg,#7c5ce7,#a78bfa); color:#fff; padding: 3px 12px; border-radius: 20px; font-size: .7rem; font-weight: 700; letter-spacing: .5px; }
 header h1 { font-size: 1.3rem; font-weight: 800; background: linear-gradient(135deg,#a78bfa,#5b8def); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
@@ -26,6 +35,14 @@ header h1 { font-size: 1.3rem; font-weight: 800; background: linear-gradient(135
 
 /* MAIN */
 main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: relative; z-index: 1; }
+
+/* PREREQUISITES */
+.prerequisites { background: linear-gradient(135deg,rgba(91,141,239,0.08),rgba(91,141,239,0.04)); border: 1px solid rgba(91,141,239,0.25); border-radius: 12px; padding: 18px 22px; margin-bottom: 32px; }
+.prerequisites h3 { font-size: .85rem; font-weight: 700; color: var(--blue); margin-bottom: 10px; }
+.prerequisites ul { list-style: none; }
+.prerequisites li { font-size: .85rem; color: var(--muted); line-height: 1.8; }
+.prerequisites a { color: var(--accent); text-decoration: none; }
+.prerequisites a:hover { text-decoration: underline; }
 
 /* SECTION CARDS */
 .section { display: none; animation: fadeUp .5s ease; }
@@ -47,6 +64,11 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 .highlight-label { font-size: .7rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
 .highlight-text { color: var(--text); font-size: .95rem; line-height: 1.7; }
 
+/* CROSS REF */
+.cross-ref { display: inline-block; background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.2); border-radius: 6px; padding: 2px 8px; font-size: .8rem; color: var(--muted); margin: 4px 0; }
+.cross-ref a { color: var(--accent); text-decoration: none; }
+.cross-ref a:hover { text-decoration: underline; }
+
 /* DECOMPOSITION DIAGRAM */
 .decomp-tree { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 24px 0; }
 .decomp-root { background: linear-gradient(135deg,#7c5ce7,#a78bfa); color:#fff; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 1rem; text-align: center; box-shadow: 0 4px 20px rgba(124,92,231,0.4); }
@@ -56,8 +78,6 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 .decomp-node { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; font-size: .85rem; text-align: center; color: var(--text); min-width: 110px; }
 .decomp-node.level2 { background: linear-gradient(135deg,rgba(91,141,239,0.15),rgba(91,141,239,0.05)); border-color: rgba(91,141,239,0.3); color: var(--blue); font-weight: 600; }
 .decomp-node.level3 { background: linear-gradient(135deg,rgba(46,204,113,0.12),rgba(46,204,113,0.04)); border-color: rgba(46,204,113,0.3); color: var(--green); font-size: .8rem; }
-.h-line { height: 2px; width: 100%; background: var(--border); }
-.branch-line { display: flex; align-items: flex-start; justify-content: center; width: 100%; gap: 0; }
 .connector { display: flex; flex-direction: column; align-items: center; }
 .connector-v { width: 2px; height: 20px; background: var(--border); margin: 0 auto; }
 
@@ -121,7 +141,6 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 .scale-right { right: 0; }
 .scale-pan { width: 80px; height: 6px; background: var(--muted); border-radius: 3px; }
 .scale-weight { background: linear-gradient(135deg,var(--blue),#2c5aa0); color:#fff; border-radius: 8px; padding: 8px 12px; font-size: .8rem; font-weight: 600; text-align: center; min-width: 80px; }
-.scale-label { color: var(--muted); font-size: .72rem; text-align: center; }
 .scale-row { display: flex; gap: 40px; align-items: center; }
 .scale-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: .85rem; transition: all .2s; }
 .scale-btn:hover { background: var(--surface); border-color: var(--accent); }
@@ -134,21 +153,53 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 .sci-name { font-size: .85rem; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
 .sci-desc { font-size: .78rem; color: var(--muted); line-height: 1.5; }
 
-/* EXERCISE */
-.exercise { background: linear-gradient(135deg,rgba(255,183,71,0.08),rgba(255,183,71,0.03)); border: 1px solid rgba(255,183,71,0.25); border-radius: 16px; padding: 28px; }
-.exercise-title { color: var(--orange); font-weight: 700; font-size: 1rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
-.ex-problem { background: var(--surface); border-radius: 10px; padding: 16px; margin-bottom: 16px; color: var(--text); font-size: .95rem; line-height: 1.7; }
-.ex-steps { counter-reset: step; }
-.ex-step { counter-increment: step; display: flex; gap: 12px; margin-bottom: 12px; padding: 12px 16px; background: var(--surface2); border-radius: 10px; }
-.ex-step::before { content: counter(step); flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg,var(--orange),#e67e22); color:#fff; font-weight: 700; font-size: .8rem; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
-.ex-step-text { font-size: .9rem; color: var(--text); line-height: 1.6; }
-
 /* TAKEAWAY */
 .takeaway { background: linear-gradient(135deg,rgba(46,204,113,0.1),rgba(46,204,113,0.04)); border: 1px solid rgba(46,204,113,0.3); border-radius: 14px; padding: 24px; margin-top: 28px; }
 .takeaway-title { color: var(--green); font-weight: 700; font-size: .9rem; letter-spacing: .5px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
 .takeaway-list { list-style: none; }
 .takeaway-list li { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; font-size: .9rem; color: var(--text); line-height: 1.6; }
 .takeaway-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+
+/* EXERCISES */
+.exercises { margin: 40px 0; }
+.exercises h2 { font-size: 1.4rem; font-weight: 800; color: var(--text); margin-bottom: 20px; }
+.exercise { border-radius: 14px; margin-bottom: 16px; overflow: hidden; border: 1px solid var(--border); }
+.ex-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; cursor: pointer; background: var(--surface); user-select: none; transition: background .2s; }
+.ex-header:hover { background: var(--surface2); }
+.exercise.open .ex-header { background: var(--surface2); border-bottom: 1px solid var(--border); }
+.ex-num { background: var(--surface2); color: var(--muted); border-radius: 6px; padding: 2px 8px; font-size: .75rem; font-weight: 700; flex-shrink: 0; }
+.exercise.open .ex-num { background: rgba(167,139,250,0.15); color: var(--accent); }
+.ex-title { flex: 1; font-weight: 600; font-size: .95rem; color: var(--text); }
+.ex-diff { padding: 2px 10px; border-radius: 20px; font-size: .72rem; font-weight: 700; flex-shrink: 0; }
+.ex-diff.easy { background: rgba(46,204,113,0.15); color: var(--green); }
+.ex-diff.medium { background: rgba(255,183,71,0.15); color: var(--orange); }
+.ex-diff.hard { background: rgba(231,76,60,0.15); color: var(--red); }
+.ex-toggle { color: var(--muted); font-size: .8rem; transition: transform .3s; flex-shrink: 0; }
+.exercise.open .ex-toggle { transform: rotate(90deg); }
+.ex-body { display: none; padding: 20px; background: var(--surface); }
+.exercise.open .ex-body { display: block; animation: fadeUp .3s; }
+.ex-problem { background: var(--surface2); border-radius: 10px; padding: 16px; margin-bottom: 14px; color: var(--text); font-size: .9rem; line-height: 1.7; border-left: 3px solid var(--accent); }
+.ex-hint { background: rgba(255,183,71,0.06); border: 1px solid rgba(255,183,71,0.2); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: .85rem; color: var(--muted); line-height: 1.6; }
+.ex-solution button { background: linear-gradient(135deg,rgba(167,139,250,0.15),rgba(91,141,239,0.1)); border: 1px solid rgba(167,139,250,0.3); color: var(--accent); padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: .85rem; font-weight: 600; transition: all .2s; }
+.ex-solution button:hover { background: rgba(167,139,250,0.2); }
+.ex-solution-content { margin-top: 14px; background: var(--surface2); border-radius: 10px; padding: 16px; font-size: .88rem; color: var(--text); line-height: 1.7; border-left: 3px solid var(--green); }
+.ex-code { background: #0a0f1e; border-radius: 8px; padding: 14px; margin: 10px 0; font-family: monospace; font-size: .82rem; line-height: 1.8; overflow-x: auto; }
+.kw { color: #ff9f7f; } .fn { color: #7ec8e3; } .str { color: #a8d8a8; } .num { color: #ffd43b; } .cmt { color: #5a7a6a; }
+
+/* LESSON SUMMARY */
+.lesson-summary { background: linear-gradient(135deg,rgba(167,139,250,0.08),rgba(91,141,239,0.06)); border: 1px solid rgba(167,139,250,0.25); border-radius: 16px; padding: 28px; margin: 40px 0 20px; }
+.lesson-summary h2 { font-size: 1.2rem; font-weight: 800; color: var(--accent); margin-bottom: 16px; }
+.summary-list { list-style: none; }
+.summary-list li { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; font-size: .92rem; color: var(--text); line-height: 1.6; }
+
+/* NEXT PREVIEW */
+.next-preview { margin: 20px 0 40px; }
+.next-preview h3 { font-size: .9rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.next-card { display: flex; align-items: center; gap: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; text-decoration: none; transition: all .3s; }
+.next-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.next-num { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg,#7c5ce7,#a78bfa); color:#fff; font-weight: 900; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.next-title { font-weight: 700; color: var(--text); font-size: 1rem; margin-bottom: 4px; }
+.next-desc { font-size: .82rem; color: var(--muted); line-height: 1.5; }
 
 /* NAVIGATION */
 .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 14px 24px; display: flex; justify-content: center; gap: 12px; z-index: 100; }
@@ -167,6 +218,13 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 </head>
 <body>
 
+<nav class="lesson-nav">
+  <a href="../index.html" class="nav-home">🏠 Hub</a>
+  <span class="nav-path">Phase 1: Think → Bài 1/4</span>
+  <span class="nav-prev disabled">← Bài trước</span>
+  <a href="02-programming-thinking.html" class="nav-next">Bài sau →</a>
+</nav>
+
 <header>
   <div class="header-inner">
     <span class="phase-badge">PHASE 1 · THINK</span>
@@ -179,6 +237,15 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 </header>
 
 <main>
+
+<div class="prerequisites">
+  <h3>📋 Yêu cầu trước bài học</h3>
+  <ul>
+    <li>📖 Cần biết: Khái niệm cơ bản về bài toán và cách giải quyết vấn đề</li>
+    <li>📖 Cần biết: Tư duy logic cơ bản (if/then/else trong đời sống)</li>
+    <li>🎯 Đây là bài đầu tiên trong Phase 1 — không cần kiến thức lập trình trước</li>
+  </ul>
+</div>
 
 <!-- SECTION 1: Decomposition -->
 <div class="section active" id="sec-0">
@@ -285,6 +352,8 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
     </div>
   </div>
 
+  <span class="cross-ref">📎 Xem thêm: <a href="02-programming-thinking.html">Bài 2 — Tư Duy Lập Trình: Interface & Abstraction</a></span>
+
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0;">
     <div style="background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.25);border-radius:12px;padding:16px;">
       <div style="color:var(--red);font-weight:700;font-size:.8rem;margin-bottom:10px;">❌ Không abstraction</div>
@@ -348,6 +417,8 @@ quit()</pre>
       Cả 3 bài toán đều là <strong>First In, First Out</strong>. Chỉ cần implement Queue một lần, dùng được cho tất cả!
     </div>
   </div>
+
+  <span class="cross-ref">📎 Xem thêm: <a href="04-design-pattern.html">Bài 4 — Design Patterns: Observer, Strategy và nhiều pattern hơn</a></span>
 
   <div class="highlight">
     <div class="highlight-label">Tại sao Pattern Recognition quan trọng?</div>
@@ -552,36 +623,250 @@ quit()</pre>
     <div class="section-desc">Áp dụng tư duy tính toán vào bài toán quen thuộc.</div>
   </div>
 
-  <div class="exercise">
-    <div class="exercise-title">📚 Bài toán: Tổ chức lịch thi cho trường đại học</div>
-    <div class="ex-problem">
-      Trường có 500 sinh viên, 50 môn học, 20 phòng thi. Không sinh viên nào bị trùng lịch 2 môn cùng lúc. Phòng không được vượt quá sức chứa. Giám thị phải được phân công.
-    </div>
-    <div class="ex-steps">
-      <div class="ex-step"><div class="ex-step-text"><strong>Decomposition:</strong> Chia thành: quản lý sinh viên, quản lý phòng, quản lý môn học, phân công giám thị, generate lịch, kiểm tra xung đột</div></div>
-      <div class="ex-step"><div class="ex-step-text"><strong>Abstraction:</strong> Mô hình hóa: sinh viên ↔ môn học (enrollment), phòng ↔ slot thời gian, môn ↔ slot (assignment)</div></div>
-      <div class="ex-step"><div class="ex-step-text"><strong>Pattern:</strong> Đây là bài toán <em>Graph Coloring</em> — môn học là node, xung đột là edge, màu là time slot</div></div>
-      <div class="ex-step"><div class="ex-step-text"><strong>Algorithm:</strong> 1. Build conflict graph → 2. Color graph (greedy) → 3. Assign rooms by capacity → 4. Assign supervisors</div></div>
-      <div class="ex-step"><div class="ex-step-text"><strong>Edge Cases:</strong> Môn có 500 sinh viên (phải thi nhiều phòng), giám thị nghỉ ốm, phòng bảo trì, môn online</div></div>
+  <div class="card" style="margin-bottom:28px;">
+    <div class="card-title">📚 Bài toán: Tổ chức lịch thi cho trường đại học</div>
+    <div class="card-body" style="margin-bottom:16px;">Trường có 500 sinh viên, 50 môn học, 20 phòng thi. Không sinh viên nào bị trùng lịch 2 môn cùng lúc. Phòng không được vượt quá sức chứa.</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;gap:12px;padding:12px 16px;background:var(--surface2);border-radius:10px;"><strong style="color:var(--accent);flex-shrink:0">Decomposition:</strong> <span style="color:var(--muted);font-size:.9rem">Chia thành: quản lý sinh viên, quản lý phòng, quản lý môn học, phân công giám thị, generate lịch, kiểm tra xung đột</span></div>
+      <div style="display:flex;gap:12px;padding:12px 16px;background:var(--surface2);border-radius:10px;"><strong style="color:var(--blue);flex-shrink:0">Abstraction:</strong> <span style="color:var(--muted);font-size:.9rem">Mô hình hóa: sinh viên ↔ môn học (enrollment), phòng ↔ slot thời gian, môn ↔ slot (assignment)</span></div>
+      <div style="display:flex;gap:12px;padding:12px 16px;background:var(--surface2);border-radius:10px;"><strong style="color:var(--green);flex-shrink:0">Pattern:</strong> <span style="color:var(--muted);font-size:.9rem">Đây là bài toán Graph Coloring — môn học là node, xung đột là edge, màu là time slot</span></div>
+      <div style="display:flex;gap:12px;padding:12px 16px;background:var(--surface2);border-radius:10px;"><strong style="color:var(--orange);flex-shrink:0">Algorithm:</strong> <span style="color:var(--muted);font-size:.9rem">1. Build conflict graph → 2. Color graph (greedy) → 3. Assign rooms by capacity → 4. Assign supervisors</span></div>
     </div>
   </div>
 
-  <div class="highlight" style="margin-top:24px;">
-    <div class="highlight-label">Insight</div>
-    <div class="highlight-text">Bài toán "tổ chức lịch thi" và bài toán "tô màu bản đồ" nhìn bề ngoài rất khác nhau nhưng <strong>cùng một pattern</strong>. Đây là sức mạnh của Computational Thinking.</div>
+  <!-- EXERCISES -->
+  <div class="exercises">
+    <h2>🏋️ Bài tập thực hành</h2>
+
+    <div class="exercise" id="ex1">
+      <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="ex-num">Ex 1</span>
+        <span class="ex-title">Decompose "đặt pizza online" thành các bước nhỏ</span>
+        <span class="ex-diff easy">🟢 Dễ</span>
+        <span class="ex-toggle">▶</span>
+      </div>
+      <div class="ex-body">
+        <div class="ex-problem">Bạn được giao task: xây dựng hệ thống đặt pizza online. Hãy áp dụng Decomposition để phân rã bài toán này thành các module độc lập. Mỗi module phải có thể phát triển và test riêng lẻ.</div>
+        <div class="ex-hint">💡 Gợi ý: Nghĩ theo luồng người dùng — từ lúc mở app đến khi nhận pizza. Mỗi bước có thể làm gì sai?</div>
+        <div class="ex-solution">
+          <button onclick="this.nextElementSibling.style.display='block';this.style.display='none'">Xem lời giải</button>
+          <div class="ex-solution-content" style="display:none">
+            <strong style="color:var(--green)">Decomposition của hệ thống đặt pizza:</strong>
+            <ul style="margin-top:10px;padding-left:0;list-style:none;">
+              <li style="padding:8px 0;border-bottom:1px solid var(--border)">📋 <strong>MenuModule</strong> — hiển thị sản phẩm, giá, tùy chọn topping</li>
+              <li style="padding:8px 0;border-bottom:1px solid var(--border)">🛒 <strong>CartModule</strong> — thêm/xóa/sửa items, tính tổng tiền</li>
+              <li style="padding:8px 0;border-bottom:1px solid var(--border)">👤 <strong>UserModule</strong> — đăng nhập, địa chỉ giao hàng, lịch sử đơn</li>
+              <li style="padding:8px 0;border-bottom:1px solid var(--border)">💳 <strong>PaymentModule</strong> — xử lý thanh toán, mã giảm giá, hoàn tiền</li>
+              <li style="padding:8px 0;border-bottom:1px solid var(--border)">📦 <strong>OrderModule</strong> — tạo đơn, trạng thái đơn, hủy đơn</li>
+              <li style="padding:8px 0;border-bottom:1px solid var(--border)">🚗 <strong>DeliveryModule</strong> — tính thời gian, phân tài xế, tracking</li>
+              <li style="padding:8px 0">🔔 <strong>NotificationModule</strong> — SMS/email/push khi đơn thay đổi trạng thái</li>
+            </ul>
+            <div style="margin-top:12px;color:var(--muted);font-size:.85rem;">Mỗi module có thể được phát triển bởi team riêng biệt và test độc lập.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="exercise" id="ex2">
+      <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="ex-num">Ex 2</span>
+        <span class="ex-title">Tìm pattern trong 3 bài toán khác nhau nhưng cùng cấu trúc</span>
+        <span class="ex-diff easy">🟢 Dễ</span>
+        <span class="ex-toggle">▶</span>
+      </div>
+      <div class="ex-body">
+        <div class="ex-problem">
+          Đọc 3 bài toán sau và xác định chúng có cùng pattern gì:<br><br>
+          <strong>A.</strong> Trình duyệt Chrome có nút Back/Forward để điều hướng lịch sử trang web.<br>
+          <strong>B.</strong> Ctrl+Z trong Word/Excel để undo thao tác vừa làm.<br>
+          <strong>C.</strong> Git có thể checkout về bất kỳ commit nào trong lịch sử.
+        </div>
+        <div class="ex-hint">💡 Gợi ý: Nghĩ về cấu trúc dữ liệu nào phù hợp để lưu lịch sử và navigate back/forward.</div>
+        <div class="ex-solution">
+          <button onclick="this.nextElementSibling.style.display='block';this.style.display='none'">Xem lời giải</button>
+          <div class="ex-solution-content" style="display:none">
+            <strong style="color:var(--green)">Cả 3 đều dùng Stack + History Pattern:</strong>
+            <div class="ex-code">
+<span class="cmt">// Pattern chung: Stack-based History</span>
+<span class="kw">class</span> <span class="fn">HistoryManager</span> {
+  <span class="kw">private</span> past: T[] = []
+  <span class="kw">private</span> future: T[] = []
+
+  <span class="fn">push</span>(state: T) {
+    <span class="kw">this</span>.past.push(state)
+    <span class="kw">this</span>.future = [] <span class="cmt">// clear future khi action mới</span>
+  }
+
+  <span class="fn">undo</span>() { <span class="cmt">// Back / Ctrl+Z / git checkout</span>
+    <span class="kw">const</span> state = <span class="kw">this</span>.past.pop()
+    <span class="kw">this</span>.future.push(state)
+    <span class="kw">return</span> state
+  }
+
+  <span class="fn">redo</span>() { <span class="cmt">// Forward / Ctrl+Y</span>
+    <span class="kw">const</span> state = <span class="kw">this</span>.future.pop()
+    <span class="kw">this</span>.past.push(state)
+    <span class="kw">return</span> state
+  }
+}
+            </div>
+            <p>Nhận ra pattern → implement 1 lần → dùng cho mọi use case!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="exercise" id="ex3">
+      <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="ex-num">Ex 3</span>
+        <span class="ex-title">Abstraction: mô tả "xe hơi" cho 3 đối tượng khác nhau</span>
+        <span class="ex-diff medium">🟡 Trung bình</span>
+        <span class="ex-toggle">▶</span>
+      </div>
+      <div class="ex-body">
+        <div class="ex-problem">Abstraction phụ thuộc vào <strong>người dùng và mục đích</strong>. Hãy mô tả "xe hơi" (interface/model) cho 3 đối tượng:<br><br>
+          <strong>A.</strong> Tài xế Uber<br>
+          <strong>B.</strong> Thợ sửa xe<br>
+          <strong>C.</strong> Hệ thống thanh toán phí đường bộ (ETC)
+        </div>
+        <div class="ex-hint">💡 Gợi ý: Mỗi đối tượng chỉ cần biết những thuộc tính phục vụ cho công việc của họ. Hãy bỏ qua mọi chi tiết không liên quan.</div>
+        <div class="ex-solution">
+          <button onclick="this.nextElementSibling.style.display='block';this.style.display='none'">Xem lời giải</button>
+          <div class="ex-solution-content" style="display:none">
+            <strong style="color:var(--green)">3 abstractions khác nhau cho cùng 1 đối tượng:</strong>
+            <div class="ex-code">
+<span class="cmt">// A. Tài xế Uber — quan tâm đến vận hành</span>
+<span class="kw">interface</span> <span class="fn">DriverView</span> {
+  fuelLevel: <span class="num">number</span>
+  gps: <span class="fn">Location</span>
+  passenger: <span class="fn">Passenger</span>
+  <span class="fn">startTrip</span>(): <span class="kw">void</span>
+  <span class="fn">endTrip</span>(): <span class="kw">void</span>
+}
+
+<span class="cmt">// B. Thợ sửa xe — quan tâm đến kỹ thuật</span>
+<span class="kw">interface</span> <span class="fn">MechanicView</span> {
+  engineCode: <span class="num">string</span>
+  oilLevel: <span class="num">number</span>
+  diagCodes: <span class="num">string</span>[]
+  lastService: <span class="fn">Date</span>
+  <span class="fn">runDiagnostic</span>(): <span class="fn">Report</span>
+}
+
+<span class="cmt">// C. ETC — chỉ cần định danh và thanh toán</span>
+<span class="kw">interface</span> <span class="fn">ETCView</span> {
+  licensePlate: <span class="num">string</span>
+  rfidTag: <span class="num">string</span>
+  vehicleClass: <span class="str">'car'|'truck'|'bus'</span>
+  <span class="fn">charge</span>(amount: <span class="num">number</span>): <span class="fn">Receipt</span>
+}
+            </div>
+            <p style="margin-top:10px;">Cùng 1 vật thể nhưng 3 interface hoàn toàn khác. Đây là sức mạnh của Abstraction!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="exercise" id="ex4">
+      <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="ex-num">Ex 4</span>
+        <span class="ex-title">Edge cases: liệt kê 10 edge cases cho form đăng ký tài khoản</span>
+        <span class="ex-diff medium">🟡 Trung bình</span>
+        <span class="ex-toggle">▶</span>
+      </div>
+      <div class="ex-body">
+        <div class="ex-problem">Form đăng ký có các fields: email, password, username, date of birth. Hãy liệt kê <strong>ít nhất 10 edge cases</strong> mà hệ thống cần xử lý. Với mỗi edge case, cho biết loại lỗi và cách xử lý.</div>
+        <div class="ex-hint">💡 Gợi ý: Dùng checklist EMPTY · ONE · BOUNDARY · NULL · OVERFLOW · FORMAT · DUPLICATE · SECURITY</div>
+        <div class="ex-solution">
+          <button onclick="this.nextElementSibling.style.display='block';this.style.display='none'">Xem lời giải</button>
+          <div class="ex-solution-content" style="display:none">
+            <strong style="color:var(--green)">10 edge cases cần xử lý:</strong>
+            <ol style="margin-top:10px;padding-left:20px;line-height:2;">
+              <li><strong>Email không có @</strong> — FORMAT ERROR → "Email không hợp lệ"</li>
+              <li><strong>Email đã tồn tại</strong> — DUPLICATE → "Email này đã được đăng ký"</li>
+              <li><strong>Password quá ngắn (&lt; 8 ký tự)</strong> — BOUNDARY → "Mật khẩu tối thiểu 8 ký tự"</li>
+              <li><strong>Password chứa toàn số / toàn chữ</strong> — WEAK → "Cần kết hợp chữ số và ký tự đặc biệt"</li>
+              <li><strong>Username có khoảng trắng</strong> — FORMAT → Trim hoặc báo lỗi</li>
+              <li><strong>Username chứa SQL injection</strong> — SECURITY → Sanitize input</li>
+              <li><strong>Date of birth trong tương lai</strong> — LOGICAL → "Ngày sinh không hợp lệ"</li>
+              <li><strong>Tuổi dưới 13</strong> — BUSINESS RULE → "Cần có sự đồng ý của phụ huynh"</li>
+              <li><strong>Email quá dài (&gt; 254 ký tự)</strong> — OVERFLOW → "Email không hợp lệ"</li>
+              <li><strong>Tất cả fields để trống</strong> — EMPTY → "Vui lòng điền đầy đủ thông tin"</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="exercise" id="ex5">
+      <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+        <span class="ex-num">Ex 5</span>
+        <span class="ex-title">Trade-off analysis: chọn giữa 2 giải pháp caching</span>
+        <span class="ex-diff hard">🔴 Khó</span>
+        <span class="ex-toggle">▶</span>
+      </div>
+      <div class="ex-body">
+        <div class="ex-problem">
+          Bạn cần cache dữ liệu user profile. Có 2 giải pháp:<br><br>
+          <strong>Giải pháp A: In-memory cache</strong> — Lưu trong RAM của server<br>
+          - Tốc độ: cực nhanh (~0.1ms)<br>
+          - Memory: tốn RAM<br>
+          - Nhược điểm: mất data khi restart server, không share giữa nhiều server<br><br>
+          <strong>Giải pháp B: Redis cache</strong> — Lưu trong Redis server riêng<br>
+          - Tốc độ: nhanh (~1-5ms)<br>
+          - Memory: tốn infrastructure<br>
+          - Ưu điểm: persistent, share được, TTL tự động<br><br>
+          Hãy phân tích trade-off và đề xuất giải pháp cho 2 context: <strong>(1) startup nhỏ 1 server</strong> và <strong>(2) production có 10 server instances</strong>.
+        </div>
+        <div class="ex-hint">💡 Gợi ý: Trade-off không có đáp án đúng/sai — phụ thuộc vào context. Hãy liệt kê criteria và đánh giá từng giải pháp.</div>
+        <div class="ex-solution">
+          <button onclick="this.nextElementSibling.style.display='block';this.style.display='none'">Xem lời giải</button>
+          <div class="ex-solution-content" style="display:none">
+            <strong style="color:var(--green)">Trade-off Analysis:</strong>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;">
+              <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.25);border-radius:8px;padding:14px;">
+                <div style="color:var(--green);font-weight:700;margin-bottom:8px;">Context 1: Startup 1 server</div>
+                <div style="font-size:.85rem;color:var(--muted);line-height:1.7;">✅ Chọn <strong>In-memory</strong><br>- Không cần infrastructure thêm<br>- 0 latency overhead<br>- Đủ dùng khi traffic thấp<br>- Khi cần scale → migrate sang Redis</div>
+              </div>
+              <div style="background:rgba(91,141,239,0.06);border:1px solid rgba(91,141,239,0.25);border-radius:8px;padding:14px;">
+                <div style="color:var(--blue);font-weight:700;margin-bottom:8px;">Context 2: Production 10 servers</div>
+                <div style="font-size:.85rem;color:var(--muted);line-height:1.7;">✅ Chọn <strong>Redis</strong><br>- 10 servers = 10 in-memory caches khác nhau → cache invalidation hell<br>- Redis = single source of truth<br>- TTL tự động, persist qua restart</div>
+              </div>
+            </div>
+            <div style="margin-top:14px;color:var(--muted);font-size:.85rem;line-height:1.7;background:var(--surface2);border-radius:8px;padding:12px;">
+              <strong style="color:var(--yellow)">Bài học:</strong> Không có "best solution" — chỉ có "best for this context". Document lý do bạn chọn và khi nào cần review lại quyết định này.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div class="takeaway">
-    <div class="takeaway-title">🏆 Tổng kết Phase 1.1</div>
-    <ul class="takeaway-list">
-      <li><strong>Decomposition</strong> — chia nhỏ bài toán</li>
-      <li><strong>Abstraction</strong> — bỏ chi tiết không cần</li>
-      <li><strong>Pattern Recognition</strong> — nhận ra điểm chung</li>
-      <li><strong>Algorithmic Thinking</strong> — Input → Process → Output</li>
-      <li><strong>Edge Cases</strong> — luôn hỏi "điều gì có thể sai?"</li>
-      <li><strong>Trade-off</strong> — không có hoàn hảo, chỉ có phù hợp</li>
-      <li><strong>Debug</strong> — phương pháp khoa học, không phải may rủi</li>
+  <!-- LESSON SUMMARY -->
+  <div class="lesson-summary">
+    <h2>📝 Tóm tắt bài học</h2>
+    <ul class="summary-list">
+      <li>✅ <strong>Decomposition</strong> — chia nhỏ bài toán thành các phần độc lập, có thể test riêng</li>
+      <li>✅ <strong>Abstraction</strong> — ẩn chi tiết phức tạp, chỉ lộ interface cần thiết cho người dùng</li>
+      <li>✅ <strong>Pattern Recognition</strong> — nhận ra cùng cấu trúc trong các bài toán khác nhau</li>
+      <li>✅ <strong>Algorithmic Thinking</strong> — tư duy theo Input → Process → Output có hệ thống</li>
+      <li>✅ <strong>Edge Cases</strong> — luôn hỏi "điều gì có thể sai?" với EMPTY/NULL/BOUNDARY/OVERFLOW</li>
+      <li>✅ <strong>Trade-off</strong> — không có giải pháp hoàn hảo, chỉ có phù hợp với context</li>
+      <li>✅ <strong>Debug Mindset</strong> — phương pháp khoa học: quan sát → giả thuyết → thí nghiệm → xác nhận</li>
     </ul>
+  </div>
+
+  <!-- NEXT PREVIEW -->
+  <div class="next-preview">
+    <h3>➡️ Bài tiếp theo</h3>
+    <a href="02-programming-thinking.html" class="next-card">
+      <span class="next-num">02</span>
+      <div>
+        <div class="next-title">Tư Duy Lập Trình</div>
+        <div class="next-desc">State management, Control flow, Function design, Module & Dependency, Composition vs Inheritance, và Pure Functions. Từ tư duy sang code thực tế.</div>
+      </div>
+      <span style="color:var(--muted)">→</span>
+    </a>
   </div>
 </div>
 
@@ -601,7 +886,6 @@ const TITLES = ['Phân rã vấn đề','Trừu tượng hóa','Nhận diện Pa
 let current = 0;
 let flowStep = 0;
 
-// Build dots
 const dotsEl = document.getElementById('dots');
 SECTIONS.forEach((_,i) => {
   const d = document.createElement('div');

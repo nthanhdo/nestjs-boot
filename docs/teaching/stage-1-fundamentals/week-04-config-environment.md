@@ -53,8 +53,8 @@ PORT=3000
 NODE_ENV=development
 
 # .env.production (trên server — không bao giờ trong repo)
-MONGODB_URI=mongodb+srv://admin:prodSecret@cluster.mongodb.net/app
-JWT_SECRET=different-production-secret-very-long-and-random
+MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/<db>
+JWT_SECRET=<generate-with-openssl-rand-base64-32>
 PORT=8080
 NODE_ENV=production
 ```
@@ -526,7 +526,7 @@ RATE_LIMIT_MAX=1000   # Loose hơn để dev test dễ
 # .env.staging
 NODE_ENV=staging
 PORT=8080
-MONGODB_URI=mongodb+srv://staging:stgPass@cluster.mongodb.net/student_db_staging
+MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/student_db_staging
 JWT_SECRET=staging-secret-32-chars-minimum-required
 JWT_EXPIRES_IN=7d
 CORS_ORIGINS=https://staging.student-api.com
@@ -537,8 +537,8 @@ RATE_LIMIT_MAX=200
 # .env.production
 NODE_ENV=production
 PORT=8080
-MONGODB_URI=mongodb+srv://prod:prodPass@cluster.mongodb.net/student_db_prod
-MONGODB_READER_URI=mongodb+srv://prod:prodPass@replica.mongodb.net/student_db_prod
+MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/student_db_prod
+MONGODB_READER_URI=mongodb+srv://<user>:<password>@<replica>.mongodb.net/student_db_prod
 JWT_SECRET=production-very-long-random-secret-at-least-64-chars-recommended
 JWT_EXPIRES_IN=7d
 CORS_ORIGINS=https://api.student.com

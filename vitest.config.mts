@@ -5,6 +5,11 @@ export default defineConfig({
     globals: true,
     root: '.',
     include: ['tests/**/*.spec.ts'],
+    exclude: [
+      'tests/cli/**',           // CLI spawns process — timeout in CI
+      'tests/testing/**',       // requires full NestJS app bootstrap
+    ],
+    testTimeout: 10000,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],

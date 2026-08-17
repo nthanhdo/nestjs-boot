@@ -1,12 +1,37 @@
-# Backend Engineering với nestjs-boot
+# Software Engineering Teaching Hub
 
-> Khóa học 16 tuần dành cho sinh viên CNTT năm 3-4 và fresher developer
-
-## Giới thiệu
-
-Khóa học này dạy Backend Engineering **từ production code thật**, không phải từ TODO app. Mỗi tuần map trực tiếp với 1 module trong [nestjs-boot](https://github.com/nthanhdo/nestjs-boot) — framework NestJS với 55+ modules, 495 tests, CI/CD pipeline hoàn chỉnh.
+> Chương trình đào tạo Software Engineer toàn diện — từ tư duy đến production
 
 **Giảng viên:** Nguyễn Thanh Đô — Backend Tech Lead, 11+ năm kinh nghiệm
+
+---
+
+## 📖 Đọc trước tiên
+
+### [00 — Programming Mindset & Software Engineering Curriculum](00-SOFTWARE-ENGINEERING-MINDSET.md)
+
+Bức tranh tổng quan: **24 chủ đề** một sinh viên cần nắm để trở thành Software Engineer, không chỉ "người biết code". Bao gồm:
+
+- 5 giai đoạn: **THINK → BUILD → ENGINEER → PRODUCTION → PROFESSIONAL**
+- 19 competency areas: từ Computational Thinking → Product Thinking
+- Core Philosophy: *"Teach students how to think when tomorrow's technology changes"*
+- Competency Map + Final Project checklist (16 requirements)
+
+> **Mục tiêu cuối cùng:** Sinh viên chuyển từ *"Em biết code"* sang *"Em biết giải quyết vấn đề bằng software"*
+
+---
+
+## 📚 Tài liệu giảng dạy
+
+### Khóa 1: Backend Engineering với nestjs-boot (16 tuần)
+
+Dạy Backend Engineering **từ production code thật**, không phải từ TODO app. Mỗi tuần map trực tiếp với 1 module trong [nestjs-boot](https://github.com/nthanhdo/nestjs-boot) — framework NestJS với 55+ modules, 495 tests, CI/CD pipeline hoàn chỉnh.
+
+### Khóa 2: Thuật toán & Giải thuật — Interactive Visualizations (31 bài)
+
+Bài giảng trực quan bằng HTML/CSS/JS animation. Mở browser là chạy, không cần server. [Xem danh sách đầy đủ →](#thuật-toán--giải-thuật-interactive-31-bài)
+
+---
 
 ## Triết lý giảng dạy
 
@@ -126,3 +151,72 @@ Sinh viên có thể:
 - Phỏng vấn vị trí Backend Developer / Junior Backend Engineer
 - Contribute vào open-source projects
 - Tự học thêm: Go, Kubernetes, System Design
+
+---
+
+## Thuật toán & Giải thuật Interactive (31 bài)
+
+Mỗi bài là 1 file HTML standalone — mở browser là chạy, không cần server hay internet.
+
+Mỗi file có: animation step-by-step, code panel sync, controls (Play/Pause/Step/Speed), giải thích tiếng Việt, Big-O analysis.
+
+### Module 1 — Cấu trúc dữ liệu
+
+| # | Bài | File |
+|---|-----|------|
+| 01 | [Mảng (Array)](algorithms/module-1-data-structures/01-array.html) | Insert/Delete/Search animation, O(1) access |
+| 02 | [Danh sách liên kết](algorithms/module-1-data-structures/02-linked-list.html) | Singly/Doubly, arrow rewiring |
+| 03 | [Ngăn xếp (Stack)](algorithms/module-1-data-structures/03-stack.html) | LIFO, bracket matching demo |
+| 04 | [Hàng đợi (Queue)](algorithms/module-1-data-structures/04-queue.html) | FIFO, Circular Queue, Priority Queue |
+| 05 | [Bảng băm (Hash Table)](algorithms/module-1-data-structures/05-hash-table.html) | Hash function, Chaining vs Open Addressing |
+| 06 | [Cây BST](algorithms/module-1-data-structures/06-tree-bst.html) | Insert/Delete/Search, 3 traversals |
+| 07 | [Đống (Heap)](algorithms/module-1-data-structures/07-heap.html) | Dual view array+tree, bubble up/down |
+
+### Module 2 — Thuật toán sắp xếp
+
+| # | Bài | File |
+|---|-----|------|
+| 08 | [Bubble Sort](algorithms/module-2-sorting/08-bubble-sort.html) | Nổi bọt, early termination |
+| 09 | [Selection Sort](algorithms/module-2-sorting/09-selection-sort.html) | Tìm min, scanning beam |
+| 10 | [Insertion Sort](algorithms/module-2-sorting/10-insertion-sort.html) | Chèn, key lift animation |
+| 11 | [Merge Sort](algorithms/module-2-sorting/11-merge-sort.html) | Chia để trị, recursion tree |
+| 12 | [Quick Sort](algorithms/module-2-sorting/12-quick-sort.html) | Pivot partition, 4 strategies |
+| 13 | [Heap Sort](algorithms/module-2-sorting/13-heap-sort.html) | Dual view heap+array |
+
+### Module 3 — Thuật toán tìm kiếm
+
+| # | Bài | File |
+|---|-----|------|
+| 14 | [Linear Search](algorithms/module-3-searching/14-linear-search.html) | Duyệt tuần tự |
+| 15 | [Binary Search](algorithms/module-3-searching/15-binary-search.html) | Chia đôi, decision tree |
+| 16 | [DFS](algorithms/module-3-searching/16-dfs.html) | Stack, edge classification |
+| 17 | [BFS](algorithms/module-3-searching/17-bfs.html) | Queue, wavefront, maze mode |
+
+### Module 4 — Tư duy giải thuật
+
+| # | Bài | File |
+|---|-----|------|
+| 18 | [Recursion](algorithms/module-4-paradigms/18-recursion.html) | Call stack, Fibonacci tree, Hanoi |
+| 19 | [Two Pointers](algorithms/module-4-paradigms/19-two-pointers.html) | Two Sum, Container Water |
+| 20 | [Sliding Window](algorithms/module-4-paradigms/20-sliding-window.html) | Fixed/Variable window |
+| 21 | [Divide & Conquer](algorithms/module-4-paradigms/21-divide-and-conquer.html) | Split + merge visualization |
+| 22 | [Greedy](algorithms/module-4-paradigms/22-greedy.html) | Activity Selection, failure demo |
+| 23 | [Backtracking](algorithms/module-4-paradigms/23-backtracking.html) | N-Queens, Maze, Sudoku |
+
+### Module 5 — Quy hoạch động
+
+| # | Bài | File |
+|---|-----|------|
+| 24 | [DP Fibonacci](algorithms/module-5-dynamic-programming/24-dp-fibonacci.html) | 3 approaches, cache demo |
+| 25 | [DP Knapsack](algorithms/module-5-dynamic-programming/25-dp-knapsack.html) | 2D table + backtrack |
+| 26 | [DP LCS](algorithms/module-5-dynamic-programming/26-dp-lcs.html) | String matching, arrow trace |
+| 27 | [DP Matrix Chain](algorithms/module-5-dynamic-programming/27-dp-matrix-chain.html) | Diagonal fill, parenthesization |
+
+### Module 6 — Đồ thị nâng cao
+
+| # | Bài | File |
+|---|-----|------|
+| 28 | [Dijkstra](algorithms/module-6-graph-advanced/28-dijkstra.html) | Shortest path, negative edge demo |
+| 29 | [Bellman-Ford](algorithms/module-6-graph-advanced/29-bellman-ford.html) | V-1 iterations, negative cycle |
+| 30 | [Kruskal & Prim](algorithms/module-6-graph-advanced/30-kruskal-prim.html) | MST, Union-Find |
+| 31 | [Topological Sort](algorithms/module-6-graph-advanced/31-topological-sort.html) | Kahn/DFS, cycle detection |

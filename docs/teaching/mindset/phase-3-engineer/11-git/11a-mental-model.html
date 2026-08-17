@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>11a — Git Mental Model | Phase 3</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--accent:#58a6ff;--success:#3fb950;--warning:#d29922;--error:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.progress-bar{position:fixed;top:0;left:0;width:100%;height:3px;background:var(--border);z-index:100;}
+.progress-fill{height:100%;background:var(--accent);width:0;transition:width .1s;}
+nav{position:sticky;top:3px;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:90;}
+nav .brand{font-weight:700;color:var(--accent);font-size:.9rem;}
+nav .links a{color:var(--muted);text-decoration:none;margin-left:1.2rem;font-size:.85rem;transition:color .2s;}
+nav .links a:hover{color:var(--text);}
+.container{max-width:860px;margin:0 auto;padding:2rem 1.5rem;}
+h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;}
+.subtitle{color:var(--muted);margin-bottom:2.5rem;font-size:1.05rem;}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:1rem;color:var(--accent);}
+.section{margin-bottom:3rem;opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
+.section.visible{opacity:1;transform:none;}
+.label{display:inline-block;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;margin-bottom:.5rem;}
+/* 4-area model */
+.four-areas{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1rem;}
+.area{padding:1.2rem .8rem;text-align:center;cursor:pointer;transition:background .2s;border-right:1px solid var(--border);}
+.area:last-child{border-right:none;}
+.area:hover{background:#1f2937;}
+.area.active{background:#1a2840;}
+.area-icon{font-size:1.5rem;margin-bottom:.4rem;}
+.area-name{font-weight:700;font-size:.85rem;margin-bottom:.2rem;}
+.area-sub{font-size:.75rem;color:var(--muted);}
+.area-detail{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin-bottom:1rem;display:none;}
+.area-detail.show{display:block;}
+.area-detail h4{font-size:.95rem;font-weight:700;margin-bottom:.6rem;color:var(--accent);}
+.area-detail p{font-size:.88rem;color:var(--muted);margin-bottom:.6rem;}
+/* arrows */
+.flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;align-items:center;gap:.4rem;margin-bottom:1.5rem;font-size:.8rem;}
+.flow-box{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.5rem;text-align:center;}
+.flow-box .cmd{color:var(--success);font-family:monospace;font-size:.75rem;}
+.flow-arrow{color:var(--accent);font-size:1.2rem;text-align:center;}
+/* code */
+pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:1.1rem;overflow-x:auto;font-size:.83rem;line-height:1.7;margin-bottom:1rem;font-family:monospace;}
+pre .c{color:var(--muted);}
+pre .cmd{color:var(--success);}
+/* mistakes */
+.mistakes{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.mistake{background:var(--surface);border:1px solid var(--error);border-radius:8px;padding:1rem;}
+.mistake h4{color:var(--error);font-size:.9rem;font-weight:700;margin-bottom:.4rem;}
+.mistake p{font-size:.84rem;color:var(--muted);}
+.fix{border-color:var(--success);}
+.fix h4{color:var(--success);}
+.exercise{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.exercise h3{color:var(--accent);margin-bottom:.8rem;font-size:1rem;}
+.exercise ol{padding-left:1.2rem;color:var(--muted);font-size:.9rem;line-height:1.8;}
+.takeaway{background:linear-gradient(135deg,#1a2235,#161b22);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.takeaway h3{color:var(--accent);margin-bottom:1rem;}
+.takeaway ul{padding-left:1.2rem;line-height:2;}
+.nav-links{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-links a{color:var(--accent);text-decoration:none;font-size:.9rem;padding:.5rem 1rem;border:1px solid var(--border);border-radius:6px;transition:border-color .2s;}
+.nav-links a:hover{border-color:var(--accent);}
+@media(max-width:640px){.four-areas{grid-template-columns:1fr 1fr;}.mistakes{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav>
+  <span class="brand">Phase 3 — Engineer Mindset</span>
+  <div class="links">
+    <a href="../10-debugging/10e-git-bisect.html">← Debugging</a>
+    <a href="11b-branch-merge.html">Branch →</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="section" id="s0">
+    <div class="label">11a / 4</div>
+    <h1>Git Mental Model</h1>
+    <p class="subtitle">Git confusion comes from not having the right mental model. Master the 4 areas and every command makes sense.</p>
+  </div>
+
+  <div class="section" id="s1">
+    <h2>The 4 Areas — Click to explore</h2>
+    <div class="four-areas">
+      <div class="area" id="a-wd" onclick="showArea('wd')">
+        <div class="area-icon">📁</div>
+        <div class="area-name">Working Dir</div>
+        <div class="area-sub">Your files</div>
+      </div>
+      <div class="area" id="a-st" onclick="showArea('st')">
+        <div class="area-icon">📋</div>
+        <div class="area-name">Staging Area</div>
+        <div class="area-sub">Index / Cache</div>
+      </div>
+      <div class="area" id="a-lo" onclick="showArea('lo')">
+        <div class="area-icon">💾</div>
+        <div class="area-name">Local Repo</div>
+        <div class="area-sub">.git/objects</div>
+      </div>
+      <div class="area" id="a-re" onclick="showArea('re')">
+        <div class="area-icon">☁️</div>
+        <div class="area-name">Remote</div>
+        <div class="area-sub">GitHub/GitLab</div>
+      </div>
+    </div>
+    <div class="area-detail" id="detail-wd">
+      <h4>Working Directory</h4>
+      <p>This is your filesystem — the files you actually edit. Git sees them as "tracked" (previously committed) or "untracked" (new files).</p>
+      <p>Changes here are <strong>not saved by git</strong> yet. They're just edits on disk. If you <code>git checkout .</code>, all changes here disappear.</p>
+      <p>Use <code>git status</code> to see what's modified here vs what's staged.</p>
+    </div>
+    <div class="area-detail" id="detail-st">
+      <h4>Staging Area (Index)</h4>
+      <p>A prep zone between your edits and your commit. You explicitly choose which changes to include: <code>git add src/orders/order.service.ts</code></p>
+      <p>This lets you make 3 changes in 1 work session but commit them as 2 separate logical units — one clean commit per concern.</p>
+      <p><code>git diff --staged</code> shows what's in staging, not just what's modified.</p>
+    </div>
+    <div class="area-detail" id="detail-lo">
+      <h4>Local Repository (.git/)</h4>
+      <p>Every commit you make goes here. This is a full graph database of all commits, branches, and tags — stored in <code>.git/objects/</code>.</p>
+      <p>Completely local. No network needed. You can commit, branch, merge, and bisect offline. Only <code>push</code> and <code>fetch</code> need the network.</p>
+      <p><code>git log --oneline --graph</code> visualizes the full local history.</p>
+    </div>
+    <div class="area-detail" id="detail-re">
+      <h4>Remote Repository</h4>
+      <p>A copy of the repo on a server (GitHub, GitLab, self-hosted). Called "origin" by default.</p>
+      <p><code>git push</code> = local commits → remote. <code>git fetch</code> = remote commits → local (without merging). <code>git pull</code> = fetch + merge.</p>
+      <p>Your local and remote can diverge. <code>git status</code> tells you: "Your branch is 3 commits ahead of origin/main."</p>
+    </div>
+  </div>
+
+  <div class="section" id="s2">
+    <h2>Command → Area Flow</h2>
+    <div class="flow">
+      <div class="flow-box"><div>Working Dir</div><div class="cmd">modified files</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box"><div>Staging</div><div class="cmd">git add</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box"><div>Local Repo</div><div class="cmd">git commit</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box"><div>Remote</div><div class="cmd">git push</div></div>
+    </div>
+    <pre><span class="c"># Moving changes between areas</span>
+<span class="cmd">git add src/file.ts</span>          <span class="c"># Working Dir → Staging</span>
+<span class="cmd">git add -p</span>                   <span class="c"># Interactive: stage chunks, not whole files</span>
+<span class="cmd">git restore --staged file.ts</span> <span class="c"># Staging → Working Dir (unstage)</span>
+<span class="cmd">git restore file.ts</span>          <span class="c"># Working Dir → last committed (DESTRUCTIVE)</span>
+
+<span class="cmd">git commit -m "feat: ..."</span>    <span class="c"># Staging → Local Repo</span>
+<span class="cmd">git push origin main</span>         <span class="c"># Local Repo → Remote</span>
+<span class="cmd">git fetch origin</span>             <span class="c"># Remote → Local (refs only, safe)</span>
+<span class="cmd">git pull origin main</span>         <span class="c"># fetch + merge (can conflict)</span></pre>
+  </div>
+
+  <div class="section" id="s3">
+    <h2>Common Mistakes</h2>
+    <div class="mistakes">
+      <div class="mistake">
+        <h4>❌ "I committed wrong file"</h4>
+        <p>Used <code>git add .</code> without checking — staged and committed secrets or build artifacts.</p>
+      </div>
+      <div class="mistake fix">
+        <h4>✅ Fix</h4>
+        <p>Always <code>git status</code> before <code>git add</code>. Use <code>git add -p</code> to review each chunk. Use <code>.gitignore</code>.</p>
+      </div>
+      <div class="mistake">
+        <h4>❌ "My changes disappeared"</h4>
+        <p>Ran <code>git checkout branch</code> or <code>git restore file</code> with uncommitted changes — Working Dir wiped.</p>
+      </div>
+      <div class="mistake fix">
+        <h4>✅ Fix</h4>
+        <p>Commit or <code>git stash</code> before switching context. <code>git stash pop</code> restores. Check <code>git status</code> first.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="s4">
+    <div class="exercise">
+      <h3>🔬 Exercise — Map the Commands</h3>
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:.8rem;">For each command, identify: which areas it moves data between, and whether it's destructive (can lose work).</p>
+      <ol>
+        <li><code>git stash</code></li>
+        <li><code>git reset HEAD~1</code></li>
+        <li><code>git reset --hard HEAD~1</code></li>
+        <li><code>git revert HEAD</code></li>
+        <li><code>git cherry-pick abc123</code></li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section" id="s5">
+    <div class="takeaway">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li>4 areas: Working Dir → Staging → Local → Remote</li>
+        <li>Staging lets you craft clean, logical commits from messy work sessions</li>
+        <li>Local repo is full history — works offline, no network needed</li>
+        <li><code>git restore</code> (no --staged) is destructive — it overwrites Working Dir</li>
+        <li>When confused: <code>git status</code> first, always. It tells you exactly where things are.</li>
+      </ul>
+    </div>
+    <div class="nav-links">
+      <a href="../10-debugging/10e-git-bisect.html">← 10e: Git Bisect</a>
+      <a href="11b-branch-merge.html">11b: Branch & Merge →</a>
+    </div>
+  </div>
+</div>
+<script>
+function showArea(id) {
+  document.querySelectorAll('.area').forEach(a => a.classList.remove('active'));
+  document.querySelectorAll('.area-detail').forEach(d => d.classList.remove('show'));
+  document.getElementById('a-' + id).classList.add('active');
+  document.getElementById('detail-' + id).classList.add('show');
+}
+window.addEventListener('scroll', () => {
+  document.getElementById('pf').style.width = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100 + '%';
+});
+const obs = new IntersectionObserver(entries => { entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+document.querySelectorAll('.section').forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

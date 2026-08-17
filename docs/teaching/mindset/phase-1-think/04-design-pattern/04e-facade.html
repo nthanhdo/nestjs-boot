@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>04e — Facade | Design Patterns</title>
+<style>
+:root{--bg:#0e1525;--surface:#151d32;--surface2:#1c2744;--border:#2a3a5c;--text:#eef1f8;--muted:#8899bb;--accent:#a78bfa;--green:#2ecc71;--red:#e74c3c;--blue:#5b8def;--orange:#ffb347;--teal:#00cec9;--yellow:#ffd43b;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.top-nav{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:10px 24px;font-size:.85rem;}
+.top-nav a{color:var(--accent);text-decoration:none;padding:4px 10px;border-radius:6px;border:1px solid transparent;transition:.2s;}
+.top-nav a:hover{border-color:var(--accent);background:#a78bfa18;}
+.nav-center{color:var(--muted);font-size:.8rem;}
+.hero{padding:48px 24px 32px;max-width:860px;margin:0 auto;animation:fadeUp .5s ease;}
+.lesson-tag{display:inline-block;background:#a78bfa22;color:var(--accent);border:1px solid #a78bfa44;border-radius:20px;padding:4px 14px;font-size:.8rem;margin-bottom:16px;}
+h1{font-size:2rem;margin-bottom:8px;}h1 span{color:var(--accent);}
+.subtitle{color:var(--muted);font-size:1rem;margin-bottom:32px;}
+.section{max-width:860px;margin:0 auto 40px;padding:0 24px;}
+h2{font-size:1.2rem;color:var(--accent);margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:1rem;color:var(--orange);margin:16px 0 8px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
+pre{background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:20px;overflow-x:auto;font-size:.88rem;line-height:1.7;}
+.kw{color:#79b8ff;}.fn{color:#b392f0;}.str{color:#9ecbff;}.num{color:var(--orange);}.cmt{color:#6a737d;font-style:italic;}.type{color:var(--teal);}
+
+/* FACADE DIAGRAM */
+.facade-diagram{display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap;margin:20px 0;}
+.caller-side{display:flex;flex-direction:column;gap:8px;}
+.caller-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:.83rem;text-align:center;}
+.facade-box{background:rgba(167,139,250,.1);border:2px solid var(--accent);border-radius:14px;padding:20px 28px;text-align:center;min-width:160px;}
+.services-side{display:flex;flex-direction:column;gap:8px;}
+.svc-box{border-radius:8px;padding:8px 14px;font-size:.8rem;text-align:center;}
+.svc-box.pay{background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.25);color:var(--green);}
+.svc-box.inv{background:rgba(91,141,239,.08);border:1px solid rgba(91,141,239,.25);color:var(--blue);}
+.svc-box.ship{background:rgba(255,183,71,.08);border:1px solid rgba(255,183,71,.25);color:var(--orange);}
+.svc-box.email{background:rgba(0,206,201,.08);border:1px solid rgba(0,206,201,.25);color:var(--teal);}
+.diag-arrow{color:var(--muted);font-size:1.4rem;}
+
+/* DEMO BUTTON */
+.demo-btn{display:inline-block;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:.9rem;cursor:pointer;margin:16px auto;display:block;width:fit-content;transition:.2s;}
+.demo-btn:hover{opacity:.85;}
+.step-log{background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:16px;min-height:80px;font-family:monospace;font-size:.82rem;line-height:1.8;margin-top:8px;}
+.log-line{opacity:0;animation:fadeIn .3s forwards;}
+.log-green{color:var(--green);}
+.log-blue{color:var(--blue);}
+.log-orange{color:var(--orange);}
+.log-teal{color:var(--teal);}
+.log-accent{color:var(--accent);}
+@keyframes fadeIn{to{opacity:1;}}
+
+.takeaway{background:linear-gradient(135deg,#a78bfa15,#5b8def10);border:1px solid #a78bfa44;border-radius:12px;padding:20px 24px;margin:32px auto;max-width:860px;}
+.takeaway-label{font-size:.75rem;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.exercise{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:10px;padding:20px;margin-top:16px;}
+.exercise-label{font-size:.75rem;color:var(--orange);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+.next-nav{max-width:860px;margin:0 auto 60px;padding:0 24px;}
+.next-topic{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;text-decoration:none;color:var(--text);transition:.2s;}
+.next-topic:hover{border-color:var(--accent);background:#a78bfa08;}
+.next-icon{font-size:2rem;}.next-text .label{font-size:.75rem;color:var(--muted);}.next-text .title{font-size:1rem;font-weight:600;color:var(--accent);}.next-arrow{margin-left:auto;font-size:1.4rem;color:var(--accent);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="04d-adapter-decorator.html">← 04d Adapter/Decorator</a>
+  <span class="nav-center">Bài 04 · Facade · 04e / 08</span>
+  <a href="04f-strategy.html">04f Strategy →</a>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">Bài 04e / 08 · Design Patterns · Structural</div>
+  <h1>🏠 Facade <span>Pattern</span></h1>
+  <p class="subtitle">Cung cấp một interface đơn giản cho subsystem phức tạp. Thay vì caller phải biết 4 services, chỉ cần gọi <code>OrderFacade.placeOrder()</code>.</p>
+</div>
+
+<!-- DIAGRAM -->
+<div class="section">
+  <h2>🏠 Facade — Một Cổng Vào Subsystem</h2>
+  <div class="facade-diagram">
+    <div class="caller-side">
+      <div class="caller-box">Controller<br><span style="color:var(--muted);font-size:.75rem;">placeOrder(dto)</span></div>
+    </div>
+    <div class="diag-arrow">→</div>
+    <div class="facade-box">
+      <div style="color:var(--accent);font-weight:700;">🏠 OrderFacade</div>
+      <div style="font-family:monospace;font-size:.72rem;color:var(--muted);margin-top:4px;">placeOrder(dto)</div>
+    </div>
+    <div class="diag-arrow">→</div>
+    <div class="services-side">
+      <div class="svc-box pay">💳 PaymentService.charge()</div>
+      <div class="svc-box inv">📦 InventoryService.reserve()</div>
+      <div class="svc-box ship">🚚 ShippingService.create()</div>
+      <div class="svc-box email">📧 EmailService.confirm()</div>
+    </div>
+  </div>
+  <p style="text-align:center;color:var(--muted);font-size:.85rem;">Controller chỉ biết <code>OrderFacade</code> — không biết 4 services bên trong</p>
+
+  <button class="demo-btn" onclick="runDemo()">▶ Simulate placeOrder()</button>
+  <div class="step-log" id="demoLog"><span style="color:var(--muted);">Click ▶ để chạy demo...</span></div>
+</div>
+
+<!-- IMPLEMENTATION -->
+<div class="section">
+  <h2>🔧 Implement OrderFacade</h2>
+  <pre style="font-size:.85rem;"><span class="cmt">// ❌ Không có Facade — Controller phải biết 4 services</span>
+<span class="kw">class</span> <span class="type">OrderController</span> {
+  <span class="kw">constructor</span>(
+    <span class="kw">private</span> payment: <span class="type">PaymentService</span>,
+    <span class="kw">private</span> inventory: <span class="type">InventoryService</span>,
+    <span class="kw">private</span> shipping: <span class="type">ShippingService</span>,
+    <span class="kw">private</span> email: <span class="type">EmailService</span>,
+  ) {}
+
+  <span class="kw">async</span> <span class="fn">placeOrder</span>(dto) {
+    <span class="kw">const</span> charge = <span class="kw">await</span> <span class="kw">this</span>.payment.<span class="fn">charge</span>(dto.card, dto.total)
+    <span class="kw">await</span> <span class="kw">this</span>.inventory.<span class="fn">reserve</span>(dto.items)
+    <span class="kw">const</span> shipment = <span class="kw">await</span> <span class="kw">this</span>.shipping.<span class="fn">create</span>(dto.address)
+    <span class="kw">await</span> <span class="kw">this</span>.email.<span class="fn">confirm</span>(dto.user, shipment.trackingId)
+  }
+}
+
+<span class="cmt">// ✅ Với Facade</span>
+<span class="kw">@Injectable</span>()
+<span class="kw">class</span> <span class="type">OrderFacade</span> {
+  <span class="kw">constructor</span>(
+    <span class="kw">private</span> payment: <span class="type">PaymentService</span>,
+    <span class="kw">private</span> inventory: <span class="type">InventoryService</span>,
+    <span class="kw">private</span> shipping: <span class="type">ShippingService</span>,
+    <span class="kw">private</span> email: <span class="type">EmailService</span>,
+  ) {}
+
+  <span class="kw">async</span> <span class="fn">placeOrder</span>(dto: <span class="type">PlaceOrderDto</span>): <span class="type">Promise</span>&lt;<span class="type">OrderResult</span>&gt; {
+    <span class="kw">const</span> charge = <span class="kw">await</span> <span class="kw">this</span>.payment.<span class="fn">charge</span>(dto.card, dto.total)
+    <span class="kw">await</span> <span class="kw">this</span>.inventory.<span class="fn">reserve</span>(dto.items)
+    <span class="kw">const</span> shipment = <span class="kw">await</span> <span class="kw">this</span>.shipping.<span class="fn">create</span>(dto.address)
+    <span class="kw">await</span> <span class="kw">this</span>.email.<span class="fn">confirm</span>(dto.user, shipment.trackingId)
+    <span class="kw">return</span> { orderId: charge.transactionId, trackingId: shipment.trackingId }
+  }
+}
+
+<span class="cmt">// Controller chỉ inject 1 dependency</span>
+<span class="kw">@Controller</span>(<span class="str">'orders'</span>)
+<span class="kw">class</span> <span class="type">OrderController</span> {
+  <span class="kw">constructor</span>(<span class="kw">private</span> facade: <span class="type">OrderFacade</span>) {}
+
+  <span class="kw">@Post</span>()
+  <span class="fn">create</span>(<span class="kw">@Body</span>() dto: <span class="type">PlaceOrderDto</span>) {
+    <span class="kw">return</span> <span class="kw">this</span>.facade.<span class="fn">placeOrder</span>(dto)  <span class="cmt">// đơn giản!</span>
+  }
+}</pre>
+</div>
+
+<!-- FACADE IN NESTJS -->
+<div class="section">
+  <h2>🔌 Facade Trong NestJS — Service Layer</h2>
+  <div class="card">
+    <p style="color:var(--muted);font-size:.9rem;">Trong NestJS, <strong>Service layer thường là Facade</strong> — nó orchestrate multiple repositories và sub-services. Controller không biết cách fetch user, validate, gửi email. Service (Facade) biết hết.</p>
+    <ul style="color:var(--muted);font-size:.9rem;padding-left:16px;margin-top:10px;line-height:2;">
+      <li><code>UserService.register()</code> = Facade: create user + send welcome email + create trial subscription</li>
+      <li><code>AuthService.login()</code> = Facade: validate credentials + generate tokens + log audit</li>
+      <li><code>OrderService.cancel()</code> = Facade: refund + restore inventory + notify user</li>
+    </ul>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
+    <div style="background:rgba(46,204,113,.06);border:1px solid rgba(46,204,113,.25);border-radius:10px;padding:16px;">
+      <div style="color:var(--green);font-size:.8rem;font-weight:700;margin-bottom:8px;">✅ Dùng Facade khi</div>
+      <ul style="color:var(--muted);font-size:.88rem;padding-left:16px;line-height:2;">
+        <li>Subsystem phức tạp với nhiều steps</li>
+        <li>Muốn giảm dependencies cho caller</li>
+        <li>Nhiều callers dùng cùng sequence</li>
+        <li>Hide implementation từ consumer</li>
+      </ul>
+    </div>
+    <div style="background:rgba(231,76,60,.06);border:1px solid rgba(231,76,60,.25);border-radius:10px;padding:16px;">
+      <div style="color:var(--red);font-size:.8rem;font-weight:700;margin-bottom:8px;">❌ Cẩn thận khi</div>
+      <ul style="color:var(--muted);font-size:.88rem;padding-left:16px;line-height:2;">
+        <li>Facade quá lớn → God Object</li>
+        <li>Một operation duy nhất → không cần</li>
+        <li>Facade che giấu quá nhiều → khó debug</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="takeaway">
+  <div class="takeaway-label">💡 Key Takeaway</div>
+  <p><strong>Facade = simplification.</strong> Một method đơn giản phía trên subsystem phức tạp. NestJS Service layer tự nhiên là Facade pattern. Controller → 1 Facade → nhiều services/repos. Lợi ích: giảm coupling, dễ test (mock 1 Facade thay vì 4 services), dễ thay đổi internals. Nguy cơ: Facade thành God Object nếu quá nhiều methods.</p>
+</div>
+
+<div class="section">
+  <h2>🏋️ Bài Tập</h2>
+  <div class="exercise">
+    <div class="exercise-label">Implement AuthFacade</div>
+    <pre style="font-size:.82rem;"><span class="cmt">// AuthFacade orchestrates:</span>
+<span class="cmt">// 1. UserRepository.findByEmail(email)</span>
+<span class="cmt">// 2. PasswordService.verify(password, hash)</span>
+<span class="cmt">// 3. TokenService.generatePair(userId)</span>
+<span class="cmt">// 4. AuditService.log('login', userId, ip)</span>
+<span class="cmt">// 5. Return { accessToken, refreshToken }</span>
+<span class="cmt">// TODO: implement login(dto: LoginDto): Promise&lt;TokenPair&gt;</span>
+<span class="cmt">// TODO: throw UnauthorizedException if user not found or pw wrong</span></pre>
+  </div>
+</div>
+
+<div class="next-nav">
+  <a href="04f-strategy.html" class="next-topic">
+    <div class="next-icon">🎯</div>
+    <div class="next-text">
+      <div class="label">Bài tiếp theo · 04f / 08</div>
+      <div class="title">Strategy — hoán đổi algorithm tại runtime</div>
+    </div>
+    <span class="next-arrow">→</span>
+  </a>
+</div>
+
+<script>
+const logs = [
+  {cls:'log-accent', t:0, msg:'🏠 OrderFacade.placeOrder({ items: 3, total: $49.99 })'},
+  {cls:'log-green', t:400, msg:'  💳 PaymentService.charge() → txn_abc123 ✓'},
+  {cls:'log-blue', t:800, msg:'  📦 InventoryService.reserve([item-1, item-2, item-3]) ✓'},
+  {cls:'log-orange', t:1200, msg:'  🚚 ShippingService.create(address) → tracking: VN123456 ✓'},
+  {cls:'log-teal', t:1600, msg:'  📧 EmailService.confirm(user@example.com, VN123456) ✓'},
+  {cls:'log-accent', t:2000, msg:'✅ Order placed — orderId: txn_abc123, tracking: VN123456'},
+];
+function runDemo() {
+  const el = document.getElementById('demoLog');
+  el.innerHTML = '';
+  logs.forEach(({cls, t, msg}) => {
+    setTimeout(() => {
+      const span = document.createElement('div');
+      span.className = `log-line ${cls}`;
+      span.textContent = msg;
+      el.appendChild(span);
+    }, t);
+  });
+}
+</script>
+</body>
+</html>

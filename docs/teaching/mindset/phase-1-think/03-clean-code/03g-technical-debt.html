@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03g — Technical Debt | Clean Code</title>
+<style>
+:root{--bg:#0e1525;--surface:#151d32;--surface2:#1c2744;--border:#2a3a5c;--text:#eef1f8;--muted:#8899bb;--accent:#a78bfa;--green:#2ecc71;--red:#e74c3c;--blue:#5b8def;--orange:#ffb347;--teal:#00cec9;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.top-nav{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:10px 24px;font-size:.85rem;}
+.top-nav a{color:var(--accent);text-decoration:none;padding:4px 10px;border-radius:6px;border:1px solid transparent;transition:.2s;}
+.top-nav a:hover{border-color:var(--accent);background:#a78bfa18;}
+.nav-center{color:var(--muted);font-size:.8rem;}
+.hero{padding:48px 24px 32px;max-width:860px;margin:0 auto;animation:fadeUp .5s ease;}
+.lesson-tag{display:inline-block;background:#a78bfa22;color:var(--accent);border:1px solid #a78bfa44;border-radius:20px;padding:4px 14px;font-size:.8rem;margin-bottom:16px;}
+h1{font-size:2rem;margin-bottom:8px;}h1 span{color:var(--accent);}
+.subtitle{color:var(--muted);font-size:1rem;margin-bottom:32px;}
+.section{max-width:860px;margin:0 auto 40px;padding:0 24px;}
+h2{font-size:1.2rem;color:var(--accent);margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:1rem;color:var(--orange);margin:16px 0 8px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
+.card-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:600px){.card-row{grid-template-columns:1fr;}}
+pre{background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:20px;overflow-x:auto;font-size:.88rem;line-height:1.7;}
+.kw{color:#79b8ff;}.fn{color:#b392f0;}.str{color:#9ecbff;}.num{color:var(--orange);}.cmt{color:#6a737d;font-style:italic;}.type{color:var(--teal);}
+
+/* VELOCITY CHART */
+.chart-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px;margin:16px 0;}
+.chart-title{font-size:.8rem;font-weight:700;color:var(--muted);margin-bottom:12px;}
+
+/* DEBT TYPES */
+.debt-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0;}
+@media(max-width:600px){.debt-grid{grid-template-columns:1fr;}}
+.debt-card{border-radius:12px;padding:18px;}
+.debt-label{font-size:.8rem;font-weight:700;margin-bottom:8px;}
+
+/* PRIORITY MATRIX */
+.matrix{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0;}
+.matrix-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;}
+.p-badge{display:inline-block;border-radius:6px;padding:2px 8px;font-size:.72rem;font-weight:700;margin-bottom:6px;}
+.p0{background:rgba(231,76,60,.2);color:var(--red);}
+.p1{background:rgba(255,183,71,.2);color:var(--orange);}
+.p2{background:rgba(91,141,239,.2);color:var(--blue);}
+
+.takeaway{background:linear-gradient(135deg,#a78bfa15,#5b8def10);border:1px solid #a78bfa44;border-radius:12px;padding:20px 24px;margin:32px auto;max-width:860px;}
+.takeaway-label{font-size:.75rem;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.exercise{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:10px;padding:20px;margin-top:16px;}
+.exercise-label{font-size:.75rem;color:var(--orange);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+
+/* FINAL NEXT NAV */
+.next-nav{max-width:860px;margin:0 auto 60px;padding:0 24px;display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:600px){.next-nav{grid-template-columns:1fr;}}
+.next-topic{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;text-decoration:none;color:var(--text);transition:.2s;}
+.next-topic:hover{border-color:var(--accent);background:#a78bfa08;}
+.next-topic.phase{border-color:var(--accent);}
+.next-icon{font-size:2rem;}.next-text .label{font-size:.75rem;color:var(--muted);}.next-text .title{font-size:1rem;font-weight:600;color:var(--accent);}.next-arrow{margin-left:auto;font-size:1.4rem;color:var(--accent);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="03f-refactoring.html">← 03f Refactoring</a>
+  <span class="nav-center">Bài 03 · Technical Debt · 03g / 07</span>
+  <a href="../04-design-pattern/04a-why-patterns.html">04a Design Patterns →</a>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">Bài 03g / 07 · Clean Code · Bài Cuối</div>
+  <h1>💸 Technical <span>Debt</span></h1>
+  <p class="subtitle">Nợ kỹ thuật tích lũy theo thời gian. Giống như lãi suất ngân hàng — càng để lâu, càng tốn kém. Biết cách quản lý có ý thức là kỹ năng của senior.</p>
+</div>
+
+<!-- VELOCITY CHART -->
+<div class="section">
+  <h2>📉 Velocity Giảm Khi Không Refactor</h2>
+  <div class="chart-wrap">
+    <div class="chart-title">Development velocity theo thời gian</div>
+    <svg width="100%" height="160" viewBox="0 0 800 160" preserveAspectRatio="none">
+      <line x1="0" y1="40" x2="800" y2="40" stroke="#2a3a5c" stroke-width="1"/>
+      <line x1="0" y1="80" x2="800" y2="80" stroke="#2a3a5c" stroke-width="1"/>
+      <line x1="0" y1="120" x2="800" y2="120" stroke="#2a3a5c" stroke-width="1"/>
+      <path d="M 0,20 C 200,18 400,22 800,25" stroke="#2ecc71" stroke-width="3" fill="none" stroke-dasharray="8,4"/>
+      <path d="M 0,20 C 100,30 300,70 500,110 C 600,130 700,145 800,152" stroke="#e74c3c" stroke-width="3" fill="none"/>
+      <text x="640" y="18" fill="#2ecc71" font-size="11" font-family="sans-serif">với refactoring</text>
+      <text x="540" y="138" fill="#e74c3c" font-size="11" font-family="sans-serif">không refactor</text>
+      <text x="10" y="155" fill="#8899bb" font-size="11" font-family="sans-serif">Tháng 1</text>
+      <text x="370" y="155" fill="#8899bb" font-size="11" font-family="sans-serif">Tháng 6</text>
+      <text x="720" y="155" fill="#8899bb" font-size="11" font-family="sans-serif">Tháng 12</text>
+      <text x="4" y="42" fill="#8899bb" font-size="10" font-family="sans-serif">High</text>
+      <text x="4" y="122" fill="#8899bb" font-size="10" font-family="sans-serif">Low</text>
+    </svg>
+  </div>
+  <p style="color:var(--muted);font-size:.9rem;">Tech debt không giết chết team ngay — nó làm chậm dần đến khi không ai dám chạm vào code. Tháng 12 với debt: feature 2 tuần. Không có debt: feature 2 ngày.</p>
+</div>
+
+<!-- TYPES OF DEBT -->
+<div class="section">
+  <h2>🏦 Phân Loại Tech Debt</h2>
+  <div class="debt-grid">
+    <div class="debt-card" style="background:rgba(255,183,71,.06);border:1px solid rgba(255,183,71,.25);">
+      <div class="debt-label" style="color:var(--orange);">💰 Deliberate Debt (Cố ý)</div>
+      <p style="color:var(--muted);font-size:.88rem;line-height:1.6;">Cố tình "nợ" để ship nhanh. Chấp nhận được nếu có kế hoạch trả nợ rõ ràng. <br><em>"Cần ship trong 2 ngày, sau đó refactor sprint sau."</em></p>
+      <div style="color:var(--orange);font-size:.8rem;margin-top:8px;">✓ OK nếu có plan cụ thể</div>
+    </div>
+    <div class="debt-card" style="background:rgba(231,76,60,.06);border:1px solid rgba(231,76,60,.25);">
+      <div class="debt-label" style="color:var(--red);">☠️ Reckless Debt (Liều lĩnh)</div>
+      <p style="color:var(--muted);font-size:.88rem;line-height:1.6;">Không biết mình đang nợ. Không có kế hoạch. Accumulate mãi đến khi team không dám đụng vào code nữa.</p>
+      <div style="color:var(--red);font-size:.8rem;margin-top:8px;">✗ Không chấp nhận được</div>
+    </div>
+    <div class="debt-card" style="background:rgba(91,141,239,.06);border:1px solid rgba(91,141,239,.25);">
+      <div class="debt-label" style="color:var(--blue);">🎓 Prudent Inadvertent (Vô tình khôn ngoan)</div>
+      <p style="color:var(--muted);font-size:.88rem;line-height:1.6;">Sau khi ship mới biết "Lẽ ra nên làm khác." Bình thường — nhận ra là tiến bộ. Plan refactor sprint sau.</p>
+      <div style="color:var(--blue);font-size:.8rem;margin-top:8px;">✓ Learning, plan to fix</div>
+    </div>
+    <div class="debt-card" style="background:var(--surface2);border:1px solid var(--border);">
+      <div class="debt-label" style="color:var(--muted);">😅 Reckless Inadvertent (Vô tình liều lĩnh)</div>
+      <p style="color:var(--muted);font-size:.88rem;line-height:1.6;">Không biết best practices, không biết đang nợ. Cần mentoring và code review để phát hiện.</p>
+      <div style="color:var(--muted);font-size:.8rem;margin-top:8px;">→ Education + code review</div>
+    </div>
+  </div>
+</div>
+
+<!-- MANAGEMENT STRATEGY -->
+<div class="section">
+  <h2>🎯 Quản Lý Tech Debt</h2>
+  <div class="matrix">
+    <div class="matrix-item">
+      <span class="p-badge p0">P0 — Critical</span>
+      <div style="font-size:.85rem;font-weight:600;margin-bottom:4px;">Fix ngay trong sprint này</div>
+      <div style="color:var(--muted);font-size:.8rem;">Security vulnerabilities, hardcoded credentials, no tests trên payment flow</div>
+    </div>
+    <div class="matrix-item">
+      <span class="p-badge p1">P1 — High</span>
+      <div style="font-size:.85rem;font-weight:600;margin-bottom:4px;">Sprint này hoặc tới</div>
+      <div style="color:var(--muted);font-size:.8rem;">Duplicate API calls, DIP violations, performance issues đã thấy</div>
+    </div>
+    <div class="matrix-item">
+      <span class="p-badge p2">P2 — Medium</span>
+      <div style="font-size:.85rem;font-weight:600;margin-bottom:4px;">Backlog — schedule khi có thời gian</div>
+      <div style="color:var(--muted);font-size:.8rem;">Magic strings → enum, God file → extract, old TODO comments</div>
+    </div>
+    <div class="matrix-item" style="border-color:var(--border);">
+      <span class="p-badge" style="background:var(--surface);color:var(--muted);">P3 — Low</span>
+      <div style="font-size:.85rem;font-weight:600;margin-bottom:4px;">Nice-to-have</div>
+      <div style="color:var(--muted);font-size:.8rem;">Style inconsistencies, minor naming issues. Boy scout rule: fix khi đi ngang qua.</div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>20% Sprint Rule</h3>
+    <p style="color:var(--muted);font-size:.9rem;">Dành 20% thời gian sprint cho tech debt — đây là investment, không phải waste. Không làm → velocity giảm → cuối cùng mất nhiều hơn. Track debt bằng Jira ticket, không để trong code comments.</p>
+  </div>
+</div>
+
+<!-- BOY SCOUT RULE -->
+<div class="section">
+  <h2>🏕️ Boy Scout Rule</h2>
+  <div style="background:linear-gradient(135deg,rgba(46,204,113,.08),rgba(0,206,201,.05));border:1px solid rgba(46,204,113,.25);border-radius:12px;padding:20px 24px;">
+    <blockquote style="font-size:1.1rem;color:var(--text);font-style:italic;margin-bottom:12px;">"Leave the code cleaner than you found it."</blockquote>
+    <p style="color:var(--muted);font-size:.9rem;">Mỗi khi bạn chạm vào một file → cải thiện ít nhất 1 thứ nhỏ: rename 1 biến, extract 1 function, xóa 1 dead code. Không cần perfect. Chỉ cần <em>slightly better</em>.</p>
+    <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;">
+      <span style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:.82rem;color:var(--green);">✓ Rename 1 biến xấu</span>
+      <span style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:.82rem;color:var(--green);">✓ Xóa 1 dead code</span>
+      <span style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:.82rem;color:var(--green);">✓ Extract 1 magic number</span>
+      <span style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 12px;font-size:.82rem;color:var(--green);">✓ Add 1 test case</span>
+    </div>
+  </div>
+</div>
+
+<div class="takeaway">
+  <div class="takeaway-label">💡 Key Takeaway — Bài 03 Complete</div>
+  <p>Tech debt không xấu — là công cụ nếu quản lý có ý thức. Deliberate debt = OK nếu có plan. Reckless debt = không chấp nhận. Track debt: ghi vào backlog, schedule refactoring sprints. 20% sprint time cho debt. Boy Scout Rule: leave code slightly better every time you touch it.</p>
+</div>
+
+<div class="section">
+  <h2>🏋️ Bài Tập</h2>
+  <div class="exercise">
+    <div class="exercise-label">Phân tích và lập kế hoạch xử lý Tech Debt</div>
+    <pre style="font-size:.82rem;"><span class="cmt">// Bạn vừa join project và phát hiện:</span>
+1. <span class="cmt">AuthService.ts</span>: 800-line file, mọi thứ trong 1 hàm
+2. Không có tests nào cho payment flow
+3. Magic strings rải rác: <span class="str">'admin'</span>, <span class="str">'user'</span> ở 12 files
+4. <span class="fn">getUsers</span>() gọi API 3 lần trong 1 request
+5. TODO comment từ 2 năm trước
+6. Database connection hardcode trong 5 files
+7. <span class="type">OrderService</span> import trực tiếp <span class="type">MySQLAdapter</span></pre>
+    <p style="color:var(--muted);font-size:.9rem;margin-top:10px;">Phân loại: P0/P1/P2/P3. Ước lượng effort. Đề xuất thứ tự xử lý.</p>
+  </div>
+</div>
+
+<div class="next-nav">
+  <a href="../04-design-pattern/04a-why-patterns.html" class="next-topic phase">
+    <div class="next-icon">🏗️</div>
+    <div class="next-text">
+      <div class="label">Bài tiếp theo · Bài 04</div>
+      <div class="title">Design Patterns — Tại sao cần patterns</div>
+    </div>
+    <span class="next-arrow">→</span>
+  </a>
+  <a href="03a-naming.html" class="next-topic">
+    <div class="next-icon">🔄</div>
+    <div class="next-text">
+      <div class="label">Ôn lại từ đầu</div>
+      <div class="title">03a — Đặt Tên Có Ý Nghĩa</div>
+    </div>
+    <span class="next-arrow">↩</span>
+  </a>
+</div>
+</body>
+</html>

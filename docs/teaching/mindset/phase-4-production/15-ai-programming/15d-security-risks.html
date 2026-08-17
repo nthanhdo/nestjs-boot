@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>15d — AI Security Risks | NestJS Boot</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;font-size:16px}
+nav{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #21262d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.nav-left,.nav-right{display:flex;align-items:center;gap:12px}
+.nav-link{color:#8b949e;text-decoration:none;font-size:.85rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s}
+.nav-link:hover{color:#e6edf3;border-color:#58a6ff}
+.nav-title{color:#e6edf3;font-size:.9rem;font-weight:600}
+.phase-badge{background:#d29922;color:#000;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.container{max-width:900px;margin:0 auto;padding:40px 24px}
+h1{font-size:2rem;font-weight:700;margin-bottom:8px;color:#e6edf3}
+.subtitle{color:#8b949e;font-size:1rem;margin-bottom:32px}
+h2{font-size:1.4rem;font-weight:600;margin:40px 0 16px;color:#e6edf3}
+h3{font-size:1.1rem;font-weight:600;margin-bottom:10px;color:#e6edf3}
+.card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:24px;margin-bottom:16px}
+.section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+@media(max-width:600px){.compare-grid{grid-template-columns:1fr}}
+.compare-bad{background:#1a0d0d;border:1px solid #f8514940;border-radius:10px;padding:16px}
+.compare-good{background:#0d1a0d;border:1px solid #3fb95040;border-radius:10px;padding:16px}
+.compare-bad h4{color:#ff7b72;font-size:.85rem;margin-bottom:8px}
+.compare-good h4{color:#3fb950;font-size:.85rem;margin-bottom:8px}
+code{background:#1c2128;border:1px solid #30363d;border-radius:4px;padding:1px 6px;font-family:'Fira Code',monospace;font-size:.85rem;color:#f0883e}
+pre{background:#1c2128;border:1px solid #30363d;border-radius:8px;padding:16px;overflow-x:auto;font-family:'Fira Code',monospace;font-size:.82rem;line-height:1.6;color:#e6edf3;margin:8px 0}
+.vuln-badge{display:inline-block;background:#f8514920;border:1px solid #f85149;color:#ff7b72;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:8px}
+.safe-badge{display:inline-block;background:#3fb95020;border:1px solid #3fb950;color:#3fb950;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:8px}
+.security-item{background:#161b22;border:1px solid #21262d;border-radius:10px;padding:20px;margin-bottom:12px;border-left:4px solid #f85149}
+.security-item.fixed{border-left-color:#3fb950}
+.checklist{background:#0d1a13;border:1px solid #3fb95040;border-radius:10px;padding:20px}
+.checklist-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #21262d;color:#c9d1d9;font-size:.9rem}
+.checklist-item:last-child{border-bottom:none}
+.check-icon{color:#3fb950;font-size:1.1rem;flex-shrink:0;margin-top:2px}
+.warn-icon{color:#f0883e;font-size:1.1rem;flex-shrink:0;margin-top:2px}
+.tip{background:#132030;border:1px solid #1f6feb;border-radius:8px;padding:14px 18px;color:#79c0ff;font-size:.9rem;margin-top:16px}
+.warn{background:#1c1000;border:1px solid #d29922;border-radius:8px;padding:14px 18px;color:#d29922;font-size:.9rem;margin-top:12px}
+.exercises{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:24px}
+.exercises-title{font-size:1.1rem;font-weight:700;margin-bottom:20px;color:#e6edf3}
+.ex-card{border-radius:10px;padding:18px;margin-bottom:12px}
+.ex-green{background:#0d1a0d;border:1px solid #3fb95040}
+.ex-yellow{background:#1a1200;border:1px solid #d2992240}
+.ex-red{background:#1a0d0d;border:1px solid #f8514940}
+.ex-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ex-diff{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.diff-green{background:#3fb95020;color:#3fb950}
+.diff-yellow{background:#d2992220;color:#d29922}
+.diff-red{background:#f8514920;color:#ff7b72}
+.ex-num{font-size:.8rem;color:#8b949e}
+.ex-title{font-weight:600;color:#e6edf3;margin-bottom:6px}
+.ex-desc{color:#8b949e;font-size:.88rem}
+.ex-solution{margin-top:12px}
+.ex-sol-toggle{background:#1c2128;border:1px solid #30363d;color:#8b949e;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem}
+.ex-sol-body{display:none;margin-top:10px;background:#1c2128;border-radius:8px;padding:14px;color:#c9d1d9;font-size:.85rem;line-height:1.6}
+.ex-sol-body.open{display:block}
+.risk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:16px}
+.risk-card{background:#1a0d0d;border:1px solid #f8514940;border-radius:10px;padding:16px}
+.risk-title{color:#ff7b72;font-weight:700;font-size:.9rem;margin-bottom:6px}
+.risk-desc{color:#c9d1d9;font-size:.82rem}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-left">
+    <span class="phase-badge">Phase 4</span>
+    <span class="nav-title">15d — AI Security Risks</span>
+  </div>
+  <div class="nav-right">
+    <a class="nav-link" href="15c-verification.html">← 15c Verification</a>
+    <a class="nav-link" href="../../phase-5-professional/16-workflow/16a-agile-scrum.html" style="color:#58a6ff;border-color:#1f6feb">16a Agile →</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>🔐 AI-Generated Security Risks</h1>
+  <p class="subtitle">AI code "chạy được" ≠ "secure". Phần này teach bạn nhận diện và fix 6 loại lỗ hổng phổ biến nhất trong AI-generated code.</p>
+
+  <div class="warn">⚠️ <strong>Reality check:</strong> Khảo sát GitHub Copilot 2023 — 40% code AI generate trong security-sensitive contexts chứa ít nhất 1 vulnerability. AI được train trên internet code — bao gồm cả code xấu.</div>
+
+  <hr class="section-divider">
+  <h2>🎯 6 Risk Categories</h2>
+
+  <div class="risk-grid">
+    <div class="risk-card">
+      <div class="risk-title">1. SQL / NoSQL Injection</div>
+      <div class="risk-desc">String concatenation thay vì parameterized queries. Attacker kiểm soát được query logic.</div>
+    </div>
+    <div class="risk-card">
+      <div class="risk-title">2. Plain-text Passwords</div>
+      <div class="risk-desc">AI thường skip bcrypt/argon2. Lưu raw password hoặc dùng MD5/SHA1 không salted.</div>
+    </div>
+    <div class="risk-card">
+      <div class="risk-title">3. JWT Vulnerabilities</div>
+      <div class="risk-desc">Không verify signature, alg=none bypass, weak secret, không set expiry.</div>
+    </div>
+    <div class="risk-card">
+      <div class="risk-title">4. Missing Input Validation</div>
+      <div class="risk-desc">No DTO validation, no sanitization. XSS, path traversal, type confusion attacks.</div>
+    </div>
+    <div class="risk-card">
+      <div class="risk-title">5. Hardcoded Secrets</div>
+      <div class="risk-desc">API keys, passwords, tokens hardcoded trong source. Leaked khi push lên GitHub.</div>
+    </div>
+    <div class="risk-card">
+      <div class="risk-title">6. Dependency CVEs</div>
+      <div class="risk-desc">AI suggest outdated versions. Package có CVEs đã biết không được update.</div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>🔍 Risk 1: SQL Injection</h2>
+
+  <div class="compare-grid">
+    <div class="compare-bad">
+      <h4>❌ AI generates — VULNERABLE</h4>
+<pre><span style="color:#f85149">// Raw string concat — DANGER</span>
+async searchProducts(q: string) {
+  return this.db.query(
+    `SELECT * FROM products
+     WHERE name LIKE '%<span style="text-decoration:line-through;color:#f85149">${q}</span>%'`
+  );
+}
+
+<span style="color:#f85149">// Exploit: q = "' OR '1'='1' --"
+// Returns ALL rows regardless of name</span></pre>
+    </div>
+    <div class="compare-good">
+      <h4>✅ Fix — parameterized query</h4>
+<pre><span style="color:#3fb950">// Parameterized — SAFE</span>
+async searchProducts(q: string) {
+  return this.db.query(
+    `SELECT * FROM products
+     WHERE name LIKE $1`,
+    [`%${q}%`]  <span style="color:#3fb950">// param, never concat</span>
+  );
+}
+
+<span style="color:#3fb950">// TypeORM: .where('name LIKE :q', {q: `%${q}%`})
+// Mongoose: .find({name: /pattern/}) — safe</span></pre>
+    </div>
+  </div>
+
+  <div class="compare-grid">
+    <div class="compare-bad">
+      <h4>❌ NoSQL Injection — MongoDB</h4>
+<pre><span style="color:#f85149">// Never trust req.body directly</span>
+async login(body: any) {
+  return this.User.findOne({
+    email: body.email,
+    password: body.password
+    <span style="color:#f85149">// body = {email: {$gt: ""}, password: {$gt: ""}}</span>
+    <span style="color:#f85149">// → login without credentials!</span>
+  });
+}</pre>
+    </div>
+    <div class="compare-good">
+      <h4>✅ Fix — DTO + type enforcement</h4>
+<pre><span style="color:#3fb950">// Typed DTO prevents object injection</span>
+class LoginDto {
+  @IsEmail() email: string;
+  @IsString() @MinLength(8) password: string;
+}
+
+async login(dto: LoginDto) {
+  const user = await this.User.findOne({
+    email: dto.email  <span style="color:#3fb950">// typed string, safe</span>
+  });
+  <span style="color:#3fb950">// compare hash, not raw password</span>
+}</pre>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>🔍 Risk 2: Plain-text Passwords</h2>
+
+  <div class="compare-grid">
+    <div class="compare-bad">
+      <h4>❌ AI generates — VULNERABLE</h4>
+<pre><span style="color:#f85149">// AI often skips hashing!</span>
+async createUser(dto: CreateUserDto) {
+  return this.User.create({
+    email: dto.email,
+    password: dto.password,  <span style="color:#f85149">// raw!</span>
+  });
+}
+
+<span style="color:#f85149">// Also bad: MD5, SHA1 without salt
+// crypto.createHash('md5').update(pw).digest('hex')</span></pre>
+    </div>
+    <div class="compare-good">
+      <h4>✅ Fix — bcrypt hash</h4>
+<pre><span style="color:#3fb950">import * as bcrypt from 'bcrypt';</span>
+
+async createUser(dto: CreateUserDto) {
+  const saltRounds = 12; <span style="color:#3fb950">// cost factor</span>
+  const hash = await bcrypt.hash(
+    dto.password, saltRounds
+  );
+  return this.User.create({
+    email: dto.email,
+    password: hash,  <span style="color:#3fb950">// never raw</span>
+  });
+}
+
+<span style="color:#3fb950">// verify: bcrypt.compare(plain, hash)</span></pre>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>🔍 Risk 3: JWT Vulnerabilities</h2>
+
+  <div class="compare-grid">
+    <div class="compare-bad">
+      <h4>❌ AI generates — VULNERABLE</h4>
+<pre><span style="color:#f85149">// 3 mistakes in 1 snippet</span>
+const token = jwt.sign(
+  { userId: user.id },
+  'secret',       <span style="color:#f85149">// hardcoded weak secret</span>
+  { algorithm: 'none' }  <span style="color:#f85149">// CRITICAL: no sig!</span>
+  <span style="color:#f85149">// missing: expiresIn</span>
+);
+
+<span style="color:#f85149">// Verify also broken:
+jwt.verify(token, '')  // accepts anything</span></pre>
+    </div>
+    <div class="compare-good">
+      <h4>✅ Fix — proper JWT config</h4>
+<pre><span style="color:#3fb950">// NestJS: use @nestjs/jwt module</span>
+JwtModule.register({
+  secret: process.env.JWT_SECRET,  <span style="color:#3fb950">// env</span>
+  signOptions: {
+    expiresIn: '15m',  <span style="color:#3fb950">// short-lived</span>
+    algorithm: 'HS256',  <span style="color:#3fb950">// explicit</span>
+  },
+});
+
+<span style="color:#3fb950">// Refresh token: 7d, stored in httpOnly cookie
+// Rotate on each use to detect theft</span></pre>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>🔍 Risk 4: Missing Input Validation</h2>
+
+  <div class="compare-grid">
+    <div class="compare-bad">
+      <h4>❌ No validation — XSS + overflow</h4>
+<pre><span style="color:#f85149">@Post('/comments')
+async create(@Body() body: any) {
+  // body.content could be:
+  // "&lt;script&gt;alert(document.cookie)&lt;/script&gt;"
+  // or a 50MB string to exhaust memory
+  return this.Comment.create(body);
+}</span></pre>
+    </div>
+    <div class="compare-good">
+      <h4>✅ DTO + whitelist validation</h4>
+<pre><span style="color:#3fb950">class CreateCommentDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(2000)
+  @Transform(({value}) => sanitizeHtml(value))
+  content: string;
+}
+
+// main.ts
+app.useGlobalPipes(new ValidationPipe({
+  whitelist: true,     // strip unknown props
+  forbidNonWhitelisted: true,
+}));</span></pre>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>🔍 Risk 5: Hardcoded Secrets</h2>
+
+  <div class="compare-grid">
+    <div class="compare-bad">
+      <h4>❌ Secrets in source code</h4>
+<pre><span style="color:#f85149">// AI often puts real-looking placeholders
+const stripe = new Stripe('sk_live_abc123xyz');
+const redis = createClient({ password: 'redis123' });
+const sendgrid = sgMail.setApiKey('SG.xxx');
+
+// Once pushed to GitHub → leaked forever
+// Even after deletion: git history exposes it</span></pre>
+    </div>
+    <div class="compare-good">
+      <h4>✅ Environment variables only</h4>
+<pre><span style="color:#3fb950">// Always from process.env
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const redis = createClient({
+  password: process.env.REDIS_PASSWORD
+});
+
+// .env (gitignored) for local dev
+// GitHub Secrets / Vault for production
+// ConfigModule validates at startup</span></pre>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>🔍 Risk 6: Outdated Dependencies</h2>
+
+  <div class="card">
+    <h3>AI suggests packages — verify versions</h3>
+    <p style="color:#c9d1d9;font-size:.9rem;margin-bottom:12px">AI training data có cutoff → suggest versions cũ có CVE đã biết</p>
+<pre><span style="color:#f85149"># Check vulnerabilities in current project</span>
+npm audit
+
+<span style="color:#f85149"># Check specific package</span>
+npm audit --audit-level=high
+
+<span style="color:#f85149"># Auto-fix safe updates</span>
+npm audit fix
+
+<span style="color:#3fb950"># Research before adding new package:
+# https://snyk.io/vuln/npm:{package-name}
+# https://security.snyk.io/</span></pre>
+    <div class="tip" style="margin-top:12px">
+      <strong>Habit:</strong> Khi AI suggest <code>npm install X</code> → search "X npm CVE" trước. Ưu tiên packages ít dependencies, high weekly downloads, active maintenance.
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>✅ AI Security Review Checklist</h2>
+
+  <div class="checklist">
+    <div class="checklist-item"><span class="check-icon">□</span><span>SQL/NoSQL queries dùng parameterized / ORM methods — không string concat</span></div>
+    <div class="checklist-item"><span class="check-icon">□</span><span>Passwords hash với bcrypt/argon2 (saltRounds ≥ 12) — không raw, không MD5</span></div>
+    <div class="checklist-item"><span class="check-icon">□</span><span>JWT có secret từ env, algorithm explicit (HS256/RS256), expiresIn set</span></div>
+    <div class="checklist-item"><span class="check-icon">□</span><span>Tất cả endpoints có DTO + ValidationPipe(whitelist: true)</span></div>
+    <div class="checklist-item"><span class="check-icon">□</span><span>Không có string literal nào trông như secret/key/password trong source</span></div>
+    <div class="checklist-item"><span class="check-icon">□</span><span><code>npm audit</code> clean hoặc chấp nhận được (chỉ low/info)</span></div>
+    <div class="checklist-item"><span class="check-icon">□</span><span>File upload có validate MIME type + max size — không trust extension</span></div>
+    <div class="checklist-item"><span class="check-icon">□</span><span>Error messages không leak stack trace / DB schema ra user</span></div>
+  </div>
+
+  <div class="tip" style="margin-top:20px">
+    <strong>Pro tip:</strong> Dùng AI để review security! Prompt: <em>"Review code này cho các security vulnerabilities: SQL injection, authentication bypass, input validation gaps, hardcoded secrets. List tất cả issues tìm thấy."</em>
+  </div>
+
+  <!-- EXERCISES -->
+  <hr class="section-divider">
+  <div class="exercises">
+    <div class="exercises-title">🎯 Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 1</span></div>
+      <div class="ex-title">Chạy npm audit trên project hiện tại</div>
+      <div class="ex-desc">Mở một NestJS project bất kỳ. Chạy <code>npm audit</code>. Đọc output, phân loại severity (critical/high/medium/low). Fix ít nhất 1 vulnerability bằng <code>npm audit fix</code>.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">Severity levels:<br>• <strong>Critical</strong> → fix ngay, block deploy<br>• <strong>High</strong> → fix trong sprint hiện tại<br>• <strong>Medium</strong> → backlog P2<br>• <strong>Low/Info</strong> → acknowledge, next refactor<br><br><code>npm audit fix --force</code> có thể break breaking changes — test sau khi chạy</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 2</span></div>
+      <div class="ex-title">Review một AI-generated UserService cho security issues</div>
+      <div class="ex-desc">Prompt AI: "Write a NestJS UserService with createUser (email + password) and login (return JWT)." Copy output. Không chạy — chỉ đọc và tìm tất cả security issues theo checklist trên.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">Thường tìm được:<br>1. Password lưu raw (missing bcrypt)<br>2. JWT secret hardcoded ('secret' hoặc 'jwt-secret')<br>3. Không set JWT expiresIn<br>4. Không có input validation DTO<br>5. Trả về full user object (kể cả password field) trong response<br><br>Fix tất cả trước khi dùng bất kỳ đoạn code nào</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 3</span></div>
+      <div class="ex-title">Viết unit test expose SQL injection vulnerability</div>
+      <div class="ex-desc">Tạo function <code>searchByName(q: string)</code> dùng raw SQL concat. Viết test với input <code>"' OR '1'='1' --"</code>. Verify nó return unexpected rows. Sau đó fix bằng parameterized query và verify test pass safely.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">Test pattern:<br><pre style="margin:8px 0">it('should not return all rows on injection', async () => {
+  const result = await service.search("' OR '1'='1' --");
+  // Before fix: result.length === ALL_ROWS (FAIL expected behavior)
+  // After fix: result.length === 0 (no match for injection string)
+  expect(result.length).toBe(0);
+});</pre>Cách dễ test không cần real DB: mock <code>this.db.query</code>, kiểm tra query string KHÔNG chứa raw input.</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header"><span class="ex-diff diff-red">🔴 Khó</span><span class="ex-num">Bài 4</span></div>
+      <div class="ex-title">Implement full auth: bcrypt + JWT + DTO — tự mình verify security</div>
+      <div class="ex-desc">Build auth module từ đầu: register (hash password), login (verify hash, return JWT 15min), guard (verify JWT). Sau đó self-audit bằng checklist 8 điểm ở trên — tick tất cả trước khi nộp.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">Checklist self-audit:<br>✓ bcrypt.hash() với saltRounds=12<br>✓ bcrypt.compare() — không so sánh raw<br>✓ JWT_SECRET từ process.env<br>✓ expiresIn: '15m'<br>✓ JwtAuthGuard trên protected routes<br>✓ RegisterDto + LoginDto với @IsEmail, @MinLength(8)<br>✓ Response loại bỏ password field (@Exclude())<br>✓ 401 message generic: "Invalid credentials" (không reveal "email not found" vs "wrong password")</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <hr class="section-divider">
+  <div class="card">
+    <h3>📌 Tóm Tắt — AI Security Risks</h3>
+    <ul style="color:#c9d1d9;padding-left:20px;margin-top:8px">
+      <li style="margin:6px 0"><strong>SQL/NoSQL injection</strong> — parameterized queries, typed DTOs. Không bao giờ concat user input</li>
+      <li style="margin:6px 0"><strong>Password hashing</strong> — bcrypt/argon2 mandatory. MD5/SHA1 không dùng cho auth</li>
+      <li style="margin:6px 0"><strong>JWT</strong> — secret từ env, algorithm explicit, expiry set, rotate refresh tokens</li>
+      <li style="margin:6px 0"><strong>Input validation</strong> — DTO + ValidationPipe(whitelist) mọi endpoint. Sanitize output</li>
+      <li style="margin:6px 0"><strong>Secrets</strong> — chỉ trong env vars. Scan .git history nếu lỡ commit</li>
+      <li style="margin:6px 0"><strong>Dependencies</strong> — <code>npm audit</code> mỗi sprint. Không thêm package không verify</li>
+    </ul>
+  </div>
+
+  <div style="text-align:center;margin-top:48px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">Bài 15d / Phase 4 → Phase 5</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="15c-verification.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← 15c: Verification</a>
+      <a href="../../phase-5-professional/16-workflow/16a-agile-scrum.html" style="color:#58a6ff;text-decoration:none;font-size:.85rem">Tiếp theo: 16a — Agile &amp; Scrum →</a>
+    </div>
+  </div>
+</div>
+<script>
+function toggleSol(btn){const b=btn.nextElementSibling;const o=b.classList.toggle('open');btn.textContent=o?'Ẩn gợi ý':'Xem gợi ý';}
+</script>
+</body>
+</html>

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>16a — Agile & Scrum | NestJS Boot</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;font-size:16px}
+nav{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #21262d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.nav-left,.nav-right{display:flex;align-items:center;gap:12px}
+.nav-link{color:#8b949e;text-decoration:none;font-size:.85rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s}
+.nav-link:hover{color:#e6edf3;border-color:#bc8cff}
+.nav-title{color:#e6edf3;font-size:.9rem;font-weight:600}
+.phase-badge{background:#6e40c9;color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.container{max-width:900px;margin:0 auto;padding:40px 24px}
+h1{font-size:2rem;font-weight:700;margin-bottom:8px}
+.subtitle{color:#8b949e;font-size:1rem;margin-bottom:32px}
+h2{font-size:1.3rem;font-weight:600;margin:40px 0 16px;color:#bc8cff;padding-left:12px;border-left:3px solid #6e40c9}
+h3{font-size:1.05rem;font-weight:600;margin-bottom:10px;color:#e6edf3}
+.card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:24px;margin-bottom:16px}
+.section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
+pre{background:#1c2128;border:1px solid #30363d;border-radius:8px;padding:16px;overflow-x:auto;font-family:'Fira Code',monospace;font-size:.82rem;line-height:1.6;color:#e6edf3;margin:8px 0}
+code{background:#1c2128;border:1px solid #30363d;border-radius:4px;padding:1px 6px;font-family:'Fira Code',monospace;font-size:.85rem;color:#f0883e}
+.tip{background:#132030;border:1px solid #1f6feb;border-radius:8px;padding:14px 18px;color:#79c0ff;font-size:.9rem;margin-top:16px}
+.warn{background:#1c1000;border:1px solid #d29922;border-radius:8px;padding:14px 18px;color:#d29922;font-size:.9rem;margin-top:12px}
+.sprint-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0}
+@media(max-width:700px){.sprint-grid{grid-template-columns:1fr 1fr}}
+.sprint-box{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:18px;text-align:center}
+.sprint-icon{font-size:2rem;margin-bottom:8px}
+.sprint-title{font-weight:700;color:#e6edf3;font-size:.9rem;margin-bottom:6px}
+.sprint-sub{font-size:.78rem;color:#8b949e;line-height:1.5}
+.sprint-time{font-size:.72rem;color:#bc8cff;margin-top:6px;font-weight:600}
+.cycle-wrap{background:#1c2128;border:1px solid #30363d;border-radius:12px;padding:24px;margin:16px 0}
+.cycle-steps{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:16px}
+.cycle-step{background:#161b22;border:1px solid #6e40c9;border-radius:8px;padding:8px 14px;font-size:.82rem;color:#c9d1d9;display:flex;align-items:center;gap:6px}
+.cycle-step::after{content:'→';color:#6e40c9;margin-left:6px}
+.cycle-step:last-child::after{content:'↺';color:#3fb950}
+.standup-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0}
+@media(max-width:600px){.standup-grid{grid-template-columns:1fr}}
+.standup-q{background:#161b22;border:1px solid #21262d;border-radius:10px;padding:14px;text-align:center}
+.standup-icon{font-size:1.5rem;margin-bottom:6px}
+.standup-q-text{font-size:.85rem;font-weight:600;color:#bc8cff;margin-bottom:6px}
+.standup-ex{font-size:.78rem;color:#8b949e;font-style:italic}
+.retro-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 0}
+@media(max-width:600px){.retro-grid{grid-template-columns:1fr}}
+.retro-box{border-radius:10px;padding:16px}
+.retro-went-well{background:#0d2d1a;border:1px solid #3fb95040}
+.retro-improve{background:#1a0d0d;border:1px solid #f8514940}
+.retro-action{background:#0d1a2d;border:1px solid #1f6feb40}
+.retro-title{font-size:.82rem;font-weight:700;margin-bottom:10px}
+.retro-item{font-size:.78rem;color:#c9d1d9;padding:4px 0;border-bottom:1px solid #21262d}
+.retro-item:last-child{border-bottom:none}
+.exercises{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:24px;margin-top:32px}
+.exercises-title{font-size:1.1rem;font-weight:700;margin-bottom:20px;color:#e6edf3}
+.ex-card{border-radius:10px;padding:18px;margin-bottom:12px}
+.ex-green{background:#0d1a0d;border:1px solid #3fb95040}
+.ex-yellow{background:#1a1200;border:1px solid #d2992240}
+.ex-red{background:#1a0d0d;border:1px solid #f8514940}
+.ex-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ex-diff{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.diff-green{background:#3fb95020;color:#3fb950}
+.diff-yellow{background:#d2992220;color:#d29922}
+.diff-red{background:#f8514920;color:#ff7b72}
+.ex-num{font-size:.8rem;color:#8b949e}
+.ex-title{font-weight:600;color:#e6edf3;margin-bottom:6px}
+.ex-desc{color:#8b949e;font-size:.88rem}
+.ex-solution{margin-top:12px}
+.ex-sol-toggle{background:#1c2128;border:1px solid #30363d;color:#8b949e;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem}
+.ex-sol-body{display:none;margin-top:10px;background:#1c2128;border-radius:8px;padding:14px;color:#c9d1d9;font-size:.85rem;line-height:1.6}
+.ex-sol-body.open{display:block}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-left">
+    <span class="phase-badge">Phase 5</span>
+    <span class="nav-title">16a — Agile &amp; Scrum</span>
+  </div>
+  <div class="nav-right">
+    <a class="nav-link" href="../../phase-4-production/15-ai-programming/15d-security-risks.html">← 15d Security</a>
+    <a class="nav-link" href="16b-estimation.html" style="color:#bc8cff;border-color:#6e40c9">16b Estimation →</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>🏃 Agile &amp; Scrum</h1>
+  <p class="subtitle">Quy trình làm việc team-based mà mọi professional engineer đều cần hiểu. Sprint cycle, daily standup, review, retrospective — không phải bureaucracy mà là <em>coordination system</em>.</p>
+
+  <h2>Tại Sao Agile?</h2>
+  <div class="card">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div>
+        <h3 style="color:#ff7b72;margin-bottom:8px">❌ Waterfall</h3>
+        <ul style="color:#8b949e;padding-left:16px;font-size:.88rem">
+          <li style="margin:4px 0">Plan 6 tháng trước, không đổi</li>
+          <li style="margin:4px 0">Ship khi "xong hết"</li>
+          <li style="margin:4px 0">Khách hàng thấy sản phẩm sau 6-12 tháng</li>
+          <li style="margin:4px 0">Nếu requirements sai → disaster</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="color:#3fb950;margin-bottom:8px">✅ Agile</h3>
+        <ul style="color:#c9d1d9;padding-left:16px;font-size:.88rem">
+          <li style="margin:4px 0">Plan 2 tuần (1 sprint)</li>
+          <li style="margin:4px 0">Ship working software mỗi sprint</li>
+          <li style="margin:4px 0">Feedback ngay từ sprint 1</li>
+          <li style="margin:4px 0">Adapt khi requirements thay đổi</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h2>🔄 Sprint Cycle (2 tuần)</h2>
+
+  <div class="sprint-grid">
+    <div class="sprint-box">
+      <div class="sprint-icon">📋</div>
+      <div class="sprint-title">Sprint Planning</div>
+      <div class="sprint-sub">Chọn tasks từ backlog. Estimate. Team commit vào sprint goal.</div>
+      <div class="sprint-time">2-4 giờ / sprint</div>
+    </div>
+    <div class="sprint-box">
+      <div class="sprint-icon">☕</div>
+      <div class="sprint-title">Daily Standup</div>
+      <div class="sprint-sub">15 phút mỗi sáng. 3 câu hỏi. Sync trạng thái và blockers.</div>
+      <div class="sprint-time">15 phút / ngày</div>
+    </div>
+    <div class="sprint-box">
+      <div class="sprint-icon">🎯</div>
+      <div class="sprint-title">Sprint Review</div>
+      <div class="sprint-sub">Demo những gì hoàn thành. Stakeholder feedback. Accept/reject.</div>
+      <div class="sprint-time">1-2 giờ / sprint</div>
+    </div>
+    <div class="sprint-box">
+      <div class="sprint-icon">🔄</div>
+      <div class="sprint-title">Retrospective</div>
+      <div class="sprint-sub">Làm tốt gì, cải thiện gì. Action items cụ thể cho sprint sau.</div>
+      <div class="sprint-time">1-2 giờ / sprint</div>
+    </div>
+  </div>
+
+  <div class="cycle-wrap">
+    <p style="color:#8b949e;font-size:.82rem;margin-bottom:12px">Sprint flow:</p>
+    <div class="cycle-steps">
+      <div class="cycle-step">📅 Day 1: Planning</div>
+      <div class="cycle-step">⌨️ Day 2-9: Build</div>
+      <div class="cycle-step">🧪 Day 8-9: Test</div>
+      <div class="cycle-step">🎯 Day 10: Review</div>
+      <div class="cycle-step">🔄 Day 10: Retro</div>
+    </div>
+    <p style="color:#8b949e;font-size:.78rem;text-align:center">↺ Lặp lại mỗi 2 tuần</p>
+  </div>
+
+  <hr class="section-divider">
+  <h2>☕ Daily Standup — 3 Câu Hỏi</h2>
+  <p style="color:#c9d1d9;font-size:.9rem;margin-bottom:16px">Mục đích: sync, không phải status report cho manager. Mỗi người nói không quá 2 phút.</p>
+
+  <div class="standup-grid">
+    <div class="standup-q">
+      <div class="standup-icon">✅</div>
+      <div class="standup-q-text">Hôm qua làm gì?</div>
+      <div class="standup-ex">"Xong phần JWT guard, viết tests cho auth module."</div>
+    </div>
+    <div class="standup-q">
+      <div class="standup-icon">🎯</div>
+      <div class="standup-q-text">Hôm nay làm gì?</div>
+      <div class="standup-ex">"Implement forgot-password endpoint, integrate Nodemailer."</div>
+    </div>
+    <div class="standup-q">
+      <div class="standup-icon">🚧</div>
+      <div class="standup-q-text">Có bị blocked không?</div>
+      <div class="standup-ex">"Cần SMTP credentials từ anh Minh để test email flow."</div>
+    </div>
+  </div>
+
+  <div class="warn"><strong>Anti-pattern:</strong> Standup kéo dài 45 phút vì team thảo luận technical details. Rule: nếu discussion cần > 5 phút → schedule separate meeting. Standup = sync only, không giải quyết problems.</div>
+
+  <hr class="section-divider">
+  <h2>🎯 Sprint Review vs Retrospective</h2>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0">
+    <div class="card">
+      <h3 style="color:#58a6ff;margin-bottom:12px">Sprint Review</h3>
+      <p style="color:#8b949e;font-size:.85rem;margin-bottom:10px">Hướng ra ngoài — khách hàng / stakeholder</p>
+      <ul style="color:#c9d1d9;padding-left:16px;font-size:.85rem">
+        <li style="margin:6px 0">Demo features đã done (only done = deployable)</li>
+        <li style="margin:6px 0">Gather feedback từ PO / stakeholder</li>
+        <li style="margin:6px 0">Accept hoặc reject items</li>
+        <li style="margin:6px 0">Update backlog dựa trên feedback</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="color:#bc8cff;margin-bottom:12px">Retrospective</h3>
+      <p style="color:#8b949e;font-size:.85rem;margin-bottom:10px">Hướng vào trong — cải thiện team process</p>
+      <ul style="color:#c9d1d9;padding-left:16px;font-size:.85rem">
+        <li style="margin:6px 0">Went well → celebrate, keep doing</li>
+        <li style="margin:6px 0">To improve → specific pain points</li>
+        <li style="margin:6px 0">Action items → ai làm gì, khi nào</li>
+        <li style="margin:6px 0">Không blame cá nhân — blame process</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 style="margin-bottom:12px">Ví dụ Retrospective:</h3>
+  <div class="retro-grid">
+    <div class="retro-box retro-went-well">
+      <div class="retro-title" style="color:#3fb950">✅ Went Well</div>
+      <div class="retro-item">CI/CD pipeline hoạt động tốt, 0 deploy issues</div>
+      <div class="retro-item">Code review chất lượng, bugs bắt được sớm</div>
+      <div class="retro-item">Team communicate tốt qua Slack</div>
+    </div>
+    <div class="retro-box retro-improve">
+      <div class="retro-title" style="color:#ff7b72">⚠️ To Improve</div>
+      <div class="retro-item">Estimation sai → 3 tasks spill sang sprint sau</div>
+      <div class="retro-item">Không có definition of done rõ ràng</div>
+      <div class="retro-item">Testing bị dồn vào ngày cuối sprint</div>
+    </div>
+    <div class="retro-box retro-action">
+      <div class="retro-title" style="color:#58a6ff">🎯 Action Items</div>
+      <div class="retro-item">Thêm buffer 30% vào estimate (Linh lead)</div>
+      <div class="retro-item">Viết DoD cho mỗi task (cả team, sprint planning)</div>
+      <div class="retro-item">Test viết cùng với feature (Minh + Thảo)</div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>📋 Backlog Management</h2>
+
+  <div class="card">
+    <h3 style="margin-bottom:12px">Product Backlog vs Sprint Backlog</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <p style="color:#bc8cff;font-size:.85rem;font-weight:600;margin-bottom:8px">Product Backlog</p>
+        <ul style="color:#8b949e;padding-left:16px;font-size:.83rem">
+          <li style="margin:4px 0">Tất cả features/bugs chưa làm</li>
+          <li style="margin:4px 0">Ordered by priority (PO quyết định)</li>
+          <li style="margin:4px 0">Thay đổi liên tục khi có info mới</li>
+          <li style="margin:4px 0">Items lớn được break down khi cần</li>
+        </ul>
+      </div>
+      <div>
+        <p style="color:#58a6ff;font-size:.85rem;font-weight:600;margin-bottom:8px">Sprint Backlog</p>
+        <ul style="color:#c9d1d9;padding-left:16px;font-size:.83rem">
+          <li style="margin:4px 0">Subset chọn từ product backlog</li>
+          <li style="margin:4px 0">Team cam kết hoàn thành trong 2 tuần</li>
+          <li style="margin:4px 0">Không thêm item giữa sprint (trừ P0)</li>
+          <li style="margin:4px 0">Team tự organize how để đạt sprint goal</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip"><strong>Definition of Done (DoD):</strong> Mỗi team phải có DoD rõ ràng. Ví dụ: Code written + tests pass + code reviewed + deployed to staging + QA sign-off. "Done" không phải "code chạy trên máy tôi".</div>
+
+  <!-- EXERCISES -->
+  <hr class="section-divider">
+  <div class="exercises">
+    <div class="exercises-title">🎯 Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 1</span></div>
+      <div class="ex-title">Viết daily standup cho ngày hôm nay</div>
+      <div class="ex-desc">Nhìn vào task đang làm. Viết 3 câu cho daily standup: hôm qua, hôm nay, blocker. Mỗi câu phải cụ thể (không vague như "làm backend"), không quá 15 giây khi đọc to.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Tốt vs không tốt:</strong><br>❌ "Hôm qua làm auth, hôm nay cũng auth"<br>✅ "Hôm qua: implement JWT refresh token flow, tests pass. Hôm nay: forgot-password endpoint với Redis OTP storage. Blocked: cần SMTP config từ DevOps team."<br><br>Key: cụ thể, actionable, nếu blocked → tag người cần giúp ngay</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 2</span></div>
+      <div class="ex-title">Retrospective: phân tích sprint vừa rồi theo format Went Well / To Improve / Actions</div>
+      <div class="ex-desc">Nhớ lại 1 project/sprint gần đây (cá nhân hoặc team). Viết retrospective đầy đủ với ít nhất 3 items mỗi category. Action items phải có owner và deadline.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Template action item tốt:</strong><br>"[Tên] sẽ [action cụ thể] trước [ngày] để giải quyết [problem]"<br><br>Ví dụ: "Linh sẽ thêm buffer 30% vào estimate formula trong planning doc trước Sprint 5 planning để giải quyết vấn đề tasks spill."<br><br>Anti-pattern: "Team cần communicate tốt hơn" → quá vague, không ai chịu trách nhiệm, không đo được</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header"><span class="ex-diff diff-red">🔴 Khó</span><span class="ex-num">Bài 3</span></div>
+      <div class="ex-title">Sprint planning: chọn tasks cho sprint 2 tuần, capacity 40 points</div>
+      <div class="ex-desc">Backlog: Auth system (L=13pts), Dashboard UI (M=8pts), CSV Export (M=8pts), Fix checkout bug (S=3pts), Email notifications (L=13pts), Search autocomplete (S=5pts), Dark mode (M=8pts). Team capacity = 40 points. Chọn tasks, justify priority, explain trade-offs.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Approach:</strong><br>1. P0 bugs first: Fix checkout bug (3pts) — revenue-blocking<br>2. High value: Auth system (13pts) — blocking nhiều features khác<br>3. Dashboard UI (8pts) — users cần để thấy value<br>4. Search autocomplete (5pts) — UX improvement, low effort<br>= 29pts. Buffer 20% → còn dư 3-4pts cho interruptions<br><br><strong>Skip và lý do:</strong><br>- Email notifications (13pts) — cần auth xong trước (dependency)<br>- CSV Export (8pts) — lower priority vs core features<br>- Dark mode (8pts) — nice-to-have, not urgent<br><br>Sprint goal: "Auth + core UI working = users can login và see dashboard"</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <hr class="section-divider">
+  <div class="card">
+    <h3>📌 Tóm Tắt — Agile &amp; Scrum</h3>
+    <ul style="color:#c9d1d9;padding-left:20px;margin-top:8px">
+      <li style="margin:6px 0"><strong>Sprint</strong> = 2 tuần, commit vào goal, deliver working software</li>
+      <li style="margin:6px 0"><strong>Standup</strong> = 15 phút, 3 câu. Sync và surface blockers — không status report</li>
+      <li style="margin:6px 0"><strong>Sprint Review</strong> = demo cho stakeholders, collect feedback, update backlog</li>
+      <li style="margin:6px 0"><strong>Retrospective</strong> = cải thiện process, không blame người. Action items có owner</li>
+      <li style="margin:6px 0"><strong>DoD</strong> = team phải đồng ý "done" nghĩa là gì trước khi bắt đầu</li>
+      <li style="margin:6px 0"><strong>Backlog</strong> = product (tất cả) vs sprint (cam kết 2 tuần)</li>
+    </ul>
+  </div>
+
+  <div style="text-align:center;margin-top:48px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">Bài 16a / Phase 5 — Professional</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="../../phase-4-production/15-ai-programming/15d-security-risks.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← 15d: AI Security</a>
+      <a href="16b-estimation.html" style="color:#bc8cff;text-decoration:none;font-size:.85rem">Tiếp theo: 16b — Estimation →</a>
+    </div>
+  </div>
+</div>
+<script>
+function toggleSol(btn){const b=btn.nextElementSibling;const o=b.classList.toggle('open');btn.textContent=o?'Ẩn gợi ý':'Xem gợi ý';}
+</script>
+</body>
+</html>

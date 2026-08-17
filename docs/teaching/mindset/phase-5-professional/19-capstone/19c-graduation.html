@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🎓 Graduation — NestJS Boot</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;font-size:16px}
+nav{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #21262d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.nav-left,.nav-right{display:flex;align-items:center;gap:12px}
+.nav-link{color:#8b949e;text-decoration:none;font-size:.85rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s}
+.nav-link:hover{color:#e6edf3;border-color:#d4b833}
+.nav-title{color:#d4b833;font-size:.9rem;font-weight:700}
+.container{max-width:900px;margin:0 auto;padding:40px 24px}
+h1{font-size:2.2rem;font-weight:800;margin-bottom:8px;text-align:center}
+.section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
+h2{font-size:1.3rem;font-weight:600;margin:40px 0 16px;color:#d4b833;padding-left:12px;border-left:3px solid #d4b833;text-align:left}
+.graduation-banner{background:linear-gradient(135deg,#0d2d1a 0%,#0d1a2d 50%,#1a0d2d 100%);border:2px solid #3fb950;border-radius:20px;padding:48px 40px;margin:32px 0;text-align:center;position:relative;overflow:hidden}
+.graduation-banner::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at center,rgba(63,185,80,.06) 0%,transparent 70%);pointer-events:none}
+.banner-emoji{font-size:4rem;margin-bottom:16px;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.banner-title{font-size:2rem;font-weight:800;color:#3fb950;margin-bottom:8px}
+.banner-subtitle{font-size:1.1rem;color:#79c0ff;font-style:italic;margin-bottom:24px}
+.phase-progress{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:24px 0}
+.phase-done{padding:8px 18px;border-radius:20px;background:#0d3b1f;color:#3fb950;border:1px solid #238636;font-weight:600;font-size:.88rem;display:flex;align-items:center;gap:6px}
+.phase-done::before{content:'✓';font-weight:800}
+.transformation-box{font-size:1rem;color:#58a6ff;font-style:italic;margin:24px 0;padding:18px 24px;background:rgba(88,166,255,.08);border-radius:12px;border:1px solid rgba(88,166,255,.2);line-height:1.8}
+.back-link{display:inline-block;margin-top:24px;color:#d4b833;text-decoration:none;font-size:.9rem;border:1px solid #9e8c1e;padding:10px 24px;border-radius:10px;transition:all .2s;font-weight:600}
+.back-link:hover{background:#2d200d;border-color:#d4b833}
+.transforms{display:flex;flex-direction:column;gap:12px;margin:16px 0}
+.t-item{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:10px;background:#161b22;border:1px solid #30363d;transition:transform .2s}
+.t-item:hover{transform:translateX(4px);border-color:#3fb950}
+.t-before{font-size:.88rem;color:#8b949e;font-style:italic;flex:1}
+.t-arrow{color:#58a6ff;font-size:1.2rem;flex-shrink:0}
+.t-after{font-size:.88rem;font-weight:600;color:#3fb950;flex:1;text-align:right}
+.roadmap{display:flex;flex-direction:column;gap:0;margin:16px 0}
+.road-level{display:flex;gap:16px;align-items:flex-start;padding:14px 0;border-left:2px solid #30363d;padding-left:20px;position:relative}
+.road-level::before{content:'';position:absolute;left:-5px;top:22px;width:8px;height:8px;border-radius:50%;background:#30363d}
+.road-level.now::before{background:#3fb950;box-shadow:0 0 12px rgba(63,185,80,.6);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 4px rgba(63,185,80,.4)}50%{box-shadow:0 0 12px rgba(63,185,80,.8)}}
+.road-level.six::before{background:#58a6ff}
+.road-label{font-size:.8rem;font-weight:700;width:80px;flex-shrink:0;padding-top:2px}
+.road-tags{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+.road-tag{padding:4px 10px;border-radius:8px;font-size:.78rem}
+.rt-done{background:#0d2d1a;color:#3fb950;border:1px solid #238636}
+.rt-next{background:#0d1a2d;color:#58a6ff;border:1px solid #1f4a9e}
+.rt-later{background:#1a1a1a;color:#484f58;border:1px solid #21262d}
+.quote-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+@media(max-width:600px){.quote-grid{grid-template-columns:1fr}}
+.quote-card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:20px}
+.quote-text{font-size:.9rem;color:#c9d1d9;font-style:italic;line-height:1.7;margin-bottom:10px}
+.quote-author{font-size:.78rem;color:#8b949e;text-align:right}
+.confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
+.c-piece{position:absolute;width:8px;height:8px;border-radius:2px;animation:fall linear infinite;opacity:0}
+@keyframes fall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+</style>
+</head>
+<body>
+
+<div class="confetti" id="confetti"></div>
+
+<nav>
+  <div class="nav-left">
+    <span style="font-size:1.2rem">🎓</span>
+    <span class="nav-title">Graduation Day!</span>
+  </div>
+  <div class="nav-right">
+    <a class="nav-link" href="19b-career.html">← 19b Career</a>
+    <a class="nav-link" href="../../index.html" style="color:#d4b833;border-color:#9e8c1e">↩ Teaching Hub</a>
+  </div>
+</nav>
+
+<div class="container" style="position:relative;z-index:1">
+  <!-- GRADUATION BANNER -->
+  <div class="graduation-banner">
+    <div class="banner-emoji">🎓</div>
+    <div class="banner-title">Chúc Mừng Tốt Nghiệp!</div>
+    <div class="banner-subtitle">Bạn đã hoàn thành hành trình 5-phase từ "học code" đến "Professional Engineer"</div>
+
+    <div class="phase-progress">
+      <div class="phase-done" style="background:#0d2d1a;border-color:#3fb95040">Phase 1 — Think</div>
+      <div class="phase-done" style="background:#0d1a2d;border-color:#1f6feb40">Phase 2 — Build</div>
+      <div class="phase-done" style="background:#1a0d2d;border-color:#6e40c940">Phase 3 — Engineer</div>
+      <div class="phase-done" style="background:#2d1a0d;border-color:#9e6c1e40">Phase 4 — Production</div>
+      <div class="phase-done" style="background:#2d200d;border-color:#d4b83340">Phase 5 — Professional</div>
+    </div>
+
+    <div class="transformation-box">
+      "Bạn bắt đầu như một người học code.<br>
+      Bạn kết thúc như một người giải quyết vấn đề bằng software.<br>
+      Đó là sự khác biệt giữa coder và engineer."
+    </div>
+
+    <a href="../../index.html" class="back-link">↩ Quay về Teaching Hub</a>
+  </div>
+
+  <h2>🧠 Mindset Transformations</h2>
+
+  <div class="transforms">
+    <div class="t-item">
+      <span class="t-before">"Anh cho em ticket, em code"</span>
+      <span class="t-arrow">→</span>
+      <span class="t-after">"Tại sao cần feature này?"</span>
+    </div>
+    <div class="t-item">
+      <span class="t-before">"Done = code chạy trên máy tôi"</span>
+      <span class="t-arrow">→</span>
+      <span class="t-after">"Done = deployed + monitored + documented"</span>
+    </div>
+    <div class="t-item">
+      <span class="t-before">"AI viết code cho tôi"</span>
+      <span class="t-arrow">→</span>
+      <span class="t-after">"Tôi verify mọi output. 100% ownership."</span>
+    </div>
+    <div class="t-item">
+      <span class="t-before">"Estimate? Không biết, tùy"</span>
+      <span class="t-arrow">→</span>
+      <span class="t-after">"M — 2 ngày. Base 6h + buffer 30% + risk 20%."</span>
+    </div>
+    <div class="t-item">
+      <span class="t-before">"Code review = tìm lỗi người khác"</span>
+      <span class="t-arrow">→</span>
+      <span class="t-after">"Code review = collaborative quality + knowledge sharing"</span>
+    </div>
+    <div class="t-item">
+      <span class="t-before">"Security? Add sau"</span>
+      <span class="t-arrow">→</span>
+      <span class="t-after">"Security = design from day 1. Always."</span>
+    </div>
+  </div>
+
+  <h2>🗺️ What's Next — Roadmap</h2>
+
+  <div class="roadmap">
+    <div class="road-level now">
+      <span class="road-label" style="color:#3fb950">Hôm nay</span>
+      <div class="road-tags">
+        <span class="road-tag rt-done">Capstone complete</span>
+        <span class="road-tag rt-done">GitHub portfolio ready</span>
+        <span class="road-tag rt-done">Resume with RESHADED</span>
+        <span class="road-tag rt-done">16 engineering requirements</span>
+      </div>
+    </div>
+    <div class="road-level six">
+      <span class="road-label" style="color:#58a6ff">6 tháng</span>
+      <div class="road-tags">
+        <span class="road-tag rt-next">First job / internship</span>
+        <span class="road-tag rt-next">Real production codebase</span>
+        <span class="road-tag rt-next">1+ OSS contribution</span>
+        <span class="road-tag rt-next">Docker + AWS basics</span>
+      </div>
+    </div>
+    <div class="road-level">
+      <span class="road-label">1 năm</span>
+      <div class="road-tags">
+        <span class="road-tag rt-later">Junior → Mid-level</span>
+        <span class="road-tag rt-later">System design fundamentals</span>
+        <span class="road-tag rt-later">Microservices patterns</span>
+        <span class="road-tag rt-later">Mentor someone junior</span>
+      </div>
+    </div>
+    <div class="road-level">
+      <span class="road-label">2 năm</span>
+      <div class="road-tags">
+        <span class="road-tag rt-later">Senior Engineer</span>
+        <span class="road-tag rt-later">Tech lead capability</span>
+        <span class="road-tag rt-later">Architecture decisions</span>
+        <span class="road-tag rt-later">Blog / talks / OSS</span>
+      </div>
+    </div>
+  </div>
+
+  <h2>💬 Words of Wisdom</h2>
+
+  <div class="quote-grid">
+    <div class="quote-card">
+      <div class="quote-text">"The best code is the code that solves the right problem. The second best is well-tested code that solves the wrong problem, because at least you can find out it's wrong."</div>
+      <div class="quote-author">— Kent Beck</div>
+    </div>
+    <div class="quote-card">
+      <div class="quote-text">"Any fool can write code that a computer can understand. Good programmers write code that humans can understand."</div>
+      <div class="quote-author">— Martin Fowler</div>
+    </div>
+    <div class="quote-card">
+      <div class="quote-text">"It's not about being 10x smarter. It's about building the right habits: read, question, verify, ship, learn."</div>
+      <div class="quote-author">— Engineering wisdom</div>
+    </div>
+    <div class="quote-card">
+      <div class="quote-text">"The engineer who asks 'why' before 'how' will always outperform the engineer who only asks 'how'. Product thinking is a superpower."</div>
+      <div class="quote-author">— Product Engineering principle</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:60px;padding:40px;background:#161b22;border:1px solid #21262d;border-radius:20px">
+    <div style="font-size:3rem;margin-bottom:16px">🚀</div>
+    <h1 style="font-size:1.8rem;color:#d4b833;margin-bottom:8px">Hành Trình Mới Bắt Đầu</h1>
+    <p style="color:#8b949e;font-size:.9rem;margin-bottom:24px">5 phases, 19 bài, hàng trăm exercises. Bây giờ là lúc áp dụng vào thực tế.</p>
+    <a href="../../index.html" style="display:inline-block;background:linear-gradient(135deg,#238636,#1f6feb);color:#fff;text-decoration:none;font-size:1rem;font-weight:700;padding:14px 32px;border-radius:12px;transition:transform .2s" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">↩ Quay về Teaching Hub</a>
+  </div>
+</div>
+
+<script>
+// Confetti animation
+const colors = ['#3fb950','#58a6ff','#bc8cff','#d4b833','#f0883e','#ff7b72'];
+const confetti = document.getElementById('confetti');
+for(let i=0;i<50;i++){
+  const el=document.createElement('div');
+  el.className='c-piece';
+  el.style.left=Math.random()*100+'%';
+  el.style.top=Math.random()*100+'%';
+  el.style.background=colors[Math.floor(Math.random()*colors.length)];
+  el.style.animationDuration=(3+Math.random()*4)+'s';
+  el.style.animationDelay=(Math.random()*5)+'s';
+  el.style.width=(6+Math.random()*6)+'px';
+  el.style.height=(6+Math.random()*6)+'px';
+  confetti.appendChild(el);
+}
+</script>
+</body>
+</html>

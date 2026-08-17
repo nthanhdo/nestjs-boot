@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>11c — PR & Code Review | Phase 3</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--accent:#58a6ff;--success:#3fb950;--warning:#d29922;--error:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.progress-bar{position:fixed;top:0;left:0;width:100%;height:3px;background:var(--border);z-index:100;}
+.progress-fill{height:100%;background:var(--accent);width:0;transition:width .1s;}
+nav{position:sticky;top:3px;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:90;}
+nav .brand{font-weight:700;color:var(--accent);font-size:.9rem;}
+nav .links a{color:var(--muted);text-decoration:none;margin-left:1.2rem;font-size:.85rem;transition:color .2s;}
+nav .links a:hover{color:var(--text);}
+.container{max-width:860px;margin:0 auto;padding:2rem 1.5rem;}
+h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;}
+.subtitle{color:var(--muted);margin-bottom:2.5rem;font-size:1.05rem;}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:1rem;color:var(--accent);}
+.section{margin-bottom:3rem;opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
+.section.visible{opacity:1;transform:none;}
+.label{display:inline-block;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;margin-bottom:.5rem;}
+/* PR flow steps */
+.flow-steps{counter-reset:step;display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem;}
+.flow-step{display:flex;gap:1rem;align-items:flex-start;padding:1rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;}
+.flow-step::before{counter-increment:step;content:counter(step);background:var(--accent);color:#000;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;flex-shrink:0;}
+.flow-step-body h4{font-size:.9rem;font-weight:700;margin-bottom:.3rem;}
+.flow-step-body p{font-size:.85rem;color:var(--muted);}
+/* checklist */
+.checklist{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin-bottom:1rem;}
+.checklist h4{font-size:.9rem;font-weight:700;margin-bottom:.8rem;color:var(--muted);}
+.check-item{display:flex;align-items:flex-start;gap:.6rem;margin-bottom:.5rem;font-size:.88rem;}
+.check-item input[type=checkbox]{margin-top:.25rem;accent-color:var(--accent);width:14px;height:14px;flex-shrink:0;}
+.check-item label{color:var(--text);cursor:pointer;line-height:1.5;}
+/* review comment examples */
+.review-example{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:1rem;}
+.review-file{background:#1f2937;padding:.5rem 1rem;font-family:monospace;font-size:.8rem;color:var(--muted);}
+.review-code{background:#0d1117;padding:.8rem 1rem;font-family:monospace;font-size:.82rem;border-bottom:1px solid var(--border);}
+.review-code .line{display:flex;gap.5rem;}
+.review-code .ln{color:var(--muted);padding-right:.6rem;user-select:none;}
+.review-comment{padding:1rem;font-size:.87rem;}
+.review-comment .avatar{display:inline-block;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;text-align:center;line-height:22px;margin-right:.5rem;}
+.review-comment .type{font-size:.75rem;font-weight:700;padding:.15rem .4rem;border-radius:4px;margin-left:.3rem;}
+.type-nitpick{background:#1a2840;color:var(--accent);}
+.type-blocking{background:#2a0808;color:var(--error);}
+.type-suggest{background:#1a3a1a;color:var(--success);}
+.review-comment p{color:var(--muted);font-size:.85rem;margin-top:.4rem;line-height:1.6;}
+.exercise{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.exercise h3{color:var(--accent);margin-bottom:.8rem;font-size:1rem;}
+.exercise ol{padding-left:1.2rem;color:var(--muted);font-size:.9rem;line-height:1.8;}
+.takeaway{background:linear-gradient(135deg,#1a2235,#161b22);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.takeaway h3{color:var(--accent);margin-bottom:1rem;}
+.takeaway ul{padding-left:1.2rem;line-height:2;}
+.nav-links{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-links a{color:var(--accent);text-decoration:none;font-size:.9rem;padding:.5rem 1rem;border:1px solid var(--border);border-radius:6px;transition:border-color .2s;}
+.nav-links a:hover{border-color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav>
+  <span class="brand">Phase 3 — Engineer Mindset</span>
+  <div class="links">
+    <a href="11b-branch-merge.html">← Branch</a>
+    <a href="11d-versioning.html">Versioning →</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="section" id="s0">
+    <div class="label">11c / 4</div>
+    <h1>PR & Code Review</h1>
+    <p class="subtitle">Pull Requests are not bureaucracy — they're the highest-leverage quality gate in your workflow.</p>
+  </div>
+
+  <div class="section" id="s1">
+    <h2>PR Flow — 6 Steps</h2>
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="flow-step-body">
+          <h4>Create feature branch + commits</h4>
+          <p>One branch per task. Small, focused commits with clear messages. Reference the issue: <code>git commit -m "feat(auth): add JWT refresh endpoint #123"</code></p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-body">
+          <h4>Push branch + open PR</h4>
+          <p>Write a clear PR description: What changed? Why? How to test? Screenshots for UI. Link the issue. Assign reviewers.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-body">
+          <h4>CI runs automatically</h4>
+          <p>Tests, lint, type-check, build. Never ask for review on a red CI. Fix it first — reviewer's time is expensive.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-body">
+          <h4>Reviewer provides feedback</h4>
+          <p>Reviewer looks at: correctness, security, performance, readability, tests. Comments categorized by severity.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-body">
+          <h4>Author addresses feedback</h4>
+          <p>Fix blocking issues. Reply to nitpicks. Mark conversations resolved. Push new commits — don't amend/force-push unless agreed.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-step-body">
+          <h4>Approved → Merge → Delete branch</h4>
+          <p>Squash or merge. Delete the feature branch. Close the linked issue. Celebrate the shipped feature.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="s2">
+    <h2>Review Checklist</h2>
+    <div class="checklist">
+      <h4>As Reviewer — check these before approving:</h4>
+      <div class="check-item"><input type="checkbox" id="c1"><label for="c1">Does it do what the PR description says?</label></div>
+      <div class="check-item"><input type="checkbox" id="c2"><label for="c2">Are there tests? Do they cover the happy path AND edge cases?</label></div>
+      <div class="check-item"><input type="checkbox" id="c3"><label for="c3">Any security concerns? (auth, input validation, secrets in code)</label></div>
+      <div class="check-item"><input type="checkbox" id="c4"><label for="c4">Any obvious performance issues? (N+1, missing index, large payload)</label></div>
+      <div class="check-item"><input type="checkbox" id="c5"><label for="c5">Is the code readable? Would a new teammate understand it in 6 months?</label></div>
+      <div class="check-item"><input type="checkbox" id="c6"><label for="c6">No hardcoded secrets, credentials, or environment-specific values?</label></div>
+      <div class="check-item"><input type="checkbox" id="c7"><label for="c7">Error handling present? What happens when the DB is down?</label></div>
+      <div class="check-item"><input type="checkbox" id="c8"><label for="c8">Is this the right abstraction? Or does it add unnecessary complexity?</label></div>
+    </div>
+  </div>
+
+  <div class="section" id="s3">
+    <h2>Review Comment Types</h2>
+    <div class="review-example">
+      <div class="review-file">src/auth/auth.service.ts</div>
+      <div class="review-code">
+        <div><span class="ln">41</span>const user = await this.userRepo.findOne(userId);</div>
+        <div><span class="ln">42</span>return user.email;</div>
+      </div>
+      <div class="review-comment">
+        <span class="avatar">R</span><strong>reviewer</strong>
+        <span class="type type-blocking">BLOCKING</span>
+        <p>If <code>findOne</code> returns null (user deleted/not found), line 42 will throw <code>TypeError: Cannot read property 'email' of null</code>. Add a null check: <code>if (!user) throw new NotFoundException();</code></p>
+      </div>
+    </div>
+    <div class="review-example">
+      <div class="review-file">src/orders/order.controller.ts</div>
+      <div class="review-code">
+        <div><span class="ln">18</span>async createOrder(@Body() body: any) {</div>
+      </div>
+      <div class="review-comment">
+        <span class="avatar">R</span><strong>reviewer</strong>
+        <span class="type type-blocking">BLOCKING</span>
+        <p>Never type body as <code>any</code> — defeats TypeScript's purpose. Create a <code>CreateOrderDto</code> with class-validator decorators and use <code>ValidationPipe</code>.</p>
+      </div>
+    </div>
+    <div class="review-example">
+      <div class="review-file">src/products/product.service.ts</div>
+      <div class="review-code">
+        <div><span class="ln">55</span>const name = product.productName;</div>
+      </div>
+      <div class="review-comment">
+        <span class="avatar">R</span><strong>reviewer</strong>
+        <span class="type type-nitpick">NITPICK</span>
+        <p>Minor: per our naming convention, the field is <code>name</code> not <code>productName</code> (redundant prefix). Your call — blocking is overkill here.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="s4">
+    <div class="exercise">
+      <h3>🔬 Exercise — Write Review Comments</h3>
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:.8rem;">Review this code snippet and write 2-3 comments with severity tags:</p>
+      <pre style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:1rem;font-size:.83rem;margin-bottom:.8rem;">@Post('/login')
+async login(@Body() body) {
+  const user = await this.db.query(
+    `SELECT * FROM users WHERE email='${body.email}'`
+  );
+  if (user && user.password === body.password) {
+    return { token: 'abc123', user };
+  }
+  return { error: 'Invalid credentials' };
+}</pre>
+      <ol>
+        <li>Identify the SQL injection vulnerability — write a BLOCKING comment</li>
+        <li>Identify the password comparison issue — write a BLOCKING comment</li>
+        <li>Identify the hardcoded token issue — write a BLOCKING comment</li>
+        <li>What's the correct implementation? Sketch it.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section" id="s5">
+    <div class="takeaway">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li>PRs are quality gates — never ask for review on red CI</li>
+        <li>BLOCKING comments must be fixed before merge. NITPICK = author's call.</li>
+        <li>Good review comments suggest a fix — not just flag the problem</li>
+        <li>Reviewers: be kind but honest. "This will crash when X" is helpful, not harsh.</li>
+        <li>Authors: feedback is about the code, not you. Don't take it personally.</li>
+      </ul>
+    </div>
+    <div class="nav-links">
+      <a href="11b-branch-merge.html">← 11b: Branch & Merge</a>
+      <a href="11d-versioning.html">11d: Versioning →</a>
+    </div>
+  </div>
+</div>
+<script>
+window.addEventListener('scroll',()=>{
+  document.getElementById('pf').style.width=(window.scrollY/(document.documentElement.scrollHeight-window.innerHeight))*100+'%';
+});
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.1});
+document.querySelectorAll('.section').forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

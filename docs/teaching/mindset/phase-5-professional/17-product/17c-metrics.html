@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>17c — Product Metrics & Funnel | NestJS Boot</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;font-size:16px}
+nav{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #21262d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.nav-left,.nav-right{display:flex;align-items:center;gap:12px}
+.nav-link{color:#8b949e;text-decoration:none;font-size:.85rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s}
+.nav-link:hover{color:#e6edf3;border-color:#bc8cff}
+.nav-title{color:#e6edf3;font-size:.9rem;font-weight:600}
+.phase-badge{background:#6e40c9;color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.container{max-width:900px;margin:0 auto;padding:40px 24px}
+h1{font-size:2rem;font-weight:700;margin-bottom:8px}
+.subtitle{color:#8b949e;font-size:1rem;margin-bottom:32px}
+h2{font-size:1.3rem;font-weight:600;margin:40px 0 16px;color:#bc8cff;padding-left:12px;border-left:3px solid #6e40c9}
+h3{font-size:1.05rem;font-weight:600;margin-bottom:10px;color:#e6edf3}
+.card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:24px;margin-bottom:16px}
+.section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
+.tip{background:#132030;border:1px solid #1f6feb;border-radius:8px;padding:14px 18px;color:#79c0ff;font-size:.9rem;margin-top:16px}
+.funnel{display:flex;flex-direction:column;align-items:center;margin:20px 0;gap:4px}
+.funnel-step{border-radius:6px;display:flex;align-items:center;justify-content:space-between;padding:12px 20px;font-size:.85rem;font-weight:500;transition:transform .2s}
+.funnel-step:hover{transform:scale(1.02)}
+.f-rate{font-size:.75rem;color:#8b949e;margin-left:8px}
+.funnel-arrow{color:#58a6ff;font-size:1rem;text-align:center}
+.roi-table{width:100%;border-collapse:collapse;margin:16px 0}
+.roi-table th{background:#21262d;color:#c9d1d9;padding:10px 14px;text-align:left;font-size:.83rem}
+.roi-table td{padding:10px 14px;border-bottom:1px solid #21262d;font-size:.83rem;vertical-align:top;color:#c9d1d9}
+.roi-table tr:hover td{background:#161b22}
+.priority-p0{color:#ff7b72;font-weight:700}
+.priority-p1{color:#f0883e;font-weight:700}
+.priority-p2{color:#d29922;font-weight:700}
+.priority-backlog{color:#8b949e;font-weight:700}
+.decision-tree{margin:16px 0}
+.dt-question{background:#0d1a2d;border:1px solid #1f6feb40;border-radius:10px;padding:14px 20px;text-align:center;color:#58a6ff;font-weight:600;margin-bottom:14px}
+.dt-branches{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.dt-branches{grid-template-columns:1fr}}
+.dt-yes{background:#0d2d1a;border:1px solid #3fb95040;border-radius:8px;padding:12px}
+.dt-no{background:#1a0d0d;border:1px solid #f8514940;border-radius:8px;padding:12px}
+.dt-label{font-weight:700;font-size:.88rem;margin-bottom:6px}
+.dt-items{font-size:.82rem;color:#8b949e;line-height:1.7}
+.dt-result{color:#8b949e;font-size:.8rem;margin-top:8px;font-style:italic}
+.exercises{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:24px;margin-top:32px}
+.exercises-title{font-size:1.1rem;font-weight:700;margin-bottom:20px;color:#e6edf3}
+.ex-card{border-radius:10px;padding:18px;margin-bottom:12px}
+.ex-green{background:#0d1a0d;border:1px solid #3fb95040}
+.ex-yellow{background:#1a1200;border:1px solid #d2992240}
+.ex-red{background:#1a0d0d;border:1px solid #f8514940}
+.ex-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ex-diff{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.diff-green{background:#3fb95020;color:#3fb950}
+.diff-yellow{background:#d2992220;color:#d29922}
+.diff-red{background:#f8514920;color:#ff7b72}
+.ex-num{font-size:.8rem;color:#8b949e}
+.ex-title{font-weight:600;color:#e6edf3;margin-bottom:6px}
+.ex-desc{color:#8b949e;font-size:.88rem}
+.ex-solution{margin-top:12px}
+.ex-sol-toggle{background:#1c2128;border:1px solid #30363d;color:#8b949e;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem}
+.ex-sol-body{display:none;margin-top:10px;background:#1c2128;border-radius:8px;padding:14px;color:#c9d1d9;font-size:.85rem;line-height:1.6}
+.ex-sol-body.open{display:block}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-left">
+    <span class="phase-badge">Phase 5</span>
+    <span class="nav-title">17c — Metrics &amp; Funnel</span>
+  </div>
+  <div class="nav-right">
+    <a class="nav-link" href="17b-mvp.html">← 17b MVP</a>
+    <a class="nav-link" href="../18-documentation/18a-readme-api.html" style="color:#bc8cff;border-color:#6e40c9">18a Docs →</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>📊 Product Metrics &amp; Funnel</h1>
+  <p class="subtitle">"If you can't measure it, you can't improve it." Engineer cần hiểu metrics để biết feature mình build có tác động thực sự hay không.</p>
+
+  <h2>🔽 Conversion Funnel</h2>
+  <p style="color:#c9d1d9;font-size:.9rem;margin-bottom:16px">Funnel = hành trình user từ lạ → paying customer. Mỗi bước đều có drop-off. Engineer cần ensure tracking events đúng ở mỗi step.</p>
+
+  <div class="funnel">
+    <div class="funnel-step" style="width:85%;background:#0d1a2d;border:1px solid #1f4a9e">
+      <span>👁️ Impressions / Reach</span>
+      <span style="color:#58a6ff;font-weight:700">10,000 <span class="f-rate">visitors</span></span>
+    </div>
+    <div class="funnel-arrow">↓ 30% sign up</div>
+    <div class="funnel-step" style="width:70%;background:#0d1a2d;border:1px solid #1f4a9e">
+      <span>📝 Sign-up</span>
+      <span style="color:#58a6ff;font-weight:700">3,000 <span class="f-rate">registered</span></span>
+    </div>
+    <div class="funnel-arrow">↓ 60% activate</div>
+    <div class="funnel-step" style="width:55%;background:#0d2d1a;border:1px solid #238636">
+      <span>✅ Activation (dùng core feature)</span>
+      <span style="color:#3fb950;font-weight:700">1,800 <span class="f-rate">activated</span></span>
+    </div>
+    <div class="funnel-arrow">↓ 40% return D7</div>
+    <div class="funnel-step" style="width:40%;background:#0d2d1a;border:1px solid #238636">
+      <span>🔁 Retention (D7)</span>
+      <span style="color:#3fb950;font-weight:700">720 <span class="f-rate">returned</span></span>
+    </div>
+    <div class="funnel-arrow">↓ 5% convert</div>
+    <div class="funnel-step" style="width:25%;background:#2d1a0d;border:1px solid #d29922">
+      <span>💰 Paid Conversion</span>
+      <span style="color:#d29922;font-weight:700">36 <span class="f-rate">paid</span></span>
+    </div>
+  </div>
+
+  <div class="tip"><strong>Engineer's role:</strong> Đảm bảo tracking events được fire đúng ở mỗi step. Sau deploy feature mới → check funnel numbers. Nếu không di chuyển như expect → bug hoặc wrong feature.</div>
+
+  <hr class="section-divider">
+  <h2>📈 Key Metrics — Đo Cái Gì?</h2>
+
+  <div class="card">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:.85rem">
+      <div>
+        <h3 style="color:#58a6ff;margin-bottom:10px">Growth Metrics</h3>
+        <ul style="color:#c9d1d9;padding-left:16px">
+          <li style="margin:5px 0"><strong>DAU/WAU/MAU</strong> — active users mỗi ngày/tuần/tháng</li>
+          <li style="margin:5px 0"><strong>Sign-up rate</strong> — % visitors đăng ký</li>
+          <li style="margin:5px 0"><strong>Activation rate</strong> — % users dùng core feature</li>
+          <li style="margin:5px 0"><strong>Viral coefficient</strong> — mỗi user mang bao nhiêu user mới</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="color:#3fb950;margin-bottom:10px">Health Metrics</h3>
+        <ul style="color:#c9d1d9;padding-left:16px">
+          <li style="margin:5px 0"><strong>Retention D1/D7/D30</strong> — % quay lại sau 1/7/30 ngày</li>
+          <li style="margin:5px 0"><strong>Churn rate</strong> — % users rời đi mỗi tháng</li>
+          <li style="margin:5px 0"><strong>NPS</strong> — user satisfaction score</li>
+          <li style="margin:5px 0"><strong>Error rate</strong> — % requests fail</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="color:#f0883e;margin-bottom:10px">Revenue Metrics</h3>
+        <ul style="color:#c9d1d9;padding-left:16px">
+          <li style="margin:5px 0"><strong>MRR/ARR</strong> — Monthly/Annual Recurring Revenue</li>
+          <li style="margin:5px 0"><strong>ARPU</strong> — Average Revenue Per User</li>
+          <li style="margin:5px 0"><strong>Conversion rate</strong> — free → paid</li>
+          <li style="margin:5px 0"><strong>LTV</strong> — Lifetime Value of customer</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="color:#bc8cff;margin-bottom:10px">Technical Metrics</h3>
+        <ul style="color:#c9d1d9;padding-left:16px">
+          <li style="margin:5px 0"><strong>P95 latency</strong> — 95th percentile response time</li>
+          <li style="margin:5px 0"><strong>Uptime %</strong> — 99.9% = 8.7h downtime/year</li>
+          <li style="margin:5px 0"><strong>Error rate</strong> — 5xx responses / total</li>
+          <li style="margin:5px 0"><strong>Deploy frequency</strong> — cadence of shipping</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>💰 Cost vs Value — ROI Thinking</h2>
+
+  <table class="roi-table">
+    <thead>
+      <tr><th>Feature</th><th>Effort</th><th>User Value</th><th>Business Value</th><th>Priority</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Fix checkout bug</td>
+        <td>S — 2h</td>
+        <td style="color:#3fb950">High — blocking purchase</td>
+        <td style="color:#3fb950">High — direct revenue</td>
+        <td><span class="priority-p0">P0 — Now</span></td>
+      </tr>
+      <tr>
+        <td>Search autocomplete</td>
+        <td>M — 2d</td>
+        <td style="color:#3fb950">High — discovery UX</td>
+        <td style="color:#f0883e">Medium</td>
+        <td><span class="priority-p1">P1 — Next sprint</span></td>
+      </tr>
+      <tr>
+        <td>AI recommendations</td>
+        <td>XL — 3w</td>
+        <td style="color:#f0883e">Potential high</td>
+        <td style="color:#f0883e">Uncertain</td>
+        <td><span class="priority-p2">P2 — Research first</span></td>
+      </tr>
+      <tr>
+        <td>Custom avatar shapes</td>
+        <td>M — 2d</td>
+        <td style="color:#ff7b72">Low — cosmetic</td>
+        <td style="color:#ff7b72">Very low</td>
+        <td><span class="priority-backlog">Backlog</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr class="section-divider">
+  <h2>🌳 Decision Tree — Should We Build This?</h2>
+
+  <div class="decision-tree">
+    <div class="dt-question">❓ Feature: "Thêm dark mode cho app"</div>
+    <div class="dt-branches">
+      <div class="dt-yes">
+        <div class="dt-label" style="color:#3fb950">✓ Build nếu:</div>
+        <div class="dt-items">• &gt;30% users đã request<br>• Accessibility requirement<br>• Low effort (S/M, CSS vars ready)<br>• Competitors đã có</div>
+        <div class="dt-result">→ Add to next sprint backlog</div>
+      </div>
+      <div class="dt-no">
+        <div class="dt-label" style="color:#ff7b72">✗ Skip nếu:</div>
+        <div class="dt-items">• Chỉ 1-2 người mention<br>• Core problems chưa solved<br>• High effort (cần CSS refactor)<br>• No data backing demand</div>
+        <div class="dt-result">→ Backlog / decline with reason</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXERCISES -->
+  <hr class="section-divider">
+  <div class="exercises">
+    <div class="exercises-title">🎯 Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 1</span></div>
+      <div class="ex-title">Define 5 KPIs cho e-commerce app — tên, cách đo, target</div>
+      <div class="ex-desc">Cho một e-commerce app (catalog + cart + checkout). Define 5 KPIs quan trọng nhất: tên metric, cách đo (công thức), target value, và tại sao metric đó quan trọng với business.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">1. <strong>Conversion Rate</strong> = Orders/Sessions × 100%. Target: ≥2%. Vì: revenue metric cốt lõi<br>2. <strong>Cart Abandonment Rate</strong> = (Carts - Orders)/Carts × 100%. Target: &lt;70%. Vì: UX friction indicator<br>3. <strong>Average Order Value</strong> = Total Revenue/Total Orders. Target: grow 10%/quarter. Vì: revenue efficiency<br>4. <strong>Page Load Time P95</strong>. Target: &lt;2 seconds. Vì: every 100ms slower = -1% conversion<br>5. <strong>Search Zero Results Rate</strong> = Searches returning 0/Total searches. Target: &lt;5%. Vì: catalog gap signal<br><br>Bonus: track DAILY, review weekly. Alert if any metric deviates >10% from baseline</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 2</span></div>
+      <div class="ex-title">ROI analysis: 3 feature requests — priority rank với lý do</div>
+      <div class="ex-desc">Rank theo priority và justify: (A) Fix search showing wrong results (bug, S effort, high user complaint), (B) Add dark mode (M effort, 3 users requested), (C) Add AI product descriptions (XL effort, business thinks it differentiates). Context: conversion rate is dropping this week.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Priority:</strong><br>1. <strong>P0: Fix search bug</strong> — Conversion dropping + search showing wrong results = direct causal link. S effort + high impact = ship now<br>2. <strong>P2: AI descriptions</strong> — XL effort but could differentiate if done well. Needs research first: "What specific user problem does it solve?" and POC<br>3. <strong>Backlog: Dark mode</strong> — 3 users ≠ demand signal. M effort for unclear ROI when conversion is the priority<br><br>Key insight: when core metric is hurting → fix core problems first. Nice-to-haves can wait<br><br>Communicate: "Dark mode is noted. When search is fixed and conversion stabilizes, we'll revisit with proper demand signal (user survey)."</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header"><span class="ex-diff diff-red">🔴 Khó</span><span class="ex-num">Bài 3</span></div>
+      <div class="ex-title">Build a metrics dashboard — define tracking events cho authentication flow</div>
+      <div class="ex-desc">Design tất cả tracking events cần thiết cho auth flow (register → verify email → first login → complete profile). Mỗi event: tên, khi nào fire, properties cần capture, metric nó feeds vào. Sau đó: identify top 3 metrics cần monitor weekly.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Events:</strong><br>1. <code>signup_started</code> — when form first touched. Props: source (organic/referral), device<br>2. <code>signup_completed</code> — on success. Props: method (email/oauth), referral_code<br>3. <code>email_verification_sent</code> — props: timestamp<br>4. <code>email_verified</code> — props: time_to_verify (minutes between sent and verified)<br>5. <code>first_login</code> — props: time_since_signup, method<br>6. <code>profile_completed</code> — props: fields filled (%)<br>7. <code>signup_abandoned</code> — if user starts but leaves. Props: last_field_interacted<br><br><strong>Top 3 weekly metrics:</strong><br>1. Email verification rate (signup_completed → email_verified). Target: ≥70%<br>2. Time to verify (median). Target: &lt;5 minutes<br>3. Signup abandonment rate by field (tells you which field causes friction)<br><br>These three tell you where the funnel is leaking in acquisition</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <hr class="section-divider">
+  <div class="card">
+    <h3>📌 Tóm Tắt — Metrics</h3>
+    <ul style="color:#c9d1d9;padding-left:20px;margin-top:8px">
+      <li style="margin:6px 0"><strong>Funnel</strong> = Impressions → Sign-up → Activation → Retention → Paid. Engineer đảm bảo tracking đúng</li>
+      <li style="margin:6px 0"><strong>4 metric categories</strong> = Growth + Health + Revenue + Technical</li>
+      <li style="margin:6px 0"><strong>ROI thinking</strong> = mọi feature = (User Value × Business Value) / Effort. Priority theo đây</li>
+      <li style="margin:6px 0"><strong>Decision tree</strong> = data-driven build/skip/defer. Không theo feeling hoặc 1 user request</li>
+      <li style="margin:6px 0"><strong>Define metrics BEFORE building</strong> — nếu không biết thành công là gì, không biết feature có work không</li>
+    </ul>
+  </div>
+
+  <div style="text-align:center;margin-top:48px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">Bài 17c / Phase 5 — Professional</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="17b-mvp.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← 17b: MVP</a>
+      <a href="../18-documentation/18a-readme-api.html" style="color:#bc8cff;text-decoration:none;font-size:.85rem">Tiếp theo: 18a — Documentation →</a>
+    </div>
+  </div>
+</div>
+<script>
+function toggleSol(btn){const b=btn.nextElementSibling;const o=b.classList.toggle('open');btn.textContent=o?'Ẩn gợi ý':'Xem gợi ý';}
+</script>
+</body>
+</html>

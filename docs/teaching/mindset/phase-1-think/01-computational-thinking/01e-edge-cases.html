@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01e — Edge Cases | Computational Thinking</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+  --text: #eef1f8; --muted: #8899bb;
+  --accent: #a78bfa; --yellow: #ffd43b; --green: #2ecc71; --red: #e74c3c;
+  --blue: #5b8def; --orange: #ffb347; --pink: #ff5e7a; --teal: #00cec9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 20% 20%, rgba(167,139,250,0.06) 0%, transparent 50%); pointer-events:none; z-index:0; }
+.top-nav { background: var(--surface2); border-bottom: 1px solid var(--border); padding: 10px 24px; position: sticky; top: 0; z-index: 200; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.nav-home { color: var(--accent); text-decoration: none; font-weight: 700; font-size: .82rem; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(167,139,250,0.3); }
+.nav-home:hover { background: rgba(167,139,250,0.1); }
+.nav-topic { color: var(--muted); font-size: .8rem; flex: 1; padding: 0 8px; }
+.nav-sub-prev, .nav-sub-next { color: var(--muted); text-decoration: none; font-size: .8rem; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); transition: all .2s; white-space: nowrap; }
+.nav-sub-prev:hover, .nav-sub-next:hover { color: var(--text); border-color: var(--accent); }
+.hero { background: var(--surface); border-bottom: 1px solid var(--border); padding: 28px 24px 24px; }
+.hero-inner { max-width: 860px; margin: 0 auto; }
+.hero-badge { display: inline-flex; gap: 6px; background: linear-gradient(135deg,rgba(124,92,231,0.2),rgba(167,139,250,0.1)); border: 1px solid rgba(167,139,250,0.3); border-radius: 20px; padding: 4px 12px; font-size: .72rem; font-weight: 700; color: var(--accent); letter-spacing: .5px; margin-bottom: 12px; }
+.hero h1 { font-size: 2rem; font-weight: 900; background: linear-gradient(135deg,#fff,var(--red)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom: 10px; }
+.hero-desc { color: var(--muted); font-size: 1rem; max-width: 600px; }
+main { max-width: 860px; margin: 0 auto; padding: 36px 24px 100px; position: relative; z-index: 1; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+.card-title { font-size: 1rem; font-weight: 700; color: var(--accent); margin-bottom: 14px; }
+.highlight { background: linear-gradient(135deg,rgba(167,139,250,0.1),rgba(91,141,239,0.08)); border: 1px solid rgba(167,139,250,0.3); border-radius: 12px; padding: 18px 22px; margin: 20px 0; }
+.highlight-label { font-size: .7rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.highlight-text { color: var(--text); font-size: .95rem; line-height: 1.7; }
+.takeaway { background: linear-gradient(135deg,rgba(46,204,113,0.1),rgba(46,204,113,0.04)); border: 1px solid rgba(46,204,113,0.3); border-radius: 14px; padding: 24px; margin-top: 28px; }
+.takeaway-title { color: var(--green); font-weight: 700; font-size: .9rem; margin-bottom: 14px; }
+.takeaway-list { list-style: none; }
+.takeaway-list li { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; font-size: .9rem; color: var(--text); line-height: 1.6; }
+.takeaway-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+/* EDGE LIST */
+.edge-list { list-style: none; margin: 14px 0; }
+.edge-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--surface2); border-radius: 10px; margin-bottom: 8px; border-left: 3px solid var(--red); }
+.edge-bullet { color: var(--red); font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+.edge-text { font-size: .9rem; color: var(--text); line-height: 1.5; }
+.edge-tag { display: inline-block; background: rgba(231,76,60,0.15); color: var(--red); padding: 1px 7px; border-radius: 4px; font-size: .7rem; font-weight: 700; margin-left: 6px; }
+
+/* CHECKLIST */
+.checklist-box { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: 10px; margin: 16px 0; }
+.check-chip { background: var(--surface2); border: 2px solid var(--border); border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all .2s; }
+.check-chip:hover { border-color: var(--accent); }
+.check-chip.checked { border-color: var(--green); background: rgba(46,204,113,0.08); }
+.check-chip-emoji { font-size: 1.4rem; }
+.check-chip-name { font-size: .78rem; font-weight: 700; color: var(--text); margin: 4px 0 2px; }
+.check-chip-desc { font-size: .7rem; color: var(--muted); }
+
+.kw { color: #ff9f7f; } .fn { color: #7ec8e3; } .str { color: #a8d8a8; } .num { color: #ffd43b; } .cmt { color: #5a7a6a; }
+.ex-code { background: #0a0f1e; border-radius: 8px; padding: 14px; margin: 10px 0; font-family: monospace; font-size: .8rem; line-height: 1.85; overflow-x: auto; white-space: pre; }
+.ex-section { margin-top: 40px; }
+.ex-section h2 { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 16px; }
+.exercise { border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+.ex-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; cursor: pointer; background: var(--surface); transition: background .2s; }
+.ex-header:hover { background: var(--surface2); }
+.ex-tag { background: rgba(167,139,250,0.15); color: var(--accent); border-radius: 6px; padding: 2px 8px; font-size: .72rem; font-weight: 700; flex-shrink: 0; }
+.ex-title-text { flex: 1; font-weight: 600; font-size: .9rem; }
+.ex-diff { padding: 2px 10px; border-radius: 20px; font-size: .7rem; font-weight: 700; }
+.ex-diff.easy { background: rgba(46,204,113,0.15); color: var(--green); }
+.ex-diff.medium { background: rgba(255,183,71,0.15); color: var(--orange); }
+.ex-toggle { color: var(--muted); font-size: .75rem; transition: transform .3s; }
+.exercise.open .ex-toggle { transform: rotate(90deg); }
+.ex-body { display: none; padding: 18px; background: var(--surface); border-top: 1px solid var(--border); }
+.exercise.open .ex-body { display: block; animation: fadeUp .3s; }
+.ex-prompt { background: var(--surface2); border-left: 3px solid var(--accent); border-radius: 8px; padding: 14px; margin-bottom: 12px; font-size: .9rem; color: var(--text); line-height: 1.7; }
+.ex-hint { background: rgba(255,183,71,0.06); border: 1px solid rgba(255,183,71,0.2); border-radius: 8px; padding: 10px 14px; font-size: .83rem; color: var(--muted); margin-bottom: 12px; }
+.ex-reveal { background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.3); color: var(--accent); padding: 7px 16px; border-radius: 8px; cursor: pointer; font-size: .83rem; font-weight: 600; }
+.ex-answer { display: none; margin-top: 12px; background: var(--surface2); border-left: 3px solid var(--green); border-radius: 8px; padding: 14px; font-size: .88rem; color: var(--text); line-height: 1.7; }
+.next-link { display: flex; align-items: center; gap: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; text-decoration: none; margin-top: 32px; transition: all .3s; }
+.next-link:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.next-icon { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg,#7c5ce7,#a78bfa); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+.next-text .label { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.next-text .title { font-weight: 700; color: var(--text); }
+.next-arrow { margin-left: auto; color: var(--muted); font-size: 1.2rem; }
+.prev-link { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--muted); font-size: .85rem; margin-bottom: 16px; }
+.prev-link:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="../index.html" class="nav-home">🏠 Hub</a>
+  <span class="nav-topic">Bài 01 — Tư Duy Tính Toán · 01e/07</span>
+  <a href="01d-algorithmic-thinking.html" class="nav-sub-prev">← 01d Algorithmic</a>
+  <a href="01f-tradeoff.html" class="nav-sub-next">01f Trade-offs →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">KHÁI NIỆM 05 · 7 PHẦN</div>
+    <h1>⚡ Edge Cases</h1>
+    <p class="hero-desc">Code chạy đúng với dữ liệu bình thường chưa đủ. Phải test với những trường hợp bất thường — đây là nơi bug thực sự ẩn náu.</p>
+  </div>
+</div>
+
+<main>
+
+<a href="01d-algorithmic-thinking.html" class="prev-link">← Quay lại 01d: Algorithmic Thinking</a>
+
+<!-- MOTIVATION -->
+<div class="card">
+  <div class="card-title">⚠️ Tại sao edge cases quan trọng?</div>
+  <div style="color:var(--text);font-size:.95rem;line-height:1.75;margin-bottom:16px;">
+    <strong>80% code</strong> xử lý happy path — dữ liệu bình thường, user hành động như mong đợi.<br>
+    <strong>80% bugs</strong> đến từ edge cases — dữ liệu bất thường mà developer không nghĩ đến.
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:14px;">
+      <div style="color:var(--red);font-weight:700;font-size:.82rem;margin-bottom:8px;">❌ Chỉ test happy path</div>
+      <div style="font-size:.82rem;color:var(--muted);line-height:1.6">average([80, 90, 70]) → 80 ✓<br>average([]) → NaN (crash!)<br>average(null) → TypeError (crash!)<br>Shipped to production → user complaint</div>
+    </div>
+    <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.25);border-radius:10px;padding:14px;">
+      <div style="color:var(--green);font-weight:700;font-size:.82rem;margin-bottom:8px;">✅ Test edge cases</div>
+      <div style="font-size:.82rem;color:var(--muted);line-height:1.6">average([]) → null/0 (defined)<br>average(null) → throw InvalidInput<br>average([1e308, 1e308]) → Infinity check<br>All cases handled before ship</div>
+    </div>
+  </div>
+</div>
+
+<!-- EDGE CASES DEMO -->
+<div class="card">
+  <div class="card-title">📊 Bài toán: Tính điểm trung bình</div>
+  <div style="color:var(--muted);font-size:.9rem;margin-bottom:14px;">Với hàm <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent)">average(scores: number[])</code>, những gì có thể xảy ra?</div>
+  <ul class="edge-list">
+    <li class="edge-item"><span class="edge-bullet">⚡</span><div class="edge-text">Mảng rỗng <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.82rem">[]</code> → chia cho 0 → <strong>NaN hoặc Exception</strong><span class="edge-tag">CRASH</span></div></li>
+    <li class="edge-item"><span class="edge-bullet">⚡</span><div class="edge-text">Có <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.82rem">null</code> hoặc <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.82rem">undefined</code> trong mảng → sum = NaN<span class="edge-tag">WRONG</span></div></li>
+    <li class="edge-item"><span class="edge-bullet">⚡</span><div class="edge-text">Số rất lớn → floating point overflow: <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.82rem">1e308 + 1e308 = Infinity</code><span class="edge-tag">OVERFLOW</span></div></li>
+    <li class="edge-item"><span class="edge-bullet">⚡</span><div class="edge-text">Chỉ 1 phần tử: <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.82rem">[95]</code> → average phải là 95<span class="edge-tag">CHECK</span></div></li>
+    <li class="edge-item"><span class="edge-bullet">⚡</span><div class="edge-text">String thay vì number: <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.82rem">["a", "b"]</code> → sum = "ab0" (type coercion!)<span class="edge-tag">TYPE ERROR</span></div></li>
+    <li class="edge-item"><span class="edge-bullet">⚡</span><div class="edge-text">Số âm: <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.82rem">[-100, 200]</code> → kết quả âm, có hợp lệ không?<span class="edge-tag">BOUNDARY</span></div></li>
+  </ul>
+</div>
+
+<!-- CHECKLIST INTERACTIVE -->
+<div class="card">
+  <div class="card-title">✅ Checklist Edge Cases — EMPTY · ONE · MANY · NULL · BOUNDARY · OVERFLOW</div>
+  <div style="color:var(--muted);font-size:.88rem;margin-bottom:14px;">Click vào từng loại để đánh dấu đã xem xét:</div>
+  <div class="checklist-box">
+    <div class="check-chip" onclick="this.classList.toggle('checked')">
+      <div class="check-chip-emoji">📭</div>
+      <div class="check-chip-name">EMPTY</div>
+      <div class="check-chip-desc">[], "", null, 0</div>
+    </div>
+    <div class="check-chip" onclick="this.classList.toggle('checked')">
+      <div class="check-chip-emoji">1️⃣</div>
+      <div class="check-chip-name">ONE</div>
+      <div class="check-chip-desc">Single element</div>
+    </div>
+    <div class="check-chip" onclick="this.classList.toggle('checked')">
+      <div class="check-chip-emoji">🔢</div>
+      <div class="check-chip-name">MANY</div>
+      <div class="check-chip-desc">Large dataset</div>
+    </div>
+    <div class="check-chip" onclick="this.classList.toggle('checked')">
+      <div class="check-chip-emoji">🚫</div>
+      <div class="check-chip-name">NULL/UNDEF</div>
+      <div class="check-chip-desc">Missing values</div>
+    </div>
+    <div class="check-chip" onclick="this.classList.toggle('checked')">
+      <div class="check-chip-emoji">📏</div>
+      <div class="check-chip-name">BOUNDARY</div>
+      <div class="check-chip-desc">Min, max values</div>
+    </div>
+    <div class="check-chip" onclick="this.classList.toggle('checked')">
+      <div class="check-chip-emoji">💥</div>
+      <div class="check-chip-name">OVERFLOW</div>
+      <div class="check-chip-desc">Too large/small</div>
+    </div>
+    <div class="check-chip" onclick="this.classList.toggle('checked')">
+      <div class="check-chip-emoji">🔤</div>
+      <div class="check-chip-name">TYPE ERROR</div>
+      <div class="check-chip-desc">Wrong type input</div>
+    </div>
+    <div class="check-chip" onclick="this.classList.toggle('checked')">
+      <div class="check-chip-emoji">🔐</div>
+      <div class="check-chip-name">SECURITY</div>
+      <div class="check-chip-desc">SQL injection, XSS</div>
+    </div>
+  </div>
+</div>
+
+<!-- CODE EXAMPLE -->
+<div class="card">
+  <div class="card-title">💻 Code xử lý edge cases cho average()</div>
+  <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.25);border-radius:10px;padding:16px;font-family:monospace;font-size:.82rem;line-height:1.85;">
+    <span class="kw">function</span> <span class="fn">average</span>(scores: <span class="num">number</span>[]): <span class="num">number</span> | <span class="kw">null</span> {<br>
+    &nbsp;&nbsp;<span class="cmt">// EMPTY: mảng rỗng</span><br>
+    &nbsp;&nbsp;<span class="kw">if</span> (!Array.<span class="fn">isArray</span>(scores) || scores.length === <span class="num">0</span>) <span class="kw">return null</span><br><br>
+    &nbsp;&nbsp;<span class="cmt">// TYPE: lọc null/undefined/NaN</span><br>
+    &nbsp;&nbsp;<span class="kw">const</span> valid = scores.<span class="fn">filter</span>(s => <span class="kw">typeof</span> s === <span class="str">'number'</span> && !<span class="fn">isNaN</span>(s))<br>
+    &nbsp;&nbsp;<span class="kw">if</span> (valid.length === <span class="num">0</span>) <span class="kw">return null</span><br><br>
+    &nbsp;&nbsp;<span class="cmt">// OVERFLOW: dùng reduce với trung gian</span><br>
+    &nbsp;&nbsp;<span class="kw">const</span> sum = valid.<span class="fn">reduce</span>((a, b) => a + b, <span class="num">0</span>)<br>
+    &nbsp;&nbsp;<span class="kw">if</span> (!<span class="fn">isFinite</span>(sum)) <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="str">'Overflow detected'</span>)<br><br>
+    &nbsp;&nbsp;<span class="kw">return</span> sum / valid.length<br>
+    }
+  </div>
+</div>
+
+<!-- TAKEAWAY -->
+<div class="takeaway">
+  <div class="takeaway-title">🎯 Key Takeaway</div>
+  <ul class="takeaway-list">
+    <li>Bug trong production thường đến từ edge cases bị bỏ qua — không phải logic chính</li>
+    <li>Dùng checklist EMPTY · ONE · NULL · BOUNDARY · OVERFLOW · TYPE trước khi commit</li>
+    <li>Viết unit test cho edge cases — không chỉ happy path</li>
+  </ul>
+</div>
+
+<!-- EXERCISES -->
+<div class="ex-section">
+  <h2>🏋️ Mini Exercises</h2>
+
+  <div class="exercise">
+    <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="ex-tag">Ex 1</span>
+      <span class="ex-title-text">Liệt kê 10 edge cases cho form đăng ký tài khoản</span>
+      <span class="ex-diff medium">🟡 Trung bình</span>
+      <span class="ex-toggle">▶</span>
+    </div>
+    <div class="ex-body">
+      <div class="ex-prompt">Form đăng ký có: email, password, username, date of birth. Hãy liệt kê ít nhất 10 edge cases, với mỗi case: loại lỗi và cách xử lý.</div>
+      <div class="ex-hint">💡 Dùng checklist: EMPTY · BOUNDARY · NULL · FORMAT · DUPLICATE · SECURITY · LOGICAL · OVERFLOW</div>
+      <button class="ex-reveal" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">Xem đáp án</button>
+      <div class="ex-answer">
+        <strong style="color:var(--green)">10 edge cases cần xử lý:</strong>
+        <ol style="margin-top:10px;padding-left:20px;line-height:2.2">
+          <li><strong>Email không có @</strong> — FORMAT → "Email không hợp lệ"</li>
+          <li><strong>Email đã tồn tại</strong> — DUPLICATE → "Email này đã được đăng ký"</li>
+          <li><strong>Password &lt; 8 ký tự</strong> — BOUNDARY → "Tối thiểu 8 ký tự"</li>
+          <li><strong>Password toàn số hoặc toàn chữ</strong> — WEAK → "Cần mix chữ + số + ký tự"</li>
+          <li><strong>Username có khoảng trắng</strong> — FORMAT → trim hoặc báo lỗi</li>
+          <li><strong>Username SQL injection</strong> — SECURITY → sanitize input</li>
+          <li><strong>Date of birth tương lai</strong> — LOGICAL → "Ngày sinh không hợp lệ"</li>
+          <li><strong>Tuổi dưới 13</strong> — BUSINESS RULE → "Cần đồng ý của phụ huynh"</li>
+          <li><strong>Email &gt; 254 ký tự</strong> — OVERFLOW → "Email quá dài"</li>
+          <li><strong>Tất cả fields trống</strong> — EMPTY → "Vui lòng điền đầy đủ"</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<a href="01f-tradeoff.html" class="next-link">
+  <div class="next-icon">⚖️</div>
+  <div class="next-text">
+    <div class="label">Tiếp theo · 01f / 07</div>
+    <div class="title">Trade-off Thinking</div>
+  </div>
+  <span class="next-arrow">→</span>
+</a>
+
+</main>
+</body>
+</html>

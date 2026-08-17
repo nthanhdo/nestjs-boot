@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06c — Monolith vs Microservices | Phase 2</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #1a2235; --border: #2a3a55;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #60a5fa; --accent2: #818cf8;
+  --success: #34d399; --warning: #fbbf24; --error: #ef4444;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+.top-nav { position: sticky; top: 0; z-index: 100; background: rgba(14,21,37,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .6rem 1.5rem; font-size: .85rem; }
+.top-nav .breadcrumb { color: var(--muted); } .top-nav .breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a { padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-links a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .75rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+
+/* COMPARISON TABLE */
+.compare-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.compare-table th { padding: .75rem; background: rgba(255,255,255,.04); text-align: left; border-bottom: 2px solid var(--border); }
+.compare-table td { padding: .65rem .75rem; border-bottom: 1px solid rgba(42,58,85,.5); vertical-align: top; }
+.compare-table tr:last-child td { border: none; }
+.compare-table .aspect { color: var(--text); font-weight: 600; width: 140px; }
+.mono-col { color: #60a5fa; }
+.micro-col { color: #818cf8; }
+
+/* VISUAL DIAGRAMS */
+.diagram-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.monolith-box { background: rgba(96,165,250,.08); border: 2px solid rgba(96,165,250,.4); border-radius: 10px; padding: 1rem; }
+.micro-box { background: rgba(129,140,248,.08); border: 2px dashed rgba(129,140,248,.4); border-radius: 10px; padding: 1rem; }
+.diagram-title { font-weight: 700; font-size: .85rem; margin-bottom: .75rem; }
+.mono-module { background: rgba(96,165,250,.15); border-radius: 4px; padding: .3rem .5rem; font-size: .72rem; color: #60a5fa; margin: .2rem 0; }
+.micro-service { background: rgba(129,140,248,.15); border: 1px solid rgba(129,140,248,.4); border-radius: 6px; padding: .4rem .5rem; font-size: .72rem; color: #818cf8; margin: .2rem 0; }
+.micro-arrow { text-align: center; color: var(--muted); font-size: .7rem; }
+
+/* DECISION FLOWCHART */
+.flow-node {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: .6rem 1rem; font-size: .8rem; text-align: center; margin: .25rem 0;
+  cursor: pointer; transition: all .2s;
+}
+.flow-node:hover { border-color: var(--accent); color: var(--accent); }
+.flow-node.decision { background: rgba(96,165,250,.1); border-color: rgba(96,165,250,.4); color: #60a5fa; }
+.flow-node.result-mono { background: rgba(52,211,153,.08); border-color: rgba(52,211,153,.4); color: #34d399; }
+.flow-node.result-micro { background: rgba(129,140,248,.08); border-color: rgba(129,140,248,.4); color: #818cf8; }
+.flow-center { display: flex; flex-direction: column; align-items: center; }
+.flow-branch { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: .5rem; }
+.flow-arrow { color: var(--muted); font-size: 1rem; margin: .1rem 0; }
+
+/* STRANGLER FIG */
+.strangler-steps { display: flex; flex-direction: column; gap: .75rem; }
+.strangler-step { display: flex; gap: 1rem; align-items: flex-start; }
+.s-step-num { background: var(--accent2); color: #000; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .8rem; flex-shrink: 0; }
+.s-step-content { flex: 1; }
+.s-step-title { font-weight: 600; font-size: .9rem; margin-bottom: .2rem; }
+.s-step-desc { font-size: .82rem; color: var(--muted); }
+
+.exercise-box { background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.3); border-radius: var(--radius); padding: 1.5rem; }
+.exercise-box h2 { color: var(--accent2); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(129,140,248,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent2); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem; }
+
+.takeaway { background: rgba(96,165,250,.08); border: 1px solid rgba(96,165,250,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--accent); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '✦'; color: var(--accent); }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(14,21,37,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 2 · Architecture · <span>06c — Monolith vs Microservices</span></div>
+  <div class="nav-links">
+    <a href="06b-clean-hex.html">← Clean &amp; Hex</a>
+    <a href="06d-event-driven.html" class="next">Event-Driven →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">06c · Architecture</div>
+  <h1>Monolith vs <em>Microservices</em></h1>
+  <p>Microservices không tự nhiên tốt hơn Monolith. Amazon, Netflix bắt đầu từ Monolith. Câu hỏi đúng: <em>bạn đang ở giai đoạn nào?</em></p>
+</div>
+
+<div class="content">
+
+  <!-- VISUAL COMPARISON -->
+  <section>
+    <h2>Visual — Cấu trúc khác nhau như thế nào?</h2>
+    <div class="diagram-grid">
+      <div class="monolith-box">
+        <div class="diagram-title" style="color:#60a5fa">🏢 Monolith</div>
+        <div style="background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.3);border-radius:6px;padding:.6rem;margin-bottom:.5rem;font-size:.72rem;color:var(--muted)">1 process, 1 deploy unit</div>
+        <div class="mono-module">📦 Product Module</div>
+        <div class="mono-module">📦 Order Module</div>
+        <div class="mono-module">📦 User Module</div>
+        <div class="mono-module">📦 Payment Module</div>
+        <div class="mono-module">📦 Notification Module</div>
+        <div style="margin-top:.5rem;font-size:.65rem;color:var(--muted)">→ 1 DB chung · 1 process · 1 Docker image</div>
+      </div>
+      <div class="micro-box">
+        <div class="diagram-title" style="color:#818cf8">⚡ Microservices</div>
+        <div style="background:rgba(129,140,248,.08);border:1px solid rgba(129,140,248,.3);border-radius:6px;padding:.6rem;margin-bottom:.5rem;font-size:.72rem;color:var(--muted)">N processes, N deploy units</div>
+        <div class="micro-service">🔵 product-service :3001</div>
+        <div class="micro-arrow">↕ HTTP/gRPC/Queue</div>
+        <div class="micro-service">🟣 order-service :3002</div>
+        <div class="micro-arrow">↕ HTTP/gRPC/Queue</div>
+        <div class="micro-service">🟢 user-service :3003</div>
+        <div class="micro-arrow">↕ HTTP/gRPC/Queue</div>
+        <div class="micro-service">🔴 payment-service :3004</div>
+        <div style="margin-top:.5rem;font-size:.65rem;color:var(--muted)">→ Mỗi service: DB riêng, deploy riêng, scale riêng</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPARISON TABLE -->
+  <section>
+    <h2>So sánh chi tiết</h2>
+    <div class="card" style="overflow-x:auto">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>Tiêu chí</th>
+            <th class="mono-col">🏢 Monolith</th>
+            <th class="micro-col">⚡ Microservices</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="aspect">Deploy</td><td class="mono-col">1 unit, nhanh và đơn giản</td><td class="micro-col">N services, phức tạp, cần CI/CD mạnh</td></tr>
+          <tr><td class="aspect">Scale</td><td class="mono-col">Scale toàn app, tốn resource</td><td class="micro-col">Scale từng service độc lập, hiệu quả hơn</td></tr>
+          <tr><td class="aspect">Dev speed</td><td class="mono-col">Nhanh đầu (1 repo, 1 env)</td><td class="micro-col">Chậm hơn (nhiều repo, local orchestration)</td></tr>
+          <tr><td class="aspect">Fault isolation</td><td class="mono-col">1 bug có thể crash cả app</td><td class="micro-col">1 service die, service khác vẫn chạy</td></tr>
+          <tr><td class="aspect">Tech stack</td><td class="mono-col">1 stack cho toàn bộ</td><td class="micro-col">Mỗi service có thể khác nhau</td></tr>
+          <tr><td class="aspect">Testing</td><td class="mono-col">Dễ test end-to-end</td><td class="micro-col">Phức tạp: contract tests, integration tests</td></tr>
+          <tr><td class="aspect">Observability</td><td class="mono-col">1 log file đơn giản</td><td class="micro-col">Cần distributed tracing, centralized logging</td></tr>
+          <tr><td class="aspect">Phù hợp</td><td class="mono-col">Startup, &lt;10 devs, MVP</td><td class="micro-col">Scale-up, &gt;20 devs, domain rõ ràng</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- DECISION FLOWCHART -->
+  <section>
+    <h2>Nên chọn gì? Decision Flow</h2>
+    <div class="card">
+      <div class="flow-center">
+        <div class="flow-node decision">Team size của bạn là bao nhiêu?</div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-branch">
+          <div class="flow-center">
+            <div style="font-size:.75rem;color:var(--muted);margin-bottom:.25rem">&lt; 10 người</div>
+            <div class="flow-node decision">Domain phức tạp?</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-node result-mono">✅ Monolith<br><span style="font-size:.7rem">Modular Monolith OK</span></div>
+          </div>
+          <div class="flow-center">
+            <div style="font-size:.75rem;color:var(--muted);margin-bottom:.25rem">&gt; 20 người</div>
+            <div class="flow-node decision">Domain boundaries rõ?</div>
+            <div class="flow-arrow">↓</div>
+            <div class="flow-node result-micro">⚡ Microservices<br><span style="font-size:.7rem">Khi domain đã stable</span></div>
+          </div>
+        </div>
+        <div style="margin-top:.75rem;font-size:.8rem;color:var(--muted);text-align:center">
+          Rule: <strong style="color:var(--warning)">"Monolith first"</strong> — Martin Fowler. Refactor sang Micro khi đã hiểu domain.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STRANGLER FIG PATTERN -->
+  <section>
+    <h2>Strangler Fig — Migration Pattern</h2>
+    <p>Không "rewrite toàn bộ". Bóc tách service từng bước từ Monolith — như cây bóp chặt dần:</p>
+    <div class="card">
+      <div class="strangler-steps">
+        <div class="strangler-step">
+          <div class="s-step-num">1</div>
+          <div class="s-step-content">
+            <div class="s-step-title">Identify bounded context</div>
+            <div class="s-step-desc">Tìm module nào có domain rõ ràng, ít coupling nhất. Ví dụ: Notification module.</div>
+          </div>
+        </div>
+        <div class="strangler-step">
+          <div class="s-step-num">2</div>
+          <div class="s-step-content">
+            <div class="s-step-title">Create new service alongside</div>
+            <div class="s-step-desc">Tạo notification-service riêng, chạy parallel với monolith. Không xóa code cũ.</div>
+          </div>
+        </div>
+        <div class="strangler-step">
+          <div class="s-step-num">3</div>
+          <div class="s-step-content">
+            <div class="s-step-title">Route traffic gradually</div>
+            <div class="s-step-desc">Dùng feature flag hoặc API gateway để route 1% → 10% → 50% → 100% sang service mới.</div>
+          </div>
+        </div>
+        <div class="strangler-step">
+          <div class="s-step-num">4</div>
+          <div class="s-step-content">
+            <div class="s-step-title">Remove old code</div>
+            <div class="s-step-desc">Khi 100% traffic trên service mới ổn định → xóa code cũ trong monolith. Lặp lại cho module tiếp theo.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXERCISE -->
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — Architecture Decision</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Vẽ diagram kiến trúc hiện tại của project bạn đang làm. Monolith hay Microservices? Modular không?</li>
+      <li><span class="step-num">2</span>List tất cả modules/features. Đánh dấu: module nào có "bounded context" rõ ràng (có thể tách service)?</li>
+      <li><span class="step-num">3</span>Chọn 1 module để "strangler fig". Phác thảo: API contract mới, DB riêng, và migration plan 4 bước.</li>
+      <li><span class="step-num">4</span>Tư duy: nếu bạn phải scale user-service ×10 trong khi product-service dùng ít resource — Monolith có làm được không? Cost là bao nhiêu?</li>
+    </ul>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>"Monolith first" — hiểu domain trước, tách micro khi domain đã stable.</li>
+      <li>Microservices không free lunch: cần CI/CD mature, distributed tracing, contract testing.</li>
+      <li>Modular Monolith = best of both worlds cho team &lt;10 người với domain không quá phức tạp.</li>
+      <li>Strangler Fig pattern: migrate từng phần, không rewrite toàn bộ — giảm rủi ro.</li>
+      <li>Decision driver: team size, domain complexity, độc lập deploy, scale requirements.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="06b-clean-hex.html">← Clean &amp; Hex</a>
+  <div class="progress-dots">
+    <div class="dot"></div><div class="dot"></div>
+    <div class="dot active"></div><div class="dot"></div>
+  </div>
+  <a href="06d-event-driven.html" class="next">Event-Driven →</a>
+</div>
+
+</body>
+</html>

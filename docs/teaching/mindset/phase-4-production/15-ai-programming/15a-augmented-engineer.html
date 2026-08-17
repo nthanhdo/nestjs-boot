@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>15a: AI = Tool — The Augmented Engineer</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.7}
+  .container{max-width:900px;margin:0 auto;padding:40px 24px}
+  h1{font-size:2rem;color:#58a6ff;margin-bottom:8px}
+  h2{font-size:1.4rem;color:#79c0ff;margin:36px 0 14px;padding-left:12px;border-left:3px solid #58a6ff}
+  h3{font-size:1.05rem;color:#a5d6ff;margin:18px 0 8px}
+  p{color:#c9d1d9;margin-bottom:12px}
+  .subtitle{color:#8b949e;font-size:1rem;margin-bottom:36px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;margin-right:6px}
+  .badge-orange{background:#3b1e0d;color:#f0883e;border:1px solid #9e4f1e}
+  .badge-blue{background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e}
+  .card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin:20px 0}
+  .tip{background:#0d2d1a;border:1px solid #238636;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .tip::before{content:'💡';position:absolute;left:14px;top:14px}
+  .section-divider{border:none;border-top:1px solid #21262d;margin:36px 0}
+  .nav-bar{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #30363d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .nav-links{display:flex;gap:8px;flex-wrap:wrap}
+  .nav-link{color:#8b949e;text-decoration:none;font-size:.8rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s;white-space:nowrap}
+  .nav-link:hover{color:#58a6ff;border-color:#58a6ff}
+  .nav-link.current{color:#58a6ff;border-color:#58a6ff;background:#0d1a2d}
+  .nav-center{font-size:.8rem;color:#484f58}
+  /* Augmented visual */
+  .augmented{display:flex;align-items:center;justify-content:center;gap:24px;margin:32px 0;flex-wrap:wrap}
+  .aug-person{text-align:center}
+  .aug-icon{font-size:3.5rem;display:block;margin-bottom:8px}
+  .aug-label{font-size:.85rem;color:#8b949e}
+  .aug-plus{font-size:2rem;color:#58a6ff;font-weight:700}
+  .aug-equals{font-size:2rem;color:#3fb950;font-weight:700}
+  .aug-result{background:linear-gradient(135deg,#0d2d6b,#1a0d2d);border:2px solid #58a6ff;border-radius:16px;padding:20px 30px;text-align:center}
+  .aug-result .big{font-size:2rem;font-weight:700;color:#58a6ff}
+  /* Capability matrix */
+  .matrix{width:100%;border-collapse:collapse;margin:20px 0}
+  .matrix th{background:#21262d;color:#c9d1d9;padding:10px 14px;text-align:left;font-size:.85rem;border-bottom:2px solid #30363d}
+  .matrix td{padding:10px 14px;border-bottom:1px solid #21262d;font-size:.84rem}
+  .matrix tr:hover td{background:#161b22}
+  .can{color:#3fb950;font-weight:600}
+  .cannot{color:#ff7b72;font-weight:600}
+  .partial{color:#f0883e;font-weight:600}
+  /* Workflow */
+  .workflow{display:flex;flex-direction:column;gap:4px;margin:20px 0}
+  .wf-step{display:flex;align-items:flex-start;gap:16px;padding:14px 16px;border-radius:10px;transition:background .2s}
+  .wf-step:hover{background:#161b22}
+  .wf-num{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0}
+  .wf-ai{background:#1a0d2d;border:2px solid #6e40c9;color:#bc8cff}
+  .wf-dev{background:#0d2d1a;border:2px solid #238636;color:#3fb950}
+  .wf-both{background:#0d1a2d;border:2px solid #1f4a9e;color:#58a6ff}
+  .wf-content{flex:1}
+  .wf-title{font-weight:600;color:#c9d1d9;margin-bottom:3px}
+  .wf-desc{font-size:.85rem;color:#8b949e}
+  .wf-owner{font-size:.72rem;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:4px}
+  .own-ai{background:#1a0d2d;color:#bc8cff;border:1px solid #6e40c9}
+  .own-dev{background:#0d2d1a;color:#3fb950;border:1px solid #238636}
+  .own-both{background:#0d1a2d;color:#58a6ff;border:1px solid #1f4a9e}
+  /* Exercises */
+  .exercises{margin:48px 0}
+  .exercises-title{font-size:1.2rem;color:#79c0ff;margin-bottom:24px;padding-left:12px;border-left:3px solid #58a6ff}
+  .ex-card{border-radius:12px;padding:20px 24px;margin:16px 0}
+  .ex-green{background:#0a1f0a;border:1px solid #238636}
+  .ex-yellow{background:#1f1a0a;border:1px solid #9e6c1e}
+  .ex-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .ex-diff{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:10px}
+  .diff-green{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .diff-yellow{background:#3b2a0d;color:#d4a843;border:1px solid #9e6c1e}
+  .ex-num{font-size:.8rem;font-weight:700;color:#8b949e}
+  .ex-title{font-size:.95rem;font-weight:700;color:#c9d1d9}
+  .ex-desc{font-size:.88rem;color:#8b949e;margin-top:4px}
+  .ex-sol-toggle{background:none;border:1px solid #30363d;color:#8b949e;border-radius:6px;padding:4px 12px;font-size:.75rem;cursor:pointer;margin-top:10px;transition:all .2s}
+  .ex-sol-toggle:hover{border-color:#58a6ff;color:#58a6ff}
+  .ex-sol-body{display:none;margin-top:10px;padding:12px;background:#0d1117;border-radius:8px;font-size:.83rem;color:#c9d1d9;line-height:1.6}
+  .ex-sol-body.open{display:block}
+  .takeaway{background:linear-gradient(135deg,#0d2d1a,#0d1a2d);border:2px solid #3fb950;border-radius:12px;padding:24px;margin:40px 0;text-align:center}
+  .takeaway h3{color:#3fb950;margin-bottom:12px}
+  @media(max-width:600px){.augmented{flex-direction:column}}
+</style>
+</head>
+<body>
+<nav class="nav-bar">
+  <div class="nav-links">
+    <a class="nav-link" href="../14-devops/14d-deploy.html">← 14d: Deploy Strategies</a>
+    <span class="nav-link current">15a: AI = Tool</span>
+    <a class="nav-link" href="15b-prompting.html">15b: Prompting →</a>
+  </div>
+  <div class="nav-center">Phase 4 — AI Programming · 15a / 15d</div>
+</nav>
+
+<div class="container">
+  <div style="margin-bottom:20px">
+    <span class="badge badge-orange">Phase 4</span>
+    <span class="badge badge-blue">15a</span>
+  </div>
+  <h1>AI = Tool, Không Phải Replacement</h1>
+  <p class="subtitle">Engineer + AI = 10x output. Nhưng chỉ khi engineer hiểu AI làm được gì, không làm được gì, và luôn verify output.</p>
+
+  <h2>1. The Augmented Engineer</h2>
+  <p>AI không thay thế kỹ sư — nó <strong>amplify</strong> kỹ năng của kỹ sư. Nền tảng thinking và judgment của bạn quyết định bạn có review được AI output hay không.</p>
+
+  <div class="augmented">
+    <div class="aug-person">
+      <span class="aug-icon">👨‍💻</span>
+      <div class="aug-label">Engineer<br>Thinking + Judgment</div>
+    </div>
+    <div class="aug-plus">+</div>
+    <div class="aug-person">
+      <span class="aug-icon">🤖</span>
+      <div class="aug-label">AI Assistant<br>Speed + Breadth</div>
+    </div>
+    <div class="aug-equals">=</div>
+    <div class="aug-result">
+      <div class="big">10x</div>
+      <div style="font-size:.8rem;color:#8b949e;margin-top:4px">Augmented Engineer</div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <strong>Core insight:</strong> Người dùng AI tốt nhất là người biết <em>khi nào dùng</em>, <em>khi nào không</em>, và luôn <em>verify output</em>. AI giỏi thật ra cần engineer giỏi hơn, không ít hơn.
+  </div>
+
+  <hr class="section-divider">
+
+  <h2>2. Capability Matrix — AI Can & Cannot</h2>
+  <p>Biết giới hạn của AI = biết khi nào lean on nó và khi nào cần judgment của bạn.</p>
+
+  <table class="matrix">
+    <thead><tr><th>Task</th><th>AI có thể làm</th><th>Giới hạn / Risk</th></tr></thead>
+    <tbody>
+      <tr><td>Boilerplate code</td><td><span class="can">✓ Rất tốt</span></td><td>Cần review naming/style theo codebase</td></tr>
+      <tr><td>CRUD operations</td><td><span class="can">✓ Nhanh</span></td><td>Có thể thiếu edge case</td></tr>
+      <tr><td>Regex patterns</td><td><span class="can">✓ Xuất sắc</span></td><td>Test kỹ với real data</td></tr>
+      <tr><td>Explain code</td><td><span class="can">✓ Rất tốt</span></td><td>Context-dependent accuracy</td></tr>
+      <tr><td>Unit test scaffolding</td><td><span class="can">✓ Tốt</span></td><td>Logic assertions phải tự viết</td></tr>
+      <tr><td>Refactoring suggestions</td><td><span class="partial">~ Tốt</span></td><td>Cần verify không break behavior</td></tr>
+      <tr><td>Architecture decisions</td><td><span class="cannot">✗ Nguy hiểm</span></td><td>Không có domain context của bạn</td></tr>
+      <tr><td>Business logic phức tạp</td><td><span class="cannot">✗ Rủi ro cao</span></td><td>Không hiểu business rules thực tế</td></tr>
+      <tr><td>Security review</td><td><span class="cannot">✗ Không đủ</span></td><td>Có thể miss subtle vulnerabilities</td></tr>
+      <tr><td>Production debugging</td><td><span class="partial">~ Hỗ trợ</span></td><td>Không có system context đầy đủ</td></tr>
+      <tr><td>Code ownership</td><td><span class="cannot">✗ Không bao giờ</span></td><td>Developer là người chịu 100% trách nhiệm</td></tr>
+    </tbody>
+  </table>
+
+  <hr class="section-divider">
+
+  <h2>3. Code Generation Workflow</h2>
+  <p>AI generate → Developer là người sở hữu và chịu trách nhiệm. Không bao giờ skip bước verify.</p>
+
+  <div class="workflow">
+    <div class="wf-step">
+      <div class="wf-num wf-ai">1</div>
+      <div class="wf-content">
+        <div class="wf-title">AI Generates Draft</div>
+        <div class="wf-desc">Cung cấp context đầy đủ (stack, types, constraints) → AI tạo draft code</div>
+        <span class="wf-owner own-ai">🤖 AI làm</span>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num wf-dev">2</div>
+      <div class="wf-content">
+        <div class="wf-title">Developer Reads & Understands</div>
+        <div class="wf-desc">Đọc từng dòng — hiểu logic, không chỉ "nó chạy được"</div>
+        <span class="wf-owner own-dev">👨‍💻 Dev làm</span>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num wf-both">3</div>
+      <div class="wf-content">
+        <div class="wf-title">Code Review</div>
+        <div class="wf-desc">Kiểm tra: security, edge cases, performance, style fit codebase</div>
+        <span class="wf-owner own-both">🔍 Dev + AI iterate</span>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num wf-dev">4</div>
+      <div class="wf-content">
+        <div class="wf-title">Adapt to Codebase</div>
+        <div class="wf-desc">Sửa naming, integrate với existing patterns, conventions</div>
+        <span class="wf-owner own-dev">👨‍💻 Dev làm</span>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num" style="background:#2d0d1a;border:2px solid #9e1e1e;color:#ff7b72;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0">5</div>
+      <div class="wf-content">
+        <div class="wf-title">Test Thoroughly</div>
+        <div class="wf-desc">Unit tests, edge cases, integration — AI code phải pass cùng test bar như human code</div>
+        <span class="wf-owner own-dev">👨‍💻 Dev chịu trách nhiệm</span>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num wf-dev">6</div>
+      <div class="wf-content">
+        <div class="wf-title">Own the Code</div>
+        <div class="wf-desc">Commit, document, maintain. "AI generated" không là lý do để không hiểu code</div>
+        <span class="wf-owner own-dev">👨‍💻 Dev owns 100%</span>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <h2>4. Mindset Check</h2>
+  <div class="card">
+    <h3>✅ Engineer Mindset (đúng)</h3>
+    <ul style="color:#c9d1d9;padding-left:20px;margin-top:8px">
+      <li style="margin:6px 0">"AI accelerate tôi, không replace judgment của tôi"</li>
+      <li style="margin:6px 0">"Tôi review mọi dòng code AI generate trước khi commit"</li>
+      <li style="margin:6px 0">"Nếu tôi không hiểu code này, tôi không commit nó"</li>
+      <li style="margin:6px 0">"AI là starting point, không phải final answer"</li>
+    </ul>
+  </div>
+  <div class="card" style="border-color:#9e1e1e;background:#1f0a0a">
+    <h3 style="color:#ff7b72">❌ Anti-patterns (tránh)</h3>
+    <ul style="color:#ff7b72;padding-left:20px;margin-top:8px">
+      <li style="margin:6px 0">Copy-paste AI code mà không đọc → bugs vào production</li>
+      <li style="margin:6px 0">Dùng AI giải quyết bug mà không hiểu root cause → bug tái phát</li>
+      <li style="margin:6px 0">Để AI quyết định architecture → technical debt khổng lồ</li>
+      <li style="margin:6px 0">Nói "AI generate" khi bị hỏi về code → không chuyên nghiệp</li>
+    </ul>
+  </div>
+
+  <hr class="section-divider">
+
+  <div class="exercises">
+    <div class="exercises-title">Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header">
+        <span class="ex-diff diff-green">Dễ</span>
+        <span class="ex-num">Bài 1</span>
+      </div>
+      <div class="ex-title">Phân tích: AI làm được / không làm được gì trong project của bạn</div>
+      <div class="ex-desc">List 5 tasks trong project hiện tại. Classify mỗi task: AI tốt / AI trung bình / AI không phù hợp. Giải thích lý do cho mỗi classification.</div>
+      <button class="ex-sol-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Ẩn gợi ý':'Xem gợi ý'">Xem gợi ý</button>
+      <div class="ex-sol-body">
+        <strong>Framework:</strong><br>
+        AI tốt: task rõ ràng, patterns đã biết, không cần domain context (CRUD, regex, boilerplate)<br>
+        AI trung bình: cần review kỹ, có thể miss edge cases (refactoring, explain complex code)<br>
+        AI không phù hợp: cần business context, security-critical, architecture decisions<br><br>
+        Lý do quan trọng hơn classification — "tại sao" mới giúp bạn dùng AI đúng cách
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header">
+        <span class="ex-diff diff-yellow">Trung bình</span>
+        <span class="ex-num">Bài 2</span>
+      </div>
+      <div class="ex-title">Follow the 6-step workflow với một real task</div>
+      <div class="ex-desc">Chọn một task thực (ví dụ: tạo UserService method). Follow đúng 6 bước. Document mỗi bước: AI output là gì, bạn thay đổi gì, tại sao. Measure: % code cuối cùng giữ nguyên từ AI.</div>
+      <button class="ex-sol-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Ẩn gợi ý':'Xem gợi ý'">Xem gợi ý</button>
+      <div class="ex-sol-body">
+        Typical result: ~60-70% code AI generate được giữ lại sau review<br>
+        Thay đổi phổ biến: naming theo codebase conventions, thêm validation, fix error codes, thêm logging<br>
+        Điều quan trọng: bạn phải hiểu 100% code cuối cùng, kể cả phần AI viết không thay đổi
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <h3>Key Takeaway — 15a</h3>
+    <p style="color:#c9d1d9;margin-top:8px">AI = công cụ amplify, không replace. Engineer giỏi = biết dùng AI đúng chỗ + verify mọi output. 6-step workflow: Generate → Read → Review → Adapt → Test → Own. Code ownership là của developer, không phải AI.</p>
+  </div>
+
+  <div style="text-align:center;margin-top:40px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">15a / Bài 15: AI Programming — Phase 4</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="../14-devops/14d-deploy.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← 14d: Deploy Strategies</a>
+      <a href="15b-prompting.html" style="color:#58a6ff;text-decoration:none;font-size:.85rem">Tiếp theo: 15b — Prompting →</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

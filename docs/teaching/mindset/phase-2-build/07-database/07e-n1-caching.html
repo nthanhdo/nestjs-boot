@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>07e — N+1 & Caching | Phase 2</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #1a2235; --border: #2a3a55;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #2dd4bf; --accent2: #818cf8;
+  --success: #34d399; --warning: #fbbf24; --error: #ef4444;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+.top-nav { position: sticky; top: 0; z-index: 100; background: rgba(14,21,37,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .6rem 1.5rem; font-size: .85rem; }
+.top-nav .breadcrumb { color: var(--muted); } .top-nav .breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a { padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-links a.next { background: var(--success); color: #000; border-color: var(--success); font-weight: 600; }
+
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .75rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+
+/* N+1 SIMULATION */
+.query-log { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: .75rem; height: 160px; overflow-y: auto; font-family: monospace; font-size: .75rem; }
+.qlog-item { padding: .2rem 0; display: flex; gap: .5rem; }
+.qlog-item .qnum { color: var(--muted); min-width: 30px; }
+.qlog-item .qtext { color: var(--text); }
+.qlog-item.slow { color: #ef4444; }
+.qlog-item.fast { color: var(--success); }
+.counter-display { font-size: 1.5rem; font-weight: 800; }
+.counter-display.bad { color: #ef4444; }
+.counter-display.good { color: #34d399; }
+
+/* CACHING LAYERS */
+.cache-layers { display: flex; flex-direction: column; gap: .5rem; }
+.cache-layer { display: flex; align-items: center; gap: 1rem; padding: .75rem 1rem; border-radius: 8px; cursor: pointer; transition: all .2s; }
+.cache-layer:hover { filter: brightness(1.1); }
+.cache-icon { font-size: 1.2rem; flex-shrink: 0; }
+.cache-info { flex: 1; }
+.cache-name { font-weight: 700; font-size: .85rem; }
+.cache-desc { font-size: .75rem; opacity: .75; }
+.cache-speed { font-size: .75rem; font-weight: 700; text-align: right; }
+.cache-detail { display: none; padding: .5rem 1rem .75rem 2.8rem; font-size: .82rem; color: var(--muted); line-height: 1.6; }
+.cache-layer.open + .cache-detail { display: block; }
+
+/* CODE */
+.code-block { background: #0a0f1e; border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; font-family: 'Courier New', monospace; font-size: .78rem; line-height: 1.7; overflow-x: auto; }
+.c-comment { color: #6b7280; } .c-kw { color: #818cf8; } .c-str { color: #34d399; }
+.c-fn { color: #fbbf24; } .c-type { color: #f472b6; }
+
+/* NEXT TOPIC */
+.next-topic { background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.3); border-radius: var(--radius); padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.next-topic h3 { color: var(--success); margin-bottom: .25rem; }
+.next-topic p { margin: 0; font-size: .85rem; }
+.next-topic a { background: var(--success); color: #000; padding: .5rem 1.25rem; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: .85rem; white-space: nowrap; }
+
+.exercise-box { background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.3); border-radius: var(--radius); padding: 1.5rem; }
+.exercise-box h2 { color: var(--accent2); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(129,140,248,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent2); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem; }
+
+.takeaway { background: rgba(45,212,191,.06); border: 1px solid rgba(45,212,191,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--accent); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '✦'; color: var(--accent); }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(14,21,37,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--success); color: #000; border-color: var(--success); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 2 · Database · <span>07e — N+1 &amp; Caching</span></div>
+  <div class="nav-links">
+    <a href="07d-acid-transactions.html">← ACID</a>
+    <a href="../08-api/08a-http-rest.html" class="next">08 API →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">07e · Database Thinking</div>
+  <h1>N+1 &amp; <em>Caching</em></h1>
+  <p>N+1 là silent killer — code trông đúng nhưng DB bị hammer. 10 orders = 11 queries. 100 orders = 101 queries. Caching đặt đúng chỗ giảm 90% DB load.</p>
+</div>
+
+<div class="content">
+
+  <!-- N+1 SIMULATION -->
+  <section>
+    <h2>N+1 Problem — Live Simulation</h2>
+    <div class="card">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+        <div>
+          <div style="font-size:.8rem;color:#ef4444;margin-bottom:.4rem">❌ N+1 Pattern</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem">1 query lấy orders + 1 query/order lấy user</div>
+          <div class="counter-display bad" id="n1Counter">0 queries</div>
+        </div>
+        <div>
+          <div style="font-size:.8rem;color:#34d399;margin-bottom:.4rem">✅ Eager Loading</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:.5rem">1 query dùng populate/JOIN</div>
+          <div class="counter-display good" id="eagerCounter">0 queries</div>
+        </div>
+      </div>
+      <div class="query-log" id="queryLog">
+        <div style="color:var(--muted);font-size:.75rem">Click buttons to simulate...</div>
+      </div>
+      <div style="display:flex;gap:.75rem;margin-top:.75rem">
+        <button onclick="simN1()" style="padding:.4rem 1rem;background:rgba(239,68,68,.2);border:1px solid #ef4444;color:#ef4444;border-radius:6px;cursor:pointer;font-size:.8rem;font-weight:600">❌ Run N+1 (10 orders)</button>
+        <button onclick="simEager()" style="padding:.4rem 1rem;background:rgba(52,211,153,.15);border:1px solid #34d399;color:#34d399;border-radius:6px;cursor:pointer;font-size:.8rem;font-weight:600">✅ Run Eager Load</button>
+        <button onclick="clearLog()" style="padding:.4rem 1rem;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;cursor:pointer;font-size:.8rem">Clear</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FIX N+1 -->
+  <section>
+    <h2>Fix N+1 — Mongoose Populate</h2>
+    <div class="code-block">
+<span class="c-comment">// ❌ N+1 Problem</span>
+<span class="c-kw">const</span> orders = <span class="c-kw">await</span> Order.<span class="c-fn">find</span>({});
+<span class="c-kw">for</span> (<span class="c-kw">const</span> order <span class="c-kw">of</span> orders) {
+  <span class="c-comment">// N queries! 100 orders = 100 extra queries</span>
+  order.user = <span class="c-kw">await</span> User.<span class="c-fn">findById</span>(order.userId);
+}
+
+<span class="c-comment">// ✅ Fix 1: Mongoose populate (JOIN equivalent)</span>
+<span class="c-kw">const</span> orders = <span class="c-kw">await</span> Order.<span class="c-fn">find</span>({})
+  .<span class="c-fn">populate</span>(<span class="c-str">'userId'</span>, <span class="c-str">'name email'</span>); <span class="c-comment">// 2 queries total</span>
+
+<span class="c-comment">// ✅ Fix 2: Aggregation $lookup (1 query)</span>
+Order.<span class="c-fn">aggregate</span>([
+  { $<span class="c-fn">lookup</span>: {
+    from: <span class="c-str">'users'</span>, localField: <span class="c-str">'userId'</span>,
+    foreignField: <span class="c-str">'_id'</span>, as: <span class="c-str">'user'</span>
+  }},
+  { $<span class="c-fn">unwind</span>: <span class="c-str">'$user'</span> }
+]);</div>
+  </section>
+
+  <!-- CACHING LAYERS -->
+  <section>
+    <h2>Caching Layers — Bấm để xem chi tiết</h2>
+    <div class="card">
+      <div class="cache-layers">
+        <div class="cache-layer" style="background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.3)" onclick="toggleCache(this)">
+          <span class="cache-icon">🌐</span>
+          <div class="cache-info"><div class="cache-name" style="color:#f472b6">Browser Cache</div><div class="cache-desc">HTTP Cache-Control, ETags, Service Worker</div></div>
+          <div class="cache-speed" style="color:#f472b6">~0ms</div>
+        </div>
+        <div class="cache-detail">Cache ở client side. Dùng <code>Cache-Control: max-age=3600</code> cho static assets. <code>ETag</code> cho conditional requests. Service Worker cho offline. Không query server khi cache hit.</div>
+
+        <div class="cache-layer" style="background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.3)" onclick="toggleCache(this)">
+          <span class="cache-icon">🔗</span>
+          <div class="cache-info"><div class="cache-name" style="color:#60a5fa">CDN Cache</div><div class="cache-desc">Cloudflare, CloudFront — geographic edge</div></div>
+          <div class="cache-speed" style="color:#60a5fa">~5-20ms</div>
+        </div>
+        <div class="cache-detail">Distributed globally. Request served từ nearest edge node. Excellent cho static files, images, pre-rendered HTML. Vary header để cache per-locale.</div>
+
+        <div class="cache-layer" style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3)" onclick="toggleCache(this)">
+          <span class="cache-icon">🔴</span>
+          <div class="cache-info"><div class="cache-name" style="color:#34d399">Redis In-Memory Cache</div><div class="cache-desc">Application-level cache, shared across instances</div></div>
+          <div class="cache-speed" style="color:#34d399">~1ms</div>
+        </div>
+        <div class="cache-detail">Key/value store in RAM. Perfect cho: session data, rate limiting, frequently-read DB results, computed aggregations. TTL per key. Pub/sub for invalidation. <code>GETSET/SETNX</code> cho distributed locks.</div>
+
+        <div class="cache-layer" style="background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.3)" onclick="toggleCache(this)">
+          <span class="cache-icon">🗄️</span>
+          <div class="cache-info"><div class="cache-name" style="color:#fbbf24">DB Query Cache</div><div class="cache-desc">MongoDB query plan cache, connection pool</div></div>
+          <div class="cache-speed" style="color:#fbbf24">~5-50ms</div>
+        </div>
+        <div class="cache-detail">MongoDB caches query plans. Working set (hot data) stays in RAM if total size fits WiredTiger cache (50% RAM by default). Proper indexing ≈ automatic caching for common queries.</div>
+
+        <div class="cache-layer" style="background:rgba(148,163,184,.06);border:1px solid rgba(148,163,184,.3)" onclick="toggleCache(this)">
+          <span class="cache-icon">💾</span>
+          <div class="cache-info"><div class="cache-name" style="color:var(--muted)">Disk (No Cache)</div><div class="cache-desc">Cold reads from storage</div></div>
+          <div class="cache-speed" style="color:var(--muted)">~10-100ms</div>
+        </div>
+        <div class="cache-detail">When nothing is cached — full disk read. SSD: ~0.1ms random read. But DB overhead, parsing, network latency adds up to 10-100ms. Avoid hot paths hitting disk.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CACHE INVALIDATION -->
+  <section>
+    <h2>Cache Invalidation — Vấn đề khó nhất</h2>
+    <p>"There are only two hard things in Computer Science: cache invalidation and naming things." — Phil Karlton</p>
+    <div class="card">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div>
+          <p style="font-weight:600;font-size:.85rem;margin-bottom:.5rem">Strategies:</p>
+          <ul style="list-style:none;font-size:.82rem">
+            <li style="padding:.3rem 0;color:var(--muted)">⏰ <strong>TTL (Time-To-Live)</strong>: cache expire sau X giây. Đơn giản, eventual consistency.</li>
+            <li style="padding:.3rem 0;color:var(--muted)">🗑️ <strong>Cache Aside</strong>: write invalidates cache key. Read: check cache → miss → DB → populate.</li>
+            <li style="padding:.3rem 0;color:var(--muted)">✏️ <strong>Write-Through</strong>: write cả DB lẫn cache cùng lúc. Consistent hơn, 2x write.</li>
+            <li style="padding:.3rem 0;color:var(--muted)">🔔 <strong>Event-Driven</strong>: invalidate on domain events (product.updated → delete product:* keys).</li>
+          </ul>
+        </div>
+        <div class="code-block" style="font-size:.72rem">
+<span class="c-comment">// Cache-Aside pattern</span>
+<span class="c-kw">async</span> <span class="c-fn">getProduct</span>(id) {
+  <span class="c-kw">const</span> cached = <span class="c-kw">await</span> redis.<span class="c-fn">get</span>(<span class="c-str">`product:${id}`</span>);
+  <span class="c-kw">if</span> (cached) <span class="c-kw">return</span> <span class="c-fn">JSON.parse</span>(cached);
+
+  <span class="c-kw">const</span> product = <span class="c-kw">await</span> Product.<span class="c-fn">findById</span>(id);
+  <span class="c-kw">await</span> redis.<span class="c-fn">setEx</span>(
+    <span class="c-str">`product:${id}`</span>, <span class="c-fn">3600</span>, <span class="c-comment">// 1h TTL</span>
+    <span class="c-fn">JSON.stringify</span>(product)
+  );
+  <span class="c-kw">return</span> product;
+}
+
+<span class="c-comment">// On update: invalidate</span>
+<span class="c-kw">await</span> redis.<span class="c-fn">del</span>(<span class="c-str">`product:${id}`</span>);</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXERCISE -->
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — Fix N+1 &amp; Add Cache</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Enable Mongoose query logging: <code>mongoose.set('debug', true)</code>. Navigate app và đếm queries per request. Tìm N+1.</li>
+      <li><span class="step-num">2</span>Refactor N+1 query dùng <code>.populate()</code> hoặc aggregation <code>$lookup</code>. Verify query count giảm.</li>
+      <li><span class="step-num">3</span>Cài Redis + ioredis. Implement Cache-Aside pattern cho 1 endpoint hay được gọi nhất.</li>
+      <li><span class="step-num">4</span>Set TTL phù hợp: data thay đổi ít = TTL dài (product info), data thay đổi nhiều = TTL ngắn (stock count).</li>
+      <li><span class="step-num">5</span>Implement cache invalidation: khi product được update → delete cache key. Test: update product → next GET trả data mới.</li>
+    </ul>
+  </section>
+
+  <!-- NEXT TOPIC -->
+  <section class="next-topic">
+    <div>
+      <h3>Tiếp theo: 08 — API Fundamentals</h3>
+      <p>Database tốt. Giờ expose data ra ngoài qua API như thế nào đúng cách?</p>
+    </div>
+    <a href="../08-api/08a-http-rest.html">08a: HTTP &amp; REST →</a>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>N+1: fetch 100 orders rồi loop query từng user = 101 queries. Fix: populate/JOIN = 2 queries.</li>
+      <li>Caching hierarchy: Browser (~0ms) → CDN (~10ms) → Redis (~1ms) → DB (~50ms) → Disk (~100ms).</li>
+      <li>Cache-Aside pattern: check cache → miss → DB → populate cache. Invalidate on write.</li>
+      <li>Cache invalidation strategies: TTL (đơn giản), write-through (consistent), event-driven (scalable).</li>
+      <li>"Cache everything" is wrong. Cache hot paths only. Wrong cache = stale data bugs.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="07d-acid-transactions.html">← ACID</a>
+  <div class="progress-dots">
+    <div class="dot"></div><div class="dot"></div>
+    <div class="dot"></div><div class="dot"></div><div class="dot active"></div>
+  </div>
+  <a href="../08-api/08a-http-rest.html" class="next">08 API →</a>
+</div>
+
+<script>
+function clearLog() {
+  document.getElementById('queryLog').innerHTML = '<div style="color:var(--muted);font-size:.75rem">Cleared...</div>';
+  document.getElementById('n1Counter').textContent = '0 queries';
+  document.getElementById('eagerCounter').textContent = '0 queries';
+}
+
+async function simN1() {
+  const log = document.getElementById('queryLog');
+  log.innerHTML = '';
+  let count = 0;
+  const addLog = (text, cls) => {
+    count++;
+    const div = document.createElement('div');
+    div.className = 'qlog-item ' + (cls || '');
+    div.innerHTML = `<span class="qnum">#${count}</span><span class="qtext">${text}</span>`;
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+    document.getElementById('n1Counter').textContent = count + ' queries';
+  };
+  addLog('db.orders.find({}) → 10 orders', 'fast');
+  for (let i = 1; i <= 10; i++) {
+    await new Promise(r => setTimeout(r, 120));
+    addLog(`db.users.findById("user_${i}") ← triggered by order ${i}`, 'slow');
+  }
+}
+
+async function simEager() {
+  const log = document.getElementById('queryLog');
+  log.innerHTML = '';
+  const addLog = (text, cls) => {
+    const div = document.createElement('div');
+    div.className = 'qlog-item ' + (cls || '');
+    div.innerHTML = `<span class="qnum">#1</span><span class="qtext">${text}</span>`;
+    log.appendChild(div);
+    document.getElementById('eagerCounter').textContent = '2 queries total ✅';
+  };
+  addLog('db.orders.find({}) → 10 orders', 'fast');
+  await new Promise(r => setTimeout(r, 300));
+  const div = document.createElement('div');
+  div.className = 'qlog-item fast';
+  div.innerHTML = '<span class="qnum">#2</span><span class="qtext">db.users.find({ _id: { $in: [user_1..user_10] } }) ← populate = 1 batch query</span>';
+  log.appendChild(div);
+  document.getElementById('eagerCounter').textContent = '2 queries ✅';
+}
+
+function toggleCache(el) {
+  const detail = el.nextElementSibling;
+  if (el.classList.contains('open')) {
+    el.classList.remove('open');
+    detail.style.display = 'none';
+  } else {
+    document.querySelectorAll('.cache-layer.open').forEach(e => {
+      e.classList.remove('open');
+      e.nextElementSibling.style.display = 'none';
+    });
+    el.classList.add('open');
+    detail.style.display = 'block';
+  }
+}
+</script>
+</body>
+</html>

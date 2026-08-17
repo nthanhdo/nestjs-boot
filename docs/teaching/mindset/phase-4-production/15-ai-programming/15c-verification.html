@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>15c: Verification + Hallucination — Never Trust, Always Verify</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.7}
+  .container{max-width:900px;margin:0 auto;padding:40px 24px}
+  h1{font-size:2rem;color:#58a6ff;margin-bottom:8px}
+  h2{font-size:1.4rem;color:#79c0ff;margin:36px 0 14px;padding-left:12px;border-left:3px solid #58a6ff}
+  h3{font-size:1.05rem;color:#a5d6ff;margin:18px 0 8px}
+  p{color:#c9d1d9;margin-bottom:12px}
+  .subtitle{color:#8b949e;font-size:1rem;margin-bottom:36px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;margin-right:6px}
+  .badge-orange{background:#3b1e0d;color:#f0883e;border:1px solid #9e4f1e}
+  .badge-blue{background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e}
+  .card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin:20px 0}
+  .code-block{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px;font-family:'Fira Code','Cascadia Code',monospace;font-size:.85rem;overflow-x:auto;margin:12px 0;white-space:pre}
+  .cm{color:#8b949e}.kw{color:#ff7b72}.str{color:#a5d6ff}.fn{color:#d2a8ff}.var{color:#ffa657}.num{color:#79c0ff}
+  .tip{background:#0d2d1a;border:1px solid #238636;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .tip::before{content:'💡';position:absolute;left:14px;top:14px}
+  .warning{background:#2d1a0d;border:1px solid #9e4f1e;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .warning::before{content:'⚠️';position:absolute;left:14px;top:14px}
+  .section-divider{border:none;border-top:1px solid #21262d;margin:36px 0}
+  .nav-bar{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #30363d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .nav-links{display:flex;gap:8px;flex-wrap:wrap}
+  .nav-link{color:#8b949e;text-decoration:none;font-size:.8rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s;white-space:nowrap}
+  .nav-link:hover{color:#58a6ff;border-color:#58a6ff}
+  .nav-link.current{color:#58a6ff;border-color:#58a6ff;background:#0d1a2d}
+  .nav-center{font-size:.8rem;color:#484f58}
+  /* Hallucination block */
+  .hall-block{background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:20px;margin:20px 0}
+  .hall-line{display:flex;align-items:flex-start;gap:12px;padding:8px 0;font-family:'Fira Code',monospace;font-size:.83rem;border-bottom:1px dashed #21262d}
+  .hall-line:last-child{border-bottom:none}
+  .hall-code{flex:1;color:#c9d1d9}
+  .hall-strike{text-decoration:line-through;color:#484f58}
+  .hall-badge{font-size:.7rem;padding:2px 8px;border-radius:6px;white-space:nowrap;flex-shrink:0}
+  .hall-wrong{background:#2d0d0d;color:#ff7b72;border:1px solid #9e1e1e}
+  .hall-ok{background:#0d2d1a;color:#3fb950;border:1px solid #238636}
+  /* Verify loop */
+  .verify-steps{display:flex;flex-direction:column;gap:0;margin:20px 0;counter-reset:vstep}
+  .v-step{display:flex;gap:16px;align-items:flex-start;padding:14px 0;border-bottom:1px solid #21262d;counter-increment:vstep}
+  .v-step:last-child{border-bottom:none}
+  .v-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;flex-shrink:0;color:#fff}
+  .v-content{flex:1}
+  .v-title{font-weight:600;color:#c9d1d9;margin-bottom:3px}
+  .v-desc{font-size:.85rem;color:#8b949e}
+  /* Checklist */
+  .checklist{list-style:none;padding:0}
+  .checklist li{padding:8px 0;color:#c9d1d9;display:flex;align-items:flex-start;gap:10px;border-bottom:1px solid #21262d;font-size:.88rem}
+  .checklist li:last-child{border-bottom:none}
+  /* Exercises */
+  .exercises{margin:48px 0}
+  .exercises-title{font-size:1.2rem;color:#79c0ff;margin-bottom:24px;padding-left:12px;border-left:3px solid #58a6ff}
+  .ex-card{border-radius:12px;padding:20px 24px;margin:16px 0}
+  .ex-green{background:#0a1f0a;border:1px solid #238636}
+  .ex-yellow{background:#1f1a0a;border:1px solid #9e6c1e}
+  .ex-red{background:#1f0a0a;border:1px solid #9e1e1e}
+  .ex-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .ex-diff{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:10px}
+  .diff-green{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .diff-yellow{background:#3b2a0d;color:#d4a843;border:1px solid #9e6c1e}
+  .diff-red{background:#3b0d0d;color:#ff7b72;border:1px solid #9e1e1e}
+  .ex-num{font-size:.8rem;font-weight:700;color:#8b949e}
+  .ex-title{font-size:.95rem;font-weight:700;color:#c9d1d9}
+  .ex-desc{font-size:.88rem;color:#8b949e;margin-top:4px}
+  .ex-sol-toggle{background:none;border:1px solid #30363d;color:#8b949e;border-radius:6px;padding:4px 12px;font-size:.75rem;cursor:pointer;margin-top:10px;transition:all .2s}
+  .ex-sol-toggle:hover{border-color:#58a6ff;color:#58a6ff}
+  .ex-sol-body{display:none;margin-top:10px;padding:12px;background:#0d1117;border-radius:8px;font-size:.83rem;color:#c9d1d9;line-height:1.6}
+  .ex-sol-body.open{display:block}
+  .takeaway{background:linear-gradient(135deg,#0d2d1a,#0d1a2d);border:2px solid #3fb950;border-radius:12px;padding:24px;margin:40px 0;text-align:center}
+  .takeaway h3{color:#3fb950;margin-bottom:12px}
+</style>
+</head>
+<body>
+<nav class="nav-bar">
+  <div class="nav-links">
+    <a class="nav-link" href="15b-prompting.html">← 15b: Prompting</a>
+    <span class="nav-link current">15c: Verification</span>
+    <a class="nav-link" href="15d-security-risks.html">15d: Security Risks →</a>
+  </div>
+  <div class="nav-center">Phase 4 — AI Programming · 15c / 15d</div>
+</nav>
+
+<div class="container">
+  <div style="margin-bottom:20px">
+    <span class="badge badge-orange">Phase 4</span>
+    <span class="badge badge-blue">15c</span>
+  </div>
+  <h1>Verification + Hallucination</h1>
+  <p class="subtitle">AI tự tin sai. Không phải tệ — đây là bản chất của LLM. Biết verify đúng cách = bảo vệ code của bạn khỏi confident-but-wrong AI output.</p>
+
+  <h2>1. Hallucination Là Gì?</h2>
+  <p>AI generate code <em>trông đúng nhưng sai</em>. Package không tồn tại, API deprecated, method signature sai, logic bug ở edge case. AI không "biết" nó sai — nó generate confident text.</p>
+
+  <div class="hall-block">
+    <div style="color:#ff7b72;font-size:.8rem;font-weight:600;margin-bottom:12px">AI generates confidently — nhưng có 3 lỗi:</div>
+    <div class="hall-line">
+      <div class="hall-code"><span class="kw">import</span> { <span class="fn hall-strike">validateEmail</span> } <span class="kw">from</span> <span class="str hall-strike">'@nestjs/common/utils/email'</span></div>
+      <div class="hall-badge hall-wrong">✗ Không tồn tại</div>
+    </div>
+    <div class="hall-line">
+      <div class="hall-code"><span class="kw">await</span> collection.<span class="fn hall-strike">insert</span>(doc)</div>
+      <div class="hall-badge hall-wrong">✗ Deprecated từ MongoDB 4</div>
+    </div>
+    <div class="hall-line">
+      <div class="hall-code"><span class="kw">throw new</span> <span class="fn">HttpException</span>(<span class="str">'Not found'</span>, <span class="num hall-strike">401</span>)</div>
+      <div class="hall-badge hall-wrong">✗ Nên là 404</div>
+    </div>
+    <div style="color:#3fb950;font-size:.8rem;font-weight:600;margin:16px 0 10px">Developer catches và fixes:</div>
+    <div class="hall-line">
+      <div class="hall-code"><span class="kw">import</span> { <span class="fn">isEmail</span> } <span class="kw">from</span> <span class="str">'class-validator'</span></div>
+      <div class="hall-badge hall-ok">✓ Đúng</div>
+    </div>
+    <div class="hall-line">
+      <div class="hall-code"><span class="kw">await</span> collection.<span class="fn">insertOne</span>(doc)</div>
+      <div class="hall-badge hall-ok">✓ Current API</div>
+    </div>
+    <div class="hall-line">
+      <div class="hall-code"><span class="kw">throw new</span> <span class="fn">NotFoundException</span>(<span class="str">'Resource'</span>)</div>
+      <div class="hall-badge hall-ok">✓ 404 đúng</div>
+    </div>
+  </div>
+
+  <div class="warning">
+    <strong>Hallucination phổ biến nhất:</strong> Package names không tồn tại, deprecated API methods, wrong method signatures, outdated syntax, logic bugs trong edge cases, wrong HTTP status codes.
+  </div>
+
+  <hr class="section-divider">
+
+  <h2>2. The Verification Loop — 4 Bước</h2>
+  <p>Never Trust, Always Verify. Áp dụng cho mọi AI output trước khi commit.</p>
+
+  <div class="verify-steps">
+    <div class="v-step">
+      <div class="v-num" style="background:#0d2d6b;border:2px solid #1f4a9e">①</div>
+      <div class="v-content">
+        <div class="v-title">UNDERSTAND — Đọc từng dòng</div>
+        <div class="v-desc">Không chỉ "code chạy không?". Hiểu logic của từng bước. Nếu không giải thích được đoạn code → đừng commit nó.</div>
+      </div>
+    </div>
+    <div class="v-step">
+      <div class="v-num" style="background:#0d2d1a;border:2px solid #238636">②</div>
+      <div class="v-content">
+        <div class="v-title">TEST — Chạy với real input</div>
+        <div class="v-desc">Test happy path + edge cases (null, empty, boundary values). Nếu AI tạo ra function → viết unit test cho nó trước khi integrate.</div>
+      </div>
+    </div>
+    <div class="v-step">
+      <div class="v-num" style="background:#2d1a0d;border:2px solid #9e6c1e">③</div>
+      <div class="v-content">
+        <div class="v-title">VERIFY — Package và API tồn tại không?</div>
+        <div class="v-desc">Mọi package được import: check npm registry. Mọi method: check official docs. Đừng assume API tồn tại chỉ vì AI dùng nó.</div>
+      </div>
+    </div>
+    <div class="v-step">
+      <div class="v-num" style="background:#1a0d2d;border:2px solid #6e40c9">④</div>
+      <div class="v-content">
+        <div class="v-title">REVIEW — Security và logic</div>
+        <div class="v-desc">Check: input validation, error handling, no hardcoded secrets, no obvious logic bugs. Chi tiết ở bài 15d.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <h2>3. Verification Checklist Thực Tế</h2>
+
+  <div class="card">
+    <h3>Trước khi commit bất kỳ AI code nào</h3>
+    <ul class="checklist">
+      <li><span style="color:#58a6ff">①</span><strong>Packages:</strong> Mọi import → verify trên npmjs.com</li>
+      <li><span style="color:#3fb950">②</span><strong>API methods:</strong> Check official docs (không phải AI docs)</li>
+      <li><span style="color:#f0883e">③</span><strong>Logic:</strong> Trace through manually với 3 input scenarios</li>
+      <li><span style="color:#bc8cff">④</span><strong>Edge cases:</strong> Null, empty, negative, boundary values</li>
+      <li><span style="color:#a5d6ff">⑤</span><strong>Error types:</strong> NestJS exception classes đúng (NotFoundException, BadRequestException...)</li>
+      <li><span style="color:#ffa657">⑥</span><strong>Tests pass:</strong> Unit tests xanh trước khi push</li>
+    </ul>
+  </div>
+
+  <hr class="section-divider">
+
+  <h2>4. Dùng AI để Verify AI</h2>
+  <p>Một trick hữu ích: dùng prompt mới để review code AI vừa generate.</p>
+
+  <div class="code-block"><span class="str">"Review this code for potential issues:
+[paste generated code]
+
+Check for:
+1. Package names that might not exist
+2. Deprecated APIs (NestJS v10, Mongoose v8, MongoDB Node.js driver v6)
+3. Missing error handling
+4. Security issues (injection, hardcoded values)
+5. Logic bugs in edge cases (null input, empty array, concurrent calls)"</span></div>
+
+  <div class="tip">
+    <strong>Không hoàn hảo nhưng hữu ích:</strong> AI review AI có thể catch một số issues mà bạn miss. Không thay thế human review — bổ sung thêm một layer. Final judgment luôn là của bạn.
+  </div>
+
+  <hr class="section-divider">
+
+  <div class="exercises">
+    <div class="exercises-title">Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header">
+        <span class="ex-diff diff-green">Dễ</span>
+        <span class="ex-num">Bài 1</span>
+      </div>
+      <div class="ex-title">Review AI-generated UserService: tìm ít nhất 3 vấn đề</div>
+      <div class="ex-desc">Prompt AI tạo UserService với createUser, findAll, deleteUser. Review output và liệt kê ít nhất 3 vấn đề cụ thể với giải thích tại sao mỗi vấn đề là vấn đề.</div>
+      <button class="ex-sol-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Ẩn gợi ý':'Xem gợi ý'">Xem gợi ý</button>
+      <div class="ex-sol-body">
+        <strong>Vấn đề thường gặp trong AI-generated UserService:</strong><br>
+        1. Password không được hash (plain text lưu DB) — security risk<br>
+        2. findAll() không có pagination → memory leak với large dataset<br>
+        3. deleteUser không check ownership → user A có thể xóa user B<br>
+        4. Throw Error() thay vì NotFoundException/ConflictException<br>
+        5. Missing @IsEmail() validation trong DTO<br>
+        6. No transaction khi cần atomic operation
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header">
+        <span class="ex-diff diff-yellow">Trung bình</span>
+        <span class="ex-num">Bài 2</span>
+      </div>
+      <div class="ex-title">Generate function → viết tests → fix failures</div>
+      <div class="ex-desc">Prompt AI tạo discount calculator (VIP -20%, weekend +10%, min $5). Viết unit tests cho 5+ cases. Khi test fail → AI code có bug → fix và document bug found.</div>
+      <button class="ex-sol-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Ẩn gợi ý':'Xem gợi ý'">Xem gợi ý</button>
+      <div class="ex-sol-body">
+        <strong>Test cases cần viết:</strong><br>
+        - VIP weekday: -20% ✓ (thường đúng)<br>
+        - Regular weekend: +10% ✓ (thường đúng)<br>
+        - VIP weekend: ưu tiên rule nào? AI thường đoán sai<br>
+        - Price sau discount &lt; $5 → return $5 (min floor)<br>
+        - Input = 0 → return 0 hay $5?<br>
+        - Input = negative → throw hay 0?<br><br>
+        AI thường fail: VIP+weekend case và min price floor case.
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header">
+        <span class="ex-diff diff-red">Khó</span>
+        <span class="ex-num">Bài 3</span>
+      </div>
+      <div class="ex-title">Verify hallucinated packages trong AI output</div>
+      <div class="ex-desc">Prompt AI tạo complex NestJS service. List mọi package được import. Verify mỗi package: tồn tại trên npmjs.com? Version hiện tại? Method AI dùng có trong API không? Document findings.</div>
+      <button class="ex-sol-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Ẩn gợi ý':'Xem gợi ý'">Xem gợi ý</button>
+      <div class="ex-sol-body">
+        <strong>Verification workflow:</strong><br>
+        1. Extract all imports vào list<br>
+        2. npmjs.com → search package → check weekly downloads (thấp = suspect)<br>
+        3. GitHub repo → check last commit (abandoned?)<br>
+        4. Official docs → ctrl+F method name AI used<br>
+        5. Paste error vào terminal nếu package install fail<br><br>
+        Common hallucinations: @nestjs/common/utils/* subpaths, non-existent mongoose methods, outdated package names
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <h3>Key Takeaway — 15c</h3>
+    <p style="color:#c9d1d9;margin-top:8px">Hallucination không phải lỗi của AI — đây là bản chất LLM. Verification loop 4 bước: Understand → Test → Verify → Review. Kiểm tra mọi package, mọi API method. Tests là cách verify hiệu quả nhất. Code ownership = verification responsibility.</p>
+  </div>
+
+  <div style="text-align:center;margin-top:40px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">15c / Bài 15: AI Programming — Phase 4</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="15b-prompting.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← 15b: Prompting</a>
+      <a href="15d-security-risks.html" style="color:#58a6ff;text-decoration:none;font-size:.85rem">Tiếp theo: 15d — Security Risks →</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10d — Stack Trace Reader | Phase 3</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--accent:#58a6ff;--success:#3fb950;--warning:#d29922;--error:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.progress-bar{position:fixed;top:0;left:0;width:100%;height:3px;background:var(--border);z-index:100;}
+.progress-fill{height:100%;background:var(--accent);width:0;transition:width .1s;}
+nav{position:sticky;top:3px;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:90;}
+nav .brand{font-weight:700;color:var(--accent);font-size:.9rem;}
+nav .links a{color:var(--muted);text-decoration:none;margin-left:1.2rem;font-size:.85rem;transition:color .2s;}
+nav .links a:hover{color:var(--text);}
+.container{max-width:860px;margin:0 auto;padding:2rem 1.5rem;}
+h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;}
+.subtitle{color:var(--muted);margin-bottom:2.5rem;font-size:1.05rem;}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:1rem;color:var(--accent);}
+.section{margin-bottom:3rem;opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
+.section.visible{opacity:1;transform:none;}
+.label{display:inline-block;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;margin-bottom:.5rem;}
+/* Stack trace interactive */
+.trace-container{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:1.2rem;font-family:monospace;font-size:.82rem;margin-bottom:1rem;}
+.trace-line{padding:.3rem .5rem;border-radius:4px;cursor:pointer;transition:background .2s;display:flex;align-items:flex-start;gap:.5rem;line-height:1.5;}
+.trace-line:hover{background:#1f2937;}
+.trace-line.selected{background:#1a2840;border-left:3px solid var(--accent);}
+.trace-line.your-code{color:var(--text);}
+.trace-line.framework{color:var(--muted);}
+.trace-line.node-internal{color:#444;}
+.trace-num{color:var(--muted);width:1.5rem;flex-shrink:0;font-size:.75rem;padding-top:.05rem;}
+.tooltip{display:none;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-top:.5rem;font-family:'Segoe UI',sans-serif;font-size:.85rem;}
+.tooltip.show{display:block;}
+.tooltip h4{font-size:.85rem;font-weight:700;color:var(--accent);margin-bottom:.4rem;}
+.tooltip p{color:var(--muted);line-height:1.6;}
+.legend{display:flex;gap:1.2rem;margin-bottom:.8rem;flex-wrap:wrap;}
+.legend-item{display:flex;align-items:center;gap:.4rem;font-size:.8rem;color:var(--muted);}
+.dot{width:10px;height:10px;border-radius:50%;}
+.dot.yours{background:var(--text);}
+.dot.fw{background:#444;}
+.dot.internal{background:#222;}
+/* anatomy grid */
+.anatomy{display:grid;grid-template-columns:auto 1fr;gap:.3rem .8rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;font-size:.85rem;margin-bottom:1rem;align-items:start;}
+.anatomy .part{color:var(--accent);font-family:monospace;white-space:nowrap;}
+.anatomy .desc{color:var(--muted);}
+/* tips */
+.tips{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;}
+.tip{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;}
+.tip h4{font-size:.9rem;font-weight:700;margin-bottom:.4rem;color:var(--warning);}
+.tip p{font-size:.85rem;color:var(--muted);}
+.exercise{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.exercise h3{color:var(--accent);margin-bottom:.8rem;font-size:1rem;}
+.exercise ol{padding-left:1.2rem;color:var(--muted);font-size:.9rem;line-height:1.8;}
+.takeaway{background:linear-gradient(135deg,#1a2235,#161b22);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.takeaway h3{color:var(--accent);margin-bottom:1rem;}
+.takeaway ul{padding-left:1.2rem;line-height:2;}
+.nav-links{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-links a{color:var(--accent);text-decoration:none;font-size:.9rem;padding:.5rem 1rem;border:1px solid var(--border);border-radius:6px;transition:border-color .2s;}
+.nav-links a:hover{border-color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav>
+  <span class="brand">Phase 3 — Engineer Mindset</span>
+  <div class="links">
+    <a href="10c-tools.html">← Tools</a>
+    <a href="10e-git-bisect.html">Git Bisect →</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="section" id="s0">
+    <div class="label">10d / 5</div>
+    <h1>Stack Trace Reader</h1>
+    <p class="subtitle">A stack trace isn't noise — it's a map. Learn to read it top-to-bottom and find the bug in seconds.</p>
+  </div>
+
+  <div class="section" id="s1">
+    <h2>Interactive Stack Trace</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:.8rem;">Click any line to understand what it means. Focus on your code (bright lines) first.</p>
+    <div class="legend">
+      <div class="legend-item"><div class="dot yours"></div>Your code (investigate here)</div>
+      <div class="legend-item"><div class="dot fw"></div>Framework/library</div>
+      <div class="legend-item"><div class="dot internal"></div>Node.js internals (ignore)</div>
+    </div>
+    <div class="trace-container">
+      <div class="trace-line your-code" onclick="explain(0)"><span class="trace-num">1</span>TypeError: Cannot read properties of undefined (reading 'id')</div>
+      <div class="trace-line your-code" onclick="explain(1)"><span class="trace-num">2</span>&nbsp;&nbsp;&nbsp;&nbsp;at OrderService.create (src/orders/order.service.ts:42:25)</div>
+      <div class="trace-line your-code" onclick="explain(2)"><span class="trace-num">3</span>&nbsp;&nbsp;&nbsp;&nbsp;at OrderController.create (src/orders/order.controller.ts:18:40)</div>
+      <div class="trace-line framework" onclick="explain(3)"><span class="trace-num">4</span>&nbsp;&nbsp;&nbsp;&nbsp;at RouterExecutionContext.create (node_modules/@nestjs/core/router/router-execution-context.js:46:28)</div>
+      <div class="trace-line framework" onclick="explain(4)"><span class="trace-num">5</span>&nbsp;&nbsp;&nbsp;&nbsp;at RouterProxy.createRequestHandler (node_modules/@nestjs/core/router/router-proxy.js:31:14)</div>
+      <div class="trace-line node-internal" onclick="explain(5)"><span class="trace-num">6</span>&nbsp;&nbsp;&nbsp;&nbsp;at Layer.handle [as handle_request] (node_modules/express/lib/router/layer.js:95:5)</div>
+      <div class="trace-line node-internal" onclick="explain(6)"><span class="trace-num">7</span>&nbsp;&nbsp;&nbsp;&nbsp;at next (node_modules/express/lib/router/route.js:137:13)</div>
+    </div>
+    <div class="tooltip" id="tip">
+      <h4 id="tip-title"></h4>
+      <p id="tip-body"></p>
+    </div>
+  </div>
+
+  <div class="section" id="s2">
+    <h2>Anatomy of One Stack Frame</h2>
+    <div class="anatomy">
+      <span class="part">at</span><span class="desc">Keyword — marks a call frame</span>
+      <span class="part">OrderService</span><span class="desc">Class name (or function name)</span>
+      <span class="part">.create</span><span class="desc">Method name</span>
+      <span class="part">(src/orders/</span><span class="desc">File path relative to project root</span>
+      <span class="part">order.service.ts</span><span class="desc">Exact file</span>
+      <span class="part">:42</span><span class="desc">Line number — go here first</span>
+      <span class="part">:25)</span><span class="desc">Column number — character position on that line</span>
+    </div>
+    <p style="color:var(--muted);font-size:.85rem;">In VS Code: <kbd>Ctrl+G</kbd> → type line number to jump instantly. Or just click the file path in terminal (if your terminal supports it).</p>
+  </div>
+
+  <div class="section" id="s3">
+    <h2>Reading Strategy</h2>
+    <div class="tips">
+      <div class="tip">
+        <h4>1. Read the error type first</h4>
+        <p><code>TypeError</code>, <code>ReferenceError</code>, <code>ValidationError</code> — the type tells you the category before you look at code.</p>
+      </div>
+      <div class="tip">
+        <h4>2. Find YOUR code in the trace</h4>
+        <p>Ignore <code>node_modules</code>. Your code is the first line without it. That's where to start.</p>
+      </div>
+      <div class="tip">
+        <h4>3. Read top-to-bottom = last-to-first</h4>
+        <p>Top = where it crashed. Bottom = where the call started. Work upward to find the root.</p>
+      </div>
+      <div class="tip">
+        <h4>4. Check one frame above the crash</h4>
+        <p>If line 42 crashes, often line 18 (the caller) passed bad data. Look at both.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="s4">
+    <div class="exercise">
+      <h3>🔬 Exercise — Trace Analysis</h3>
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:.8rem;">Given this error: <code>ReferenceError: user is not defined at AuthService.validate (auth.service.ts:31:18)</code></p>
+      <ol>
+        <li>What type of error is this? What does that type mean?</li>
+        <li>What file and line should you open first?</li>
+        <li>What are you looking for on that line?</li>
+        <li>If auth.service.ts:31 is <code>return user.id;</code> — what's the bug?</li>
+        <li>What's the fix? What guard/check would prevent this?</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section" id="s5">
+    <div class="takeaway">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li>Error type is a category — learn the 6 common JS error types</li>
+        <li>Skip <code>node_modules</code> frames — your bug isn't there</li>
+        <li>Top of trace = crash site, but root cause is often one frame up</li>
+        <li>Line:column is your GPS coordinate — open it immediately</li>
+        <li>Async stacks are truncated — use <code>async_hooks</code> or structured logging for full context</li>
+      </ul>
+    </div>
+    <div class="nav-links">
+      <a href="10c-tools.html">← 10c: Tools</a>
+      <a href="10e-git-bisect.html">10e: Git Bisect →</a>
+    </div>
+  </div>
+</div>
+<script>
+const explanations = [
+  {title:'Error Message (Line 1)', body:'This is the most important line. "TypeError" = you tried to use undefined/null as an object. "Cannot read properties of undefined (reading \'id\')" = something was undefined and you tried to access .id on it.'},
+  {title:'Crash Site — Your Code (Line 2)', body:'order.service.ts line 42, column 25. This is where it crashed. Open this file NOW. Something on that line returned undefined when you expected an object. Likely: const result = await repo.findOne(...); then result.id when result is null.'},
+  {title:'Caller — Your Code (Line 3)', body:'order.controller.ts line 18. This called the service. Check: what data did it pass? Is the input validated before passing to the service? This is where bad data may have entered.'},
+  {title:'NestJS Framework (Line 4)', body:'This is NestJS internal code. You don\'t need to debug this — it\'s working correctly. It\'s just calling your handler. Skip it.'},
+  {title:'NestJS Framework (Line 5)', body:'Another NestJS internal. This is the router proxy setting up your request handler. Ignore it — your code is lines 2 and 3.'},
+  {title:'Express Router (Line 6)', body:'Express.js internals. This is the HTTP layer routing the request to your handler. Far from your bug. Ignore.'},
+  {title:'Express Router (Line 7)', body:'Express.js internals — middleware chain. Nothing to debug here. The entire bottom half of this trace is standard framework plumbing.'}
+];
+function explain(i){
+  document.querySelectorAll('.trace-line').forEach((l,j)=>l.classList.toggle('selected',j===i));
+  const tip=document.getElementById('tip');
+  document.getElementById('tip-title').textContent=explanations[i].title;
+  document.getElementById('tip-body').textContent=explanations[i].body;
+  tip.classList.add('show');
+}
+window.addEventListener('scroll',()=>{
+  document.getElementById('pf').style.width=(window.scrollY/(document.documentElement.scrollHeight-window.innerHeight))*100+'%';
+});
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.1});
+document.querySelectorAll('.section').forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

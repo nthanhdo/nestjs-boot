@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02b — Control Flow | Tư Duy Lập Trình</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #151d32; --surface2: #1c2744;
+  --border: #2a3a5c; --text: #eef1f8; --muted: #8899bb;
+  --accent: #a78bfa; --green: #2ecc71; --red: #e74c3c;
+  --blue: #5b8def; --orange: #ffb347; --teal: #00cec9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; }
+.top-nav { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; font-size: .85rem; }
+.top-nav a { color: var(--accent); text-decoration: none; padding: 4px 10px; border-radius: 6px; border: 1px solid transparent; transition: .2s; }
+.top-nav a:hover { border-color: var(--accent); background: #a78bfa18; }
+.nav-center { color: var(--muted); font-size: .8rem; }
+.hero { padding: 48px 24px 32px; max-width: 860px; margin: 0 auto; animation: fadeUp .5s ease; }
+.lesson-tag { display: inline-block; background: #a78bfa22; color: var(--accent); border: 1px solid #a78bfa44; border-radius: 20px; padding: 4px 14px; font-size: .8rem; margin-bottom: 16px; }
+h1 { font-size: 2rem; margin-bottom: 8px; }
+h1 span { color: var(--accent); }
+.subtitle { color: var(--muted); font-size: 1rem; margin-bottom: 32px; }
+.section { max-width: 860px; margin: 0 auto 40px; padding: 0 24px; }
+h2 { font-size: 1.2rem; color: var(--accent); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1rem; color: var(--orange); margin: 16px 0 8px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:600px){ .card-row { grid-template-columns: 1fr; } }
+pre { background: #0a0f1e; border: 1px solid var(--border); border-radius: 10px; padding: 20px; overflow-x: auto; font-size: .88rem; line-height: 1.7; }
+.kw { color: #79b8ff; } .fn { color: #b392f0; } .str { color: #9ecbff; }
+.num { color: var(--orange); } .cmt { color: #6a737d; font-style: italic; } .type { color: var(--teal); }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:600px){ .compare { grid-template-columns: 1fr; } }
+.compare-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.compare-box.bad { border-top: 3px solid var(--red); }
+.compare-box.good { border-top: 3px solid var(--green); }
+.compare-label { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+.compare-box.bad .compare-label { color: var(--red); }
+.compare-box.good .compare-label { color: var(--green); }
+
+/* FLOW DIAGRAM */
+.flow-diagram { display: flex; align-items: center; gap: 0; overflow-x: auto; padding: 20px 0; }
+.flow-node { text-align: center; }
+.flow-box { background: var(--surface2); border: 2px solid var(--border); border-radius: 8px; padding: 10px 16px; font-size: .85rem; white-space: nowrap; cursor: pointer; transition: .2s; }
+.flow-box.diamond { clip-path: polygon(50% 0%,100% 50%,50% 100%,0% 50%); background: #a78bfa22; border-color: var(--accent); padding: 20px 24px; }
+.flow-box:hover, .flow-box.active { border-color: var(--teal); background: #00cec910; }
+.flow-arrow { padding: 0 8px; color: var(--muted); font-size: 1.2rem; }
+.flow-label { font-size: .7rem; color: var(--muted); margin-top: 4px; }
+
+/* ASYNC TIMELINE */
+.timeline { position: relative; padding-left: 24px; border-left: 2px solid var(--border); }
+.timeline-item { margin-bottom: 16px; position: relative; }
+.timeline-dot { position: absolute; left: -32px; top: 4px; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); border: 2px solid var(--bg); }
+.timeline-item.wait .timeline-dot { background: var(--orange); }
+.timeline-item.done .timeline-dot { background: var(--green); }
+.timeline-label { font-size: .85rem; color: var(--text); }
+.timeline-time { font-size: .75rem; color: var(--muted); }
+
+/* QUIZ */
+.quiz-option { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; cursor: pointer; font-size: .9rem; transition: .2s; }
+.quiz-option:hover { border-color: var(--accent); }
+.quiz-option.correct { border-color: var(--green); background: #2ecc7115; color: var(--green); }
+.quiz-option.wrong { border-color: var(--red); background: #e74c3c15; color: var(--red); }
+
+.takeaway { background: linear-gradient(135deg, #a78bfa15, #5b8def10); border: 1px solid #a78bfa44; border-radius: 12px; padding: 20px 24px; margin: 32px auto; max-width: 860px; }
+.takeaway-label { font-size: .75rem; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
+.exercise { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--orange); border-radius: 10px; padding: 20px; margin-top: 16px; }
+.exercise-label { font-size: .75rem; color: var(--orange); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px; }
+.exercise ul { padding-left: 20px; color: var(--muted); font-size: .9rem; }
+.exercise li { margin-bottom: 6px; }
+.next-nav { max-width: 860px; margin: 0 auto 60px; padding: 0 24px; }
+.next-topic { display: flex; align-items: center; gap: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; text-decoration: none; color: var(--text); transition: .2s; }
+.next-topic:hover { border-color: var(--accent); background: #a78bfa08; }
+.next-icon { font-size: 2rem; }
+.next-text .label { font-size: .75rem; color: var(--muted); }
+.next-text .title { font-size: 1rem; font-weight: 600; color: var(--accent); }
+.next-arrow { margin-left: auto; font-size: 1.4rem; color: var(--accent); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="02a-data-state.html">← 02a Data & State</a>
+  <span class="nav-center">Bài 02 · Control Flow · 02b / 06</span>
+  <a href="02c-function-design.html">02c Functions →</a>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">Bài 02b / 06 · Tư Duy Lập Trình</div>
+  <h1>🔀 <span>Control Flow</span></h1>
+  <p class="subtitle">Branching, loops, async — ba công cụ kiểm soát luồng chương trình. Dùng đúng thì code rõ ràng; dùng sai thì tạo ra mê cung không lối thoát.</p>
+</div>
+
+<!-- BRANCHING -->
+<div class="section">
+  <h2>🌿 Branching — if / switch / guard clause</h2>
+  <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px;">Branching quyết định con đường nào được đi. Vấn đề là: <em>nesting quá sâu = Pyramid of Doom</em>.</p>
+  <div class="compare">
+    <div class="compare-box bad">
+      <div class="compare-label">❌ Deep nesting — khó đọc</div>
+      <pre style="font-size:.82rem;"><span class="kw">function</span> <span class="fn">processOrder</span>(order) {
+  <span class="kw">if</span> (order) {
+    <span class="kw">if</span> (order.userId) {
+      <span class="kw">if</span> (order.items.length > <span class="num">0</span>) {
+        <span class="kw">if</span> (order.total > <span class="num">0</span>) {
+          <span class="cmt">// actual logic ở đây</span>
+        }
+      }
+    }
+  }
+}</pre>
+    </div>
+    <div class="compare-box good">
+      <div class="compare-label">✅ Guard clauses — flat & clear</div>
+      <pre style="font-size:.82rem;"><span class="kw">function</span> <span class="fn">processOrder</span>(order) {
+  <span class="kw">if</span> (!order) <span class="kw">throw</span> <span class="kw">new</span> <span class="fn">Error</span>(<span class="str">'No order'</span>)
+  <span class="kw">if</span> (!order.userId) <span class="kw">throw</span> <span class="fn">Error</span>(<span class="str">'No user'</span>)
+  <span class="kw">if</span> (!order.items.length) <span class="kw">throw</span> <span class="fn">Error</span>(<span class="str">'Empty'</span>)
+  <span class="kw">if</span> (order.total <= <span class="num">0</span>) <span class="kw">throw</span> <span class="fn">Error</span>(<span class="str">'Bad total'</span>)
+
+  <span class="cmt">// actual logic — không bị indent</span>
+  <span class="kw">return</span> <span class="fn">fulfill</span>(order)
+}</pre>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <h3>Switch vs Object map</h3>
+    <div class="compare">
+      <div style="flex:1;">
+        <pre style="font-size:.82rem;"><span class="cmt">// Switch — verbose</span>
+<span class="kw">switch</span>(status) {
+  <span class="kw">case</span> <span class="str">'pending'</span>: <span class="kw">return</span> <span class="str">'⏳'</span>
+  <span class="kw">case</span> <span class="str">'done'</span>:    <span class="kw">return</span> <span class="str">'✅'</span>
+  <span class="kw">case</span> <span class="str">'failed'</span>:  <span class="kw">return</span> <span class="str">'❌'</span>
+  <span class="kw">default</span>:        <span class="kw">return</span> <span class="str">'❓'</span>
+}</pre>
+      </div>
+      <div style="flex:1;">
+        <pre style="font-size:.82rem;"><span class="cmt">// Object map — concise</span>
+<span class="kw">const</span> icons = {
+  pending: <span class="str">'⏳'</span>,
+  done:    <span class="str">'✅'</span>,
+  failed:  <span class="str">'❌'</span>,
+}
+<span class="kw">return</span> icons[status] ?? <span class="str">'❓'</span></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOOPS -->
+<div class="section">
+  <h2>🔁 Loops — Chọn Đúng Công Cụ</h2>
+  <div class="card-row">
+    <div class="card">
+      <h3>for...of — iterate items</h3>
+      <pre style="font-size:.82rem;"><span class="kw">for</span> (<span class="kw">const</span> item <span class="kw">of</span> order.items) {
+  <span class="kw">await</span> <span class="fn">processItem</span>(item)
+}
+<span class="cmt">// Dùng khi cần index hoặc async/await</span></pre>
+    </div>
+    <div class="card">
+      <h3>.map/.filter/.reduce</h3>
+      <pre style="font-size:.82rem;"><span class="kw">const</span> prices = items
+  .<span class="fn">filter</span>(i => i.inStock)
+  .<span class="fn">map</span>(i => i.price)
+  .<span class="fn">reduce</span>((s, p) => s + p, <span class="num">0</span>)
+<span class="cmt">// Dùng khi transform data</span></pre>
+    </div>
+    <div class="card">
+      <h3>while — condition-based</h3>
+      <pre style="font-size:.82rem;"><span class="kw">let</span> retries = <span class="num">0</span>
+<span class="kw">while</span> (retries < <span class="num">3</span>) {
+  <span class="kw">const</span> ok = <span class="kw">await</span> <span class="fn">tryConnect</span>()
+  <span class="kw">if</span> (ok) <span class="kw">break</span>
+  retries++
+}</pre>
+    </div>
+    <div class="card">
+      <h3>⚠️ Avoid: nested loops O(n²)</h3>
+      <pre style="font-size:.82rem;"><span class="cmt">// ❌ O(n²) — dùng Map thay thế</span>
+<span class="kw">for</span> (<span class="kw">const</span> a <span class="kw">of</span> listA)
+  <span class="kw">for</span> (<span class="kw">const</span> b <span class="kw">of</span> listB)
+    <span class="kw">if</span> (a.id === b.id) ...
+
+<span class="cmt">// ✅ O(n) với Map lookup</span>
+<span class="kw">const</span> bMap = <span class="kw">new</span> <span class="fn">Map</span>(listB.<span class="fn">map</span>(b=>[b.id,b]))</pre>
+    </div>
+  </div>
+</div>
+
+<!-- ASYNC FLOW -->
+<div class="section">
+  <h2>⚡ Async Control Flow</h2>
+  <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px;">Async là control flow đặc biệt — chương trình không dừng mà "chờ" ở background. Hiểu Promise chain và parallel execution là critical.</p>
+  <div class="compare">
+    <div class="compare-box bad">
+      <div class="compare-label">❌ Sequential — chậm không cần thiết</div>
+      <pre style="font-size:.82rem;"><span class="cmt">// Tổng: 300ms (100+100+100)</span>
+<span class="kw">const</span> user = <span class="kw">await</span> <span class="fn">getUser</span>(id)     <span class="cmt">// 100ms</span>
+<span class="kw">const</span> orders = <span class="kw">await</span> <span class="fn">getOrders</span>(id) <span class="cmt">// 100ms</span>
+<span class="kw">const</span> prefs = <span class="kw">await</span> <span class="fn">getPrefs</span>(id)   <span class="cmt">// 100ms</span>
+<span class="cmt">// chúng KHÔNG phụ thuộc nhau!</span></pre>
+    </div>
+    <div class="compare-box good">
+      <div class="compare-label">✅ Parallel — 3× nhanh hơn</div>
+      <pre style="font-size:.82rem;"><span class="cmt">// Tổng: ~100ms (chạy song song)</span>
+<span class="kw">const</span> [user, orders, prefs] =
+  <span class="kw">await</span> <span class="type">Promise</span>.<span class="fn">all</span>([
+    <span class="fn">getUser</span>(id),
+    <span class="fn">getOrders</span>(id),
+    <span class="fn">getPrefs</span>(id),
+  ])
+<span class="cmt">// Khi không phụ thuộc → dùng all()</span></pre>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <h3>Promise.allSettled — khi cần biết từng kết quả</h3>
+    <pre style="font-size:.85rem;"><span class="kw">const</span> results = <span class="kw">await</span> <span class="type">Promise</span>.<span class="fn">allSettled</span>([
+  <span class="fn">sendEmail</span>(user),
+  <span class="fn">sendSMS</span>(user),
+  <span class="fn">pushNotify</span>(user),
+])
+results.<span class="fn">forEach</span>((r, i) => {
+  <span class="kw">if</span> (r.status === <span class="str">'rejected'</span>)
+    logger.<span class="fn">error</span>(<span class="str">`Channel <span class="num">${i}</span> failed`</span>, r.reason)
+})
+<span class="cmt">// allSettled: không throw khi một cái fail → log từng cái</span></pre>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div class="section">
+  <h2>🧠 Mini Quiz</h2>
+  <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px;">Đoạn code sau có tổng thời gian chạy bao nhiêu nếu mỗi API call mất 200ms?</p>
+  <pre style="margin-bottom:16px;font-size:.85rem;"><span class="kw">const</span> a = <span class="kw">await</span> <span class="fn">fetchA</span>()  <span class="cmt">// 200ms</span>
+<span class="kw">const</span> [b, c] = <span class="kw">await</span> <span class="type">Promise</span>.<span class="fn">all</span>([<span class="fn">fetchB</span>(), <span class="fn">fetchC</span>()])  <span class="cmt">// ?</span>
+<span class="kw">const</span> d = <span class="kw">await</span> <span class="fn">fetchD</span>(a)  <span class="cmt">// phụ thuộc a, 200ms</span></pre>
+  <div id="quiz-options">
+    <div class="quiz-option" onclick="checkQuiz(this, false)">A. 200ms</div>
+    <div class="quiz-option" onclick="checkQuiz(this, false)">B. 800ms</div>
+    <div class="quiz-option" onclick="checkQuiz(this, true)">C. 600ms (200 + 200 + 200)</div>
+    <div class="quiz-option" onclick="checkQuiz(this, false)">D. 400ms</div>
+  </div>
+  <p id="quiz-explain" style="display:none;margin-top:12px;color:var(--green);font-size:.9rem;">
+    ✅ Đúng! fetchA=200ms → b+c parallel=200ms → fetchD(a)=200ms → tổng 600ms. fetchB và fetchC chạy song song nên chỉ tốn 200ms thay vì 400ms.
+  </p>
+</div>
+
+<!-- TAKEAWAY -->
+<div class="takeaway">
+  <div class="takeaway-label">💡 Key Takeaway</div>
+  <p>Guard clauses thay vì nesting sâu. Dùng <code>Promise.all()</code> khi tasks độc lập. Chọn loop phù hợp: <code>for...of</code> cho async, <code>.map/.filter</code> cho transform, <code>while</code> cho retry. Mỗi công cụ có use case — không có one-size-fits-all.</p>
+</div>
+
+<!-- EXERCISE -->
+<div class="section">
+  <h2>🏋️ Bài Tập</h2>
+  <div class="exercise">
+    <div class="exercise-label">Refactor: Flatten + Parallelize</div>
+    <pre style="font-size:.85rem;"><span class="cmt">// Refactor đoạn này: (1) dùng guard clauses, (2) parallel khi có thể</span>
+<span class="kw">async function</span> <span class="fn">checkout</span>(userId, cartId) {
+  <span class="kw">if</span> (userId) {
+    <span class="kw">const</span> user = <span class="kw">await</span> <span class="fn">getUser</span>(userId)
+    <span class="kw">if</span> (user.isActive) {
+      <span class="kw">const</span> cart = <span class="kw">await</span> <span class="fn">getCart</span>(cartId)
+      <span class="kw">if</span> (cart.items.length > <span class="num">0</span>) {
+        <span class="kw">const</span> payment = <span class="kw">await</span> <span class="fn">charge</span>(user, cart)
+        <span class="kw">const</span> inv = <span class="kw">await</span> <span class="fn">updateInventory</span>(cart)
+        <span class="kw">const</span> notif = <span class="kw">await</span> <span class="fn">notify</span>(user)
+        <span class="kw">return</span> { payment, inv, notif }
+      }
+    }
+  }
+}</pre>
+  </div>
+</div>
+
+<div class="next-nav">
+  <a href="02c-function-design.html" class="next-topic">
+    <div class="next-icon">🔧</div>
+    <div class="next-text">
+      <div class="label">Bài tiếp theo · 02c / 06</div>
+      <div class="title">Function Design — SRP, pure, composable</div>
+    </div>
+    <span class="next-arrow">→</span>
+  </a>
+</div>
+
+<script>
+function checkQuiz(el, correct) {
+  document.querySelectorAll('.quiz-option').forEach(o => {
+    o.classList.remove('correct','wrong');
+    o.onclick = null;
+  });
+  el.classList.add(correct ? 'correct' : 'wrong');
+  if (!correct) document.querySelectorAll('.quiz-option')[2].classList.add('correct');
+  document.getElementById('quiz-explain').style.display = 'block';
+}
+</script>
+</body>
+</html>

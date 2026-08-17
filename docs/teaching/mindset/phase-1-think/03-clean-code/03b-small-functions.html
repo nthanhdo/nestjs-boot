@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03b — Small Functions | Clean Code</title>
+<style>
+:root{--bg:#0e1525;--surface:#151d32;--surface2:#1c2744;--border:#2a3a5c;--text:#eef1f8;--muted:#8899bb;--accent:#a78bfa;--green:#2ecc71;--red:#e74c3c;--blue:#5b8def;--orange:#ffb347;--teal:#00cec9;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.top-nav{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:10px 24px;font-size:.85rem;}
+.top-nav a{color:var(--accent);text-decoration:none;padding:4px 10px;border-radius:6px;border:1px solid transparent;transition:.2s;}
+.top-nav a:hover{border-color:var(--accent);background:#a78bfa18;}
+.nav-center{color:var(--muted);font-size:.8rem;}
+.hero{padding:48px 24px 32px;max-width:860px;margin:0 auto;animation:fadeUp .5s ease;}
+.lesson-tag{display:inline-block;background:#a78bfa22;color:var(--accent);border:1px solid #a78bfa44;border-radius:20px;padding:4px 14px;font-size:.8rem;margin-bottom:16px;}
+h1{font-size:2rem;margin-bottom:8px;}h1 span{color:var(--accent);}
+.subtitle{color:var(--muted);font-size:1rem;margin-bottom:32px;}
+.section{max-width:860px;margin:0 auto 40px;padding:0 24px;}
+h2{font-size:1.2rem;color:var(--accent);margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:1rem;color:var(--orange);margin:16px 0 8px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
+pre{background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:20px;overflow-x:auto;font-size:.88rem;line-height:1.7;}
+.kw{color:#79b8ff;}.fn{color:#b392f0;}.str{color:#9ecbff;}.num{color:var(--orange);}.cmt{color:#6a737d;font-style:italic;}.type{color:var(--teal);}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:600px){.compare{grid-template-columns:1fr;}}
+.compare-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.compare-box.bad{border-top:3px solid var(--red);}
+.compare-box.good{border-top:3px solid var(--green);}
+.compare-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+.compare-box.bad .compare-label{color:var(--red);}
+.compare-box.good .compare-label{color:var(--green);}
+
+/* BIG FN VISUALIZATION */
+.fn-big{background:rgba(231,76,60,.06);border:1px solid rgba(231,76,60,.25);border-radius:12px;padding:20px;margin-bottom:16px;}
+.fn-big-label{color:var(--red);font-size:.78rem;font-weight:700;margin-bottom:10px;}
+.fn-lines{display:flex;flex-wrap:wrap;gap:3px;margin:10px 0;}
+.fn-line{width:18px;height:8px;border-radius:2px;background:rgba(231,76,60,.4);}
+.fn-small-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+.fn-small-box{background:rgba(46,204,113,.06);border:1px solid rgba(46,204,113,.25);border-radius:8px;padding:10px;text-align:center;font-size:.75rem;color:var(--green);}
+.fn-small-lines{display:flex;flex-wrap:wrap;gap:2px;margin-top:6px;justify-content:center;}
+.fn-small-line{width:12px;height:5px;border-radius:1px;background:rgba(46,204,113,.3);}
+
+.split-btn{background:linear-gradient(135deg,#00b894,#2ecc71);color:#fff;border:none;padding:10px 24px;border-radius:10px;cursor:pointer;font-size:.9rem;font-weight:600;display:block;margin:12px auto;}
+.highlight-box{background:rgba(46,204,113,.06);border:1px solid rgba(46,204,113,.25);border-radius:12px;padding:16px 20px;margin:16px 0;}
+.highlight-label{font-size:.75rem;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.takeaway{background:linear-gradient(135deg,#a78bfa15,#5b8def10);border:1px solid #a78bfa44;border-radius:12px;padding:20px 24px;margin:32px auto;max-width:860px;}
+.takeaway-label{font-size:.75rem;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.exercise{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:10px;padding:20px;margin-top:16px;}
+.exercise-label{font-size:.75rem;color:var(--orange);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+.next-nav{max-width:860px;margin:0 auto 60px;padding:0 24px;}
+.next-topic{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;text-decoration:none;color:var(--text);transition:.2s;}
+.next-topic:hover{border-color:var(--accent);background:#a78bfa08;}
+.next-icon{font-size:2rem;}.next-text .label{font-size:.75rem;color:var(--muted);}.next-text .title{font-size:1rem;font-weight:600;color:var(--accent);}.next-arrow{margin-left:auto;font-size:1.4rem;color:var(--accent);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="03a-naming.html">← 03a Naming</a>
+  <span class="nav-center">Bài 03 · Small Functions · 03b / 07</span>
+  <a href="03c-dry-kiss-yagni.html">03c DRY/KISS →</a>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">Bài 03b / 07 · Clean Code</div>
+  <h1>✂️ Hàm <span>Nhỏ</span></h1>
+  <p class="subtitle">Hàm lý tưởng đủ nhỏ để thấy toàn bộ trên màn hình. Đây là áp dụng của SRP vào thực tế. Khi hàm làm nhiều việc → tách ra.</p>
+</div>
+
+<!-- VISUALIZATION -->
+<div class="section">
+  <h2>🔬 Hàm 100 Dòng vs 5 Hàm Nhỏ</h2>
+  <div class="fn-big">
+    <div class="fn-big-label">❌ processUserRegistration() — 100 dòng</div>
+    <div class="fn-lines" id="bigLines"></div>
+    <div style="color:var(--red);font-size:.85rem;margin-top:10px;">Validate input + Hash password + Save DB + Send email + Create session + Log event + Notify admin...</div>
+  </div>
+  <button class="split-btn" onclick="showSmall()">→ Tách thành hàm nhỏ</button>
+  <div id="smallGrid" style="display:none;animation:fadeUp .4s;">
+    <div style="color:var(--green);font-size:.78rem;font-weight:700;margin-bottom:10px;">✅ 5 hàm nhỏ, mỗi hàm 15-20 dòng</div>
+    <div class="fn-small-grid">
+      <div class="fn-small-box">validateInput()<div class="fn-small-lines" id="sl1"></div></div>
+      <div class="fn-small-box">hashPassword()<div class="fn-small-lines" id="sl2"></div></div>
+      <div class="fn-small-box">saveUser()<div class="fn-small-lines" id="sl3"></div></div>
+      <div class="fn-small-box">sendEmail()<div class="fn-small-lines" id="sl4"></div></div>
+      <div class="fn-small-box">createSession()<div class="fn-small-lines" id="sl5"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- RULE OF THUMB -->
+<div class="section">
+  <h2>📏 Dấu Hiệu Hàm Cần Tách</h2>
+  <div class="card" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div style="background:rgba(231,76,60,.06);border:1px solid rgba(231,76,60,.2);border-radius:8px;padding:14px;">
+      <div style="color:var(--red);font-size:.8rem;font-weight:700;margin-bottom:8px;">❌ Tín hiệu XẤU</div>
+      <ul style="color:var(--muted);font-size:.85rem;padding-left:16px;line-height:2;">
+        <li>Cần scroll để đọc hết</li>
+        <li>Có comment "// Step 1:", "// Step 2:"</li>
+        <li>Hàm nesting > 3 levels</li>
+        <li>Khó viết test vì quá nhiều branches</li>
+        <li>> 30 dòng code thực</li>
+      </ul>
+    </div>
+    <div style="background:rgba(46,204,113,.06);border:1px solid rgba(46,204,113,.2);border-radius:8px;padding:14px;">
+      <div style="color:var(--green);font-size:.8rem;font-weight:700;margin-bottom:8px;">✅ Tín hiệu TỐT</div>
+      <ul style="color:var(--muted);font-size:.85rem;padding-left:16px;line-height:2;">
+        <li>Nhìn tên biết output</li>
+        <li>Test trong 3-5 dòng</li>
+        <li>1 level abstraction duy nhất</li>
+        <li>Dễ đặt tên có ý nghĩa</li>
+        <li>Có thể đọc xong trong 10 giây</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ONE LEVEL OF ABSTRACTION -->
+<div class="section">
+  <h2>🎯 One Level of Abstraction</h2>
+  <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px;">Hàm nên làm việc ở cùng 1 level abstraction. Đừng mix high-level logic với low-level implementation details.</p>
+  <div class="compare">
+    <div class="compare-box bad">
+      <div class="compare-label">❌ Mixed levels</div>
+      <pre style="font-size:.82rem;"><span class="kw">async function</span> <span class="fn">checkout</span>(userId) {
+  <span class="cmt">// High-level intent</span>
+  <span class="kw">const</span> user = <span class="kw">await</span> <span class="fn">getUser</span>(userId)
+
+  <span class="cmt">// Suddenly low-level SQL!</span>
+  <span class="kw">const</span> cart = <span class="kw">await</span> db.<span class="fn">query</span>(
+    <span class="str">'SELECT * FROM carts WHERE user_id=? AND status=?'</span>,
+    [userId, <span class="str">'active'</span>]
+  )
+  <span class="cmt">// Back to high-level</span>
+  <span class="kw">await</span> <span class="fn">processPayment</span>(cart)
+}</pre>
+    </div>
+    <div class="compare-box good">
+      <div class="compare-label">✅ Same level</div>
+      <pre style="font-size:.82rem;"><span class="kw">async function</span> <span class="fn">checkout</span>(userId) {
+  <span class="cmt">// All high-level intent</span>
+  <span class="kw">const</span> user = <span class="kw">await</span> <span class="fn">getUser</span>(userId)
+  <span class="kw">const</span> cart = <span class="kw">await</span> <span class="fn">getActiveCart</span>(userId)
+  <span class="kw">await</span> <span class="fn">processPayment</span>(cart, user)
+  <span class="kw">await</span> <span class="fn">sendConfirmation</span>(user, cart)
+}
+<span class="cmt">// SQL detail nằm trong getActiveCart() ✓</span></pre>
+    </div>
+  </div>
+</div>
+
+<!-- EXTRACT METHOD RECIPE -->
+<div class="section">
+  <h2>🔧 Extract Method Recipe</h2>
+  <pre style="font-size:.85rem;"><span class="cmt">// Before: comment "// Step" = dấu hiệu cần extract</span>
+<span class="kw">async function</span> <span class="fn">registerUser</span>(data) {
+  <span class="cmt">// Step 1: validate</span>
+  <span class="kw">if</span> (!data.email.includes(<span class="str">'@'</span>)) <span class="kw">throw</span> <span class="fn">Error</span>(<span class="str">'Invalid email'</span>)
+  <span class="kw">if</span> (data.password.length < <span class="num">8</span>) <span class="kw">throw</span> <span class="fn">Error</span>(<span class="str">'Too short'</span>)
+  <span class="cmt">// Step 2: hash</span>
+  <span class="kw">const</span> hashedPw = <span class="kw">await</span> bcrypt.<span class="fn">hash</span>(data.password, <span class="num">10</span>)
+  <span class="cmt">// Step 3: save</span>
+  <span class="kw">const</span> user = <span class="kw">await</span> db.<span class="fn">create</span>({ ...data, password: hashedPw })
+  <span class="cmt">// Step 4: notify</span>
+  <span class="kw">await</span> mailer.<span class="fn">send</span>(user.email, <span class="str">'Welcome!'</span>)
+  <span class="kw">return</span> user
+}
+
+<span class="cmt">// After: each "Step" becomes a named function</span>
+<span class="kw">async function</span> <span class="fn">registerUser</span>(data) {
+  <span class="fn">validateRegistrationData</span>(data)
+  <span class="kw">const</span> user = <span class="kw">await</span> <span class="fn">createUserAccount</span>(data)
+  <span class="kw">await</span> <span class="fn">sendWelcomeEmail</span>(user)
+  <span class="kw">return</span> user
+}</pre>
+  <div class="highlight-box">
+    <div class="highlight-label">Rule of Thumb</div>
+    <p style="color:var(--text);font-size:.9rem;">Nếu bạn thấy comment <code>// Step 1:</code>, <code>// Validate:</code>, <code>// TODO:</code> trong body của hàm → đó là dấu hiệu cần extract thành function riêng. Mỗi comment = 1 hàm mới.</p>
+  </div>
+</div>
+
+<div class="takeaway">
+  <div class="takeaway-label">💡 Key Takeaway</div>
+  <p>Hàm nhỏ → dễ đọc, dễ test, dễ tái sử dụng, dễ debug. Mỗi hàm chỉ làm 1 việc ở 1 level abstraction. Extract method là refactoring an toàn nhất để học. Comment "// Step N" = extract signal.</p>
+</div>
+
+<div class="section">
+  <h2>🏋️ Bài Tập</h2>
+  <div class="exercise">
+    <div class="exercise-label">Tách hàm 80 dòng</div>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:10px;">Hàm <code>processOrder()</code> dưới đây cần tách. Liệt kê các "Step" ẩn trong nó, sau đó viết pseudo-code cho version refactored:</p>
+    <pre style="font-size:.82rem;"><span class="kw">async function</span> <span class="fn">processOrder</span>(uid, items, cc, addr, promo) {
+  <span class="cmt">// Step 1: validate user</span>
+  <span class="kw">const</span> u = <span class="kw">await</span> db.<span class="fn">query</span>(<span class="str">'SELECT * FROM users WHERE id=?'</span>, [uid])
+  <span class="kw">if</span> (!u || !u.email || !u.isActive) <span class="kw">return</span> { err: <span class="str">'invalid user'</span> }
+  <span class="cmt">// [... 50 more lines: validate items, apply promo, charge card, save order ...]</span>
+}</pre>
+  </div>
+</div>
+
+<div class="next-nav">
+  <a href="03c-dry-kiss-yagni.html" class="next-topic">
+    <div class="next-icon">♻️</div>
+    <div class="next-text">
+      <div class="label">Bài tiếp theo · 03c / 07</div>
+      <div class="title">DRY · KISS · YAGNI — ba nguyên tắc cốt lõi</div>
+    </div>
+    <span class="next-arrow">→</span>
+  </a>
+</div>
+
+<script>
+const bl = document.getElementById('bigLines');
+for(let i=0;i<100;i++){const d=document.createElement('div');d.className='fn-line';bl.appendChild(d);}
+function showSmall(){
+  document.getElementById('smallGrid').style.display='block';
+  [[1,18],[2,12],[3,15],[4,10],[5,14]].forEach(([n,count])=>{
+    const c=document.getElementById('sl'+n);
+    for(let i=0;i<count;i++){const d=document.createElement('div');d.className='fn-small-line';c.appendChild(d);}
+  });
+}
+</script>
+</body>
+</html>

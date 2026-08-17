@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01b — Trừu Tượng Hóa | Computational Thinking</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+  --text: #eef1f8; --muted: #8899bb;
+  --accent: #a78bfa; --yellow: #ffd43b; --green: #2ecc71; --red: #e74c3c;
+  --blue: #5b8def; --orange: #ffb347; --pink: #ff5e7a; --teal: #00cec9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6; }
+body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 20% 20%, rgba(167,139,250,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(91,141,239,0.05) 0%, transparent 50%); pointer-events:none; z-index:0; }
+.top-nav { background: var(--surface2); border-bottom: 1px solid var(--border); padding: 10px 24px; position: sticky; top: 0; z-index: 200; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.nav-home { color: var(--accent); text-decoration: none; font-weight: 700; font-size: .82rem; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(167,139,250,0.3); }
+.nav-home:hover { background: rgba(167,139,250,0.1); }
+.nav-topic { color: var(--muted); font-size: .8rem; flex: 1; padding: 0 8px; }
+.nav-sub-prev, .nav-sub-next { color: var(--muted); text-decoration: none; font-size: .8rem; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); transition: all .2s; white-space: nowrap; }
+.nav-sub-prev:hover, .nav-sub-next:hover { color: var(--text); border-color: var(--accent); }
+.hero { background: var(--surface); border-bottom: 1px solid var(--border); padding: 28px 24px 24px; }
+.hero-inner { max-width: 860px; margin: 0 auto; }
+.hero-badge { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg,rgba(124,92,231,0.2),rgba(167,139,250,0.1)); border: 1px solid rgba(167,139,250,0.3); border-radius: 20px; padding: 4px 12px; font-size: .72rem; font-weight: 700; color: var(--accent); letter-spacing: .5px; margin-bottom: 12px; }
+.hero h1 { font-size: 2rem; font-weight: 900; background: linear-gradient(135deg,#fff,var(--accent)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom: 10px; }
+.hero-desc { color: var(--muted); font-size: 1rem; max-width: 600px; }
+main { max-width: 860px; margin: 0 auto; padding: 36px 24px 100px; position: relative; z-index: 1; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+.card-title { font-size: 1rem; font-weight: 700; color: var(--accent); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.highlight { background: linear-gradient(135deg,rgba(167,139,250,0.1),rgba(91,141,239,0.08)); border: 1px solid rgba(167,139,250,0.3); border-radius: 12px; padding: 18px 22px; margin: 20px 0; }
+.highlight-label { font-size: .7rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.highlight-text { color: var(--text); font-size: .95rem; line-height: 1.7; }
+.takeaway { background: linear-gradient(135deg,rgba(46,204,113,0.1),rgba(46,204,113,0.04)); border: 1px solid rgba(46,204,113,0.3); border-radius: 14px; padding: 24px; margin-top: 28px; }
+.takeaway-title { color: var(--green); font-weight: 700; font-size: .9rem; letter-spacing: .5px; margin-bottom: 14px; }
+.takeaway-list { list-style: none; }
+.takeaway-list li { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; font-size: .9rem; color: var(--text); line-height: 1.6; }
+.takeaway-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+/* MAP COMPARE */
+.map-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+.map-side { border-radius: 12px; padding: 20px; text-align: center; }
+.map-side.real { background: linear-gradient(135deg,rgba(255,183,71,0.1),rgba(255,183,71,0.05)); border: 1px solid rgba(255,183,71,0.3); }
+.map-side.abstract { background: linear-gradient(135deg,rgba(167,139,250,0.1),rgba(167,139,250,0.05)); border: 1px solid rgba(167,139,250,0.3); }
+.map-label { font-size: .72rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+.map-side.real .map-label { color: var(--orange); }
+.map-side.abstract .map-label { color: var(--accent); }
+.city-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 3px; margin: 10px auto; max-width: 120px; }
+.city-block { width: 20px; height: 20px; border-radius: 2px; }
+.city-block.building { background: #3d5a80; }
+.city-block.road { background: #4a4e69; }
+.city-block.park { background: #2d6a4f; }
+
+/* CODE COMPARE */
+.code-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0; }
+.code-side { border-radius: 12px; overflow: hidden; }
+.code-header { padding: 10px 16px; font-size: .75rem; font-weight: 700; letter-spacing: 1px; }
+.code-side.bad .code-header { background: rgba(231,76,60,0.15); color: var(--red); }
+.code-side.good .code-header { background: rgba(46,204,113,0.15); color: var(--green); }
+.code-body { background: var(--surface2); padding: 14px 16px; font-family: monospace; font-size: .8rem; line-height: 1.85; }
+.kw { color: #ff9f7f; } .fn { color: #7ec8e3; } .str { color: #a8d8a8; } .num { color: #ffd43b; } .cmt { color: #5a7a6a; }
+
+/* LAYERS VIZ */
+.layers { display: flex; flex-direction: column; gap: 0; margin: 20px 0; }
+.layer { padding: 14px 20px; text-align: center; font-size: .85rem; font-weight: 600; cursor: pointer; transition: all .2s; }
+.layer:hover { filter: brightness(1.15); }
+.layer-0 { background: rgba(167,139,250,0.25); border: 1px solid rgba(167,139,250,0.5); border-radius: 10px 10px 0 0; color: var(--accent); }
+.layer-1 { background: rgba(91,141,239,0.2); border: 1px solid rgba(91,141,239,0.4); border-top: none; color: var(--blue); }
+.layer-2 { background: rgba(0,206,201,0.15); border: 1px solid rgba(0,206,201,0.35); border-top: none; color: var(--teal); }
+.layer-3 { background: rgba(46,204,113,0.12); border: 1px solid rgba(46,204,113,0.3); border-top: none; border-radius: 0 0 10px 10px; color: var(--green); }
+.layer-detail { display: none; padding: 10px 14px; background: var(--surface2); font-size: .8rem; color: var(--muted); line-height: 1.6; border: 1px solid var(--border); border-top: none; }
+.layer-detail.show { display: block; animation: fadeUp .3s; }
+
+/* EXERCISES */
+.ex-section { margin-top: 40px; }
+.ex-section h2 { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 16px; }
+.exercise { border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+.ex-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; cursor: pointer; background: var(--surface); transition: background .2s; }
+.ex-header:hover { background: var(--surface2); }
+.ex-tag { background: rgba(167,139,250,0.15); color: var(--accent); border-radius: 6px; padding: 2px 8px; font-size: .72rem; font-weight: 700; flex-shrink: 0; }
+.ex-title-text { flex: 1; font-weight: 600; font-size: .9rem; }
+.ex-diff { padding: 2px 10px; border-radius: 20px; font-size: .7rem; font-weight: 700; }
+.ex-diff.easy { background: rgba(46,204,113,0.15); color: var(--green); }
+.ex-diff.medium { background: rgba(255,183,71,0.15); color: var(--orange); }
+.ex-toggle { color: var(--muted); font-size: .75rem; transition: transform .3s; }
+.exercise.open .ex-toggle { transform: rotate(90deg); }
+.ex-body { display: none; padding: 18px; background: var(--surface); border-top: 1px solid var(--border); }
+.exercise.open .ex-body { display: block; animation: fadeUp .3s; }
+.ex-prompt { background: var(--surface2); border-left: 3px solid var(--accent); border-radius: 8px; padding: 14px; margin-bottom: 12px; font-size: .9rem; color: var(--text); line-height: 1.7; }
+.ex-hint { background: rgba(255,183,71,0.06); border: 1px solid rgba(255,183,71,0.2); border-radius: 8px; padding: 10px 14px; font-size: .83rem; color: var(--muted); margin-bottom: 12px; }
+.ex-reveal { background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.3); color: var(--accent); padding: 7px 16px; border-radius: 8px; cursor: pointer; font-size: .83rem; font-weight: 600; }
+.ex-answer { display: none; margin-top: 12px; background: var(--surface2); border-left: 3px solid var(--green); border-radius: 8px; padding: 14px; font-size: .88rem; color: var(--text); line-height: 1.7; }
+.ex-code { background: #0a0f1e; border-radius: 8px; padding: 14px; margin: 10px 0; font-family: monospace; font-size: .8rem; line-height: 1.85; overflow-x: auto; white-space: pre; }
+.next-link { display: flex; align-items: center; gap: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; text-decoration: none; margin-top: 32px; transition: all .3s; }
+.next-link:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.next-icon { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg,#7c5ce7,#a78bfa); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+.next-text .label { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.next-text .title { font-weight: 700; color: var(--text); }
+.next-arrow { margin-left: auto; color: var(--muted); font-size: 1.2rem; }
+.prev-link { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--muted); font-size: .85rem; margin-bottom: 16px; transition: color .2s; }
+.prev-link:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="../index.html" class="nav-home">🏠 Hub</a>
+  <span class="nav-topic">Bài 01 — Tư Duy Tính Toán · 01b/07</span>
+  <a href="01a-decomposition.html" class="nav-sub-prev">← 01a Decomposition</a>
+  <a href="01c-pattern-recognition.html" class="nav-sub-next">01c Pattern Recognition →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">KHÁI NIỆM 02 · 7 PHẦN</div>
+    <h1>🔮 Trừu Tượng Hóa</h1>
+    <p class="hero-desc">Abstraction — Ẩn đi những chi tiết không cần thiết, chỉ lộ ra những gì quan trọng cho người dùng hiện tại.</p>
+  </div>
+</div>
+
+<main>
+
+<a href="01a-decomposition.html" class="prev-link">← Quay lại 01a: Phân Rã Vấn Đề</a>
+
+<div class="card">
+  <div class="card-title">🗺️ Ví dụ cổ điển: Bản đồ vs Thực tế</div>
+  <div style="color:var(--muted);font-size:.9rem;margin-bottom:16px;">Google Maps không hiện từng viên gạch, mỗi tòa nhà. Nó chỉ hiện những gì bạn cần để điều hướng.</div>
+  <div class="map-compare">
+    <div class="map-side real">
+      <div class="map-label">🌆 Thực tế</div>
+      <div class="city-grid">
+        <div class="city-block building"></div><div class="city-block road"></div><div class="city-block building"></div><div class="city-block building"></div><div class="city-block road"></div>
+        <div class="city-block road"></div><div class="city-block road"></div><div class="city-block road"></div><div class="city-block road"></div><div class="city-block road"></div>
+        <div class="city-block park"></div><div class="city-block road"></div><div class="city-block building"></div><div class="city-block road"></div><div class="city-block building"></div>
+        <div class="city-block building"></div><div class="city-block road"></div><div class="city-block road"></div><div class="city-block road"></div><div class="city-block building"></div>
+        <div class="city-block road"></div><div class="city-block road"></div><div class="city-block park"></div><div class="city-block road"></div><div class="city-block road"></div>
+      </div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:8px;">Màu sắc · kiến trúc · vật liệu · ánh sáng · mùi...</div>
+    </div>
+    <div class="map-side abstract">
+      <div class="map-label">🗺️ Abstraction</div>
+      <div style="display:flex;flex-direction:column;gap:8px;align-items:center;margin:14px 0;">
+        <div style="display:flex;gap:16px;align-items:center;">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--accent)"></div>
+          <div style="height:2px;width:60px;background:rgba(91,141,239,0.5)"></div>
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--teal)"></div>
+        </div>
+        <div style="height:2px;width:2px;background:rgba(167,139,250,0.4);height:20px;width:2px;border-left:2px solid rgba(167,139,250,0.3)"></div>
+        <div style="display:flex;gap:24px;">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--green)"></div>
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--orange)"></div>
+        </div>
+      </div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:8px;">Chỉ: đường · địa điểm · khoảng cách</div>
+    </div>
+  </div>
+  <div class="highlight">
+    <div class="highlight-label">Nguyên tắc</div>
+    <div class="highlight-text">Abstraction phụ thuộc vào <strong>người dùng và mục đích</strong>. Cùng 1 thành phố nhưng: tài xế cần đường đi, kiến trúc sư cần cấu trúc, cứu hỏa cần vị trí hydrant. Mỗi abstraction phục vụ 1 mục đích.</div>
+  </div>
+</div>
+
+<!-- CODE ABSTRACTION -->
+<div class="card">
+  <div class="card-title">💻 Abstraction trong code</div>
+  <div class="code-compare">
+    <div class="code-side bad">
+      <div class="code-header">❌ Không abstraction</div>
+      <div class="code-body">
+<span class="fn">openSocket</span>(host, <span class="num">587</span>)<br>
+<span class="fn">auth</span>(user, pass)<br>
+<span class="fn">helo</span>(domain)<br>
+<span class="fn">rcptTo</span>(email)<br>
+<span class="fn">data</span>(content)<br>
+<span class="fn">quit</span>()<br>
+<span class="cmt">// 6 bước chỉ để gửi email!</span>
+      </div>
+    </div>
+    <div class="code-side good">
+      <div class="code-header">✅ Có abstraction</div>
+      <div class="code-body">
+<span class="fn">sendEmail</span>({<br>
+&nbsp;&nbsp;to: <span class="str">'user@mail.com'</span>,<br>
+&nbsp;&nbsp;subject: <span class="str">'Hello'</span>,<br>
+&nbsp;&nbsp;body: <span class="str">'Welcome!'</span><br>
+})<br>
+<span class="cmt">// Người dùng không cần biết SMTP</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LAYERED ABSTRACTION -->
+<div class="card">
+  <div class="card-title">🏗️ Abstraction theo tầng — Click để xem từng layer</div>
+  <div style="color:var(--muted);font-size:.88rem;margin-bottom:16px;">Mọi hệ thống có nhiều tầng abstraction. Người dùng mỗi tầng chỉ cần biết tầng ngay dưới.</div>
+  <div class="layers">
+    <div class="layer layer-0" onclick="toggleLayer(0)">🧑‍💻 Application Code — sendEmail(to, subject, body)</div>
+    <div class="layer-detail" id="ld-0">Lập trình viên dùng hàm sendEmail. Không cần biết gì về SMTP hay mạng.</div>
+    <div class="layer layer-1" onclick="toggleLayer(1)">📬 Email Library — SMTP client, retry, auth</div>
+    <div class="layer-detail" id="ld-1">Library xử lý SMTP protocol, retry khi gặp lỗi, authentication. Không cần biết về TCP/IP.</div>
+    <div class="layer layer-2" onclick="toggleLayer(2)">🌐 OS Network Stack — TCP/IP, sockets, TLS</div>
+    <div class="layer-detail" id="ld-2">OS quản lý TCP connection, TLS handshake, packet routing. Không biết về physical hardware.</div>
+    <div class="layer layer-3" onclick="toggleLayer(3)">⚡ Hardware — NIC, cables, signals</div>
+    <div class="layer-detail" id="ld-3">Card mạng chuyển đổi bits thành tín hiệu điện/quang. Đây là "thực tế" cuối cùng.</div>
+  </div>
+</div>
+
+<!-- 3 CÂU HỎI -->
+<div class="card">
+  <div class="card-title">❓ 3 câu hỏi để thiết kế abstraction tốt</div>
+  <div style="display:flex;flex-direction:column;gap:12px;margin:4px 0;">
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;">
+      <div style="font-weight:700;color:var(--accent);margin-bottom:6px;">1. Người dùng cần biết điều này không?</div>
+      <div style="font-size:.88rem;color:var(--muted)">Nếu không cần → ẩn đi. Ví dụ: người gọi <code style="background:var(--surface);padding:1px 5px;border-radius:3px;font-family:monospace;color:var(--accent)">saveUser()</code> không cần biết transaction logic.</div>
+    </div>
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;">
+      <div style="font-weight:700;color:var(--blue);margin-bottom:6px;">2. Interface này có thể thay thế implementation không?</div>
+      <div style="font-size:.88rem;color:var(--muted)">Abstraction tốt: swap MySQL sang MongoDB mà không đổi caller code. Abstraction tệ: caller biết quá nhiều về implementation.</div>
+    </div>
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;">
+      <div style="font-weight:700;color:var(--green);margin-bottom:6px;">3. Abstraction này có "rò rỉ" không?</div>
+      <div style="font-size:.88rem;color:var(--muted)">Leaky abstraction: file.read() có thể throw DiskFragmentedException → bạn phải biết về disk internals. Đây là abstraction tệ.</div>
+    </div>
+  </div>
+</div>
+
+<!-- TAKEAWAY -->
+<div class="takeaway">
+  <div class="takeaway-title">🎯 Key Takeaway</div>
+  <ul class="takeaway-list">
+    <li>Ẩn đi chi tiết phức tạp, chỉ lộ interface cần thiết — "program to interface, not implementation"</li>
+    <li>Abstraction giúp code dễ đọc, dễ dùng, dễ thay thế (swap implementation không ảnh hưởng caller)</li>
+    <li>Câu hỏi hay: "Người dùng hàm này có cần biết điều này không?" — Nếu không → ẩn đi</li>
+  </ul>
+</div>
+
+<!-- EXERCISES -->
+<div class="ex-section">
+  <h2>🏋️ Mini Exercises</h2>
+
+  <div class="exercise">
+    <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="ex-tag">Ex 1</span>
+      <span class="ex-title-text">Mô tả "xe hơi" với abstraction khác nhau cho 3 đối tượng</span>
+      <span class="ex-diff medium">🟡 Trung bình</span>
+      <span class="ex-toggle">▶</span>
+    </div>
+    <div class="ex-body">
+      <div class="ex-prompt">Abstraction phụ thuộc vào người dùng. Hãy thiết kế interface (TypeScript) cho "xe hơi" cho 3 đối tượng khác nhau:<br><br>
+        <strong>A.</strong> Tài xế Grab — chỉ quan tâm đến vận hành<br>
+        <strong>B.</strong> Thợ sửa xe — quan tâm đến kỹ thuật<br>
+        <strong>C.</strong> Hệ thống ETC (thu phí) — chỉ cần định danh + thanh toán</div>
+      <div class="ex-hint">💡 Gợi ý: Mỗi đối tượng chỉ cần thuộc tính phục vụ công việc của họ. Bỏ mọi thứ không liên quan.</div>
+      <button class="ex-reveal" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">Xem đáp án</button>
+      <div class="ex-answer">
+        <div class="ex-code"><span class="cmt">// A. Tài xế Grab</span>
+<span class="kw">interface</span> <span class="fn">DriverView</span> {
+  fuelLevel: <span class="num">number</span>    <span class="cmt">// 0-100%</span>
+  gps: <span class="fn">Location</span>
+  passenger: <span class="fn">Passenger</span> | null
+  <span class="fn">startTrip</span>(): <span class="kw">void</span>
+  <span class="fn">endTrip</span>(): <span class="fn">TripSummary</span>
+}
+
+<span class="cmt">// B. Thợ sửa xe</span>
+<span class="kw">interface</span> <span class="fn">MechanicView</span> {
+  engineCode: <span class="num">string</span>
+  oilLevel: <span class="num">number</span>
+  diagnosticCodes: <span class="num">string</span>[]
+  lastServiceDate: <span class="fn">Date</span>
+  <span class="fn">runDiagnostic</span>(): <span class="fn">DiagReport</span>
+}
+
+<span class="cmt">// C. Hệ thống ETC</span>
+<span class="kw">interface</span> <span class="fn">ETCView</span> {
+  licensePlate: <span class="num">string</span>
+  rfidTag: <span class="num">string</span>
+  vehicleClass: <span class="str">'car' | 'truck' | 'bus'</span>
+  <span class="fn">charge</span>(amount: <span class="num">number</span>): <span class="fn">Receipt</span>
+}</div>
+        <p style="color:var(--muted);font-size:.85rem;margin-top:8px;">Cùng 1 vật thể nhưng 3 interface hoàn toàn khác nhau. Đây là sức mạnh của abstraction!</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="exercise">
+    <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="ex-tag">Ex 2</span>
+      <span class="ex-title-text">Nhận diện "leaky abstraction" trong code</span>
+      <span class="ex-diff medium">🟡 Trung bình</span>
+      <span class="ex-toggle">▶</span>
+    </div>
+    <div class="ex-body">
+      <div class="ex-prompt">Hàm sau có "leaky abstraction" — caller phải biết về implementation detail. Hãy xác định vấn đề và đề xuất cách fix:
+        <br><br><code>async function getUserById(id: string): Promise&lt;User&gt; {</code><br>
+        <code>  // có thể throw: MongooseError, CastError, ValidationError</code><br>
+        <code>  return User.findById(id).lean()</code><br>
+        <code>}</code></div>
+      <div class="ex-hint">💡 Gợi ý: Caller của getUserById có nên biết về Mongoose, MongoDB, hay CastError không?</div>
+      <button class="ex-reveal" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">Xem phân tích</button>
+      <div class="ex-answer">
+        <strong style="color:var(--red)">Vấn đề:</strong> Caller phải catch MongooseError, CastError — đây là MongoDB implementation details. Nếu sau này đổi sang PostgreSQL thì tất cả catch blocks của caller phải sửa.<br><br>
+        <strong style="color:var(--green)">Fix — abstract lại errors:</strong>
+        <div class="ex-code"><span class="kw">class</span> <span class="fn">UserNotFoundError</span> <span class="kw">extends</span> <span class="fn">Error</span> {}
+<span class="kw">class</span> <span class="fn">InvalidUserIdError</span> <span class="kw">extends</span> <span class="fn">Error</span> {}
+
+<span class="kw">async function</span> <span class="fn">getUserById</span>(id: <span class="num">string</span>): <span class="fn">Promise</span>&lt;<span class="fn">User</span>&gt; {
+  <span class="kw">try</span> {
+    <span class="kw">const</span> user = <span class="kw">await</span> User.<span class="fn">findById</span>(id).<span class="fn">lean</span>()
+    <span class="kw">if</span> (!user) <span class="kw">throw new</span> <span class="fn">UserNotFoundError</span>()
+    <span class="kw">return</span> user
+  } <span class="kw">catch</span> (e) {
+    <span class="kw">if</span> (e <span class="kw">instanceof</span> CastError) <span class="kw">throw new</span> <span class="fn">InvalidUserIdError</span>()
+    <span class="kw">throw</span> e <span class="cmt">// re-throw unknown errors</span>
+  }
+}</div>
+        Giờ caller chỉ cần biết UserNotFoundError và InvalidUserIdError — không phụ thuộc Mongoose.
+      </div>
+    </div>
+  </div>
+</div>
+
+<a href="01c-pattern-recognition.html" class="next-link">
+  <div class="next-icon">🔍</div>
+  <div class="next-text">
+    <div class="label">Tiếp theo · 01c / 07</div>
+    <div class="title">Nhận Diện Pattern</div>
+  </div>
+  <span class="next-arrow">→</span>
+</a>
+
+</main>
+
+<script>
+function toggleLayer(i) {
+  const el = document.getElementById('ld-' + i);
+  el.classList.toggle('show');
+}
+</script>
+</body>
+</html>

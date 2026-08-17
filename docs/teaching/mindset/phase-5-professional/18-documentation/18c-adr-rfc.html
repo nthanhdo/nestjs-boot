@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>18c — ADR & Troubleshooting | NestJS Boot</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;font-size:16px}
+nav{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #21262d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.nav-left,.nav-right{display:flex;align-items:center;gap:12px}
+.nav-link{color:#8b949e;text-decoration:none;font-size:.85rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s}
+.nav-link:hover{color:#e6edf3;border-color:#bc8cff}
+.nav-title{color:#e6edf3;font-size:.9rem;font-weight:600}
+.phase-badge{background:#6e40c9;color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.container{max-width:900px;margin:0 auto;padding:40px 24px}
+h1{font-size:2rem;font-weight:700;margin-bottom:8px}
+.subtitle{color:#8b949e;font-size:1rem;margin-bottom:32px}
+h2{font-size:1.3rem;font-weight:600;margin:40px 0 16px;color:#bc8cff;padding-left:12px;border-left:3px solid #6e40c9}
+h3{font-size:1.05rem;font-weight:600;margin-bottom:10px;color:#e6edf3}
+.card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:24px;margin-bottom:16px}
+.section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
+pre{background:#1c2128;border:1px solid #30363d;border-radius:8px;padding:16px;overflow-x:auto;font-family:'Fira Code',monospace;font-size:.82rem;line-height:1.6;color:#e6edf3;margin:8px 0}
+code{background:#1c2128;border:1px solid #30363d;border-radius:4px;padding:1px 6px;font-family:'Fira Code',monospace;font-size:.85rem;color:#f0883e}
+.tip{background:#132030;border:1px solid #1f6feb;border-radius:8px;padding:14px 18px;color:#79c0ff;font-size:.9rem;margin-top:16px}
+.adr-card{background:#161b22;border:1px solid #21262d;border-radius:12px;overflow:hidden;margin:16px 0}
+.adr-header{background:#21262d;padding:12px 20px;display:flex;align-items:center;gap:12px}
+.adr-num{font-family:monospace;font-size:.8rem;color:#8b949e}
+.adr-title{font-weight:700;color:#e6edf3;font-size:.95rem;flex:1}
+.adr-status{font-size:.72rem;padding:2px 8px;border-radius:10px}
+.status-accepted{background:#0d2d1a;color:#3fb950;border:1px solid #238636}
+.status-deprecated{background:#1a0d0d;color:#ff7b72;border:1px solid #9e1e1e}
+.adr-section{padding:12px 20px;border-bottom:1px solid #21262d}
+.adr-section:last-child{border-bottom:none}
+.adr-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;color:#bc8cff;font-weight:700;margin-bottom:6px}
+.adr-content{font-size:.85rem;color:#c9d1d9;line-height:1.6}
+.trouble-list{display:flex;flex-direction:column;gap:10px;margin:16px 0}
+.tr-item{background:#161b22;border:1px solid #30363d;border-radius:10px;overflow:hidden}
+.tr-header{padding:12px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.tr-header:hover{background:#1c2128}
+.tr-symptom{font-size:.85rem;font-weight:600;color:#ff7b72;flex:1}
+.tr-toggle{color:#8b949e;font-size:.8rem;transition:transform .2s}
+.tr-body{display:none;padding:14px 16px;border-top:1px solid #21262d;display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:.82rem}
+@media(max-width:600px){.tr-body{grid-template-columns:1fr}}
+.tr-check-title{color:#f0883e;font-weight:600;margin-bottom:6px}
+.tr-fix-title{color:#3fb950;font-weight:600;margin-bottom:6px}
+.tr-list{color:#c9d1d9;padding-left:14px}
+.tr-list li{margin:4px 0}
+.exercises{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:24px;margin-top:32px}
+.exercises-title{font-size:1.1rem;font-weight:700;margin-bottom:20px;color:#e6edf3}
+.ex-card{border-radius:10px;padding:18px;margin-bottom:12px}
+.ex-green{background:#0d1a0d;border:1px solid #3fb95040}
+.ex-yellow{background:#1a1200;border:1px solid #d2992240}
+.ex-red{background:#1a0d0d;border:1px solid #f8514940}
+.ex-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ex-diff{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.diff-green{background:#3fb95020;color:#3fb950}
+.diff-yellow{background:#d2992220;color:#d29922}
+.diff-red{background:#f8514920;color:#ff7b72}
+.ex-num{font-size:.8rem;color:#8b949e}
+.ex-title{font-weight:600;color:#e6edf3;margin-bottom:6px}
+.ex-desc{color:#8b949e;font-size:.88rem}
+.ex-solution{margin-top:12px}
+.ex-sol-toggle{background:#1c2128;border:1px solid #30363d;color:#8b949e;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem}
+.ex-sol-body{display:none;margin-top:10px;background:#1c2128;border-radius:8px;padding:14px;color:#c9d1d9;font-size:.85rem;line-height:1.6}
+.ex-sol-body.open{display:block}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-left">
+    <span class="phase-badge">Phase 5</span>
+    <span class="nav-title">18c — ADR &amp; Troubleshooting</span>
+  </div>
+  <div class="nav-right">
+    <a class="nav-link" href="18b-diagrams.html">← 18b Diagrams</a>
+    <a class="nav-link" href="../19-capstone/19a-requirements.html" style="color:#bc8cff;border-color:#6e40c9">19a Capstone →</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>📋 ADR &amp; Troubleshooting Guide</h1>
+  <p class="subtitle">Architecture Decision Records = lý do tại sao code ở đây lại như vậy. Troubleshooting guides = first line of defense khi things go wrong.</p>
+
+  <h2>📜 ADR — Architecture Decision Record</h2>
+  <p style="color:#c9d1d9;font-size:.9rem;margin-bottom:4px">ADR = document một architectural decision, bao gồm context, options xem xét, và lý do chọn. Tránh câu "Tại sao code lại như vậy?" sau 6 tháng.</p>
+
+  <div class="tip"><strong>Khi nào viết ADR?</strong> Khi decision: (1) hard to reverse, (2) affects multiple teams, (3) has significant trade-offs. Format: đơn giản, trong kho repo (docs/adr/), commit cùng code.</div>
+
+  <div class="adr-card">
+    <div class="adr-header">
+      <span class="adr-num">ADR-001</span>
+      <span class="adr-title">Use JWT over Server-Side Sessions</span>
+      <span class="adr-status status-accepted">ACCEPTED</span>
+    </div>
+    <div class="adr-section">
+      <div class="adr-label">Context</div>
+      <div class="adr-content">Mobile app requires stateless auth. Current session-based auth adds Redis latency (~20ms/request) and complicates horizontal scaling. 3 teams need auth: web, mobile, partner API.</div>
+    </div>
+    <div class="adr-section">
+      <div class="adr-label">Decision</div>
+      <div class="adr-content">Use JWT access tokens (15min) + refresh tokens (7 days). Refresh tokens stored in Redis for revocation. Implement using @nestjs/jwt with RS256 signing (asymmetric, supports microservices).</div>
+    </div>
+    <div class="adr-section">
+      <div class="adr-label">Consequences</div>
+      <div class="adr-content" style="color:#f0883e">+ Stateless: scales horizontally without sticky sessions<br>+ Mobile-compatible: Bearer token pattern standard<br>– Access token not immediately revocable (must wait expire)<br>– Revocation logic complex (Redis blacklist for logout)</div>
+    </div>
+    <div class="adr-section">
+      <div class="adr-label">Alternatives Rejected</div>
+      <div class="adr-content">1. Server-side sessions — rejected: Redis dependency, not mobile-friendly<br>2. Opaque tokens — rejected: database lookup per request, performance issue at scale</div>
+    </div>
+    <div class="adr-section">
+      <div class="adr-label">Date &amp; Status</div>
+      <div class="adr-content" style="color:#3fb950">2026-08-14 — ACCEPTED by: Lead Architect + Backend Lead</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h3 style="margin-bottom:10px">ADR Folder Structure</h3>
+<pre>docs/
+└── adr/
+    ├── 001-jwt-over-sessions.md     <span style="color:#3fb950">ACCEPTED</span>
+    ├── 002-mongodb-over-postgres.md <span style="color:#3fb950">ACCEPTED</span>
+    ├── 003-rest-over-graphql.md     <span style="color:#d29922">SUPERSEDED by 007</span>
+    └── 007-graphql-public-api.md    <span style="color:#3fb950">ACCEPTED</span></pre>
+    <p style="color:#8b949e;font-size:.82rem;margin-top:8px">Statuses: PROPOSED → ACCEPTED → DEPRECATED → SUPERSEDED. Không delete ADR cũ — chỉ mark deprecated.</p>
+  </div>
+
+  <hr class="section-divider">
+  <h2>🔧 Troubleshooting Guide</h2>
+  <p style="color:#c9d1d9;font-size:.9rem;margin-bottom:16px">Format: searchable bằng error message. Developer copy error → find guide → fix. Không phải essay.</p>
+
+  <div class="trouble-list">
+    <div class="tr-item">
+      <div class="tr-header" onclick="toggleTr(this)">
+        <span class="tr-symptom">MongoNetworkError: connect ECONNREFUSED 127.0.0.1:27017</span>
+        <span class="tr-toggle">▼</span>
+      </div>
+      <div class="tr-body" style="display:grid">
+        <div>
+          <div class="tr-check-title">🔍 Check</div>
+          <ul class="tr-list">
+            <li><code>docker ps | grep mongo</code> — running?</li>
+            <li><code>cat .env | grep MONGODB_URI</code> — correct?</li>
+            <li>docker-compose.yml — mongo service defined?</li>
+          </ul>
+        </div>
+        <div>
+          <div class="tr-fix-title">✅ Fix</div>
+          <ul class="tr-list">
+            <li><code>docker compose up -d mongodb</code></li>
+            <li>Update .env với correct URI</li>
+            <li>Check firewall nếu remote MongoDB</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="tr-item">
+      <div class="tr-header" onclick="toggleTr(this)">
+        <span class="tr-symptom">JsonWebTokenError: invalid signature</span>
+        <span class="tr-toggle">▼</span>
+      </div>
+      <div class="tr-body" style="display:grid">
+        <div>
+          <div class="tr-check-title">🔍 Check</div>
+          <ul class="tr-list">
+            <li>JWT_SECRET trong .env correct?</li>
+            <li>Token generated với same secret?</li>
+            <li>Algorithm mismatch (HS256 vs RS256)?</li>
+          </ul>
+        </div>
+        <div>
+          <div class="tr-fix-title">✅ Fix</div>
+          <ul class="tr-list">
+            <li>Verify JWT_SECRET identical across envs</li>
+            <li>Clear cookies/localStorage, re-login</li>
+            <li>Match algorithm in sign + verify</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="tr-item">
+      <div class="tr-header" onclick="toggleTr(this)">
+        <span class="tr-symptom">ValidationPipe: property X should not exist</span>
+        <span class="tr-toggle">▼</span>
+      </div>
+      <div class="tr-body" style="display:grid">
+        <div>
+          <div class="tr-check-title">🔍 Check</div>
+          <ul class="tr-list">
+            <li>DTO whitelist: true + forbidNonWhitelisted?</li>
+            <li>Request body có extra fields không?</li>
+            <li>DTO có decorator cho field đó không?</li>
+          </ul>
+        </div>
+        <div>
+          <div class="tr-fix-title">✅ Fix</div>
+          <ul class="tr-list">
+            <li>Add missing field với @IsString() etc.</li>
+            <li>Or remove extra field từ request</li>
+            <li>Or add @IsOptional() nếu field optional</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXERCISES -->
+  <hr class="section-divider">
+  <div class="exercises">
+    <div class="exercises-title">🎯 Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 1</span></div>
+      <div class="ex-title">Viết ADR cho technology choice trong project của bạn</div>
+      <div class="ex-desc">Chọn 1 tech decision đã làm (MongoDB vs PostgreSQL, REST vs GraphQL, JWT vs Sessions, v.v.). Viết ADR hoàn chỉnh: Context, Decision, Consequences (+/-), Alternatives Rejected, Date.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">ADR quality checklist:<br>☐ Context mô tả vấn đề cụ thể, không abstract<br>☐ Decision rõ ràng — ai đọc biết ngay chọn gì<br>☐ Consequences có cả pros và cons (honest)<br>☐ Alternatives: giải thích tại sao KHÔNG chọn (không chỉ list)<br>☐ Date + Approvers (ai đã accept decision)<br><br>Anti-pattern: "We chose MongoDB because it's good" → không có context, không có alternatives, không có consequences. ADR phải answer "tại sao không chọn X?"</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header"><span class="ex-diff diff-red">🔴 Khó</span><span class="ex-num">Bài 2</span></div>
+      <div class="ex-title">Build troubleshooting guide: 5 errors từ project thực</div>
+      <div class="ex-desc">Collect 5 real errors bạn đã gặp trong NestJS development. Với mỗi error: (1) exact error message (copy từ logs), (2) 3+ possible causes, (3) verification commands/steps, (4) fix commands/code. Format: searchable, developer có thể copy error → find guide.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">Common NestJS errors để document:<br>1. "Nest can't resolve dependencies of..." — missing provider/import<br>2. "Cannot read property of undefined" — service not initialized<br>3. "CORS error" — missing CORS config<br>4. "Class transformer error" — missing class-transformer package<br>5. "Cannot find module..." — wrong path, missing npm install<br><br>Format chuẩn:<br>Title = exact error substring (searchable)<br>Symptom = full log output<br>Quick diagnosis = 2-3 commands để identify cause<br>Fix = specific code/command changes<br>Prevention = how to avoid in future<br><br>Commit troubleshooting guide vào repo — nó có giá trị như code</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <hr class="section-divider">
+  <div class="card">
+    <h3>📌 Tóm Tắt — ADR &amp; Troubleshooting</h3>
+    <ul style="color:#c9d1d9;padding-left:20px;margin-top:8px">
+      <li style="margin:6px 0"><strong>ADR</strong> = document architectural decisions. Context → Decision → Consequences → Alternatives</li>
+      <li style="margin:6px 0"><strong>ADR khi nào</strong> = hard to reverse, affects multiple teams, significant trade-offs</li>
+      <li style="margin:6px 0"><strong>ADR storage</strong> = docs/adr/ trong repo. Commit với code. Không delete — mark deprecated</li>
+      <li style="margin:6px 0"><strong>Troubleshooting guide</strong> = searchable by error message. Symptom + Check + Fix format</li>
+      <li style="margin:6px 0"><strong>Both = living docs</strong> — update khi decisions change hoặc new errors discovered</li>
+    </ul>
+  </div>
+
+  <div style="text-align:center;margin-top:48px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">Bài 18c / Phase 5 — Professional</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="18b-diagrams.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← 18b: Diagrams</a>
+      <a href="../19-capstone/19a-requirements.html" style="color:#bc8cff;text-decoration:none;font-size:.85rem">Tiếp theo: 19a — Capstone →</a>
+    </div>
+  </div>
+</div>
+<script>
+function toggleSol(btn){const b=btn.nextElementSibling;const o=b.classList.toggle('open');btn.textContent=o?'Ẩn gợi ý':'Xem gợi ý';}
+function toggleTr(header){const body=header.nextElementSibling;const isOpen=body.style.display==='grid';body.style.display=isOpen?'none':'grid';header.querySelector('.tr-toggle').style.transform=isOpen?'':'rotate(180deg)';}
+</script>
+</body>
+</html>

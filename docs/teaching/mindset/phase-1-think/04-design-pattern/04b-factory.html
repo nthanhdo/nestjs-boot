@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>04b — Factory Pattern | Design Patterns</title>
+<style>
+:root{--bg:#0e1525;--surface:#151d32;--surface2:#1c2744;--border:#2a3a5c;--text:#eef1f8;--muted:#8899bb;--accent:#a78bfa;--green:#2ecc71;--red:#e74c3c;--blue:#5b8def;--orange:#ffb347;--teal:#00cec9;--yellow:#ffd43b;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.top-nav{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:10px 24px;font-size:.85rem;}
+.top-nav a{color:var(--accent);text-decoration:none;padding:4px 10px;border-radius:6px;border:1px solid transparent;transition:.2s;}
+.top-nav a:hover{border-color:var(--accent);background:#a78bfa18;}
+.nav-center{color:var(--muted);font-size:.8rem;}
+.hero{padding:48px 24px 32px;max-width:860px;margin:0 auto;animation:fadeUp .5s ease;}
+.lesson-tag{display:inline-block;background:#a78bfa22;color:var(--accent);border:1px solid #a78bfa44;border-radius:20px;padding:4px 14px;font-size:.8rem;margin-bottom:16px;}
+h1{font-size:2rem;margin-bottom:8px;}h1 span{color:var(--accent);}
+.subtitle{color:var(--muted);font-size:1rem;margin-bottom:32px;}
+.section{max-width:860px;margin:0 auto 40px;padding:0 24px;}
+h2{font-size:1.2rem;color:var(--accent);margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
+pre{background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:20px;overflow-x:auto;font-size:.88rem;line-height:1.7;}
+.kw{color:#79b8ff;}.fn{color:#b392f0;}.str{color:#9ecbff;}.num{color:var(--orange);}.cmt{color:#6a737d;font-style:italic;}.type{color:var(--teal);}
+
+/* FACTORY DEMO */
+.factory-demo{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center;}
+.factory-inputs{display:flex;flex-direction:column;gap:8px;}
+.factory-input{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:.85rem;cursor:pointer;transition:.2s;text-align:center;}
+.factory-input:hover,.factory-input.selected{border-color:var(--orange);background:rgba(255,183,71,.1);color:var(--orange);}
+.factory-machine{background:linear-gradient(135deg,rgba(255,183,71,.1),rgba(255,183,71,.05));border:2px solid var(--orange);border-radius:12px;padding:16px 24px;text-align:center;}
+.factory-output{min-width:80px;height:80px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;border:2px dashed var(--border);transition:.4s;}
+.factory-output.active{border-color:var(--green);background:rgba(46,204,113,.06);animation:popIn .4s;}
+@keyframes popIn{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:600px){.compare{grid-template-columns:1fr;}}
+.compare-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.compare-box.bad{border-top:3px solid var(--red);}
+.compare-box.good{border-top:3px solid var(--green);}
+.compare-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+.compare-box.bad .compare-label{color:var(--red);}
+.compare-box.good .compare-label{color:var(--green);}
+
+.takeaway{background:linear-gradient(135deg,#a78bfa15,#5b8def10);border:1px solid #a78bfa44;border-radius:12px;padding:20px 24px;margin:32px auto;max-width:860px;}
+.takeaway-label{font-size:.75rem;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.exercise{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:10px;padding:20px;margin-top:16px;}
+.exercise-label{font-size:.75rem;color:var(--orange);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+.next-nav{max-width:860px;margin:0 auto 60px;padding:0 24px;}
+.next-topic{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;text-decoration:none;color:var(--text);transition:.2s;}
+.next-topic:hover{border-color:var(--accent);background:#a78bfa08;}
+.next-icon{font-size:2rem;}.next-text .label{font-size:.75rem;color:var(--muted);}.next-text .title{font-size:1rem;font-weight:600;color:var(--accent);}.next-arrow{margin-left:auto;font-size:1.4rem;color:var(--accent);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="04a-why-patterns.html">← 04a Why Patterns</a>
+  <span class="nav-center">Bài 04 · Factory · 04b / 08</span>
+  <a href="04c-singleton-builder.html">04c Singleton/Builder →</a>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">Bài 04b / 08 · Design Patterns · Creational</div>
+  <h1>🏭 Factory <span>Pattern</span></h1>
+  <p class="subtitle">Thay vì <code>new Dog()</code> hay <code>new Cat()</code>, bạn gọi <code>AnimalFactory.create(type)</code>. Factory quyết định tạo loại nào — caller không cần biết.</p>
+</div>
+
+<!-- INTERACTIVE DEMO -->
+<div class="section">
+  <h2>🔬 Demo — Factory Tạo Object</h2>
+  <div class="factory-demo">
+    <div class="factory-inputs">
+      <div class="factory-input" onclick="runFactory(this,'dog','🐕')">🐕 'dog'</div>
+      <div class="factory-input" onclick="runFactory(this,'cat','🐈')">🐈 'cat'</div>
+      <div class="factory-input" onclick="runFactory(this,'bird','🐦')">🐦 'bird'</div>
+    </div>
+    <div style="color:var(--muted);font-size:1.5rem;">→</div>
+    <div class="factory-machine">
+      <div style="color:var(--orange);font-weight:700;">🏭 AnimalFactory</div>
+      <div style="font-size:.78rem;color:var(--muted);margin-top:4px;">.create(type)</div>
+    </div>
+    <div style="color:var(--muted);font-size:1.5rem;">→</div>
+    <div class="factory-output" id="factOut">?</div>
+  </div>
+  <p style="color:var(--muted);font-size:.85rem;margin-top:12px;text-align:center;">Caller không biết <code>new Dog()</code> hay <code>new Cat()</code> được tạo — chỉ nhận IAnimal interface.</p>
+</div>
+
+<!-- PROBLEM vs FACTORY -->
+<div class="section">
+  <h2>🎯 Tại Sao Cần Factory?</h2>
+  <div class="compare">
+    <div class="compare-box bad">
+      <div class="compare-label">❌ Không có Factory</div>
+      <pre style="font-size:.82rem;"><span class="kw">function</span> <span class="fn">notify</span>(type) {
+  <span class="kw">if</span> (type === <span class="str">'email'</span>) {
+    <span class="kw">const</span> n = <span class="kw">new</span> <span class="type">EmailNotifier</span>()
+    n.<span class="fn">send</span>(msg)
+  } <span class="kw">else if</span> (type === <span class="str">'sms'</span>) {
+    <span class="kw">const</span> n = <span class="kw">new</span> <span class="type">SmsNotifier</span>()
+    n.<span class="fn">send</span>(msg)
+  }
+  <span class="cmt">// Thêm 'push' → sửa hàm này</span>
+}</pre>
+    </div>
+    <div class="compare-box good">
+      <div class="compare-label">✅ Với Factory</div>
+      <pre style="font-size:.82rem;"><span class="kw">function</span> <span class="fn">notify</span>(type) {
+  <span class="kw">const</span> n = <span class="fn">NotificationFactory</span>
+    .<span class="fn">create</span>(type)
+  n.<span class="fn">send</span>(msg)
+  <span class="cmt">// Thêm 'push' → chỉ sửa Factory</span>
+  <span class="cmt">// notify() không thay đổi ✓ OCP</span>
+}</pre>
+    </div>
+  </div>
+</div>
+
+<!-- IMPLEMENTATION -->
+<div class="section">
+  <h2>🔧 Implement Factory Trong TypeScript</h2>
+  <pre style="font-size:.85rem;"><span class="cmt">// Step 1: Define interface</span>
+<span class="kw">interface</span> <span class="type">INotifier</span> {
+  <span class="fn">send</span>(to: <span class="type">string</span>, msg: <span class="type">string</span>): <span class="type">Promise</span>&lt;<span class="kw">void</span>&gt;
+}
+
+<span class="cmt">// Step 2: Concrete implementations</span>
+<span class="kw">class</span> <span class="type">EmailNotifier</span> <span class="kw">implements</span> <span class="type">INotifier</span> {
+  <span class="kw">async</span> <span class="fn">send</span>(to, msg) { <span class="cmt">/* SendGrid... */</span> }
+}
+<span class="kw">class</span> <span class="type">SmsNotifier</span> <span class="kw">implements</span> <span class="type">INotifier</span> {
+  <span class="kw">async</span> <span class="fn">send</span>(to, msg) { <span class="cmt">/* Twilio... */</span> }
+}
+
+<span class="cmt">// Step 3: Factory — object map (not if/else)</span>
+<span class="kw">class</span> <span class="type">NotificationFactory</span> {
+  <span class="kw">private static</span> registry = {
+    email: <span class="type">EmailNotifier</span>,
+    sms: <span class="type">SmsNotifier</span>,
+    push: <span class="type">PushNotifier</span>,
+  }
+
+  <span class="kw">static</span> <span class="fn">create</span>(type: <span class="type">string</span>): <span class="type">INotifier</span> {
+    <span class="kw">const</span> Cls = <span class="kw">this</span>.registry[type]
+    <span class="kw">if</span> (!Cls) <span class="kw">throw</span> <span class="kw">new</span> <span class="fn">Error</span>(<span class="str">`Unknown notifier: ${type}`</span>)
+    <span class="kw">return</span> <span class="kw">new</span> <span class="fn">Cls</span>()
+  }
+}
+<span class="cmt">// Thêm type mới: chỉ thêm vào registry — OCP ✓</span></pre>
+</div>
+
+<!-- WHEN TO USE -->
+<div class="section">
+  <h2>✅ Khi Nào Dùng Factory?</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div style="background:rgba(46,204,113,.06);border:1px solid rgba(46,204,113,.25);border-radius:10px;padding:16px;">
+      <div style="color:var(--green);font-size:.8rem;font-weight:700;margin-bottom:8px;">✅ Dùng khi</div>
+      <ul style="color:var(--muted);font-size:.88rem;padding-left:16px;line-height:2;">
+        <li>Không biết trước sẽ tạo type nào</li>
+        <li>Type phụ thuộc vào runtime data</li>
+        <li>Muốn ẩn logic khởi tạo phức tạp</li>
+        <li>Nhiều types implement cùng interface</li>
+      </ul>
+    </div>
+    <div style="background:rgba(231,76,60,.06);border:1px solid rgba(231,76,60,.25);border-radius:10px;padding:16px;">
+      <div style="color:var(--red);font-size:.8rem;font-weight:700;margin-bottom:8px;">❌ Không dùng khi</div>
+      <ul style="color:var(--muted);font-size:.88rem;padding-left:16px;line-height:2;">
+        <li>Chỉ có 1 loại object duy nhất</li>
+        <li>Logic tạo object đơn giản</li>
+        <li>Factory thêm complexity không cần thiết</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="takeaway">
+  <div class="takeaway-label">💡 Key Takeaway</div>
+  <p>Factory = nhà máy sản xuất objects. Caller không cần biết implementation cụ thể. Dùng object map (không dùng if/else chain) để dễ mở rộng. Thêm loại mới → chỉ thêm vào map, không sửa caller. Đây là OCP trong thực tế.</p>
+</div>
+
+<div class="section">
+  <h2>🏋️ Bài Tập</h2>
+  <div class="exercise">
+    <div class="exercise-label">Implement NotificationFactory</div>
+    <pre style="font-size:.82rem;"><span class="kw">interface</span> <span class="type">INotifier</span> {
+  <span class="fn">send</span>(to: <span class="type">string</span>, message: <span class="type">string</span>): <span class="type">Promise</span>&lt;<span class="kw">void</span>&gt;
+}
+<span class="cmt">// TODO: Implement EmailNotifier, SmsNotifier, PushNotifier</span>
+<span class="cmt">// TODO: NotificationFactory.create('email'|'sms'|'push')</span>
+<span class="cmt">// Bonus: throw UnsupportedNotifierError nếu type invalid</span></pre>
+  </div>
+</div>
+
+<div class="next-nav">
+  <a href="04c-singleton-builder.html" class="next-topic">
+    <div class="next-icon">💎</div>
+    <div class="next-text">
+      <div class="label">Bài tiếp theo · 04c / 08</div>
+      <div class="title">Singleton & Builder — 1 instance + build từng bước</div>
+    </div>
+    <span class="next-arrow">→</span>
+  </a>
+</div>
+
+<script>
+function runFactory(el, type, emoji) {
+  document.querySelectorAll('.factory-input').forEach(f=>f.classList.remove('selected'));
+  el.classList.add('selected');
+  const out = document.getElementById('factOut');
+  out.textContent='';out.classList.remove('active');
+  setTimeout(()=>{
+    out.textContent=emoji;out.classList.add('active');
+    out.style.borderColor='var(--green)';out.style.background='rgba(46,204,113,.06)';
+    setTimeout(()=>out.classList.remove('active'),500);
+  },300);
+}
+</script>
+</body>
+</html>

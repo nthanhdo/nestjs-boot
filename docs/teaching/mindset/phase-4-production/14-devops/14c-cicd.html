@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>14c: CI/CD Pipeline — GitHub Actions</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.7}
+  .container{max-width:900px;margin:0 auto;padding:40px 24px}
+  h1{font-size:2rem;color:#58a6ff;margin-bottom:8px}
+  h2{font-size:1.4rem;color:#79c0ff;margin:36px 0 14px;padding-left:12px;border-left:3px solid #58a6ff}
+  h3{font-size:1.05rem;color:#a5d6ff;margin:18px 0 8px}
+  p{color:#c9d1d9;margin-bottom:12px}
+  .subtitle{color:#8b949e;font-size:1rem;margin-bottom:36px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;margin-right:6px}
+  .badge-orange{background:#3b1e0d;color:#f0883e;border:1px solid #9e4f1e}
+  .badge-blue{background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e}
+  .card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin:20px 0}
+  .code-block{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px;font-family:'Fira Code','Cascadia Code',monospace;font-size:.85rem;overflow-x:auto;margin:12px 0;white-space:pre}
+  .cm{color:#8b949e}.kw{color:#ff7b72}.str{color:#a5d6ff}.fn{color:#d2a8ff}.var{color:#ffa657}.num{color:#79c0ff}
+  .tip{background:#0d2d1a;border:1px solid #238636;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .tip::before{content:'💡';position:absolute;left:14px;top:14px}
+  .warning{background:#2d1a0d;border:1px solid #9e4f1e;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .warning::before{content:'⚠️';position:absolute;left:14px;top:14px}
+  .section-divider{border:none;border-top:1px solid #21262d;margin:36px 0}
+  .nav-bar{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #30363d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .nav-links{display:flex;gap:8px;flex-wrap:wrap}
+  .nav-link{color:#8b949e;text-decoration:none;font-size:.8rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s;white-space:nowrap}
+  .nav-link:hover{color:#58a6ff;border-color:#58a6ff}
+  .nav-link.current{color:#58a6ff;border-color:#58a6ff;background:#0d1a2d}
+  .nav-center{font-size:.8rem;color:#484f58}
+  /* Pipeline visual */
+  .pipeline{display:flex;align-items:center;gap:0;margin:24px 0;overflow-x:auto;padding:10px 0}
+  .pipe-stage{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:90px}
+  .pipe-icon{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;transition:transform .3s}
+  .pipe-icon:hover{transform:scale(1.15)}
+  .pipe-label{font-size:.7rem;color:#8b949e;text-align:center;line-height:1.3}
+  .pipe-arrow{color:#30363d;font-size:1.4rem;padding:0 4px;align-self:center;margin-bottom:22px}
+  /* Job flow */
+  .job-flow{display:flex;flex-direction:column;gap:12px;margin:20px 0}
+  .job{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px}
+  .job-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .job-icon{font-size:1.2rem}
+  .job-name{font-weight:600;color:#c9d1d9;font-size:.92rem}
+  .job-trigger{font-size:.72rem;padding:2px 8px;border-radius:8px;margin-left:auto}
+  .jt-always{background:#0d2d1a;color:#3fb950;border:1px solid #238636}
+  .jt-on-pass{background:#0d1a2d;color:#58a6ff;border:1px solid #1f4a9e}
+  .job-steps{display:flex;flex-direction:column;gap:4px}
+  .job-step{font-size:.82rem;color:#8b949e;padding:4px 0;border-bottom:1px dashed #21262d;display:flex;gap:8px}
+  .job-step:last-child{border-bottom:none}
+  .step-num{color:#58a6ff;font-weight:700;min-width:20px}
+  /* Exercises */
+  .exercises{margin:48px 0}
+  .exercises-title{font-size:1.2rem;color:#79c0ff;margin-bottom:24px;padding-left:12px;border-left:3px solid #58a6ff}
+  .ex-card{border-radius:12px;padding:20px 24px;margin:16px 0}
+  .ex-green{background:#0a1f0a;border:1px solid #238636}
+  .ex-yellow{background:#1f1a0a;border:1px solid #9e6c1e}
+  .ex-red{background:#1f0a0a;border:1px solid #9e1e1e}
+  .ex-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .ex-diff{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:10px}
+  .diff-green{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .diff-yellow{background:#3b2a0d;color:#d4a843;border:1px solid #9e6c1e}
+  .diff-red{background:#3b0d0d;color:#ff7b72;border:1px solid #9e1e1e}
+  .ex-num{font-size:.8rem;font-weight:700;color:#8b949e}
+  .ex-title{font-size:.95rem;font-weight:700;color:#c9d1d9}
+  .ex-desc{font-size:.88rem;color:#8b949e;margin-top:4px}
+  .ex-sol-toggle{background:none;border:1px solid #30363d;color:#8b949e;border-radius:6px;padding:4px 12px;font-size:.75rem;cursor:pointer;margin-top:10px;transition:all .2s}
+  .ex-sol-toggle:hover{border-color:#58a6ff;color:#58a6ff}
+  .ex-sol-body{display:none;margin-top:10px;padding:12px;background:#0d1117;border-radius:8px;font-size:.83rem;color:#c9d1d9;line-height:1.6}
+  .ex-sol-body.open{display:block}
+  .takeaway{background:linear-gradient(135deg,#0d2d1a,#0d1a2d);border:2px solid #3fb950;border-radius:12px;padding:24px;margin:40px 0;text-align:center}
+  .takeaway h3{color:#3fb950;margin-bottom:12px}
+</style>
+</head>
+<body>
+<nav class="nav-bar">
+  <div class="nav-links">
+    <a class="nav-link" href="14b-compose.html">← 14b: Docker Compose</a>
+    <span class="nav-link current">14c: CI/CD Pipeline</span>
+    <a class="nav-link" href="14d-deploy.html">14d: Deploy Strategies →</a>
+  </div>
+  <div class="nav-center">Phase 4 — DevOps · 14c / 14d</div>
+</nav>
+
+<div class="container">
+  <div style="margin-bottom:20px">
+    <span class="badge badge-orange">Phase 4</span>
+    <span class="badge badge-blue">14c</span>
+  </div>
+  <h1>CI/CD Pipeline</h1>
+  <p class="subtitle">Continuous Integration + Continuous Deployment với GitHub Actions — từ <code>git push</code> đến production tự động, không sai, không quên.</p>
+
+  <h2>1. CI vs CD — Khái Niệm</h2>
+  <div class="card">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div>
+        <h3 style="color:#58a6ff">CI — Continuous Integration</h3>
+        <p style="font-size:.88rem">Merge code thường xuyên (ít nhất 1 lần/ngày). Mỗi merge → tự động build + test. Phát hiện conflict và bug sớm, trước khi vào main branch.</p>
+        <div style="font-size:.8rem;color:#8b949e;margin-top:8px">Trigger: mọi push, mọi PR</div>
+      </div>
+      <div>
+        <h3 style="color:#3fb950">CD — Continuous Deployment</h3>
+        <p style="font-size:.88rem">Sau khi CI pass → tự động deploy lên environment (staging hoặc production). Không cần manual step. Code review approved → live trong vài phút.</p>
+        <div style="font-size:.8rem;color:#8b949e;margin-top:8px">Trigger: merge vào main branch</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>2. Pipeline Flow</h2>
+  <div class="pipeline">
+    <div class="pipe-stage">
+      <div class="pipe-icon" style="background:#0d2d1a;border:2px solid #238636">📤</div>
+      <div class="pipe-label">git push</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-stage">
+      <div class="pipe-icon" style="background:#2d1a0d;border:2px solid #9e6c1e">🔍</div>
+      <div class="pipe-label">Lint & Type check</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-stage">
+      <div class="pipe-icon" style="background:#2d0d1a;border:2px solid #9e1e1e">🧪</div>
+      <div class="pipe-label">Unit + Integration Tests</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-stage">
+      <div class="pipe-icon" style="background:#0d1a2d;border:2px solid #1f4a9e">🔨</div>
+      <div class="pipe-label">Build</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-stage">
+      <div class="pipe-icon" style="background:#0d2d2d;border:2px solid #1e9e9e">🐳</div>
+      <div class="pipe-label">Docker Build & Push</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-stage">
+      <div class="pipe-icon" style="background:#1a0d2d;border:2px solid #6e40c9">🚀</div>
+      <div class="pipe-label">Deploy</div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <h2>3. GitHub Actions — CI Workflow</h2>
+  <p>File <code>.github/workflows/ci.yml</code> — chạy trên mọi push và PR.</p>
+
+  <div class="code-block"><span class="var">name</span>: <span class="str">CI</span>
+<span class="var">on</span>:
+  <span class="var">push</span>:
+    <span class="var">branches</span>: ['<span class="str">**</span>']         <span class="cm"># trigger mọi branch</span>
+  <span class="var">pull_request</span>:
+    <span class="var">branches</span>: [<span class="str">main</span>]
+
+<span class="var">jobs</span>:
+  <span class="var">ci</span>:
+    <span class="var">runs-on</span>: <span class="str">ubuntu-latest</span>
+    <span class="var">steps</span>:
+      <span class="cm"># Step 1: Checkout code</span>
+      - <span class="var">uses</span>: <span class="str">actions/checkout@v4</span>
+
+      <span class="cm"># Step 2: Setup Node with cache</span>
+      - <span class="var">uses</span>: <span class="str">actions/setup-node@v4</span>
+        <span class="var">with</span>:
+          <span class="var">node-version</span>: '<span class="str">20</span>'
+          <span class="var">cache</span>: '<span class="str">npm</span>'              <span class="cm"># cache node_modules</span>
+
+      <span class="cm"># Step 3: Install deps</span>
+      - <span class="var">name</span>: <span class="str">Install dependencies</span>
+        <span class="var">run</span>: npm ci
+
+      <span class="cm"># Step 4: Lint</span>
+      - <span class="var">name</span>: <span class="str">Lint</span>
+        <span class="var">run</span>: npm run lint
+
+      <span class="cm"># Step 5: Type check</span>
+      - <span class="var">name</span>: <span class="str">Type check</span>
+        <span class="var">run</span>: npx tsc --noEmit
+
+      <span class="cm"># Step 6: Test</span>
+      - <span class="var">name</span>: <span class="str">Run tests</span>
+        <span class="var">run</span>: npm test -- --coverage
+
+      <span class="cm"># Step 7: Build</span>
+      - <span class="var">name</span>: <span class="str">Build</span>
+        <span class="var">run</span>: npm run build</div>
+
+  <hr class="section-divider">
+
+  <h2>4. CD Workflow — Deploy Sau Khi CI Pass</h2>
+  <p>File <code>.github/workflows/deploy.yml</code> — chỉ chạy khi push vào main và CI đã green.</p>
+
+  <div class="code-block"><span class="var">name</span>: <span class="str">Deploy</span>
+<span class="var">on</span>:
+  <span class="var">push</span>:
+    <span class="var">branches</span>: [<span class="str">main</span>]
+
+<span class="var">jobs</span>:
+  <span class="var">deploy</span>:
+    <span class="var">runs-on</span>: <span class="str">ubuntu-latest</span>
+    <span class="var">steps</span>:
+      - <span class="var">uses</span>: <span class="str">actions/checkout@v4</span>
+
+      <span class="cm"># Build & push Docker image</span>
+      - <span class="var">name</span>: <span class="str">Login to Docker Hub</span>
+        <span class="var">uses</span>: <span class="str">docker/login-action@v3</span>
+        <span class="var">with</span>:
+          <span class="var">username</span>: <span class="var">${{ secrets.DOCKER_USERNAME }}</span>
+          <span class="var">password</span>: <span class="var">${{ secrets.DOCKER_TOKEN }}</span>
+
+      - <span class="var">name</span>: <span class="str">Build and push</span>
+        <span class="var">uses</span>: <span class="str">docker/build-push-action@v5</span>
+        <span class="var">with</span>:
+          <span class="var">push</span>: <span class="str">true</span>
+          <span class="var">tags</span>: <span class="str">myuser/myapp:${{ github.sha }},myuser/myapp:latest</span>
+
+      <span class="cm"># Deploy to server via SSH</span>
+      - <span class="var">name</span>: <span class="str">Deploy to VPS</span>
+        <span class="var">uses</span>: <span class="str">appleboy/ssh-action@v1</span>
+        <span class="var">with</span>:
+          <span class="var">host</span>: <span class="var">${{ secrets.VPS_HOST }}</span>
+          <span class="var">username</span>: <span class="var">${{ secrets.VPS_USER }}</span>
+          <span class="var">key</span>: <span class="var">${{ secrets.VPS_SSH_KEY }}</span>
+          <span class="var">script</span>: |
+            docker pull myuser/myapp:<span class="var">${{ github.sha }}</span>
+            docker compose up -d --no-deps app
+            docker image prune -f</div>
+
+  <hr class="section-divider">
+
+  <h2>5. Secrets Management</h2>
+  <p>Secrets KHÔNG bao giờ hardcode vào workflow files. GitHub Secrets là nơi lưu trữ an toàn.</p>
+
+  <div class="card">
+    <h3>Cách thêm secret vào GitHub</h3>
+    <p style="font-size:.88rem">Settings → Secrets and variables → Actions → New repository secret</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;font-size:.85rem">
+      <div>
+        <div style="color:#58a6ff;font-weight:600;margin-bottom:6px">Secret cần có:</div>
+        <ul style="color:#c9d1d9;padding-left:16px">
+          <li style="margin:4px 0">DOCKER_USERNAME</li>
+          <li style="margin:4px 0">DOCKER_TOKEN (access token)</li>
+          <li style="margin:4px 0">VPS_HOST (IP hoặc domain)</li>
+          <li style="margin:4px 0">VPS_USER</li>
+          <li style="margin:4px 0">VPS_SSH_KEY (private key)</li>
+        </ul>
+      </div>
+      <div>
+        <div style="color:#3fb950;font-weight:600;margin-bottom:6px">Dùng trong workflow:</div>
+        <div class="code-block" style="margin:0;font-size:.78rem"><span class="var">${{ secrets.DOCKER_USERNAME }}</span>
+<span class="var">${{ secrets.VPS_HOST }}</span>
+<span class="cm"># Never in logs!</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <strong>Pro tip:</strong> Dùng <code>github.sha</code> làm image tag thay vì <code>latest</code> — mỗi commit có image riêng, dễ rollback về commit cụ thể.
+  </div>
+
+  <hr class="section-divider">
+
+  <div class="exercises">
+    <div class="exercises-title">Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header">
+        <span class="ex-diff diff-green">Dễ</span>
+        <span class="ex-num">Bài 1</span>
+      </div>
+      <div class="ex-title">Tạo CI workflow: install → lint → test → build</div>
+      <div class="ex-desc">Tạo <code>.github/workflows/ci.yml</code> trigger khi push vào bất kỳ branch. Pipeline phải green trên GitHub Actions.</div>
+      <button class="ex-sol-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Ẩn gợi ý':'Xem gợi ý'">Xem gợi ý</button>
+      <div class="ex-sol-body">
+        on: push: branches: ['**']<br>
+        steps: checkout → setup-node (cache: npm) → npm ci → npm run lint → npm test → npm run build<br>
+        Thêm cache để build nhanh hơn<br>
+        Verify: Push lên GitHub → Actions tab → xem pipeline
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header">
+        <span class="ex-diff diff-yellow">Trung bình</span>
+        <span class="ex-num">Bài 2</span>
+      </div>
+      <div class="ex-title">Thêm test coverage report vào CI</div>
+      <div class="ex-desc">Modify CI workflow để upload coverage report sau khi test. Sử dụng <code>actions/upload-artifact</code> để save coverage HTML report. Verify có thể download từ Actions run.</div>
+      <button class="ex-sol-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Ẩn gợi ý':'Xem gợi ý'">Xem gợi ý</button>
+      <div class="ex-sol-body">
+        Thêm sau step test:<br>
+        <code>- uses: actions/upload-artifact@v4</code><br>
+        <code>  with: { name: coverage, path: coverage/ }</code><br><br>
+        Jest config: <code>--coverage --coverageReporters=html,text</code><br>
+        Verify: Run → Summary → Artifacts → download coverage.zip
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header">
+        <span class="ex-diff diff-red">Khó</span>
+        <span class="ex-num">Bài 3</span>
+      </div>
+      <div class="ex-title">Full pipeline: CI → Docker build/push → deploy → health check</div>
+      <div class="ex-desc">Xây dựng pipeline đầy đủ: code push → CI test → Docker build → push Docker Hub → deploy lên Railway/Render (hoặc VPS) → verify <code>/health</code> trả 200.</div>
+      <button class="ex-sol-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Ẩn gợi ý':'Xem gợi ý'">Xem gợi ý</button>
+      <div class="ex-sol-body">
+        1. CI job (test + build)<br>
+        2. deploy job: needs: [ci] — chỉ chạy nếu CI pass<br>
+        3. Docker Hub: docker/login-action + docker/build-push-action<br>
+        4. Railway: webhook URL trong secret → curl -X POST ${{ secrets.RAILWAY_WEBHOOK }}<br>
+        5. Verify step: curl https://your-app.up.railway.app/health → expect 200<br><br>
+        Nếu dùng VPS: appleboy/ssh-action → docker pull + docker compose up -d
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <h3>Key Takeaway — 14c</h3>
+    <p style="color:#c9d1d9;margin-top:8px">CI = test sớm, fail nhanh. CD = deploy tự động khi code tốt. GitHub Actions: event triggers → jobs → steps. Secrets = không bao giờ hardcode. <code>github.sha</code> = versioning đúng cách cho Docker images.</p>
+  </div>
+
+  <div style="text-align:center;margin-top:40px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">14c / Bài 14: DevOps — Phase 4</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="14b-compose.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← 14b: Docker Compose</a>
+      <a href="14d-deploy.html" style="color:#58a6ff;text-decoration:none;font-size:.85rem">Tiếp theo: 14d — Deploy Strategies →</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

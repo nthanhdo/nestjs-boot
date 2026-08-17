@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>05a — Design Tokens | Phase 2</title>
+<style>
+:root {
+  --bg: #0e1525;
+  --surface: #1a2235;
+  --border: #2a3a55;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #f472b6;
+  --accent2: #818cf8;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --radius: 10px;
+  --gap: 1rem;
+
+  /* Live theme tokens — will be overridden by JS */
+  --brand-primary: #f472b6;
+  --brand-secondary: #818cf8;
+  --brand-bg: #1a2235;
+  --brand-text: #e2e8f0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+/* NAV */
+.top-nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(14,21,37,.95); backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .6rem 1.5rem; font-size: .85rem;
+}
+.top-nav .breadcrumb { color: var(--muted); }
+.top-nav .breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a {
+  padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem;
+  border: 1px solid var(--border); color: var(--muted); transition: all .2s;
+}
+.nav-links a:hover, .nav-links a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+/* HERO */
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .75rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+
+/* CONTENT */
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: var(--text); }
+h3 { font-size: 1rem; font-weight: 600; margin-bottom: .6rem; color: var(--accent2); }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+
+/* CARD */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 1.25rem;
+}
+
+/* TOKEN TABLE */
+.token-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.token-table th { text-align: left; padding: .5rem .75rem; color: var(--muted); border-bottom: 1px solid var(--border); }
+.token-table td { padding: .5rem .75rem; border-bottom: 1px solid rgba(42,58,85,.5); font-family: monospace; }
+.token-table tr:last-child td { border: none; }
+.swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; margin-right: 6px; border: 1px solid rgba(255,255,255,.15); }
+.token-name { color: var(--accent); }
+.token-val { color: var(--success); }
+
+/* LIVE DEMO */
+.theme-switcher { margin-bottom: 1rem; display: flex; gap: .5rem; flex-wrap: wrap; }
+.theme-btn {
+  padding: .4rem 1rem; border-radius: 20px; border: 2px solid transparent;
+  cursor: pointer; font-size: .8rem; font-weight: 600; transition: all .2s;
+}
+.theme-btn.active { border-color: #fff; }
+
+.demo-card {
+  border-radius: var(--radius); padding: 1.5rem; transition: all .4s ease;
+  background: var(--brand-bg); border: 2px solid var(--brand-primary);
+}
+.demo-card h3 { color: var(--brand-primary); margin-bottom: .5rem; font-size: 1rem; }
+.demo-card p { color: var(--brand-text); margin: 0 0 1rem; font-size: .85rem; }
+.demo-btn {
+  padding: .4rem 1rem; border-radius: 6px; border: none; cursor: pointer;
+  background: var(--brand-primary); color: #000; font-weight: 600; font-size: .8rem; transition: all .4s;
+}
+.demo-secondary {
+  margin-left: .5rem; background: transparent; border: 1px solid var(--brand-secondary);
+  color: var(--brand-secondary);
+}
+
+/* CODE BLOCK */
+.code-block {
+  background: #0a0f1e; border: 1px solid var(--border); border-radius: 8px;
+  padding: 1rem 1.25rem; font-family: 'Courier New', monospace; font-size: .8rem;
+  line-height: 1.7; overflow-x: auto; margin: .75rem 0;
+}
+.c-comment { color: #6b7280; }
+.c-prop { color: #f472b6; }
+.c-val { color: #34d399; }
+.c-sel { color: #818cf8; }
+
+/* NAMING GRID */
+.naming-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.naming-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+.naming-card.bad { border-left: 3px solid #ef4444; }
+.naming-card.good { border-left: 3px solid var(--success); }
+.tag { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin-bottom: .5rem; }
+.tag.bad { color: #ef4444; } .tag.good { color: var(--success); }
+.naming-card code { font-size: .8rem; font-family: monospace; color: var(--text); }
+
+/* EXERCISE */
+.exercise-box {
+  background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.3);
+  border-radius: var(--radius); padding: 1.5rem;
+}
+.exercise-box h2 { color: var(--accent2); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li {
+  padding: .6rem 0; border-bottom: 1px solid rgba(129,140,248,.15);
+  color: var(--muted); display: flex; gap: .75rem; align-items: flex-start;
+}
+.exercise-steps li:last-child { border: none; }
+.step-num {
+  background: var(--accent2); color: #000; border-radius: 50%; width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center; font-size: .75rem;
+  font-weight: 700; flex-shrink: 0; margin-top: .1rem;
+}
+
+/* TAKEAWAY */
+.takeaway {
+  background: rgba(244,114,182,.08); border: 1px solid rgba(244,114,182,.3);
+  border-radius: var(--radius); padding: 1.5rem;
+}
+.takeaway h2 { color: var(--accent); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '✦'; color: var(--accent); flex-shrink: 0; }
+
+/* BOTTOM NAV */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(14,21,37,.97); border-top: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .75rem 1.5rem;
+}
+.bottom-nav a {
+  padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem;
+  border: 1px solid var(--border); color: var(--muted); transition: all .2s;
+}
+.bottom-nav a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--border); transition: background .2s; cursor: pointer;
+}
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 2 · Design System · <span>05a — Design Tokens</span></div>
+  <div class="nav-links">
+    <a href="../05-design-system.html">← Overview</a>
+    <a href="05b-color-typography.html" class="next">Color & Typography →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">05a · Design System</div>
+  <h1>Design <em>Tokens</em></h1>
+  <p>Tokens là những "hạt nhân" của một design system — giá trị thô được đặt tên có nghĩa. Một thay đổi nhỏ ở token lan toàn bộ sản phẩm đồng nhất.</p>
+</div>
+
+<div class="content">
+
+  <!-- CONCEPT -->
+  <section>
+    <h2>Token là gì?</h2>
+    <p>Design token = <strong>tên có nghĩa gắn với giá trị cụ thể</strong>. Thay vì ghi cứng <code>#f472b6</code> khắp nơi, bạn đặt tên <code>--color-brand-primary</code> và dùng tên đó.</p>
+    <div class="card">
+      <div class="token-table-wrapper">
+        <table class="token-table">
+          <thead><tr><th>Tên token</th><th>Giá trị</th><th>Dùng cho</th></tr></thead>
+          <tbody>
+            <tr><td class="token-name"><span class="swatch" style="background:#f472b6"></span>--color-brand-primary</td><td class="token-val">#f472b6</td><td>CTA, links, focus ring</td></tr>
+            <tr><td class="token-name"><span class="swatch" style="background:#818cf8"></span>--color-brand-secondary</td><td class="token-val">#818cf8</td><td>Icons, tags, accents</td></tr>
+            <tr><td class="token-name"><span class="swatch" style="background:#0e1525"></span>--color-bg-base</td><td class="token-val">#0e1525</td><td>Body background</td></tr>
+            <tr><td class="token-name"><span class="swatch" style="background:#1a2235"></span>--color-surface</td><td class="token-val">#1a2235</td><td>Card, panel backgrounds</td></tr>
+            <tr><td class="token-name">--space-4</td><td class="token-val">4px</td><td>Base spacing unit (4px grid)</td></tr>
+            <tr><td class="token-name">--radius-md</td><td class="token-val">10px</td><td>Card border radius</td></tr>
+            <tr><td class="token-name">--font-size-base</td><td class="token-val">16px</td><td>Body text</td></tr>
+            <tr><td class="token-name">--duration-fast</td><td class="token-val">150ms</td><td>Hover transitions</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIVE DEMO -->
+  <section>
+    <h2>Live Demo — Đổi Theme bằng Tokens</h2>
+    <p>Bấm theme để thấy token thay đổi, card re-render ngay — không đổi HTML/JS, chỉ đổi token value:</p>
+    <div class="card">
+      <div class="theme-switcher" id="themeSwitcher">
+        <button class="theme-btn active" style="background:#f472b6;color:#000" onclick="applyTheme('brand')">Brand Pink</button>
+        <button class="theme-btn" style="background:#06b6d4;color:#000" onclick="applyTheme('ocean')">Ocean</button>
+        <button class="theme-btn" style="background:#10b981;color:#000" onclick="applyTheme('forest')">Forest</button>
+        <button class="theme-btn" style="background:#f59e0b;color:#000" onclick="applyTheme('sunset')">Sunset</button>
+      </div>
+      <div class="demo-card" id="demoCard">
+        <h3>AliShopping Tools</h3>
+        <p>Tìm sản phẩm trending · So sánh giá · Track đơn hàng — powered by token-based theming.</p>
+        <button class="demo-btn" id="demoBtn">Dùng thử miễn phí</button>
+        <button class="demo-btn demo-secondary" id="demoSecBtn">Xem demo</button>
+      </div>
+      <div class="code-block" style="margin-top:1rem" id="tokenDisplay">
+<span class="c-sel">:root</span> {
+  <span class="c-prop">--brand-primary</span>: <span class="c-val" id="t1">#f472b6</span>;
+  <span class="c-prop">--brand-secondary</span>: <span class="c-val" id="t2">#818cf8</span>;
+  <span class="c-prop">--brand-bg</span>: <span class="c-val" id="t3">#1a2235</span>;
+}</div>
+    </div>
+  </section>
+
+  <!-- CSS VARIABLES ANATOMY -->
+  <section>
+    <h2>Cú pháp CSS Custom Properties</h2>
+    <div class="code-block">
+<span class="c-comment">/* 1. Khai báo ở :root → scope toàn cục */</span>
+<span class="c-sel">:root</span> {
+  <span class="c-prop">--color-brand-primary</span>: <span class="c-val">#f472b6</span>;
+  <span class="c-prop">--space-base</span>: <span class="c-val">4px</span>;
+  <span class="c-prop">--radius-md</span>: <span class="c-val">10px</span>;
+}
+
+<span class="c-comment">/* 2. Dùng với var() */</span>
+<span class="c-sel">.button</span> {
+  <span class="c-prop">background</span>: <span class="c-val">var(--color-brand-primary)</span>;
+  <span class="c-prop">padding</span>: <span class="c-val">calc(var(--space-base) * 2) calc(var(--space-base) * 4)</span>;
+  <span class="c-prop">border-radius</span>: <span class="c-val">var(--radius-md)</span>;
+}
+
+<span class="c-comment">/* 3. Override per-component scope */</span>
+<span class="c-sel">.theme-dark</span> {
+  <span class="c-prop">--color-brand-primary</span>: <span class="c-val">#818cf8</span>; <span class="c-comment">/* local override */</span>
+}</div>
+  </section>
+
+  <!-- NAMING CONVENTIONS -->
+  <section>
+    <h2>Naming Convention — Category · Scale · Variant</h2>
+    <p>Đặt tên theo pattern: <strong><code>--[category]-[property]-[scale?]-[variant?]</code></strong></p>
+    <div class="naming-grid">
+      <div class="naming-card bad">
+        <div class="tag bad">❌ Xấu</div>
+        <code>--pink</code><br>
+        <code>--big-font</code><br>
+        <code>--margin1</code><br>
+        <code>--color1</code>
+      </div>
+      <div class="naming-card good">
+        <div class="tag good">✅ Tốt</div>
+        <code>--color-brand-primary</code><br>
+        <code>--font-size-xl</code><br>
+        <code>--space-4</code> (= 16px)<br>
+        <code>--color-feedback-error</code>
+      </div>
+      <div class="naming-card bad">
+        <div class="tag bad">❌ Xấu</div>
+        <code>--headerBackgroundBlue</code><br>
+        <code>--DANGER_RED</code><br>
+        <code>--btn_hover_bg</code>
+      </div>
+      <div class="naming-card good">
+        <div class="tag good">✅ Tốt</div>
+        <code>--color-bg-header</code><br>
+        <code>--color-feedback-danger</code><br>
+        <code>--color-interactive-hover</code>
+      </div>
+    </div>
+    <p style="margin-top:.75rem">Rule ngón tay cái: nếu tên token chứa giá trị cụ thể (<em>"blue", "16px", "big"</em>) → rename về ngữ nghĩa.</p>
+  </section>
+
+  <!-- TOKEN TIERS -->
+  <section>
+    <h2>Ba tầng Token</h2>
+    <div class="card">
+      <div style="display:grid;gap:.75rem">
+        <div style="border-left:3px solid #f472b6;padding:.75rem 1rem;background:rgba(244,114,182,.06);border-radius:0 8px 8px 0">
+          <strong style="color:#f472b6">1. Primitive (Global) Tokens</strong>
+          <p style="margin:.25rem 0 0;font-size:.85rem">Tất cả giá trị thô: <code>--blue-500: #3b82f6</code> · Không dùng trực tiếp trong component.</p>
+        </div>
+        <div style="border-left:3px solid #818cf8;padding:.75rem 1rem;background:rgba(129,140,248,.06);border-radius:0 8px 8px 0">
+          <strong style="color:#818cf8">2. Semantic (Alias) Tokens</strong>
+          <p style="margin:.25rem 0 0;font-size:.85rem">Gắn nghĩa: <code>--color-brand-primary: var(--pink-400)</code> · Dùng trong component.</p>
+        </div>
+        <div style="border-left:3px solid #34d399;padding:.75rem 1rem;background:rgba(52,211,153,.06);border-radius:0 8px 8px 0">
+          <strong style="color:#34d399">3. Component Tokens</strong>
+          <p style="margin:.25rem 0 0;font-size:.85rem">Scoped: <code>--btn-bg: var(--color-brand-primary)</code> · Dễ override per-instance.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXERCISE -->
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — Token System cho App của bạn</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Mở 1 project bất kỳ. Ctrl+F tìm mã hex cứng trong CSS — đếm xem có bao nhiêu chỗ?</li>
+      <li><span class="step-num">2</span>Tạo file <code>tokens.css</code>. Khai báo <code>:root { --color-brand-primary: #... }</code> cho màu chính.</li>
+      <li><span class="step-num">3</span>Replace tất cả hex cứng bằng <code>var(--color-brand-primary)</code>. Đổi 1 giá trị ở token — verify mọi chỗ đổi theo.</li>
+      <li><span class="step-num">4</span>Thêm dark mode: <code>[data-theme="dark"] { --color-brand-primary: #818cf8; }</code>. Toggle class và test.</li>
+      <li><span class="step-num">5</span>Viết ra 3 primitive token, 3 semantic token, 1 component token cho button của bạn.</li>
+    </ul>
+  </section>
+
+  <!-- TAKEAWAY -->
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>Token = tên có nghĩa gắn giá trị → 1 chỗ thay đổi, toàn app đổi theo.</li>
+      <li>CSS Custom Properties là cách native implement token trong browser — không cần build tool.</li>
+      <li>Đặt tên theo ngữ nghĩa, không theo giá trị cụ thể (<code>--color-brand</code>, không phải <code>--pink</code>).</li>
+      <li>3 tầng: Primitive → Semantic → Component. Dùng Semantic trong component.</li>
+      <li>Token là nền tảng để theming, dark mode, và white-labeling trở nên dễ dàng.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="../05-design-system.html">← Overview</a>
+  <div class="progress-dots">
+    <div class="dot active" title="05a Tokens"></div>
+    <div class="dot" title="05b Color & Typography"></div>
+    <div class="dot" title="05c Components"></div>
+    <div class="dot" title="05d States & Responsive"></div>
+  </div>
+  <a href="05b-color-typography.html" class="next">Color &amp; Typography →</a>
+</div>
+
+<script>
+const themes = {
+  brand:  { primary:'#f472b6', secondary:'#818cf8', bg:'#1a2235', text:'#e2e8f0' },
+  ocean:  { primary:'#06b6d4', secondary:'#3b82f6', bg:'#0a1e2d', text:'#e0f2fe' },
+  forest: { primary:'#10b981', secondary:'#34d399', bg:'#0a1e18', text:'#d1fae5' },
+  sunset: { primary:'#f59e0b', secondary:'#ef4444', bg:'#1e1505', text:'#fef3c7' },
+};
+function applyTheme(name) {
+  const t = themes[name];
+  const root = document.documentElement;
+  root.style.setProperty('--brand-primary', t.primary);
+  root.style.setProperty('--brand-secondary', t.secondary);
+  root.style.setProperty('--brand-bg', t.bg);
+  root.style.setProperty('--brand-text', t.text);
+  document.getElementById('t1').textContent = t.primary;
+  document.getElementById('t2').textContent = t.secondary;
+  document.getElementById('t3').textContent = t.bg;
+  document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+</script>
+</body>
+</html>

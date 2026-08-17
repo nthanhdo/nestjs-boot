@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>14a: Docker Basics — Container vs VM, Dockerfile, Layers</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.7}
+  .container{max-width:900px;margin:0 auto;padding:40px 24px}
+  h1{font-size:2rem;color:#58a6ff;margin-bottom:8px}
+  h2{font-size:1.4rem;color:#79c0ff;margin:36px 0 14px;padding-left:12px;border-left:3px solid #58a6ff}
+  h3{font-size:1.05rem;color:#a5d6ff;margin:18px 0 8px}
+  p{color:#c9d1d9;margin-bottom:12px}
+  .subtitle{color:#8b949e;font-size:1rem;margin-bottom:36px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;margin-right:6px}
+  .badge-orange{background:#3b1e0d;color:#f0883e;border:1px solid #9e4f1e}
+  .badge-blue{background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e}
+  .card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin:20px 0}
+  .code-block{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px;font-family:'Fira Code','Cascadia Code',monospace;font-size:.85rem;overflow-x:auto;margin:12px 0;white-space:pre}
+  .cm{color:#8b949e}.kw{color:#ff7b72}.str{color:#a5d6ff}.fn{color:#d2a8ff}.var{color:#ffa657}.num{color:#79c0ff}
+  .tip{background:#0d2d1a;border:1px solid #238636;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .tip::before{content:'💡';position:absolute;left:14px;top:14px}
+  .warning{background:#2d1a0d;border:1px solid #9e4f1e;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .warning::before{content:'⚠️';position:absolute;left:14px;top:14px}
+  .section-divider{border:none;border-top:1px solid #21262d;margin:36px 0}
+  /* Nav */
+  .nav-bar{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #30363d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .nav-links{display:flex;gap:8px;flex-wrap:wrap}
+  .nav-link{color:#8b949e;text-decoration:none;font-size:.8rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s;white-space:nowrap}
+  .nav-link:hover{color:#58a6ff;border-color:#58a6ff}
+  .nav-link.current{color:#58a6ff;border-color:#58a6ff;background:#0d1a2d}
+  .nav-center{font-size:.8rem;color:#484f58}
+  /* Compare grid */
+  .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:20px 0}
+  .compare-box{border-radius:10px;padding:20px;text-align:center}
+  .compare-box.vm{background:#1a0d2d;border:1px solid #6e40c9}
+  .compare-box.docker{background:#0d1a2d;border:1px solid #1f4a9e}
+  .stack-layer{padding:10px 16px;border-radius:6px;margin:6px 0;font-size:.85rem;font-weight:500;text-align:center;transition:transform .2s}
+  .stack-layer:hover{transform:scale(1.03)}
+  .layer-hw{background:#2d1a0d;color:#ffa657;border:1px solid #9e4f1e}
+  .layer-os{background:#0d2d1a;color:#3fb950;border:1px solid #238636}
+  .layer-hyp{background:#2d0d1a;color:#ff7b72;border:1px solid #9e1e1e}
+  .layer-vm{background:#2d1a0d;color:#f0883e;border:1px solid #9e6c1e}
+  .layer-app{background:#0d1a2d;color:#58a6ff;border:1px solid #1f4a9e}
+  .layer-cont{background:#0d2d2d;color:#39c5cf;border:1px solid #1e9e9e}
+  .layer-docker{background:#1a0d2d;color:#bc8cff;border:1px solid #6e40c9}
+  /* Layer viz */
+  .df-layer{display:flex;align-items:center;gap:16px;padding:12px 16px;border-radius:8px;margin:6px 0;transition:all .3s;border:1px solid #30363d;background:#161b22}
+  .df-layer:hover{transform:translateX(4px)}
+  .df-step{background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e;border-radius:6px;padding:4px 10px;font-family:monospace;font-size:.8rem;white-space:nowrap;min-width:80px;text-align:center}
+  .df-desc{color:#c9d1d9;font-size:.88rem;flex:1}
+  .df-cached{font-size:.75rem;padding:2px 8px;border-radius:10px}
+  .df-cached.yes{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .df-cached.no{background:#3b1e0d;color:#f0883e;border:1px solid #9e4f1e}
+  /* Exercises */
+  .exercises{margin:48px 0}
+  .exercises-title{font-size:1.2rem;color:#79c0ff;margin-bottom:24px;padding-left:12px;border-left:3px solid #58a6ff}
+  .ex-card{border-radius:12px;padding:20px 24px;margin:16px 0}
+  .ex-green{background:#0a1f0a;border:1px solid #238636}
+  .ex-yellow{background:#1f1a0a;border:1px solid #9e6c1e}
+  .ex-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .ex-diff{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:10px}
+  .diff-green{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .diff-yellow{background:#3b2a0d;color:#d4a843;border:1px solid #9e6c1e}
+  .ex-num{font-size:.8rem;font-weight:700;color:#8b949e}
+  .ex-title{font-size:.95rem;font-weight:700;color:#c9d1d9}
+  .ex-desc{font-size:.88rem;color:#8b949e;margin-top:4px}
+  .ex-sol-toggle{background:none;border:1px solid #30363d;color:#8b949e;border-radius:6px;padding:4px 12px;font-size:.75rem;cursor:pointer;margin-top:10px;transition:all .2s}
+  .ex-sol-toggle:hover{border-color:#58a6ff;color:#58a6ff}
+  .ex-sol-body{display:none;margin-top:10px;padding:12px;background:#0d1117;border-radius:8px;font-size:.83rem;color:#c9d1d9;line-height:1.6}
+  .ex-sol-body.open{display:block}
+  /* Takeaway */
+  .takeaway{background:linear-gradient(135deg,#0d2d1a,#0d1a2d);border:2px solid #3fb950;border-radius:12px;padding:24px;margin:40px 0;text-align:center}
+  .takeaway h3{color:#3fb950;margin-bottom:12px}
+  @media(max-width:600px){.compare-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="nav-bar">
+  <div class="nav-links">
+    <a class="nav-link" href="../14-devops.html">← Bài 14: DevOps (overview)</a>
+    <span class="nav-link current">14a: Docker Basics</span>
+    <a class="nav-link" href="14b-compose.html">14b: Docker Compose →</a>
+  </div>
+  <div class="nav-center">Phase 4 — DevOps · 14a / 14d</div>
+</nav>
+
+<div class="container">
+  <div style="margin-bottom:20px">
+    <span class="badge badge-orange">Phase 4</span>
+    <span class="badge badge-blue">14a</span>
+  </div>
+  <h1>Docker Basics</h1>
+  <p class="subtitle">Container vs VM, Dockerfile, và Layer Caching — nền tảng để đưa code chạy nhất quán ở bất cứ đâu.</p>
+
+  <h2>1. Tại Sao Docker?</h2>
+  <p>Câu cửa miệng của developer trước Docker: <strong>"works on my machine"</strong>. Docker giải quyết vấn đề này bằng cách đóng gói ứng dụng cùng với <em>mọi thứ nó cần</em> — code, runtime, thư viện, config — thành một unit nhất quán chạy ở bất cứ đâu.</p>
+
+  <div class="tip">
+    <strong>Core insight:</strong> Docker không virtualize hardware — nó virtualize OS. Kết quả: container nhỏ hơn VM hàng trăm lần, boot trong vài giây thay vì phút.
+  </div>
+
+  <hr class="section-divider">
+
+  <h2>2. Container vs Virtual Machine</h2>
+  <p>Hiểu sự khác biệt về kiến trúc để chọn đúng tool cho đúng job.</p>
+
+  <div class="compare-grid">
+    <div class="compare-box vm">
+      <h3 style="color:#bc8cff;margin-bottom:16px">Virtual Machine</h3>
+      <div class="stack-layer layer-hw">Hardware</div>
+      <div class="stack-layer layer-os">OS Host (Linux/Windows)</div>
+      <div class="stack-layer layer-hyp">Hypervisor (VMware/KVM)</div>
+      <div class="stack-layer layer-vm">Guest OS (toàn bộ kernel)</div>
+      <div class="stack-layer layer-app">App + Dependencies</div>
+      <div style="margin-top:14px;font-size:.82rem;color:#8b949e">Size: <strong>1–10 GB</strong> | Boot: <strong>1–5 phút</strong></div>
+      <div style="font-size:.78rem;color:#8b949e;margin-top:4px">Isolation: hoàn toàn (kernel riêng)</div>
+    </div>
+    <div class="compare-box docker">
+      <h3 style="color:#58a6ff;margin-bottom:16px">Docker Container</h3>
+      <div class="stack-layer layer-hw">Hardware</div>
+      <div class="stack-layer layer-os">OS Host (chia sẻ kernel)</div>
+      <div class="stack-layer layer-docker">Docker Engine</div>
+      <div class="stack-layer layer-cont">Container namespace</div>
+      <div class="stack-layer layer-app">App + Dependencies</div>
+      <div style="margin-top:14px;font-size:.82rem;color:#8b949e">Size: <strong>50–500 MB</strong> | Boot: <strong>1–5 giây</strong></div>
+      <div style="font-size:.78rem;color:#8b949e;margin-top:4px">Isolation: process-level (share kernel)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Khi nào dùng gì?</h3>
+    <ul style="color:#c9d1d9;padding-left:20px;margin-top:8px">
+      <li style="margin:6px 0"><strong>Docker:</strong> web apps, microservices, CI/CD pipelines, development environments</li>
+      <li style="margin:6px 0"><strong>VM:</strong> khi cần OS khác (Windows app trên Linux server), full hardware isolation, legacy software</li>
+    </ul>
+  </div>
+
+  <hr class="section-divider">
+
+  <h2>3. Dockerfile — Viết Instructions Tốt</h2>
+  <p>Dockerfile là blueprint để build Docker image. Mỗi instruction tạo một <strong>layer</strong>. Layer không thay đổi được cache lại — đây là key để build nhanh.</p>
+
+  <div class="code-block"><span class="cm"># Dockerfile cho NestJS app</span>
+<span class="cm"># ═══ Stage 1: Builder ═══</span>
+<span class="kw">FROM</span> <span class="str">node:20-alpine</span> <span class="kw">AS</span> <span class="fn">builder</span>
+
+<span class="cm"># Set working directory</span>
+<span class="kw">WORKDIR</span> <span class="str">/app</span>
+
+<span class="cm"># QUAN TRỌNG: copy package.json TRƯỚC source code</span>
+<span class="cm"># → layer npm install được cache nếu deps không đổi</span>
+<span class="kw">COPY</span> package*.json ./
+<span class="kw">RUN</span> npm ci --only=production
+
+<span class="cm"># Copy source và build</span>
+<span class="kw">COPY</span> . .
+<span class="kw">RUN</span> npm run build
+
+<span class="cm"># ═══ Stage 2: Runner (nhỏ hơn, production only) ═══</span>
+<span class="kw">FROM</span> <span class="str">node:20-alpine</span> <span class="kw">AS</span> <span class="fn">runner</span>
+<span class="kw">WORKDIR</span> <span class="str">/app</span>
+
+<span class="cm"># Chỉ copy những gì cần để chạy</span>
+<span class="kw">COPY</span> --from=builder /app/dist ./dist
+<span class="kw">COPY</span> --from=builder /app/node_modules ./node_modules
+
+<span class="cm"># Expose port và define entrypoint</span>
+<span class="kw">EXPOSE</span> <span class="num">3000</span>
+<span class="kw">CMD</span> ["node", "dist/main.js"]</div>
+
+  <h2>4. Layer Caching — Tại Sao Quan Trọng</h2>
+  <p>Docker cache mỗi layer. Khi một layer thay đổi, tất cả layers phía sau phải rebuild. Thứ tự COPY quyết định hiệu quả của cache.</p>
+
+  <div class="df-layer">
+    <div class="df-step">FROM</div>
+    <div class="df-desc">node:20-alpine — base image (stable, ít thay đổi nhất)</div>
+    <div class="df-cached yes">✓ cached</div>
+  </div>
+  <div class="df-layer">
+    <div class="df-step">WORKDIR</div>
+    <div class="df-desc">Set /app — không bao giờ thay đổi</div>
+    <div class="df-cached yes">✓ cached</div>
+  </div>
+  <div class="df-layer">
+    <div class="df-step">COPY pkg</div>
+    <div class="df-desc">package.json — chỉ thay đổi khi add/remove dependency</div>
+    <div class="df-cached yes">✓ cached</div>
+  </div>
+  <div class="df-layer">
+    <div class="df-step">RUN npm ci</div>
+    <div class="df-desc">Install deps — tốn 30-60s nhưng được cache nếu package.json không đổi</div>
+    <div class="df-cached yes">✓ cached</div>
+  </div>
+  <div class="df-layer" style="border-color:#1f4a9e;background:#0d1a2d">
+    <div class="df-step">COPY . .</div>
+    <div class="df-desc">Source code — thay đổi thường xuyên → invalidate cache từ đây</div>
+    <div class="df-cached no">✗ rebuild</div>
+  </div>
+  <div class="df-layer" style="border-color:#1f4a9e;background:#0d1a2d">
+    <div class="df-step">RUN build</div>
+    <div class="df-desc">Compile TypeScript → phải rebuild mỗi lần</div>
+    <div class="df-cached no">✗ rebuild</div>
+  </div>
+  <div class="df-layer" style="border-color:#1f4a9e;background:#0d1a2d">
+    <div class="df-step">CMD</div>
+    <div class="df-desc">Entrypoint — phụ thuộc vào build</div>
+    <div class="df-cached no">✗ rebuild</div>
+  </div>
+
+  <div class="warning">
+    <strong>Anti-pattern phổ biến:</strong> <code>COPY . .</code> trước <code>RUN npm install</code> — mỗi lần thay đổi bất kỳ file source nào sẽ trigger npm install lại. Với 500+ packages, đây là hàng phút lãng phí mỗi build.
+  </div>
+
+  <hr class="section-divider">
+
+  <h2>5. Commands Thiết Yếu</h2>
+
+  <div class="code-block"><span class="cm"># Build image từ Dockerfile hiện tại</span>
+docker build -t myapp:<span class="var">latest</span> .
+docker build -t myapp:<span class="var">1.2.0</span> --no-cache .   <span class="cm"># bỏ cache</span>
+
+<span class="cm"># Chạy container</span>
+docker run -p <span class="num">3000</span>:<span class="num">3000</span> myapp:<span class="var">latest</span>
+docker run -d -p <span class="num">3000</span>:<span class="num">3000</span> --name my-api myapp   <span class="cm"># detached</span>
+docker run --env-file .env myapp                   <span class="cm"># inject env vars</span>
+
+<span class="cm"># Inspect và debug</span>
+docker ps                             <span class="cm"># containers đang chạy</span>
+docker ps -a                          <span class="cm"># tất cả containers</span>
+docker logs my-api                    <span class="cm"># xem logs</span>
+docker logs -f my-api                 <span class="cm"># follow live logs</span>
+docker exec -it my-api sh             <span class="cm"># shell vào container</span>
+
+<span class="cm"># Image management</span>
+docker images                         <span class="cm"># list images</span>
+docker image prune                    <span class="cm"># xóa dangling images</span>
+docker system prune -a                <span class="cm"># cleanup toàn bộ (cẩn thận!)</span></div>
+
+  <hr class="section-divider">
+
+  <div class="exercises">
+    <div class="exercises-title">Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header">
+        <span class="ex-diff diff-green">Dễ</span>
+        <span class="ex-num">Bài 1</span>
+      </div>
+      <div class="ex-title">Viết Dockerfile multi-stage cho Node.js app</div>
+      <div class="ex-desc">Tạo Dockerfile 2-stage: builder (compile TypeScript) và runner. So sánh image size với single-stage. Target: runner image &lt; 150MB.</div>
+      <button class="ex-sol-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Ẩn gợi ý':'Xem gợi ý'">Xem gợi ý</button>
+      <div class="ex-sol-body">
+        <strong>Checklist:</strong><br>
+        1. Stage 1 <code>AS builder</code>: node:20-alpine, COPY package*.json, RUN npm ci, COPY . ., RUN npm run build<br>
+        2. Stage 2 <code>AS runner</code>: node:20-alpine (fresh), COPY --from=builder dist + node_modules<br>
+        3. So sánh: <code>docker build -t single . && docker build -t multi -f Dockerfile.multi .</code><br>
+        4. <code>docker images | grep -E 'single|multi'</code> — multi thường nhỏ hơn 60-70%<br>
+        5. Verify: <code>docker run -p 3000:3000 multi && curl localhost:3000/health</code>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header">
+        <span class="ex-diff diff-yellow">Trung bình</span>
+        <span class="ex-num">Bài 2</span>
+      </div>
+      <div class="ex-title">Debug container crash bằng logs</div>
+      <div class="ex-desc">Tạo lỗi có chủ đích (sai MONGO_URI, thiếu env var). Build image, chạy container, quan sát crash. Dùng <code>docker logs</code> để tìm root cause và fix.</div>
+      <button class="ex-sol-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Ẩn gợi ý':'Xem gợi ý'">Xem gợi ý</button>
+      <div class="ex-sol-body">
+        <strong>Workflow debug:</strong><br>
+        1. <code>docker run myapp</code> → exit code non-zero<br>
+        2. <code>docker ps -a</code> → xem Exited status<br>
+        3. <code>docker logs &lt;container-id&gt;</code> → đọc error message cuối<br>
+        4. Common: <code>MongoServerError: Authentication failed</code> → sai MONGO_URI<br>
+        5. <code>ECONNREFUSED 127.0.0.1:27017</code> → connect tới localhost không work trong container<br>
+        6. Fix: truyền đúng env vars: <code>docker run -e MONGO_URI=mongodb://host.docker.internal:27017/db myapp</code>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <h3>Key Takeaway — 14a</h3>
+    <p style="color:#c9d1d9;margin-top:8px">Docker = đóng gói app nhất quán. Container nhỏ hơn VM 10x, boot nhanh hơn 100x. Multi-stage build = image nhỏ + bảo mật + deploy nhanh. Layer caching: thứ tự COPY quyết định tốc độ build.</p>
+  </div>
+
+  <div style="text-align:center;margin-top:40px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">14a / Bài 14: DevOps — Phase 4</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="../14-devops.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← Bài 14: DevOps Overview</a>
+      <a href="14b-compose.html" style="color:#58a6ff;text-decoration:none;font-size:.85rem">Tiếp theo: 14b — Docker Compose →</a>
+    </div>
+  </div>
+</div>
+<script>
+function toggleSol(btn){const b=btn.nextElementSibling;const o=b.classList.toggle('open');btn.textContent=o?'Ẩn gợi ý':'Xem gợi ý';}
+</script>
+</body>
+</html>

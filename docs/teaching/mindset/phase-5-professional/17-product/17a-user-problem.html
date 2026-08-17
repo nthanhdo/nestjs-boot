@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>17a — User Problem vs Business Problem | NestJS Boot</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;font-size:16px}
+nav{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #21262d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.nav-left,.nav-right{display:flex;align-items:center;gap:12px}
+.nav-link{color:#8b949e;text-decoration:none;font-size:.85rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s}
+.nav-link:hover{color:#e6edf3;border-color:#bc8cff}
+.nav-title{color:#e6edf3;font-size:.9rem;font-weight:600}
+.phase-badge{background:#6e40c9;color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.container{max-width:900px;margin:0 auto;padding:40px 24px}
+h1{font-size:2rem;font-weight:700;margin-bottom:8px}
+.subtitle{color:#8b949e;font-size:1rem;margin-bottom:32px}
+h2{font-size:1.3rem;font-weight:600;margin:40px 0 16px;color:#bc8cff;padding-left:12px;border-left:3px solid #6e40c9}
+h3{font-size:1.05rem;font-weight:600;margin-bottom:10px;color:#e6edf3}
+.card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:24px;margin-bottom:16px}
+.section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
+.tip{background:#132030;border:1px solid #1f6feb;border-radius:8px;padding:14px 18px;color:#79c0ff;font-size:.9rem;margin-top:16px}
+.warn{background:#1c1000;border:1px solid #d29922;border-radius:8px;padding:14px 18px;color:#d29922;font-size:.9rem;margin-top:12px}
+.compare-table{width:100%;border-collapse:collapse;margin:20px 0}
+.compare-table th{padding:12px 16px;text-align:left;font-size:.85rem}
+.compare-table th:first-child{background:#2d0d0d;color:#ff7b72;border-radius:8px 0 0 0}
+.compare-table th:last-child{background:#0d2d1a;color:#3fb950;border-radius:0 8px 0 0}
+.compare-table td{padding:10px 16px;border-bottom:1px solid #21262d;font-size:.85rem;vertical-align:top}
+.compare-table td:first-child{color:#8b949e}
+.compare-table td:last-child{color:#c9d1d9}
+.compare-table tr:hover td{background:#161b22}
+.venn-wrap{display:flex;justify-content:center;margin:24px 0}
+.five-why{background:#1c2128;border:1px solid #30363d;border-radius:10px;padding:20px;margin:16px 0}
+.why-step{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #21262d}
+.why-step:last-child{border-bottom:none}
+.why-q{color:#8b949e;font-size:.82rem;width:80px;flex-shrink:0;padding-top:2px}
+.why-ask{color:#58a6ff;font-size:.85rem;font-style:italic;flex:1}
+.why-answer{color:#c9d1d9;font-size:.85rem}
+.questions-list{display:flex;flex-direction:column;gap:10px;margin:16px 0}
+.q-item{display:flex;gap:14px;align-items:flex-start;padding:14px;background:#161b22;border:1px solid #21262d;border-radius:10px}
+.q-num{color:#bc8cff;font-size:1.2rem;font-weight:800;flex-shrink:0;min-width:28px}
+.q-content-title{font-weight:600;color:#e6edf3;font-size:.9rem;margin-bottom:4px}
+.q-why-text{font-size:.8rem;color:#8b949e}
+.exercises{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:24px;margin-top:32px}
+.exercises-title{font-size:1.1rem;font-weight:700;margin-bottom:20px;color:#e6edf3}
+.ex-card{border-radius:10px;padding:18px;margin-bottom:12px}
+.ex-green{background:#0d1a0d;border:1px solid #3fb95040}
+.ex-yellow{background:#1a1200;border:1px solid #d2992240}
+.ex-red{background:#1a0d0d;border:1px solid #f8514940}
+.ex-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ex-diff{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.diff-green{background:#3fb95020;color:#3fb950}
+.diff-yellow{background:#d2992220;color:#d29922}
+.diff-red{background:#f8514920;color:#ff7b72}
+.ex-num{font-size:.8rem;color:#8b949e}
+.ex-title{font-weight:600;color:#e6edf3;margin-bottom:6px}
+.ex-desc{color:#8b949e;font-size:.88rem}
+.ex-solution{margin-top:12px}
+.ex-sol-toggle{background:#1c2128;border:1px solid #30363d;color:#8b949e;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem}
+.ex-sol-body{display:none;margin-top:10px;background:#1c2128;border-radius:8px;padding:14px;color:#c9d1d9;font-size:.85rem;line-height:1.6}
+.ex-sol-body.open{display:block}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-left">
+    <span class="phase-badge">Phase 5</span>
+    <span class="nav-title">17a — User Problem</span>
+  </div>
+  <div class="nav-right">
+    <a class="nav-link" href="../16-workflow/16c-rfc-adr.html">← 16c RFC</a>
+    <a class="nav-link" href="17b-mvp.html" style="color:#bc8cff;border-color:#6e40c9">17b MVP →</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>🧠 User Problem vs Business Problem</h1>
+  <p class="subtitle">Feature tốt nhất nằm ở giao điểm của hai loại problem. Engineer giỏi phân biệt được — và hỏi đúng câu hỏi trước khi code.</p>
+
+  <h2>🐒 Code Monkey → Product Engineer</h2>
+
+  <div style="text-align:center;margin:24px 0;display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap">
+    <div style="background:#2d0d0d;border:1px solid #9e1e1e;border-radius:12px;padding:16px 24px;text-align:center">
+      <div style="font-size:2rem;margin-bottom:6px">🐒</div>
+      <div style="color:#ff7b72;font-weight:700">Code Monkey</div>
+      <div style="color:#8b949e;font-size:.82rem;margin-top:4px">"Anh cho em ticket, em code"</div>
+    </div>
+    <div style="color:#58a6ff;font-size:1.8rem">→</div>
+    <div style="background:#0d2d1a;border:1px solid #238636;border-radius:12px;padding:16px 24px;text-align:center">
+      <div style="font-size:2rem;margin-bottom:6px">🧠</div>
+      <div style="color:#3fb950;font-weight:700">Product Engineer</div>
+      <div style="color:#8b949e;font-size:.82rem;margin-top:4px">"Tại sao cần feature này?"</div>
+    </div>
+  </div>
+
+  <table class="compare-table">
+    <thead>
+      <tr><th>❌ Code Monkey</th><th>✅ Product Engineer</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Implement ticket theo literal description</td><td>Hỏi "problem thực sự là gì?" trước khi code</td></tr>
+      <tr><td>Done = code chạy, ticket closed</td><td>Done = user problem được giải quyết</td></tr>
+      <tr><td>Không quan tâm feature có ai dùng không</td><td>Theo dõi metrics sau khi ship</td></tr>
+      <tr><td>"Đó là việc của PM, không phải của tôi"</td><td>Chủ động suggest improvements, spot risks</td></tr>
+      <tr><td>Estimate = random number</td><td>Estimate = scope + risk + historical data</td></tr>
+    </tbody>
+  </table>
+
+  <hr class="section-divider">
+  <h2>🔵🟣 Venn Diagram: Sweet Spot</h2>
+
+  <div class="venn-wrap">
+    <svg viewBox="0 0 480 240" style="width:100%;max-width:480px">
+      <circle cx="180" cy="120" r="95" fill="#0d1a2d" stroke="#58a6ff" stroke-width="2" opacity="0.85"/>
+      <circle cx="300" cy="120" r="95" fill="#1a0d2d" stroke="#bc8cff" stroke-width="2" opacity="0.85"/>
+      <ellipse cx="240" cy="120" rx="55" ry="75" fill="#0d2d1a" opacity="0.7"/>
+      <text x="135" y="108" fill="#58a6ff" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="700">User</text>
+      <text x="135" y="125" fill="#58a6ff" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="700">Problem</text>
+      <text x="135" y="155" fill="#8b949e" font-size="10" text-anchor="middle" font-family="sans-serif">UX · Speed</text>
+      <text x="135" y="168" fill="#8b949e" font-size="10" text-anchor="middle" font-family="sans-serif">Reliability</text>
+      <text x="346" y="108" fill="#bc8cff" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="700">Business</text>
+      <text x="346" y="125" fill="#bc8cff" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="700">Problem</text>
+      <text x="346" y="155" fill="#8b949e" font-size="10" text-anchor="middle" font-family="sans-serif">Revenue</text>
+      <text x="346" y="168" fill="#8b949e" font-size="10" text-anchor="middle" font-family="sans-serif">Retention</text>
+      <text x="240" y="112" fill="#3fb950" font-size="12" text-anchor="middle" font-family="sans-serif" font-weight="700">✓ Sweet</text>
+      <text x="240" y="128" fill="#3fb950" font-size="12" text-anchor="middle" font-family="sans-serif" font-weight="700">Spot</text>
+      <text x="240" y="144" fill="#8b949e" font-size="9" text-anchor="middle" font-family="sans-serif">Build this!</text>
+    </svg>
+  </div>
+
+  <div class="tip"><strong>Rule:</strong> Feature chỉ solve business problem → không sustainable (user churn). Chỉ solve user problem → company không tồn tại để serve users. Feature tốt nhất = solve cả hai đồng thời.</div>
+
+  <hr class="section-divider">
+  <h2>❓ 5 Whys — Tìm Real Problem</h2>
+  <p style="color:#c9d1d9;font-size:.9rem;margin-bottom:4px">Hỏi "tại sao" 5 lần để uncover root cause thay vì implement symptom.</p>
+
+  <div class="five-why">
+    <div class="why-step">
+      <span class="why-q">Hỏi 1:</span>
+      <div>
+        <div class="why-ask">"Tại sao user muốn export CSV?"</div>
+        <div class="why-answer">→ "Để gửi cho manager hàng tuần."</div>
+      </div>
+    </div>
+    <div class="why-step">
+      <span class="why-q">Hỏi 2:</span>
+      <div>
+        <div class="why-ask">"Tại sao gửi bằng CSV, không phải trong app?"</div>
+        <div class="why-answer">→ "Manager dùng Excel để tổng hợp nhiều report từ nhiều nguồn."</div>
+      </div>
+    </div>
+    <div class="why-step">
+      <span class="why-q">Hỏi 3:</span>
+      <div>
+        <div class="why-ask">"Tại sao không tổng hợp trong app?"</div>
+        <div class="why-answer">→ "App không có view cross-account hoặc multi-period comparison."</div>
+      </div>
+    </div>
+    <div class="why-step">
+      <span class="why-q">Kết luận:</span>
+      <div>
+        <div class="why-ask" style="color:#3fb950">Real problem = thiếu consolidated reporting view</div>
+        <div class="why-answer">Giải pháp tốt hơn: aggregation dashboard → 10x giá trị hơn CSV export</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>🗝️ 5 Câu Hỏi Trước Khi Build</h2>
+
+  <div class="questions-list">
+    <div class="q-item">
+      <div class="q-num">①</div>
+      <div>
+        <div class="q-content-title">"Tại sao cần feature này?"</div>
+        <div class="q-why-text">Understand the "why" trước khi implement "how". Tránh build wrong thing đúng cách.</div>
+      </div>
+    </div>
+    <div class="q-item">
+      <div class="q-num">②</div>
+      <div>
+        <div class="q-content-title">"Problem thực sự là gì?"</div>
+        <div class="q-why-text">User request ≠ user need. "Cần thêm faster horse" → thực ra cần xe hơi.</div>
+      </div>
+    </div>
+    <div class="q-item">
+      <div class="q-num">③</div>
+      <div>
+        <div class="q-content-title">"Ai sẽ dùng? Bao nhiêu người?"</div>
+        <div class="q-why-text">Scale ảnh hưởng design. 10 users vs 10 triệu users = different architecture decisions.</div>
+      </div>
+    </div>
+    <div class="q-item">
+      <div class="q-num">④</div>
+      <div>
+        <div class="q-content-title">"Thành công trông như thế nào?"</div>
+        <div class="q-why-text">Define metric trước khi build. Nếu không define → sau khi ship không biết có work hay không.</div>
+      </div>
+    </div>
+    <div class="q-item">
+      <div class="q-num">⑤</div>
+      <div>
+        <div class="q-content-title">"Nếu không build, điều gì xảy ra?"</div>
+        <div class="q-why-text">Đôi khi câu trả lời là "không sao" → giúp deprioritize đúng và ship faster ở chỗ khác.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXERCISES -->
+  <hr class="section-divider">
+  <div class="exercises">
+    <div class="exercises-title">🎯 Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 1</span></div>
+      <div class="ex-title">Phân loại: User Problem hay Business Problem?</div>
+      <div class="ex-desc">Phân loại từng item sau: (1) "App chậm khi load" (2) "Conversion rate thấp" (3) "Khó tìm sản phẩm" (4) "Churn rate cao" (5) "Form đăng ký quá dài" (6) "Không có upsell flow". Một số có thể là cả hai.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">1. App chậm → User problem (UX) + Business (bounce rate↑ → revenue↓)<br>2. Conversion rate thấp → Business problem (nhưng cần diagnose: UX issue? trust issue? pricing?)<br>3. Khó tìm sản phẩm → User problem → có business impact (abandonment rate↑)<br>4. Churn rate cao → Business problem → symptom của user problem cần investigate<br>5. Form đăng ký quá dài → User problem → business impact (signup rate↓)<br>6. Không có upsell flow → Business problem (revenue) — user-neutral nếu done right<br><br>Key insight: Business problems thường là symptoms của user problems không được solved</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 2</span></div>
+      <div class="ex-title">5 Whys: feature "Add forgot password" → tìm real problem</div>
+      <div class="ex-desc">Pair với một bạn: một người đóng vai user vừa request "forgot password feature". Người kia hỏi 5 whys để tìm xem real problem là gì và liệu forgot password có phải solution tốt nhất không.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>5 Whys mẫu:</strong><br>Why? "Tôi thường xuyên quên mật khẩu"<br>Why? "Mỗi site tôi dùng password khác nhau"<br>Why? "Vì sợ security breach"<br>Why? "Đã bị hack 2 lần từ dùng cùng 1 password"<br><br>Real problem: user cần password management, không phải forgot-password flow.<br>Better solutions: (1) OAuth login (Google/GitHub) eliminates password entirely, (2) Magic link login, (3) Forgot password là tactical fix, không giải quyết root cause<br><br>Exercise insight: đôi khi feature được request không phải solution tốt nhất cho real problem</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header"><span class="ex-diff diff-red">🔴 Khó</span><span class="ex-num">Bài 3</span></div>
+      <div class="ex-title">Phân tích feature request từ Sweet Spot perspective</div>
+      <div class="ex-desc">Feature request: "Thêm social features: user có thể follow nhau, share todo lists, và comment trên task của người khác." Phân tích: (1) User problem thực sự là gì? (2) Business problem là gì? (3) Feature này có nằm trong sweet spot không? (4) Recommend: build, defer, hay reject?</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Phân tích:</strong><br><strong>User problem:</strong> "Muốn collaborate với team trên tasks" → nhưng đã có apps chuyên (Notion, Asana)<br><strong>Business problem:</strong> Tăng engagement, virality (social = viral loops). Nhưng mission của app là gì — cá nhân hay nhóm?<br><br><strong>Sweet spot check:</strong><br>- User problem: MAYBE (nếu codebase đang target teams)<br>- Business value: YES nếu team tier có pricing<br>- Technical cost: XL — auth cho shared resources, real-time, notification, moderation<br>→ Có thể không phải sweet spot vì cost/value ratio xấu<br><br><strong>Recommendation:</strong> DEFER — research first. Survey 50 users: "Do you need collaboration?", "Would you pay for it?". Nếu &gt;40% confirm với willingness to pay → design minimal version (just share, no comment/follow). Re-estimate sau research.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <hr class="section-divider">
+  <div class="card">
+    <h3>📌 Tóm Tắt — User Problem</h3>
+    <ul style="color:#c9d1d9;padding-left:20px;margin-top:8px">
+      <li style="margin:6px 0"><strong>Product Engineer</strong> hỏi "tại sao" trước khi code, theo dõi metrics sau khi ship</li>
+      <li style="margin:6px 0"><strong>Sweet spot</strong> = giao điểm User Problem + Business Problem. Build features ở đây</li>
+      <li style="margin:6px 0"><strong>5 Whys</strong> = hỏi "tại sao" 5 lần để uncover real problem, không chỉ symptom</li>
+      <li style="margin:6px 0"><strong>5 câu hỏi</strong> = tại sao, real problem, ai dùng, thành công là gì, nếu không build thì sao</li>
+      <li style="margin:6px 0"><strong>User request ≠ user need</strong> — always dig deeper trước khi implement</li>
+    </ul>
+  </div>
+
+  <div style="text-align:center;margin-top:48px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">Bài 17a / Phase 5 — Professional</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="../16-workflow/16c-rfc-adr.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← 16c: RFC</a>
+      <a href="17b-mvp.html" style="color:#bc8cff;text-decoration:none;font-size:.85rem">Tiếp theo: 17b — MVP →</a>
+    </div>
+  </div>
+</div>
+<script>
+function toggleSol(btn){const b=btn.nextElementSibling;const o=b.classList.toggle('open');btn.textContent=o?'Ẩn gợi ý':'Xem gợi ý';}
+</script>
+</body>
+</html>

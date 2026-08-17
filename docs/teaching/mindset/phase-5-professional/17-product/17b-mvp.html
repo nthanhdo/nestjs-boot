@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>17b — MVP: Ship Fast, Learn Fast | NestJS Boot</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;font-size:16px}
+nav{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #21262d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.nav-left,.nav-right{display:flex;align-items:center;gap:12px}
+.nav-link{color:#8b949e;text-decoration:none;font-size:.85rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s}
+.nav-link:hover{color:#e6edf3;border-color:#bc8cff}
+.nav-title{color:#e6edf3;font-size:.9rem;font-weight:600}
+.phase-badge{background:#6e40c9;color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.container{max-width:900px;margin:0 auto;padding:40px 24px}
+h1{font-size:2rem;font-weight:700;margin-bottom:8px}
+.subtitle{color:#8b949e;font-size:1rem;margin-bottom:32px}
+h2{font-size:1.3rem;font-weight:600;margin:40px 0 16px;color:#bc8cff;padding-left:12px;border-left:3px solid #6e40c9}
+h3{font-size:1.05rem;font-weight:600;margin-bottom:10px;color:#e6edf3}
+.card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:24px;margin-bottom:16px}
+.section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
+.tip{background:#132030;border:1px solid #1f6feb;border-radius:8px;padding:14px 18px;color:#79c0ff;font-size:.9rem;margin-top:16px}
+.warn{background:#1c1000;border:1px solid #d29922;border-radius:8px;padding:14px 18px;color:#d29922;font-size:.9rem;margin-top:12px}
+.mvp-stages{display:flex;flex-direction:column;gap:10px;margin:20px 0}
+.mvp-stage{display:flex;align-items:flex-start;gap:16px;padding:16px;border-radius:12px}
+.stage-vision{background:#1a0d2d;border:1px solid #6e40c940}
+.stage-mvp{background:#0d1a2d;border:1px solid #1f6feb40}
+.stage-v2{background:#0d2d1a;border:1px solid #3fb95040}
+.stage-label{font-size:.82rem;font-weight:700;width:80px;flex-shrink:0;padding-top:4px}
+.label-vision{color:#bc8cff}
+.label-mvp{color:#58a6ff}
+.label-v2{color:#3fb950}
+.tags{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+.tag{padding:4px 10px;border-radius:10px;font-size:.75rem;font-weight:500}
+.tag-keep{background:#0d2d1a;color:#3fb950;border:1px solid #3fb95050}
+.tag-later{background:#2d1a0d;color:#f0883e;border:1px solid #f0883e40}
+.tag-cut{background:#1c2128;color:#484f58;border:1px solid #30363d;text-decoration:line-through}
+.tag-user-driven{background:#2d1a0d;color:#d29922;border:1px solid #d2992240}
+.arrow-center{text-align:center;color:#58a6ff;font-size:1.2rem;padding:4px}
+.functional-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+@media(max-width:600px){.functional-grid{grid-template-columns:1fr}}
+.func-box{background:#161b22;border:1px solid #21262d;border-radius:10px;padding:16px}
+.func-title{font-size:.85rem;font-weight:700;margin-bottom:10px}
+.func-item{display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:.83rem;color:#c9d1d9;border-bottom:1px solid #21262d}
+.func-item:last-child{border-bottom:none}
+.func-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:6px}
+.dot-blue{background:#58a6ff}
+.dot-purple{background:#bc8cff}
+.iterate-cycle{background:#1c2128;border:1px solid #30363d;border-radius:12px;padding:20px;margin:16px 0}
+.cycle-row{display:flex;align-items:center;gap:12px;margin:8px 0;flex-wrap:wrap}
+.cycle-node{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:8px 14px;font-size:.82rem;color:#c9d1d9;display:flex;align-items:center;gap:6px}
+.cycle-arrow{color:#58a6ff;font-size:1.1rem}
+.exercises{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:24px;margin-top:32px}
+.exercises-title{font-size:1.1rem;font-weight:700;margin-bottom:20px;color:#e6edf3}
+.ex-card{border-radius:10px;padding:18px;margin-bottom:12px}
+.ex-green{background:#0d1a0d;border:1px solid #3fb95040}
+.ex-yellow{background:#1a1200;border:1px solid #d2992240}
+.ex-red{background:#1a0d0d;border:1px solid #f8514940}
+.ex-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ex-diff{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.diff-green{background:#3fb95020;color:#3fb950}
+.diff-yellow{background:#d2992220;color:#d29922}
+.diff-red{background:#f8514920;color:#ff7b72}
+.ex-num{font-size:.8rem;color:#8b949e}
+.ex-title{font-weight:600;color:#e6edf3;margin-bottom:6px}
+.ex-desc{color:#8b949e;font-size:.88rem}
+.ex-solution{margin-top:12px}
+.ex-sol-toggle{background:#1c2128;border:1px solid #30363d;color:#8b949e;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem}
+.ex-sol-body{display:none;margin-top:10px;background:#1c2128;border-radius:8px;padding:14px;color:#c9d1d9;font-size:.85rem;line-height:1.6}
+.ex-sol-body.open{display:block}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-left">
+    <span class="phase-badge">Phase 5</span>
+    <span class="nav-title">17b — MVP</span>
+  </div>
+  <div class="nav-right">
+    <a class="nav-link" href="17a-user-problem.html">← 17a User Problem</a>
+    <a class="nav-link" href="17c-metrics.html" style="color:#bc8cff;border-color:#6e40c9">17c Metrics →</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>🚀 MVP — Ship Fast, Learn Fast</h1>
+  <p class="subtitle">MVP (Minimum Viable Product) = strip mọi thứ không cần thiết → ship core value → học từ real users → iterate. Không phải ship sản phẩm tệ — mà ship đúng thứ tối thiểu.</p>
+
+  <div class="warn"><strong>Common misconception:</strong> MVP không phải "phiên bản lỗi". MVP là phiên bản đơn giản nhất có thể deliver core value và thu thập real feedback. Chất lượng vẫn phải đảm bảo — scope mới nhỏ.</div>
+
+  <h2>📦 Strip to Core — 3 Stage</h2>
+
+  <div class="mvp-stages">
+    <div class="mvp-stage stage-vision">
+      <div class="stage-label label-vision">Full Vision</div>
+      <div class="tags">
+        <span class="tag tag-keep">Auth</span>
+        <span class="tag tag-keep">Create post</span>
+        <span class="tag tag-keep">Comments</span>
+        <span class="tag tag-later">Rich editor</span>
+        <span class="tag tag-later">Mentions</span>
+        <span class="tag tag-later">Reactions</span>
+        <span class="tag tag-cut">AI summary</span>
+        <span class="tag tag-cut">Dark mode</span>
+        <span class="tag tag-cut">Analytics dash</span>
+        <span class="tag tag-cut">Mobile app</span>
+      </div>
+    </div>
+    <div class="arrow-center">↓ Strip to core — "nếu không có cái này, app vô nghĩa không?"</div>
+    <div class="mvp-stage stage-mvp">
+      <div class="stage-label label-mvp">MVP</div>
+      <div class="tags">
+        <span class="tag tag-keep">Auth</span>
+        <span class="tag tag-keep">Create post</span>
+        <span class="tag tag-keep">Comments</span>
+        <span class="tag" style="background:#161b22;color:#484f58;border:1px solid #30363d">→ everything else = backlog</span>
+      </div>
+    </div>
+    <div class="arrow-center">↓ Ship → Collect feedback → Learn → Prioritize next</div>
+    <div class="mvp-stage stage-v2">
+      <div class="stage-label label-v2">v2 — Data-driven</div>
+      <div class="tags">
+        <span class="tag tag-keep">Auth</span>
+        <span class="tag tag-keep">Create post</span>
+        <span class="tag tag-keep">Comments</span>
+        <span class="tag tag-keep">Rich editor</span>
+        <span class="tag tag-user-driven">Reactions (users asked)</span>
+        <span class="tag tag-cut">AI summary (low demand)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip"><strong>MVP test question:</strong> "Nếu không có feature này, liệu user có thể achieve core value của app không?" Nếu "có" → feature không phải core, cut khỏi MVP.</div>
+
+  <hr class="section-divider">
+  <h2>⚙️🎨 Functional vs Non-functional Requirements</h2>
+  <p style="color:#c9d1d9;font-size:.9rem;margin-bottom:16px">Non-functional phải design từ đầu — không thể add-on sau. Junior thường bỏ qua đây.</p>
+
+  <div class="functional-grid">
+    <div class="func-box">
+      <div class="func-title" style="color:#58a6ff">⚙️ Functional (cái gì)</div>
+      <div class="func-item"><div class="func-dot dot-blue"></div>User register bằng email</div>
+      <div class="func-item"><div class="func-dot dot-blue"></div>Tạo và edit post</div>
+      <div class="func-item"><div class="func-dot dot-blue"></div>Comment trên post</div>
+      <div class="func-item"><div class="func-dot dot-blue"></div>Admin xem dashboard</div>
+      <div class="func-item"><div class="func-dot dot-blue"></div>Search posts theo title</div>
+    </div>
+    <div class="func-box">
+      <div class="func-title" style="color:#bc8cff">📊 Non-functional (như thế nào)</div>
+      <div class="func-item"><div class="func-dot dot-purple"></div>API response &lt; 200ms P95</div>
+      <div class="func-item"><div class="func-dot dot-purple"></div>Uptime 99.9%</div>
+      <div class="func-item"><div class="func-dot dot-purple"></div>Handle 1000 concurrent users</div>
+      <div class="func-item"><div class="func-dot dot-purple"></div>Password hashed, GDPR compliant</div>
+      <div class="func-item"><div class="func-dot dot-purple"></div>Accessible (WCAG 2.1 AA)</div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>🔄 Build-Measure-Learn Loop</h2>
+
+  <div class="iterate-cycle">
+    <p style="color:#8b949e;font-size:.82rem;margin-bottom:12px">Lean Startup cycle — lặp lại mỗi 2-4 tuần:</p>
+    <div class="cycle-row">
+      <div class="cycle-node">💡 Idea / Hypothesis</div>
+      <div class="cycle-arrow">→</div>
+      <div class="cycle-node">⌨️ Build (small)</div>
+      <div class="cycle-arrow">→</div>
+      <div class="cycle-node">📊 Measure (data)</div>
+      <div class="cycle-arrow">→</div>
+      <div class="cycle-node">🧠 Learn</div>
+      <div class="cycle-arrow">→</div>
+      <div class="cycle-node" style="border-color:#58a6ff;color:#58a6ff">↺ Iterate</div>
+    </div>
+    <div class="tip" style="margin-top:12px">Cycle tốt: hypothesis rõ ràng trước khi build ("Nếu thêm X, retention tăng Y%"). Sau ship: verify hypothesis, không phải "xem có người dùng không".</div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>🤔 Khi Nào Push Back Feature?</h2>
+
+  <div class="card" style="border-color:#3fb95040">
+    <h3 style="color:#3fb950;margin-bottom:10px">✅ Push back khi có technical reason:</h3>
+    <ul style="color:#c9d1d9;padding-left:16px;font-size:.85rem">
+      <li style="margin:6px 0">Feature tạo security risk chưa được mitigate trong scope</li>
+      <li style="margin:6px 0">Technical debt đã quá cao — thêm feature làm system fragile</li>
+      <li style="margin:6px 0">Estimate unrealistic — "1 ngày" nhưng thực tế cần 1 tuần</li>
+      <li style="margin:6px 0">Feature contradicts architectural decision đã ratify</li>
+    </ul>
+  </div>
+
+  <div class="card" style="border-color:#f8514940">
+    <h3 style="color:#ff7b72;margin-bottom:10px">❌ Không push back khi:</h3>
+    <ul style="color:#8b949e;padding-left:16px;font-size:.85rem">
+      <li style="margin:6px 0">Không thích feature nhưng không có technical reason</li>
+      <li style="margin:6px 0">Prefer tech stack khác mà không có data backup</li>
+      <li style="margin:6px 0">Business decision — đó là role của PM/founder</li>
+    </ul>
+  </div>
+
+  <!-- EXERCISES -->
+  <hr class="section-divider">
+  <div class="exercises">
+    <div class="exercises-title">🎯 Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 1</span></div>
+      <div class="ex-title">Strip Todo App xuống còn 3 features cho MVP</div>
+      <div class="ex-desc">Feature list: Create task, Edit task, Delete task, Mark done, Due dates, Labels/tags, Priority levels, Recurring tasks, Reminders, Subtasks, Comments, Share with team, Dark mode, Keyboard shortcuts, Import CSV. Strip xuống còn đúng 3 features. Justify từng decision.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">MVP = (1) Create task, (2) Mark done, (3) View list<br><br>Test: "Nếu không có X, user có thể dùng app không?"<br>- Edit task? → Nếu không có thì phải delete và create lại → painful nhưng possible. KEEP vì UX tệ nếu thiếu<br>- Due dates? → User có thể ghi vào task title → cut<br>- Labels? → Nice-to-have → cut<br>- Dark mode? → Zero core value → cut<br><br>Real MVP là tối giản nhất cho phép user achieve "manage my tasks" — không phải "use all features I want"</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 2</span></div>
+      <div class="ex-title">Define MVP cho "E-commerce với AI recommendations"</div>
+      <div class="ex-desc">Feature ideas: Product catalog, Search, Cart, Checkout, Payment (Stripe), User accounts, Order history, AI recommendations, Reviews, Wishlist, Product comparison, Email confirmation, Admin dashboard, Inventory management. Chia thành: MVP / V2 / V3 / Never. Justify.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">MVP: Product catalog, Search (basic), Cart, Checkout, Stripe payment, Email confirmation<br>→ Core = user có thể browse và mua. Đây là core value.<br><br>V2 (after validation): User accounts, Order history, Admin dashboard, Basic inventory<br>→ Cần khi có returning customers<br><br>V3 (after product-market fit): Reviews, Wishlist, AI recommendations<br>→ AI recommendations cần data để train — không thể ship khi chưa có orders<br><br>Never (for now): Product comparison — complex, niche use case<br><br>Key: AI recommendations phụ thuộc vào data → phải có V1+V2 first. Đây là common mistake: ship AI feature khi chưa có đủ data</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header"><span class="ex-diff diff-red">🔴 Khó</span><span class="ex-num">Bài 3</span></div>
+      <div class="ex-title">Design Build-Measure-Learn cycle cho feature mới</div>
+      <div class="ex-desc">Feature hypothesis: "Nếu thêm 'Save for Later' button trên product page, Cart abandonment rate sẽ giảm 15%." Design full BML cycle: (1) Specific hypothesis, (2) What to build (smallest version), (3) Metrics cần measure, (4) How to interpret results, (5) What to do nếu hypothesis confirmed/rejected.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>BML Design:</strong><br><strong>Hypothesis:</strong> "Adding 'Save for Later' reduces cart abandonment by ≥10% in 2 weeks"<br><br><strong>Build (smallest):</strong> Single button, items saved in localStorage (no backend), simple "Saved Items" page. No account sync yet.<br><br><strong>Measure:</strong><br>- Cart abandonment rate (primary)<br>- "Save for Later" click rate (usage signal)<br>- Return rate of saved-item users vs normal<br>- Session duration on saved-items page<br><br><strong>Interpret:</strong><br>- ≥10% reduction + high click rate → confirmed, build full (backend sync, cross-device)<br>- ≥10% reduction + low click rate → maybe coincidental, run longer<br>- &lt;10% reduction → abandonment cause is elsewhere (checkout friction? price? trust?)<br><br><strong>If rejected:</strong> Investigate checkout flow, run separate A/B on payment options or trust signals</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <hr class="section-divider">
+  <div class="card">
+    <h3>📌 Tóm Tắt — MVP</h3>
+    <ul style="color:#c9d1d9;padding-left:20px;margin-top:8px">
+      <li style="margin:6px 0"><strong>MVP</strong> = smallest version that delivers core value và thu thập real feedback</li>
+      <li style="margin:6px 0"><strong>Strip test</strong> = "nếu không có X, user có achieve core value không?" Nếu "có" → cut</li>
+      <li style="margin:6px 0"><strong>Non-functional</strong> = phải design từ đầu, không add-on sau. Security, performance, scale</li>
+      <li style="margin:6px 0"><strong>Build-Measure-Learn</strong> = hypothesis → build → measure → learn → iterate</li>
+      <li style="margin:6px 0"><strong>Push back</strong> khi có technical reason. Không push back vì personal preference</li>
+    </ul>
+  </div>
+
+  <div style="text-align:center;margin-top:48px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">Bài 17b / Phase 5 — Professional</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="17a-user-problem.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← 17a: User Problem</a>
+      <a href="17c-metrics.html" style="color:#bc8cff;text-decoration:none;font-size:.85rem">Tiếp theo: 17c — Metrics →</a>
+    </div>
+  </div>
+</div>
+<script>
+function toggleSol(btn){const b=btn.nextElementSibling;const o=b.classList.toggle('open');btn.textContent=o?'Ẩn gợi ý':'Xem gợi ý';}
+</script>
+</body>
+</html>

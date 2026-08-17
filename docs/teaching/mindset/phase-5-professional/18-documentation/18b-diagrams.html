@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>18b — C4 + Sequence + ERD | NestJS Boot</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;font-size:16px}
+nav{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #21262d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.nav-left,.nav-right{display:flex;align-items:center;gap:12px}
+.nav-link{color:#8b949e;text-decoration:none;font-size:.85rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s}
+.nav-link:hover{color:#e6edf3;border-color:#bc8cff}
+.nav-title{color:#e6edf3;font-size:.9rem;font-weight:600}
+.phase-badge{background:#6e40c9;color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.container{max-width:900px;margin:0 auto;padding:40px 24px}
+h1{font-size:2rem;font-weight:700;margin-bottom:8px}
+.subtitle{color:#8b949e;font-size:1rem;margin-bottom:32px}
+h2{font-size:1.3rem;font-weight:600;margin:40px 0 16px;color:#bc8cff;padding-left:12px;border-left:3px solid #6e40c9}
+h3{font-size:1.05rem;font-weight:600;margin-bottom:10px;color:#e6edf3}
+.card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:24px;margin-bottom:16px}
+.section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
+pre{background:#1c2128;border:1px solid #30363d;border-radius:8px;padding:16px;overflow-x:auto;font-family:'Fira Code',monospace;font-size:.82rem;line-height:1.6;color:#e6edf3;margin:8px 0}
+.tip{background:#132030;border:1px solid #1f6feb;border-radius:8px;padding:14px 18px;color:#79c0ff;font-size:.9rem;margin-top:16px}
+.c4-levels{display:flex;flex-direction:column;gap:10px;margin:16px 0}
+.c4-level{display:flex;align-items:flex-start;gap:14px;padding:14px;background:#161b22;border:1px solid #30363d;border-radius:10px}
+.c4-num{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;flex-shrink:0}
+.c4-1{background:#0d1a2d;border:2px solid #1f4a9e;color:#58a6ff}
+.c4-2{background:#1a0d2d;border:2px solid #6e40c9;color:#bc8cff}
+.c4-3{background:#0d2d1a;border:2px solid #238636;color:#3fb950}
+.c4-4{background:#2d1a0d;border:2px solid #9e6c1e;color:#f0883e}
+.c4-name{font-weight:700;color:#c9d1d9;font-size:.9rem;margin-bottom:3px}
+.c4-desc{font-size:.82rem;color:#8b949e}
+.c4-example{font-size:.78rem;color:#484f58;font-family:monospace;margin-top:3px}
+.erd-wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:16px 0}
+@media(max-width:600px){.erd-wrap{grid-template-columns:1fr}}
+.erd-table{background:#161b22;border:1px solid #30363d;border-radius:10px;overflow:hidden}
+.erd-header{background:#0d1a2d;padding:10px 14px;font-size:.85rem;font-weight:700;color:#58a6ff}
+.erd-field{padding:7px 14px;border-bottom:1px solid #21262d;font-size:.78rem;font-family:monospace;display:flex;gap:8px;align-items:center}
+.erd-field:last-child{border-bottom:none}
+.erd-pk{color:#f0883e;font-weight:700}
+.erd-fk{color:#bc8cff}
+.erd-col{color:#c9d1d9}
+.erd-type{color:#8b949e;margin-left:auto;font-size:.72rem}
+.erd-tag{font-size:.65rem;padding:1px 5px;border-radius:4px;background:#2d1a0d;color:#f0883e;border:1px solid #9e4f1e;flex-shrink:0}
+.seq-wrap{overflow-x:auto;margin:16px 0}
+.exercises{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:24px;margin-top:32px}
+.exercises-title{font-size:1.1rem;font-weight:700;margin-bottom:20px;color:#e6edf3}
+.ex-card{border-radius:10px;padding:18px;margin-bottom:12px}
+.ex-green{background:#0d1a0d;border:1px solid #3fb95040}
+.ex-yellow{background:#1a1200;border:1px solid #d2992240}
+.ex-red{background:#1a0d0d;border:1px solid #f8514940}
+.ex-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ex-diff{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.diff-green{background:#3fb95020;color:#3fb950}
+.diff-yellow{background:#d2992220;color:#d29922}
+.diff-red{background:#f8514920;color:#ff7b72}
+.ex-num{font-size:.8rem;color:#8b949e}
+.ex-title{font-weight:600;color:#e6edf3;margin-bottom:6px}
+.ex-desc{color:#8b949e;font-size:.88rem}
+.ex-solution{margin-top:12px}
+.ex-sol-toggle{background:#1c2128;border:1px solid #30363d;color:#8b949e;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem}
+.ex-sol-body{display:none;margin-top:10px;background:#1c2128;border-radius:8px;padding:14px;color:#c9d1d9;font-size:.85rem;line-height:1.6}
+.ex-sol-body.open{display:block}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-left">
+    <span class="phase-badge">Phase 5</span>
+    <span class="nav-title">18b — Diagrams</span>
+  </div>
+  <div class="nav-right">
+    <a class="nav-link" href="18a-readme-api.html">← 18a README</a>
+    <a class="nav-link" href="18c-adr-rfc.html" style="color:#bc8cff;border-color:#6e40c9">18c ADR →</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>🗂️ C4 + Sequence + ERD Diagrams</h1>
+  <p class="subtitle">Diagram đúng loại cho đúng audience — đây là communication skill quan trọng không kém code skill.</p>
+
+  <h2>📐 C4 Model — 4 Levels of Abstraction</h2>
+  <p style="color:#c9d1d9;font-size:.9rem;margin-bottom:16px">C4 = Context, Container, Component, Code. Mỗi level = một audience khác nhau với mức độ detail khác nhau.</p>
+
+  <div class="c4-levels">
+    <div class="c4-level">
+      <div class="c4-num c4-1">L1</div>
+      <div>
+        <div class="c4-name">System Context (Big Picture)</div>
+        <div class="c4-desc">Audience: non-technical stakeholders, PM. System của bạn interact với ai, với gì. External actors và systems.</div>
+        <div class="c4-example">User → OrderService → [Stripe, Email, Inventory]. Boxes + arrows, không có tech detail.</div>
+      </div>
+    </div>
+    <div class="c4-level">
+      <div class="c4-num c4-2">L2</div>
+      <div>
+        <div class="c4-name">Container Diagram</div>
+        <div class="c4-desc">Audience: technical leads, architects. Services, databases, deployment units. Công nghệ nào, chạy ở đâu.</div>
+        <div class="c4-example">API Server (NestJS/Node) → MongoDB → Redis → S3 → Worker (Bull Queue)</div>
+      </div>
+    </div>
+    <div class="c4-level">
+      <div class="c4-num c4-3">L3</div>
+      <div>
+        <div class="c4-name">Component Diagram</div>
+        <div class="c4-desc">Audience: developers. Modules, services, controllers trong một container. Cụ thể hơn L2.</div>
+        <div class="c4-example">OrderModule → OrderService → OrderRepo + InventoryService + PaymentService</div>
+      </div>
+    </div>
+    <div class="c4-level">
+      <div class="c4-num c4-4">L4</div>
+      <div>
+        <div class="c4-name">Code Level</div>
+        <div class="c4-desc">Audience: developers. Class diagram, UML. Thường auto-generate từ code — không vẽ tay.</div>
+        <div class="c4-example">Class diagrams, method signatures — chỉ khi complex algorithm cần document</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip"><strong>Rule:</strong> L1 + L2 = mandatory cho mọi project. L3 = cho complex modules. L4 = rarely needed. Tools: draw.io, Mermaid (code-based), Structurizr DSL.</div>
+
+  <hr class="section-divider">
+  <h2>⏩ Sequence Diagram — Request Flow</h2>
+  <p style="color:#c9d1d9;font-size:.9rem;margin-bottom:16px">Sequence diagram = ai call ai, theo thứ tự, với data gì. Dùng khi explain authentication flows, payment processing, complex multi-service calls.</p>
+
+  <div class="seq-wrap">
+    <svg viewBox="0 0 640 320" style="width:100%;background:#1c2128;border-radius:8px;border:1px solid #30363d">
+      <!-- Actors -->
+      <rect x="40" y="20" width="80" height="30" rx="6" fill="#0d2d6b" stroke="#1f4a9e"/>
+      <text x="80" y="40" fill="#58a6ff" font-size="11" text-anchor="middle" font-family="sans-serif" font-weight="600">Client</text>
+      <rect x="200" y="20" width="80" height="30" rx="6" fill="#0d2d1a" stroke="#238636"/>
+      <text x="240" y="40" fill="#3fb950" font-size="11" text-anchor="middle" font-family="sans-serif" font-weight="600">API</text>
+      <rect x="360" y="20" width="80" height="30" rx="6" fill="#2d1a0d" stroke="#9e6c1e"/>
+      <text x="400" y="40" fill="#f0883e" font-size="11" text-anchor="middle" font-family="sans-serif" font-weight="600">Auth Svc</text>
+      <rect x="520" y="20" width="80" height="30" rx="6" fill="#1a0d2d" stroke="#6e40c9"/>
+      <text x="560" y="40" fill="#bc8cff" font-size="11" text-anchor="middle" font-family="sans-serif" font-weight="600">DB</text>
+      <!-- Lifelines -->
+      <line x1="80" y1="50" x2="80" y2="300" stroke="#30363d" stroke-width="1" stroke-dasharray="4"/>
+      <line x1="240" y1="50" x2="240" y2="300" stroke="#30363d" stroke-width="1" stroke-dasharray="4"/>
+      <line x1="400" y1="50" x2="400" y2="300" stroke="#30363d" stroke-width="1" stroke-dasharray="4"/>
+      <line x1="560" y1="50" x2="560" y2="300" stroke="#30363d" stroke-width="1" stroke-dasharray="4"/>
+      <!-- Messages -->
+      <line x1="80" y1="80" x2="240" y2="80" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="160" y="74" fill="#8b949e" font-size="10" text-anchor="middle" font-family="monospace">POST /login {email, pw}</text>
+      <line x1="240" y1="110" x2="400" y2="110" stroke="#3fb950" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="320" y="104" fill="#8b949e" font-size="10" text-anchor="middle" font-family="monospace">verify(email, pw)</text>
+      <line x1="400" y1="140" x2="560" y2="140" stroke="#f0883e" stroke-width="1.5" marker-end="url(#arr)"/>
+      <text x="480" y="134" fill="#8b949e" font-size="10" text-anchor="middle" font-family="monospace">findUser(email)</text>
+      <line x1="560" y1="170" x2="400" y2="170" stroke="#bc8cff" stroke-width="1.5" stroke-dasharray="4" marker-end="url(#arr)"/>
+      <text x="480" y="164" fill="#8b949e" font-size="10" text-anchor="middle" font-family="monospace">User{hash}</text>
+      <line x1="400" y1="200" x2="240" y2="200" stroke="#bc8cff" stroke-width="1.5" stroke-dasharray="4" marker-end="url(#arr)"/>
+      <text x="320" y="194" fill="#8b949e" font-size="10" text-anchor="middle" font-family="monospace">verified: true</text>
+      <line x1="240" y1="230" x2="80" y2="230" stroke="#bc8cff" stroke-width="1.5" stroke-dasharray="4" marker-end="url(#arr)"/>
+      <text x="160" y="224" fill="#8b949e" font-size="10" text-anchor="middle" font-family="monospace">{access_token, refresh_token}</text>
+      <defs>
+        <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#8b949e"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:10px">Mermaid — Code-based Sequence</h3>
+<pre><span style="color:#8b949e">```mermaid</span>
+sequenceDiagram
+  Client->>API: POST /login {email, password}
+  API->>AuthService: verify(email, password)
+  AuthService->>DB: findUser(email)
+  DB-->>AuthService: User{passwordHash}
+  AuthService-->>API: verified: true
+  API-->>Client: {access_token, refresh_token}
+<span style="color:#8b949e">```</span></pre>
+    <div class="tip" style="margin-top:12px">Mermaid code = version-controllable diagram. Commit cùng với code. Update khi flow thay đổi. Render trực tiếp trong GitHub README/docs.</div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>🗃️ ERD — Entity Relationship Diagram</h2>
+  <p style="color:#c9d1d9;font-size:.9rem;margin-bottom:16px">ERD = database schema visualized. Mọi backend project cần ERD — giúp hiểu data model mà không cần đọc schema files.</p>
+
+  <div class="erd-wrap">
+    <div class="erd-table">
+      <div class="erd-header">users</div>
+      <div class="erd-field"><span class="erd-pk">_id</span><span class="erd-type">ObjectId</span><span class="erd-tag">PK</span></div>
+      <div class="erd-field"><span class="erd-col">email</span><span class="erd-type">String</span></div>
+      <div class="erd-field"><span class="erd-col">password</span><span class="erd-type">String</span></div>
+      <div class="erd-field"><span class="erd-col">role</span><span class="erd-type">Enum</span></div>
+      <div class="erd-field"><span class="erd-col">createdAt</span><span class="erd-type">Date</span></div>
+    </div>
+    <div class="erd-table">
+      <div class="erd-header">orders</div>
+      <div class="erd-field"><span class="erd-pk">_id</span><span class="erd-type">ObjectId</span><span class="erd-tag">PK</span></div>
+      <div class="erd-field"><span class="erd-fk">userId</span><span class="erd-type">ObjectId</span><span class="erd-tag" style="background:#1a0d2d;color:#bc8cff;border-color:#6e40c9">FK</span></div>
+      <div class="erd-field"><span class="erd-col">status</span><span class="erd-type">Enum</span></div>
+      <div class="erd-field"><span class="erd-col">total</span><span class="erd-type">Number</span></div>
+      <div class="erd-field"><span class="erd-col">createdAt</span><span class="erd-type">Date</span></div>
+    </div>
+    <div class="erd-table">
+      <div class="erd-header">order_items</div>
+      <div class="erd-field"><span class="erd-pk">_id</span><span class="erd-type">ObjectId</span><span class="erd-tag">PK</span></div>
+      <div class="erd-field"><span class="erd-fk">orderId</span><span class="erd-type">ObjectId</span><span class="erd-tag" style="background:#1a0d2d;color:#bc8cff;border-color:#6e40c9">FK</span></div>
+      <div class="erd-field"><span class="erd-col">productId</span><span class="erd-type">ObjectId</span></div>
+      <div class="erd-field"><span class="erd-col">qty</span><span class="erd-type">Number</span></div>
+      <div class="erd-field"><span class="erd-col">price</span><span class="erd-type">Number</span></div>
+    </div>
+  </div>
+
+  <p style="color:#8b949e;font-size:.82rem;text-align:center;margin-top:4px">users 1–∞ orders &nbsp;&nbsp;&nbsp; orders 1–∞ order_items</p>
+
+  <!-- EXERCISES -->
+  <hr class="section-divider">
+  <div class="exercises">
+    <div class="exercises-title">🎯 Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 1</span></div>
+      <div class="ex-title">Vẽ C4 Level 1+2 cho project hiện tại</div>
+      <div class="ex-desc">Chọn project đang có. Vẽ L1 (System Context) và L2 (Container) bằng draw.io hoặc Mermaid. L1: system của bạn + actors (user, admin) + external systems (DB, 3rd party). L2: các services/databases với tech stack.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">L1 checklist:<br>☐ System box ở giữa (tên + tech stack)<br>☐ User actors bên ngoài (User, Admin)<br>☐ External systems (MongoDB, Redis, Stripe, SendGrid)<br>☐ Arrows với description ("uses", "sends to")<br>☐ No internal detail — just boundaries<br><br>L2 checklist:<br>☐ API Server với tech (NestJS + Node 20)<br>☐ Each database/cache (MongoDB, Redis)<br>☐ Background workers nếu có (Bull Queue)<br>☐ Frontend nếu có (Next.js)<br>☐ Arrows với protocol (HTTP, TCP, AMQP)<br><br>Tool nhanh: Mermaid C4 syntax hoặc draw.io C4 template</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 2</span></div>
+      <div class="ex-title">Viết Mermaid sequence diagram cho checkout flow</div>
+      <div class="ex-desc">Checkout flow: User → API → InventoryService (check stock) → PaymentService (Stripe) → OrderService (create order) → EmailService (send confirmation) → User. Viết Mermaid code, render và verify flow logic đúng.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><pre>sequenceDiagram
+  User->>API: POST /checkout {items, payment}
+  API->>InventoryService: checkStock(items)
+  alt Out of stock
+    InventoryService-->>API: Error: OUT_OF_STOCK
+    API-->>User: 409 Conflict
+  else In stock
+    InventoryService-->>API: stockAvailable
+    API->>PaymentService: charge(amount, card)
+    PaymentService-->>API: {paymentId, success}
+    API->>OrderService: createOrder({items, paymentId})
+    OrderService-->>API: {orderId}
+    API->>EmailService: sendConfirmation(email, orderId)
+    API-->>User: 201 {orderId}
+  end</pre>Key: alt/else = conditional flows. Dashes (-->) = response. Solid (->>) = request.</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header"><span class="ex-diff diff-red">🔴 Khó</span><span class="ex-num">Bài 3</span></div>
+      <div class="ex-title">Design ERD cho e-learning platform (4+ entities)</div>
+      <div class="ex-desc">Platform có: Users, Courses, Lessons, Enrollments, Progress tracking, Reviews. Design ERD với ít nhất 5 entities. Mỗi entity: fields + types + PK/FK. Include cardinality (1-1, 1-N, N-N). Identify nơi cần indexes.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Entities:</strong><br>- users: _id, email, password, role<br>- courses: _id, title, instructorId(FK→users), price<br>- lessons: _id, courseId(FK→courses), title, videoUrl, order<br>- enrollments: _id, userId(FK), courseId(FK), enrolledAt, completed — <strong>N-N bridge</strong><br>- progress: _id, enrollmentId(FK), lessonId(FK), completedAt — N-N bridge<br>- reviews: _id, userId(FK), courseId(FK), rating(1-5), comment<br><br><strong>Cardinality:</strong><br>users 1—∞ courses (instructor)<br>courses 1—∞ lessons<br>users N—N courses (via enrollments)<br>enrollments 1—∞ progress<br><br><strong>Indexes:</strong><br>enrollments: compound(userId, courseId) unique<br>progress: compound(enrollmentId, lessonId) unique<br>courses: instructorId (frequent query)<br>reviews: compound(userId, courseId) unique (one review per course)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <hr class="section-divider">
+  <div class="card">
+    <h3>📌 Tóm Tắt — Diagrams</h3>
+    <ul style="color:#c9d1d9;padding-left:20px;margin-top:8px">
+      <li style="margin:6px 0"><strong>C4 Model</strong> = 4 levels. L1+L2 mandatory. L3 cho complex modules. L4 rarely needed</li>
+      <li style="margin:6px 0"><strong>Sequence diagram</strong> = request flow với thứ tự calls. Dùng Mermaid cho version control</li>
+      <li style="margin:6px 0"><strong>ERD</strong> = database schema visual. Mandatory cho mọi backend project</li>
+      <li style="margin:6px 0"><strong>Audience rule</strong> = L1 cho non-technical, L2-L3 cho engineers, ERD cho developers</li>
+      <li style="margin:6px 0"><strong>Update khi thay đổi</strong> — diagram là doc, treat như code</li>
+    </ul>
+  </div>
+
+  <div style="text-align:center;margin-top:48px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">Bài 18b / Phase 5 — Professional</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="18a-readme-api.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← 18a: README</a>
+      <a href="18c-adr-rfc.html" style="color:#bc8cff;text-decoration:none;font-size:.85rem">Tiếp theo: 18c — ADR &amp; Troubleshooting →</a>
+    </div>
+  </div>
+</div>
+<script>
+function toggleSol(btn){const b=btn.nextElementSibling;const o=b.classList.toggle('open');btn.textContent=o?'Ẩn gợi ý':'Xem gợi ý';}
+</script>
+</body>
+</html>

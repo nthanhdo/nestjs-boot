@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>09d — TDD | Phase 3</title>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --border: #30363d;
+  --text: #e6edf3; --muted: #7d8590; --accent: #58a6ff;
+  --success: #3fb950; --warning: #d29922; --error: #f85149; --radius: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+.top-nav { position: sticky; top: 0; z-index: 100; background: rgba(13,17,23,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .6rem 1.5rem; }
+.breadcrumb { font-size: .82rem; color: var(--muted); } .breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a { padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-links a.next { background: var(--success); color: #000; border-color: var(--success); font-weight: 600; }
+.progress-bar { height: 2px; background: var(--border); position: fixed; top: 0; left: 0; right: 0; z-index: 200; }
+.progress-fill { height: 100%; background: var(--accent); width: 0; }
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .72rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+
+/* TDD CYCLE */
+.tdd-cycle { display: flex; gap: 1rem; justify-content: center; align-items: center; flex-wrap: wrap; }
+.tdd-circle {
+  width: 150px; height: 150px; border-radius: 50%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; cursor: pointer; transition: all .3s;
+  border: 3px solid transparent; font-weight: 700;
+}
+.tdd-circle:hover { transform: scale(1.05); }
+.tdd-circle.active { transform: scale(1.1); box-shadow: 0 0 20px rgba(88,166,255,.4); }
+.tdd-red { background: rgba(248,81,73,.15); border-color: #f85149; color: #f85149; }
+.tdd-green { background: rgba(63,185,80,.12); border-color: #3fb950; color: #3fb950; }
+.tdd-blue { background: rgba(88,166,255,.1); border-color: #58a6ff; color: #58a6ff; }
+.tdd-icon { font-size: 2rem; margin-bottom: .25rem; }
+.tdd-name { font-size: .9rem; }
+.tdd-sub { font-size: .7rem; opacity: .75; font-weight: 400; }
+.tdd-arrow { font-size: 1.5rem; color: var(--muted); }
+.tdd-detail { border-radius: 8px; padding: 1rem; margin-top: 1rem; font-size: .85rem; color: var(--muted); line-height: 1.6; display: none; }
+.tdd-detail.show { display: block; animation: fade .2s; }
+@keyframes fade { from{opacity:0} to{opacity:1} }
+
+/* TDD WALKTHROUGH */
+.step-cards { display: flex; flex-direction: column; gap: .5rem; }
+.step-card { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.step-card-header { padding: .6rem .9rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: .85rem; }
+.step-card-body { padding: .75rem 1rem; border-top: 1px solid var(--border); display: none; }
+.step-card.open .step-card-body { display: block; }
+
+.code-block { background: #010409; border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; font-family: 'Courier New', monospace; font-size: .78rem; line-height: 1.7; overflow-x: auto; }
+.c-comment { color: #6e7681; } .c-kw { color: #ff7b72; } .c-str { color: #a5d6ff; }
+.c-fn { color: #d2a8ff; } .c-num { color: #79c0ff; }
+
+/* NEXT TOPIC */
+.next-topic { background: rgba(63,185,80,.07); border: 1px solid rgba(63,185,80,.3); border-radius: var(--radius); padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.next-topic h3 { color: var(--success); margin-bottom: .25rem; }
+.next-topic p { margin: 0; font-size: .85rem; }
+.next-topic a { background: var(--success); color: #000; padding: .5rem 1.25rem; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: .85rem; white-space: nowrap; }
+
+.exercise-box { background: rgba(88,166,255,.06); border: 1px solid rgba(88,166,255,.25); border-radius: var(--radius); padding: 1.5rem; }
+.exercise-box h2 { color: var(--accent); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(88,166,255,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; }
+.takeaway { background: rgba(63,185,80,.06); border: 1px solid rgba(63,185,80,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--success); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '▸'; color: var(--success); }
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(13,17,23,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--success); color: #000; border-color: var(--success); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 3 · Testing · <span>09d — TDD</span></div>
+  <div class="nav-links">
+    <a href="09c-unit-test.html">← Unit Test</a>
+    <a href="../10-debugging/10a-process.html" class="next">10 Debugging →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">09d · Testing</div>
+  <h1>Test-Driven <em>Development</em></h1>
+  <p>Viết test trước khi viết code. Red → Green → Refactor. Nghe điên, nhưng cho ra code design tốt hơn, coverage cao hơn, và confidence tuyệt đối khi refactor.</p>
+</div>
+
+<div class="content">
+
+  <!-- TDD CYCLE -->
+  <section>
+    <h2>Red → Green → Refactor — Bấm từng pha</h2>
+    <div class="card">
+      <div class="tdd-cycle">
+        <div class="tdd-circle tdd-red" onclick="showTddPhase('red', this)" id="c-red">
+          <div class="tdd-icon">🔴</div>
+          <div class="tdd-name">RED</div>
+          <div class="tdd-sub">Viết test fail</div>
+        </div>
+        <div class="tdd-arrow">→</div>
+        <div class="tdd-circle tdd-green" onclick="showTddPhase('green', this)" id="c-green">
+          <div class="tdd-icon">🟢</div>
+          <div class="tdd-name">GREEN</div>
+          <div class="tdd-sub">Code đủ để pass</div>
+        </div>
+        <div class="tdd-arrow">→</div>
+        <div class="tdd-circle tdd-blue" onclick="showTddPhase('refactor', this)" id="c-refactor">
+          <div class="tdd-icon">🔵</div>
+          <div class="tdd-name">REFACTOR</div>
+          <div class="tdd-sub">Clean code</div>
+        </div>
+      </div>
+      <div class="tdd-detail" id="detail-red" style="background:rgba(248,81,73,.06);border:1px solid rgba(248,81,73,.25)">
+        <strong style="color:#f85149">🔴 RED</strong> — Viết test MÀ KHÔNG viết code implementation trước.<br>
+        Test phải fail (đỏ) — nếu pass ngay, có gì sai.<br>
+        Test = specification. Bạn đang định nghĩa "behavior expected" trước.
+      </div>
+      <div class="tdd-detail" id="detail-green" style="background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.25)">
+        <strong style="color:#3fb950">🟢 GREEN</strong> — Viết code đơn giản nhất để test pass.<br>
+        Không cần clean, không cần optimal — chỉ cần test xanh.<br>
+        "Make it work, then make it right." Đừng premature optimize.
+      </div>
+      <div class="tdd-detail" id="detail-refactor" style="background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.25)">
+        <strong style="color:#58a6ff">🔵 REFACTOR</strong> — Cải thiện code structure mà không đổi behavior.<br>
+        Extract methods, rename, simplify. Test vẫn xanh = behavior không đổi.<br>
+        Đây là giai đoạn code thực sự trở nên clean.
+      </div>
+    </div>
+  </section>
+
+  <!-- TDD WALKTHROUGH -->
+  <section>
+    <h2>TDD Walkthrough — Tính Discount</h2>
+    <div class="step-cards">
+      <div class="step-card" onclick="this.classList.toggle('open')">
+        <div class="step-card-header" style="background:rgba(248,81,73,.08)">
+          <span style="color:#f85149">🔴 Step 1: Write failing test</span><span>▾</span>
+        </div>
+        <div class="step-card-body">
+          <div class="code-block" style="font-size:.75rem">
+<span class="c-kw">it</span>(<span class="c-str">'should apply 10% discount when order >= $100'</span>, () => {
+  <span class="c-kw">const</span> result = <span class="c-fn">applyDiscount</span>(<span class="c-num">100</span>);
+  expect(result).toBe(<span class="c-num">90</span>); <span class="c-comment">// ❌ FAIL — function không tồn tại</span>
+});</div>
+        </div>
+      </div>
+      <div class="step-card" onclick="this.classList.toggle('open')">
+        <div class="step-card-header" style="background:rgba(63,185,80,.06)">
+          <span style="color:#3fb950">🟢 Step 2: Minimal code to pass</span><span>▾</span>
+        </div>
+        <div class="step-card-body">
+          <div class="code-block" style="font-size:.75rem">
+<span class="c-kw">function</span> <span class="c-fn">applyDiscount</span>(amount: <span class="c-kw">number</span>): <span class="c-kw">number</span> {
+  <span class="c-kw">if</span> (amount &gt;= <span class="c-num">100</span>) <span class="c-kw">return</span> amount * <span class="c-num">0.9</span>;
+  <span class="c-kw">return</span> amount; <span class="c-comment">// ✅ PASS</span>
+}</div>
+        </div>
+      </div>
+      <div class="step-card" onclick="this.classList.toggle('open')">
+        <div class="step-card-header" style="background:rgba(88,166,255,.06)">
+          <span style="color:#58a6ff">🔴 Step 3: Add more test cases</span><span>▾</span>
+        </div>
+        <div class="step-card-body">
+          <div class="code-block" style="font-size:.75rem">
+<span class="c-kw">it</span>(<span class="c-str">'should apply 20% when order >= $500'</span>, () => {
+  expect(<span class="c-fn">applyDiscount</span>(<span class="c-num">500</span>)).toBe(<span class="c-num">400</span>); <span class="c-comment">// ❌ FAIL</span>
+});
+<span class="c-kw">it</span>(<span class="c-str">'should not discount orders < $100'</span>, () => {
+  expect(<span class="c-fn">applyDiscount</span>(<span class="c-num">50</span>)).toBe(<span class="c-num">50</span>); <span class="c-comment">// ✅ already passes</span>
+});</div>
+        </div>
+      </div>
+      <div class="step-card" onclick="this.classList.toggle('open')">
+        <div class="step-card-header" style="background:rgba(63,185,80,.06)">
+          <span style="color:#3fb950">🟢 Step 4: Green + Refactor</span><span>▾</span>
+        </div>
+        <div class="step-card-body">
+          <div class="code-block" style="font-size:.75rem">
+<span class="c-kw">const</span> DISCOUNT_TIERS = [
+  { min: <span class="c-num">500</span>, rate: <span class="c-num">0.8</span> },
+  { min: <span class="c-num">100</span>, rate: <span class="c-num">0.9</span> },
+  { min: <span class="c-num">0</span>,   rate: <span class="c-num">1.0</span> },
+];
+
+<span class="c-kw">function</span> <span class="c-fn">applyDiscount</span>(amount: <span class="c-kw">number</span>): <span class="c-kw">number</span> {
+  <span class="c-kw">const</span> tier = DISCOUNT_TIERS.<span class="c-fn">find</span>(t => amount >= t.min)!;
+  <span class="c-kw">return</span> amount * tier.rate; <span class="c-comment">// ✅ ALL TESTS PASS + EXTENSIBLE</span>
+}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BENEFITS -->
+  <section>
+    <h2>TDD Benefits — Thực tế</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+      <div class="card" style="border-left:3px solid var(--success)">
+        <p style="font-weight:600;color:var(--success);margin-bottom:.5rem">✅ TDD cho bạn</p>
+        <ul style="list-style:none;font-size:.82rem">
+          <li style="padding:.25rem 0;color:var(--muted)">• 100% coverage tự nhiên — không cần chase sau</li>
+          <li style="padding:.25rem 0;color:var(--muted)">• Buộc thiết kế testable API trước khi code</li>
+          <li style="padding:.25rem 0;color:var(--muted)">• Refactor confidence — test xanh = ok</li>
+          <li style="padding:.25rem 0;color:var(--muted)">• Ít bugs hơn vì edge cases được nghĩ trước</li>
+        </ul>
+      </div>
+      <div class="card" style="border-left:3px solid var(--warning)">
+        <p style="font-weight:600;color:var(--warning);margin-bottom:.5rem">⚠️ TDD không phải cho</p>
+        <ul style="list-style:none;font-size:.82rem">
+          <li style="padding:.25rem 0;color:var(--muted)">• Exploratory/prototype code</li>
+          <li style="padding:.25rem 0;color:var(--muted)">• UI layout/CSS (dùng visual test)</li>
+          <li style="padding:.25rem 0;color:var(--muted)">• Glue code đơn giản (1-line functions)</li>
+          <li style="padding:.25rem 0;color:var(--muted)">• Third-party integration setup</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- NEXT TOPIC -->
+  <section class="next-topic">
+    <div>
+      <h3>Tiếp theo: 10 — Debugging</h3>
+      <p>Tests không bắt hết bugs. Khi bug xảy ra — bạn debug như thế nào có hệ thống?</p>
+    </div>
+    <a href="../10-debugging/10a-process.html">10a: Debug Process →</a>
+  </section>
+
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — TDD Kata</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Bài toán: implement <code>calculateShipping(weight, country)</code>. Trước khi code, viết 5 tests cho 5 cases khác nhau.</li>
+      <li><span class="step-num">2</span>Chạy tests → tất cả fail (red). Verify đúng tests đang fail vì reason đúng.</li>
+      <li><span class="step-num">3</span>Implement minimal code để pass từng test một. Commit sau mỗi green.</li>
+      <li><span class="step-num">4</span>Refactor: extract constants, rename for clarity. Verify tests vẫn xanh sau refactor.</li>
+      <li><span class="step-num">5</span>Retrospective: so sánh design sau TDD vs design bạn sẽ viết nếu code trước.</li>
+    </ul>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>Red → Green → Refactor. Không skip bước nào. Refactor chỉ khi tests xanh.</li>
+      <li>TDD không phải "viết tests rồi code". Mà là tests định nghĩa design.</li>
+      <li>Kết quả: 100% coverage tự nhiên, code testable by design, confident refactor.</li>
+      <li>Không phải cho mọi thứ — prototype, UI, glue code thì skip.</li>
+      <li>Bắt đầu nhỏ: 1 function, 1 feature. Không TDD toàn bộ app ngay ngày 1.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="09c-unit-test.html">← Unit Test</a>
+  <div class="progress-dots">
+    <div class="dot"></div><div class="dot"></div>
+    <div class="dot"></div><div class="dot active"></div>
+  </div>
+  <a href="../10-debugging/10a-process.html" class="next">10 Debugging →</a>
+</div>
+
+<script>
+window.addEventListener('scroll', () => {
+  document.getElementById('pf').style.width = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100 + '%';
+});
+let tddActive = null;
+function showTddPhase(id, el) {
+  document.querySelectorAll('.tdd-circle').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.tdd-detail').forEach(d => d.classList.remove('show'));
+  if (tddActive === id) { tddActive = null; return; }
+  el.classList.add('active');
+  document.getElementById('detail-' + id).classList.add('show');
+  tddActive = id;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>09b — Test Pyramid | Phase 3</title>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --border: #30363d;
+  --text: #e6edf3; --muted: #7d8590; --accent: #58a6ff;
+  --success: #3fb950; --warning: #d29922; --error: #f85149; --radius: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+.top-nav { position: sticky; top: 0; z-index: 100; background: rgba(13,17,23,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .6rem 1.5rem; }
+.breadcrumb { font-size: .82rem; color: var(--muted); }
+.breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a { padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-links a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+.progress-bar { height: 2px; background: var(--border); position: fixed; top: 0; left: 0; right: 0; z-index: 200; }
+.progress-fill { height: 100%; background: var(--accent); width: 0; }
+
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .72rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+
+/* PYRAMID */
+.pyramid { display: flex; flex-direction: column; align-items: center; gap: 0; cursor: pointer; }
+.pyr-level { height: 70px; display: flex; align-items: center; justify-content: center; transition: all .2s; position: relative; }
+.pyr-level:hover { filter: brightness(1.15); }
+.pyr-level.selected { filter: brightness(1.2); transform: scale(1.02); }
+.pyr-e2e { width: 200px; border-radius: 8px 8px 0 0; background: rgba(248,81,73,.25); border: 1px solid rgba(248,81,73,.5); }
+.pyr-int { width: 340px; background: rgba(210,153,34,.2); border: 1px solid rgba(210,153,34,.4); }
+.pyr-unit { width: 500px; border-radius: 0 0 8px 8px; background: rgba(63,185,80,.15); border: 1px solid rgba(63,185,80,.4); }
+.pyr-label { font-weight: 700; font-size: .85rem; text-align: center; }
+.pyr-count { font-size: .7rem; opacity: .75; display: block; margin-top: .15rem; }
+
+/* LEVEL DETAIL */
+.level-detail { border-radius: var(--radius); padding: 1rem; margin-top: .75rem; transition: all .3s; display: none; }
+.level-detail.show { display: block; animation: fadeIn .2s; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+/* MOCK TABLE */
+.mock-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: .75rem; }
+.mock-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: .9rem; cursor: pointer; }
+.mock-card h3 { font-size: .82rem; font-weight: 700; margin-bottom: .35rem; }
+.mock-card .mk-desc { font-size: .75rem; color: var(--muted); }
+.mock-card .mk-code { font-size: .7rem; color: var(--success); font-family: monospace; margin-top: .35rem; }
+
+/* CODE BLOCK */
+.code-block { background: #010409; border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; font-family: 'Courier New', monospace; font-size: .78rem; line-height: 1.7; overflow-x: auto; }
+.c-comment { color: #6e7681; } .c-kw { color: #ff7b72; } .c-str { color: #a5d6ff; }
+.c-fn { color: #d2a8ff; } .c-num { color: #79c0ff; }
+
+.exercise-box { background: rgba(88,166,255,.06); border: 1px solid rgba(88,166,255,.25); border-radius: var(--radius); padding: 1.5rem; }
+.exercise-box h2 { color: var(--accent); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(88,166,255,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; }
+
+.takeaway { background: rgba(63,185,80,.06); border: 1px solid rgba(63,185,80,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--success); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '▸'; color: var(--success); }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(13,17,23,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 3 · Testing · <span>09b — Test Pyramid</span></div>
+  <div class="nav-links">
+    <a href="09a-why-test.html">← Why Test</a>
+    <a href="09c-unit-test.html" class="next">Unit Test →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">09b · Testing</div>
+  <h1>The Test <em>Pyramid</em></h1>
+  <p>Unit tests nhiều → Integration tests vừa → E2E tests ít. Hình tam giác này là optimal ratio — không phải ngẫu nhiên mà là kinh tế học của testing.</p>
+</div>
+
+<div class="content">
+
+  <section>
+    <h2>Interactive Pyramid — Bấm từng tầng</h2>
+    <div class="card">
+      <div class="pyramid" id="pyramid">
+        <div class="pyr-level pyr-e2e" onclick="showLevel('e2e', this)">
+          <div class="pyr-label" style="color:#f85149">🌐 E2E Tests<span class="pyr-count">~10 tests · chậm nhất</span></div>
+        </div>
+        <div class="pyr-level pyr-int" onclick="showLevel('int', this)">
+          <div class="pyr-label" style="color:#d29922">🔗 Integration Tests<span class="pyr-count">~100 tests · vừa</span></div>
+        </div>
+        <div class="pyr-level pyr-unit" onclick="showLevel('unit', this)">
+          <div class="pyr-label" style="color:#3fb950">⚡ Unit Tests<span class="pyr-count">~1000 tests · nhanh nhất</span></div>
+        </div>
+      </div>
+      <div class="level-detail" id="detail-e2e" style="background:rgba(248,81,73,.06);border:1px solid rgba(248,81,73,.25)">
+        <strong style="color:#f85149">E2E Tests</strong> — Test toàn bộ flow từ browser đến DB và back. Dùng Playwright, Cypress.<br><br>
+        <strong>Test gì:</strong> "User đăng ký → login → đặt hàng → nhận email xác nhận" — real browser, real DB.<br>
+        <strong>Chậm vì:</strong> Spin up browser + server + DB. 1 test = 5-30 giây.<br>
+        <strong>Chạy khi:</strong> CI trước deploy. Không chạy local mỗi save.
+      </div>
+      <div class="level-detail" id="detail-int" style="background:rgba(210,153,34,.06);border:1px solid rgba(210,153,34,.25)">
+        <strong style="color:#d29922">Integration Tests</strong> — Test 2+ components working together. Thường dùng test DB hoặc mocked external services.<br><br>
+        <strong>Test gì:</strong> Controller + Service + Repository → DB. API contract (request → response shape).<br>
+        <strong>Dùng:</strong> Jest + Supertest cho HTTP endpoints. In-memory MongoDB với mongodb-memory-server.<br>
+        <strong>Chạy khi:</strong> CI và local khi thay đổi API/service layer.
+      </div>
+      <div class="level-detail" id="detail-unit" style="background:rgba(63,185,80,.06);border:1px solid rgba(63,185,80,.25)">
+        <strong style="color:#3fb950">Unit Tests</strong> — Test 1 function/class trong isolation. Tất cả dependencies được mock.<br><br>
+        <strong>Test gì:</strong> Business logic, calculations, transformations, error handling. Pure functions.<br>
+        <strong>Nhanh vì:</strong> Không có I/O. 1000 unit tests chạy &lt;10 giây.<br>
+        <strong>Chạy khi:</strong> Mỗi file save trong watch mode. Fast feedback loop.
+      </div>
+    </div>
+  </section>
+
+  <!-- DISTRIBUTION -->
+  <section>
+    <h2>Distribution Rule — 70/20/10</h2>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem">
+      <div class="card" style="text-align:center;border-color:rgba(63,185,80,.4)">
+        <div style="font-size:2rem;font-weight:800;color:#3fb950">70%</div>
+        <div style="font-size:.85rem;color:#3fb950;font-weight:600">Unit Tests</div>
+        <p style="font-size:.78rem">Nhiều nhất, nhanh nhất, isolate nhất</p>
+      </div>
+      <div class="card" style="text-align:center;border-color:rgba(210,153,34,.4)">
+        <div style="font-size:2rem;font-weight:800;color:#d29922">20%</div>
+        <div style="font-size:.85rem;color:#d29922;font-weight:600">Integration</div>
+        <p style="font-size:.78rem">Test component collaboration</p>
+      </div>
+      <div class="card" style="text-align:center;border-color:rgba(248,81,73,.4)">
+        <div style="font-size:2rem;font-weight:800;color:#f85149">10%</div>
+        <div style="font-size:.85rem;color:#f85149;font-weight:600">E2E</div>
+        <p style="font-size:.78rem">Critical paths only — login, checkout</p>
+      </div>
+    </div>
+    <p style="font-size:.82rem;margin-top:.75rem">Anti-pattern "Testing Ice Cream Cone": nhiều E2E, ít unit → CI chậm, flaky tests, hard to debug.</p>
+  </section>
+
+  <!-- MOCK/STUB/SPY -->
+  <section>
+    <h2>Mock vs Stub vs Spy</h2>
+    <div class="mock-cards">
+      <div class="mock-card">
+        <h3 style="color:#58a6ff">🎭 Mock</h3>
+        <div class="mk-desc">Fake hoàn toàn — thay thế dependency với object giả. Có thể assert calls.</div>
+        <div class="mk-code">jest.fn() / jest.mock()</div>
+      </div>
+      <div class="mock-card">
+        <h3 style="color:#d29922">🔧 Stub</h3>
+        <div class="mk-desc">Trả về data cụ thể khi được gọi. Không assert calls — chỉ control return value.</div>
+        <div class="mk-code">mockReturnValue('data')</div>
+      </div>
+      <div class="mock-card">
+        <h3 style="color:#3fb950">👁️ Spy</h3>
+        <div class="mk-desc">Wrap real implementation — theo dõi được gọi không, với args gì, nhưng vẫn chạy thật.</div>
+        <div class="mk-code">jest.spyOn(obj, 'method')</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CODE -->
+  <section>
+    <h2>Integration Test — NestJS + Supertest</h2>
+    <div class="code-block">
+<span class="c-comment">// products.e2e-spec.ts</span>
+<span class="c-kw">describe</span>(<span class="c-str">'ProductController (e2e)'</span>, () => {
+  <span class="c-kw">let</span> app: INestApplication;
+
+  beforeAll(<span class="c-kw">async</span> () => {
+    <span class="c-kw">const</span> module = <span class="c-kw">await</span> Test.<span class="c-fn">createTestingModule</span>({
+      imports: [AppModule],
+    }).<span class="c-fn">compile</span>();
+
+    app = module.<span class="c-fn">createNestApplication</span>();
+    <span class="c-kw">await</span> app.<span class="c-fn">init</span>();
+  });
+
+  <span class="c-kw">it</span>(<span class="c-str">'GET /products → returns paginated list'</span>, () => {
+    <span class="c-kw">return</span> <span class="c-fn">request</span>(app.<span class="c-fn">getHttpServer</span>())
+      .<span class="c-fn">get</span>(<span class="c-str">'/products?page=1&limit=10'</span>)
+      .expect(<span class="c-num">200</span>)
+      .expect(res => {
+        expect(res.body.data).<span class="c-fn">toBeInstanceOf</span>(Array);
+        expect(res.body.meta.page).toBe(<span class="c-num">1</span>);
+      });
+  });
+});</div>
+  </section>
+
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — Identify Test Types</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Review project hiện tại. Đang có bao nhiêu unit / integration / E2E tests? Tính tỷ lệ. So với 70/20/10 rule.</li>
+      <li><span class="step-num">2</span>Chọn 1 Service method phức tạp nhất. Viết 3 unit tests: success case, edge case, error case.</li>
+      <li><span class="step-num">3</span>Viết 1 integration test cho API endpoint hay dùng nhất dùng Supertest.</li>
+      <li><span class="step-num">4</span>Đo CI runtime trước và sau khi add tests. Đặt mục tiêu: unit test suite chạy &lt;30s.</li>
+    </ul>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>Pyramid: Unit (70%) → Integration (20%) → E2E (10%). Bottom = nhiều, nhanh, rẻ.</li>
+      <li>Ice Cream Cone (ngược pyramid) = CI chậm, flaky, khó debug. Tránh.</li>
+      <li>Mock = fake hoàn toàn. Stub = control return value. Spy = wrap real + observe.</li>
+      <li>Unit test chạy &lt;10ms/test. Integration chạy &lt;1s/test. E2E chạy &lt;30s/test.</li>
+      <li>E2E chỉ cho critical paths: login, checkout, payment. Không phải mọi feature.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="09a-why-test.html">← Why Test</a>
+  <div class="progress-dots">
+    <div class="dot"></div><div class="dot active"></div>
+    <div class="dot"></div><div class="dot"></div>
+  </div>
+  <a href="09c-unit-test.html" class="next">Unit Test →</a>
+</div>
+
+<script>
+window.addEventListener('scroll', () => {
+  const p = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
+  document.getElementById('pf').style.width = p + '%';
+});
+let selected = null;
+function showLevel(id, el) {
+  document.querySelectorAll('.pyr-level').forEach(l => l.classList.remove('selected'));
+  document.querySelectorAll('.level-detail').forEach(d => d.classList.remove('show'));
+  if (selected === id) { selected = null; return; }
+  el.classList.add('selected');
+  document.getElementById('detail-' + id).classList.add('show');
+  selected = id;
+}
+</script>
+</body>
+</html>

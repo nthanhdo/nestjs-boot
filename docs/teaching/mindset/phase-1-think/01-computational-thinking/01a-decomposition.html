@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01a — Phân Rã Vấn Đề | Computational Thinking</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+  --text: #eef1f8; --muted: #8899bb;
+  --accent: #a78bfa; --yellow: #ffd43b; --green: #2ecc71; --red: #e74c3c;
+  --blue: #5b8def; --orange: #ffb347; --pink: #ff5e7a; --teal: #00cec9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6; }
+body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 20% 20%, rgba(167,139,250,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(91,141,239,0.05) 0%, transparent 50%); pointer-events:none; z-index:0; }
+
+/* NAV */
+.top-nav { background: var(--surface2); border-bottom: 1px solid var(--border); padding: 10px 24px; position: sticky; top: 0; z-index: 200; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.nav-home { color: var(--accent); text-decoration: none; font-weight: 700; font-size: .82rem; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(167,139,250,0.3); }
+.nav-home:hover { background: rgba(167,139,250,0.1); }
+.nav-topic { color: var(--muted); font-size: .8rem; flex: 1; padding: 0 8px; }
+.nav-sub-prev, .nav-sub-next { color: var(--muted); text-decoration: none; font-size: .8rem; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); transition: all .2s; white-space: nowrap; }
+.nav-sub-prev:hover, .nav-sub-next:hover { color: var(--text); border-color: var(--accent); }
+.nav-sub-prev.disabled { opacity: .35; pointer-events: none; }
+
+/* HERO */
+.hero { background: var(--surface); border-bottom: 1px solid var(--border); padding: 28px 24px 24px; }
+.hero-inner { max-width: 860px; margin: 0 auto; }
+.hero-badge { display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg,rgba(124,92,231,0.2),rgba(167,139,250,0.1)); border: 1px solid rgba(167,139,250,0.3); border-radius: 20px; padding: 4px 12px; font-size: .72rem; font-weight: 700; color: var(--accent); letter-spacing: .5px; margin-bottom: 12px; }
+.hero h1 { font-size: 2rem; font-weight: 900; background: linear-gradient(135deg,#fff,var(--accent)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom: 10px; }
+.hero-desc { color: var(--muted); font-size: 1rem; max-width: 600px; }
+
+/* MAIN */
+main { max-width: 860px; margin: 0 auto; padding: 36px 24px 100px; position: relative; z-index: 1; }
+
+/* CARD */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+.card-title { font-size: 1rem; font-weight: 700; color: var(--accent); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.card-body { color: var(--text); font-size: .95rem; line-height: 1.75; }
+
+/* HIGHLIGHT */
+.highlight { background: linear-gradient(135deg,rgba(167,139,250,0.1),rgba(91,141,239,0.08)); border: 1px solid rgba(167,139,250,0.3); border-radius: 12px; padding: 18px 22px; margin: 20px 0; }
+.highlight-label { font-size: .7rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.highlight-text { color: var(--text); font-size: .95rem; line-height: 1.7; }
+
+/* DECOMP TREE */
+.decomp-tree { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 28px 0; }
+.decomp-root { background: linear-gradient(135deg,#7c5ce7,#a78bfa); color:#fff; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 1rem; text-align: center; box-shadow: 0 4px 20px rgba(124,92,231,0.4); }
+.decomp-arrow-down { width: 2px; height: 32px; background: var(--border); margin: 0 auto; }
+.decomp-branches { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.decomp-branch { display: flex; flex-direction: column; align-items: center; gap: 0; }
+.decomp-node { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; font-size: .85rem; text-align: center; color: var(--text); min-width: 110px; }
+.decomp-node.level2 { background: linear-gradient(135deg,rgba(91,141,239,0.15),rgba(91,141,239,0.05)); border-color: rgba(91,141,239,0.3); color: var(--blue); font-weight: 600; }
+.decomp-node.level3 { background: linear-gradient(135deg,rgba(46,204,113,0.12),rgba(46,204,113,0.04)); border-color: rgba(46,204,113,0.3); color: var(--green); font-size: .8rem; }
+.connector-v { width: 2px; height: 20px; background: var(--border); margin: 0 auto; }
+
+/* PRINCIPLES */
+.principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin: 20px 0; }
+.principle { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+.principle-num { font-size: 1.6rem; font-weight: 900; color: var(--accent); opacity: .4; }
+.principle-title { font-weight: 700; color: var(--text); margin: 4px 0; }
+.principle-desc { font-size: .82rem; color: var(--muted); line-height: 1.5; }
+
+/* INTERACTIVE DRILL */
+.drill { background: var(--surface2); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin: 20px 0; }
+.drill-title { font-weight: 700; color: var(--yellow); margin-bottom: 12px; font-size: .9rem; }
+.drill-items { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.drill-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: .85rem; cursor: pointer; transition: all .2s; }
+.drill-item:hover { border-color: var(--accent); transform: translateY(-1px); }
+.drill-item.decomposed { border-color: var(--green); background: rgba(46,204,113,0.08); color: var(--green); }
+.drill-result { font-size: .85rem; color: var(--muted); min-height: 40px; padding: 10px; background: var(--surface); border-radius: 8px; line-height: 1.6; display: none; }
+.drill-result.show { display: block; animation: fadeUp .3s; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+/* TAKEAWAY */
+.takeaway { background: linear-gradient(135deg,rgba(46,204,113,0.1),rgba(46,204,113,0.04)); border: 1px solid rgba(46,204,113,0.3); border-radius: 14px; padding: 24px; margin-top: 28px; }
+.takeaway-title { color: var(--green); font-weight: 700; font-size: .9rem; letter-spacing: .5px; margin-bottom: 14px; }
+.takeaway-list { list-style: none; }
+.takeaway-list li { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; font-size: .9rem; color: var(--text); line-height: 1.6; }
+.takeaway-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+
+/* EXERCISES */
+.ex-section { margin-top: 40px; }
+.ex-section h2 { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 16px; }
+.exercise { border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+.ex-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; cursor: pointer; background: var(--surface); transition: background .2s; }
+.ex-header:hover { background: var(--surface2); }
+.ex-tag { background: rgba(167,139,250,0.15); color: var(--accent); border-radius: 6px; padding: 2px 8px; font-size: .72rem; font-weight: 700; flex-shrink: 0; }
+.ex-title-text { flex: 1; font-weight: 600; font-size: .9rem; }
+.ex-diff { padding: 2px 10px; border-radius: 20px; font-size: .7rem; font-weight: 700; }
+.ex-diff.easy { background: rgba(46,204,113,0.15); color: var(--green); }
+.ex-diff.medium { background: rgba(255,183,71,0.15); color: var(--orange); }
+.ex-toggle { color: var(--muted); font-size: .75rem; transition: transform .3s; }
+.exercise.open .ex-toggle { transform: rotate(90deg); }
+.ex-body { display: none; padding: 18px; background: var(--surface); border-top: 1px solid var(--border); }
+.exercise.open .ex-body { display: block; animation: fadeUp .3s; }
+.ex-prompt { background: var(--surface2); border-left: 3px solid var(--accent); border-radius: 8px; padding: 14px; margin-bottom: 12px; font-size: .9rem; color: var(--text); line-height: 1.7; }
+.ex-hint { background: rgba(255,183,71,0.06); border: 1px solid rgba(255,183,71,0.2); border-radius: 8px; padding: 10px 14px; font-size: .83rem; color: var(--muted); margin-bottom: 12px; }
+.ex-reveal { background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.3); color: var(--accent); padding: 7px 16px; border-radius: 8px; cursor: pointer; font-size: .83rem; font-weight: 600; border-width: 1px; }
+.ex-answer { display: none; margin-top: 12px; background: var(--surface2); border-left: 3px solid var(--green); border-radius: 8px; padding: 14px; font-size: .88rem; color: var(--text); line-height: 1.7; }
+
+/* NEXT LINK */
+.next-link { display: flex; align-items: center; gap: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; text-decoration: none; margin-top: 32px; transition: all .3s; }
+.next-link:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.next-icon { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg,#7c5ce7,#a78bfa); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+.next-text .label { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.next-text .title { font-weight: 700; color: var(--text); }
+.next-arrow { margin-left: auto; color: var(--muted); font-size: 1.2rem; }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="../index.html" class="nav-home">🏠 Hub</a>
+  <span class="nav-topic">Bài 01 — Tư Duy Tính Toán · 01a/07</span>
+  <span class="nav-sub-prev disabled">← Đầu tiên</span>
+  <a href="01b-abstraction.html" class="nav-sub-next">01b Abstraction →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">KHÁI NIỆM 01 · 7 PHẦN</div>
+    <h1>🔀 Phân Rã Vấn Đề</h1>
+    <p class="hero-desc">Divide & Conquer — Mọi bài toán lớn đều có thể chia thành các bài toán nhỏ hơn, độc lập, có thể giải riêng lẻ.</p>
+  </div>
+</div>
+
+<main>
+
+<div class="card">
+  <div class="card-title">💡 Tại sao não người không thể xử lý bài toán lớn?</div>
+  <div class="card-body">
+    Working memory của con người chỉ giữ được <strong>7 ± 2 items</strong> cùng lúc (Miller's Law). Khi bài toán có hàng chục biến số tương tác, não bị "overflow" — đó là lý do chúng ta stress, mắc sai sót, và bỏ sót edge cases.
+    <br><br>
+    <strong>Decomposition</strong> giải quyết điều này: thay vì nghĩ toàn bộ hệ thống, chúng ta chia nhỏ đến khi mỗi phần vừa đủ nhỏ để não xử lý một lúc.
+  </div>
+</div>
+
+<!-- TREE DIAGRAM: Banking App -->
+<div class="card">
+  <div class="card-title">🏦 Ví dụ: Decompose "App Banking"</div>
+  <div class="decomp-tree">
+    <div class="decomp-root">🏦 App Banking</div>
+    <div class="decomp-arrow-down"></div>
+    <div class="decomp-branches">
+      <div class="decomp-branch">
+        <div class="decomp-node level2">👤 User</div>
+        <div class="connector-v"></div>
+        <div class="decomp-node level3">Đăng ký</div>
+        <div class="connector-v" style="height:8px"></div>
+        <div class="decomp-node level3">Đăng nhập</div>
+        <div class="connector-v" style="height:8px"></div>
+        <div class="decomp-node level3">2FA</div>
+      </div>
+      <div class="decomp-branch">
+        <div class="decomp-node level2">💰 Giao dịch</div>
+        <div class="connector-v"></div>
+        <div class="decomp-node level3">Chuyển tiền</div>
+        <div class="connector-v" style="height:8px"></div>
+        <div class="decomp-node level3">Lịch sử</div>
+        <div class="connector-v" style="height:8px"></div>
+        <div class="decomp-node level3">Số dư</div>
+      </div>
+      <div class="decomp-branch">
+        <div class="decomp-node level2">🔔 Thông báo</div>
+        <div class="connector-v"></div>
+        <div class="decomp-node level3">Email</div>
+        <div class="connector-v" style="height:8px"></div>
+        <div class="decomp-node level3">SMS</div>
+        <div class="connector-v" style="height:8px"></div>
+        <div class="decomp-node level3">Push</div>
+      </div>
+      <div class="decomp-branch">
+        <div class="decomp-node level2">🛡️ Bảo mật</div>
+        <div class="connector-v"></div>
+        <div class="decomp-node level3">Mã hoá</div>
+        <div class="connector-v" style="height:8px"></div>
+        <div class="decomp-node level3">Rate limit</div>
+        <div class="connector-v" style="height:8px"></div>
+        <div class="decomp-node level3">Audit log</div>
+      </div>
+    </div>
+  </div>
+  <div class="highlight">
+    <div class="highlight-label">Quy tắc decomposition</div>
+    <div class="highlight-text">Mỗi phần sau khi phân rã phải <strong>độc lập</strong> (independent) và <strong>có thể kiểm tra riêng lẻ</strong> (separately testable). Nếu một phần thay đổi thì phần kia không bị ảnh hưởng — đó mới là phân rã đúng.</div>
+  </div>
+</div>
+
+<!-- 3 PRINCIPLES -->
+<div class="card">
+  <div class="card-title">📐 3 Nguyên tắc Decomposition tốt</div>
+  <div class="principles">
+    <div class="principle">
+      <div class="principle-num">1</div>
+      <div class="principle-title">Cohesion</div>
+      <div class="principle-desc">Mỗi phần chứa những thứ liên quan chặt chẽ với nhau. "UserModule" chỉ có login, register, profile — không có sendEmail.</div>
+    </div>
+    <div class="principle">
+      <div class="principle-num">2</div>
+      <div class="principle-title">Independence</div>
+      <div class="principle-desc">Phần A không cần biết chi tiết bên trong phần B. Giao tiếp qua interface rõ ràng — không phụ thuộc trực tiếp vào implementation.</div>
+    </div>
+    <div class="principle">
+      <div class="principle-num">3</div>
+      <div class="principle-title">Testability</div>
+      <div class="principle-desc">Mỗi phần có thể test riêng bằng unit test. Nếu cần mock 5 dependencies để test thì phần đó chưa được phân rã đúng.</div>
+    </div>
+  </div>
+</div>
+
+<!-- INTERACTIVE DRILL -->
+<div class="drill">
+  <div class="drill-title">🎮 Thử phân rã: Click vào một "bài toán lớn" để xem cách chia</div>
+  <div class="drill-items">
+    <div class="drill-item" onclick="drillDecomp('pizza')">🍕 Hệ thống đặt pizza</div>
+    <div class="drill-item" onclick="drillDecomp('exam')">📝 Lịch thi đại học</div>
+    <div class="drill-item" onclick="drillDecomp('hotel')">🏨 Đặt phòng khách sạn</div>
+    <div class="drill-item" onclick="drillDecomp('ecom')">🛒 Sàn thương mại điện tử</div>
+  </div>
+  <div class="drill-result" id="drillResult"></div>
+</div>
+
+<!-- TAKEAWAY -->
+<div class="takeaway">
+  <div class="takeaway-title">🎯 Key Takeaway</div>
+  <ul class="takeaway-list">
+    <li>Bài toán lớn = nhiều bài toán nhỏ ghép lại — giải từng phần nhỏ → ghép lại = xong</li>
+    <li>Phân rã tốt giúp cả team làm việc song song, độc lập, không blocking nhau</li>
+    <li>Dấu hiệu phân rã tệ: hai phần "biết quá nhiều về nhau" hoặc khó test riêng lẻ</li>
+  </ul>
+</div>
+
+<!-- EXERCISES -->
+<div class="ex-section">
+  <h2>🏋️ Mini Exercises</h2>
+
+  <div class="exercise" id="ex1">
+    <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="ex-tag">Ex 1</span>
+      <span class="ex-title-text">Phân rã hệ thống "đặt pizza online" thành modules độc lập</span>
+      <span class="ex-diff easy">🟢 Dễ</span>
+      <span class="ex-toggle">▶</span>
+    </div>
+    <div class="ex-body">
+      <div class="ex-prompt">Bạn được giao task: xây dựng hệ thống đặt pizza online. Hãy phân rã thành các module — mỗi module phải độc lập, có thể phát triển và test riêng lẻ. Liệt kê ít nhất 6 modules và 1-2 chức năng chính của từng module.</div>
+      <div class="ex-hint">💡 Gợi ý: Nghĩ theo luồng người dùng — từ lúc mở app đến khi nhận pizza. Mỗi bước xử lý một "loại quan tâm" khác nhau.</div>
+      <button class="ex-reveal" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">Xem gợi ý đáp án</button>
+      <div class="ex-answer">
+        <strong style="color:var(--green)">Decomposition của hệ thống đặt pizza:</strong>
+        <ul style="margin-top:10px;list-style:none;line-height:2.2">
+          <li>📋 <strong>MenuModule</strong> — hiển thị sản phẩm, giá, tùy chọn topping, filter theo loại</li>
+          <li>🛒 <strong>CartModule</strong> — thêm/xóa/sửa items, tính tổng, áp mã giảm giá</li>
+          <li>👤 <strong>UserModule</strong> — đăng ký, đăng nhập, địa chỉ giao hàng, lịch sử đơn</li>
+          <li>💳 <strong>PaymentModule</strong> — xử lý thanh toán (card/cash/e-wallet), hoàn tiền</li>
+          <li>📦 <strong>OrderModule</strong> — tạo đơn, track trạng thái, hủy đơn, dispute</li>
+          <li>🚗 <strong>DeliveryModule</strong> — tính thời gian ước tính, phân tài xế, real-time tracking</li>
+          <li>🔔 <strong>NotificationModule</strong> — SMS/email/push khi đơn thay đổi trạng thái</li>
+        </ul>
+        <p style="margin-top:10px;color:var(--muted);font-size:.85rem;">Mỗi module có thể được 1 team riêng phát triển và deploy độc lập.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="exercise" id="ex2">
+    <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="ex-tag">Ex 2</span>
+      <span class="ex-title-text">Nhận diện "decomposition sai" — tại sao module này tệ?</span>
+      <span class="ex-diff medium">🟡 Trung bình</span>
+      <span class="ex-toggle">▶</span>
+    </div>
+    <div class="ex-body">
+      <div class="ex-prompt">Đây là một "module" được đề xuất:<br><br>
+        <strong>UserMegaModule</strong>: login, register, sendEmail, generateInvoicePDF, processPayment, createOrder, updateInventory, sendSMS, generateReport<br><br>
+        Hãy giải thích TẠI SAO module này là decomposition sai, và đề xuất cách chia tốt hơn.</div>
+      <div class="ex-hint">💡 Gợi ý: Kiểm tra 3 nguyên tắc — cohesion, independence, testability. Cái nào bị vi phạm?</div>
+      <button class="ex-reveal" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">Xem phân tích</button>
+      <div class="ex-answer">
+        <strong style="color:var(--red)">Vấn đề của UserMegaModule:</strong>
+        <ul style="margin-top:8px;list-style:none;line-height:2">
+          <li>❌ <strong>Cohesion thấp</strong>: processPayment và updateInventory hoàn toàn không liên quan đến "User"</li>
+          <li>❌ <strong>Independence = 0</strong>: thay đổi email template → phải re-deploy toàn bộ "user" module</li>
+          <li>❌ <strong>Testability tệ</strong>: test login phải mock email server, PDF generator, payment gateway...</li>
+        </ul>
+        <strong style="color:var(--green)">Tách đúng:</strong>
+        <div style="margin-top:8px;font-size:.85rem;color:var(--muted);line-height:2">UserService (login/register) · MailService (sendEmail/sendSMS) · PdfService (invoice/report) · PaymentService (processPayment) · InventoryService (updateInventory) · OrderService (createOrder)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NEXT LINK -->
+<a href="01b-abstraction.html" class="next-link">
+  <div class="next-icon">🔮</div>
+  <div class="next-text">
+    <div class="label">Tiếp theo · 01b / 07</div>
+    <div class="title">Trừu Tượng Hóa (Abstraction)</div>
+  </div>
+  <span class="next-arrow">→</span>
+</a>
+
+</main>
+
+<script>
+const decomps = {
+  pizza: '🍕 Pizza: MenuModule · CartModule · OrderModule · PaymentModule · DeliveryModule · NotificationModule · ReviewModule',
+  exam: '📝 Lịch thi: StudentModule · SubjectModule · RoomModule · ScheduleEngine · ConflictChecker · SupervisorModule · NotificationModule',
+  hotel: '🏨 Khách sạn: RoomCatalogModule · BookingModule · CheckIn/OutModule · PaymentModule · HousekeepingModule · ReviewModule · ReportModule',
+  ecom: '🛒 E-commerce: ProductCatalog · SearchModule · CartModule · OrderModule · PaymentModule · InventoryModule · LogisticsModule · ReviewModule · SellerModule',
+};
+function drillDecomp(key) {
+  document.querySelectorAll('.drill-item').forEach(el => el.classList.remove('decomposed'));
+  event.target.classList.add('decomposed');
+  const r = document.getElementById('drillResult');
+  r.textContent = decomps[key];
+  r.classList.add('show');
+}
+</script>
+</body>
+</html>

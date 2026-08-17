@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12d — Path Traversal | Phase 3</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--accent:#58a6ff;--success:#3fb950;--warning:#d29922;--error:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.progress-bar{position:fixed;top:0;left:0;width:100%;height:3px;background:var(--border);z-index:100;}
+.progress-fill{height:100%;background:var(--accent);width:0;transition:width .1s;}
+nav{position:sticky;top:3px;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:90;}
+nav .brand{font-weight:700;color:var(--accent);font-size:.9rem;}
+nav .links a{color:var(--muted);text-decoration:none;margin-left:1.2rem;font-size:.85rem;transition:color .2s;}
+nav .links a:hover{color:var(--text);}
+.container{max-width:860px;margin:0 auto;padding:2rem 1.5rem;}
+h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;}
+.subtitle{color:var(--muted);margin-bottom:2.5rem;font-size:1.05rem;}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:1rem;color:var(--accent);}
+.section{margin-bottom:3rem;opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
+.section.visible{opacity:1;transform:none;}
+.label{display:inline-block;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;margin-bottom:.5rem;}
+/* attack simulation */
+.attack-sim{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin-bottom:1rem;}
+.attack-sim h4{font-size:.9rem;font-weight:700;margin-bottom:.8rem;}
+.url-parts{font-family:monospace;font-size:.88rem;background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:.8rem 1rem;margin-bottom:.6rem;word-break:break-all;}
+.safe-part{color:var(--success);}
+.attack-part{color:var(--error);font-weight:bold;}
+.result{padding:.6rem 1rem;border-radius:6px;font-size:.85rem;margin-bottom:.5rem;}
+.result.danger{background:#2a0808;border:1px solid var(--error);color:var(--error);}
+.result.safe{background:#1a3a1a;border:1px solid var(--success);color:var(--success);}
+/* file tree */
+.tree{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:1rem;font-family:monospace;font-size:.85rem;line-height:1.8;margin-bottom:1rem;}
+.tree .dir{color:var(--accent);}
+.tree .safe-file{color:var(--success);}
+.tree .danger-file{color:var(--error);}
+/* case study steps */
+.case-steps{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem;}
+.case-step{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.8rem 1rem;font-size:.87rem;}
+.case-step .step-label{font-size:.75rem;font-weight:700;color:var(--muted);margin-bottom:.2rem;text-transform:uppercase;}
+.case-step .step-content{color:var(--text);font-family:monospace;}
+.case-step.attack{border-color:var(--error);}
+.case-step.attack .step-label{color:var(--error);}
+.case-step.defend{border-color:var(--success);}
+.case-step.defend .step-label{color:var(--success);}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;font-size:.82rem;line-height:1.7;margin-bottom:1rem;font-family:monospace;}
+pre .c{color:var(--muted);}
+pre .bad{color:var(--error);}
+pre .good{color:var(--success);}
+.exercise{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.exercise h3{color:var(--accent);margin-bottom:.8rem;font-size:1rem;}
+.exercise ol{padding-left:1.2rem;color:var(--muted);font-size:.9rem;line-height:1.8;}
+.takeaway{background:linear-gradient(135deg,#1a2235,#161b22);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.takeaway h3{color:var(--accent);margin-bottom:1rem;}
+.takeaway ul{padding-left:1.2rem;line-height:2;}
+.nav-links{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-links a{color:var(--accent);text-decoration:none;font-size:.9rem;padding:.5rem 1rem;border:1px solid var(--border);border-radius:6px;transition:border-color .2s;}
+.nav-links a:hover{border-color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav>
+  <span class="brand">Phase 3 — Engineer Mindset</span>
+  <div class="links">
+    <a href="12c-injection.html">← Injection</a>
+    <a href="12e-ctf.html">CTF Mindset →</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="section" id="s0">
+    <div class="label">12d / 5</div>
+    <h1>Path Traversal</h1>
+    <p class="subtitle">A single <code>../</code> sequence in a filename can expose your entire filesystem. A real case study.</p>
+  </div>
+
+  <div class="section" id="s1">
+    <h2>The Attack</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Imagine a file download endpoint: <code>GET /files/download?name=invoice.pdf</code></p>
+    <div class="attack-sim">
+      <h4>Normal request (safe):</h4>
+      <div class="url-parts"><span class="safe-part">GET /files/download?name=</span><span class="safe-part">invoice.pdf</span></div>
+      <div class="url-parts"><span class="safe-part">Resolved: /var/app/uploads/invoice.pdf</span></div>
+      <div class="result safe">✓ File served from expected directory</div>
+    </div>
+    <div class="attack-sim">
+      <h4>Attack request:</h4>
+      <div class="url-parts"><span class="safe-part">GET /files/download?name=</span><span class="attack-part">../../../etc/passwd</span></div>
+      <div class="url-parts"><span class="safe-part">Resolved: /var/app/uploads/</span><span class="attack-part">../../../etc/passwd</span><br>→ <span class="attack-part">/etc/passwd</span></div>
+      <div class="result danger">🚨 System password file served! Attacker now has all usernames + shell info.</div>
+    </div>
+  </div>
+
+  <div class="section" id="s2">
+    <h2>What's at Risk</h2>
+    <div class="tree">
+      <div><span class="dir">/var/app/uploads/</span>  ← intended directory</div>
+      <div>&nbsp;&nbsp;<span class="safe-file">invoice.pdf</span>  ← safe</div>
+      <div>&nbsp;&nbsp;<span class="safe-file">report.xlsx</span>  ← safe</div>
+      <br>
+      <div><span class="dir">/etc/</span></div>
+      <div>&nbsp;&nbsp;<span class="danger-file">passwd</span>  ← user list, shell paths</div>
+      <div>&nbsp;&nbsp;<span class="danger-file">shadow</span>  ← hashed passwords (if root)</div>
+      <div>&nbsp;&nbsp;<span class="danger-file">nginx/nginx.conf</span>  ← server config</div>
+      <br>
+      <div><span class="dir">/var/app/</span></div>
+      <div>&nbsp;&nbsp;<span class="danger-file">.env</span>  ← API keys, DB connection strings</div>
+      <div>&nbsp;&nbsp;<span class="danger-file">src/config/database.ts</span>  ← DB credentials</div>
+    </div>
+  </div>
+
+  <div class="section" id="s3">
+    <h2>Attack to Defense — Step by Step</h2>
+    <div class="case-steps">
+      <div class="case-step attack">
+        <div class="step-label">Attack — Attacker's Payload</div>
+        <div class="step-content">GET /files/download?name=../../../etc/passwd</div>
+      </div>
+      <div class="case-step attack">
+        <div class="step-label">Server — Vulnerable Code</div>
+        <div class="step-content">const path = '/var/app/uploads/' + req.query.name;<br>res.sendFile(path); // ❌ No validation</div>
+      </div>
+      <div class="case-step attack">
+        <div class="step-label">Result</div>
+        <div class="step-content">/etc/passwd contents streamed to attacker</div>
+      </div>
+      <div class="case-step defend">
+        <div class="step-label">Fix Step 1 — Resolve and validate</div>
+        <div class="step-content">const resolved = path.resolve(UPLOAD_DIR, name);<br>if (!resolved.startsWith(UPLOAD_DIR)) throw 403;</div>
+      </div>
+      <div class="case-step defend">
+        <div class="step-label">Fix Step 2 — Sanitize filename</div>
+        <div class="step-content">const safeName = path.basename(name); // strips all directories</div>
+      </div>
+      <div class="case-step defend">
+        <div class="step-label">Fix Step 3 — Allowlist</div>
+        <div class="step-content">const allowed = /^[a-zA-Z0-9_.-]+$/.test(safeName);<br>if (!allowed) throw 400;</div>
+      </div>
+    </div>
+    <pre><span class="c">// ✅ Complete fix in Node.js / NestJS</span>
+<span class="good">import * as path from 'path';
+
+const UPLOAD_DIR = path.resolve('/var/app/uploads');
+
+async function downloadFile(name: string, res: Response) {
+  // Step 1: Strip directory traversal
+  const safeName = path.basename(name);
+
+  // Step 2: Resolve full path
+  const filePath = path.resolve(UPLOAD_DIR, safeName);
+
+  // Step 3: Verify it stays within UPLOAD_DIR
+  if (!filePath.startsWith(UPLOAD_DIR + path.sep)) {
+    throw new ForbiddenException('Access denied');
+  }
+
+  // Step 4: Validate filename chars (optional belt+suspenders)
+  if (!/^[a-zA-Z0-9_.-]+$/.test(safeName)) {
+    throw new BadRequestException('Invalid filename');
+  }
+
+  res.sendFile(filePath);
+}</span></pre>
+  </div>
+
+  <div class="section" id="s4">
+    <div class="exercise">
+      <h3>🔬 Exercise — Path Traversal Analysis</h3>
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:.8rem;">UPLOAD_DIR = <code>/var/app/uploads/</code>. Evaluate each request:</p>
+      <ol>
+        <li>name = <code>report.pdf</code> → resolved path? Safe or not?</li>
+        <li>name = <code>../../../etc/passwd</code> → what does <code>path.basename()</code> return?</li>
+        <li>name = <code>%2e%2e%2fetc%2fpasswd</code> (URL-encoded) → what happens if you don't decode first?</li>
+        <li>name = <code>uploads/../../.env</code> → does the startsWith check catch this?</li>
+        <li>Write the regex pattern that allows ONLY letters, numbers, hyphens, underscores, and dots</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section" id="s5">
+    <div class="takeaway">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li><code>../</code> is the attacker's tool — never trust filename input directly</li>
+        <li><code>path.basename(name)</code> strips all directory components — always do this first</li>
+        <li><code>path.resolve(dir, name).startsWith(dir)</code> is the canonical guard</li>
+        <li>URL encoding bypasses naive string checks — Node's req.query auto-decodes, but be aware</li>
+        <li>Defense in depth: basename + startsWith check + allowlist regex — all three</li>
+      </ul>
+    </div>
+    <div class="nav-links">
+      <a href="12c-injection.html">← 12c: Injection</a>
+      <a href="12e-ctf.html">12e: CTF Mindset →</a>
+    </div>
+  </div>
+</div>
+<script>
+window.addEventListener('scroll',()=>{
+  document.getElementById('pf').style.width=(window.scrollY/(document.documentElement.scrollHeight-window.innerHeight))*100+'%';
+});
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.1});
+document.querySelectorAll('.section').forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

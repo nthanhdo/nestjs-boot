@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10b — 5 Whys | Phase 3</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--accent:#58a6ff;--success:#3fb950;--warning:#d29922;--error:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.progress-bar{position:fixed;top:0;left:0;width:100%;height:3px;background:var(--border);z-index:100;}
+.progress-fill{height:100%;background:var(--accent);width:0;transition:width .1s;}
+nav{position:sticky;top:3px;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:90;}
+nav .brand{font-weight:700;color:var(--accent);font-size:.9rem;}
+nav .links a{color:var(--muted);text-decoration:none;margin-left:1.2rem;font-size:.85rem;transition:color .2s;}
+nav .links a:hover{color:var(--text);}
+.container{max-width:860px;margin:0 auto;padding:2rem 1.5rem;}
+h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;}
+.subtitle{color:var(--muted);margin-bottom:2.5rem;font-size:1.05rem;}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:1rem;color:var(--accent);}
+.section{margin-bottom:3rem;opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
+.section.visible{opacity:1;transform:none;}
+.label{display:inline-block;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;margin-bottom:.5rem;}
+/* 5 Whys accordion */
+.why-chain{display:flex;flex-direction:column;gap:0;}
+.why-item{border:1px solid var(--border);border-radius:0;background:var(--surface);cursor:pointer;overflow:hidden;}
+.why-item:first-child{border-radius:8px 8px 0 0;}
+.why-item:last-child{border-radius:0 0 8px 8px;}
+.why-header{display:flex;align-items:center;gap:1rem;padding:.9rem 1.1rem;user-select:none;transition:background .2s;}
+.why-header:hover{background:#1f2937;}
+.why-badge{background:var(--accent);color:#000;font-size:.7rem;font-weight:800;padding:.2rem .55rem;border-radius:4px;white-space:nowrap;}
+.why-q{font-weight:600;flex:1;}
+.why-arrow{color:var(--muted);font-size:.85rem;transition:transform .3s;}
+.why-item.open .why-arrow{transform:rotate(90deg);}
+.why-body{display:none;padding:1rem 1.1rem;border-top:1px solid var(--border);font-size:.9rem;color:var(--muted);line-height:1.7;}
+.why-item.open .why-body{display:block;}
+.why-answer{color:var(--text);font-weight:600;margin-bottom:.4rem;}
+.why-action{display:inline-block;margin-top:.6rem;background:#0d1117;border:1px solid var(--success);color:var(--success);font-size:.8rem;padding:.25rem .6rem;border-radius:4px;}
+/* Comparison */
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.compare-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;}
+.compare-card h4{font-size:.9rem;font-weight:700;margin-bottom:.8rem;}
+.compare-card.good{border-color:var(--success);}
+.compare-card.good h4{color:var(--success);}
+.compare-card.bad{border-color:var(--error);}
+.compare-card.bad h4{color:var(--error);}
+.compare-card p{font-size:.85rem;color:var(--muted);margin-bottom:.4rem;}
+/* template builder */
+.template-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;font-family:monospace;font-size:.85rem;line-height:2;}
+.template-box span{color:var(--accent);}
+.template-box em{color:var(--muted);}
+.exercise{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.exercise h3{color:var(--accent);margin-bottom:.8rem;font-size:1rem;}
+.exercise ol{padding-left:1.2rem;color:var(--muted);font-size:.9rem;line-height:1.8;}
+.takeaway{background:linear-gradient(135deg,#1a2235,#161b22);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.takeaway h3{color:var(--accent);margin-bottom:1rem;}
+.takeaway ul{padding-left:1.2rem;line-height:2;}
+.nav-links{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-links a{color:var(--accent);text-decoration:none;font-size:.9rem;padding:.5rem 1rem;border:1px solid var(--border);border-radius:6px;transition:border-color .2s;}
+.nav-links a:hover{border-color:var(--accent);}
+@media(max-width:640px){.compare{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav>
+  <span class="brand">Phase 3 — Engineer Mindset</span>
+  <div class="links">
+    <a href="10a-process.html">← Process</a>
+    <a href="10c-tools.html">Tools →</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="section" id="s0">
+    <div class="label">10b / 5</div>
+    <h1>5 Whys — Root Cause Analysis</h1>
+    <p class="subtitle">Surface symptoms hide deeper causes. Ask why five times to reach the system problem, not the patch target.</p>
+  </div>
+
+  <div class="section" id="s1">
+    <h2>Interactive Example: Production Crash</h2>
+    <p style="color:var(--muted);margin-bottom:1.2rem;font-size:.9rem;">Scenario: <em>"The app crashed in production at 2am."</em> Click each Why to dig deeper.</p>
+    <div class="why-chain">
+      <div class="why-item" id="w1">
+        <div class="why-header" onclick="toggle('w1')">
+          <span class="why-badge">Why 1</span>
+          <div class="why-q">Why did the app crash?</div>
+          <span class="why-arrow">▶</span>
+        </div>
+        <div class="why-body">
+          <div class="why-answer">Because the server ran out of memory.</div>
+          Most teams stop here → "Add more RAM." But that's a band-aid. Keep asking.
+        </div>
+      </div>
+      <div class="why-item" id="w2">
+        <div class="why-header" onclick="toggle('w2')">
+          <span class="why-badge">Why 2</span>
+          <div class="why-q">Why did the server run out of memory?</div>
+          <span class="why-arrow">▶</span>
+        </div>
+        <div class="why-body">
+          <div class="why-answer">Because there was a memory leak — objects were being created but never garbage collected.</div>
+          Getting warmer. Is the leak in code, or is it systemic?
+        </div>
+      </div>
+      <div class="why-item" id="w3">
+        <div class="why-header" onclick="toggle('w3')">
+          <span class="why-badge">Why 3</span>
+          <div class="why-q">Why were objects not garbage collected?</div>
+          <span class="why-arrow">▶</span>
+        </div>
+        <div class="why-body">
+          <div class="why-answer">Because event listeners were being added in a loop without being removed.</div>
+          Specific code smell identified. But why was this written this way?
+        </div>
+      </div>
+      <div class="why-item" id="w4">
+        <div class="why-header" onclick="toggle('w4')">
+          <span class="why-badge">Why 4</span>
+          <div class="why-q">Why were listeners added without cleanup?</div>
+          <span class="why-arrow">▶</span>
+        </div>
+        <div class="why-body">
+          <div class="why-answer">Because the developer didn't know the component lifecycle — no one explained it in onboarding.</div>
+          This is a process/knowledge gap, not just a code bug.
+        </div>
+      </div>
+      <div class="why-item" id="w5">
+        <div class="why-header" onclick="toggle('w5')">
+          <span class="why-badge">Why 5</span>
+          <div class="why-q">Why wasn't this covered in onboarding?</div>
+          <span class="why-arrow">▶</span>
+        </div>
+        <div class="why-body">
+          <div class="why-answer">Because there is no structured onboarding checklist — knowledge transfer is ad-hoc.</div>
+          <span class="why-action">Root cause → Create structured onboarding + add memory leak lint rule + write test for cleanup</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="s2">
+    <h2>Shallow Fix vs Root Fix</h2>
+    <div class="compare">
+      <div class="compare-card bad">
+        <h4>❌ Shallow Fix (Why 1 response)</h4>
+        <p>Add 4GB RAM to the server.</p>
+        <p>Crash delayed 2 weeks, then happens again.</p>
+        <p>Root cause unchanged. Team on call every month.</p>
+      </div>
+      <div class="compare-card good">
+        <h4>✅ Root Fix (Why 5 response)</h4>
+        <p>Add lifecycle cleanup docs to onboarding.</p>
+        <p>Add ESLint rule for listener cleanup.</p>
+        <p>Write test asserting zero active listeners on component unmount.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="s3">
+    <h2>5 Whys Template</h2>
+    <div class="template-box">
+      <span>Problem:</span> <em>[1 sentence describing the symptom]</em><br>
+      <span>Why 1:</span> <em>[immediate technical cause]</em><br>
+      <span>Why 2:</span> <em>[cause of the cause]</em><br>
+      <span>Why 3:</span> <em>[deeper systemic issue]</em><br>
+      <span>Why 4:</span> <em>[process or knowledge gap]</em><br>
+      <span>Why 5:</span> <em>[organizational or structural root]</em><br>
+      <span>Root cause:</span> <em>[concise statement of the real problem]</em><br>
+      <span>Fix:</span> <em>[action that addresses Why 5, not Why 1]</em>
+    </div>
+    <p style="color:var(--muted);font-size:.85rem;margin-top:.8rem;">Note: You might only need 3 Whys, or you might need 7. The number is a heuristic — stop when you hit a systemic issue you can actually fix.</p>
+  </div>
+
+  <div class="section" id="s4">
+    <div class="exercise">
+      <h3>🔬 Exercise — Run 5 Whys</h3>
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:.8rem;">Scenario: <em>"Users report they can't log in with Google OAuth."</em></p>
+      <ol>
+        <li>Write Why 1 (technical surface symptom)</li>
+        <li>Write Why 2 (what caused the symptom)</li>
+        <li>Write Why 3 (why that cause exists)</li>
+        <li>Write Why 4 (process gap)</li>
+        <li>Write Why 5 (structural root)</li>
+        <li>Define ONE fix that addresses the root, not the surface</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section" id="s5">
+    <div class="takeaway">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li>Every visible bug has a root cause that isn't the visible bug</li>
+        <li>Fixing Why 1 creates a recurring incident; fixing Why 5 closes it permanently</li>
+        <li>Root causes are usually process, knowledge, or systemic — not just code</li>
+        <li>5 Whys pairs with post-mortems: the RCA section IS a 5 Whys exercise</li>
+        <li>Stop asking when you reach something you can measurably fix</li>
+      </ul>
+    </div>
+    <div class="nav-links">
+      <a href="10a-process.html">← 10a: Process</a>
+      <a href="10c-tools.html">10c: Tools →</a>
+    </div>
+  </div>
+</div>
+<script>
+function toggle(id){document.getElementById(id).classList.toggle('open');}
+window.addEventListener('scroll',()=>{
+  document.getElementById('pf').style.width=(window.scrollY/(document.documentElement.scrollHeight-window.innerHeight))*100+'%';
+});
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.1});
+document.querySelectorAll('.section').forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

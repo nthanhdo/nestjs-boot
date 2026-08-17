@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01g — Debugging Mindset | Computational Thinking</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+  --text: #eef1f8; --muted: #8899bb;
+  --accent: #a78bfa; --yellow: #ffd43b; --green: #2ecc71; --red: #e74c3c;
+  --blue: #5b8def; --orange: #ffb347; --pink: #ff5e7a; --teal: #00cec9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 20% 20%, rgba(167,139,250,0.06) 0%, transparent 50%); pointer-events:none; z-index:0; }
+.top-nav { background: var(--surface2); border-bottom: 1px solid var(--border); padding: 10px 24px; position: sticky; top: 0; z-index: 200; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.nav-home { color: var(--accent); text-decoration: none; font-weight: 700; font-size: .82rem; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(167,139,250,0.3); }
+.nav-home:hover { background: rgba(167,139,250,0.1); }
+.nav-topic { color: var(--muted); font-size: .8rem; flex: 1; padding: 0 8px; }
+.nav-sub-prev, .nav-sub-next { color: var(--muted); text-decoration: none; font-size: .8rem; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); transition: all .2s; white-space: nowrap; }
+.nav-sub-prev:hover, .nav-sub-next:hover { color: var(--text); border-color: var(--accent); }
+.hero { background: var(--surface); border-bottom: 1px solid var(--border); padding: 28px 24px 24px; }
+.hero-inner { max-width: 860px; margin: 0 auto; }
+.hero-badge { display: inline-flex; gap: 6px; background: linear-gradient(135deg,rgba(124,92,231,0.2),rgba(167,139,250,0.1)); border: 1px solid rgba(167,139,250,0.3); border-radius: 20px; padding: 4px 12px; font-size: .72rem; font-weight: 700; color: var(--accent); letter-spacing: .5px; margin-bottom: 12px; }
+.hero h1 { font-size: 2rem; font-weight: 900; background: linear-gradient(135deg,#fff,var(--teal)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom: 10px; }
+.hero-desc { color: var(--muted); font-size: 1rem; max-width: 600px; }
+main { max-width: 860px; margin: 0 auto; padding: 36px 24px 100px; position: relative; z-index: 1; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+.card-title { font-size: 1rem; font-weight: 700; color: var(--accent); margin-bottom: 14px; }
+.highlight { background: linear-gradient(135deg,rgba(167,139,250,0.1),rgba(91,141,239,0.08)); border: 1px solid rgba(167,139,250,0.3); border-radius: 12px; padding: 18px 22px; margin: 20px 0; }
+.highlight-label { font-size: .7rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.highlight-text { color: var(--text); font-size: .95rem; line-height: 1.7; }
+.takeaway { background: linear-gradient(135deg,rgba(46,204,113,0.1),rgba(46,204,113,0.04)); border: 1px solid rgba(46,204,113,0.3); border-radius: 14px; padding: 24px; margin-top: 28px; }
+.takeaway-title { color: var(--green); font-weight: 700; font-size: .9rem; margin-bottom: 14px; }
+.takeaway-list { list-style: none; }
+.takeaway-list li { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; font-size: .9rem; color: var(--text); line-height: 1.6; }
+.takeaway-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@keyframes stepIn { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+
+/* SCI STEPS */
+.sci-steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 20px 0; }
+.sci-step { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; cursor: pointer; transition: all .3s; }
+.sci-step:hover { border-color: var(--accent); transform: translateY(-2px); }
+.sci-step.active { border-color: var(--teal); background: rgba(0,206,201,0.08); animation: stepIn .3s; }
+.sci-num { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#7c5ce7,#a78bfa); color:#fff; font-weight: 800; font-size: .9rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
+.sci-step.active .sci-num { background: linear-gradient(135deg,var(--teal),var(--blue)); }
+.sci-name { font-size: .85rem; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+.sci-step.active .sci-name { color: var(--teal); }
+.sci-desc { font-size: .78rem; color: var(--muted); line-height: 1.5; }
+.sci-detail { display: none; background: rgba(0,206,201,0.06); border: 1px solid rgba(0,206,201,0.25); border-radius: 10px; padding: 14px; margin-top: 12px; font-size: .85rem; color: var(--text); line-height: 1.6; }
+.sci-detail.show { display: block; animation: fadeUp .3s; }
+
+/* ANTI PATTERN */
+.anti-block { background: rgba(231,76,60,0.06); border: 1px solid rgba(231,76,60,0.25); border-radius: 12px; padding: 18px; margin: 16px 0; }
+.anti-title { color: var(--red); font-weight: 700; font-size: .85rem; margin-bottom: 10px; }
+
+/* QUIZ */
+.quiz-opts { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+.quiz-opt { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; cursor: pointer; font-size: .88rem; transition: all .2s; }
+.quiz-opt:hover { border-color: var(--accent); }
+.quiz-opt.correct { border-color: var(--green); background: rgba(46,204,113,0.08); color: var(--green); }
+.quiz-opt.wrong { border-color: var(--red); background: rgba(231,76,60,0.08); color: var(--red); }
+
+.ex-section { margin-top: 40px; }
+.ex-section h2 { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 16px; }
+.exercise { border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+.ex-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; cursor: pointer; background: var(--surface); transition: background .2s; }
+.ex-header:hover { background: var(--surface2); }
+.ex-tag { background: rgba(167,139,250,0.15); color: var(--accent); border-radius: 6px; padding: 2px 8px; font-size: .72rem; font-weight: 700; flex-shrink: 0; }
+.ex-title-text { flex: 1; font-weight: 600; font-size: .9rem; }
+.ex-diff { padding: 2px 10px; border-radius: 20px; font-size: .7rem; font-weight: 700; }
+.ex-diff.easy { background: rgba(46,204,113,0.15); color: var(--green); }
+.ex-diff.medium { background: rgba(255,183,71,0.15); color: var(--orange); }
+.ex-toggle { color: var(--muted); font-size: .75rem; transition: transform .3s; }
+.exercise.open .ex-toggle { transform: rotate(90deg); }
+.ex-body { display: none; padding: 18px; background: var(--surface); border-top: 1px solid var(--border); }
+.exercise.open .ex-body { display: block; animation: fadeUp .3s; }
+.ex-prompt { background: var(--surface2); border-left: 3px solid var(--accent); border-radius: 8px; padding: 14px; margin-bottom: 12px; font-size: .9rem; color: var(--text); line-height: 1.7; }
+.ex-reveal { background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.3); color: var(--accent); padding: 7px 16px; border-radius: 8px; cursor: pointer; font-size: .83rem; font-weight: 600; }
+.ex-answer { display: none; margin-top: 12px; background: var(--surface2); border-left: 3px solid var(--green); border-radius: 8px; padding: 14px; font-size: .88rem; color: var(--text); line-height: 1.7; }
+
+/* NEXT TOPIC LINK */
+.next-topic { display: flex; align-items: center; gap: 16px; background: linear-gradient(135deg,rgba(0,206,201,0.1),rgba(91,141,239,0.06)); border: 1px solid rgba(0,206,201,0.3); border-radius: 14px; padding: 20px 24px; text-decoration: none; margin-top: 32px; transition: all .3s; }
+.next-topic:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.next-icon { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg,var(--teal),var(--blue)); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+.next-text .label { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.next-text .title { font-weight: 700; color: var(--text); }
+.next-arrow { margin-left: auto; color: var(--muted); font-size: 1.2rem; }
+.prev-link { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--muted); font-size: .85rem; margin-bottom: 16px; }
+.prev-link:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="../index.html" class="nav-home">🏠 Hub</a>
+  <span class="nav-topic">Bài 01 — Tư Duy Tính Toán · 01g/07</span>
+  <a href="01f-tradeoff.html" class="nav-sub-prev">← 01f Trade-offs</a>
+  <a href="../02-programming-thinking/02a-data-state.html" class="nav-sub-next">Bài 02: Tư Duy Lập Trình →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">KHÁI NIỆM 07 · 7 PHẦN · CUỐI BÀI 01</div>
+    <h1>🔬 Debugging Mindset</h1>
+    <p class="hero-desc">Debug không phải may rủi hay mò mẫm. Đó là phương pháp khoa học áp dụng cho code — có quy trình rõ ràng và có thể học được.</p>
+  </div>
+</div>
+
+<main>
+
+<a href="01f-tradeoff.html" class="prev-link">← Quay lại 01f: Trade-off Thinking</a>
+
+<!-- SCIENTIFIC METHOD -->
+<div class="card">
+  <div class="card-title">🔬 6 Bước Scientific Method — Click vào từng bước</div>
+  <div class="sci-steps">
+    <div class="sci-step" onclick="showSciDetail(0)">
+      <div class="sci-num">1</div>
+      <div class="sci-name">Quan sát</div>
+      <div class="sci-desc">Bug xảy ra khi nào? Input gì? Error message gì?</div>
+    </div>
+    <div class="sci-step" onclick="showSciDetail(1)">
+      <div class="sci-num">2</div>
+      <div class="sci-name">Giả thuyết</div>
+      <div class="sci-desc">"Có lẽ vì... Tôi nghĩ nguyên nhân là..."</div>
+    </div>
+    <div class="sci-step" onclick="showSciDetail(2)">
+      <div class="sci-num">3</div>
+      <div class="sci-name">Thí nghiệm</div>
+      <div class="sci-desc">Thêm log, viết test, reproduce bug</div>
+    </div>
+    <div class="sci-step" onclick="showSciDetail(3)">
+      <div class="sci-num">4</div>
+      <div class="sci-name">Kết quả</div>
+      <div class="sci-desc">Giả thuyết đúng hay sai? Bug xác nhận?</div>
+    </div>
+    <div class="sci-step" onclick="showSciDetail(4)">
+      <div class="sci-num">5</div>
+      <div class="sci-name">Sửa</div>
+      <div class="sci-desc">Fix root cause, không phải symptom</div>
+    </div>
+    <div class="sci-step" onclick="showSciDetail(5)">
+      <div class="sci-num">6</div>
+      <div class="sci-name">Confirm</div>
+      <div class="sci-desc">Test lại, check regression</div>
+    </div>
+  </div>
+  <div class="sci-detail" id="sciDetail"></div>
+</div>
+
+<!-- ANTI-PATTERNS -->
+<div class="anti-block">
+  <div class="anti-title">❌ Anti-pattern: "Debug mò" (Cargo Cult Debugging)</div>
+  <div style="color:var(--muted);font-size:.9rem;line-height:1.7">"Thử thay cái này xem... không được. Thử cái kia... cũng không. Thêm console.log ở đây... ở đó..."<br>
+  Không có phương pháp = mất hàng giờ cho lỗi đơn giản. Không học được gì sau khi fix.</div>
+</div>
+
+<!-- RUBBER DUCK -->
+<div class="card">
+  <div class="card-title">🦆 Rubber Duck Debugging</div>
+  <div style="color:var(--text);font-size:.95rem;line-height:1.75;margin-bottom:16px;">
+    Giải thích bug cho một con vịt cao su (hoặc bất kỳ ai/thứ gì) từ đầu đến cuối. Trong quá trình giải thích, thường bạn tự tìm ra câu trả lời.
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+    <div style="background:rgba(255,183,71,0.06);border:1px solid rgba(255,183,71,0.25);border-radius:10px;padding:14px;">
+      <div style="font-weight:700;color:var(--yellow);margin-bottom:8px;">🦆 Nói với vịt</div>
+      <div style="font-size:.85rem;color:var(--muted);line-height:1.7">"Hàm này nhận user object, filter theo role, rồi... à đợi, tôi quên check trường hợp role là undefined rồi!"</div>
+    </div>
+    <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.25);border-radius:10px;padding:14px;">
+      <div style="font-weight:700;color:var(--green);margin-bottom:8px;">🧠 Tại sao nó work</div>
+      <div style="font-size:.85rem;color:var(--muted);line-height:1.7">Bắt buộc articulate từng assumption. Khi nói ra giả định sai → não tự nhận ra sai, không cần ai chỉ.</div>
+    </div>
+  </div>
+</div>
+
+<!-- BINARY SEARCH DEBUG -->
+<div class="card">
+  <div class="card-title">🔍 Binary Search Debugging — Kỹ thuật nâng cao</div>
+  <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Khi không biết bug ở đâu trong pipeline dài, chia đôi và kiểm tra điểm giữa. Nếu điểm giữa OK → bug ở nửa sau. Nếu không OK → bug ở nửa trước.</div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:16px 0;">
+    <div style="background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.3);border-radius:8px;padding:8px 12px;font-size:.78rem;text-align:center;color:var(--red)">API → DB<br><small>(10 steps)</small></div>
+    <div style="color:var(--muted)">→</div>
+    <div style="background:rgba(255,183,71,0.1);border:1px solid rgba(255,183,71,0.3);border-radius:8px;padding:8px 12px;font-size:.78rem;text-align:center;color:var(--orange)">Check step 5<br><small>✓ OK?</small></div>
+    <div style="color:var(--muted)">→</div>
+    <div style="background:rgba(91,141,239,0.08);border:1px solid rgba(91,141,239,0.3);border-radius:8px;padding:8px 12px;font-size:.78rem;text-align:center;color:var(--blue)">Check step 7-8<br><small>→ bug found!</small></div>
+  </div>
+  <div style="font-size:.85rem;color:var(--muted)">O(log n) phép kiểm tra thay vì O(n) — tương tự binary search algorithm.</div>
+</div>
+
+<!-- QUIZ -->
+<div class="card">
+  <div class="card-title">🎯 Mini Quiz: Thứ tự debug đúng là gì?</div>
+  <div style="color:var(--muted);font-size:.88rem;margin-bottom:14px;">User báo "app bị lỗi khi click mua hàng". Bước đầu tiên bạn làm là gì?</div>
+  <div class="quiz-opts" id="quizOpts">
+    <div class="quiz-opt" onclick="selectQuiz(this, false)">A. Ngay lập tức sửa hàm processPayment vì đó thường là nơi lỗi</div>
+    <div class="quiz-opt" onclick="selectQuiz(this, false)">B. Thêm console.log vào khắp nơi trong codebase</div>
+    <div class="quiz-opt" onclick="selectQuiz(this, true)">C. Reproduce bug: hỏi user "click mua hàng khi nào? sản phẩm nào? error message gì?"</div>
+    <div class="quiz-opt" onclick="selectQuiz(this, false)">D. Restart server và hy vọng nó tự hết</div>
+  </div>
+</div>
+
+<!-- TAKEAWAY -->
+<div class="takeaway">
+  <div class="takeaway-title">🎯 Key Takeaway</div>
+  <ul class="takeaway-list">
+    <li><strong>Reproduce trước</strong> — nếu không reproduce được, chưa debug được. Đừng sửa mù quáng.</li>
+    <li><strong>Thay đổi 1 biến mỗi lần</strong> — không thay nhiều thứ cùng lúc, sẽ không biết cái gì fix được bug</li>
+    <li><strong>Đọc error message kỹ</strong> — thường có câu trả lời ngay trong stack trace. Line number, file name.</li>
+  </ul>
+</div>
+
+<!-- EXERCISES -->
+<div class="ex-section">
+  <h2>🏋️ Mini Exercises</h2>
+
+  <div class="exercise">
+    <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="ex-tag">Ex 1</span>
+      <span class="ex-title-text">Apply scientific method cho bug: "Authentication fails intermittently"</span>
+      <span class="ex-diff medium">🟡 Trung bình</span>
+      <span class="ex-toggle">▶</span>
+    </div>
+    <div class="ex-body">
+      <div class="ex-prompt">Bug report: "Login đôi khi thất bại — khoảng 10% thời gian, không rõ pattern". Hãy apply 6 bước Scientific Method để debug. Viết ra từng bước bạn sẽ làm.</div>
+      <button class="ex-reveal" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">Xem gợi ý</button>
+      <div class="ex-answer">
+        <strong style="color:var(--green)">6 bước cho intermittent auth bug:</strong><br>
+        <ol style="margin-top:8px;padding-left:20px;line-height:2.4">
+          <li><strong>Quan sát:</strong> Thu thập logs — user nào? thời gian? device? network? Có pattern không (cùng IP, cùng user agent)?</li>
+          <li><strong>Giả thuyết:</strong> "Có lẽ do session expiry race condition" hoặc "JWT clock skew giữa servers"</li>
+          <li><strong>Thí nghiệm:</strong> Log timestamps của token tạo vs kiểm tra. Check server time sync. Load test để reproduce 10% fail rate</li>
+          <li><strong>Kết quả:</strong> Phát hiện server time lệch 2s → JWT "exp" kiểm tra sai</li>
+          <li><strong>Sửa:</strong> Thêm clock tolerance: <code>jwt.verify(token, secret, {'{'} clockTolerance: 30 {'}'})</code></li>
+          <li><strong>Confirm:</strong> Deploy, monitor 24h, confirm 0% fail rate. Thêm monitoring cho clock drift</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NEXT TOPIC -->
+<a href="../02-programming-thinking/02a-data-state.html" class="next-topic">
+  <div class="next-icon">💻</div>
+  <div class="next-text">
+    <div class="label">Bài tiếp theo · Bài 02</div>
+    <div class="title">Tư Duy Lập Trình — Data & State</div>
+  </div>
+  <span class="next-arrow">→</span>
+</a>
+
+</main>
+
+<script>
+const sciDetails = [
+  '<strong>Quan sát — Gather Evidence:</strong><br>• Đọc error message và stack trace KỸ — line number, file name, error type<br>• Bug xảy ra với input gì? User nào? Browser nào? Time nào?<br>• Gần đây có deploy hay thay đổi gì không?<br>• Lỗi có thể reproduce được không?',
+  '<strong>Giả thuyết — Form a Hypothesis:</strong><br>• "Có thể lỗi do X vì Y"<br>• Từ evidence đã thu thập, liệt kê 2-3 nguyên nhân có thể nhất<br>• Ưu tiên hypothesis đơn giản nhất trước (Occam\'s Razor)<br>• KHÔNG sửa gì trước khi có hypothesis rõ ràng',
+  '<strong>Thí nghiệm — Test Hypothesis:</strong><br>• Reproduce bug với input tối thiểu<br>• Thêm strategic logging (không phải scatter console.log khắp nơi)<br>• Viết test case tái tạo bug trước khi fix<br>• Thay đổi 1 biến mỗi lần — không thay nhiều cùng lúc',
+  '<strong>Kết quả — Analyze Results:</strong><br>• Hypothesis đúng → chuyển sang bước 5<br>• Hypothesis sai → quay lại bước 2 với thông tin mới<br>• Thu thập thêm evidence nếu kết quả không rõ ràng<br>• Log và document findings để tránh loop',
+  '<strong>Sửa — Fix Root Cause:</strong><br>• Fix nguyên nhân gốc, không phải triệu chứng<br>• Symptom fix: "try/catch và return empty" — bug vẫn còn đó<br>• Root cause fix: hiểu tại sao bug xảy ra và fix điều đó<br>• Consider side effects — fix này có break gì khác không?',
+  '<strong>Confirm — Verify Fix:</strong><br>• Test lại với test case đã reproduce bug<br>• Test edge cases liên quan<br>• Regression test — các tính năng khác vẫn OK?<br>• Deploy và monitor production logs<br>• Viết test để prevent bug tái phát',
+];
+
+function showSciDetail(i) {
+  document.querySelectorAll('.sci-step').forEach((s,j) => s.classList.toggle('active', j===i));
+  const d = document.getElementById('sciDetail');
+  d.innerHTML = sciDetails[i];
+  d.classList.add('show');
+}
+
+let quizDone = false;
+function selectQuiz(el, correct) {
+  if (quizDone) return;
+  quizDone = true;
+  el.classList.add(correct ? 'correct' : 'wrong');
+  if (!correct) {
+    document.querySelectorAll('.quiz-opt')[2].classList.add('correct');
+  }
+}
+</script>
+</body>
+</html>

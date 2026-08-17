@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03e — Code Smells | Clean Code</title>
+<style>
+:root{--bg:#0e1525;--surface:#151d32;--surface2:#1c2744;--border:#2a3a5c;--text:#eef1f8;--muted:#8899bb;--accent:#a78bfa;--green:#2ecc71;--red:#e74c3c;--blue:#5b8def;--orange:#ffb347;--teal:#00cec9;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.top-nav{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:10px 24px;font-size:.85rem;}
+.top-nav a{color:var(--accent);text-decoration:none;padding:4px 10px;border-radius:6px;border:1px solid transparent;transition:.2s;}
+.top-nav a:hover{border-color:var(--accent);background:#a78bfa18;}
+.nav-center{color:var(--muted);font-size:.8rem;}
+.hero{padding:48px 24px 32px;max-width:860px;margin:0 auto;animation:fadeUp .5s ease;}
+.lesson-tag{display:inline-block;background:#a78bfa22;color:var(--accent);border:1px solid #a78bfa44;border-radius:20px;padding:4px 14px;font-size:.8rem;margin-bottom:16px;}
+h1{font-size:2rem;margin-bottom:8px;}h1 span{color:var(--accent);}
+.subtitle{color:var(--muted);font-size:1rem;margin-bottom:32px;}
+.section{max-width:860px;margin:0 auto 40px;padding:0 24px;}
+h2{font-size:1.2rem;color:var(--accent);margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:1rem;color:var(--orange);margin:16px 0 8px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
+pre{background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:20px;overflow-x:auto;font-size:.88rem;line-height:1.7;}
+.kw{color:#79b8ff;}.fn{color:#b392f0;}.str{color:#9ecbff;}.num{color:var(--orange);}.cmt{color:#6a737d;font-style:italic;}.type{color:var(--teal);}
+.smell-highlight{background:rgba(255,183,71,.15);border-radius:3px;cursor:pointer;}
+.smell-highlight:hover{background:rgba(255,183,71,.3);}
+
+/* SMELL CATALOG */
+.smell-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0;}
+@media(max-width:600px){.smell-grid{grid-template-columns:1fr;}}
+.smell-item{background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.85rem;}
+.smell-name{color:var(--orange);font-weight:600;}
+.smell-desc{color:var(--muted);font-size:.8rem;}
+
+/* QUIZ */
+.quiz-code{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
+.quiz-code-label{color:var(--orange);font-size:.78rem;font-weight:700;margin-bottom:12px;}
+.quiz-answers{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+.quiz-ans{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:.82rem;cursor:pointer;transition:.2s;}
+.quiz-ans:hover{border-color:var(--orange);}
+.quiz-ans.correct{border-color:var(--green);background:rgba(46,204,113,.08);color:var(--green);}
+.quiz-ans.wrong{border-color:var(--red);background:rgba(231,76,60,.08);color:var(--red);}
+
+.takeaway{background:linear-gradient(135deg,#a78bfa15,#5b8def10);border:1px solid #a78bfa44;border-radius:12px;padding:20px 24px;margin:32px auto;max-width:860px;}
+.takeaway-label{font-size:.75rem;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.exercise{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:10px;padding:20px;margin-top:16px;}
+.exercise-label{font-size:.75rem;color:var(--orange);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+.next-nav{max-width:860px;margin:0 auto 60px;padding:0 24px;}
+.next-topic{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;text-decoration:none;color:var(--text);transition:.2s;}
+.next-topic:hover{border-color:var(--accent);background:#a78bfa08;}
+.next-icon{font-size:2rem;}.next-text .label{font-size:.75rem;color:var(--muted);}.next-text .title{font-size:1rem;font-weight:600;color:var(--accent);}.next-arrow{margin-left:auto;font-size:1.4rem;color:var(--accent);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="03d-solid.html">← 03d SOLID</a>
+  <span class="nav-center">Bài 03 · Code Smells · 03e / 07</span>
+  <a href="03f-refactoring.html">03f Refactoring →</a>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">Bài 03e / 07 · Clean Code</div>
+  <h1>🔍 Code <span>Smells</span></h1>
+  <p class="subtitle">Code smells là dấu hiệu cảnh báo — code có thể chạy đúng nhưng có vấn đề về thiết kế. Nhận diện sớm để refactor trước khi thành bug thật sự.</p>
+</div>
+
+<!-- SMELL VS BUG -->
+<div class="section">
+  <h2>⚠️ Code Smell ≠ Bug</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div style="background:rgba(231,76,60,.06);border:1px solid rgba(231,76,60,.2);border-radius:10px;padding:16px;">
+      <div style="color:var(--red);font-size:.8rem;font-weight:700;margin-bottom:8px;">🐛 Bug</div>
+      <p style="color:var(--muted);font-size:.88rem;line-height:1.6;">Code chạy sai — crash, wrong output, security hole. Phải fix ngay.</p>
+    </div>
+    <div style="background:rgba(255,183,71,.06);border:1px solid rgba(255,183,71,.2);border-radius:10px;padding:16px;">
+      <div style="color:var(--orange);font-size:.8rem;font-weight:700;margin-bottom:8px;">👃 Code Smell</div>
+      <p style="color:var(--muted);font-size:.88rem;line-height:1.6;">Code chạy đúng nhưng có vấn đề thiết kế — tiền thân của bug. Note lại, refactor khi có thời gian.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <p style="color:var(--muted);font-size:.9rem;"><strong style="color:var(--teal);">Boy Scout Rule:</strong> "Leave the code cleaner than you found it." Mỗi lần chạm vào code → cải thiện ít nhất 1 thứ nhỏ. Không cần perfect — chỉ cần slightly better.</p>
+  </div>
+</div>
+
+<!-- INTERACTIVE SMELL FINDER -->
+<div class="section">
+  <h2>🔬 Tìm Code Smells — Bấm vào highlighted code</h2>
+  <div class="quiz-code">
+    <div class="quiz-code-label">👃 Tìm code smells trong đoạn code này:</div>
+    <pre style="font-size:.85rem;"><span class="kw">function</span> <span class="fn">doThings</span>(<span class="smell-highlight" title="Long Parameter List" onclick="markSmell('long-param')">a, b, c, d, e, f</span>) {
+  <span class="kw">if</span> (a === <span class="num">1</span>) {
+    <span class="kw">if</span> (b === <span class="num">2</span>) {
+      <span class="kw">if</span> (c === <span class="num">3</span>) { <span class="smell-highlight" title="Arrow code!" onclick="markSmell('arrow')">// ← deeply nested</span>
+        <span class="kw">if</span> (d === <span class="num">4</span>) {
+          result = <span class="fn">process</span>(e, f)
+        }
+      }
+    }
+  }
+  <span class="kw">const</span> x = a * <span class="smell-highlight" title="Magic Number" onclick="markSmell('magic')"><span class="num">0.1728</span></span>
+  <span class="kw">return</span> x
+}</pre>
+    <div class="quiz-answers" id="smellAnswers">
+      <div class="quiz-ans" onclick="checkAnswer(this, true)">📦 Long Parameter List (6 params)</div>
+      <div class="quiz-ans" onclick="checkAnswer(this, true)">🌲 Arrow Code / Deeply Nested</div>
+      <div class="quiz-ans" onclick="checkAnswer(this, true)">🔢 Magic Number (0.1728)</div>
+      <div class="quiz-ans" onclick="checkAnswer(this, false)">♻️ Duplicate Code</div>
+      <div class="quiz-ans" onclick="checkAnswer(this, false)">💀 Dead Code</div>
+    </div>
+  </div>
+  <p id="smell-reveal" style="display:none;color:var(--green);font-size:.9rem;margin-top:8px;">✅ 3 smells đúng: Long Param, Arrow Code, Magic Number. Duplicate + Dead Code không có ở đây.</p>
+</div>
+
+<!-- SMELL CATALOG -->
+<div class="section">
+  <h2>📋 Danh Sách Code Smells Phổ Biến</h2>
+  <div class="smell-grid">
+    <div class="smell-item">
+      <div class="smell-name">Long Method</div>
+      <div class="smell-desc">Hàm > 30 dòng — tách thành hàm nhỏ</div>
+    </div>
+    <div class="smell-item">
+      <div class="smell-name">God Class</div>
+      <div class="smell-desc">Class biết quá nhiều, làm quá nhiều</div>
+    </div>
+    <div class="smell-item">
+      <div class="smell-name">Long Parameter List</div>
+      <div class="smell-desc">> 3 params → đóng gói thành object</div>
+    </div>
+    <div class="smell-item">
+      <div class="smell-name">Shotgun Surgery</div>
+      <div class="smell-desc">1 change → sửa nhiều nơi trong codebase</div>
+    </div>
+    <div class="smell-item">
+      <div class="smell-name">Feature Envy</div>
+      <div class="smell-desc">Method dùng data của class khác nhiều hơn chính nó</div>
+    </div>
+    <div class="smell-item">
+      <div class="smell-name">Data Clumps</div>
+      <div class="smell-desc">Nhóm biến luôn đi cùng nhau → tạo class</div>
+    </div>
+    <div class="smell-item">
+      <div class="smell-name">Magic Numbers/Strings</div>
+      <div class="smell-desc">0.1728, "admin", 86400 không có tên</div>
+    </div>
+    <div class="smell-item">
+      <div class="smell-name">Comments Explaining Bad Code</div>
+      <div class="smell-desc">Comment giải thích code xấu → fix code thay vì comment</div>
+    </div>
+    <div class="smell-item">
+      <div class="smell-name">Dead Code</div>
+      <div class="smell-desc">Code không bao giờ được gọi → xóa</div>
+    </div>
+    <div class="smell-item">
+      <div class="smell-name">Primitive Obsession</div>
+      <div class="smell-desc">Dùng string/number cho domain concepts → tạo value objects</div>
+    </div>
+  </div>
+</div>
+
+<!-- ARROW CODE FIX -->
+<div class="section">
+  <h2>🎯 Fix Arrow Code (Deeply Nested)</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--red);border-radius:10px;padding:16px;">
+      <div style="color:var(--red);font-size:.75rem;font-weight:700;text-transform:uppercase;margin-bottom:10px;">❌ Arrow code</div>
+      <pre style="font-size:.8rem;"><span class="kw">if</span> (user) {
+  <span class="kw">if</span> (user.isActive) {
+    <span class="kw">if</span> (cart.items.length > <span class="num">0</span>) {
+      <span class="kw">if</span> (payment.isValid) {
+        <span class="cmt">// actual logic</span>
+      }
+    }
+  }
+}</pre>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-top:3px solid var(--green);border-radius:10px;padding:16px;">
+      <div style="color:var(--green);font-size:.75rem;font-weight:700;text-transform:uppercase;margin-bottom:10px;">✅ Guard clauses</div>
+      <pre style="font-size:.8rem;"><span class="kw">if</span> (!user) <span class="kw">throw</span> <span class="fn">Error</span>()
+<span class="kw">if</span> (!user.isActive) <span class="kw">throw</span> <span class="fn">Error</span>()
+<span class="kw">if</span> (!cart.items.length) <span class="kw">throw</span> <span class="fn">Error</span>()
+<span class="kw">if</span> (!payment.isValid) <span class="kw">throw</span> <span class="fn">Error</span>()
+
+<span class="cmt">// actual logic — flat ✓</span></pre>
+    </div>
+  </div>
+</div>
+
+<div class="takeaway">
+  <div class="takeaway-label">💡 Key Takeaway</div>
+  <p>Code smell ≠ bug, nhưng là tiền thân của bug. Nhận diện → ghi chú → refactor khi có thời gian. Boy Scout Rule: leave code cleaner. Ưu tiên fix: Magic Numbers → Long Parameter List → Arrow Code → God Class.</p>
+</div>
+
+<div class="section">
+  <h2>🏋️ Bài Tập</h2>
+  <div class="exercise">
+    <div class="exercise-label">Nhận diện 5 code smells</div>
+    <pre style="font-size:.82rem;"><span class="kw">class</span> <span class="type">UserService</span> {
+  <span class="fn">processUser</span>(name, email, age, phone,
+               address, zip, country, role, dept, mgr) {
+    <span class="kw">if</span> (role === <span class="str">'admin'</span>) {
+      <span class="kw">if</span> (dept === <span class="str">'IT'</span>) {
+        <span class="kw">if</span> (age > <span class="num">25</span>) {
+          db.<span class="fn">save</span>(...); db.<span class="fn">save</span>(...); db.<span class="fn">save</span>(...);
+        }
+      }
+    }
+    <span class="fn">sendEmail</span>(email, <span class="str">'Welcome'</span>, <span class="str">'...'</span>)
+    analytics.<span class="fn">track</span>(email)
+  }
+}</pre>
+    <p style="color:var(--muted);font-size:.9rem;margin-top:10px;">Liệt kê 5 smells, tên smell, giải thích, và cách fix.</p>
+  </div>
+</div>
+
+<div class="next-nav">
+  <a href="03f-refactoring.html" class="next-topic">
+    <div class="next-icon">🔧</div>
+    <div class="next-text">
+      <div class="label">Bài tiếp theo · 03f / 07</div>
+      <div class="title">Refactoring — từng bước an toàn</div>
+    </div>
+    <span class="next-arrow">→</span>
+  </a>
+</div>
+
+<script>
+let correctCount = 0;
+function checkAnswer(el, correct) {
+  el.classList.add(correct ? 'correct' : 'wrong');
+  el.onclick = null;
+  if(correct) { correctCount++; if(correctCount >= 3) document.getElementById('smell-reveal').style.display='block'; }
+}
+function markSmell(type) { console.log('Smell found:', type); }
+</script>
+</body>
+</html>

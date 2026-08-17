@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>13e — CAP Theorem & Circuit Breaker | Phase 3</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--accent:#58a6ff;--success:#3fb950;--warning:#d29922;--error:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.progress-bar{position:fixed;top:0;left:0;width:100%;height:3px;background:var(--border);z-index:100;}
+.progress-fill{height:100%;background:var(--accent);width:0;transition:width .1s;}
+nav{position:sticky;top:3px;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:90;}
+nav .brand{font-weight:700;color:var(--accent);font-size:.9rem;}
+nav .links a{color:var(--muted);text-decoration:none;margin-left:1.2rem;font-size:.85rem;transition:color .2s;}
+nav .links a:hover{color:var(--text);}
+.container{max-width:900px;margin:0 auto;padding:2rem 1.5rem;}
+h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;}
+.subtitle{color:var(--muted);margin-bottom:2.5rem;font-size:1.05rem;}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:1rem;color:var(--accent);}
+.section{margin-bottom:3rem;opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
+.section.visible{opacity:1;transform:none;}
+.label{display:inline-block;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;margin-bottom:.5rem;}
+/* CAP triangle */
+.cap-container{display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;margin-bottom:1rem;}
+.cap-svg-wrap{flex-shrink:0;}
+.cap-desc{flex:1;min-width:220px;}
+.cap-node{cursor:pointer;transition:opacity .2s;}
+.cap-node:hover{opacity:.8;}
+.cap-card-grid{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-bottom:1rem;}
+.cap-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;}
+.cap-card h4{font-size:.9rem;font-weight:700;margin-bottom:.4rem;}
+.cap-card p{font-size:.83rem;color:var(--muted);}
+.cap-card.cp{border-color:#d2a8ff;}
+.cap-card.cp h4{color:#d2a8ff;}
+.cap-card.ap{border-color:var(--success);}
+.cap-card.ap h4{color:var(--success);}
+/* circuit breaker states */
+.cb-states{display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;}
+.cb-state{background:var(--surface);border:2px solid var(--border);border-radius:50%;width:120px;height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;text-align:center;flex-shrink:0;}
+.cb-state h4{font-size:.8rem;font-weight:700;margin-bottom:.2rem;}
+.cb-state p{font-size:.65rem;color:var(--muted);padding:0 .3rem;}
+.cb-state.closed{border-color:var(--success);}
+.cb-state.closed h4{color:var(--success);}
+.cb-state.open{border-color:var(--error);}
+.cb-state.open h4{color:var(--error);}
+.cb-state.half{border-color:var(--warning);}
+.cb-state.half h4{color:var(--warning);}
+.cb-state.active-state{transform:scale(1.1);box-shadow:0 0 20px currentColor;}
+.cb-detail{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin-bottom:1rem;display:none;font-size:.88rem;color:var(--muted);line-height:1.7;}
+.cb-detail.show{display:block;}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;font-size:.82rem;line-height:1.7;margin-bottom:1rem;font-family:monospace;}
+pre .c{color:var(--muted);}
+pre .good{color:var(--success);}
+.exercise{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.exercise h3{color:var(--accent);margin-bottom:.8rem;font-size:1rem;}
+.exercise ol{padding-left:1.2rem;color:var(--muted);font-size:.9rem;line-height:1.8;}
+.takeaway{background:linear-gradient(135deg,#1a2235,#161b22);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.takeaway h3{color:var(--accent);margin-bottom:1rem;}
+.takeaway ul{padding-left:1.2rem;line-height:2;}
+.nav-links{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-links a{color:var(--accent);text-decoration:none;font-size:.9rem;padding:.5rem 1rem;border:1px solid var(--border);border-radius:6px;transition:border-color .2s;}
+.nav-links a:hover{border-color:var(--accent);}
+@media(max-width:640px){.cap-card-grid{grid-template-columns:1fr;}.cb-states{justify-content:center;}}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav>
+  <span class="brand">Phase 3 — Engineer Mindset</span>
+  <div class="links">
+    <a href="13d-cache-queue.html">← Cache & Queue</a>
+    <a href="#">↑ Complete</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="section" id="s0">
+    <div class="label">13e / 5</div>
+    <h1>CAP Theorem & Circuit Breaker</h1>
+    <p class="subtitle">The two most important theoretical foundations for distributed systems design.</p>
+  </div>
+
+  <div class="section" id="s1">
+    <h2>CAP Theorem — Click the triangle</h2>
+    <div class="cap-container">
+      <div class="cap-svg-wrap">
+        <svg width="260" height="240" viewBox="0 0 260 240">
+          <!-- Triangle -->
+          <polygon points="130,20 20,220 240,220" fill="none" stroke="#30363d" stroke-width="2"/>
+          <!-- Nodes -->
+          <circle cx="130" cy="20" r="28" fill="#1a2235" stroke="#58a6ff" stroke-width="2" class="cap-node" onclick="showCap('c')" id="cap-c"/>
+          <circle cx="20" cy="220" r="28" fill="#1a2235" stroke="#3fb950" stroke-width="2" class="cap-node" onclick="showCap('a')" id="cap-a"/>
+          <circle cx="240" cy="220" r="28" fill="#1a2235" stroke="#d2a8ff" stroke-width="2" class="cap-node" onclick="showCap('p')" id="cap-p"/>
+          <!-- Labels -->
+          <text x="130" y="25" fill="#58a6ff" font-size="13" font-weight="bold" text-anchor="middle">C</text>
+          <text x="130" y="38" fill="#58a6ff" font-size="9" text-anchor="middle">Consistency</text>
+          <text x="20" y="225" fill="#3fb950" font-size="13" font-weight="bold" text-anchor="middle">A</text>
+          <text x="20" y="238" fill="#3fb950" font-size="9" text-anchor="middle">Availability</text>
+          <text x="240" y="225" fill="#d2a8ff" font-size="13" font-weight="bold" text-anchor="middle">P</text>
+          <text x="240" y="238" fill="#d2a8ff" font-size="9" text-anchor="middle">Partition</text>
+          <!-- Midpoint labels -->
+          <text x="75" y="130" fill="#7d8590" font-size="9" text-anchor="middle">CA</text>
+          <text x="186" y="130" fill="#7d8590" font-size="9" text-anchor="middle">CP</text>
+          <text x="130" y="215" fill="#7d8590" font-size="9" text-anchor="middle">AP</text>
+        </svg>
+      </div>
+      <div class="cap-desc" id="cap-desc">
+        <p style="color:var(--muted);font-size:.88rem;">In a distributed system, you can only guarantee 2 of 3 properties. Click a node to learn about each property.</p>
+        <p style="color:var(--muted);font-size:.88rem;margin-top:.8rem;"><strong style="color:var(--text)">Key insight:</strong> Network partitions (P) are inevitable in distributed systems. So the real choice is: CP or AP?</p>
+      </div>
+    </div>
+    <div class="cap-card-grid">
+      <div class="cap-card cp">
+        <h4>CP Systems (Consistency + Partition tolerance)</h4>
+        <p>Sacrifices availability. When partition occurs → reject requests rather than return stale data. Examples: MongoDB (with majority write concern), HBase, Zookeeper.</p>
+      </div>
+      <div class="cap-card ap">
+        <h4>AP Systems (Availability + Partition tolerance)</h4>
+        <p>Sacrifices consistency. When partition occurs → return possibly stale data rather than error. Examples: DynamoDB (eventual consistency), Cassandra, CouchDB.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="s2">
+    <h2>Circuit Breaker — Click the states</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Prevents cascading failures when a downstream service is unhealthy.</p>
+    <div class="cb-states">
+      <div class="cb-state closed" id="cb-closed" onclick="showCb('closed')">
+        <h4>CLOSED</h4>
+        <p>Normal operation. Requests pass through.</p>
+      </div>
+      <div class="cb-state open" id="cb-open" onclick="showCb('open')">
+        <h4>OPEN</h4>
+        <p>Failures exceeded threshold. Reject immediately.</p>
+      </div>
+      <div class="cb-state half" id="cb-half" onclick="showCb('half')">
+        <h4>HALF-OPEN</h4>
+        <p>Testing. Allow one probe request through.</p>
+      </div>
+    </div>
+    <div class="cb-detail" id="cb-detail"></div>
+    <pre><span class="c">// Circuit breaker with opossum (NestJS)</span>
+<span class="good">import CircuitBreaker from 'opossum';
+
+const options = {
+  timeout: 3000,           // If request takes >3s, it's a failure
+  errorThresholdPercentage: 50, // Open after 50% failure rate
+  resetTimeout: 30000      // Try again after 30s
+};
+
+const breaker = new CircuitBreaker(callExternalService, options);
+
+breaker.fallback(() => ({ status: 'degraded', data: cachedResult }));
+breaker.on('open', () => logger.warn('Circuit OPEN — payment service down'));
+breaker.on('halfOpen', () => logger.info('Circuit HALF-OPEN — probing'));
+breaker.on('close', () => logger.info('Circuit CLOSED — service recovered'));</span></pre>
+  </div>
+
+  <div class="section" id="s3">
+    <div class="exercise">
+      <h3>🔬 Exercise — Design Decisions</h3>
+      <ol>
+        <li>A banking app needs account balance to be always accurate. CP or AP?</li>
+        <li>A social media "like count" can be slightly off. CP or AP?</li>
+        <li>Your payment service calls a fraud detection API. If fraud API is slow, payments timeout. What pattern prevents this?</li>
+        <li>Circuit breaker opens. What should your API return to the client? (hint: what's better — 500 or degraded 200?)</li>
+        <li>How long should resetTimeout be? What factors determine this?</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section" id="s4">
+    <div class="takeaway">
+      <h3>Key Takeaways — Phase 3 Complete</h3>
+      <ul>
+        <li>CAP: Partition tolerance is mandatory in distributed systems → real choice is CP vs AP</li>
+        <li>CP = consistency guarantee, may reject requests on partition (banking, financial)</li>
+        <li>AP = availability guarantee, may return stale data (social, analytics)</li>
+        <li>Circuit breaker = fail fast, protect against cascading failures, degrade gracefully</li>
+        <li>System design is trade-offs — name every trade-off explicitly in your design doc</li>
+      </ul>
+    </div>
+    <div class="nav-links">
+      <a href="13d-cache-queue.html">← 13d: Cache & Queue</a>
+      <a href="../../../phase-2-build/05-design-system/05a-tokens.html">↑ Phase 2 Start</a>
+    </div>
+  </div>
+</div>
+<script>
+const capContent = {
+  c: {title:'Consistency', body:'Every read receives the most recent write or an error. All nodes see the same data at the same time. No stale reads. Achieved via: synchronous replication, quorum writes, distributed locks.'},
+  a: {title:'Availability', body:'Every request receives a response (not necessarily the most recent data). The system is always up, always responds. No errors, even if some nodes are unreachable. Achieved via: async replication, read from any replica.'},
+  p: {title:'Partition Tolerance', body:'The system continues operating even when network communication between nodes fails. Network partitions are not hypothetical — they happen in every distributed system. This is why you must always choose P, and then pick C or A.'}
+};
+function showCap(id) {
+  document.getElementById('cap-desc').innerHTML = `<h4 style="color:var(--accent);margin-bottom:.5rem;">${capContent[id].title}</h4><p style="color:var(--muted);font-size:.88rem;">${capContent[id].body}</p>`;
+}
+const cbContent = {
+  closed: {title:'CLOSED — Normal Operation', body:'All requests pass through to the downstream service. The breaker monitors failure rate. If failures exceed the threshold (e.g. 50% in 30 seconds), it trips to OPEN. This is the default/happy state.'},
+  open: {title:'OPEN — Failing Fast', body:'The breaker is "blown." All requests are immediately rejected WITHOUT calling the downstream service. This prevents pile-up of requests to an already-failing service (cascading failure). After the resetTimeout, it transitions to HALF-OPEN.'},
+  half: {title:'HALF-OPEN — Testing Recovery', body:'One probe request is allowed through to test if the downstream service has recovered. If it succeeds → back to CLOSED. If it fails → back to OPEN. This allows automatic recovery without manual intervention.'}
+};
+let activeCb = null;
+function showCb(id) {
+  activeCb = activeCb === id ? null : id;
+  ['closed','open','half'].forEach(s => document.getElementById('cb-'+s).classList.toggle('active-state', s === activeCb));
+  const detail = document.getElementById('cb-detail');
+  if (!activeCb) { detail.classList.remove('show'); return; }
+  detail.innerHTML = `<strong style="color:var(--text)">${cbContent[activeCb].title}</strong><br><br>${cbContent[activeCb].body}`;
+  detail.classList.add('show');
+}
+window.addEventListener('scroll', () => {
+  document.getElementById('pf').style.width = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100 + '%';
+});
+const obs = new IntersectionObserver(entries => { entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+document.querySelectorAll('.section').forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

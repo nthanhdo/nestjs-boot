@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01f — Trade-off Thinking | Computational Thinking</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+  --text: #eef1f8; --muted: #8899bb;
+  --accent: #a78bfa; --yellow: #ffd43b; --green: #2ecc71; --red: #e74c3c;
+  --blue: #5b8def; --orange: #ffb347; --pink: #ff5e7a; --teal: #00cec9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 20% 20%, rgba(167,139,250,0.06) 0%, transparent 50%); pointer-events:none; z-index:0; }
+.top-nav { background: var(--surface2); border-bottom: 1px solid var(--border); padding: 10px 24px; position: sticky; top: 0; z-index: 200; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.nav-home { color: var(--accent); text-decoration: none; font-weight: 700; font-size: .82rem; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(167,139,250,0.3); }
+.nav-home:hover { background: rgba(167,139,250,0.1); }
+.nav-topic { color: var(--muted); font-size: .8rem; flex: 1; padding: 0 8px; }
+.nav-sub-prev, .nav-sub-next { color: var(--muted); text-decoration: none; font-size: .8rem; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); transition: all .2s; white-space: nowrap; }
+.nav-sub-prev:hover, .nav-sub-next:hover { color: var(--text); border-color: var(--accent); }
+.hero { background: var(--surface); border-bottom: 1px solid var(--border); padding: 28px 24px 24px; }
+.hero-inner { max-width: 860px; margin: 0 auto; }
+.hero-badge { display: inline-flex; gap: 6px; background: linear-gradient(135deg,rgba(124,92,231,0.2),rgba(167,139,250,0.1)); border: 1px solid rgba(167,139,250,0.3); border-radius: 20px; padding: 4px 12px; font-size: .72rem; font-weight: 700; color: var(--accent); letter-spacing: .5px; margin-bottom: 12px; }
+.hero h1 { font-size: 2rem; font-weight: 900; background: linear-gradient(135deg,#fff,var(--orange)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom: 10px; }
+.hero-desc { color: var(--muted); font-size: 1rem; max-width: 600px; }
+main { max-width: 860px; margin: 0 auto; padding: 36px 24px 100px; position: relative; z-index: 1; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+.card-title { font-size: 1rem; font-weight: 700; color: var(--accent); margin-bottom: 14px; }
+.highlight { background: linear-gradient(135deg,rgba(167,139,250,0.1),rgba(91,141,239,0.08)); border: 1px solid rgba(167,139,250,0.3); border-radius: 12px; padding: 18px 22px; margin: 20px 0; }
+.highlight-label { font-size: .7rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.highlight-text { color: var(--text); font-size: .95rem; line-height: 1.7; }
+.takeaway { background: linear-gradient(135deg,rgba(46,204,113,0.1),rgba(46,204,113,0.04)); border: 1px solid rgba(46,204,113,0.3); border-radius: 14px; padding: 24px; margin-top: 28px; }
+.takeaway-title { color: var(--green); font-weight: 700; font-size: .9rem; margin-bottom: 14px; }
+.takeaway-list { list-style: none; }
+.takeaway-list li { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; font-size: .9rem; color: var(--text); line-height: 1.6; }
+.takeaway-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+/* SCALE */
+.scale-container { display: flex; flex-direction: column; align-items: center; margin: 24px 0; gap: 8px; }
+.scale-weights { display: flex; gap: 60px; align-items: flex-end; }
+.scale-weight { background: linear-gradient(135deg,var(--blue),#2c5aa0); color:#fff; border-radius: 10px; padding: 10px 16px; font-size: .85rem; font-weight: 700; text-align: center; min-width: 90px; transition: all .4s; }
+.scale-weight.right { background: linear-gradient(135deg,var(--pink),#c0143c); }
+.scale-beam-wrap { position: relative; width: 300px; height: 20px; display: flex; align-items: center; }
+.scale-beam { width: 100%; height: 4px; background: var(--border); border-radius: 2px; position: relative; transition: transform .6s cubic-bezier(.34,1.56,.64,1); }
+.scale-pivot { position: absolute; bottom: -16px; left: 50%; transform: translateX(-50%); width: 4px; height: 28px; background: var(--muted); border-radius: 2px; }
+.scale-btns { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 12px 0; }
+.scale-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: .82rem; transition: all .2s; }
+.scale-btn:hover { border-color: var(--accent); }
+.scale-btn.active { background: rgba(167,139,250,0.15); border-color: var(--accent); color: var(--accent); }
+.scale-desc { color: var(--muted); font-size: .85rem; text-align: center; max-width: 400px; min-height: 40px; line-height: 1.6; }
+
+/* TRADEOFF TABLE */
+.tradeoff-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: .85rem; }
+.tradeoff-table th { background: var(--surface2); color: var(--accent); font-weight: 700; padding: 10px 14px; text-align: left; border: 1px solid var(--border); }
+.tradeoff-table td { padding: 10px 14px; border: 1px solid var(--border); color: var(--muted); vertical-align: top; line-height: 1.5; }
+.tradeoff-table tr:hover td { background: rgba(167,139,250,0.04); }
+.td-pro { color: var(--green); }
+.td-con { color: var(--red); }
+
+.ex-section { margin-top: 40px; }
+.ex-section h2 { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 16px; }
+.exercise { border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+.ex-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; cursor: pointer; background: var(--surface); transition: background .2s; }
+.ex-header:hover { background: var(--surface2); }
+.ex-tag { background: rgba(167,139,250,0.15); color: var(--accent); border-radius: 6px; padding: 2px 8px; font-size: .72rem; font-weight: 700; flex-shrink: 0; }
+.ex-title-text { flex: 1; font-weight: 600; font-size: .9rem; }
+.ex-diff { padding: 2px 10px; border-radius: 20px; font-size: .7rem; font-weight: 700; }
+.ex-diff.easy { background: rgba(46,204,113,0.15); color: var(--green); }
+.ex-diff.hard { background: rgba(231,76,60,0.15); color: var(--red); }
+.ex-toggle { color: var(--muted); font-size: .75rem; transition: transform .3s; }
+.exercise.open .ex-toggle { transform: rotate(90deg); }
+.ex-body { display: none; padding: 18px; background: var(--surface); border-top: 1px solid var(--border); }
+.exercise.open .ex-body { display: block; animation: fadeUp .3s; }
+.ex-prompt { background: var(--surface2); border-left: 3px solid var(--accent); border-radius: 8px; padding: 14px; margin-bottom: 12px; font-size: .9rem; color: var(--text); line-height: 1.7; }
+.ex-reveal { background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.3); color: var(--accent); padding: 7px 16px; border-radius: 8px; cursor: pointer; font-size: .83rem; font-weight: 600; }
+.ex-answer { display: none; margin-top: 12px; background: var(--surface2); border-left: 3px solid var(--green); border-radius: 8px; padding: 14px; font-size: .88rem; color: var(--text); line-height: 1.7; }
+.next-link { display: flex; align-items: center; gap: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; text-decoration: none; margin-top: 32px; transition: all .3s; }
+.next-link:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.next-icon { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg,#7c5ce7,#a78bfa); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+.next-text .label { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.next-text .title { font-weight: 700; color: var(--text); }
+.next-arrow { margin-left: auto; color: var(--muted); font-size: 1.2rem; }
+.prev-link { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--muted); font-size: .85rem; margin-bottom: 16px; }
+.prev-link:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="../index.html" class="nav-home">🏠 Hub</a>
+  <span class="nav-topic">Bài 01 — Tư Duy Tính Toán · 01f/07</span>
+  <a href="01e-edge-cases.html" class="nav-sub-prev">← 01e Edge Cases</a>
+  <a href="01g-debugging-mindset.html" class="nav-sub-next">01g Debug Mindset →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">KHÁI NIỆM 06 · 7 PHẦN</div>
+    <h1>⚖️ Trade-off Thinking</h1>
+    <p class="hero-desc">Không có giải pháp hoàn hảo. Mọi quyết định kỹ thuật đều là sự đánh đổi — kỹ năng là biết đánh đổi điều gì và tại sao.</p>
+  </div>
+</div>
+
+<main>
+
+<a href="01e-edge-cases.html" class="prev-link">← Quay lại 01e: Edge Cases</a>
+
+<!-- SCALE DEMO -->
+<div class="card">
+  <div class="card-title">⚖️ Cán cân Trade-off — Click để chọn</div>
+  <div style="color:var(--muted);font-size:.88rem;margin-bottom:16px;">Trong kỹ thuật, khi tăng một thứ lên thường kéo thứ khác xuống:</div>
+  <div class="scale-btns">
+    <button class="scale-btn" onclick="showTradeoff(0)">⚡ Speed vs 💾 Memory</button>
+    <button class="scale-btn" onclick="showTradeoff(1)">🎯 Simplicity vs ✨ Features</button>
+    <button class="scale-btn" onclick="showTradeoff(2)">🔒 Consistency vs ⚡ Availability</button>
+    <button class="scale-btn" onclick="showTradeoff(3)">💸 Cost vs ⏱️ Time-to-market</button>
+  </div>
+  <div class="scale-container" id="scaleViz" style="display:none">
+    <div class="scale-weights">
+      <div class="scale-weight" id="sw-left">Speed</div>
+      <div class="scale-weight right" id="sw-right">Memory</div>
+    </div>
+    <div class="scale-beam-wrap">
+      <div class="scale-beam" id="scaleBeam">
+        <div class="scale-pivot"></div>
+      </div>
+    </div>
+    <div class="scale-desc" id="tradeoffDesc"></div>
+  </div>
+</div>
+
+<!-- TRADEOFF TABLE -->
+<div class="card">
+  <div class="card-title">📊 Catalog Trade-off phổ biến trong software</div>
+  <table class="tradeoff-table">
+    <thead>
+      <tr><th>Trade-off</th><th class="td-pro">Lợi (+)</th><th class="td-con">Giá (-)</th><th>Quyết định khi</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Caching</strong></td>
+        <td class="td-pro">Nhanh hơn O(1) lookup</td>
+        <td class="td-con">Tốn RAM, stale data risk</td>
+        <td>Read-heavy, data ít thay đổi</td>
+      </tr>
+      <tr>
+        <td><strong>Normalization vs Denormalization</strong></td>
+        <td class="td-pro">No duplication, dễ update</td>
+        <td class="td-con">JOIN chậm hơn, query phức tạp</td>
+        <td>Write-heavy vs Read-heavy</td>
+      </tr>
+      <tr>
+        <td><strong>Microservices vs Monolith</strong></td>
+        <td class="td-pro">Scale độc lập, fault isolation</td>
+        <td class="td-con">Phức tạp hơn, network overhead</td>
+        <td>Team lớn, scale khác nhau</td>
+      </tr>
+      <tr>
+        <td><strong>Sync vs Async</strong></td>
+        <td class="td-pro">Async: non-blocking, throughput cao</td>
+        <td class="td-con">Async: debug khó, complexity cao</td>
+        <td>I/O heavy → async; CPU heavy → sync</td>
+      </tr>
+      <tr>
+        <td><strong>Eager vs Lazy loading</strong></td>
+        <td class="td-pro">Eager: fast subsequent access</td>
+        <td class="td-con">Eager: slow initial load, waste</td>
+        <td>Biết user sẽ dùng → eager; không biết → lazy</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- DECISION FRAMEWORK -->
+<div class="card">
+  <div class="card-title">🧭 Framework ra quyết định Trade-off</div>
+  <div style="display:flex;flex-direction:column;gap:12px;margin:8px 0;">
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;display:flex;gap:14px;align-items:flex-start;">
+      <div style="background:linear-gradient(135deg,var(--blue),#2c5aa0);color:#fff;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">1</div>
+      <div><strong style="color:var(--blue)">Xác định priorities của bài toán</strong><br><span style="font-size:.85rem;color:var(--muted)">Startup: time-to-market > perfection. Enterprise: reliability > speed. Gaming: latency > cost.</span></div>
+    </div>
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;display:flex;gap:14px;align-items:flex-start;">
+      <div style="background:linear-gradient(135deg,var(--accent),var(--blue));color:#fff;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">2</div>
+      <div><strong style="color:var(--accent)">Đánh giá từng option theo criteria đó</strong><br><span style="font-size:.85rem;color:var(--muted)">Không đánh giá theo cảm tính hoặc trend. Đánh giá theo context cụ thể của bài toán.</span></div>
+    </div>
+    <div style="background:var(--surface2);border-radius:10px;padding:16px;display:flex;gap:14px;align-items:flex-start;">
+      <div style="background:linear-gradient(135deg,var(--teal),var(--blue));color:#fff;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">3</div>
+      <div><strong style="color:var(--teal)">Document lý do và điều kiện review</strong><br><span style="font-size:.85rem;color:var(--muted)">"Chúng tôi chọn in-memory cache VÌ đang single-server. Khi scale lên 3+ servers, sẽ migrate sang Redis."</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="highlight">
+  <div class="highlight-label">Câu hỏi cần đặt</div>
+  <div class="highlight-text"><strong>"Bài toán của tôi ưu tiên điều gì?"</strong> Rồi chọn giải pháp phù hợp với ngữ cảnh, không phải giải pháp "tốt nhất trên lý thuyết". Trade-off thay đổi khi ngữ cảnh thay đổi (scale, budget, team).</div>
+</div>
+
+<div class="takeaway">
+  <div class="takeaway-title">🎯 Key Takeaway</div>
+  <ul class="takeaway-list">
+    <li>Không có "đúng" hay "sai" — chỉ có "phù hợp" hay "không phù hợp" với context hiện tại</li>
+    <li>Document lý do chọn trade-off để team hiểu sau này (ADR — Architecture Decision Record)</li>
+    <li>Trade-off thay đổi khi context thay đổi — schedule review định kỳ</li>
+  </ul>
+</div>
+
+<div class="ex-section">
+  <h2>🏋️ Mini Exercises</h2>
+
+  <div class="exercise">
+    <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="ex-tag">Ex 1</span>
+      <span class="ex-title-text">Phân tích trade-off: In-memory cache vs Redis cache</span>
+      <span class="ex-diff hard">🔴 Khó</span>
+      <span class="ex-toggle">▶</span>
+    </div>
+    <div class="ex-body">
+      <div class="ex-prompt">Bạn cần cache user profile. Hai options:<br><br>
+        <strong>A: In-memory</strong> — ~0.1ms, mất khi restart, không share giữa servers<br>
+        <strong>B: Redis</strong> — ~1-5ms, persistent, share được, cần infra thêm<br><br>
+        Đề xuất cho 2 contexts: (1) startup 1 server, (2) production 10 servers.</div>
+      <button class="ex-reveal" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">Xem phân tích</button>
+      <div class="ex-answer">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.25);border-radius:8px;padding:12px">
+            <div style="color:var(--green);font-weight:700;margin-bottom:6px">Context 1: Startup 1 server</div>
+            <div style="font-size:.85rem;color:var(--muted);line-height:1.7">✅ Chọn <strong>In-memory</strong><br>- Zero infrastructure cost<br>- Nhanh nhất<br>- Khi scale → migrate Redis<br>- Restart ít → data loss OK</div>
+          </div>
+          <div style="background:rgba(91,141,239,0.06);border:1px solid rgba(91,141,239,0.25);border-radius:8px;padding:12px">
+            <div style="color:var(--blue);font-weight:700;margin-bottom:6px">Context 2: Production 10 servers</div>
+            <div style="font-size:.85rem;color:var(--muted);line-height:1.7">✅ Chọn <strong>Redis</strong><br>- 10 caches khác nhau = inconsistency<br>- Cache invalidation hell<br>- Redis = single source of truth<br>- TTL, persistence built-in</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;background:var(--surface2);border-radius:8px;padding:12px;font-size:.85rem;color:var(--muted);line-height:1.6">
+          <strong style="color:var(--yellow)">Bài học:</strong> Không có "best solution" — chỉ có "best for this context". Document decision và khi nào cần review lại.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<a href="01g-debugging-mindset.html" class="next-link">
+  <div class="next-icon">🔬</div>
+  <div class="next-text">
+    <div class="label">Tiếp theo · 01g / 07</div>
+    <div class="title">Debugging Mindset</div>
+  </div>
+  <span class="next-arrow">→</span>
+</a>
+
+</main>
+
+<script>
+const tradeoffs = [
+  { l:'⚡ Speed', r:'💾 Memory', desc:'Khi dùng cache để tăng tốc → tốn thêm RAM. Đây là trade-off cơ bản nhất trong computing.', tilt:-8 },
+  { l:'🎯 Simplicity', r:'✨ Features', desc:'Thêm tính năng → code phức tạp hơn, khó maintain. Hỏi: "Tính năng này có thực sự cần không?"', tilt:8 },
+  { l:'🔒 Consistency', r:'⚡ Availability', desc:'CAP Theorem: distributed system không thể có đủ 3: Consistency, Availability, Partition tolerance.', tilt:-5 },
+  { l:'💸 Cost', r:'⏱️ Speed', desc:'Infra đắt hơn → nhanh hơn, reliable hơn. Budget thấp → cần optimize code nhiều hơn.', tilt:6 },
+];
+function showTradeoff(i) {
+  const t = tradeoffs[i];
+  document.getElementById('scaleViz').style.display = 'flex';
+  document.getElementById('scaleViz').style.flexDirection = 'column';
+  document.getElementById('scaleViz').style.alignItems = 'center';
+  document.getElementById('sw-left').textContent = t.l;
+  document.getElementById('sw-right').textContent = t.r;
+  document.getElementById('scaleBeam').style.transform = `rotate(${t.tilt}deg)`;
+  document.getElementById('tradeoffDesc').textContent = t.desc;
+  document.querySelectorAll('.scale-btn').forEach((b,j) => b.classList.toggle('active', j===i));
+}
+</script>
+</body>
+</html>

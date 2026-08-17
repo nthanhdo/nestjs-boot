@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06d — Event-Driven Architecture | Phase 2</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #1a2235; --border: #2a3a55;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #60a5fa; --accent2: #818cf8;
+  --success: #34d399; --warning: #fbbf24; --error: #ef4444;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+.top-nav { position: sticky; top: 0; z-index: 100; background: rgba(14,21,37,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .6rem 1.5rem; font-size: .85rem; }
+.top-nav .breadcrumb { color: var(--muted); } .top-nav .breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a { padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-links a.next { background: var(--success); color: #000; border-color: var(--success); font-weight: 600; }
+
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .75rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+
+/* EVENT FLOW ANIMATION */
+.event-flow { position: relative; }
+.flow-row { display: flex; gap: .5rem; align-items: center; margin-bottom: .75rem; }
+.flow-box { padding: .5rem .9rem; border-radius: 8px; font-size: .8rem; font-weight: 600; white-space: nowrap; }
+.publisher { background: rgba(96,165,250,.15); border: 1px solid rgba(96,165,250,.4); color: #60a5fa; }
+.broker { background: rgba(251,191,36,.15); border: 1px solid rgba(251,191,36,.4); color: #fbbf24; }
+.subscriber { background: rgba(129,140,248,.15); border: 1px solid rgba(129,140,248,.4); color: #818cf8; }
+.event-pill { background: rgba(52,211,153,.15); border: 1px solid rgba(52,211,153,.4); color: #34d399; padding: .25rem .6rem; border-radius: 20px; font-size: .72rem; font-weight: 700; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+.flow-arrow { color: var(--muted); flex-shrink: 0; }
+
+/* SUBSCRIBERS LIST */
+.subs-list { display: flex; flex-direction: column; gap: .4rem; }
+.sub-item { display: flex; align-items: center; gap: .5rem; padding: .4rem .6rem; background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.25); border-radius: 6px; font-size: .8rem; }
+.sub-icon { font-size: 1rem; flex-shrink: 0; }
+
+/* SYNC VS ASYNC */
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.compare-card { border-radius: 8px; padding: 1rem; }
+.sync-card { background: rgba(239,68,68,.06); border: 1px solid rgba(239,68,68,.25); }
+.async-card { background: rgba(52,211,153,.06); border: 1px solid rgba(52,211,153,.25); }
+.compare-title { font-weight: 700; font-size: .85rem; margin-bottom: .75rem; }
+.sync-card .compare-title { color: #ef4444; }
+.async-card .compare-title { color: #34d399; }
+.timeline { display: flex; flex-direction: column; gap: .3rem; }
+.tl-item { padding: .35rem .5rem; border-radius: 4px; font-size: .75rem; display: flex; gap: .4rem; align-items: center; }
+.tl-step { background: rgba(255,255,255,.08); }
+.tl-wait { background: rgba(239,68,68,.15); color: #ef4444; }
+.tl-blocked { background: rgba(239,68,68,.25); color: #ef4444; font-style: italic; }
+.tl-free { background: rgba(52,211,153,.1); color: #34d399; }
+
+/* CODE BLOCK */
+.code-block { background: #0a0f1e; border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; font-family: 'Courier New', monospace; font-size: .78rem; line-height: 1.7; overflow-x: auto; }
+.c-comment { color: #6b7280; } .c-class { color: #60a5fa; } .c-fn { color: #fbbf24; }
+.c-kw { color: #818cf8; } .c-str { color: #34d399; } .c-type { color: #f472b6; } .c-deco { color: #fbbf24; }
+
+/* PATTERNS */
+.pattern-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: .75rem; }
+.pattern-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; cursor: pointer; transition: all .2s; }
+.pattern-card:hover { border-color: var(--accent); }
+.pattern-card h3 { font-size: .85rem; font-weight: 700; margin-bottom: .3rem; }
+.pattern-card p { font-size: .75rem; margin: 0; }
+
+/* NEXT TOPIC */
+.next-topic { background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.3); border-radius: var(--radius); padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.next-topic h3 { color: var(--success); margin-bottom: .25rem; }
+.next-topic p { margin: 0; font-size: .85rem; }
+.next-topic a { background: var(--success); color: #000; padding: .5rem 1.25rem; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: .85rem; white-space: nowrap; }
+
+.exercise-box { background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.3); border-radius: var(--radius); padding: 1.5rem; }
+.exercise-box h2 { color: var(--accent2); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(129,140,248,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent2); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem; }
+
+.takeaway { background: rgba(96,165,250,.08); border: 1px solid rgba(96,165,250,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--accent); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '✦'; color: var(--accent); }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(14,21,37,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--success); color: #000; border-color: var(--success); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 2 · Architecture · <span>06d — Event-Driven</span></div>
+  <div class="nav-links">
+    <a href="06c-monolith-vs-micro.html">← Monolith vs Micro</a>
+    <a href="../07-database/07a-erd-modeling.html" class="next">07 Database →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">06d · Architecture</div>
+  <h1><em>Event-Driven</em> Architecture</h1>
+  <p>Publisher phát event, không biết ai lắng nghe. Subscriber lắng nghe, không biết ai phát. Decoupling đạt mức tối đa — hệ thống mở rộng không cần đụng code cũ.</p>
+</div>
+
+<div class="content">
+
+  <!-- LIVE EVENT FLOW -->
+  <section>
+    <h2>Pub/Sub Flow — Order Placed Event</h2>
+    <p>Khi user đặt hàng, <code>order-service</code> publish event. Nhiều services lắng nghe và react độc lập:</p>
+    <div class="card">
+      <div class="flow-row">
+        <div class="flow-box publisher">🛍️ OrderService</div>
+        <span class="flow-arrow">→ publish →</span>
+        <div class="event-pill">ORDER_PLACED</div>
+        <span class="flow-arrow">→</span>
+        <div class="flow-box broker">📨 Message Broker<br><span style="font-size:.65rem;font-weight:400">(Redis/RabbitMQ/Kafka)</span></div>
+      </div>
+      <div style="margin-left:60px">
+        <div style="border-left:2px solid var(--border);padding-left:1rem">
+          <div class="subs-list">
+            <div class="sub-item"><span class="sub-icon">📧</span> <strong>NotificationService</strong> → gửi email xác nhận</div>
+            <div class="sub-item"><span class="sub-icon">📦</span> <strong>InventoryService</strong> → trừ tồn kho</div>
+            <div class="sub-item"><span class="sub-icon">💰</span> <strong>AffiliateService</strong> → ghi nhận commission</div>
+            <div class="sub-item"><span class="sub-icon">📊</span> <strong>AnalyticsService</strong> → track conversion</div>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top:1rem;font-size:.85rem">OrderService không import NotificationService, InventoryService, hay AffiliateService. Thêm AnalyticsService? Chỉ cần subscribe — không sửa OrderService.</p>
+    </div>
+  </section>
+
+  <!-- SYNC VS ASYNC -->
+  <section>
+    <h2>Synchronous vs Asynchronous</h2>
+    <div class="compare-grid">
+      <div class="compare-card sync-card">
+        <div class="compare-title">❌ Synchronous (direct call)</div>
+        <div class="timeline">
+          <div class="tl-item tl-step">1. User places order</div>
+          <div class="tl-item tl-step">2. Save to DB</div>
+          <div class="tl-item tl-wait">3. Gọi email service → đợi...</div>
+          <div class="tl-item tl-blocked">4. Email chậm → timeout?</div>
+          <div class="tl-item tl-wait">5. Gọi inventory → đợi...</div>
+          <div class="tl-item tl-blocked">6. Total: 2-3 giây!</div>
+        </div>
+        <p style="font-size:.75rem;margin-top:.5rem;color:#ef4444">User đợi response trong khi order service làm việc không liên quan đến đặt hàng.</p>
+      </div>
+      <div class="compare-card async-card">
+        <div class="compare-title">✅ Asynchronous (event)</div>
+        <div class="timeline">
+          <div class="tl-item tl-step">1. User places order</div>
+          <div class="tl-item tl-step">2. Save to DB</div>
+          <div class="tl-item tl-free">3. Publish ORDER_PLACED ← 1ms</div>
+          <div class="tl-item tl-free">4. Return 201 Created ← ngay lập tức</div>
+          <div class="tl-item" style="background:rgba(52,211,153,.05);font-size:.72rem;color:var(--muted)">... background: email, inventory, affiliate xử lý parallel</div>
+        </div>
+        <p style="font-size:.75rem;margin-top:.5rem;color:#34d399">User nhận response ngay lập tức. Background jobs chạy parallel, không block nhau.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- NESTJS CODE -->
+  <section>
+    <h2>Code Example — NestJS EventEmitter</h2>
+    <div class="code-block">
+<span class="c-comment">// Publisher — OrderService</span>
+<span class="c-kw">export class</span> <span class="c-class">OrderService</span> {
+  <span class="c-fn">constructor</span>(<span class="c-kw">private</span> events: <span class="c-type">EventEmitter2</span>) {}
+
+  <span class="c-kw">async</span> <span class="c-fn">placeOrder</span>(dto: <span class="c-type">PlaceOrderDto</span>) {
+    <span class="c-kw">const</span> order = <span class="c-kw">await</span> <span class="c-kw">this</span>.orderRepo.<span class="c-fn">create</span>(dto);
+    <span class="c-kw">this</span>.events.<span class="c-fn">emit</span>(<span class="c-str">'order.placed'</span>, { orderId: order.id, ... });
+    <span class="c-kw">return</span> order; <span class="c-comment">// không biết ai nhận event này</span>
+  }
+}
+
+<span class="c-comment">// Subscriber — NotificationService</span>
+<span class="c-kw">export class</span> <span class="c-class">NotificationService</span> {
+  <span class="c-deco">@OnEvent</span>(<span class="c-str">'order.placed'</span>)
+  <span class="c-kw">async</span> <span class="c-fn">onOrderPlaced</span>(payload: <span class="c-type">OrderPlacedEvent</span>) {
+    <span class="c-kw">await</span> <span class="c-kw">this</span>.<span class="c-fn">sendConfirmationEmail</span>(payload.orderId);
+  }
+}
+
+<span class="c-comment">// Subscriber — InventoryService (thêm mà không sửa OrderService)</span>
+<span class="c-kw">export class</span> <span class="c-class">InventoryService</span> {
+  <span class="c-deco">@OnEvent</span>(<span class="c-str">'order.placed'</span>)
+  <span class="c-kw">async</span> <span class="c-fn">onOrderPlaced</span>(payload: <span class="c-type">OrderPlacedEvent</span>) {
+    <span class="c-kw">await</span> <span class="c-kw">this</span>.<span class="c-fn">decrementStock</span>(payload.items);
+  }
+}</div>
+  </section>
+
+  <!-- PATTERNS -->
+  <section>
+    <h2>Common Event-Driven Patterns</h2>
+    <div class="pattern-cards">
+      <div class="pattern-card">
+        <h3 style="color:#60a5fa">📨 Pub/Sub</h3>
+        <p style="color:var(--muted)">1 publisher → N subscribers. Loose coupling. Ví dụ: NestJS EventEmitter, Redis Pub/Sub.</p>
+      </div>
+      <div class="pattern-card">
+        <h3 style="color:#818cf8">📋 Message Queue</h3>
+        <p style="color:var(--muted)">1 producer → 1 consumer. Guaranteed delivery. Ví dụ: BullMQ, RabbitMQ.</p>
+      </div>
+      <div class="pattern-card">
+        <h3 style="color:#34d399">📡 Event Streaming</h3>
+        <p style="color:var(--muted)">Persistent log, replay. N consumers tại offset khác nhau. Ví dụ: Kafka.</p>
+      </div>
+      <div class="pattern-card">
+        <h3 style="color:#fbbf24">📖 Event Sourcing</h3>
+        <p style="color:var(--muted)">State = sequence of events, không phải snapshot. Audit trail đầy đủ, rebuild từ events.</p>
+      </div>
+      <div class="pattern-card">
+        <h3 style="color:#f472b6">🔄 CQRS</h3>
+        <p style="color:var(--muted)">Command (write) và Query (read) tách biệt. Read models optimized riêng.</p>
+      </div>
+      <div class="pattern-card">
+        <h3 style="color:#06b6d4">🧩 Saga Pattern</h3>
+        <p style="color:var(--muted)">Distributed transaction qua events. Compensation events khi fail.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRADEOFFS -->
+  <section>
+    <h2>Tradeoffs — Không phải silver bullet</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="card" style="border-left:3px solid var(--success)">
+        <p style="color:var(--success);font-weight:700;margin-bottom:.5rem">✅ Lợi ích</p>
+        <ul style="list-style:none;font-size:.85rem">
+          <li style="padding:.25rem 0;color:var(--muted)">• Loose coupling — thêm feature không sửa code cũ</li>
+          <li style="padding:.25rem 0;color:var(--muted)">• Non-blocking — response nhanh hơn</li>
+          <li style="padding:.25rem 0;color:var(--muted)">• Fault isolation — 1 subscriber fail không ảnh hưởng publisher</li>
+          <li style="padding:.25rem 0;color:var(--muted)">• Scale subscribers độc lập</li>
+        </ul>
+      </div>
+      <div class="card" style="border-left:3px solid var(--warning)">
+        <p style="color:var(--warning);font-weight:700;margin-bottom:.5rem">⚠️ Chi phí</p>
+        <ul style="list-style:none;font-size:.85rem">
+          <li style="padding:.25rem 0;color:var(--muted)">• Eventual consistency — data không ngay lập tức consistent</li>
+          <li style="padding:.25rem 0;color:var(--muted)">• Debug khó hơn — flow không linear</li>
+          <li style="padding:.25rem 0;color:var(--muted)">• Event schema phải backward compatible</li>
+          <li style="padding:.25rem 0;color:var(--muted)">• Infrastructure: message broker cần vận hành</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXERCISE -->
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — Refactor to Events</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Tìm 1 Service method đang gọi 3+ service khác trực tiếp (chaining). Đây là candidate tốt để chuyển sang events.</li>
+      <li><span class="step-num">2</span>Cài <code>@nestjs/event-emitter</code>. Định nghĩa event class: <code>class OrderPlacedEvent { orderId: string; items: [] }</code>.</li>
+      <li><span class="step-num">3</span>Refactor: publisher chỉ emit event sau khi save to DB. Subscribers xử lý async với <code>@OnEvent()</code>.</li>
+      <li><span class="step-num">4</span>Test: thêm 1 subscriber mới (ví dụ: log analytics) mà không sửa publisher. Verify nó hoạt động.</li>
+      <li><span class="step-num">5</span>Đo thời gian response trước và sau refactor. Document sự khác biệt.</li>
+    </ul>
+  </section>
+
+  <!-- NEXT TOPIC -->
+  <section class="next-topic">
+    <div>
+      <h3>Tiếp theo: 07 — Database Thinking</h3>
+      <p>Architecture tốt cần Database thiết kế đúng. ERD, normalization, indexing là gì?</p>
+    </div>
+    <a href="../07-database/07a-erd-modeling.html">07a: ERD Modeling →</a>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>Event-Driven = Publisher phát event, không biết ai subscribe. Open/Closed Principle ở system level.</li>
+      <li>Async events → response nhanh hơn (không đợi side effects), scale độc lập.</li>
+      <li>Tradeoff: eventual consistency, flow khó debug, cần backward-compatible event schema.</li>
+      <li>NestJS EventEmitter cho in-process. BullMQ/Redis cho cross-service, guaranteed delivery.</li>
+      <li>Dùng events cho side effects (notification, audit, analytics) — không dùng cho critical synchronous flow.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="06c-monolith-vs-micro.html">← Monolith vs Micro</a>
+  <div class="progress-dots">
+    <div class="dot"></div><div class="dot"></div>
+    <div class="dot"></div><div class="dot active"></div>
+  </div>
+  <a href="../07-database/07a-erd-modeling.html" class="next">07 Database →</a>
+</div>
+
+</body>
+</html>

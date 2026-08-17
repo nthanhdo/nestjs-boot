@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>16b — Task Breakdown & Estimation | NestJS Boot</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;font-size:16px}
+nav{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #21262d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.nav-left,.nav-right{display:flex;align-items:center;gap:12px}
+.nav-link{color:#8b949e;text-decoration:none;font-size:.85rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s}
+.nav-link:hover{color:#e6edf3;border-color:#bc8cff}
+.nav-title{color:#e6edf3;font-size:.9rem;font-weight:600}
+.phase-badge{background:#6e40c9;color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.container{max-width:900px;margin:0 auto;padding:40px 24px}
+h1{font-size:2rem;font-weight:700;margin-bottom:8px}
+.subtitle{color:#8b949e;font-size:1rem;margin-bottom:32px}
+h2{font-size:1.3rem;font-weight:600;margin:40px 0 16px;color:#bc8cff;padding-left:12px;border-left:3px solid #6e40c9}
+h3{font-size:1.05rem;font-weight:600;margin-bottom:10px;color:#e6edf3}
+.card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:24px;margin-bottom:16px}
+.section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
+pre{background:#1c2128;border:1px solid #30363d;border-radius:8px;padding:16px;overflow-x:auto;font-family:'Fira Code',monospace;font-size:.82rem;line-height:1.6;color:#e6edf3;margin:8px 0}
+code{background:#1c2128;border:1px solid #30363d;border-radius:4px;padding:1px 6px;font-family:'Fira Code',monospace;font-size:.85rem;color:#f0883e}
+.tip{background:#132030;border:1px solid #1f6feb;border-radius:8px;padding:14px 18px;color:#79c0ff;font-size:.9rem;margin-top:16px}
+.warn{background:#1c1000;border:1px solid #d29922;border-radius:8px;padding:14px 18px;color:#d29922;font-size:.9rem;margin-top:12px}
+.tshirt-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:20px 0}
+@media(max-width:600px){.tshirt-grid{grid-template-columns:repeat(3,1fr)}}
+.tshirt{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:16px 10px;text-align:center;transition:transform .2s,border-color .2s}
+.tshirt:hover{transform:translateY(-4px)}
+.ts-label{font-size:1.6rem;font-weight:800;margin-bottom:4px}
+.ts-xs{color:#3fb950} .ts-s{color:#58a6ff} .ts-m{color:#f0883e} .ts-l{color:#ff7b72} .ts-xl{color:#bc8cff}
+.ts-hours{font-size:.75rem;color:#8b949e;margin-bottom:6px}
+.ts-desc{font-size:.7rem;color:#484f58;line-height:1.4}
+.breakdown-demo{background:#161b22;border:1px solid #1f6feb;border-radius:12px;padding:20px;margin:16px 0}
+.big-task-label{text-align:center;color:#58a6ff;font-weight:700;font-size:1rem;padding:12px;background:#0d1a2d;border:1px solid #1f6feb;border-radius:8px;margin-bottom:12px}
+.arrow-down{text-align:center;color:#58a6ff;font-size:1.3rem;margin:8px 0}
+.sub-tasks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media(max-width:600px){.sub-tasks{grid-template-columns:1fr}}
+.sub-task{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:10px;text-align:center;font-size:.8rem;color:#c9d1d9}
+.sub-size{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7rem;margin-top:4px}
+.sz-xs{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+.sz-s{background:#0d1a2d;color:#58a6ff;border:1px solid #1f4a9e}
+.sz-m{background:#2d1a0d;color:#f0883e;border:1px solid #9e4f1e}
+.formula-box{background:#1c2128;border:1px solid #30363d;border-radius:10px;padding:20px;font-family:'Fira Code',monospace;font-size:.85rem;color:#e6edf3}
+.formula-line{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #21262d}
+.formula-line:last-child{border-bottom:none;font-weight:700;color:#58a6ff}
+.label-col{color:#8b949e}
+.val-col{color:#e6edf3}
+.exercises{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:24px;margin-top:32px}
+.exercises-title{font-size:1.1rem;font-weight:700;margin-bottom:20px;color:#e6edf3}
+.ex-card{border-radius:10px;padding:18px;margin-bottom:12px}
+.ex-green{background:#0d1a0d;border:1px solid #3fb95040}
+.ex-yellow{background:#1a1200;border:1px solid #d2992240}
+.ex-red{background:#1a0d0d;border:1px solid #f8514940}
+.ex-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ex-diff{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.diff-green{background:#3fb95020;color:#3fb950}
+.diff-yellow{background:#d2992220;color:#d29922}
+.diff-red{background:#f8514920;color:#ff7b72}
+.ex-num{font-size:.8rem;color:#8b949e}
+.ex-title{font-weight:600;color:#e6edf3;margin-bottom:6px}
+.ex-desc{color:#8b949e;font-size:.88rem}
+.ex-solution{margin-top:12px}
+.ex-sol-toggle{background:#1c2128;border:1px solid #30363d;color:#8b949e;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem}
+.ex-sol-body{display:none;margin-top:10px;background:#1c2128;border-radius:8px;padding:14px;color:#c9d1d9;font-size:.85rem;line-height:1.6}
+.ex-sol-body.open{display:block}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-left">
+    <span class="phase-badge">Phase 5</span>
+    <span class="nav-title">16b — Estimation</span>
+  </div>
+  <div class="nav-right">
+    <a class="nav-link" href="16a-agile-scrum.html">← 16a Agile</a>
+    <a class="nav-link" href="16c-rfc-adr.html" style="color:#bc8cff;border-color:#6e40c9">16c RFC/ADR →</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>⏱️ Task Breakdown &amp; Estimation</h1>
+  <p class="subtitle">Estimation không phải đoán mò — có formula, có pattern, có cách cải thiện theo thời gian. Đây là skill phân biệt senior khỏi junior.</p>
+
+  <h2>🧩 Task Breakdown — Chia Nhỏ Vấn Đề</h2>
+  <p style="color:#c9d1d9;font-size:.9rem;margin-bottom:16px">Rule: task tốt nhất = hoàn thành trong 2-4 giờ, mô tả được trong 1 câu, deploy độc lập được.</p>
+
+  <div class="breakdown-demo">
+    <div class="big-task-label">🔵 User Authentication System (L — 5 ngày)</div>
+    <div class="arrow-down">↓ Breakdown</div>
+    <div class="sub-tasks">
+      <div class="sub-task">JWT Strategy + Guards<div class="sub-size sz-m">M — 4h</div></div>
+      <div class="sub-task">Register endpoint + DTO<div class="sub-size sz-s">S — 2h</div></div>
+      <div class="sub-task">Login + bcrypt verify<div class="sub-size sz-s">S — 2h</div></div>
+      <div class="sub-task">Refresh token logic<div class="sub-size sz-m">M — 3h</div></div>
+      <div class="sub-task">Forgot password + OTP<div class="sub-size sz-m">M — 4h</div></div>
+      <div class="sub-task">Unit tests cho auth<div class="sub-size sz-s">S — 2h</div></div>
+    </div>
+    <div class="arrow-down" style="margin-top:12px">Total: 17h ≈ 2.5 ngày (với buffer)</div>
+  </div>
+
+  <div class="warn"><strong>Red flag:</strong> Nếu không thể breakdown một task thành subtasks nhỏ hơn → chưa hiểu scope đủ rõ. Hỏi thêm trước khi estimate.</div>
+
+  <h2>👕 T-shirt Sizing</h2>
+  <p style="color:#c9d1d9;font-size:.9rem;margin-bottom:16px">Quick relative sizing — đủ để plan sprint, không cần chính xác đến từng giờ.</p>
+
+  <div class="tshirt-grid">
+    <div class="tshirt">
+      <div class="ts-label ts-xs">XS</div>
+      <div class="ts-hours">&lt; 2 giờ</div>
+      <div class="ts-desc">Config change, typo fix, add a field</div>
+    </div>
+    <div class="tshirt">
+      <div class="ts-label ts-s">S</div>
+      <div class="ts-hours">2–4 giờ</div>
+      <div class="ts-desc">Simple endpoint, single feature with validation</div>
+    </div>
+    <div class="tshirt">
+      <div class="ts-label ts-m">M</div>
+      <div class="ts-hours">1–2 ngày</div>
+      <div class="ts-desc">Feature với logic + tests, simple integration</div>
+    </div>
+    <div class="tshirt">
+      <div class="ts-label ts-l">L</div>
+      <div class="ts-hours">3–5 ngày</div>
+      <div class="ts-desc">Complex feature, multi-service, cần design trước</div>
+    </div>
+    <div class="tshirt">
+      <div class="ts-label ts-xl">XL</div>
+      <div class="ts-hours">&gt; 1 tuần</div>
+      <div class="ts-desc">System redesign → chia nhỏ thành L tasks</div>
+    </div>
+  </div>
+
+  <div class="tip"><strong>XL rule:</strong> Nếu estimate là XL → team chưa đủ info để implement. Phải research/design trước. Chia thành L tasks có thể estimate riêng lẻ.</div>
+
+  <hr class="section-divider">
+  <h2>🧮 Estimation Formula</h2>
+
+  <div class="formula-box">
+    <div class="formula-line"><span class="label-col">Base (nếu mọi thứ suôn sẻ)</span><span class="val-col">4h</span></div>
+    <div class="formula-line"><span class="label-col">Buffer 50% (unknowns, integration, debugging)</span><span class="val-col">+2h</span></div>
+    <div class="formula-line"><span class="label-col">Risk 20% (unclear spec, dependencies)</span><span class="val-col">+1h</span></div>
+    <div class="formula-line"><span class="label-col" style="color:#58a6ff">TOTAL ESTIMATE</span><span class="val-col" style="color:#58a6ff">7h → "1 ngày"</span></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h3 style="margin-bottom:12px">Khi nào dùng buffer bao nhiêu?</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.85rem">
+      <div>
+        <p style="color:#3fb950;font-weight:600;margin-bottom:6px">Buffer thấp (20-30%)</p>
+        <ul style="color:#c9d1d9;padding-left:16px">
+          <li style="margin:4px 0">Đã làm task tương tự trước</li>
+          <li style="margin:4px 0">Spec rõ ràng, không ambiguous</li>
+          <li style="margin:4px 0">Không có external dependencies</li>
+        </ul>
+      </div>
+      <div>
+        <p style="color:#ff7b72;font-weight:600;margin-bottom:6px">Buffer cao (50-100%)</p>
+        <ul style="color:#c9d1d9;padding-left:16px">
+          <li style="margin:4px 0">Tech stack mới, chưa dùng bao giờ</li>
+          <li style="margin:4px 0">Spec còn nhiều unknowns</li>
+          <li style="margin:4px 0">Phải integrate với 3rd-party API</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>📊 Improving Estimates Over Time</h2>
+
+  <div class="card">
+    <h3 style="margin-bottom:12px">Track actual vs estimate</h3>
+    <p style="color:#c9d1d9;font-size:.88rem;margin-bottom:12px">Sau mỗi sprint, compare actual với estimate. Tìm pattern để calibrate.</p>
+<pre><span style="color:#8b949e"># Sprint log (ghi trong spreadsheet hoặc doc)</span>
+
+Task                    | Estimate | Actual | Ratio
+------------------------|----------|--------|-------
+JWT setup               | 2h       | 4h     | 2.0x
+Register endpoint       | 2h       | 3h     | 1.5x
+Email integration       | 4h       | 8h     | 2.0x
+------------------------|----------|--------|-------
+Average ratio: ~1.8x
+
+<span style="color:#3fb950"># Next sprint: multiply estimates by 1.8x</span></pre>
+    <div class="tip" style="margin-top:12px">Nếu ratio luôn &gt;1.5x → đang underestimate. Adjust formula. Nếu ratio luôn &lt;0.8x → đang overestimate và đang under-deliver (khác vấn đề).</div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>💬 Communicate Estimates Đúng Cách</h2>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0">
+    <div class="card" style="border-color:#f8514940">
+      <h3 style="color:#ff7b72;margin-bottom:8px">❌ Estimate sai</h3>
+      <ul style="color:#8b949e;padding-left:16px;font-size:.85rem">
+        <li style="margin:4px 0">"Dễ thôi, 1 tiếng" — không có basis</li>
+        <li style="margin:4px 0">"Không biết, tùy" — không helpful</li>
+        <li style="margin:4px 0">"Xong sớm nhất có thể" — không commit</li>
+      </ul>
+    </div>
+    <div class="card" style="border-color:#3fb95040">
+      <h3 style="color:#3fb950;margin-bottom:8px">✅ Estimate đúng</h3>
+      <ul style="color:#c9d1d9;padding-left:16px;font-size:.85rem">
+        <li style="margin:4px 0">"Tôi estimate M (2 ngày) với assumption là spec không đổi."</li>
+        <li style="margin:4px 0">"Cần thêm info về X trước khi estimate được."</li>
+        <li style="margin:4px 0">"Base 4h + buffer 50% = 6h → commit 1 ngày."</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- EXERCISES -->
+  <hr class="section-divider">
+  <div class="exercises">
+    <div class="exercises-title">🎯 Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 1</span></div>
+      <div class="ex-title">T-shirt size 10 tasks — practice relative sizing</div>
+      <div class="ex-desc">Size các tasks: (1) Fix typo in README, (2) Add email validation to login, (3) OAuth Google login, (4) Notification system (email + in-app), (5) Dark mode toggle, (6) Fix 404 on /profile route, (7) Migrate DB from Postgres to MongoDB, (8) Add CSV export, (9) Rate limiting, (10) Full-text search with Elasticsearch.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">1. Fix typo → XS (5-15 phút)<br>2. Add email validation → XS/S (30-60 phút nếu DTO đã có)<br>3. OAuth Google → L (3-5 ngày: passport, callback, session, edge cases)<br>4. Notification system → XL (chia thành: email templates S, queue system M, in-app M, preference UI M)<br>5. Dark mode → S/M (tùy codebase: 2h nếu CSS vars, 1-2 ngày nếu cần refactor)<br>6. Fix 404 → XS sau debug (unknown time to debug first)<br>7. DB migration → XL (data migration = high risk, never underestimate)<br>8. CSV export → M (1-2 ngày: streaming large data, edge cases)<br>9. Rate limiting → S (2-4h: @nestjs/throttler config + tests)<br>10. Elasticsearch → XL (infrastructure + integration + index design)</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 2</span></div>
+      <div class="ex-title">Breakdown "Order tracking system" thành 6-8 subtasks với size</div>
+      <div class="ex-desc">Feature: User có thể xem real-time status của order (placed → processing → shipped → delivered). Breakdown thành subtasks, estimate từng task, tính total và add buffer 30%.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">1. Order status enum + schema update (XS — 1h)<br>2. PATCH /orders/:id/status endpoint với role guard (S — 2h)<br>3. GET /orders/:id/tracking với history log (S — 2h)<br>4. Status transition validation (prevent invalid state: delivered→processing) (S — 2h)<br>5. WebSocket event khi status thay đổi (M — 4h)<br>6. Email notification mỗi status change (M — 3h)<br>7. FE status timeline component (M — 4h nếu có FE team)<br>8. Integration tests end-to-end flow (S — 3h)<br><br>Total: ~21h base → +30% buffer = 27h ≈ 3.5 ngày → estimate "1 sprint" (cùng với tasks khác)<br><br>Key insight: Step 5 (WebSocket) là M highest risk → có thể cần L nếu infra chưa có</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header"><span class="ex-diff diff-red">🔴 Khó</span><span class="ex-num">Bài 3</span></div>
+      <div class="ex-title">Track actual vs estimate trong 1 tuần — tính calibration ratio</div>
+      <div class="ex-desc">Làm 5-10 coding tasks trong tuần tới. Trước mỗi task: estimate bằng T-shirt size + giờ cụ thể. Sau khi xong: ghi actual time. Cuối tuần: tính average ratio, phân tích tại sao underestimate hoặc overestimate.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Tracking template:</strong><br><pre>Date | Task | Estimate | Actual | Ratio | Notes
+-----|------|----------|--------|-------|------
+Mon  | JWT setup | 2h | 3.5h | 1.75x | Forgot refresh token edge cases
+Mon  | DTO validation | 1h | 1h | 1.0x | Simple, similar to past
+Tue  | Email integration | 4h | 7h | 1.75x | Nodemailer config took 2h</pre><br><strong>Common patterns:</strong><br>- Integration với external service luôn x2<br>- "Simple" tasks có hidden edge cases<br>- Debug time không được estimate<br>- "Just a config change" thường là 3h<br><br>Target: ratio 1.0-1.3x sau 3 sprints (continuous improvement)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <hr class="section-divider">
+  <div class="card">
+    <h3>📌 Tóm Tắt — Estimation</h3>
+    <ul style="color:#c9d1d9;padding-left:20px;margin-top:8px">
+      <li style="margin:6px 0"><strong>Task breakdown</strong> = chia đến khi mỗi task ≤ 2-4h và mô tả được trong 1 câu</li>
+      <li style="margin:6px 0"><strong>T-shirt sizing</strong> = XS/S/M/L/XL. XL → cần research/design trước, không implement ngay</li>
+      <li style="margin:6px 0"><strong>Formula</strong> = Base + Buffer (20-100% tùy risk) + Risk. Commit sau khi tính xong</li>
+      <li style="margin:6px 0"><strong>Track và calibrate</strong> = ghi actual vs estimate, tính ratio, adjust cho sprint sau</li>
+      <li style="margin:6px 0"><strong>Communicate</strong> = state assumptions khi estimate. "Estimate này assume X và Y"</li>
+    </ul>
+  </div>
+
+  <div style="text-align:center;margin-top:48px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">Bài 16b / Phase 5 — Professional</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="16a-agile-scrum.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← 16a: Agile</a>
+      <a href="16c-rfc-adr.html" style="color:#bc8cff;text-decoration:none;font-size:.85rem">Tiếp theo: 16c — RFC &amp; ADR →</a>
+    </div>
+  </div>
+</div>
+<script>
+function toggleSol(btn){const b=btn.nextElementSibling;const o=b.classList.toggle('open');btn.textContent=o?'Ẩn gợi ý':'Xem gợi ý';}
+</script>
+</body>
+</html>

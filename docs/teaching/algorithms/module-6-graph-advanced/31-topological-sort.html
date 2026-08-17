@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>31 - Sắp xếp Tô-pô (Topological Sort)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#0f1117;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{background:#1a1f2e;padding:8px 16px;border-bottom:1px solid #2d3748;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
+header h1{font-size:1.05rem;color:#68d391}
+.badge{background:#276749;color:#9ae6b4;padding:2px 8px;border-radius:12px;font-size:0.75rem}
+.tabs{display:flex;gap:4px;margin-left:8px}
+.tab{padding:4px 14px;border-radius:6px;cursor:pointer;font-size:0.82rem;font-weight:600;border:1px solid #4a5568;background:#2d3748;color:#a0aec0;transition:all 0.2s}
+.tab.active{background:#276749;color:#9ae6b4;border-color:#48bb78}
+.demo-tabs{display:flex;gap:4px;margin-left:auto}
+.demo-tab{padding:3px 10px;border-radius:5px;cursor:pointer;font-size:0.75rem;border:1px solid #4a5568;background:#2d3748;color:#a0aec0}
+.demo-tab.active{background:#2b6cb0;color:#bee3f8;border-color:#63b3ed}
+.main{display:flex;flex:1;overflow:hidden}
+.left-panel{width:220px;background:#1a1f2e;border-right:1px solid #2d3748;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.panel-title{padding:7px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;color:#718096;border-bottom:1px solid #2d3748;flex-shrink:0}
+.center{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.right-panel{width:260px;background:#1a1f2e;border-left:1px solid #2d3748;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+#svg-container{flex:1;position:relative;overflow:hidden;background:#0f1117}
+svg{width:100%;height:100%}
+/* Result bar */
+.result-bar{background:#1a202c;border-top:1px solid #2d3748;padding:8px 12px;flex-shrink:0}
+.result-label{font-size:0.75rem;color:#718096;margin-bottom:4px}
+.result-nodes{display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-height:34px}
+.result-node{background:#276749;color:#9ae6b4;border-radius:8px;padding:4px 12px;font-weight:700;font-size:0.9rem;display:flex;align-items:center;gap:4px;transition:all 0.3s;animation:slideIn 0.3s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.result-arrow{color:#4a5568;font-size:1rem}
+.controls{background:#1a1f2e;border-top:1px solid #2d3748;padding:7px 12px;display:flex;align-items:center;gap:7px;flex-shrink:0;flex-wrap:wrap}
+button{padding:5px 12px;border:none;border-radius:6px;cursor:pointer;font-size:0.8rem;font-weight:600;transition:all 0.2s}
+.btn-play{background:#276749;color:#fff}.btn-play:hover{background:#22543d}
+.btn-step{background:#2b6cb0;color:#fff}
+.btn-reset{background:#c53030;color:#fff}
+.btn-sm{background:#2d3748;color:#e2e8f0;padding:4px 8px;font-size:0.75rem;border-radius:5px}
+.btn-sm.danger{background:#742a2a;color:#fc8181}
+label{font-size:0.8rem;color:#a0aec0}
+input[type=range]{accent-color:#48bb78;width:80px}
+.info-box{padding:9px 12px;font-size:0.79rem;line-height:1.5;color:#a0aec0;border-bottom:1px solid #2d3748}
+.info-box strong{color:#68d391}
+/* In-degree table */
+.indegree-table{padding:8px 12px}
+.indegree-table table{width:100%;border-collapse:collapse;font-size:0.8rem}
+.indegree-table th{color:#718096;padding:3px 4px;border-bottom:1px solid #2d3748;text-align:left;font-size:0.75rem}
+.indegree-table td{padding:3px 4px;border-bottom:1px solid #1a202c;transition:all 0.3s}
+.indegree-table tr.zero td{color:#68d391;font-weight:700}
+.indegree-table tr.done td{color:#4a5568}
+.indegree-table td.deg-val{font-weight:700;color:#68d391}
+.indegree-table td.deg-val.decreasing{animation:blink 0.4s ease;color:#fc8181}
+@keyframes blink{0%{background:#742a2a}100%{background:transparent}}
+/* Queue */
+.queue-list{padding:8px 12px;display:flex;flex-wrap:wrap;gap:4px}
+.queue-item{background:#276749;border-radius:6px;padding:4px 10px;font-size:0.85rem;font-weight:700;color:#9ae6b4;transition:all 0.3s}
+.queue-item.front{background:#2f855a;border:1px solid #68d391;animation:pulseg 0.6s ease infinite alternate}
+@keyframes pulseg{from{opacity:0.7}to{opacity:1}}
+/* DFS stack */
+.stack-display{padding:8px 12px;display:flex;flex-direction:column-reverse;gap:3px;max-height:180px}
+.stack-item{background:#2d3748;border-radius:5px;padding:4px 8px;font-size:0.82rem;display:flex;justify-content:space-between;transition:all 0.3s}
+.stack-item.new{background:#276749;border:1px solid #48bb78}
+.stack-item.popping{background:#742a2a;border:1px solid #fc8181}
+/* DFS trace */
+.dfs-trace{padding:6px 12px;font-size:0.77rem;color:#a0aec0;max-height:100px;overflow-y:auto}
+.dfs-trace .entry{border-left:2px solid #4a5568;padding-left:5px;margin-bottom:2px}
+.dfs-trace .entry.enter{border-color:#ecc94b;color:#fbd38d}
+.dfs-trace .entry.leave{border-color:#48bb78;color:#9ae6b4}
+.dfs-trace .entry.back{border-color:#fc8181;color:#fc8181}
+/* Code */
+.code-panel{padding:7px 12px;font-family:'Courier New',monospace;font-size:0.73rem;line-height:1.7}
+.code-line{padding:0 4px;border-radius:3px;color:#a0aec0;white-space:pre}
+.code-line.active{background:#1c4532;color:#9ae6b4}
+/* Step log */
+.step-log{padding:6px 12px;font-size:0.77rem;line-height:1.5;color:#a0aec0;max-height:120px;overflow-y:auto}
+.step-log .entry{border-left:2px solid #4a5568;padding-left:5px;margin-bottom:2px}
+.step-log .entry.good{border-color:#48bb78;color:#9ae6b4}
+.step-log .entry.warn{border-color:#fc8181;color:#fc8181;font-weight:700}
+/* Cycle alert */
+.cycle-alert{display:none;background:#742a2a;border:1px solid #fc8181;border-radius:8px;padding:10px;margin:8px;font-size:0.8rem;color:#fc8181}
+/* Hidden */
+.hidden{display:none}
+/* Course demo */
+.course-info{padding:8px 12px;font-size:0.78rem;color:#a0aec0;border-bottom:1px solid #2d3748}
+.semester-list{padding:6px 12px;display:flex;flex-direction:column;gap:4px}
+.semester-row{background:#2d3748;border-radius:6px;padding:5px 8px;font-size:0.78rem}
+.semester-row strong{color:#68d391}
+</style>
+</head>
+<body>
+<header>
+  <h1>📐 Sắp xếp Tô-pô (Topological Sort)</h1>
+  <span class="badge">Module 6 · Bài 31</span>
+  <div class="tabs">
+    <div class="tab active" id="tab-kahn" onclick="switchTab('kahn')">Kahn's (BFS)</div>
+    <div class="tab" id="tab-dfs" onclick="switchTab('dfs')">DFS</div>
+  </div>
+  <div class="demo-tabs">
+    <div class="demo-tab active" id="demo-default" onclick="switchDemo('default')">Đồ thị DAG</div>
+    <div class="demo-tab" id="demo-course" onclick="switchDemo('course')">Môn học</div>
+    <div class="demo-tab" id="demo-cycle" onclick="switchDemo('cycle')">Có chu trình</div>
+  </div>
+  <button class="btn-sm danger" style="margin-left:4px" id="btn-add-cycle">+ Chu trình</button>
+</header>
+<div class="main">
+  <!-- Left -->
+  <div class="left-panel">
+    <div class="panel-title">📋 Giải thích</div>
+    <div class="info-box" id="algo-desc">
+      <strong>Kahn's (BFS):</strong> Xử lý các đỉnh có in-degree = 0 trước. Sau khi xử lý, giảm in-degree của hàng xóm. Nếu không xử lý hết tất cả đỉnh → có chu trình!
+    </div>
+    <!-- Kahn panel -->
+    <div id="kahn-left">
+      <div class="panel-title">🔢 Bảng in-degree</div>
+      <div class="indegree-table" id="indegree-table"></div>
+      <div class="panel-title">📬 Hàng đợi (Queue)</div>
+      <div class="queue-list" id="queue-list"></div>
+    </div>
+    <!-- DFS panel -->
+    <div id="dfs-left" class="hidden">
+      <div class="panel-title">📚 Stack (Ngăn xếp)</div>
+      <div class="stack-display" id="stack-display"></div>
+      <div class="panel-title">🔍 DFS Trace</div>
+      <div class="dfs-trace" id="dfs-trace"></div>
+    </div>
+    <div class="cycle-alert" id="cycle-alert">
+      🔴 <strong>CÓ CHU TRÌNH!</strong><br>
+      Queue trống nhưng chưa xử lý hết đỉnh → Đồ thị không phải DAG → Không thể sắp xếp tô-pô!
+    </div>
+    <div class="panel-title">📝 Nhật ký</div>
+    <div class="step-log" id="step-log"></div>
+  </div>
+  <!-- Center -->
+  <div class="center">
+    <div id="svg-container">
+      <svg id="graph-svg">
+        <defs>
+          <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#718096"/>
+          </marker>
+          <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#48bb78"/>
+          </marker>
+          <marker id="arrow-yellow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#ecc94b"/>
+          </marker>
+          <marker id="arrow-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#fc8181"/>
+          </marker>
+        </defs>
+        <g id="edges-group"></g>
+        <g id="nodes-group"></g>
+      </svg>
+    </div>
+    <div class="result-bar">
+      <div class="result-label">Thứ tự tô-pô:</div>
+      <div class="result-nodes" id="result-nodes"></div>
+    </div>
+    <div class="controls">
+      <button class="btn-play" id="btn-play">▶ Chạy</button>
+      <button class="btn-step" id="btn-step">⏭ Bước</button>
+      <button class="btn-reset" id="btn-reset">↺ Reset</button>
+      <label>Tốc độ:</label>
+      <input type="range" id="speed" min="200" max="2000" value="700" step="100">
+      <span style="margin-left:auto;font-size:0.8rem;color:#718096" id="status-bar">Nhấn Chạy để bắt đầu</span>
+    </div>
+  </div>
+  <!-- Right -->
+  <div class="right-panel">
+    <!-- Kahn right -->
+    <div id="kahn-right">
+      <div class="panel-title">💻 Kahn's (Python)</div>
+      <div class="code-panel" id="code-kahn"></div>
+    </div>
+    <!-- DFS right -->
+    <div id="dfs-right" class="hidden">
+      <div class="panel-title">💻 DFS (Python)</div>
+      <div class="code-panel" id="code-dfs"></div>
+    </div>
+    <!-- Course demo -->
+    <div id="course-panel" class="hidden">
+      <div class="panel-title">📚 Kế hoạch học kỳ</div>
+      <div class="course-info">Dựa vào thứ tự tô-pô, chia môn thành các học kỳ:</div>
+      <div class="semester-list" id="semester-list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const W=()=>document.getElementById('svg-container').clientWidth;
+const H=()=>document.getElementById('svg-container').clientHeight;
+
+// ─── Datasets ──────────────────────────────────────────────────────────────
+const DATASETS={
+  default:{
+    nodes:[{id:'A'},{id:'B'},{id:'C'},{id:'D'},{id:'E'},{id:'F'},{id:'G'}],
+    edges:[
+      {from:'A',to:'C'},{from:'A',to:'B'},{from:'B',to:'D'},{from:'C',to:'D'},
+      {from:'D',to:'E'},{from:'D',to:'F'},{from:'E',to:'G'},{from:'F',to:'G'},
+    ],
+    layout:(cx,cy)=>[
+      {id:'A',x:cx-220,y:cy},{id:'B',x:cx-80,y:cy-90},{id:'C',x:cx-80,y:cy+90},
+      {id:'D',x:cx+40,y:cy},{id:'E',x:cx+150,y:cy-80},{id:'F',x:cx+150,y:cy+80},
+      {id:'G',x:cx+270,y:cy},
+    ],
+  },
+  course:{
+    nodes:[
+      {id:'Toán',label:'Toán'},{id:'CTDL',label:'CTDL'},{id:'GT',label:'Giải Tích'},
+      {id:'OOP',label:'OOP'},{id:'CSDL',label:'CSDL'},{id:'Mạng',label:'Mạng'},
+      {id:'AI',label:'AI'},{id:'Web',label:'Web'},
+    ],
+    edges:[
+      {from:'Toán',to:'CTDL'},{from:'Toán',to:'GT'},{from:'GT',to:'AI'},
+      {from:'CTDL',to:'OOP'},{from:'OOP',to:'CSDL'},{from:'OOP',to:'Mạng'},
+      {from:'CSDL',to:'Web'},{from:'Mạng',to:'Web'},{from:'CTDL',to:'AI'},
+    ],
+    layout:(cx,cy)=>[
+      {id:'Toán',x:cx-220,y:cy},{id:'CTDL',x:cx-80,y:cy-90},{id:'GT',x:cx-80,y:cy+90},
+      {id:'OOP',x:cx+50,y:cy-80},{id:'CSDL',x:cx+180,y:cy-120},{id:'Mạng',x:cx+50,y:cy+80},
+      {id:'AI',x:cx+200,y:cy+60},{id:'Web',x:cx+300,y:cy},
+    ],
+  },
+  cycle:{
+    nodes:[{id:'A'},{id:'B'},{id:'C'},{id:'D'},{id:'E'}],
+    edges:[
+      {from:'A',to:'B'},{from:'B',to:'C'},{from:'C',to:'D'},{from:'D',to:'B'},
+      {from:'A',to:'E'},{from:'E',to:'D'},
+    ],
+    layout:(cx,cy)=>[
+      {id:'A',x:cx-180,y:cy},{id:'B',x:cx-40,y:cy-100},{id:'C',x:cx+80,y:cy-80},
+      {id:'D',x:cx+80,y:cy+80},{id:'E',x:cx-40,y:cy+100},
+    ],
+  },
+};
+
+let currentTab='kahn', currentDemo='default';
+let nodes=[], edges=[];
+let steps=[], stepIdx=0, playing=false, timer=null;
+let nodeColors={}, edgeColors={}, resultOrder=[];
+
+function loadDataset(name){
+  const d=DATASETS[name];
+  nodes=d.nodes.map(n=>({...n,label:n.label||n.id}));
+  edges=[...d.edges];
+  initPositions();
+}
+
+function initPositions(){
+  const cx=W()/2, cy=H()/2;
+  const d=DATASETS[currentDemo];
+  if(!d)return;
+  const layout=d.layout(cx,cy);
+  layout.forEach(p=>{const n=nodes.find(n=>n.id===p.id);if(n){n.x=p.x;n.y=p.y;}});
+}
+
+// ─── In-degree ─────────────────────────────────────────────────────────────
+function computeIndegree(){
+  const deg={};
+  nodes.forEach(n=>{deg[n.id]=0;});
+  edges.forEach(e=>{deg[e.to]=(deg[e.to]||0)+1;});
+  return deg;
+}
+
+// ─── Kahn's BFS ────────────────────────────────────────────────────────────
+function buildKahnSteps(){
+  steps=[];resultOrder=[];
+  const deg=computeIndegree();
+  let q=Object.keys(deg).filter(v=>deg[v]===0);
+  const processed=new Set(), result=[];
+
+  steps.push({type:'init',deg:{...deg},q:[...q],result:[],code:1,log:`In-degree khởi tạo. Hàng đợi ban đầu: [${q.join(', ')}]`});
+
+  while(q.length){
+    const u=q.shift();
+    processed.add(u);result.push(u);
+    steps.push({type:'dequeue',node:u,deg:{...deg},q:[...q],result:[...result],code:3,log:`Lấy ${u} từ queue, thêm vào kết quả`});
+
+    const neighbors=edges.filter(e=>e.from===u);
+    for(const e of neighbors){
+      deg[e.to]--;
+      const newQ=[...q];
+      if(deg[e.to]===0){newQ.push(e.to);q.push(e.to);}
+      steps.push({type:'relax',from:u,to:e.to,newDeg:deg[e.to],deg:{...deg},q:newQ,result:[...result],code:5,
+        log:`Giảm in-degree[${e.to}]=${deg[e.to]}${deg[e.to]===0?' → thêm vào queue!':''}`});
+    }
+  }
+
+  if(processed.size<nodes.length){
+    const remaining=nodes.filter(n=>!processed.has(n.id)).map(n=>n.id);
+    steps.push({type:'cycle',remaining,deg:{...deg},q:[],result:[...result],code:8,
+      log:`⚠️ CHU TRÌNH! Queue rỗng nhưng còn ${remaining.join(',')} chưa xử lý!`});
+  } else {
+    steps.push({type:'done',result:[...result],deg,code:9,log:`✅ Hoàn thành! Thứ tự: ${result.join(' → ')}`});
+  }
+}
+
+// ─── DFS-based ─────────────────────────────────────────────────────────────
+function buildDFSSteps(){
+  steps=[];resultOrder=[];
+  const visited=new Set(), onStack=new Set();
+  const stack=[]; // finish order (reversed = topo)
+  const color={}; // white/gray/black
+  nodes.forEach(n=>{color[n.id]='white';});
+  let hasCycle=false, backEdge=null;
+
+  function dfs(u){
+    if(hasCycle)return;
+    color[u]='gray'; onStack.add(u);
+    steps.push({type:'dfs_enter',node:u,color:{...color},stack:[...stack],onStack:new Set(onStack),code:2,log:`Vào ${u} (màu xám - đang xử lý)`});
+    for(const e of edges.filter(e=>e.from===u)){
+      if(hasCycle)return;
+      if(color[e.to]==='gray'){
+        hasCycle=true; backEdge={from:u,to:e.to};
+        steps.push({type:'back_edge',from:u,to:e.to,color:{...color},stack:[...stack],code:7,log:`🔴 BACK EDGE! ${u}→${e.to}: CHU TRÌNH!`});
+        return;
+      }
+      if(color[e.to]==='white'){
+        steps.push({type:'dfs_recurse',from:u,to:e.to,color:{...color},stack:[...stack],code:4,log:`Đi tiếp từ ${u} đến ${e.to}`});
+        dfs(e.to);
+      }
+    }
+    if(!hasCycle){
+      color[u]='black';onStack.delete(u);stack.push(u);
+      steps.push({type:'dfs_leave',node:u,color:{...color},stack:[...stack],code:5,log:`Rời ${u} (màu đen), đẩy vào stack`});
+    }
+  }
+
+  for(const n of nodes){
+    if(color[n.id]==='white'&&!hasCycle) dfs(n.id);
+  }
+
+  if(!hasCycle){
+    const result=[...stack].reverse();
+    steps.push({type:'done',result,stack:[...stack],code:8,log:`✅ Hoàn thành! Đảo ngược stack = thứ tự tô-pô: ${result.join(' → ')}`});
+  }
+}
+
+// ─── Render helpers ────────────────────────────────────────────────────────
+function renderIndegreeTable(deg, q, processed){
+  const c=document.getElementById('indegree-table');
+  let html='<table><tr><th>Đỉnh</th><th>In-degree</th><th>Trạng thái</th></tr>';
+  nodes.forEach(n=>{
+    const d=deg[n.id];
+    const isDone=processed&&processed.has(n.id);
+    const isQ=q&&q.includes(n.id);
+    const isZero=d===0&&!isDone;
+    html+=`<tr class="${isDone?'done':isZero?'zero':''}">
+      <td>${n.label}</td>
+      <td class="deg-val">${d}</td>
+      <td style="font-size:0.72rem;color:${isDone?'#4a5568':isQ?'#68d391':'#718096'}">${isDone?'✓ Xong':isQ?'📬 Queue':'⏳'}</td>
+    </tr>`;
+  });
+  html+='</table>';
+  c.innerHTML=html;
+}
+
+function renderQueue(q){
+  const c=document.getElementById('queue-list');
+  if(!q||q.length===0){c.innerHTML='<span style="color:#718096;font-size:0.8rem">Queue rỗng</span>';return;}
+  c.innerHTML=q.map((item,i)=>`<div class="queue-item${i===0?' front':''}">${item}</div>`).join('');
+}
+
+function renderStack(stack, newNode, poppingNode){
+  const c=document.getElementById('stack-display');
+  if(!stack||stack.length===0){c.innerHTML='<span style="color:#718096;font-size:0.8rem">Stack rỗng</span>';return;}
+  c.innerHTML=[...stack].reverse().map((item,i,arr)=>{
+    const isNew=i===0&&item===newNode;
+    const isPop=i===0&&item===poppingNode;
+    return`<div class="stack-item${isNew?' new':isPop?' popping':''}">
+      <span>${item}</span><span style="color:#4a5568;font-size:0.7rem">${i===0?'← TOP':''}</span>
+    </div>`;
+  }).join('');
+}
+
+function addDFSTrace(msg,cls){
+  const c=document.getElementById('dfs-trace');
+  const div=document.createElement('div');div.className='entry '+(cls||'');div.textContent=msg;
+  c.appendChild(div);c.scrollTop=c.scrollHeight;
+}
+
+function renderResult(order){
+  const c=document.getElementById('result-nodes');
+  c.innerHTML=order.map((id,i)=>`
+    ${i>0?'<span class="result-arrow">→</span>':''}
+    <div class="result-node">${id}</div>
+  `).join('');
+}
+
+function addLog(msg,cls){
+  const log=document.getElementById('step-log');
+  const div=document.createElement('div');div.className='entry '+(cls||'');div.textContent=msg;
+  log.appendChild(div);log.scrollTop=log.scrollHeight;
+}
+
+// ─── Code panels ───────────────────────────────────────────────────────────
+const KAHN_CODE=[
+  'def kahn(graph):',
+  '    deg = compute_indegree(graph)',
+  '    q = deque([v for v in deg if deg[v]==0])',
+  '    result = []',
+  '    while q:',
+  '        u = q.popleft()',
+  '        result.append(u)',
+  '        for v in graph[u]:',
+  '            deg[v] -= 1',
+  '            if deg[v] == 0: q.append(v)',
+  '    if len(result) < len(graph):',
+  '        raise CycleError("Có chu trình!")',
+  '    return result',
+];
+const DFS_CODE=[
+  'def dfs_topo(graph):',
+  '    color = {v:"white" for v in graph}',
+  '    stack = []',
+  '    def dfs(u):',
+  '        color[u] = "gray"',
+  '        for v in graph[u]:',
+  '            if color[v]=="gray": CYCLE!',
+  '            if color[v]=="white": dfs(v)',
+  '        color[u] = "black"',
+  '        stack.append(u)',
+  '    for v in graph:',
+  '        if color[v]=="white": dfs(v)',
+  '    return stack[::-1]  # reversed',
+];
+
+function renderCode(id,line){
+  const code=id==='kahn'?KAHN_CODE:DFS_CODE;
+  const panel=document.getElementById('code-'+id);
+  if(!panel)return;
+  panel.innerHTML=code.map((l,i)=>`<div class="code-line${i===line?' active':''}">${escHtml(l)}</div>`).join('');
+}
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ─── SVG ─────────────────────────────────────────────────────────────────
+let dragging=null,dragOffX=0,dragOffY=0;
+function getPos(id){const n=nodes.find(n=>n.id===id);return n?{x:n.x,y:n.y}:{x:0,y:0};}
+function edgeKey(f,t){return f+'→'+t;}
+function calcEP(from,to,r=24){
+  const f=getPos(from),t=getPos(to);
+  const dx=t.x-f.x,dy=t.y-f.y,len=Math.sqrt(dx*dx+dy*dy)||1;
+  return{x1:f.x+dx/len*r,y1:f.y+dy/len*r,x2:t.x-dx/len*(r+8),y2:t.y-dy/len*(r+8),mx:(f.x+t.x)/2,my:(f.y+t.y)/2};
+}
+function markerFor(c){
+  if(c==='#48bb78')return'url(#arrow-green)';
+  if(c==='#ecc94b')return'url(#arrow-yellow)';
+  if(c==='#fc8181')return'url(#arrow-red)';
+  return'url(#arrow)';
+}
+
+function renderGraph(){
+  const eg=document.getElementById('edges-group');
+  const ng=document.getElementById('nodes-group');
+  eg.innerHTML='';ng.innerHTML='';
+
+  edges.forEach(e=>{
+    const key=edgeKey(e.from,e.to);
+    const color=edgeColors[key]||'#4a5568';
+    const w=color==='#48bb78'?3:1.5;
+    const ep=calcEP(e.from,e.to);
+    const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',ep.x1);line.setAttribute('y1',ep.y1);
+    line.setAttribute('x2',ep.x2);line.setAttribute('y2',ep.y2);
+    line.setAttribute('stroke',color);line.setAttribute('stroke-width',w);
+    line.setAttribute('marker-end',markerFor(color));
+    eg.appendChild(line);
+  });
+
+  nodes.forEach(n=>{
+    const color=nodeColors[n.id]||'#2d3748';
+    const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('transform',`translate(${n.x},${n.y})`);g.style.cursor='move';
+    const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('r',24);circle.setAttribute('fill',color);
+    circle.setAttribute('stroke','#48bb78');circle.setAttribute('stroke-width',1.5);
+    const text=document.createElementNS('http://www.w3.org/2000/svg','text');
+    text.setAttribute('text-anchor','middle');text.setAttribute('dy','0.35em');
+    text.setAttribute('fill','#e2e8f0');text.setAttribute('font-size','11');text.setAttribute('font-weight','700');
+    text.textContent=n.label||n.id;
+    g.appendChild(circle);g.appendChild(text);
+    g.addEventListener('mousedown',ev=>{
+      dragging=n.id;
+      const r=document.getElementById('svg-container').getBoundingClientRect();
+      dragOffX=ev.clientX-r.left-n.x;dragOffY=ev.clientY-r.top-n.y;ev.preventDefault();
+    });
+    ng.appendChild(g);
+  });
+}
+
+document.getElementById('graph-svg').addEventListener('mousemove',ev=>{
+  if(!dragging)return;
+  const r=document.getElementById('svg-container').getBoundingClientRect();
+  const n=nodes.find(n=>n.id===dragging);
+  if(n){n.x=ev.clientX-r.left-dragOffX;n.y=ev.clientY-r.top-dragOffY;renderGraph();}
+});
+document.getElementById('graph-svg').addEventListener('mouseup',()=>{dragging=null;});
+
+// ─── Apply step ────────────────────────────────────────────────────────────
+let kahnProcessed=new Set(), kahnQueue=[];
+
+function applyStep(s){
+  // Reset edge yellow
+  edges.forEach(e=>{if(edgeColors[edgeKey(e.from,e.to)]==='#ecc94b')edgeColors[edgeKey(e.from,e.to)]='#4a5568';});
+
+  if(currentTab==='kahn'){
+    if(s.type==='init'){
+      kahnQueue=[...s.q];kahnProcessed=new Set();
+      renderIndegreeTable(s.deg,s.q,kahnProcessed);renderQueue(s.q);
+      renderCode('kahn',s.code);addLog(s.log,'');
+    }
+    if(s.type==='dequeue'){
+      kahnProcessed.add(s.node);kahnQueue=[...s.q];
+      nodeColors[s.node]='#276749';
+      renderIndegreeTable(s.deg,s.q,kahnProcessed);renderQueue(s.q);
+      renderResult(s.result);renderCode('kahn',s.code);addLog(s.log,'good');
+    }
+    if(s.type==='relax'){
+      edgeColors[edgeKey(s.from,s.to)]='#ecc94b';
+      if(s.newDeg===0)nodeColors[s.to]='#ecc94b';
+      kahnQueue=[...s.q];
+      renderIndegreeTable(s.deg,s.q,kahnProcessed);renderQueue(s.q);
+      renderCode('kahn',s.code);addLog(s.log,s.newDeg===0?'good':'');
+    }
+    if(s.type==='cycle'){
+      s.remaining.forEach(id=>{nodeColors[id]='#742a2a';});
+      document.getElementById('cycle-alert').style.display='block';
+      renderCode('kahn',s.code);addLog(s.log,'warn');
+      document.getElementById('status-bar').textContent='CHU TRÌNH PHÁT HIỆN!';
+    }
+    if(s.type==='done'){
+      renderResult(s.result);renderCode('kahn',s.code);addLog(s.log,'good');
+      document.getElementById('status-bar').textContent='Hoàn thành!';
+      if(currentDemo==='course') buildSemesterPlan(s.result);
+    }
+  } else {
+    // DFS
+    if(s.color){
+      nodes.forEach(n=>{
+        if(s.color[n.id]==='gray') nodeColors[n.id]='#ecc94b';
+        else if(s.color[n.id]==='black') nodeColors[n.id]='#276749';
+        else nodeColors[n.id]='#2d3748';
+      });
+    }
+    if(s.type==='dfs_enter'){
+      renderStack(s.stack||[],null,null);renderCode('dfs',s.code);addDFSTrace(s.log,'enter');addLog(s.log,'');
+    }
+    if(s.type==='dfs_recurse'){
+      edgeColors[edgeKey(s.from,s.to)]='#ecc94b';
+      renderCode('dfs',s.code);addLog(s.log,'');
+    }
+    if(s.type==='dfs_leave'){
+      renderStack(s.stack,s.node,null);renderCode('dfs',s.code);addDFSTrace(s.log,'leave');addLog(s.log,'good');
+    }
+    if(s.type==='back_edge'){
+      edgeColors[edgeKey(s.from,s.to)]='#fc8181';
+      nodeColors[s.from]='#742a2a';nodeColors[s.to]='#742a2a';
+      document.getElementById('cycle-alert').style.display='block';
+      renderCode('dfs',s.code);addDFSTrace(s.log,'back');addLog(s.log,'warn');
+      document.getElementById('status-bar').textContent='CHU TRÌNH PHÁT HIỆN!';
+    }
+    if(s.type==='done'){
+      const result=s.result;
+      result.forEach(id=>{nodeColors[id]='#276749';});
+      renderStack(s.stack,null,null);
+      renderResult(result);renderCode('dfs',s.code);addLog(s.log,'good');
+      document.getElementById('status-bar').textContent='Hoàn thành!';
+      if(currentDemo==='course') buildSemesterPlan(result);
+    }
+  }
+  renderGraph();
+}
+
+function buildSemesterPlan(order){
+  const panel=document.getElementById('course-panel');
+  panel.classList.remove('hidden');
+  const semesters=[];
+  const remaining=new Set(order);
+  const added=new Set();
+  let iter=0;
+  while(added.size<order.length&&iter<10){
+    iter++;
+    const sem=order.filter(id=>{
+      if(added.has(id))return false;
+      const prereqs=edges.filter(e=>e.to===id).map(e=>e.from);
+      return prereqs.every(p=>added.has(p));
+    });
+    if(sem.length===0)break;
+    semesters.push(sem);
+    sem.forEach(id=>added.add(id));
+  }
+  const sl=document.getElementById('semester-list');
+  sl.innerHTML=semesters.map((sem,i)=>`
+    <div class="semester-row">
+      <strong>Học kỳ ${i+1}:</strong> ${sem.join(' · ')}
+    </div>`).join('');
+}
+
+// ─── Control ───────────────────────────────────────────────────────────────
+function step(){
+  if(stepIdx>=steps.length)return;
+  applyStep(steps[stepIdx++]);
+  document.getElementById('status-bar').textContent=`Bước ${stepIdx}/${steps.length}`;
+}
+function play(){
+  playing=!playing;
+  document.getElementById('btn-play').textContent=playing?'⏸ Dừng':'▶ Chạy';
+  if(playing)runNext();
+}
+function runNext(){
+  if(!playing||stepIdx>=steps.length){playing=false;document.getElementById('btn-play').textContent='▶ Chạy';return;}
+  step();const sp=parseInt(document.getElementById('speed').value);
+  timer=setTimeout(runNext,sp);
+}
+function reset(){
+  playing=false;clearTimeout(timer);
+  steps=[];stepIdx=0;nodeColors={};edgeColors={};kahnProcessed=new Set();kahnQueue=[];
+  document.getElementById('btn-play').textContent='▶ Chạy';
+  document.getElementById('status-bar').textContent='Nhấn Chạy để bắt đầu';
+  document.getElementById('step-log').innerHTML='';
+  document.getElementById('result-nodes').innerHTML='';
+  document.getElementById('cycle-alert').style.display='none';
+  document.getElementById('course-panel').classList.add('hidden');
+  if(currentTab==='kahn'){
+    document.getElementById('queue-list').innerHTML='';
+    document.getElementById('indegree-table').innerHTML='';
+    renderCode('kahn',-1);
+    buildKahnSteps();
+  } else {
+    document.getElementById('stack-display').innerHTML='';
+    document.getElementById('dfs-trace').innerHTML='';
+    renderCode('dfs',-1);
+    buildDFSSteps();
+  }
+  renderGraph();
+}
+
+function switchTab(tab){
+  currentTab=tab;
+  document.getElementById('tab-kahn').classList.toggle('active',tab==='kahn');
+  document.getElementById('tab-dfs').classList.toggle('active',tab==='dfs');
+  document.getElementById('kahn-left').classList.toggle('hidden',tab!=='kahn');
+  document.getElementById('dfs-left').classList.toggle('hidden',tab!=='dfs');
+  document.getElementById('kahn-right').classList.toggle('hidden',tab!=='kahn');
+  document.getElementById('dfs-right').classList.toggle('hidden',tab!=='dfs');
+  document.getElementById('algo-desc').innerHTML=tab==='kahn'
+    ?'<strong>Kahn\'s (BFS):</strong> Xử lý các đỉnh có in-degree = 0 trước. Sau khi xử lý, giảm in-degree của hàng xóm. Nếu không xử lý hết → có chu trình!'
+    :'<strong>DFS:</strong> Duyệt DFS, khi hoàn thành một đỉnh thì push vào stack. Đảo ngược stack = thứ tự tô-pô. Back edge = chu trình!';
+  reset();
+}
+
+function switchDemo(demo){
+  currentDemo=demo;
+  ['default','course','cycle'].forEach(d=>{
+    document.getElementById('demo-'+d).classList.toggle('active',d===demo);
+  });
+  loadDataset(demo);
+  reset();
+}
+
+document.getElementById('btn-play').onclick=play;
+document.getElementById('btn-step').onclick=step;
+document.getElementById('btn-reset').onclick=reset;
+
+document.getElementById('btn-add-cycle').onclick=function(){
+  // Add a cycle edge to current graph
+  if(nodes.length>=2){
+    const last=nodes[nodes.length-1].id;
+    const first=nodes[0].id;
+    if(!edges.find(e=>e.from===last&&e.to===first)){
+      edges.push({from:last,to:first});
+      reset();renderGraph();
+    }
+  }
+};
+
+window.addEventListener('resize',()=>{initPositions();renderGraph();});
+window.addEventListener('load',()=>{
+  loadDataset('default');
+  buildKahnSteps();
+  renderGraph();
+  renderCode('kahn',-1);
+  renderCode('dfs',-1);
+});
+</script>
+</body>
+</html>

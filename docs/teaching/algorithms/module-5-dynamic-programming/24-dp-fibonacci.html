@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DP #24 — Fibonacci & Giới thiệu Dynamic Programming</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; min-height: 100vh; }
+header { background: linear-gradient(135deg, #1a1f35, #252b45); padding: 16px 24px; border-bottom: 2px solid #3b4fd8; display: flex; align-items: center; gap: 16px; }
+header h1 { font-size: 1.3rem; color: #7b8fff; }
+header .badge { background: #3b4fd8; color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
+.main { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 60px); }
+.left-panel { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.right-panel { background: #161b2e; border-left: 2px solid #2a3050; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+
+/* Approach tabs */
+.tabs { display: flex; gap: 6px; }
+.tab { padding: 8px 16px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.82rem; font-weight: 600; border: 2px solid transparent; transition: all 0.2s; }
+.tab.active { background: #2a3368; border-color: #3b4fd8; color: #7b8fff; }
+.tab:not(.active) { background: #1a1f35; color: #7090c0; }
+.tab:hover:not(.active) { background: #1e2540; }
+
+/* Input section */
+.input-row { display: flex; align-items: center; gap: 12px; background: #1a1f35; padding: 10px 14px; border-radius: 10px; }
+.input-row label { font-size: 0.85rem; color: #8090c0; }
+input[type=range] { flex: 1; accent-color: #3b4fd8; }
+.n-display { background: #3b4fd8; color: white; font-weight: bold; padding: 4px 12px; border-radius: 8px; min-width: 40px; text-align: center; }
+
+/* Complexity badge */
+.complexity-row { display: flex; gap: 10px; }
+.cmx { padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; }
+.cmx.bad { background: #3d1515; color: #ff6b6b; border: 1px solid #6b2020; }
+.cmx.good { background: #153d20; color: #4eff91; border: 1px solid #206b30; }
+
+/* Visualization areas */
+.viz-box { background: #161b2e; border: 2px solid #2a3050; border-radius: 12px; padding: 16px; min-height: 280px; position: relative; }
+.viz-box h3 { font-size: 0.85rem; color: #8090c0; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Tree visualization */
+#treeCanvas { width: 100%; display: block; }
+
+/* DP Table */
+.dp-table-wrap { overflow-x: auto; }
+.dp-table { display: flex; gap: 4px; flex-wrap: nowrap; padding: 8px; }
+.dp-cell { width: 52px; height: 64px; border-radius: 8px; border: 2px solid #2a3050; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.8rem; transition: all 0.3s; flex-shrink: 0; }
+.dp-cell .idx { font-size: 0.65rem; color: #6080a0; margin-bottom: 2px; }
+.dp-cell .val { font-size: 1.1rem; font-weight: bold; }
+.dp-cell.empty { background: #1a2030; color: #3a4060; }
+.dp-cell.computing { background: #3d3000; border-color: #ffd600; color: #ffd600; }
+.dp-cell.computed { background: #1a3050; border-color: #3b7fd8; color: #7bb8ff; }
+.dp-cell.highlight { background: #2d1060; border-color: #9d60ff; color: #cf9fff; box-shadow: 0 0 12px #9d60ff88; }
+.dp-cell.backtrack { background: #0d3020; border-color: #00e090; color: #00e090; }
+.dp-cell.current-arrow { border-color: #ffd600 !important; box-shadow: 0 0 8px #ffd60088; }
+
+/* Arrows */
+.arrows-row { display: flex; gap: 4px; align-items: center; height: 20px; padding: 0 4px; margin-top: 2px; }
+.arr-spacer { width: 52px; flex-shrink: 0; }
+.arr-icon { width: 52px; flex-shrink: 0; text-align: center; font-size: 1rem; color: #3b7fd8; transition: all 0.3s; }
+.arr-icon.active { color: #ffd600; transform: scale(1.3); }
+
+/* Stats */
+.stats-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.stat-box { background: #1a1f35; border-radius: 8px; padding: 8px 14px; flex: 1; min-width: 100px; }
+.stat-box .label { font-size: 0.68rem; color: #6080a0; text-transform: uppercase; }
+.stat-box .value { font-size: 1.4rem; font-weight: bold; color: #7b8fff; }
+.stat-box.calls .value { color: #ff6b6b; }
+.stat-box.saved .value { color: #4eff91; }
+
+/* Code panel */
+.code-panel { background: #0d1117; border-radius: 10px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.78rem; line-height: 1.7; border: 1px solid #2a3050; }
+.code-line { padding: 1px 6px; border-radius: 4px; transition: background 0.2s; white-space: pre; color: #8090a0; }
+.code-line.active { background: #3b4fd855; color: #cce0ff; border-left: 3px solid #7b8fff; }
+.code-line.highlight { background: #ffd60022; color: #ffd680; border-left: 3px solid #ffd600; }
+.kw { color: #c678dd; }
+.fn { color: #61afef; }
+.num { color: #d19a66; }
+.cm { color: #5c6370; font-style: italic; }
+.str { color: #98c379; }
+
+/* Controls */
+.controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
+.btn-primary { background: #3b4fd8; color: white; }
+.btn-primary:hover { background: #5060e8; }
+.btn-secondary { background: #2a3050; color: #9090c0; }
+.btn-secondary:hover { background: #363c60; }
+.btn-danger { background: #6b2020; color: #ff9090; }
+.btn-danger:hover { background: #8b2020; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.speed-label { font-size: 0.75rem; color: #6080a0; margin-left: 4px; }
+select { background: #1a2040; color: #9090c0; border: 1px solid #3a4060; border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; }
+
+/* Memo array */
+.memo-wrap { margin-top: 8px; }
+.memo-label { font-size: 0.72rem; color: #6080a0; margin-bottom: 4px; }
+.memo-row { display: flex; gap: 3px; flex-wrap: wrap; }
+.memo-cell { width: 44px; height: 44px; border-radius: 6px; border: 1px solid #2a3050; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; }
+.memo-cell .midx { font-size: 0.58rem; color: #5070a0; }
+.memo-cell .mval { font-weight: bold; color: #7b8fff; }
+.memo-cell.hit { background: #0d3020; border-color: #00e090; animation: pulse-green 0.4s ease; }
+.memo-cell.empty { background: #161b2e; color: #3a4060; }
+@keyframes pulse-green { 0% { transform: scale(1); } 50% { transform: scale(1.2); box-shadow: 0 0 12px #00e09088; } 100% { transform: scale(1); } }
+
+/* Info box */
+.info-box { background: #1a1f35; border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; line-height: 1.5; color: #9090c0; border-left: 3px solid #3b4fd8; }
+.info-box strong { color: #7b8fff; }
+
+/* Explanation strip */
+.explanation { background: #1e2540; border-radius: 8px; padding: 8px 14px; font-size: 0.82rem; color: #b0c0e0; min-height: 36px; border-left: 3px solid #ffd600; }
+
+.section-title { font-size: 0.8rem; font-weight: 700; color: #7090c0; text-transform: uppercase; letter-spacing: 0.06em; }
+</style>
+</head>
+<body>
+<header>
+  <div class="badge">Module 5</div>
+  <h1>🎯 Fibonacci & Giới thiệu Dynamic Programming</h1>
+  <div class="badge" style="background:#153d20;color:#4eff91">#24</div>
+</header>
+
+<div class="main">
+  <div class="left-panel">
+    <!-- Approach tabs -->
+    <div>
+      <div class="tabs">
+        <div class="tab active" onclick="switchApproach('naive')" id="tab-naive">🌳 Đệ quy ngây thơ</div>
+        <div class="tab" onclick="switchApproach('memo')" id="tab-memo">🧠 Top-Down (Memoization)</div>
+        <div class="tab" onclick="switchApproach('bottom')" id="tab-bottom">📊 Bottom-Up (Tabulation)</div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="input-row">
+      <label>N = </label>
+      <input type="range" id="nSlider" min="2" max="12" value="7" oninput="onNChange(this.value)">
+      <div class="n-display" id="nDisplay">7</div>
+      <div style="font-size:0.82rem;color:#6080a0">F(N) = <span id="fnResult" style="color:#7b8fff;font-weight:bold"></span></div>
+    </div>
+
+    <!-- Complexity -->
+    <div class="complexity-row" id="complexityRow">
+      <div class="cmx bad">⚡ Đệ quy: O(2ⁿ)</div>
+      <div class="cmx good">✅ DP: O(n)</div>
+      <div class="cmx bad" id="callCountBadge">Gọi hàm: 0</div>
+    </div>
+
+    <!-- Visualization -->
+    <div class="viz-box" id="vizBox">
+      <h3 id="vizTitle">🌳 Cây đệ quy — F(7)</h3>
+      <canvas id="treeCanvas" height="260"></canvas>
+      <!-- Bottom-up table shown here when in bottom approach -->
+      <div id="tableViz" style="display:none">
+        <div class="dp-table-wrap">
+          <div class="dp-table" id="dpTable"></div>
+        </div>
+        <div class="arrows-row" id="arrowsRow"></div>
+      </div>
+    </div>
+
+    <!-- Explanation -->
+    <div class="explanation" id="explanation">Chọn phương pháp và nhấn ▶ Play để bắt đầu.</div>
+
+    <!-- Stats -->
+    <div class="stats-row" id="statsRow">
+      <div class="stat-box calls"><div class="label">Lần gọi hàm</div><div class="value" id="statCalls">0</div></div>
+      <div class="stat-box saved"><div class="label">Cache hit</div><div class="value" id="statHits">0</div></div>
+      <div class="stat-box"><div class="label">Kết quả F(N)</div><div class="value" id="statResult">—</div></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="btn btn-primary" id="btnPlay" onclick="togglePlay()">▶ Play</button>
+      <button class="btn btn-secondary" id="btnStep" onclick="stepForward()">⏭ Step</button>
+      <button class="btn btn-danger" onclick="resetAnim()">↺ Reset</button>
+      <label class="speed-label">Tốc độ:</label>
+      <select id="speedSel">
+        <option value="1200">Chậm</option>
+        <option value="700" selected>Bình thường</option>
+        <option value="350">Nhanh</option>
+        <option value="100">Rất nhanh</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="section-title">💻 Code</div>
+    <div class="code-panel" id="codePanel"></div>
+
+    <div class="section-title">🧩 Memo Array</div>
+    <div class="memo-wrap" id="memoWrap">
+      <div class="memo-label">memo[] = (chưa khởi tạo)</div>
+      <div class="memo-row" id="memoRow"></div>
+    </div>
+
+    <div class="info-box" id="infoBox">
+      <strong>Dynamic Programming</strong> giải quyết bài toán bằng cách:<br>
+      1. Chia thành <strong>subproblems</strong> nhỏ hơn<br>
+      2. Lưu kết quả (<strong>memoization/tabulation</strong>)<br>
+      3. Tái sử dụng thay vì tính lại
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────
+let N = 7;
+let approach = 'naive';
+let steps = [];
+let stepIdx = 0;
+let playing = false;
+let playTimer = null;
+
+// ── Fibonacci ──────────────────────────────────────────────────────────
+function fib(n) {
+  if (n <= 1) return n;
+  return fib(n-1) + fib(n-2);
+}
+
+// ── Code templates ─────────────────────────────────────────────────────
+const CODES = {
+  naive: [
+    {t:'fn',  c:`<span class="kw">function</span> <span class="fn">fib</span>(n):`},
+    {t:'base',c:`  <span class="kw">if</span> n <= <span class="num">1</span>: <span class="kw">return</span> n`},
+    {t:'rec', c:`  <span class="kw">return</span> <span class="fn">fib</span>(n-<span class="num">1</span>) + <span class="fn">fib</span>(n-<span class="num">2</span>)`},
+    {t:'end', c:`<span class="cm">// Vấn đề: tính lại nhiều lần!</span>`},
+    {t:'call',c:`<span class="fn">fib</span>(<span class="num">${N}</span>)`},
+    {t:'cmx', c:`<span class="cm">// Độ phức tạp: O(2ⁿ)</span>`},
+  ],
+  memo: [
+    {t:'init',c:`memo = {}`},
+    {t:'fn',  c:`<span class="kw">function</span> <span class="fn">fib</span>(n):`},
+    {t:'check',c:`  <span class="kw">if</span> n <span class="kw">in</span> memo: <span class="kw">return</span> memo[n]`},
+    {t:'base',c:`  <span class="kw">if</span> n <= <span class="num">1</span>: <span class="kw">return</span> n`},
+    {t:'rec', c:`  memo[n] = <span class="fn">fib</span>(n-<span class="num">1</span>) + <span class="fn">fib</span>(n-<span class="num">2</span>)`},
+    {t:'ret', c:`  <span class="kw">return</span> memo[n]`},
+    {t:'cmx', c:`<span class="cm">// Độ phức tạp: O(n)</span>`},
+  ],
+  bottom: [
+    {t:'init',c:`dp = [<span class="num">0</span>] * (n+<span class="num">1</span>)`},
+    {t:'b0',  c:`dp[<span class="num">0</span>] = <span class="num">0</span>; dp[<span class="num">1</span>] = <span class="num">1</span>`},
+    {t:'loop',c:`<span class="kw">for</span> i <span class="kw">in</span> range(<span class="num">2</span>, n+<span class="num">1</span>):`},
+    {t:'fill',c:`  dp[i] = dp[i-<span class="num">1</span>] + dp[i-<span class="num">2</span>]`},
+    {t:'ret', c:`<span class="kw">return</span> dp[n]`},
+    {t:'cmx', c:`<span class="cm">// Độ phức tạp: O(n)</span>`},
+  ]
+};
+
+// ── Code highlighting ──────────────────────────────────────────────────
+function renderCode(approach, activeLine) {
+  const lines = CODES[approach];
+  const panel = document.getElementById('codePanel');
+  panel.innerHTML = lines.map((l, i) => {
+    let cls = 'code-line';
+    if (i === activeLine) cls += ' highlight';
+    return `<div class="${cls}">${l.c}</div>`;
+  }).join('');
+}
+
+// ── Tree building for naive / memo ─────────────────────────────────────
+let treeNodes = [];
+let treeEdges = [];
+let memoMap = {};
+let callCount = 0;
+let hitCount = 0;
+
+function buildNaiveSteps(n) {
+  // BFS-order to build the recursion tree step by step
+  steps = [];
+  treeNodes = [];
+  treeEdges = [];
+  callCount = 0;
+
+  function dfs(n, parentIdx, depth, x) {
+    const idx = treeNodes.length;
+    treeNodes.push({ n, depth, x, state: 'pending', result: null, parentIdx });
+    callCount++;
+
+    if (parentIdx !== null) treeEdges.push({ from: parentIdx, to: idx });
+
+    steps.push({ type: 'call', nodeIdx: idx, codeLine: n <= 1 ? 1 : 2, calls: callCount, hits: 0,
+      explanation: n <= 1 ? `F(${n}) = ${n} (base case)` : `Gọi F(${n}), tiếp tục phân rã...` });
+
+    if (n <= 1) {
+      treeNodes[idx].result = n;
+      treeNodes[idx].state = 'done';
+      steps.push({ type: 'done', nodeIdx: idx, result: n, calls: callCount, hits: 0,
+        explanation: `F(${n}) = ${n} (base case), trả về ngay` });
+      return n;
+    }
+
+    const r1 = dfs(n-1, idx, depth+1, x - 1/(depth+1));
+    const r2 = dfs(n-2, idx, depth+1, x + 1/(depth+1));
+    const res = r1 + r2;
+    treeNodes[idx].result = res;
+    treeNodes[idx].state = 'done';
+    steps.push({ type: 'done', nodeIdx: idx, result: res, calls: callCount, hits: 0,
+      explanation: `F(${n}) = F(${n-1}) + F(${n-2}) = ${r1} + ${r2} = ${res}`, codeLine: 2 });
+    return res;
+  }
+
+  dfs(n, null, 0, 0.5);
+}
+
+function buildMemoSteps(n) {
+  steps = [];
+  treeNodes = [];
+  treeEdges = [];
+  memoMap = {};
+  callCount = 0;
+  hitCount = 0;
+
+  function dfs(n, parentIdx, depth, x) {
+    const idx = treeNodes.length;
+    treeNodes.push({ n, depth, x, state: 'pending', result: null, parentIdx, cached: false });
+    callCount++;
+
+    if (parentIdx !== null) treeEdges.push({ from: parentIdx, to: idx });
+
+    if (n in memoMap) {
+      hitCount++;
+      treeNodes[idx].result = memoMap[n];
+      treeNodes[idx].state = 'cached';
+      steps.push({ type: 'hit', nodeIdx: idx, result: memoMap[n], calls: callCount, hits: hitCount,
+        codeLine: 2, memoIdx: n,
+        explanation: `F(${n}) đã có trong memo! Trả về ${memoMap[n]} ngay — cache hit! 🚀` });
+      return memoMap[n];
+    }
+
+    steps.push({ type: 'call', nodeIdx: idx, codeLine: n <= 1 ? 3 : 4, calls: callCount, hits: hitCount,
+      explanation: n <= 1 ? `F(${n}) = ${n} (base case)` : `Gọi F(${n}), chưa có trong memo...` });
+
+    if (n <= 1) {
+      memoMap[n] = n;
+      treeNodes[idx].result = n;
+      treeNodes[idx].state = 'done';
+      steps.push({ type: 'done', nodeIdx: idx, result: n, calls: callCount, hits: hitCount,
+        codeLine: 3, memoIdx: n,
+        explanation: `F(${n}) = ${n}, lưu vào memo[${n}]` });
+      return n;
+    }
+
+    const r1 = dfs(n-1, idx, depth+1, x - 0.5/(depth+1));
+    const r2 = dfs(n-2, idx, depth+1, x + 0.5/(depth+1));
+    const res = r1 + r2;
+    memoMap[n] = res;
+    treeNodes[idx].result = res;
+    treeNodes[idx].state = 'done';
+    steps.push({ type: 'done', nodeIdx: idx, result: res, calls: callCount, hits: hitCount,
+      codeLine: 5, memoIdx: n,
+      explanation: `F(${n}) = ${r1} + ${r2} = ${res}, lưu memo[${n}] = ${res}` });
+    return res;
+  }
+
+  dfs(n, null, 0, 0.5);
+}
+
+function buildBottomUpSteps(n) {
+  steps = [];
+  const dp = new Array(n+1).fill(-1);
+
+  steps.push({ type: 'init', dp: [...dp], codeLine: 0,
+    explanation: `Khởi tạo mảng dp[0..${n}], tất cả = -1 (chưa tính)` });
+  dp[0] = 0; dp[1] = 1;
+  steps.push({ type: 'base', dp: [...dp], current: [0,1], codeLine: 1,
+    explanation: `Base case: dp[0] = 0, dp[1] = 1` });
+
+  for (let i = 2; i <= n; i++) {
+    steps.push({ type: 'computing', dp: [...dp], current: i, deps: [i-1, i-2], codeLine: 2,
+      explanation: `Vòng lặp i = ${i}: tính dp[${i}]` });
+    dp[i] = dp[i-1] + dp[i-2];
+    steps.push({ type: 'fill', dp: [...dp], current: i, deps: [i-1, i-2], codeLine: 3,
+      explanation: `dp[${i}] = dp[${i-1}] + dp[${i-2}] = ${dp[i-1]} + ${dp[i-2]} = ${dp[i]}` });
+  }
+  steps.push({ type: 'done', dp: [...dp], result: dp[n], codeLine: 4,
+    explanation: `Kết quả: F(${n}) = dp[${n}] = ${dp[n]} ✅` });
+}
+
+// ── Tree Layout ─────────────────────────────────────────────────────────
+function layoutTree(nodes) {
+  // Compute x positions by level (BFS-based)
+  const byDepth = {};
+  nodes.forEach((nd, i) => {
+    if (!byDepth[nd.depth]) byDepth[nd.depth] = [];
+    byDepth[nd.depth].push(i);
+  });
+  const maxDepth = Math.max(...nodes.map(n => n.depth));
+  const levelCounts = {};
+  nodes.forEach(nd => levelCounts[nd.depth] = (levelCounts[nd.depth]||0)+1);
+  const positions = [];
+  const assigned = {};
+  Object.keys(byDepth).sort((a,b)=>a-b).forEach(d => {
+    const lvl = byDepth[d];
+    lvl.forEach((ni, j) => {
+      assigned[ni] = (j+1)/(lvl.length+1);
+    });
+  });
+  return assigned;
+}
+
+function drawTree(canvas, highlightIdx, visibleUpTo) {
+  const W = canvas.offsetWidth || 700;
+  const H = 260;
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  if (!treeNodes.length) return;
+
+  const maxDepth = Math.max(...treeNodes.map(n => n.depth));
+  const levelY = d => 24 + d * (H - 40) / Math.max(maxDepth, 1);
+  const xPos = layoutTree(treeNodes);
+
+  // Group nodes by depth for coloring duplicates
+  const dupMap = {};
+  treeNodes.forEach((nd, i) => {
+    if (!dupMap[nd.n]) dupMap[nd.n] = [];
+    dupMap[nd.n].push(i);
+  });
+  const dupColors = ['#ff6b6b','#ffd600','#00e090','#61afef','#c678dd','#e5c07b'];
+  const colorFor = {};
+  let ci = 0;
+  Object.entries(dupMap).forEach(([n, idxs]) => {
+    if (idxs.length > 1) { colorFor[n] = dupColors[ci++ % dupColors.length]; }
+  });
+
+  // Draw edges first
+  treeEdges.forEach(e => {
+    if (e.from > visibleUpTo || e.to > visibleUpTo) return;
+    const from = treeNodes[e.from], to = treeNodes[e.to];
+    const fx = xPos[e.from]*W, fy = levelY(from.depth);
+    const tx = xPos[e.to]*W, ty = levelY(to.depth);
+    ctx.beginPath();
+    ctx.moveTo(fx, fy+12);
+    ctx.lineTo(tx, ty-12);
+    ctx.strokeStyle = '#2a3868';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  });
+
+  // Draw nodes
+  treeNodes.forEach((nd, i) => {
+    if (i > visibleUpTo) return;
+    const x = xPos[i]*W, y = levelY(nd.depth);
+    const r = 16;
+
+    let fill = '#1a2040';
+    let stroke = '#3a4868';
+    let textColor = '#8090b0';
+
+    if (nd.state === 'cached') { fill = '#0d3020'; stroke = '#00e090'; textColor = '#00e090'; }
+    else if (nd.state === 'done') {
+      const c = colorFor[nd.n];
+      if (c) { fill = '#1e1020'; stroke = c; textColor = c; }
+      else { fill = '#1a3050'; stroke = '#3b7fd8'; textColor = '#7bb8ff'; }
+    }
+    if (i === highlightIdx) { fill = '#3d3000'; stroke = '#ffd600'; textColor = '#ffd600'; }
+
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI*2);
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = textColor;
+    ctx.font = `bold 11px Segoe UI`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const label = nd.result !== null ? `${nd.result}` : `F${nd.n}`;
+    ctx.fillText(nd.n <= 1 ? `${nd.n}` : (nd.result !== null ? `${nd.result}` : `F${nd.n}`), x, y);
+
+    // Index label below
+    ctx.font = `9px Segoe UI`;
+    ctx.fillStyle = '#5070a0';
+    ctx.fillText(`F(${nd.n})`, x, y + r + 9);
+  });
+}
+
+// ── Bottom-up table rendering ───────────────────────────────────────────
+function renderTable(dp, current, deps, backtrack) {
+  const tableEl = document.getElementById('dpTable');
+  const arrowsEl = document.getElementById('arrowsRow');
+  tableEl.innerHTML = '';
+  arrowsEl.innerHTML = '';
+
+  dp.forEach((val, i) => {
+    const cell = document.createElement('div');
+    cell.className = 'dp-cell';
+    if (val === -1) cell.classList.add('empty');
+    else if (i === current && !backtrack) cell.classList.add('computing');
+    else if (deps && deps.includes(i)) cell.classList.add('highlight');
+    else cell.classList.add('computed');
+
+    cell.innerHTML = `<div class="idx">dp[${i}]</div><div class="val">${val === -1 ? '—' : val}</div>`;
+    tableEl.appendChild(cell);
+  });
+
+  // Arrows
+  const spacer = document.createElement('div');
+  spacer.className = 'arr-spacer';
+  arrowsEl.appendChild(spacer);
+  dp.forEach((val, i) => {
+    const arr = document.createElement('div');
+    arr.className = 'arr-icon';
+    if (deps && deps.includes(i)) { arr.textContent = '↑'; arr.classList.add('active'); }
+    else if (i >= 2 && val !== -1) arr.textContent = '⬆';
+    else arr.textContent = '';
+    arrowsEl.appendChild(arr);
+  });
+}
+
+// ── Memo panel rendering ────────────────────────────────────────────────
+function renderMemo(memoState, hitIdx) {
+  const row = document.getElementById('memoRow');
+  const label = document.querySelector('.memo-label');
+  if (approach !== 'memo') {
+    row.innerHTML = '';
+    label.textContent = 'N/A — chỉ dùng cho Top-Down';
+    return;
+  }
+  label.textContent = `memo[0..${N}]:`;
+  row.innerHTML = '';
+  for (let i = 0; i <= N; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'memo-cell';
+    const val = memoState[i] !== undefined ? memoState[i] : '?';
+    cell.innerHTML = `<div class="midx">[${i}]</div><div class="mval">${val}</div>`;
+    if (memoState[i] !== undefined) cell.classList.add('hit');
+    else cell.classList.add('empty');
+    if (i === hitIdx) cell.style.animation = 'pulse-green 0.4s ease';
+    row.appendChild(cell);
+  }
+}
+
+// ── Approach switch ────────────────────────────────────────────────────
+function switchApproach(ap) {
+  approach = ap;
+  ['naive','memo','bottom'].forEach(a => {
+    document.getElementById(`tab-${a}`).classList.toggle('active', a === ap);
+  });
+  resetAnim();
+}
+
+// ── Input change ────────────────────────────────────────────────────────
+function onNChange(val) {
+  N = parseInt(val);
+  document.getElementById('nDisplay').textContent = N;
+  document.getElementById('fnResult').textContent = fib(N);
+  // Update code N reference
+  CODES.naive[4].c = `<span class="fn">fib</span>(<span class="num">${N}</span>)`;
+  resetAnim();
+}
+
+// ── Animation state ────────────────────────────────────────────────────
+let currentMemo = {};
+let visibleNodeCount = 0;
+
+function applyStep(idx) {
+  if (idx >= steps.length) { stopPlay(); return; }
+  const s = steps[idx];
+  document.getElementById('explanation').textContent = s.explanation || '';
+  document.getElementById('statCalls').textContent = s.calls || 0;
+  document.getElementById('statHits').textContent = s.hits || 0;
+  document.getElementById('callCountBadge').textContent = `Gọi hàm: ${s.calls || 0}`;
+  if (s.result !== undefined && s.result !== null) {
+    document.getElementById('statResult').textContent = s.result;
+  }
+
+  if (approach === 'bottom') {
+    if (s.dp) renderTable(s.dp, s.current, s.deps, false);
+    renderCode('bottom', s.codeLine);
+  } else {
+    // Tree approaches
+    visibleNodeCount = s.nodeIdx !== undefined ? s.nodeIdx : visibleNodeCount;
+    const canvas = document.getElementById('treeCanvas');
+    // Sync node states up to step
+    if (s.type === 'done') treeNodes[s.nodeIdx].state = (approach === 'memo' && s.type === 'hit') ? 'cached' : 'done';
+    if (s.type === 'hit') treeNodes[s.nodeIdx].state = 'cached';
+    drawTree(canvas, s.nodeIdx, visibleNodeCount);
+    renderCode(approach, s.codeLine);
+    if (approach === 'memo') {
+      if (s.memoIdx !== undefined && s.type === 'done') currentMemo[s.memoIdx] = s.result;
+      renderMemo(currentMemo, s.type === 'hit' ? s.memoIdx : -1);
+    }
+  }
+}
+
+function togglePlay() {
+  if (playing) stopPlay(); else startPlay();
+}
+
+function startPlay() {
+  playing = true;
+  document.getElementById('btnPlay').textContent = '⏸ Pause';
+  tick();
+}
+
+function stopPlay() {
+  playing = false;
+  document.getElementById('btnPlay').textContent = '▶ Play';
+  clearTimeout(playTimer);
+}
+
+function tick() {
+  if (!playing) return;
+  if (stepIdx >= steps.length) { stopPlay(); return; }
+  applyStep(stepIdx++);
+  const speed = parseInt(document.getElementById('speedSel').value);
+  playTimer = setTimeout(tick, speed);
+}
+
+function stepForward() {
+  stopPlay();
+  if (stepIdx < steps.length) applyStep(stepIdx++);
+}
+
+function resetAnim() {
+  stopPlay();
+  stepIdx = 0;
+  currentMemo = {};
+  visibleNodeCount = 0;
+  callCount = 0; hitCount = 0;
+  document.getElementById('statCalls').textContent = '0';
+  document.getElementById('statHits').textContent = '0';
+  document.getElementById('statResult').textContent = '—';
+  document.getElementById('explanation').textContent = 'Nhấn ▶ Play hoặc ⏭ Step để bắt đầu.';
+  document.getElementById('callCountBadge').textContent = 'Gọi hàm: 0';
+
+  // Show/hide canvas vs table
+  const canvas = document.getElementById('treeCanvas');
+  const tableViz = document.getElementById('tableViz');
+  if (approach === 'bottom') {
+    canvas.style.display = 'none';
+    tableViz.style.display = 'block';
+    buildBottomUpSteps(N);
+    renderCode('bottom', -1);
+    renderTable(new Array(N+1).fill(-1), -1, null, false);
+  } else {
+    canvas.style.display = 'block';
+    tableViz.style.display = 'none';
+    if (approach === 'naive') { buildNaiveSteps(N); renderCode('naive', -1); }
+    else { buildMemoSteps(N); renderCode('memo', -1); }
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth || 700;
+    canvas.height = 260;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  renderMemo({}, -1);
+  document.getElementById('vizTitle').textContent =
+    approach === 'naive' ? `🌳 Cây đệ quy — F(${N})` :
+    approach === 'memo' ? `🧠 Cây đệ quy + Memoization — F(${N})` :
+    `📊 Bảng Bottom-Up dp[0..${N}]`;
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────
+onNChange(7);
+document.getElementById('fnResult').textContent = fib(7);
+resetAnim();
+</script>
+</body>
+</html>

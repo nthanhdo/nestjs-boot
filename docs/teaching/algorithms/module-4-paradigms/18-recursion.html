@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>18 - Đệ Quy (Recursion)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f0f1a; color: #e0e0f0; font-family: 'Segoe UI', monospace; min-height: 100vh; }
+  h1 { text-align: center; padding: 18px; background: linear-gradient(135deg, #1a1a2e, #16213e); font-size: 1.5rem; color: #a78bfa; border-bottom: 2px solid #7c3aed; letter-spacing: 2px; }
+  .subtitle { text-align: center; font-size: 0.85rem; color: #94a3b8; padding: 6px; background: #16213e; }
+
+  .tabs { display: flex; gap: 4px; padding: 10px 16px; background: #12122a; border-bottom: 1px solid #2d2d4e; }
+  .tab { padding: 8px 18px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem; border: 1px solid #2d2d4e; border-bottom: none; transition: all 0.2s; color: #94a3b8; background: #1a1a2e; }
+  .tab.active { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+
+  .main { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 110px); }
+  .viz-panel { padding: 16px; overflow-y: auto; background: #0f0f1a; }
+  .code-panel { background: #111128; border-left: 2px solid #2d2d4e; display: flex; flex-direction: column; }
+
+  /* Controls */
+  .controls { display: flex; gap: 8px; align-items: center; padding: 10px 16px; background: #12122a; border-top: 1px solid #2d2d4e; flex-wrap: wrap; }
+  .btn { padding: 7px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.15s; }
+  .btn-play { background: #7c3aed; color: #fff; }
+  .btn-play:hover { background: #6d28d9; }
+  .btn-step { background: #0e7490; color: #fff; }
+  .btn-step:hover { background: #0891b2; }
+  .btn-reset { background: #374151; color: #d1d5db; }
+  .btn-reset:hover { background: #4b5563; }
+  .speed-label { font-size: 0.78rem; color: #94a3b8; }
+  input[type=range] { width: 90px; accent-color: #7c3aed; }
+
+  /* Call Stack Tower */
+  .stack-area { display: flex; flex-direction: column-reverse; align-items: center; min-height: 260px; gap: 3px; padding: 12px; border: 1px solid #2d2d4e; border-radius: 10px; background: #0d0d1f; position: relative; }
+  .stack-area::before { content: '📚 Call Stack'; position: absolute; top: 8px; left: 12px; font-size: 0.75rem; color: #64748b; }
+  .stack-frame { width: 85%; max-width: 320px; padding: 10px 14px; border-radius: 6px; border: 2px solid; font-size: 0.82rem; font-family: monospace; position: relative; transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .stack-frame.active { border-color: #a78bfa; background: #1e1b4b; box-shadow: 0 0 16px #7c3aed55; }
+  .stack-frame.waiting { border-color: #374151; background: #1a1a2e; opacity: 0.7; }
+  .stack-frame.base { border-color: #10b981; background: #064e3b22; }
+  .frame-name { color: #a78bfa; font-weight: bold; }
+  .frame-param { color: #fbbf24; }
+  .frame-return { color: #34d399; font-size: 0.75rem; margin-top: 4px; }
+  .frame-depth { position: absolute; right: 10px; top: 8px; font-size: 0.68rem; color: #4b5563; }
+  .frame-enter { animation: slideUp 0.3s ease; }
+  .frame-exit { animation: slideDown 0.3s ease forwards; }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scaleX(0.85); } to { opacity: 1; transform: translateY(0) scaleX(1); } }
+  @keyframes slideDown { to { opacity: 0; transform: translateY(-20px) scaleX(0.85); } }
+
+  /* Result display */
+  .result-box { margin: 10px 0; padding: 12px 16px; border-radius: 8px; background: #0d2818; border: 1px solid #10b981; font-size: 0.9rem; }
+  .result-box span { color: #34d399; font-weight: bold; font-size: 1.1rem; }
+
+  /* Fibonacci tree */
+  .fib-tree { overflow-x: auto; padding: 8px; }
+  .tree-svg { display: block; margin: 0 auto; }
+
+  /* Hanoi */
+  .hanoi-area { display: flex; gap: 16px; align-items: flex-end; justify-content: center; padding: 16px; background: #0d0d1f; border-radius: 10px; border: 1px solid #2d2d4e; min-height: 180px; }
+  .peg-container { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+  .peg-name { font-size: 0.72rem; color: #94a3b8; margin-bottom: 4px; }
+  .peg-pole { width: 6px; background: #4b5563; border-radius: 3px; min-height: 100px; position: relative; }
+  .peg-base { height: 10px; border-radius: 4px; background: #374151; width: 100%; }
+  .disks { display: flex; flex-direction: column-reverse; align-items: center; gap: 3px; min-height: 100px; }
+  .disk { height: 22px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; color: #fff; transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+  /* Move log */
+  .move-log { max-height: 110px; overflow-y: auto; font-size: 0.75rem; color: #94a3b8; padding: 8px; background: #0d0d1f; border-radius: 6px; border: 1px solid #1e293b; }
+  .move-log .move-item { padding: 2px 0; border-bottom: 1px solid #1e293b22; }
+  .move-item.current { color: #a78bfa; font-weight: bold; }
+
+  /* Warning */
+  .warning-box { padding: 10px 14px; border-radius: 6px; background: #7f1d1d22; border: 1px solid #ef4444; font-size: 0.8rem; color: #fca5a5; display: flex; align-items: center; gap: 8px; }
+
+  /* Concept cards */
+  .concept-row { display: flex; gap: 10px; margin: 10px 0; }
+  .concept-card { flex: 1; padding: 12px; border-radius: 8px; font-size: 0.8rem; }
+  .concept-base { background: #064e3b22; border: 1px solid #10b981; }
+  .concept-rec { background: #1e1b4b; border: 1px solid #7c3aed; }
+  .concept-title { font-weight: bold; margin-bottom: 4px; }
+  .concept-base .concept-title { color: #34d399; }
+  .concept-rec .concept-title { color: #a78bfa; }
+
+  /* Code panel */
+  .code-header { padding: 10px 14px; background: #1a1a2e; border-bottom: 1px solid #2d2d4e; font-size: 0.78rem; color: #7c3aed; font-weight: bold; }
+  .code-body { flex: 1; overflow-y: auto; padding: 12px; font-size: 0.75rem; font-family: 'Courier New', monospace; line-height: 1.7; }
+  .code-line { padding: 1px 8px; border-radius: 3px; transition: background 0.2s; white-space: pre; }
+  .code-line.hl { background: #7c3aed33; border-left: 3px solid #a78bfa; }
+  .kw { color: #c084fc; }
+  .fn { color: #60a5fa; }
+  .num { color: #fbbf24; }
+  .cmt { color: #4b5563; font-style: italic; }
+  .str { color: #34d399; }
+
+  /* Info bar */
+  .info-bar { padding: 8px 16px; background: #12122a; font-size: 0.78rem; color: #94a3b8; display: flex; gap: 16px; flex-wrap: wrap; }
+  .info-item strong { color: #a78bfa; }
+
+  section.prob { display: none; }
+  section.prob.active { display: block; }
+</style>
+</head>
+<body>
+
+<h1>🔄 Đệ Quy (Recursion)</h1>
+<div class="subtitle">Tư duy: Bài toán lớn = Bài toán nhỏ hơn + Base case</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchProblem('factorial')">📊 Factorial</div>
+  <div class="tab" onclick="switchProblem('fibonacci')">🌳 Fibonacci Tree</div>
+  <div class="tab" onclick="switchProblem('hanoi')">🗼 Tháp Hà Nội</div>
+</div>
+
+<div class="main">
+  <div class="viz-panel">
+
+    <!-- FACTORIAL -->
+    <section class="prob active" id="prob-factorial">
+      <div class="concept-row">
+        <div class="concept-card concept-base">
+          <div class="concept-title">🛑 Base Case</div>
+          <div>factorial(0) = 1<br>Điều kiện DỪNG — không đệ quy thêm</div>
+        </div>
+        <div class="concept-card concept-rec">
+          <div class="concept-title">🔄 Recursive Case</div>
+          <div>factorial(n) = n × factorial(n-1)<br>Thu nhỏ bài toán mỗi bước</div>
+        </div>
+      </div>
+      <p style="font-size:0.8rem;color:#64748b;margin:6px 0 10px;">
+        Tính factorial(5) — quan sát stack lớn dần rồi thu nhỏ khi trả kết quả
+      </p>
+
+      <div class="stack-area" id="factorial-stack">
+        <div style="color:#2d2d4e;font-size:0.8rem;padding:40px;">Stack trống — nhấn Play</div>
+      </div>
+
+      <div class="result-box" id="factorial-result" style="display:none">
+        Kết quả: factorial(5) = <span id="factorial-val">—</span>
+      </div>
+
+      <div class="warning-box" id="factorial-warn" style="display:none;margin-top:8px;">
+        ⚠️ Stack Overflow: Đệ quy quá sâu không có base case → tràn stack!
+      </div>
+    </section>
+
+    <!-- FIBONACCI -->
+    <section class="prob" id="prob-fibonacci">
+      <div class="concept-row">
+        <div class="concept-card concept-base">
+          <div class="concept-title">🛑 Base Case</div>
+          <div>fib(0)=0, fib(1)=1<br>2 base cases vì 2 bước nhỏ nhất</div>
+        </div>
+        <div class="concept-card concept-rec">
+          <div class="concept-title">⚠️ Vấn đề</div>
+          <div style="color:#fbbf24;">fib(n) = fib(n-1) + fib(n-2)<br>→ Tính lại cùng giá trị nhiều lần! O(2ⁿ)</div>
+        </div>
+      </div>
+      <p style="font-size:0.8rem;color:#64748b;margin:6px 0 10px;">
+        Cây đệ quy của fib(5) — các ô đỏ = tính toán trùng lặp (explosive!)
+      </p>
+      <div class="fib-tree" id="fib-tree-container">
+        <svg class="tree-svg" id="fib-svg" width="640" height="320"></svg>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:8px;font-size:0.75rem;">
+        <span style="color:#a78bfa;">■ Đang tính</span>
+        <span style="color:#ef4444;">■ Đã tính rồi (duplicate)</span>
+        <span style="color:#34d399;">■ Base case</span>
+        <span style="color:#374151;">■ Chưa tính</span>
+      </div>
+      <div class="result-box" id="fib-result" style="display:none;margin-top:10px">
+        Calls thực hiện: <span id="fib-calls">—</span> | Kết quả: fib(5) = <span id="fib-val">—</span>
+      </div>
+    </section>
+
+    <!-- HANOI -->
+    <section class="prob" id="prob-hanoi">
+      <div class="concept-row">
+        <div class="concept-card concept-base">
+          <div class="concept-title">🛑 Base Case</div>
+          <div>1 đĩa → di chuyển trực tiếp từ A sang C</div>
+        </div>
+        <div class="concept-card concept-rec">
+          <div class="concept-title">🔄 Chiến lược</div>
+          <div>1. Di n-1 đĩa từ A→B<br>2. Di đĩa lớn nhất A→C<br>3. Di n-1 đĩa từ B→C</div>
+        </div>
+      </div>
+      <div class="hanoi-area" id="hanoi-pegs">
+        <div class="peg-container" id="peg-A">
+          <div class="peg-name">A (Nguồn)</div>
+          <div class="disks" id="disks-A"></div>
+          <div class="peg-base"></div>
+        </div>
+        <div class="peg-container" id="peg-B">
+          <div class="peg-name">B (Trung gian)</div>
+          <div class="disks" id="disks-B"></div>
+          <div class="peg-base"></div>
+        </div>
+        <div class="peg-container" id="peg-C">
+          <div class="peg-name">C (Đích)</div>
+          <div class="disks" id="disks-C"></div>
+          <div class="peg-base"></div>
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:0.8rem;color:#94a3b8;">
+        <strong style="color:#a78bfa;">Số bước tối thiểu cho n đĩa: 2ⁿ - 1</strong>
+        &nbsp;(3 đĩa = 7 bước)
+      </div>
+      <div class="move-log" id="move-log" style="margin-top:8px;">
+        <div style="color:#4b5563;">Nhấn Play để bắt đầu...</div>
+      </div>
+    </section>
+
+  </div><!-- end viz-panel -->
+
+  <div class="code-panel">
+    <div class="code-header">📄 Pseudocode (Vietnamese comments)</div>
+    <div class="code-body" id="code-body">
+      <!-- filled by JS -->
+    </div>
+    <div class="info-bar" id="info-bar">
+      <div class="info-item"><strong>Depth:</strong> <span id="info-depth">0</span></div>
+      <div class="info-item"><strong>Calls:</strong> <span id="info-calls">0</span></div>
+      <div class="info-item"><strong>Step:</strong> <span id="info-step">—</span></div>
+    </div>
+    <div class="controls">
+      <button class="btn btn-play" id="btn-play" onclick="togglePlay()">▶ Play</button>
+      <button class="btn btn-step" onclick="stepOnce()">⏭ Step</button>
+      <button class="btn btn-reset" onclick="resetAll()">↺ Reset</button>
+      <span class="speed-label">Tốc độ:</span>
+      <input type="range" min="1" max="5" value="3" id="speed-slider">
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let currentProblem = 'factorial';
+let playing = false;
+let timer = null;
+let stepIndex = 0;
+let steps = [];
+let callCount = 0;
+
+const codes = {
+  factorial: [
+    { text: '// Đệ quy tính giai thừa', cls: 'cmt' },
+    { text: 'function factorial(n):', cls: '' },
+    { text: '  // Base case: dừng đệ quy', cls: 'cmt' },
+    { text: '  if n == 0:', cls: 'kw' },
+    { text: '    return 1  // ← đáy stack', cls: 'num' },
+    { text: '', cls: '' },
+    { text: '  // Recursive case:', cls: 'cmt' },
+    { text: '  // Gọi chính mình với n nhỏ hơn', cls: 'cmt' },
+    { text: '  sub = factorial(n - 1)', cls: 'fn' },
+    { text: '  result = n * sub', cls: '' },
+    { text: '  return result  // ← trả về stack trên', cls: 'str' },
+  ],
+  fibonacci: [
+    { text: '// Fibonacci đệ quy ngây thơ — O(2ⁿ)', cls: 'cmt' },
+    { text: 'function fib(n):', cls: '' },
+    { text: '  // 2 base cases', cls: 'cmt' },
+    { text: '  if n == 0: return 0', cls: 'kw' },
+    { text: '  if n == 1: return 1', cls: 'kw' },
+    { text: '', cls: '' },
+    { text: '  // Tính 2 nhánh con — TRÙNG LẶP!', cls: 'cmt' },
+    { text: '  left  = fib(n - 1)  // nhánh trái', cls: 'fn' },
+    { text: '  right = fib(n - 2)  // nhánh phải', cls: 'fn' },
+    { text: '  return left + right', cls: 'str' },
+    { text: '', cls: '' },
+    { text: '// Giải pháp: Memoization / DP', cls: 'cmt' },
+    { text: '// → lưu kết quả, không tính lại', cls: 'cmt' },
+  ],
+  hanoi: [
+    { text: '// Tháp Hà Nội — n đĩa', cls: 'cmt' },
+    { text: 'function hanoi(n, from, to, via):', cls: '' },
+    { text: '  // Base case: 1 đĩa', cls: 'cmt' },
+    { text: '  if n == 1:', cls: 'kw' },
+    { text: '    move(from → to)', cls: 'num' },
+    { text: '    return', cls: '' },
+    { text: '', cls: '' },
+    { text: '  // Bước 1: di n-1 đĩa A→B', cls: 'cmt' },
+    { text: '  hanoi(n-1, from, via, to)', cls: 'fn' },
+    { text: '', cls: '' },
+    { text: '  // Bước 2: di đĩa lớn A→C', cls: 'cmt' },
+    { text: '  move(from → to)', cls: 'num' },
+    { text: '', cls: '' },
+    { text: '  // Bước 3: di n-1 đĩa B→C', cls: 'cmt' },
+    { text: '  hanoi(n-1, via, to, from)', cls: 'fn' },
+  ]
+};
+
+// ============================================================
+// FACTORIAL STEPS GENERATOR
+// ============================================================
+function genFactorialSteps(n) {
+  const steps = [];
+  const stack = [];
+  function rec(val) {
+    stack.push({ name: 'factorial', param: val, state: 'active' });
+    steps.push({ type: 'push', stack: JSON.parse(JSON.stringify(stack)), codeLine: val === 0 ? 3 : 7, desc: `Gọi factorial(${val})` });
+    if (val === 0) {
+      stack[stack.length - 1].state = 'base';
+      stack[stack.length - 1].ret = 1;
+      steps.push({ type: 'base', stack: JSON.parse(JSON.stringify(stack)), codeLine: 4, desc: `Base case! factorial(0) = 1` });
+    } else {
+      rec(val - 1);
+      const retVal = stack[stack.length - 1].ret;
+      stack.pop();
+      const myRet = val * retVal;
+      if (stack.length) {
+        stack[stack.length - 1].ret = myRet;
+        stack[stack.length - 1].state = 'active';
+      }
+      steps.push({ type: 'return', stack: JSON.parse(JSON.stringify(stack)), codeLine: 10, desc: `factorial(${val}) = ${val} × ${retVal} = ${myRet}`, result: stack.length === 0 ? myRet : null });
+    }
+  }
+  rec(n);
+  return steps;
+}
+
+// ============================================================
+// FIBONACCI TREE
+// ============================================================
+const fibNodes = [];
+const fibEdges = [];
+let fibCallCount = 0;
+const fibComputed = {};
+
+function buildFibTree(n, x, y, spread, parentId) {
+  const id = fibNodes.length;
+  const isDup = fibComputed[n] !== undefined && n > 1;
+  const isBase = n <= 1;
+  fibNodes.push({ id, n, x, y, state: 'pending', isDup, isBase });
+  if (parentId !== null) fibEdges.push({ from: parentId, to: id });
+  if (!isBase) {
+    buildFibTree(n - 1, x - spread, y + 70, spread * 0.5, id);
+    buildFibTree(n - 2, x + spread, y + 70, spread * 0.5, id);
+  }
+  if (!isDup || isBase) fibComputed[n] = true;
+}
+
+function genFibSteps() {
+  fibNodes.length = 0; fibEdges.length = 0; fibCallCount = 0;
+  Object.keys(fibComputed).forEach(k => delete fibComputed[k]);
+  buildFibTree(5, 320, 30, 120, null);
+  const steps = [];
+  let order = 0;
+  // BFS order animation
+  const queue = [0];
+  const visited = new Set();
+  while (queue.length) {
+    const id = queue.shift();
+    if (visited.has(id)) continue;
+    visited.add(id);
+    order++;
+    steps.push({ type: 'fib-activate', nodeId: id, order });
+    const children = fibEdges.filter(e => e.from === id).map(e => e.to);
+    children.forEach(c => queue.push(c));
+  }
+  return steps;
+}
+
+// ============================================================
+// HANOI STEPS GENERATOR
+// ============================================================
+function genHanoiSteps(n) {
+  const steps = [];
+  const pegs = {
+    A: Array.from({ length: n }, (_, i) => n - i),
+    B: [],
+    C: []
+  };
+  function rec(k, from, to, via) {
+    if (k === 1) {
+      const disk = pegs[from].pop();
+      pegs[to].push(disk);
+      steps.push({ pegs: { A: [...pegs.A], B: [...pegs.B], C: [...pegs.C] }, msg: `Đĩa ${disk}: ${from} → ${to}`, codeLine: 3 });
+      return;
+    }
+    rec(k - 1, from, via, to);
+    const disk = pegs[from].pop();
+    pegs[to].push(disk);
+    steps.push({ pegs: { A: [...pegs.A], B: [...pegs.B], C: [...pegs.C] }, msg: `Đĩa ${disk}: ${from} → ${to}`, codeLine: 11 });
+    rec(k - 1, via, to, from);
+  }
+  // initial state
+  steps.push({ pegs: { A: [...pegs.A], B: [...pegs.B], C: [...pegs.C] }, msg: 'Trạng thái ban đầu', codeLine: 0, initial: true });
+  rec(n, 'A', 'C', 'B');
+  return steps;
+}
+
+// ============================================================
+// RENDER FUNCTIONS
+// ============================================================
+const diskColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7'];
+
+function renderStack(frames) {
+  const el = document.getElementById('factorial-stack');
+  if (!frames || frames.length === 0) {
+    el.innerHTML = '<div style="color:#2d2d4e;font-size:0.8rem;padding:40px;">Stack trống</div>';
+    return;
+  }
+  el.innerHTML = frames.map((f, i) => {
+    const cls = f.state === 'base' ? 'base' : (i === frames.length - 1 ? 'active' : 'waiting');
+    return `<div class="stack-frame ${cls} frame-enter">
+      <div class="frame-name">factorial(<span class="frame-param">${f.param}</span>)</div>
+      ${f.ret !== undefined ? `<div class="frame-return">↩ returns ${f.ret}</div>` : ''}
+      <div class="frame-depth">depth ${i + 1}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderFibTree(activeId) {
+  const svg = document.getElementById('fib-svg');
+  const nodeRadius = 22;
+  svg.innerHTML = '';
+  // edges first
+  fibEdges.forEach(e => {
+    const from = fibNodes[e.from], to = fibNodes[e.to];
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', from.x); line.setAttribute('y1', from.y);
+    line.setAttribute('x2', to.x); line.setAttribute('y2', to.y);
+    line.setAttribute('stroke', '#2d2d4e'); line.setAttribute('stroke-width', '1.5');
+    svg.appendChild(line);
+  });
+  // nodes
+  fibNodes.forEach(node => {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', node.x); circle.setAttribute('cy', node.y);
+    circle.setAttribute('r', nodeRadius);
+    let fill = '#1e293b';
+    if (node.id === activeId) fill = '#7c3aed';
+    else if (node.isBase) fill = '#064e3b';
+    else if (node.isDup) fill = '#7f1d1d';
+    else if (node.state === 'visited') fill = '#1e3a5f';
+    circle.setAttribute('fill', fill);
+    circle.setAttribute('stroke', node.id === activeId ? '#a78bfa' : '#374151');
+    circle.setAttribute('stroke-width', '2');
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', node.x); text.setAttribute('y', node.y + 1);
+    text.setAttribute('text-anchor', 'middle'); text.setAttribute('dominant-baseline', 'middle');
+    text.setAttribute('fill', '#e0e0f0'); text.setAttribute('font-size', '12');
+    text.setAttribute('font-family', 'monospace');
+    text.textContent = `f(${node.n})`;
+    g.appendChild(circle); g.appendChild(text);
+    svg.appendChild(g);
+  });
+}
+
+function renderHanoi(pegs, msg, currentMoveIdx) {
+  ['A', 'B', 'C'].forEach(p => {
+    const el = document.getElementById(`disks-${p}`);
+    el.innerHTML = pegs[p].map(d => {
+      const w = 30 + d * 22;
+      return `<div class="disk" style="width:${w}px;background:${diskColors[d - 1]};min-width:30px;">${d}</div>`;
+    }).join('');
+  });
+  const log = document.getElementById('move-log');
+  if (steps[stepIndex] && !steps[stepIndex].initial) {
+    const item = document.createElement('div');
+    item.className = 'move-item current';
+    item.textContent = `[${currentMoveIdx}] ${msg}`;
+    log.appendChild(item);
+    log.scrollTop = log.scrollHeight;
+    // de-highlight previous
+    const prev = log.querySelector('.current.old');
+    if (prev) prev.classList.remove('old', 'current');
+    setTimeout(() => item.classList.add('old'), 500);
+  }
+}
+
+// ============================================================
+// PLAYBACK LOGIC
+// ============================================================
+function applyStep(s) {
+  callCount++;
+  document.getElementById('info-calls').textContent = callCount;
+
+  if (currentProblem === 'factorial') {
+    renderStack(s.stack);
+    highlightCode(s.codeLine);
+    document.getElementById('info-depth').textContent = s.stack.length;
+    document.getElementById('info-step').textContent = s.desc;
+    if (s.result !== undefined && s.result !== null) {
+      document.getElementById('factorial-result').style.display = 'block';
+      document.getElementById('factorial-val').textContent = s.result;
+    }
+  } else if (currentProblem === 'fibonacci') {
+    fibNodes[s.nodeId].state = 'visited';
+    renderFibTree(s.nodeId);
+    document.getElementById('info-step').textContent = `Tính fib(${fibNodes[s.nodeId].n})`;
+    document.getElementById('info-depth').textContent = s.order;
+    if (stepIndex === steps.length - 1) {
+      document.getElementById('fib-result').style.display = 'block';
+      document.getElementById('fib-calls').textContent = steps.length;
+      document.getElementById('fib-val').textContent = 5;
+    }
+  } else if (currentProblem === 'hanoi') {
+    renderHanoi(s.pegs, s.msg, stepIndex);
+    highlightCode(s.codeLine);
+    document.getElementById('info-step').textContent = s.msg;
+  }
+}
+
+function highlightCode(lineIdx) {
+  document.querySelectorAll('.code-line').forEach((el, i) => {
+    el.classList.toggle('hl', i === lineIdx);
+  });
+}
+
+function getDelay() {
+  const spd = parseInt(document.getElementById('speed-slider').value);
+  return [900, 650, 450, 280, 150][spd - 1];
+}
+
+function stepOnce() {
+  if (stepIndex >= steps.length) return;
+  applyStep(steps[stepIndex]);
+  stepIndex++;
+  if (stepIndex >= steps.length) stopPlay();
+}
+
+function togglePlay() {
+  if (playing) { stopPlay(); return; }
+  playing = true;
+  document.getElementById('btn-play').textContent = '⏸ Pause';
+  function tick() {
+    if (stepIndex >= steps.length) { stopPlay(); return; }
+    stepOnce();
+    timer = setTimeout(tick, getDelay());
+  }
+  tick();
+}
+
+function stopPlay() {
+  playing = false;
+  clearTimeout(timer);
+  document.getElementById('btn-play').textContent = '▶ Play';
+}
+
+function resetAll() {
+  stopPlay();
+  stepIndex = 0; callCount = 0;
+  document.getElementById('info-calls').textContent = 0;
+  document.getElementById('info-depth').textContent = 0;
+  document.getElementById('info-step').textContent = '—';
+  initProblem(currentProblem);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function renderCode(prob) {
+  const lines = codes[prob];
+  const body = document.getElementById('code-body');
+  body.innerHTML = lines.map((l, i) =>
+    `<div class="code-line ${l.cls}" data-line="${i}">${l.text || '&nbsp;'}</div>`
+  ).join('');
+}
+
+function initProblem(prob) {
+  renderCode(prob);
+  if (prob === 'factorial') {
+    steps = genFactorialSteps(5);
+    document.getElementById('factorial-stack').innerHTML = '<div style="color:#2d2d4e;font-size:0.8rem;padding:40px;">Stack trống — nhấn Play</div>';
+    document.getElementById('factorial-result').style.display = 'none';
+    document.getElementById('factorial-warn').style.display = 'none';
+  } else if (prob === 'fibonacci') {
+    steps = genFibSteps();
+    renderFibTree(null);
+    document.getElementById('fib-result').style.display = 'none';
+  } else if (prob === 'hanoi') {
+    steps = genHanoiSteps(3);
+    document.getElementById('move-log').innerHTML = '<div style="color:#4b5563;">Nhấn Play để bắt đầu...</div>';
+    renderHanoi(steps[0].pegs, '', 0);
+    stepIndex = 1; // skip initial render step
+    callCount = 0;
+  }
+}
+
+function switchProblem(prob) {
+  stopPlay();
+  currentProblem = prob;
+  stepIndex = 0; callCount = 0;
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['factorial', 'fibonacci', 'hanoi'][i] === prob);
+  });
+  document.querySelectorAll('.prob').forEach(s => s.classList.remove('active'));
+  document.getElementById(`prob-${prob}`).classList.add('active');
+  initProblem(prob);
+}
+
+// Boot
+initProblem('factorial');
+</script>
+</body>
+</html>

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01 — Mảng (Array) | Data Structures</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #1a1a2e; --panel-bg: #16213e; --code-bg: #0f0f23;
+    --accent: #00d4ff; --accent2: #ff6b6b; --accent3: #ffd93d;
+    --text: #e8e8f0; --text-dim: #888aaa; --border: #2a2a4a;
+    --node: #1e3a5f; --node-border: #2d6a9f; --node-active: #00d4ff;
+    --node-found: #00ff88; --node-delete: #ff4757; --node-insert: #ffd93d;
+  }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif;
+    display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+  header { background: var(--panel-bg); border-bottom: 1px solid var(--border);
+    padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+  header h1 { font-size: 1.1rem; color: var(--accent); }
+  header .badge { background: var(--code-bg); border: 1px solid var(--border);
+    padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; color: var(--text-dim); }
+
+  .main { display: flex; flex: 1; overflow: hidden; }
+
+  /* LEFT: visualization */
+  .viz { flex: 0 0 60%; display: flex; flex-direction: column; padding: 20px; gap: 16px; overflow: hidden; }
+
+  .ops-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .op-btn { background: var(--panel-bg); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
+  .op-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .op-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+  .input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .input-row input { background: var(--code-bg); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 10px; border-radius: 6px; width: 70px; font-size: 0.85rem; }
+  .input-row label { font-size: 0.8rem; color: var(--text-dim); }
+  .run-btn { background: var(--accent); color: #000; border: none; padding: 6px 16px;
+    border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: opacity 0.2s; }
+  .run-btn:hover { opacity: 0.85; }
+
+  .canvas-area { flex: 1; background: var(--panel-bg); border: 1px solid var(--border);
+    border-radius: 12px; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 20px; gap: 24px; overflow: hidden; position: relative; }
+
+  .complexity-row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .complexity-badge { background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 16px; text-align: center; min-width: 100px; }
+  .complexity-badge .label { font-size: 0.7rem; color: var(--text-dim); }
+  .complexity-badge .value { font-size: 1rem; font-weight: 700; margin-top: 2px; }
+  .complexity-badge.green .value { color: #00ff88; }
+  .complexity-badge.yellow .value { color: var(--accent3); }
+  .complexity-badge.red .value { color: var(--accent2); }
+  .complexity-badge.active-badge { border-color: var(--accent); box-shadow: 0 0 12px rgba(0,212,255,0.3); }
+
+  .array-wrapper { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+  .array-container { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center;
+    min-height: 80px; align-items: flex-end; }
+  .cell { display: flex; flex-direction: column; align-items: center; gap: 4px;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s; }
+  .cell-box { width: 52px; height: 52px; background: var(--node); border: 2px solid var(--node-border);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 600; transition: all 0.35s; position: relative; }
+  .cell-index { font-size: 0.65rem; color: var(--text-dim); }
+  .cell.active .cell-box { background: rgba(0,212,255,0.2); border-color: var(--node-active);
+    box-shadow: 0 0 16px rgba(0,212,255,0.5); color: var(--accent); }
+  .cell.found .cell-box { background: rgba(0,255,136,0.2); border-color: var(--node-found);
+    box-shadow: 0 0 16px rgba(0,255,136,0.5); color: var(--node-found); }
+  .cell.deleting .cell-box { background: rgba(255,71,87,0.2); border-color: var(--node-delete);
+    box-shadow: 0 0 16px rgba(255,71,87,0.5); color: var(--node-delete); }
+  .cell.inserting .cell-box { background: rgba(255,217,61,0.2); border-color: var(--node-insert);
+    box-shadow: 0 0 16px rgba(255,217,61,0.5); color: var(--node-insert); }
+  .cell.shifting { animation: shiftRight 0.4s ease forwards; }
+  .cell.shifting-left { animation: shiftLeft 0.4s ease forwards; }
+  @keyframes shiftRight { 0%{transform:translateX(0)} 50%{transform:translateX(56px)} 100%{transform:translateX(0)} }
+  @keyframes shiftLeft  { 0%{transform:translateX(0)} 50%{transform:translateX(-56px)} 100%{transform:translateX(0)} }
+  @keyframes fadeInDrop { from{opacity:0;transform:translateY(-40px) scale(0.7)} to{opacity:1;transform:translateY(0) scale(1)} }
+  @keyframes fadeOutUp  { from{opacity:1;transform:translateY(0) scale(1)} to{opacity:0;transform:translateY(-40px) scale(0.7)} }
+  .cell.entering { animation: fadeInDrop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  .cell.exiting  { animation: fadeOutUp 0.35s ease forwards; pointer-events:none; }
+
+  .pointer-row { display: flex; gap: 4px; justify-content: center; height: 20px; position: relative; }
+  .pointer { width: 52px; display: flex; justify-content: center; font-size: 0.65rem;
+    color: var(--accent); font-weight: 700; transition: all 0.3s; }
+
+  .status-msg { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 16px; font-size: 0.85rem; color: var(--text-dim); text-align: center; min-width: 300px; }
+  .status-msg.info { border-color: var(--accent); color: var(--accent); }
+  .status-msg.success { border-color: var(--node-found); color: var(--node-found); }
+  .status-msg.error { border-color: var(--node-delete); color: var(--node-delete); }
+
+  /* RIGHT: code panel */
+  .code-panel { flex: 0 0 40%; background: var(--code-bg); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden; }
+  .code-panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border);
+    font-size: 0.8rem; color: var(--text-dim); display: flex; gap: 8px; align-items: center; }
+  .code-panel-header span { color: var(--accent); font-weight: 600; font-size: 0.85rem; }
+  .code-body { flex: 1; overflow-y: auto; padding: 12px 0; font-family: 'Courier New', monospace; font-size: 0.82rem; }
+  .code-line { display: flex; padding: 3px 0; transition: background 0.2s; }
+  .code-line.highlight { background: rgba(0,212,255,0.12); border-left: 3px solid var(--accent); }
+  .ln { width: 36px; text-align: right; padding-right: 12px; color: #444; flex-shrink: 0; user-select: none; }
+  .code-text { color: #abb2bf; white-space: pre; }
+  .kw { color: #c678dd; } .fn { color: #61afef; } .cm { color: #5c6370; font-style: italic; }
+  .num { color: #d19a66; } .str { color: #98c379; }
+
+  /* BOTTOM: controls */
+  .controls { background: var(--panel-bg); border-top: 1px solid var(--border);
+    padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; flex-wrap: wrap; }
+  .ctrl-btn { background: var(--code-bg); border: 1px solid var(--border); color: var(--text);
+    width: 36px; height: 36px; border-radius: 8px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; font-size: 1rem; transition: all 0.2s; }
+  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .ctrl-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .speed-group { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-dim); }
+  input[type=range] { -webkit-appearance: none; width: 100px; height: 4px; background: var(--border);
+    border-radius: 2px; outline: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px;
+    background: var(--accent); border-radius: 50%; }
+  .step-info { font-size: 0.78rem; color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🗂 Mảng — Array</h1>
+  <span class="badge">Module 1 · Cấu trúc dữ liệu</span>
+  <span class="badge">Độ phức tạp: O(1) access · O(n) insert/delete</span>
+</header>
+
+<div class="main">
+  <!-- LEFT: Visualization -->
+  <div class="viz">
+    <div class="ops-bar" id="opsBar">
+      <button class="op-btn active" onclick="selectOp('access')">🔍 Access [i]</button>
+      <button class="op-btn" onclick="selectOp('search')">🔎 Search</button>
+      <button class="op-btn" onclick="selectOp('insert')">➕ Insert</button>
+      <button class="op-btn" onclick="selectOp('delete')">🗑 Delete</button>
+    </div>
+    <div class="input-row" id="inputRow">
+      <label id="lbl1">Chỉ số (index):</label>
+      <input type="number" id="inp1" value="2" min="0" max="9">
+      <span id="extraLabel" style="display:none"><label id="lbl2">Giá trị:</label>
+        <input type="number" id="inp2" value="42" min="0" max="99"></span>
+      <button class="run-btn" onclick="runOperation()">▶ Chạy</button>
+    </div>
+    <div class="canvas-area">
+      <div class="complexity-row" id="complexityRow">
+        <div class="complexity-badge" id="cBadge0"><div class="label">Access by index</div><div class="value green">O(1)</div></div>
+        <div class="complexity-badge" id="cBadge1"><div class="label">Search (unsorted)</div><div class="value yellow">O(n)</div></div>
+        <div class="complexity-badge" id="cBadge2"><div class="label">Insert at index</div><div class="value red">O(n)</div></div>
+        <div class="complexity-badge" id="cBadge3"><div class="label">Delete at index</div><div class="value red">O(n)</div></div>
+      </div>
+      <div class="array-wrapper">
+        <div class="pointer-row" id="pointerRow"></div>
+        <div class="array-container" id="arrayContainer"></div>
+      </div>
+      <div class="status-msg" id="statusMsg">Chọn thao tác và nhấn ▶ Chạy</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Code Panel -->
+  <div class="code-panel">
+    <div class="code-panel-header">📄 Pseudocode — <span id="codeTitle">Array Access</span></div>
+    <div class="code-body" id="codeBody"></div>
+  </div>
+</div>
+
+<!-- BOTTOM: Controls -->
+<div class="controls">
+  <button class="ctrl-btn" id="btnBack" onclick="stepBack()" title="Step Back">⏮</button>
+  <button class="ctrl-btn" id="btnPlay" onclick="togglePlay()" title="Play/Pause">▶</button>
+  <button class="ctrl-btn" id="btnFwd"  onclick="stepForward()" title="Step Forward">⏭</button>
+  <button class="ctrl-btn" onclick="resetAll()" title="Reset">🔄</button>
+  <div class="speed-group">🐢 <input type="range" id="speedSlider" min="1" max="5" value="3"> 🐇</div>
+  <div class="step-info" id="stepInfo">Bước 0 / 0</div>
+  <div class="step-info" id="stepDesc" style="color:var(--accent)"></div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────
+let arr = [15, 8, 42, 3, 27, 61, 9, 35];
+let currentOp = 'access';
+let steps = [];
+let stepIdx = -1;
+let playing = false;
+let playTimer = null;
+
+const speedMap = { 1:1200, 2:900, 3:600, 4:350, 5:180 };
+
+// ── Code definitions per operation ───────────────────────────────
+const codes = {
+  access: {
+    title: 'Array Access — O(1)',
+    lines: [
+      ['cm','// Truy cập phần tử theo chỉ số'],
+      ['kw','function ','fn','access','(arr, index):'],
+      ['','  ','cm','// Mảng lưu liên tiếp trong bộ nhớ'],
+      ['','  ','cm','// địa chỉ = base_addr + index × size'],
+      ['kw','  if ','','index < 0 or index ≥ arr.length:'],
+      ['','    ','kw','return ','','⚠ "Index out of bounds"'],
+      ['','  '],
+      ['kw','  return ','','arr[index]'],
+      ['cm','  // ✓ Một bước duy nhất → O(1)'],
+    ]
+  },
+  search: {
+    title: 'Linear Search — O(n)',
+    lines: [
+      ['cm','// Tìm kiếm tuyến tính (chưa sắp xếp)'],
+      ['kw','function ','fn','linearSearch','(arr, target):'],
+      ['kw','  for ','','i = 0; i < arr.length; i++:'],
+      ['','    ','kw','if ','','arr[i] == target:'],
+      ['kw','      return ','','i   ','cm','// Tìm thấy ở vị trí i'],
+      ['cm','  // Duyệt hết mảng không tìm thấy'],
+      ['kw','  return ','num','-1  ','cm','// Không tìm thấy'],
+      ['cm','// Worst case: phải duyệt n phần tử → O(n)'],
+    ]
+  },
+  insert: {
+    title: 'Insert at Index — O(n)',
+    lines: [
+      ['cm','// Chèn phần tử vào vị trí index'],
+      ['kw','function ','fn','insert','(arr, index, value):'],
+      ['','  arr.length++   ','cm','// tăng kích thước'],
+      ['cm','  // Dịch phần tử sang phải từ cuối'],
+      ['kw','  for ','','i = arr.length-1; i > index; i--:'],
+      ['','    arr[i] = arr[i-1]   ','cm','// shift right'],
+      ['','  '],
+      ['','  arr[index] = value   ','cm','// ghi vào'],
+      ['kw','  return ','','arr'],
+      ['cm','// Worst: dịch n phần tử → O(n)'],
+    ]
+  },
+  delete: {
+    title: 'Delete at Index — O(n)',
+    lines: [
+      ['cm','// Xóa phần tử tại vị trí index'],
+      ['kw','function ','fn','delete','(arr, index):'],
+      ['','  value = arr[index]'],
+      ['cm','  // Dịch phần tử sang trái'],
+      ['kw','  for ','','i = index; i < arr.length-1; i++:'],
+      ['','    arr[i] = arr[i+1]   ','cm','// shift left'],
+      ['','  '],
+      ['','  arr.length--   ','cm','// giảm kích thước'],
+      ['kw','  return ','','value'],
+      ['cm','// Worst: dịch n phần tử → O(n)'],
+    ]
+  }
+};
+
+// ── Render code panel ─────────────────────────────────────────────
+function renderCode(op, highlightLine = -1) {
+  const c = codes[op];
+  document.getElementById('codeTitle').textContent = c.title;
+  const body = document.getElementById('codeBody');
+  body.innerHTML = '';
+  c.lines.forEach((parts, i) => {
+    const div = document.createElement('div');
+    div.className = 'code-line' + (i === highlightLine ? ' highlight' : '');
+    const ln = document.createElement('span'); ln.className = 'ln'; ln.textContent = i + 1;
+    const txt = document.createElement('span'); txt.className = 'code-text';
+    let html = '';
+    for (let j = 0; j < parts.length; j += 2) {
+      const cls = parts[j]; const content = parts[j + 1] || '';
+      html += cls ? `<span class="${cls}">${content}</span>` : content;
+    }
+    txt.innerHTML = html;
+    div.appendChild(ln); div.appendChild(txt);
+    body.appendChild(div);
+    if (i === highlightLine) div.scrollIntoView({ block: 'nearest' });
+  });
+}
+
+// ── Render array ──────────────────────────────────────────────────
+function renderArray(highlights = {}) {
+  const container = document.getElementById('arrayContainer');
+  const pointerRow = document.getElementById('pointerRow');
+  container.innerHTML = '';
+  pointerRow.innerHTML = '';
+  arr.forEach((val, i) => {
+    const cell = document.createElement('div'); cell.className = 'cell';
+    const box = document.createElement('div'); box.className = 'cell-box';
+    box.textContent = val;
+    const idx = document.createElement('div'); idx.className = 'cell-index';
+    idx.textContent = `[${i}]`;
+    if (highlights[i]) { cell.classList.add(highlights[i]); }
+    cell.appendChild(box); cell.appendChild(idx);
+    container.appendChild(cell);
+    // pointer
+    const ptr = document.createElement('div'); ptr.className = 'pointer';
+    if (highlights[i] === 'active' || highlights[i] === 'found' || highlights[i] === 'inserting')
+      ptr.textContent = '▲';
+    pointerRow.appendChild(ptr);
+  });
+}
+
+// ── Build steps for each operation ───────────────────────────────
+function buildSteps(op, index, value) {
+  steps = [];
+  const n = arr.length;
+
+  if (op === 'access') {
+    steps.push({ highlights: {}, code: -1, msg: `Truy cập arr[${index}] — địa chỉ = base + ${index}×size`, badge: 0 });
+    steps.push({ highlights: { [index]: 'active' }, code: 7, msg: `✓ arr[${index}] = ${arr[index]} — Tức thì! O(1)`, badge: 0 });
+    steps.push({ highlights: { [index]: 'found' }, code: 7, msg: `Kết quả: ${arr[index]}`, badge: 0 });
+    complexityFocus(0);
+  }
+  else if (op === 'search') {
+    complexityFocus(1);
+    steps.push({ highlights: {}, code: 1, msg: `Tìm kiếm giá trị ${value} trong mảng`, badge: 1 });
+    let found = -1;
+    for (let i = 0; i < n; i++) {
+      steps.push({ highlights: { [i]: 'active' }, code: 2, msg: `Bước ${i+1}: Kiểm tra arr[${i}] = ${arr[i]}` });
+      if (arr[i] === value) {
+        steps.push({ highlights: { [i]: 'found' }, code: 4, msg: `✓ Tìm thấy ${value} tại chỉ số [${i}]!` });
+        found = i; break;
+      } else {
+        steps.push({ highlights: { [i]: 'active' }, code: 3, msg: `arr[${i}] = ${arr[i]} ≠ ${value}, tiếp tục...` });
+      }
+    }
+    if (found === -1) steps.push({ highlights: {}, code: 6, msg: `✗ Không tìm thấy ${value} — đã duyệt ${n} phần tử` });
+  }
+  else if (op === 'insert') {
+    complexityFocus(2);
+    const tempArr = [...arr];
+    steps.push({ arr: [...tempArr], highlights: {}, code: 1, msg: `Chèn ${value} tại chỉ số [${index}]` });
+    steps.push({ arr: [...tempArr], highlights: {}, code: 2, msg: `Tăng kích thước mảng lên ${n+1}` });
+    // shift steps
+    for (let i = n; i > index; i--) {
+      const h = {}; h[i-1] = 'active';
+      steps.push({ arr: [...tempArr], highlights: h, code: 5, msg: `Dịch arr[${i-1}]=${tempArr[i-1]} sang phải → arr[${i}]` });
+      tempArr.splice(i, 0, tempArr.splice(i - 1, 1)[0]);
+    }
+    tempArr[index] = value;
+    steps.push({ arr: [...tempArr], highlights: { [index]: 'inserting' }, code: 7, msg: `✓ Ghi arr[${index}] = ${value}` });
+    steps.push({ arr: [...tempArr], highlights: { [index]: 'found' }, code: 8, msg: `Hoàn thành! Đã chèn ${value} tại [${index}]` });
+    // apply
+    arr = [...tempArr];
+  }
+  else if (op === 'delete') {
+    complexityFocus(3);
+    const tempArr = [...arr];
+    const deletedVal = tempArr[index];
+    steps.push({ arr: [...tempArr], highlights: { [index]: 'deleting' }, code: 2, msg: `Xóa arr[${index}] = ${deletedVal}` });
+    for (let i = index; i < n - 1; i++) {
+      const h = {}; h[i+1] = 'active';
+      steps.push({ arr: [...tempArr], highlights: h, code: 5, msg: `Dịch arr[${i+1}]=${tempArr[i+1]} sang trái → arr[${i}]` });
+      tempArr[i] = tempArr[i + 1];
+    }
+    tempArr.pop();
+    steps.push({ arr: [...tempArr], highlights: {}, code: 7, msg: `Giảm kích thước mảng xuống ${tempArr.length}` });
+    steps.push({ arr: [...tempArr], highlights: {}, code: 8, msg: `✓ Đã xóa ${deletedVal} khỏi mảng` });
+    arr = [...tempArr];
+  }
+}
+
+function complexityFocus(idx) {
+  document.querySelectorAll('.complexity-badge').forEach((b, i) => {
+    b.classList.toggle('active-badge', i === idx);
+  });
+}
+
+// ── Step execution ────────────────────────────────────────────────
+function applyStep(idx) {
+  if (idx < 0 || idx >= steps.length) return;
+  const s = steps[idx];
+  if (s.arr) arr = [...s.arr];
+  renderArray(s.highlights || {});
+  renderCode(currentOp, s.code);
+  const msg = document.getElementById('statusMsg');
+  msg.textContent = s.msg || '';
+  msg.className = 'status-msg' + (s.msg?.startsWith('✓') ? ' success' : s.msg?.startsWith('✗') ? ' error' : ' info');
+  document.getElementById('stepInfo').textContent = `Bước ${idx + 1} / ${steps.length}`;
+  document.getElementById('stepDesc').textContent = '';
+}
+
+function stepForward() {
+  if (stepIdx < steps.length - 1) { stepIdx++; applyStep(stepIdx); }
+  else stopPlay();
+}
+function stepBack() {
+  if (stepIdx > 0) { stepIdx--; applyStep(stepIdx); }
+}
+function togglePlay() {
+  playing ? stopPlay() : startPlay();
+}
+function startPlay() {
+  playing = true;
+  document.getElementById('btnPlay').textContent = '⏸';
+  function tick() {
+    if (stepIdx < steps.length - 1) {
+      stepIdx++; applyStep(stepIdx);
+      const delay = speedMap[document.getElementById('speedSlider').value];
+      playTimer = setTimeout(tick, delay);
+    } else stopPlay();
+  }
+  tick();
+}
+function stopPlay() {
+  playing = false;
+  document.getElementById('btnPlay').textContent = '▶';
+  clearTimeout(playTimer);
+}
+
+// ── UI ────────────────────────────────────────────────────────────
+function selectOp(op) {
+  currentOp = op;
+  document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  const extraLabel = document.getElementById('extraLabel');
+  const lbl1 = document.getElementById('lbl1');
+  const inp1 = document.getElementById('inp1');
+  if (op === 'access') { lbl1.textContent = 'Chỉ số (index):'; extraLabel.style.display='none'; }
+  else if (op === 'search') { lbl1.textContent = 'Giá trị cần tìm:'; extraLabel.style.display='none'; inp1.value=27; }
+  else if (op === 'insert') { lbl1.textContent = 'Chỉ số (index):'; extraLabel.style.display=''; }
+  else if (op === 'delete') { lbl1.textContent = 'Chỉ số (index):'; extraLabel.style.display='none'; }
+  resetAll();
+}
+
+function runOperation() {
+  stopPlay();
+  const idx = parseInt(document.getElementById('inp1').value);
+  const val = parseInt(document.getElementById('inp2').value) || 42;
+  arr = [15, 8, 42, 3, 27, 61, 9, 35]; // reset base
+  buildSteps(currentOp, idx, val);
+  stepIdx = -1;
+  renderArray({});
+  renderCode(currentOp, -1);
+  document.getElementById('statusMsg').textContent = 'Nhấn ▶ để bắt đầu hoặc ⏭ để từng bước';
+  document.getElementById('statusMsg').className = 'status-msg';
+  document.getElementById('stepInfo').textContent = `Bước 0 / ${steps.length}`;
+}
+
+function resetAll() {
+  stopPlay();
+  arr = [15, 8, 42, 3, 27, 61, 9, 35];
+  steps = []; stepIdx = -1;
+  renderArray({});
+  renderCode(currentOp, -1);
+  document.getElementById('statusMsg').textContent = 'Chọn thao tác và nhấn ▶ Chạy';
+  document.getElementById('statusMsg').className = 'status-msg';
+  document.getElementById('stepInfo').textContent = 'Bước 0 / 0';
+  complexityFocus(-1);
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+renderArray({});
+renderCode('access', -1);
+</script>
+</body>
+</html>

@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>07 — Đống (Heap) | Data Structures</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #1a1a2e; --panel-bg: #16213e; --code-bg: #0f0f23;
+    --accent: #8b5cf6; --accent2: #ff6b6b; --accent3: #ffd93d;
+    --text: #e8e8f0; --text-dim: #888aaa; --border: #2a2a4a;
+    --node-bg: #1e0a35; --node-border: #6d28d9; --node-active: #8b5cf6;
+    --node-found: #00ff88; --node-delete: #ff4757; --node-insert: #ffd93d;
+    --node-swap: #f97316;
+  }
+  body { background: var(--bg); color: var(--text); font-family: system-ui,-apple-system,sans-serif;
+    display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  header { background: var(--panel-bg); border-bottom: 1px solid var(--border);
+    padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+  header h1 { font-size: 1.1rem; color: var(--accent); }
+  .badge { background: var(--code-bg); border: 1px solid var(--border); padding: 2px 10px;
+    border-radius: 20px; font-size: 0.75rem; color: var(--text-dim); }
+  .main { display: flex; flex: 1; overflow: hidden; }
+  .viz { flex: 0 0 60%; display: flex; flex-direction: column; padding: 14px; gap: 10px; overflow: hidden; }
+  .ops-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .op-btn { background: var(--panel-bg); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; transition: all 0.2s; }
+  .op-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .op-btn.active { background: var(--accent); color: #000; font-weight: 600; }
+  .mode-btn { background: var(--code-bg); border: 1px solid var(--border); color: var(--text-dim);
+    padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; transition: all 0.2s; }
+  .mode-btn.active { border-color: var(--accent); color: var(--accent); }
+  .input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .input-row label { font-size: 0.8rem; color: var(--text-dim); }
+  .input-row input { background: var(--code-bg); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 10px; border-radius: 6px; width: 70px; font-size: 0.85rem; }
+  .run-btn { background: var(--accent); color: #000; border: none; padding: 6px 16px;
+    border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+
+  .canvas-area { flex: 1; background: var(--panel-bg); border: 1px solid var(--border);
+    border-radius: 12px; display: flex; flex-direction: column; padding: 12px; gap: 10px; overflow: hidden; }
+
+  /* Array representation */
+  .array-repr { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+  .array-title { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; }
+  .array-cells { display: flex; gap: 3px; flex-wrap: wrap; }
+  .arr-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .arr-box { width: 40px; height: 36px; background: var(--node-bg); border: 1.5px solid var(--node-border);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 600; transition: all 0.35s; }
+  .arr-idx { font-size: 0.58rem; color: var(--text-dim); }
+  .arr-cell.active .arr-box { border-color: var(--node-active); background: rgba(139,92,246,0.2);
+    color: var(--node-active); box-shadow: 0 0 10px rgba(139,92,246,0.4); }
+  .arr-cell.swap1 .arr-box, .arr-cell.swap2 .arr-box { border-color: var(--node-swap);
+    background: rgba(249,115,22,0.2); color: var(--node-swap); animation: swapPulse 0.6s ease; }
+  .arr-cell.found .arr-box { border-color: var(--node-found); background: rgba(0,255,136,0.15);
+    color: var(--node-found); }
+  .arr-cell.root-cell .arr-box { border-color: var(--accent3); background: rgba(255,217,61,0.15);
+    color: var(--accent3); }
+  @keyframes swapPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
+
+  /* Formula hint */
+  .formula-bar { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: 5px 12px; font-size: 0.73rem; color: var(--text-dim); font-family: monospace;
+    display: flex; gap: 16px; flex-shrink: 0; flex-wrap: wrap; }
+  .formula-bar span { color: var(--accent3); }
+
+  /* Tree SVG */
+  #heapSvg { flex: 1; width: 100%; min-height: 0; }
+  .heap-node circle { fill: var(--node-bg); stroke: var(--node-border); stroke-width: 2; transition: all 0.4s; }
+  .heap-node text { fill: var(--text); font-size: 12px; font-weight: 700; text-anchor: middle;
+    dominant-baseline: central; pointer-events: none; }
+  .heap-node.active circle { fill: rgba(139,92,246,0.25); stroke: var(--node-active);
+    filter: drop-shadow(0 0 8px rgba(139,92,246,0.7)); }
+  .heap-node.active text { fill: var(--node-active); }
+  .heap-node.swap1 circle, .heap-node.swap2 circle { fill: rgba(249,115,22,0.25); stroke: var(--node-swap);
+    filter: drop-shadow(0 0 8px rgba(249,115,22,0.6)); }
+  .heap-node.swap1 text, .heap-node.swap2 text { fill: var(--node-swap); }
+  .heap-node.found circle { fill: rgba(0,255,136,0.2); stroke: var(--node-found);
+    filter: drop-shadow(0 0 8px rgba(0,255,136,0.5)); }
+  .heap-node.found text { fill: var(--node-found); }
+  .heap-node.root-hl circle { fill: rgba(255,217,61,0.2); stroke: var(--accent3);
+    filter: drop-shadow(0 0 8px rgba(255,217,61,0.5)); }
+  .heap-node.root-hl text { fill: var(--accent3); }
+  .heap-edge { stroke: var(--node-border); stroke-width: 1.5; fill: none; transition: stroke 0.3s; }
+  .heap-edge.swap-edge { stroke: var(--node-swap); stroke-width: 3; }
+
+  .status-msg { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 14px; font-size: 0.82rem; color: var(--text-dim); text-align: center; flex-shrink: 0; }
+  .status-msg.info { border-color: var(--accent); color: var(--accent); }
+  .status-msg.success { border-color: var(--node-found); color: var(--node-found); }
+  .status-msg.error { border-color: var(--accent2); color: var(--accent2); }
+
+  .complexity-row { display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
+  .complexity-badge { background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 5px 12px; text-align: center; }
+  .complexity-badge .label { font-size: 0.65rem; color: var(--text-dim); }
+  .complexity-badge .value { font-size: 0.9rem; font-weight: 700; margin-top: 1px; }
+  .green { color: #00ff88; } .yellow { color: var(--accent3); } .red { color: var(--accent2); }
+  .complexity-badge.active-badge { border-color: var(--accent); }
+
+  .code-panel { flex: 0 0 40%; background: var(--code-bg); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden; }
+  .code-panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border);
+    font-size: 0.8rem; color: var(--text-dim); display: flex; gap: 8px; align-items: center; }
+  .code-panel-header span { color: var(--accent); font-weight: 600; font-size: 0.85rem; }
+  .code-body { flex: 1; overflow-y: auto; padding: 12px 0; font-family: 'Courier New',monospace; font-size: 0.82rem; }
+  .code-line { display: flex; padding: 3px 0; transition: background 0.2s; }
+  .code-line.highlight { background: rgba(139,92,246,0.12); border-left: 3px solid var(--accent); }
+  .ln { width: 36px; text-align: right; padding-right: 12px; color: #444; flex-shrink: 0; user-select: none; }
+  .code-text { color: #abb2bf; white-space: pre; }
+  .kw { color: #c678dd; } .fn { color: #61afef; } .cm { color: #5c6370; font-style: italic; }
+
+  .controls { background: var(--panel-bg); border-top: 1px solid var(--border);
+    padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; flex-wrap: wrap; }
+  .ctrl-btn { background: var(--code-bg); border: 1px solid var(--border); color: var(--text);
+    width: 36px; height: 36px; border-radius: 8px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; font-size: 1rem; transition: all 0.2s; }
+  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .speed-group { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-dim); }
+  input[type=range] { -webkit-appearance: none; width: 100px; height: 4px; background: var(--border);
+    border-radius: 2px; outline: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px;
+    background: var(--accent); border-radius: 50%; }
+  .step-info { font-size: 0.78rem; color: var(--text-dim); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏔 Đống — Heap</h1>
+  <span class="badge">Module 1 · Cấu trúc dữ liệu</span>
+  <span class="badge">Tree View + Array View đồng bộ</span>
+  <button class="mode-btn active" id="modeMin" onclick="setHeapMode('min')">Min-Heap</button>
+  <button class="mode-btn" id="modeMax" onclick="setHeapMode('max')">Max-Heap</button>
+</header>
+
+<div class="main">
+  <div class="viz">
+    <div class="ops-bar">
+      <button class="op-btn active" onclick="selectOp('insert',event)">➕ Insert</button>
+      <button class="op-btn" onclick="selectOp('extract',event)">⬆ Extract Min/Max</button>
+      <button class="op-btn" onclick="selectOp('heapify',event)">🔧 Heapify (Build)</button>
+      <button class="op-btn" onclick="selectOp('peek',event)">👁 Peek</button>
+    </div>
+    <div class="input-row">
+      <label id="lbl1">Giá trị:</label>
+      <input type="number" id="inp1" value="5" min="1" max="99">
+      <button class="run-btn" onclick="runOperation()">▶ Chạy</button>
+      <div class="complexity-row">
+        <div class="complexity-badge active-badge"><div class="label">Insert/Extract</div><div class="value yellow">O(log n)</div></div>
+        <div class="complexity-badge"><div class="label">Peek (min/max)</div><div class="value green">O(1)</div></div>
+        <div class="complexity-badge"><div class="label">Build Heap</div><div class="value yellow">O(n)</div></div>
+      </div>
+    </div>
+    <div class="canvas-area">
+      <!-- Array representation -->
+      <div class="array-repr">
+        <div class="array-title">Biểu diễn mảng (Array Representation)</div>
+        <div class="array-cells" id="arrayCells"></div>
+      </div>
+      <!-- Formula -->
+      <div class="formula-bar">
+        Parent(i) = <span>⌊(i-1)/2⌋</span> &nbsp;|&nbsp;
+        Left(i) = <span>2i+1</span> &nbsp;|&nbsp;
+        Right(i) = <span>2i+2</span> &nbsp;|&nbsp;
+        Root = <span>arr[0]</span>
+      </div>
+      <!-- Tree -->
+      <svg id="heapSvg"></svg>
+      <!-- Status -->
+      <div class="status-msg" id="statusMsg">Chọn thao tác và nhấn ▶ Chạy</div>
+    </div>
+  </div>
+
+  <div class="code-panel">
+    <div class="code-panel-header">📄 Pseudocode — <span id="codeTitle">Heap Insert</span></div>
+    <div class="code-body" id="codeBody"></div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn" onclick="stepBack()">⏮</button>
+  <button class="ctrl-btn" id="btnPlay" onclick="togglePlay()">▶</button>
+  <button class="ctrl-btn" onclick="stepForward()">⏭</button>
+  <button class="ctrl-btn" onclick="resetAll()">🔄</button>
+  <div class="speed-group">🐢 <input type="range" id="speedSlider" min="1" max="5" value="3"> 🐇</div>
+  <div class="step-info" id="stepInfo">Bước 0 / 0</div>
+</div>
+
+<script>
+// ── Heap state ─────────────────────────────────────────────────────
+let heapMode = 'min'; // 'min' | 'max'
+let heap = [3, 9, 15, 17, 22, 30, 45];
+let currentOp = 'insert';
+let steps = [], stepIdx = -1, playing = false, playTimer = null;
+const speedMap = { 1:1200, 2:900, 3:600, 4:350, 5:180 };
+
+function cmp(a,b) { return heapMode==='min' ? a < b : a > b; }
+function parent(i) { return Math.floor((i-1)/2); }
+function left(i)   { return 2*i+1; }
+function right(i)  { return 2*i+2; }
+
+function heapInsert(arr, val) {
+  const a = [...arr]; a.push(val);
+  let i = a.length-1;
+  while (i>0 && cmp(a[i], a[parent(i)])) {
+    [a[i],a[parent(i)]] = [a[parent(i)],a[i]];
+    i = parent(i);
+  }
+  return a;
+}
+
+function heapExtract(arr) {
+  if (!arr.length) return arr;
+  const a = [...arr];
+  [a[0], a[a.length-1]] = [a[a.length-1], a[0]];
+  a.pop();
+  let i = 0;
+  while (true) {
+    let best = i, l=left(i), r=right(i);
+    if (l<a.length && cmp(a[l],a[best])) best=l;
+    if (r<a.length && cmp(a[r],a[best])) best=r;
+    if (best===i) break;
+    [a[i],a[best]]=[a[best],a[i]]; i=best;
+  }
+  return a;
+}
+
+// ── Render ────────────────────────────────────────────────────────
+function renderArrayCells(arr, highlights={}) {
+  const container = document.getElementById('arrayCells');
+  container.innerHTML = '';
+  arr.forEach((val,i) => {
+    const cell = document.createElement('div');
+    cell.className = 'arr-cell' + (highlights[i] ? ' '+highlights[i] : '') + (i===0 ? ' root-cell' : '');
+    const box = document.createElement('div'); box.className='arr-box'; box.textContent=val;
+    const idx = document.createElement('div'); idx.className='arr-idx'; idx.textContent=`[${i}]`;
+    cell.appendChild(box); cell.appendChild(idx);
+    container.appendChild(cell);
+  });
+}
+
+function heapLayout(arr) {
+  // Position nodes in a complete binary tree
+  const positions = {};
+  const svg = document.getElementById('heapSvg');
+  const W = svg.clientWidth || 480;
+  // level widths
+  function getPos(i, level, lo, hi) {
+    if (i >= arr.length) return;
+    const x = (lo+hi)/2, y = 28 + level*60;
+    positions[i] = {x,y};
+    getPos(2*i+1, level+1, lo, (lo+hi)/2);
+    getPos(2*i+2, level+1, (lo+hi)/2, hi);
+  }
+  getPos(0, 0, 0, W);
+  return positions;
+}
+
+function renderHeapTree(arr, highlights={}, swapPair=[]) {
+  const svg = document.getElementById('heapSvg');
+  svg.innerHTML = '';
+  if (!arr.length) return;
+  const pos = heapLayout(arr);
+
+  // Edges
+  arr.forEach((_,i) => {
+    const l=left(i), r=right(i);
+    [l,r].forEach(child => {
+      if (child < arr.length && pos[i] && pos[child]) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('x1',pos[i].x); line.setAttribute('y1',pos[i].y);
+        line.setAttribute('x2',pos[child].x); line.setAttribute('y2',pos[child].y);
+        const isSwap = (swapPair.includes(i) && swapPair.includes(child));
+        line.setAttribute('class','heap-edge'+(isSwap?' swap-edge':''));
+        svg.appendChild(line);
+      }
+    });
+  });
+
+  // Nodes
+  arr.forEach((val,i) => {
+    if (!pos[i]) return;
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    let cls = 'heap-node';
+    if (swapPair.includes(i)) cls += ' ' + (swapPair[0]===i ? 'swap1' : 'swap2');
+    else if (highlights[i]) cls += ' ' + highlights[i];
+    else if (i===0) cls += ' root-hl';
+    g.setAttribute('class', cls);
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',pos[i].x); c.setAttribute('cy',pos[i].y); c.setAttribute('r',20);
+    const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x',pos[i].x); t.setAttribute('y',pos[i].y); t.textContent=val;
+    g.appendChild(c); g.appendChild(t);
+    svg.appendChild(g);
+  });
+}
+
+// ── Code ──────────────────────────────────────────────────────────
+const codes = {
+  insert: { title:'Heap Insert (Bubble Up) — O(log n)', lines:[
+    ['cm','// Thêm vào cuối, rồi bubble up'],
+    ['kw','function ','fn','insert','(heap, val):'],
+    ['','  heap.push(val)   ','cm','// thêm vào cuối'],
+    ['','  i = heap.length - 1'],
+    ['kw','  while ','','i > 0 and cmp(heap[i], heap[parent]):'],
+    ['cm','    // Đổi chỗ với parent → bubble up'],
+    ['','    swap(heap[i], heap[parent(i)])'],
+    ['','    i = parent(i)'],
+    ['kw','  return ','cm','"// O(log n) — chiều cao cây"'],
+  ]},
+  extract: { title:'Extract Min/Max (Bubble Down) — O(log n)', lines:[
+    ['cm','// Lấy root (min/max), bubble down'],
+    ['kw','function ','fn','extract','(heap):'],
+    ['','  root = heap[0]   ','cm','// lưu kết quả'],
+    ['','  heap[0] = heap[last]   ','cm','// đưa last lên'],
+    ['','  heap.pop()   ','cm','// xóa phần tử cuối'],
+    ['','  i = 0'],
+    ['kw','  while ','','hasChildren(i):'],
+    ['cm','    // Tìm con tốt nhất (min/max)'],
+    ['','    best = bestChild(i)'],
+    ['kw','    if ','','cmp(heap[i], heap[best]): break'],
+    ['','    swap(heap[i], heap[best])'],
+    ['','    i = best'],
+    ['kw','  return ','','root ','cm','// O(log n)'],
+  ]},
+  heapify: { title:'Build Heap (Heapify) — O(n)', lines:[
+    ['cm','// Xây heap từ mảng ngẫu nhiên'],
+    ['kw','function ','fn','buildHeap','(arr):'],
+    ['cm','  // Bắt đầu từ node nội bộ cuối cùng'],
+    ['','  start = floor((n-2)/2)'],
+    ['kw','  for ','','i = start; i >= 0; i--:'],
+    ['fn','    heapifyDown','(arr, i)'],
+    ['cm','  // Không phải O(n log n) — là O(n)!'],
+    ['cm','  // Vì cây dưới thấp có ít công hơn'],
+  ]},
+  peek: { title:'Peek — O(1)', lines:[
+    ['cm','// Xem min/max mà không lấy ra'],
+    ['kw','function ','fn','peek','(heap):'],
+    ['kw','  if ','','heap.isEmpty(): ','kw','return ','','null'],
+    ['cm','  // Root luôn là min (min-heap)'],
+    ['cm','  // hoặc max (max-heap)'],
+    ['kw','  return ','','heap[0]'],
+    ['cm','// O(1) — chỉ đọc index 0!'],
+  ]},
+};
+
+function renderCode(op, hl=-1) {
+  const c = codes[op];
+  document.getElementById('codeTitle').textContent = c.title;
+  const body = document.getElementById('codeBody');
+  body.innerHTML = '';
+  c.lines.forEach((parts,i) => {
+    const div = document.createElement('div');
+    div.className = 'code-line'+(i===hl?' highlight':'');
+    const ln = document.createElement('span'); ln.className='ln'; ln.textContent=i+1;
+    const txt = document.createElement('span'); txt.className='code-text';
+    let html='';
+    for(let j=0;j<parts.length;j+=2){const cls=parts[j],cnt=parts[j+1]||''; html+=cls?`<span class="${cls}">${cnt}</span>`:cnt;}
+    txt.innerHTML=html; div.appendChild(ln); div.appendChild(txt);
+    body.appendChild(div);
+    if(i===hl) div.scrollIntoView({block:'nearest'});
+  });
+}
+
+// ── Build steps ───────────────────────────────────────────────────
+function buildSteps(op, val) {
+  steps = [];
+  const label = heapMode==='min' ? 'Min-Heap' : 'Max-Heap';
+
+  if (op === 'insert') {
+    steps.push({ arr:[...heap], highlights:{}, swap:[], code:-1, msg:`Thêm ${val} vào ${label}` });
+    let a = [...heap]; a.push(val);
+    steps.push({ arr:[...a], highlights:{[a.length-1]:'active'}, swap:[], code:2, msg:`Thêm ${val} vào cuối (index ${a.length-1})` });
+    let i = a.length-1;
+    let swapCount = 0;
+    while (i>0 && cmp(a[i], a[parent(i)])) {
+      const p = parent(i);
+      steps.push({ arr:[...a], highlights:{}, swap:[i,p], code:6, msg:`swap(arr[${i}]=${a[i]}, arr[${p}]=${a[p]}) — bubble up` });
+      [a[i],a[p]] = [a[p],a[i]];
+      i = p; swapCount++;
+      steps.push({ arr:[...a], highlights:{[i]:'active'}, swap:[], code:7, msg:`Sau swap — i=${i}, kiểm tra tiếp` });
+    }
+    steps.push({ arr:[...a], highlights:{[0]:'found',[i]:'found'}, swap:[], code:8,
+      msg:`✓ Insert xong sau ${swapCount} swap — heap hợp lệ` });
+    heap = a;
+  }
+  else if (op === 'extract') {
+    if (!heap.length) return;
+    const rootVal = heap[0];
+    steps.push({ arr:[...heap], highlights:{0:'found'}, swap:[], code:1, msg:`${label}: root = ${rootVal} sẽ bị extract` });
+    let a = [...heap];
+    const lastIdx = a.length-1;
+    steps.push({ arr:[...a], highlights:{0:'active',[lastIdx]:'active'}, swap:[0,lastIdx], code:3,
+      msg:`Đổi root với phần tử cuối [${lastIdx}]=${a[lastIdx]}` });
+    [a[0],a[lastIdx]] = [a[lastIdx],a[0]];
+    steps.push({ arr:[...a], highlights:{[lastIdx]:'found'}, swap:[], code:4, msg:`Pop phần tử cuối (${rootVal}) ra` });
+    a.pop();
+    steps.push({ arr:[...a], highlights:{0:'active'}, swap:[], code:5, msg:`root hiện tại: ${a[0]} — bubble down` });
+    let i=0;
+    while(true) {
+      let best=i, l=left(i), r=right(i);
+      if(l<a.length && cmp(a[l],a[best])) best=l;
+      if(r<a.length && cmp(a[r],a[best])) best=r;
+      if(best===i) break;
+      steps.push({ arr:[...a], highlights:{}, swap:[i,best], code:10,
+        msg:`swap(arr[${i}]=${a[i]}, arr[${best}]=${a[best]}) — bubble down` });
+      [a[i],a[best]]=[a[best],a[i]]; i=best;
+      steps.push({ arr:[...a], highlights:{[i]:'active'}, swap:[], code:11, msg:`Sau swap — i=${i}` });
+    }
+    steps.push({ arr:[...a], highlights:{0:'found'}, swap:[], code:12, msg:`✓ Extract = ${rootVal} — heap hợp lệ` });
+    heap = a;
+  }
+  else if (op === 'heapify') {
+    const raw = [45, 17, 30, 9, 22, 3, 15]; // unsorted
+    steps.push({ arr:[...raw], highlights:{}, swap:[], code:0, msg:`Heapify mảng [${raw.join(',')}] thành ${label}` });
+    let a = [...raw];
+    const start = Math.floor((a.length-2)/2);
+    steps.push({ arr:[...a], highlights:{[start]:'active'}, swap:[], code:3, msg:`Bắt đầu từ node nội bộ cuối: index ${start}` });
+    for (let i=start; i>=0; i--) {
+      steps.push({ arr:[...a], highlights:{[i]:'active'}, swap:[], code:5, msg:`heapifyDown từ index ${i} (val=${a[i]})` });
+      let j=i;
+      while(true) {
+        let best=j,l=left(j),r=right(j);
+        if(l<a.length && cmp(a[l],a[best])) best=l;
+        if(r<a.length && cmp(a[r],a[best])) best=r;
+        if(best===j) break;
+        steps.push({ arr:[...a], highlights:{}, swap:[j,best], code:5, msg:`swap(${a[j]}, ${a[best]})` });
+        [a[j],a[best]]=[a[best],a[j]]; j=best;
+      }
+    }
+    steps.push({ arr:[...a], highlights:{0:'found'}, swap:[], code:6, msg:`✓ ${label} xây xong — O(n)` });
+    heap = a;
+  }
+  else if (op === 'peek') {
+    steps.push({ arr:[...heap], highlights:{0:'found'}, swap:[], code:4, msg:`Peek: root = heap[0] = ${heap[0]} — O(1)` });
+    steps.push({ arr:[...heap], highlights:{0:'found'}, swap:[], code:5, msg:`✓ ${heapMode==='min'?'Minimum':'Maximum'} = ${heap[0]}` });
+  }
+}
+
+function applyStep(idx) {
+  if (idx<0||idx>=steps.length) return;
+  const s = steps[idx];
+  renderArrayCells(s.arr, s.highlights||{});
+  renderHeapTree(s.arr, s.highlights||{}, s.swap||[]);
+  renderCode(currentOp, s.code);
+  const msg = document.getElementById('statusMsg');
+  msg.textContent = s.msg||'';
+  msg.className = 'status-msg'+(s.msg?.startsWith('✓')?' success':' info');
+  document.getElementById('stepInfo').textContent = `Bước ${idx+1} / ${steps.length}`;
+}
+
+function stepForward() { if(stepIdx<steps.length-1){stepIdx++;applyStep(stepIdx);}else stopPlay(); }
+function stepBack()    { if(stepIdx>0){stepIdx--;applyStep(stepIdx);} }
+function togglePlay()  { playing?stopPlay():startPlay(); }
+function startPlay() {
+  playing=true; document.getElementById('btnPlay').textContent='⏸';
+  function tick() {
+    if(stepIdx<steps.length-1){stepIdx++;applyStep(stepIdx);
+      playTimer=setTimeout(tick,speedMap[document.getElementById('speedSlider').value]);
+    } else stopPlay();
+  }
+  tick();
+}
+function stopPlay() { playing=false;document.getElementById('btnPlay').textContent='▶';clearTimeout(playTimer); }
+
+function setHeapMode(mode) {
+  heapMode = mode;
+  document.getElementById('modeMin').classList.toggle('active',mode==='min');
+  document.getElementById('modeMax').classList.toggle('active',mode==='max');
+  // Rebuild heap for new mode
+  heap = [3,9,15,17,22,30,45];
+  if (mode==='max') { heap=[45,30,15,17,22,9,3]; }
+  resetAll();
+}
+
+function selectOp(op,e) {
+  currentOp=op;
+  document.querySelectorAll('.op-btn').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  const lbl=document.getElementById('lbl1');
+  const inp=document.getElementById('inp1');
+  if(op==='extract'||op==='peek'||op==='heapify'){lbl.textContent='(không cần)';inp.style.display='none';}
+  else{lbl.textContent='Giá trị:';inp.style.display='';}
+  resetAll();
+}
+
+function runOperation() {
+  stopPlay();
+  if(heapMode==='min') heap=[3,9,15,17,22,30,45];
+  else heap=[45,30,15,17,22,9,3];
+  const val=parseInt(document.getElementById('inp1').value)||5;
+  buildSteps(currentOp,val);
+  stepIdx=-1;
+  renderArrayCells(heap,{});
+  renderHeapTree(heap,{},[]);
+  renderCode(currentOp,-1);
+  document.getElementById('statusMsg').textContent='Nhấn ⏭ để từng bước';
+  document.getElementById('statusMsg').className='status-msg';
+  document.getElementById('stepInfo').textContent=`Bước 0 / ${steps.length}`;
+}
+
+function resetAll() {
+  stopPlay();
+  if(heapMode==='min') heap=[3,9,15,17,22,30,45];
+  else heap=[45,30,15,17,22,9,3];
+  steps=[]; stepIdx=-1;
+  renderArrayCells(heap,{});
+  renderHeapTree(heap,{},[]);
+  renderCode(currentOp,-1);
+  document.getElementById('statusMsg').textContent='Chọn thao tác và nhấn ▶ Chạy';
+  document.getElementById('statusMsg').className='status-msg';
+  document.getElementById('stepInfo').textContent='Bước 0 / 0';
+}
+
+renderArrayCells(heap,{});
+renderHeapTree(heap,{},[]);
+renderCode('insert',-1);
+window.addEventListener('resize', ()=>renderHeapTree(heap,{},[]));
+</script>
+</body>
+</html>

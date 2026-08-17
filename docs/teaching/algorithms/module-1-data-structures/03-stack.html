@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03 — Ngăn xếp (Stack) | Data Structures</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #1a1a2e; --panel-bg: #16213e; --code-bg: #0f0f23;
+    --accent: #f97316; --accent2: #ff6b6b; --accent3: #ffd93d;
+    --text: #e8e8f0; --text-dim: #888aaa; --border: #2a2a4a;
+    --node: #2d1e0e; --node-border: #c2410c; --node-active: #f97316;
+    --node-found: #00ff88; --node-delete: #ff4757; --node-insert: #ffd93d;
+  }
+  body { background: var(--bg); color: var(--text); font-family: system-ui,-apple-system,sans-serif;
+    display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+  header { background: var(--panel-bg); border-bottom: 1px solid var(--border);
+    padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+  header h1 { font-size: 1.1rem; color: var(--accent); }
+  .badge { background: var(--code-bg); border: 1px solid var(--border); padding: 2px 10px;
+    border-radius: 20px; font-size: 0.75rem; color: var(--text-dim); }
+
+  .main { display: flex; flex: 1; overflow: hidden; }
+  .viz { flex: 0 0 60%; display: flex; flex-direction: column; padding: 16px; gap: 12px; overflow: hidden; }
+
+  .ops-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .op-btn { background: var(--panel-bg); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; transition: all 0.2s; }
+  .op-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .op-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+  .input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .input-row label { font-size: 0.8rem; color: var(--text-dim); }
+  .input-row input { background: var(--code-bg); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 10px; border-radius: 6px; width: 70px; font-size: 0.85rem; }
+  .run-btn { background: var(--accent); color: #000; border: none; padding: 6px 16px;
+    border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+
+  .canvas-area { flex: 1; background: var(--panel-bg); border: 1px solid var(--border);
+    border-radius: 12px; display: flex; gap: 24px; padding: 20px; overflow: hidden; }
+
+  /* Stack Visual */
+  .stack-section { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .stack-title { font-size: 0.8rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+  .stack-outer { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    width: 140px; position: relative; }
+  .stack-rail { width: 120px; flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: flex-end; gap: 3px; padding: 8px 0; position: relative; }
+  .stack-rail::before { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 4px;
+    background: var(--node-border); border-radius: 2px; }
+  .stack-rail::after { content: ''; position: absolute; bottom: 0; left: 0; top: 0; width: 4px;
+    background: var(--node-border); border-radius: 2px; }
+  .stack-rail .right-wall { position: absolute; bottom: 0; right: 0; top: 0; width: 4px;
+    background: var(--node-border); border-radius: 2px; }
+
+  .stack-item { width: 108px; height: 40px; background: var(--node); border: 2px solid var(--node-border);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.95rem; transition: all 0.35s; position: relative; }
+  .stack-item.top { border-color: var(--node-active); background: rgba(249,115,22,0.15);
+    color: var(--node-active); box-shadow: 0 0 14px rgba(249,115,22,0.4); }
+  .stack-item.found { border-color: var(--node-found); background: rgba(0,255,136,0.12);
+    color: var(--node-found); box-shadow: 0 0 14px rgba(0,255,136,0.4); }
+  .stack-item.popping { border-color: var(--node-delete); background: rgba(255,71,87,0.15);
+    color: var(--node-delete); animation: popOut 0.5s ease forwards; }
+  @keyframes popOut { 0%{transform:scale(1);opacity:1} 100%{transform:scale(1.4) translateY(-30px);opacity:0} }
+  .stack-item.pushing { animation: pushIn 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  @keyframes pushIn { from{transform:scale(0.5) translateY(-50px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+
+  .top-label { position: absolute; right: -50px; display: flex; align-items: center; gap: 4px;
+    font-size: 0.7rem; color: var(--accent); font-weight: 700; }
+  .top-label::before { content: '← TOP'; }
+
+  .lifo-banner { background: rgba(249,115,22,0.1); border: 1px solid rgba(249,115,22,0.3);
+    border-radius: 8px; padding: 8px 16px; font-size: 0.78rem; text-align: center; }
+  .lifo-banner strong { color: var(--accent); }
+
+  /* Demo section */
+  .demo-section { width: 180px; display: flex; flex-direction: column; gap: 12px; }
+  .demo-title { font-size: 0.78rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; }
+  .demo-box { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px; flex: 1; font-family: 'Courier New', monospace; font-size: 0.78rem; overflow: auto; }
+  .demo-line { padding: 2px 0; color: var(--text-dim); }
+  .demo-line.active { color: var(--accent3); }
+  .demo-line.match { color: var(--node-found); }
+  .demo-line.error { color: var(--node-delete); }
+
+  .complexity-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .complexity-badge { background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 12px; text-align: center; }
+  .complexity-badge .label { font-size: 0.65rem; color: var(--text-dim); }
+  .complexity-badge .value { font-size: 0.9rem; font-weight: 700; margin-top: 2px; }
+  .green { color: #00ff88; } .yellow { color: var(--accent3); }
+  .complexity-badge.active-badge { border-color: var(--accent); box-shadow: 0 0 10px rgba(249,115,22,0.3); }
+
+  .status-msg { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 14px; font-size: 0.82rem; color: var(--text-dim); text-align: center; }
+  .status-msg.info { border-color: var(--accent); color: var(--accent); }
+  .status-msg.success { border-color: var(--node-found); color: var(--node-found); }
+  .status-msg.error { border-color: var(--node-delete); color: var(--node-delete); }
+
+  .code-panel { flex: 0 0 40%; background: var(--code-bg); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden; }
+  .code-panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border);
+    font-size: 0.8rem; color: var(--text-dim); display: flex; gap: 8px; align-items: center; }
+  .code-panel-header span { color: var(--accent); font-weight: 600; font-size: 0.85rem; }
+  .code-body { flex: 1; overflow-y: auto; padding: 12px 0; font-family: 'Courier New',monospace; font-size: 0.82rem; }
+  .code-line { display: flex; padding: 3px 0; transition: background 0.2s; }
+  .code-line.highlight { background: rgba(249,115,22,0.12); border-left: 3px solid var(--accent); }
+  .ln { width: 36px; text-align: right; padding-right: 12px; color: #444; flex-shrink: 0; user-select: none; }
+  .code-text { color: #abb2bf; white-space: pre; }
+  .kw { color: #c678dd; } .fn { color: #61afef; } .cm { color: #5c6370; font-style: italic; }
+  .num { color: #d19a66; } .str { color: #98c379; }
+
+  .controls { background: var(--panel-bg); border-top: 1px solid var(--border);
+    padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; flex-wrap: wrap; }
+  .ctrl-btn { background: var(--code-bg); border: 1px solid var(--border); color: var(--text);
+    width: 36px; height: 36px; border-radius: 8px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; font-size: 1rem; transition: all 0.2s; }
+  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .speed-group { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-dim); }
+  input[type=range] { -webkit-appearance: none; width: 100px; height: 4px; background: var(--border);
+    border-radius: 2px; outline: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px;
+    background: var(--accent); border-radius: 50%; }
+  .step-info { font-size: 0.78rem; color: var(--text-dim); }
+</style>
+</head>
+<body>
+<header>
+  <h1>📚 Ngăn xếp — Stack</h1>
+  <span class="badge">Module 1 · Cấu trúc dữ liệu</span>
+  <span class="badge">LIFO — Last In, First Out</span>
+  <span class="badge">Push/Pop: O(1)</span>
+</header>
+
+<div class="main">
+  <div class="viz">
+    <div class="ops-bar">
+      <button class="op-btn active" onclick="selectOp('push',event)">⬆ Push</button>
+      <button class="op-btn" onclick="selectOp('pop',event)">⬇ Pop</button>
+      <button class="op-btn" onclick="selectOp('peek',event)">👁 Peek</button>
+      <button class="op-btn" onclick="selectOp('bracket',event)">🔤 Bracket Matching</button>
+      <button class="op-btn" onclick="selectOp('callstack',event)">📞 Call Stack</button>
+    </div>
+    <div class="input-row">
+      <label id="lbl1">Giá trị Push:</label>
+      <input type="number" id="inp1" value="88" min="0" max="99">
+      <button class="run-btn" onclick="runOperation()">▶ Chạy</button>
+    </div>
+    <div class="canvas-area">
+      <!-- Stack visual -->
+      <div class="stack-section">
+        <div class="stack-title">Stack (LIFO)</div>
+        <div class="stack-outer">
+          <div class="stack-rail" id="stackRail">
+            <div class="right-wall"></div>
+          </div>
+        </div>
+        <div class="lifo-banner"><strong>LIFO</strong> — Vào sau, ra trước</div>
+        <div class="complexity-row">
+          <div class="complexity-badge active-badge" id="cb0"><div class="label">Push</div><div class="value green">O(1)</div></div>
+          <div class="complexity-badge" id="cb1"><div class="label">Pop</div><div class="value green">O(1)</div></div>
+          <div class="complexity-badge" id="cb2"><div class="label">Peek</div><div class="value green">O(1)</div></div>
+        </div>
+        <div class="status-msg" id="statusMsg">Chọn thao tác và nhấn ▶ Chạy</div>
+      </div>
+
+      <!-- Demo panel -->
+      <div class="demo-section">
+        <div class="demo-title" id="demoTitle">Ví dụ thực tế</div>
+        <div class="demo-box" id="demoBox">
+          <div class="demo-line">// Chọn Bracket Matching</div>
+          <div class="demo-line">// hoặc Call Stack</div>
+          <div class="demo-line">// để xem demo!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-panel">
+    <div class="code-panel-header">📄 Pseudocode — <span id="codeTitle">Stack Push</span></div>
+    <div class="code-body" id="codeBody"></div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn" onclick="stepBack()">⏮</button>
+  <button class="ctrl-btn" id="btnPlay" onclick="togglePlay()">▶</button>
+  <button class="ctrl-btn" onclick="stepForward()">⏭</button>
+  <button class="ctrl-btn" onclick="resetAll()">🔄</button>
+  <div class="speed-group">🐢 <input type="range" id="speedSlider" min="1" max="5" value="3"> 🐇</div>
+  <div class="step-info" id="stepInfo">Bước 0 / 0</div>
+</div>
+
+<script>
+let stack = [10, 23, 45, 67];
+let currentOp = 'push';
+let steps = [], stepIdx = -1, playing = false, playTimer = null;
+const speedMap = { 1:1400, 2:1000, 3:650, 4:380, 5:200 };
+
+const codes = {
+  push: {
+    title: 'Stack Push — O(1)',
+    lines: [
+      ['cm','// Thêm phần tử vào đỉnh stack'],
+      ['kw','function ','fn','push','(stack, value):'],
+      ['kw','  if ','','stack.isFull():'],
+      ['kw','    throw ','','StackOverflowError'],
+      ['cm','  // Tăng con trỏ top và ghi giá trị'],
+      ['','  stack.top++'],
+      ['','  stack[top] = value'],
+      ['kw','  return ','cm','"// O(1) — không duyệt!"'],
+    ]
+  },
+  pop: {
+    title: 'Stack Pop — O(1)',
+    lines: [
+      ['cm','// Lấy phần tử khỏi đỉnh stack'],
+      ['kw','function ','fn','pop','(stack):'],
+      ['kw','  if ','','stack.isEmpty():'],
+      ['kw','    throw ','','StackUnderflowError'],
+      ['cm','  // Lấy giá trị tại top'],
+      ['','  value = stack[top]'],
+      ['','  stack.top--   ','cm','// giảm top'],
+      ['kw','  return ','','value'],
+      ['cm','// O(1) — tức thì!'],
+    ]
+  },
+  peek: {
+    title: 'Stack Peek — O(1)',
+    lines: [
+      ['cm','// Xem đỉnh stack không lấy ra'],
+      ['kw','function ','fn','peek','(stack):'],
+      ['kw','  if ','','stack.isEmpty():'],
+      ['kw','    return ','','null'],
+      ['cm','  // Chỉ đọc, không thay đổi'],
+      ['kw','  return ','','stack[top]'],
+      ['cm','// O(1) — đọc tức thì'],
+    ]
+  },
+  bracket: {
+    title: 'Bracket Matching (dùng Stack)',
+    lines: [
+      ['cm','// Kiểm tra ngoặc hợp lệ'],
+      ['kw','function ','fn','isValid','(s):'],
+      ['','  stack = []'],
+      ['kw','  for ','','ch in s:'],
+      ['','    ','kw','if ','','ch ∈ {(, [, {}: stack.push(ch)'],
+      ['','    ','kw','else:'],
+      ['','      ','kw','if ','','stack.isEmpty(): ','kw','return ','str','false'],
+      ['','      top = stack.pop()'],
+      ['','      ','kw','if ','','!matches(top, ch): ','kw','return ','str','false'],
+      ['kw','  return ','','stack.isEmpty()'],
+      ['cm','// ✓ empty ⟹ balanced'],
+    ]
+  },
+  callstack: {
+    title: 'Call Stack — Function Calls',
+    lines: [
+      ['cm','// Mô phỏng call stack'],
+      ['kw','function ','fn','main','():'],
+      ['','  print("start")'],
+      ['fn','  foo','()   ','cm','// push frame'],
+      ['','  print("end")'],
+      ['',''],
+      ['kw','function ','fn','foo','():'],
+      ['fn','  bar','()   ','cm','// push frame'],
+      ['kw','  return   ','cm','// pop frame'],
+      [''],
+      ['kw','function ','fn','bar','():'],
+      ['kw','  return   ','cm','// pop frame'],
+    ]
+  }
+};
+
+function renderCode(op, hl = -1) {
+  const c = codes[op];
+  document.getElementById('codeTitle').textContent = c.title;
+  const body = document.getElementById('codeBody');
+  body.innerHTML = '';
+  c.lines.forEach((parts, i) => {
+    const div = document.createElement('div');
+    div.className = 'code-line' + (i === hl ? ' highlight' : '');
+    const ln = document.createElement('span'); ln.className = 'ln'; ln.textContent = i+1;
+    const txt = document.createElement('span'); txt.className = 'code-text';
+    let html = '';
+    for (let j = 0; j < parts.length; j += 2) {
+      const cls = parts[j], content = parts[j+1]||'';
+      html += cls ? `<span class="${cls}">${content}</span>` : content;
+    }
+    txt.innerHTML = html; div.appendChild(ln); div.appendChild(txt);
+    body.appendChild(div);
+    if (i === hl) div.scrollIntoView({ block: 'nearest' });
+  });
+}
+
+function renderStack(stk, topClass = '', popIdx = -1) {
+  const rail = document.getElementById('stackRail');
+  rail.innerHTML = '<div class="right-wall"></div>';
+  stk.forEach((val, i) => {
+    const item = document.createElement('div');
+    item.className = 'stack-item';
+    item.textContent = val;
+    if (i === stk.length - 1) {
+      item.classList.add(topClass || 'top');
+      const topLbl = document.createElement('span'); topLbl.className = 'top-label';
+      item.appendChild(topLbl);
+    }
+    rail.insertBefore(item, rail.querySelector('.right-wall'));
+  });
+}
+
+function setDemoBox(lines) {
+  const box = document.getElementById('demoBox');
+  box.innerHTML = lines.map(l => `<div class="demo-line ${l.cls||''}">${l.text}</div>`).join('');
+}
+
+function buildSteps(op, val) {
+  steps = [];
+
+  if (op === 'push') {
+    document.getElementById('demoTitle').textContent = 'Push vào stack';
+    setDemoBox([{text:`push(${val})`,cls:'active'},{text:`stack = [${stack.join(',')}]`},{text:`→ top tăng lên`}]);
+    complexityFocus(0);
+    steps.push({ stk:[...stack], topCls:'', code:-1, msg:`Chuẩn bị push ${val} vào stack` });
+    steps.push({ stk:[...stack], topCls:'top', code:5, msg:`stack.top++ — tăng con trỏ đỉnh` });
+    const ns = [...stack, val];
+    steps.push({ stk:ns, topCls:'pushing', code:6, msg:`Ghi stack[top] = ${val}` });
+    steps.push({ stk:ns, topCls:'found', code:7, msg:`✓ Push thành công — O(1)!` });
+    stack = ns;
+  }
+  else if (op === 'pop') {
+    if (stack.length === 0) { alert('Stack rỗng!'); return; }
+    complexityFocus(1);
+    const popped = stack[stack.length-1];
+    const ns = stack.slice(0, -1);
+    steps.push({ stk:[...stack], topCls:'top', code:1, msg:`Chuẩn bị pop từ đỉnh stack` });
+    steps.push({ stk:[...stack], topCls:'found', code:5, msg:`Đọc giá trị tại top: ${popped}` });
+    steps.push({ stk:[...stack], topCls:'popping', code:6, msg:`stack.top-- — xóa khỏi đỉnh` });
+    steps.push({ stk:ns, topCls:'top', code:7, msg:`✓ Pop thành công — trả về ${popped}` });
+    stack = ns;
+    setDemoBox([{text:`pop() → ${popped}`,cls:'active'},{text:`Removed from top`},{text:`stack = [${ns.join(',')}]`}]);
+  }
+  else if (op === 'peek') {
+    complexityFocus(2);
+    const top = stack[stack.length-1];
+    steps.push({ stk:[...stack], topCls:'top', code:1, msg:`Peek — xem đỉnh không lấy ra` });
+    steps.push({ stk:[...stack], topCls:'found', code:5, msg:`Đỉnh hiện tại: ${top} — O(1)` });
+    steps.push({ stk:[...stack], topCls:'found', code:5, msg:`✓ Peek = ${top} — stack không thay đổi` });
+    setDemoBox([{text:`peek() → ${top}`,cls:'match'},{text:`Stack không thay đổi`,cls:''},{text:`[${stack.join(',')}]`}]);
+  }
+  else if (op === 'bracket') {
+    const expr = '({[()]})';
+    document.getElementById('demoTitle').textContent = 'Bracket: ' + expr;
+    const bracketStack = [];
+    const pairs = { ')':'(', ']':'[', '}':'{' };
+    const opens = new Set(['(','[','{']);
+    const log = [];
+    steps.push({ stk:[], topCls:'', code:2, msg:`Kiểm tra: "${expr}"` });
+    for (const ch of expr) {
+      if (opens.has(ch)) {
+        bracketStack.push(ch);
+        steps.push({ stk:[...bracketStack], topCls:'top', code:4, msg:`'${ch}' là mở → push vào stack` });
+        log.push({text:`push '${ch}'`, cls:'active'});
+      } else {
+        if (bracketStack.length === 0) {
+          steps.push({ stk:[], topCls:'', code:6, msg:`✗ Stack rỗng nhưng gặp '${ch}'` });
+          log.push({text:`✗ mismatch!`, cls:'error'});
+          break;
+        }
+        const top = bracketStack.pop();
+        if (pairs[ch] === top) {
+          steps.push({ stk:[...bracketStack], topCls:'found', code:8, msg:`'${ch}' khớp với '${top}' → pop` });
+          log.push({text:`'${ch}' ↔ '${top}' ✓`, cls:'match'});
+        } else {
+          steps.push({ stk:[...bracketStack], topCls:'popping', code:8, msg:`✗ '${ch}' không khớp với '${top}'` });
+          log.push({text:`✗ mismatch!`, cls:'error'});
+          break;
+        }
+      }
+      setDemoBox(log);
+    }
+    const valid = bracketStack.length === 0;
+    steps.push({ stk:[], topCls:'', code:9, msg: valid ? `✓ Hợp lệ! Stack rỗng = cân bằng` : `✗ Stack không rỗng = mất cặp` });
+    log.push({text: valid ? '✓ BALANCED' : '✗ UNBALANCED', cls: valid ? 'match' : 'error'});
+    setDemoBox(log);
+    stack = [];
+  }
+  else if (op === 'callstack') {
+    document.getElementById('demoTitle').textContent = 'Call Stack';
+    const frames = ['main()', 'foo()', 'bar()'];
+    steps.push({ stk:[], topCls:'', code:1, msg:`Chương trình bắt đầu từ main()` });
+    steps.push({ stk:['main()'], topCls:'top', code:3, msg:`main() được đưa vào call stack` });
+    setDemoBox([{text:'→ main()',cls:'active'}]);
+    steps.push({ stk:['main()','foo()'], topCls:'top', code:3, msg:`main() gọi foo() → push foo frame` });
+    setDemoBox([{text:'→ main()',cls:''},{text:'→ foo()',cls:'active'}]);
+    steps.push({ stk:['main()','foo()','bar()'], topCls:'top', code:7, msg:`foo() gọi bar() → push bar frame` });
+    setDemoBox([{text:'→ main()',cls:''},{text:'→ foo()',cls:''},{text:'→ bar()',cls:'active'}]);
+    steps.push({ stk:['main()','foo()','bar()'], topCls:'popping', code:11, msg:`bar() kết thúc → pop bar frame` });
+    steps.push({ stk:['main()','foo()'], topCls:'top', code:8, msg:`Quay về foo() — tiếp tục thực thi` });
+    setDemoBox([{text:'→ main()',cls:''},{text:'→ foo()',cls:'active'},{text:'← bar() done',cls:'match'}]);
+    steps.push({ stk:['main()','foo()'], topCls:'popping', code:8, msg:`foo() kết thúc → pop foo frame` });
+    steps.push({ stk:['main()'], topCls:'top', code:4, msg:`Quay về main() — tiếp tục` });
+    setDemoBox([{text:'→ main()',cls:'active'},{text:'← foo() done',cls:'match'},{text:'← bar() done',cls:'match'}]);
+    steps.push({ stk:['main()'], topCls:'popping', code:4, msg:`main() kết thúc → pop, stack rỗng` });
+    steps.push({ stk:[], topCls:'', code:4, msg:`✓ Chương trình kết thúc — Call stack rỗng` });
+    setDemoBox([{text:'← main() done',cls:'match'},{text:'← foo() done',cls:'match'},{text:'← bar() done',cls:'match'},{text:'✓ Stack empty',cls:'match'}]);
+    stack = [];
+  }
+}
+
+function complexityFocus(idx) {
+  ['cb0','cb1','cb2'].forEach((id,i) =>
+    document.getElementById(id).classList.toggle('active-badge', i===idx));
+}
+
+function applyStep(idx) {
+  if (idx < 0 || idx >= steps.length) return;
+  const s = steps[idx];
+  renderStack(s.stk, s.topCls);
+  renderCode(currentOp, s.code);
+  const msg = document.getElementById('statusMsg');
+  msg.textContent = s.msg || '';
+  msg.className = 'status-msg' + (s.msg?.startsWith('✓') ? ' success' : s.msg?.startsWith('✗') ? ' error' : ' info');
+  document.getElementById('stepInfo').textContent = `Bước ${idx+1} / ${steps.length}`;
+}
+
+function stepForward() { if (stepIdx < steps.length-1) { stepIdx++; applyStep(stepIdx); } else stopPlay(); }
+function stepBack()    { if (stepIdx > 0) { stepIdx--; applyStep(stepIdx); } }
+function togglePlay()  { playing ? stopPlay() : startPlay(); }
+function startPlay() {
+  playing = true; document.getElementById('btnPlay').textContent = '⏸';
+  function tick() {
+    if (stepIdx < steps.length-1) {
+      stepIdx++; applyStep(stepIdx);
+      playTimer = setTimeout(tick, speedMap[document.getElementById('speedSlider').value]);
+    } else stopPlay();
+  }
+  tick();
+}
+function stopPlay() { playing=false; document.getElementById('btnPlay').textContent='▶'; clearTimeout(playTimer); }
+
+function selectOp(op, e) {
+  currentOp = op;
+  document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  const lbl = document.getElementById('lbl1');
+  const inp = document.getElementById('inp1');
+  const row = inp.parentElement;
+  if (op === 'push') { lbl.textContent='Giá trị Push:'; inp.style.display=''; }
+  else { lbl.textContent='(không cần input)'; inp.style.display='none'; }
+  resetAll();
+}
+
+function runOperation() {
+  stopPlay();
+  stack = [10, 23, 45, 67];
+  const val = parseInt(document.getElementById('inp1').value) || 88;
+  buildSteps(currentOp, val);
+  stepIdx = -1;
+  renderStack(stack, 'top');
+  renderCode(currentOp, -1);
+  document.getElementById('statusMsg').textContent = 'Nhấn ⏭ để từng bước hoặc ▶ để tự động';
+  document.getElementById('statusMsg').className = 'status-msg';
+  document.getElementById('stepInfo').textContent = `Bước 0 / ${steps.length}`;
+}
+
+function resetAll() {
+  stopPlay();
+  stack = [10, 23, 45, 67]; steps = []; stepIdx = -1;
+  renderStack(stack, 'top');
+  renderCode(currentOp, -1);
+  document.getElementById('statusMsg').textContent = 'Chọn thao tác và nhấn ▶ Chạy';
+  document.getElementById('statusMsg').className = 'status-msg';
+  document.getElementById('stepInfo').textContent = 'Bước 0 / 0';
+  complexityFocus(0);
+  setDemoBox([{text:'// Chọn demo để xem ví dụ',cls:''}]);
+}
+
+renderStack(stack, 'top');
+renderCode('push', -1);
+</script>
+</body>
+</html>

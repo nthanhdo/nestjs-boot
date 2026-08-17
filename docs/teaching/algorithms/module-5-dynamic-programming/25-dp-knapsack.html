@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DP #25 — Bài toán Ba lô (0/1 Knapsack)</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; min-height: 100vh; }
+header { background: linear-gradient(135deg, #1a1f35, #1f2a20); padding: 16px 24px; border-bottom: 2px solid #2ecc71; display: flex; align-items: center; gap: 16px; }
+header h1 { font-size: 1.3rem; color: #4eff91; }
+header .badge { background: #1a5c30; color: #4eff91; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
+.main { display: grid; grid-template-columns: 1fr 320px; height: calc(100vh - 60px); }
+.left-panel { padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.right-panel { background: #161b2e; border-left: 2px solid #1a3020; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+
+/* Approach toggle */
+.toggle-row { display: flex; gap: 6px; }
+.toggle-btn { padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 0.82rem; font-weight: 600; border: 2px solid #2a3040; background: #1a1f35; color: #7090c0; transition: all 0.2s; }
+.toggle-btn.active { background: #1a3a20; border-color: #2ecc71; color: #4eff91; }
+
+/* Items row */
+.items-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+.item-card { background: #1a2030; border-radius: 10px; padding: 10px 12px; border: 2px solid #2a3050; min-width: 80px; text-align: center; cursor: pointer; transition: all 0.3s; position: relative; }
+.item-card .item-icon { font-size: 1.8rem; }
+.item-card .item-name { font-size: 0.72rem; color: #8090b0; margin-top: 2px; }
+.item-card .item-stats { font-size: 0.7rem; margin-top: 4px; }
+.item-card .wt { color: #ff9966; }
+.item-card .vl { color: #4eff91; }
+.item-card.selected { border-color: #4eff91; background: #0d2a18; box-shadow: 0 0 12px #4eff9144; }
+.item-card.in-knapsack { border-color: #ffd600; background: #2a2000; animation: item-pop 0.4s ease; }
+@keyframes item-pop { 0%{transform:scale(1)} 50%{transform:scale(1.15)} 100%{transform:scale(1)} }
+.item-card.active-compute { border-color: #ffd600; background: #2d2800; box-shadow: 0 0 16px #ffd60066; }
+
+/* Knapsack visual */
+.knapsack-row { display: flex; gap: 16px; align-items: flex-start; }
+.knapsack-visual { background: #1a1a10; border: 3px solid #8060a0; border-radius: 12px; padding: 12px; min-width: 160px; min-height: 120px; position: relative; }
+.knapsack-visual .ks-title { font-size: 0.72rem; color: #9070c0; margin-bottom: 6px; }
+.ks-capacity-bar { height: 8px; background: #2a2030; border-radius: 4px; margin-bottom: 8px; }
+.ks-capacity-fill { height: 100%; background: linear-gradient(90deg, #4eff91, #2ecc71); border-radius: 4px; transition: width 0.5s; }
+.ks-items { display: flex; flex-wrap: wrap; gap: 4px; }
+.ks-item { padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; animation: slide-in 0.3s ease; }
+@keyframes slide-in { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+.ks-stats { margin-top: 8px; font-size: 0.78rem; }
+.ks-stats .total-val { color: #ffd600; font-weight: bold; }
+
+/* DP Table */
+.table-section { overflow: auto; }
+.dp-grid { display: grid; gap: 2px; width: fit-content; }
+.dp-cell { width: 44px; height: 44px; border-radius: 6px; border: 1.5px solid #2a3050; display: flex; align-items: center; justify-content: center; font-size: 0.82rem; font-weight: bold; transition: all 0.25s; position: relative; cursor: default; }
+.dp-cell.header { background: #1a2040; color: #6080a0; font-size: 0.68rem; border: none; font-weight: 600; }
+.dp-cell.empty { background: #161b2e; color: #3a4060; }
+.dp-cell.computing { background: #3d3000; border-color: #ffd600; color: #ffd600; box-shadow: 0 0 10px #ffd60066; }
+.dp-cell.computed { background: #1a2540; border-color: #2a4070; color: #8090c0; }
+.dp-cell.source-include { background: #1a3520; border-color: #4eff91 !important; color: #4eff91 !important; box-shadow: 0 0 8px #4eff9144; }
+.dp-cell.source-exclude { background: #1a2040; border-color: #61afef !important; color: #61afef !important; }
+.dp-cell.backtrack { background: #2a2000; border-color: #ffd600 !important; color: #ffd600 !important; box-shadow: 0 0 12px #ffd60088; }
+.dp-cell.optimal { background: #0d3020; border-color: #4eff91 !important; color: #4eff91 !important; }
+.dp-cell:hover { z-index: 10; transform: scale(1.1); }
+
+/* Arrows overlay */
+.table-wrap { position: relative; }
+.arrow-svg { position: absolute; top: 0; left: 0; pointer-events: none; }
+
+/* Controls */
+.controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
+.btn-primary { background: #2ecc71; color: #0f2010; }
+.btn-primary:hover { background: #4eff91; }
+.btn-secondary { background: #2a3050; color: #9090c0; }
+.btn-secondary:hover { background: #363c60; }
+.btn-danger { background: #4a1020; color: #ff9090; }
+.btn-danger:hover { background: #6a1030; }
+select { background: #1a2040; color: #9090c0; border: 1px solid #3a4060; border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; }
+
+/* Code */
+.code-panel { background: #0d1117; border-radius: 10px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.76rem; line-height: 1.7; border: 1px solid #1a3020; }
+.code-line { padding: 1px 6px; border-radius: 4px; transition: background 0.2s; white-space: pre; color: #6090a0; }
+.code-line.active { background: #2ecc7122; color: #ccffdd; border-left: 3px solid #4eff91; }
+.code-line.highlight { background: #ffd60022; color: #ffd680; border-left: 3px solid #ffd600; }
+.kw { color: #c678dd; } .fn { color: #61afef; } .num { color: #d19a66; } .cm { color: #5c6370; font-style: italic; }
+
+/* Stats */
+.stats-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.stat-box { background: #1a1f35; border-radius: 8px; padding: 8px 12px; flex: 1; min-width: 80px; }
+.stat-box .label { font-size: 0.68rem; color: #6080a0; text-transform: uppercase; }
+.stat-box .value { font-size: 1.2rem; font-weight: bold; color: #4eff91; }
+
+/* Explanation */
+.explanation { background: #1e2a20; border-radius: 8px; padding: 8px 14px; font-size: 0.82rem; color: #b0d0b8; min-height: 36px; border-left: 3px solid #2ecc71; }
+
+/* Info */
+.info-box { background: #1a1f35; border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.5; color: #9090c0; border-left: 3px solid #2ecc71; }
+.info-box strong { color: #4eff91; }
+
+.section-title { font-size: 0.78rem; font-weight: 700; color: #507060; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* Capacity control */
+.cap-row { display: flex; gap: 10px; align-items: center; background: #1a2030; border-radius: 8px; padding: 8px 14px; }
+.cap-row label { font-size: 0.82rem; color: #6090a0; }
+input[type=range] { accent-color: #2ecc71; flex: 1; }
+.cap-display { background: #1a3020; color: #4eff91; font-weight: bold; padding: 4px 10px; border-radius: 6px; }
+
+/* Legend */
+.legend { display: flex; gap: 10px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: #8090a0; }
+.legend-dot { width: 14px; height: 14px; border-radius: 3px; }
+
+.phase-badge { background: #1a3020; color: #4eff91; font-size: 0.72rem; font-weight: bold; padding: 2px 8px; border-radius: 4px; border: 1px solid #2ecc71; }
+</style>
+</head>
+<body>
+<header>
+  <div class="badge">Module 5</div>
+  <h1>🎒 Bài toán Ba lô — 0/1 Knapsack</h1>
+  <div class="badge">#25</div>
+</header>
+
+<div class="main">
+  <div class="left-panel">
+    <!-- Mode toggle -->
+    <div class="toggle-row">
+      <div class="toggle-btn active" id="btn-fill" onclick="setMode('fill')">📊 Điền bảng DP</div>
+      <div class="toggle-btn" id="btn-back" onclick="setMode('backtrack')">🔍 Backtrack (tìm items)</div>
+    </div>
+
+    <!-- Capacity -->
+    <div class="cap-row">
+      <label>Sức chứa W =</label>
+      <input type="range" id="capSlider" min="4" max="12" value="7" oninput="onCapChange(this.value)">
+      <div class="cap-display" id="capDisplay">7</div>
+      <label style="font-size:0.78rem;color:#506050">kg</label>
+    </div>
+
+    <!-- Items -->
+    <div>
+      <div class="section-title" style="margin-bottom:8px">📦 Các vật phẩm</div>
+      <div class="items-row" id="itemsRow"></div>
+    </div>
+
+    <!-- Knapsack visual + table -->
+    <div class="knapsack-row">
+      <div class="knapsack-visual" id="knapsackViz">
+        <div class="ks-title">🎒 Ba lô (W = <span id="ksCapLabel">7</span>)</div>
+        <div class="ks-capacity-bar"><div class="ks-capacity-fill" id="ksBar" style="width:0%"></div></div>
+        <div class="ks-items" id="ksItems"></div>
+        <div class="ks-stats">Giá trị: <span class="total-val" id="ksValue">0</span></div>
+      </div>
+      <div style="flex:1; overflow:auto">
+        <div class="section-title" style="margin-bottom:6px">📋 Bảng dp[item][weight]</div>
+        <div id="dpTableWrap" class="table-wrap">
+          <div id="dpGrid" class="dp-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#3d3000;border:1px solid #ffd600"></div>Đang tính</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1a3520;border:1px solid #4eff91"></div>Chọn item (include)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1a2040;border:1px solid #61afef"></div>Bỏ qua (exclude)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#0d3020;border:1px solid #4eff91"></div>Đường backtrack</div>
+    </div>
+
+    <!-- Explanation -->
+    <div class="explanation" id="explanation">Nhấn ▶ Play để bắt đầu điền bảng DP từng bước.</div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-box"><div class="label">Bước hiện tại</div><div class="value" id="statStep">0</div></div>
+      <div class="stat-box"><div class="label">Giá trị tối ưu</div><div class="value" id="statOpt">—</div></div>
+      <div class="stat-box" style="--c:#4eff91"><div class="label">Items chọn</div><div class="value" id="statItems">—</div></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="btn btn-primary" id="btnPlay" onclick="togglePlay()">▶ Play</button>
+      <button class="btn btn-secondary" onclick="stepForward()">⏭ Step</button>
+      <button class="btn btn-danger" onclick="resetAnim()">↺ Reset</button>
+      <select id="speedSel">
+        <option value="1200">Chậm</option>
+        <option value="700" selected>Bình thường</option>
+        <option value="300">Nhanh</option>
+        <option value="80">Rất nhanh</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="section-title">💻 Code (Bottom-Up)</div>
+    <div class="code-panel" id="codePanel">
+<div class="code-line"><span class="kw">function</span> <span class="fn">knapsack</span>(items, W):</div>
+<div class="code-line">  n = items.length</div>
+<div class="code-line">  dp = array (n+1) × (W+1), fill 0</div>
+<div class="code-line">  <span class="kw">for</span> i = 1 <span class="kw">to</span> n:  <span class="cm">// each item</span></div>
+<div class="code-line">    <span class="kw">for</span> w = 0 <span class="kw">to</span> W:  <span class="cm">// each capacity</span></div>
+<div class="code-line">      <span class="cm">// exclude item i</span></div>
+<div class="code-line">      dp[i][w] = dp[i-1][w]</div>
+<div class="code-line">      <span class="kw">if</span> items[i].w <= w:</div>
+<div class="code-line">        <span class="cm">// include item i</span></div>
+<div class="code-line">        include = dp[i-1][w - items[i].w] + items[i].v</div>
+<div class="code-line">        dp[i][w] = <span class="fn">max</span>(dp[i][w], include)</div>
+<div class="code-line">  <span class="kw">return</span> dp[n][W]</div>
+<div class="code-line"><span class="cm">// Độ phức tạp: O(n × W)</span></div>
+    </div>
+
+    <div class="section-title">🔍 Backtrack</div>
+    <div class="code-panel" style="font-size:0.74rem">
+<div class="code-line">i = n, w = W</div>
+<div class="code-line"><span class="kw">while</span> i > 0 <span class="kw">and</span> w > 0:</div>
+<div class="code-line">  <span class="kw">if</span> dp[i][w] != dp[i-1][w]:</div>
+<div class="code-line">    <span class="cm">// item i được chọn</span></div>
+<div class="code-line">    selected.add(items[i])</div>
+<div class="code-line">    w -= items[i].weight</div>
+<div class="code-line">  i -= 1</div>
+    </div>
+
+    <div class="info-box">
+      <strong>Công thức DP:</strong><br>
+      dp[i][w] = dp[i-1][w] nếu bỏ qua item i<br>
+      dp[i][w] = max(above, dp[i-1][w - wᵢ] + vᵢ) nếu thêm item i<br><br>
+      <strong>dp[i][w]</strong> = giá trị tối đa khi xét <strong>i items đầu</strong> với sức chứa <strong>w</strong>
+    </div>
+
+    <div class="section-title">📈 Trạng thái</div>
+    <div id="currentCellInfo" style="background:#1a2030;border-radius:8px;padding:10px;font-size:0.78rem;color:#9090c0;line-height:1.6">
+      Chưa có cell nào đang được tính.
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Items data ─────────────────────────────────────────────────────────
+const ITEM_POOL = [
+  { name: 'Laptop', icon: '💻', w: 3, v: 4, color: '#61afef' },
+  { name: 'Điện thoại', icon: '📱', w: 1, v: 3, color: '#4eff91' },
+  { name: 'Sách', icon: '📚', w: 2, v: 1, color: '#ffd600' },
+  { name: 'Máy ảnh', icon: '📷', w: 2, v: 6, color: '#c678dd' },
+  { name: 'Bình nước', icon: '🧴', w: 1, v: 2, color: '#ff9966' },
+  { name: 'Đồng hồ', icon: '⌚', w: 1, v: 5, color: '#ff6b6b' },
+];
+
+let items = ITEM_POOL.slice(0, 4);
+let W = 7;
+let mode = 'fill';
+let steps = [];
+let stepIdx = 0;
+let playing = false;
+let playTimer = null;
+let dpTable = [];
+let selectedItems = [];
+let currentHighlight = { row: -1, col: -1, srcInclude: null, srcExclude: null };
+
+// ── Setup ──────────────────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-fill').classList.toggle('active', m === 'fill');
+  document.getElementById('btn-back').classList.toggle('active', m === 'backtrack');
+  resetAnim();
+}
+
+function onCapChange(v) {
+  W = parseInt(v);
+  document.getElementById('capDisplay').textContent = W;
+  document.getElementById('ksCapLabel').textContent = W;
+  resetAnim();
+}
+
+// ── Render items ───────────────────────────────────────────────────────
+function renderItems(inKnapsack) {
+  const row = document.getElementById('itemsRow');
+  row.innerHTML = '';
+  items.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.className = 'item-card';
+    if (inKnapsack && inKnapsack.includes(i)) card.classList.add('in-knapsack');
+    card.innerHTML = `
+      <div class="item-icon">${item.icon}</div>
+      <div class="item-name">${item.name}</div>
+      <div class="item-stats"><span class="wt">⚖ ${item.w}kg</span> <span class="vl">💎 ${item.v}</span></div>`;
+    row.appendChild(card);
+  });
+}
+
+// ── Build DP steps ─────────────────────────────────────────────────────
+function buildFillSteps() {
+  steps = [];
+  const n = items.length;
+  const dp = Array.from({length: n+1}, () => new Array(W+1).fill(0));
+
+  steps.push({ type: 'init', dp: JSON.parse(JSON.stringify(dp)), hl: null, src: null,
+    explanation: `Khởi tạo bảng dp[${n+1}][${W+1}] = 0 (0 items, bất kỳ capacity nào = 0)`, codeLine: 2 });
+
+  for (let i = 1; i <= n; i++) {
+    const item = items[i-1];
+    for (let w = 0; w <= W; w++) {
+      // Exclude
+      const excVal = dp[i-1][w];
+      steps.push({ type: 'computing', dp: JSON.parse(JSON.stringify(dp)), hl: {r:i,c:w},
+        srcExclude: {r:i-1, c:w}, srcInclude: null,
+        codeLine: 6,
+        explanation: `dp[${i}][${w}]: Xét item "${item.name}" (w=${item.w}, v=${item.v}) — Bỏ qua: dp[${i-1}][${w}] = ${excVal}` });
+
+      dp[i][w] = excVal;
+
+      let includeVal = -1;
+      let codeLine = 6;
+      if (item.w <= w) {
+        includeVal = dp[i-1][w - item.w] + item.v;
+        codeLine = 10;
+        if (includeVal > excVal) {
+          dp[i][w] = includeVal;
+          steps.push({ type: 'fill', dp: JSON.parse(JSON.stringify(dp)), hl: {r:i,c:w},
+            srcExclude: {r:i-1, c:w}, srcInclude: {r:i-1, c: w - item.w},
+            codeLine: 10,
+            explanation: `dp[${i}][${w}]: Thêm "${item.name}" → ${dp[i-1][w-item.w]} + ${item.v} = ${includeVal} > ${excVal} → CHỌN!` });
+        } else {
+          steps.push({ type: 'fill', dp: JSON.parse(JSON.stringify(dp)), hl: {r:i,c:w},
+            srcExclude: {r:i-1, c:w}, srcInclude: {r:i-1, c: w - item.w},
+            codeLine: 6,
+            explanation: `dp[${i}][${w}]: Thêm "${item.name}" → ${includeVal} ≤ ${excVal} → BỎ QUA` });
+        }
+      } else {
+        steps.push({ type: 'fill', dp: JSON.parse(JSON.stringify(dp)), hl: {r:i,c:w},
+          srcExclude: {r:i-1, c:w}, srcInclude: null,
+          codeLine: 7,
+          explanation: `dp[${i}][${w}]: item.w=${item.w} > w=${w} — không thể thêm, giữ dp[${i-1}][${w}] = ${excVal}` });
+      }
+    }
+  }
+  steps.push({ type: 'done', dp: JSON.parse(JSON.stringify(dp)), hl: {r:n, c:W},
+    result: dp[n][W], codeLine: 11,
+    explanation: `✅ Hoàn thành! Giá trị tối ưu = dp[${n}][${W}] = ${dp[n][W]}` });
+  dpTable = JSON.parse(JSON.stringify(dp));
+}
+
+function buildBacktrackSteps() {
+  // First fully fill table
+  const n = items.length;
+  const dp = Array.from({length: n+1}, () => new Array(W+1).fill(0));
+  for (let i = 1; i <= n; i++) {
+    const item = items[i-1];
+    for (let w = 0; w <= W; w++) {
+      dp[i][w] = dp[i-1][w];
+      if (item.w <= w) dp[i][w] = Math.max(dp[i][w], dp[i-1][w - item.w] + item.v);
+    }
+  }
+  dpTable = JSON.parse(JSON.stringify(dp));
+
+  steps = [];
+  steps.push({ type: 'bt-start', dp: dpTable, hl: {r:n, c:W}, btSel: [],
+    explanation: `Bắt đầu backtrack từ dp[${n}][${W}] = ${dp[n][W]}. Đây là kết quả tối ưu.` });
+
+  let i = n, w = W;
+  const sel = [];
+  while (i > 0 && w > 0) {
+    if (dp[i][w] !== dp[i-1][w]) {
+      sel.push(i-1);
+      const item = items[i-1];
+      steps.push({ type: 'bt-pick', dp: dpTable, hl: {r:i, c:w}, btSel: [...sel],
+        pickedItem: i-1, newW: w - item.w,
+        explanation: `dp[${i}][${w}]=${dp[i][w]} ≠ dp[${i-1}][${w}]=${dp[i-1][w]} → "${item.name}" được chọn! w: ${w} → ${w - item.w}` });
+      w -= item.w;
+    } else {
+      steps.push({ type: 'bt-skip', dp: dpTable, hl: {r:i, c:w}, btSel: [...sel],
+        explanation: `dp[${i}][${w}] = dp[${i-1}][${w}] = ${dp[i][w]} → "${items[i-1].name}" KHÔNG được chọn` });
+    }
+    i--;
+  }
+  selectedItems = sel;
+  steps.push({ type: 'bt-done', dp: dpTable, hl: null, btSel: [...sel],
+    result: dp[n][W],
+    explanation: `✅ Xong! Đã chọn: ${sel.map(j => items[j].name).join(', ')} — Tổng giá trị: ${dp[n][W]}` });
+}
+
+// ── Render DP grid ─────────────────────────────────────────────────────
+function renderGrid(dp, hl, srcExclude, srcInclude, btSel) {
+  const grid = document.getElementById('dpGrid');
+  const n = items.length;
+  const cols = W + 2; // header col + 0..W
+  grid.style.gridTemplateColumns = `repeat(${cols}, 44px)`;
+  grid.innerHTML = '';
+
+  // Header row
+  const corner = document.createElement('div');
+  corner.className = 'dp-cell header';
+  corner.textContent = 'i\\w';
+  grid.appendChild(corner);
+  for (let w = 0; w <= W; w++) {
+    const h = document.createElement('div');
+    h.className = 'dp-cell header';
+    h.textContent = w;
+    grid.appendChild(h);
+  }
+
+  // Data rows
+  for (let i = 0; i <= n; i++) {
+    const rowHeader = document.createElement('div');
+    rowHeader.className = 'dp-cell header';
+    rowHeader.textContent = i === 0 ? '0' : items[i-1].icon;
+    rowHeader.title = i === 0 ? 'No items' : items[i-1].name;
+    grid.appendChild(rowHeader);
+
+    for (let w = 0; w <= W; w++) {
+      const cell = document.createElement('div');
+      cell.className = 'dp-cell';
+
+      const val = dp && dp[i] !== undefined ? dp[i][w] : 0;
+
+      if (hl && hl.r === i && hl.c === w) cell.classList.add('computing');
+      else if (srcInclude && srcInclude.r === i && srcInclude.c === w) cell.classList.add('source-include');
+      else if (srcExclude && srcExclude.r === i && srcExclude.c === w) cell.classList.add('source-exclude');
+      else if (btSel && i > 0) {
+        // Highlight backtrack path
+        cell.classList.add('computed');
+      } else cell.classList.add(val > 0 ? 'computed' : 'empty');
+
+      cell.textContent = val;
+      cell.title = `dp[${i}][${w}] = ${val}`;
+      grid.appendChild(cell);
+    }
+  }
+}
+
+// ── Knapsack visual update ─────────────────────────────────────────────
+function updateKnapsack(selIndices, optVal) {
+  const ksItems = document.getElementById('ksItems');
+  const ksBar = document.getElementById('ksBar');
+  ksItems.innerHTML = '';
+  let totalW = 0, totalV = 0;
+  if (selIndices) {
+    selIndices.forEach(idx => {
+      const item = items[idx];
+      totalW += item.w;
+      totalV += item.v;
+      const el = document.createElement('div');
+      el.className = 'ks-item';
+      el.style.background = item.color + '33';
+      el.style.border = `1px solid ${item.color}`;
+      el.style.color = item.color;
+      el.textContent = `${item.icon} ${item.name}`;
+      ksItems.appendChild(el);
+    });
+  }
+  ksBar.style.width = `${Math.min(100, totalW / W * 100)}%`;
+  document.getElementById('ksValue').textContent = totalV;
+  if (optVal !== undefined) document.getElementById('statOpt').textContent = optVal;
+}
+
+// ── Highlight code line ────────────────────────────────────────────────
+function highlightCode(lineIdx) {
+  const lines = document.querySelectorAll('#codePanel .code-line');
+  lines.forEach((l, i) => {
+    l.classList.remove('highlight', 'active');
+    if (i === lineIdx) l.classList.add('highlight');
+  });
+}
+
+// ── Apply step ─────────────────────────────────────────────────────────
+function applyStep(idx) {
+  if (idx >= steps.length) { stopPlay(); return; }
+  const s = steps[idx];
+  document.getElementById('explanation').textContent = s.explanation || '';
+  document.getElementById('statStep').textContent = idx + 1;
+  if (s.result !== undefined) {
+    document.getElementById('statOpt').textContent = s.result;
+  }
+  if (s.btSel !== undefined) {
+    document.getElementById('statItems').textContent = s.btSel.length > 0 ? s.btSel.map(j => items[j].icon).join(' ') : '—';
+  }
+  if (s.codeLine !== undefined) highlightCode(s.codeLine);
+  renderGrid(s.dp, s.hl, s.srcExclude, s.srcInclude, s.btSel);
+  renderItems(s.btSel);
+  updateKnapsack(s.btSel || [], s.result);
+
+  // Cell info panel
+  if (s.hl) {
+    const i = s.hl.r, w = s.hl.c;
+    const item = i > 0 ? items[i-1] : null;
+    document.getElementById('currentCellInfo').innerHTML =
+      `<b style="color:#4eff91">dp[${i}][${w}]</b><br>` +
+      (item ? `Item: ${item.icon} ${item.name} (w=${item.w}, v=${item.v})<br>` : '') +
+      `Capacity: ${w}<br>` +
+      (s.srcExclude ? `Exclude: dp[${s.srcExclude.r}][${s.srcExclude.c}]<br>` : '') +
+      (s.srcInclude ? `Include: dp[${s.srcInclude.r}][${s.srcInclude.c}] + ${item?.v || 0}` : '');
+  }
+}
+
+// ── Playback ───────────────────────────────────────────────────────────
+function togglePlay() {
+  if (playing) stopPlay(); else startPlay();
+}
+function startPlay() {
+  playing = true;
+  document.getElementById('btnPlay').textContent = '⏸ Pause';
+  tick();
+}
+function stopPlay() {
+  playing = false;
+  document.getElementById('btnPlay').textContent = '▶ Play';
+  clearTimeout(playTimer);
+}
+function tick() {
+  if (!playing) return;
+  if (stepIdx >= steps.length) { stopPlay(); return; }
+  applyStep(stepIdx++);
+  playTimer = setTimeout(tick, parseInt(document.getElementById('speedSel').value));
+}
+function stepForward() {
+  stopPlay();
+  if (stepIdx < steps.length) applyStep(stepIdx++);
+}
+function resetAnim() {
+  stopPlay(); stepIdx = 0;
+  document.getElementById('statStep').textContent = '0';
+  document.getElementById('statOpt').textContent = '—';
+  document.getElementById('statItems').textContent = '—';
+  document.getElementById('explanation').textContent = 'Nhấn ▶ Play để bắt đầu.';
+  document.getElementById('currentCellInfo').textContent = 'Chưa có cell nào đang được tính.';
+  if (mode === 'fill') buildFillSteps(); else buildBacktrackSteps();
+  const emptyDp = Array.from({length: items.length+1}, () => new Array(W+1).fill(0));
+  renderGrid(emptyDp, null, null, null, null);
+  renderItems([]);
+  updateKnapsack([], 0);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+renderItems([]);
+resetAnim();
+</script>
+</body>
+</html>

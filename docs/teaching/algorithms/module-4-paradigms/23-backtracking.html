@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>23 - Quay Lui (Backtracking)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f0f1a; color: #e0e0f0; font-family: 'Segoe UI', monospace; min-height: 100vh; }
+  h1 { text-align: center; padding: 18px; background: linear-gradient(135deg, #1a1a2e, #16213e); font-size: 1.5rem; color: #e879f9; border-bottom: 2px solid #a21caf; letter-spacing: 2px; }
+  .subtitle { text-align: center; font-size: 0.85rem; color: #94a3b8; padding: 6px; background: #16213e; }
+
+  .tabs { display: flex; gap: 4px; padding: 10px 16px; background: #12122a; border-bottom: 1px solid #2d2d4e; }
+  .tab { padding: 8px 18px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem; border: 1px solid #2d2d4e; border-bottom: none; transition: all 0.2s; color: #94a3b8; background: #1a1a2e; }
+  .tab.active { background: #a21caf; color: #fff; border-color: #a21caf; }
+
+  .main { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 110px); }
+  .viz-panel { padding: 16px; overflow-y: auto; background: #0f0f1a; }
+  .code-panel { background: #111128; border-left: 2px solid #2d2d4e; display: flex; flex-direction: column; }
+
+  .controls { display: flex; gap: 8px; align-items: center; padding: 10px 16px; background: #12122a; border-top: 1px solid #2d2d4e; flex-wrap: wrap; }
+  .btn { padding: 7px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.15s; }
+  .btn-play { background: #a21caf; color: #fff; }
+  .btn-play:hover { background: #86198f; }
+  .btn-step { background: #0e7490; color: #fff; }
+  .btn-reset { background: #374151; color: #d1d5db; }
+  .speed-label { font-size: 0.78rem; color: #94a3b8; }
+  input[type=range] { width: 90px; accent-color: #a21caf; }
+
+  /* BT principle banner */
+  .bt-principle { padding: 10px 14px; border-radius: 8px; background: #1a042a; border: 1px solid #e879f944; margin: 8px 0; font-size: 0.82rem; }
+  .bt-title { color: #e879f9; font-weight: bold; margin-bottom: 4px; }
+  .bt-steps-inline { display: flex; gap: 8px; flex-wrap: wrap; }
+  .bt-tag { padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+  .bt-tag.choose { background: #14532d22; border: 1px solid #22c55e; color: #22c55e; }
+  .bt-tag.explore { background: #1e3a5f; border: 1px solid #3b82f6; color: #60a5fa; }
+  .bt-tag.unchoose { background: #7f1d1d22; border: 1px solid #ef4444; color: #ef4444; }
+
+  /* N-Queens chessboard */
+  .chess-board { display: inline-grid; border: 2px solid #374151; border-radius: 4px; overflow: hidden; }
+  .chess-cell { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; transition: all 0.3s; position: relative; }
+  .chess-cell.light { background: #e8d5b7; }
+  .chess-cell.dark { background: #b58863; }
+  .chess-cell.queen { background: #22c55e44; }
+  .chess-cell.queen.light { background: #16a34a44; }
+  .chess-cell.queen.dark { background: #15803d44; }
+  .chess-cell.conflict { background: #ef444444; animation: flashRed 0.5s ease; }
+  .chess-cell.trying { background: #f59e0b33; }
+  .chess-cell.pruned { background: #1e293b; opacity: 0.5; }
+  @keyframes flashRed { 0%,100% { background: #ef444444; } 50% { background: #ef4444aa; } }
+
+  /* Maze */
+  .maze-grid { display: inline-grid; border: 2px solid #374151; border-radius: 4px; overflow: hidden; gap: 1px; background: #374151; }
+  .maze-cell { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; transition: all 0.35s; }
+  .maze-cell.wall { background: #1e293b; }
+  .maze-cell.open { background: #0d0d1f; }
+  .maze-cell.path { background: #22c55e33; border: 2px solid #22c55e; }
+  .maze-cell.current { background: #e879f9; animation: pulseCell 0.8s infinite; }
+  .maze-cell.backtrack { background: #ef444422; border: 2px solid #ef4444; }
+  .maze-cell.start { background: #3b82f666; }
+  .maze-cell.end { background: #f59e0b66; }
+  .maze-cell.dead { background: #7f1d1d33; }
+  @keyframes pulseCell { 0%,100% { box-shadow: 0 0 8px #e879f9; } 50% { box-shadow: 0 0 16px #e879f9; } }
+
+  /* Sudoku */
+  .sudoku-grid { display: inline-grid; grid-template-columns: repeat(9, 1fr); gap: 1px; background: #374151; border: 3px solid #374151; border-radius: 4px; overflow: hidden; }
+  .sudoku-cell { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: bold; background: #1e293b; transition: all 0.3s; }
+  .sudoku-cell.given { background: #1a1a2e; color: #94a3b8; }
+  .sudoku-cell.filled { background: #14532d22; color: #22c55e; }
+  .sudoku-cell.trying { background: #f59e0b22; color: #fbbf24; animation: tryPulse 0.6s infinite; }
+  .sudoku-cell.conflict { background: #ef444422; color: #ef4444; }
+  .sudoku-cell.backtrack-cell { background: #7f1d1d22; color: #ef444488; }
+  @keyframes tryPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+  /* Bold borders for 3x3 boxes */
+  .sudoku-cell:nth-child(3n) { border-right: 2px solid #4b5563; }
+  .sudoku-cell:nth-child(n+19):nth-child(-n+27) { border-bottom: 2px solid #4b5563; }
+  .sudoku-cell:nth-child(n+46):nth-child(-n+54) { border-bottom: 2px solid #4b5563; }
+
+  /* Status */
+  .status-row { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+  .status-card { flex: 1; min-width: 80px; padding: 8px 10px; border-radius: 8px; background: #1a1a2e; border: 1px solid #2d2d4e; font-size: 0.78rem; }
+  .status-card .label { font-size: 0.65rem; color: #64748b; margin-bottom: 2px; }
+  .status-card .val { font-size: 0.95rem; font-weight: bold; color: #e879f9; }
+
+  .step-desc { padding: 10px 14px; border-radius: 8px; background: #1a1a2e; border-left: 3px solid #e879f9; font-size: 0.82rem; color: #94a3b8; margin: 8px 0; min-height: 38px; }
+  .step-desc strong { color: #e879f9; }
+  .step-desc .ok { color: #22c55e; }
+  .step-desc .fail { color: #ef4444; }
+  .step-desc .back { color: #f59e0b; }
+
+  .result-box { padding: 10px 14px; border-radius: 8px; background: #052e16; border: 1px solid #22c55e; font-size: 0.85rem; color: #86efac; margin: 8px 0; }
+  .result-box strong { color: #22c55e; font-size: 1rem; }
+
+  /* Code panel */
+  .code-header { padding: 10px 14px; background: #1a1a2e; border-bottom: 1px solid #2d2d4e; font-size: 0.78rem; color: #a21caf; font-weight: bold; }
+  .code-body { flex: 1; overflow-y: auto; padding: 12px; font-size: 0.75rem; font-family: 'Courier New', monospace; line-height: 1.7; }
+  .code-line { padding: 1px 8px; border-radius: 3px; transition: background 0.2s; white-space: pre; }
+  .code-line.hl { background: #a21caf33; border-left: 3px solid #e879f9; }
+  .kw { color: #c084fc; } .fn { color: #60a5fa; } .num { color: #fbbf24; } .cmt { color: #4b5563; font-style: italic; } .str { color: #34d399; }
+
+  .info-bar { padding: 8px 16px; background: #12122a; font-size: 0.78rem; color: #94a3b8; display: flex; gap: 16px; flex-wrap: wrap; }
+  .info-item strong { color: #e879f9; }
+
+  section.prob { display: none; }
+  section.prob.active { display: block; }
+</style>
+</head>
+<body>
+
+<h1>↩️ Quay Lui (Backtracking)</h1>
+<div class="subtitle">Tư duy: Thử → Kiểm tra → Cắt nhánh xấu (Pruning) → Backtrack nếu thất bại</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchProblem('queens')">♛ N-Queens</div>
+  <div class="tab" onclick="switchProblem('maze')">🌀 Maze Solving</div>
+  <div class="tab" onclick="switchProblem('sudoku')">🔢 Sudoku</div>
+</div>
+
+<div class="main">
+  <div class="viz-panel">
+
+    <!-- N-QUEENS -->
+    <section class="prob active" id="prob-queens">
+      <div class="bt-principle">
+        <div class="bt-title">↩️ Backtracking Pattern</div>
+        <div class="bt-steps-inline">
+          <span class="bt-tag choose">1. CHOOSE: đặt queen</span>
+          <span class="bt-tag explore">2. EXPLORE: đệ quy hàng tiếp</span>
+          <span class="bt-tag unchoose">3. UNCHOOSE: bỏ queen (backtrack)</span>
+        </div>
+      </div>
+      <p style="font-size:0.8rem;color:#64748b;margin:6px 0;">
+        4-Queens: đặt 4 hậu trên bàn 4×4 — không ai tấn công nhau
+      </p>
+      <div style="display:flex;gap:20px;align-items:flex-start;">
+        <div class="chess-board" id="chess-board"></div>
+        <div style="flex:1;">
+          <div class="status-row">
+            <div class="status-card"><div class="label">Hàng</div><div class="val" id="q-row">—</div></div>
+            <div class="status-card"><div class="label">Cột thử</div><div class="val" id="q-col">—</div></div>
+            <div class="status-card"><div class="label">Backtracks</div><div class="val" id="q-backs">0</div></div>
+            <div class="status-card"><div class="label">Solutions</div><div class="val" id="q-sols">0</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="step-desc" id="queens-desc">Nhấn Play để bắt đầu</div>
+      <div class="result-box" id="queens-result" style="display:none">
+        ✅ <strong id="queens-ans">—</strong>
+      </div>
+    </section>
+
+    <!-- MAZE -->
+    <section class="prob" id="prob-maze">
+      <div class="bt-principle">
+        <div class="bt-title">↩️ Maze Backtracking</div>
+        <div class="bt-steps-inline">
+          <span class="bt-tag choose">1. Bước vào ô</span>
+          <span class="bt-tag explore">2. Thử 4 hướng</span>
+          <span class="bt-tag unchoose">3. Dead end → backtrack</span>
+        </div>
+      </div>
+      <p style="font-size:0.8rem;color:#64748b;margin:6px 0;">
+        Tìm đường từ S đến E — ■ tường, □ đường đi
+      </p>
+      <div style="display:flex;gap:16px;align-items:flex-start;">
+        <div class="maze-grid" id="maze-grid"></div>
+        <div style="flex:1;">
+          <div class="status-row">
+            <div class="status-card"><div class="label">Vị trí</div><div class="val" id="mz-pos">—</div></div>
+            <div class="status-card"><div class="label">Path len</div><div class="val" id="mz-len">0</div></div>
+            <div class="status-card"><div class="label">Backtracks</div><div class="val" id="mz-backs">0</div></div>
+          </div>
+          <div style="font-size:0.72rem;color:#64748b;margin-top:8px;">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <span style="color:#22c55e;">■ Path</span>
+              <span style="color:#e879f9;">■ Current</span>
+              <span style="color:#ef4444;">■ Backtrack</span>
+              <span style="color:#f59e0b;">■ Dead end</span>
+              <span style="color:#3b82f6;">■ Start</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step-desc" id="maze-desc">Nhấn Play để bắt đầu</div>
+      <div class="result-box" id="maze-result" style="display:none">
+        ✅ <strong id="maze-ans">—</strong>
+      </div>
+    </section>
+
+    <!-- SUDOKU -->
+    <section class="prob" id="prob-sudoku">
+      <div class="bt-principle">
+        <div class="bt-title">↩️ Sudoku Backtracking</div>
+        <div class="bt-steps-inline">
+          <span class="bt-tag choose">1. Thử số 1-9</span>
+          <span class="bt-tag explore">2. Valid → điền tiếp</span>
+          <span class="bt-tag unchoose">3. Conflict → xóa → thử số khác</span>
+        </div>
+      </div>
+      <p style="font-size:0.8rem;color:#64748b;margin:6px 0;">
+        Giải Sudoku 9×9 — ô xám = cho trước, ô xanh = điền bằng BT
+      </p>
+      <div class="sudoku-grid" id="sudoku-grid"></div>
+      <div class="status-row" style="margin-top:10px;">
+        <div class="status-card"><div class="label">Ô đang giải</div><div class="val" id="sk-cell">—</div></div>
+        <div class="status-card"><div class="label">Thử số</div><div class="val" id="sk-try">—</div></div>
+        <div class="status-card"><div class="label">Backtracks</div><div class="val" id="sk-backs">0</div></div>
+        <div class="status-card"><div class="label">Filled</div><div class="val" id="sk-filled">0</div></div>
+      </div>
+      <div class="step-desc" id="sudoku-desc">Nhấn Play để bắt đầu</div>
+      <div class="result-box" id="sudoku-result" style="display:none">
+        ✅ <strong id="sudoku-ans">—</strong>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="code-panel">
+    <div class="code-header">📄 Pseudocode</div>
+    <div class="code-body" id="code-body"></div>
+    <div class="info-bar">
+      <div class="info-item"><strong>Backtracks:</strong> <span id="info-backs">0</span></div>
+      <div class="info-item"><strong>Step:</strong> <span id="info-step">0</span></div>
+    </div>
+    <div class="controls">
+      <button class="btn btn-play" id="btn-play" onclick="togglePlay()">▶ Play</button>
+      <button class="btn btn-step" onclick="stepOnce()">⏭ Step</button>
+      <button class="btn btn-reset" onclick="resetAll()">↺ Reset</button>
+      <span class="speed-label">Tốc độ:</span>
+      <input type="range" min="1" max="5" value="3" id="speed-slider">
+    </div>
+  </div>
+</div>
+
+<script>
+let currentProblem = 'queens';
+let playing = false;
+let timer = null;
+let stepIndex = 0;
+let steps = [];
+let totalBacks = 0;
+
+const codes = {
+  queens: [
+    '// N-Queens Backtracking',
+    'function solve(board, row):',
+    '  // Base: tất cả hàng đã đặt',
+    '  if row == N: record solution; return',
+    '',
+    '  for col in 0..N-1:',
+    '    // Kiểm tra an toàn',
+    '    if isSafe(board, row, col):',
+    '      // 1. CHOOSE: đặt queen',
+    '      board[row][col] = QUEEN',
+    '      // 2. EXPLORE',
+    '      solve(board, row + 1)',
+    '      // 3. UNCHOOSE (backtrack)',
+    '      board[row][col] = EMPTY',
+    '    // else: cắt nhánh (pruning)',
+  ],
+  maze: [
+    '// Maze Backtracking',
+    'function solve(maze, x, y, path):',
+    '  // Base: đến đích',
+    '  if (x,y) == END: return true',
+    '',
+    '  // Kiểm tra hợp lệ',
+    '  if isWall(x,y) OR visited(x,y):',
+    '    return false  // cắt nhánh',
+    '',
+    '  // 1. CHOOSE: đánh dấu đường đi',
+    '  path.add(x, y)',
+    '  mark as visited',
+    '',
+    '  // 2. EXPLORE: 4 hướng',
+    '  directions = [UP, DOWN, LEFT, RIGHT]',
+    '  for each dir:',
+    '    if solve(maze, nx, ny, path):',
+    '      return true',
+    '',
+    '  // 3. UNCHOOSE (backtrack)',
+    '  path.remove(x, y)',
+    '  return false',
+  ],
+  sudoku: [
+    '// Sudoku Backtracking',
+    'function solve(board):',
+    '  // Tìm ô trống tiếp theo',
+    '  cell = findEmpty(board)',
+    '  if no empty: return true  // xong!',
+    '',
+    '  for num in 1..9:',
+    '    // Kiểm tra hợp lệ',
+    '    if isValid(board, cell, num):',
+    '      // 1. CHOOSE',
+    '      board[cell] = num',
+    '      // 2. EXPLORE',
+    '      if solve(board): return true',
+    '      // 3. UNCHOOSE (backtrack)',
+    '      board[cell] = 0',
+    '',
+    '  return false  // trigger backtrack',
+  ]
+};
+
+// ============================================================
+// N-QUEENS GENERATOR
+// ============================================================
+function genQueensSteps() {
+  const N = 4;
+  const steps = [];
+  let backtracks = 0;
+  let solutions = 0;
+  const board = Array.from({ length: N }, () => Array(N).fill(0));
+
+  function isSafe(r, c) {
+    for (let i = 0; i < r; i++) if (board[i][c]) return false;
+    for (let i = r - 1, j = c - 1; i >= 0 && j >= 0; i--, j--) if (board[i][j]) return false;
+    for (let i = r - 1, j = c + 1; i >= 0 && j < N; i--, j++) if (board[i][j]) return false;
+    return true;
+  }
+
+  function solve(row) {
+    if (row === N) {
+      solutions++;
+      steps.push({ board: board.map(r => [...r]), row, col: -1, phase: 'solution', backtracks, solutions, desc: `🎉 Tìm được solution #${solutions}!`, codeLine: 3 });
+      return;
+    }
+    for (let col = 0; col < N; col++) {
+      const safe = isSafe(row, col);
+      steps.push({ board: board.map(r => [...r]), row, col, phase: 'try', backtracks, solutions, desc: `Hàng ${row}: thử cột ${col} — ${safe ? '✅ An toàn' : '❌ Xung đột (pruning)'}`, codeLine: safe ? 9 : 14 });
+      if (safe) {
+        board[row][col] = 1;
+        steps.push({ board: board.map(r => [...r]), row, col, phase: 'place', backtracks, solutions, desc: `✅ Đặt queen tại (${row},${col})`, codeLine: 9 });
+        solve(row + 1);
+        board[row][col] = 0;
+        backtracks++;
+        steps.push({ board: board.map(r => [...r]), row, col, phase: 'backtrack', backtracks, solutions, desc: `↩️ Backtrack: bỏ queen (${row},${col}) — thử cột tiếp`, codeLine: 13 });
+      }
+    }
+  }
+
+  solve(0);
+  steps.push({ board: board.map(r => [...r]), phase: 'done', backtracks, solutions, desc: `Hoàn thành! Tìm được ${solutions} solutions, backtrack ${backtracks} lần`, done: true });
+  return steps;
+}
+
+function renderQueens(s) {
+  const N = 4;
+  const el = document.getElementById('chess-board');
+  el.style.gridTemplateColumns = `repeat(${N}, 44px)`;
+  el.innerHTML = '';
+  for (let r = 0; r < N; r++) {
+    for (let c = 0; c < N; c++) {
+      const cell = document.createElement('div');
+      const isLight = (r + c) % 2 === 0;
+      let extra = '';
+      if (s.board[r][c]) extra = 'queen';
+      else if (r === s.row && c === s.col && s.phase === 'try' && !s.board[r][c]) {
+        // trying cell
+        const safe = !s.desc.includes('❌');
+        extra = safe ? 'trying' : 'conflict';
+      }
+      cell.className = `chess-cell ${isLight ? 'light' : 'dark'} ${extra}`;
+      if (s.board[r][c]) cell.textContent = '♛';
+      el.appendChild(cell);
+    }
+  }
+  document.getElementById('q-row').textContent = s.row !== undefined ? s.row : '—';
+  document.getElementById('q-col').textContent = s.col !== undefined && s.col >= 0 ? s.col : '—';
+  document.getElementById('q-backs').textContent = s.backtracks;
+  document.getElementById('q-sols').textContent = s.solutions;
+  document.getElementById('queens-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
+  document.getElementById('info-backs').textContent = s.backtracks;
+  if (s.done) {
+    document.getElementById('queens-result').style.display = 'block';
+    document.getElementById('queens-ans').textContent = `${s.solutions} solutions tìm được, ${s.backtracks} lần backtrack`;
+  }
+}
+
+// ============================================================
+// MAZE GENERATOR
+// ============================================================
+const mazeLayout = [
+  [0,0,0,1,0,0,0],
+  [1,1,0,1,0,1,0],
+  [0,0,0,0,0,1,0],
+  [0,1,1,1,0,1,0],
+  [0,0,0,1,0,0,0],
+  [1,1,0,1,1,1,0],
+  [0,0,0,0,0,0,2],
+];
+const ROWS = 7, COLS = 7;
+const START = [0, 0], END = [6, 6];
+const DIRS = [[0,1],[1,0],[0,-1],[-1,0]];
+
+function genMazeSteps() {
+  const steps = [];
+  let backtracks = 0;
+  const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+  const path = [];
+
+  function solve(r, c) {
+    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return false;
+    if (mazeLayout[r][c] === 1 || visited[r][c]) {
+      steps.push({ path: [...path], current: [r, c], phase: 'blocked', backtracks, desc: `❌ (${r},${c}) là tường hoặc đã thăm — cắt nhánh`, codeLine: 7 });
+      return false;
+    }
+    visited[r][c] = true;
+    path.push([r, c]);
+    steps.push({ path: [...path], current: [r, c], phase: 'enter', backtracks, desc: `Bước vào (${r},${c}) — path length = ${path.length}`, codeLine: 10 });
+
+    if (r === END[0] && c === END[1]) {
+      steps.push({ path: [...path], current: [r, c], phase: 'found', backtracks, desc: `🎉 Tìm được đường đi! Length = ${path.length}`, codeLine: 3, done: true, ans: `Path length = ${path.length}` });
+      return true;
+    }
+
+    for (const [dr, dc] of DIRS) {
+      if (solve(r + dr, c + dc)) return true;
+    }
+
+    path.pop();
+    backtracks++;
+    steps.push({ path: [...path], current: [r, c], phase: 'backtrack', backtracks, desc: `↩️ Dead end tại (${r},${c}) — backtrack!`, codeLine: 20 });
+    return false;
+  }
+
+  solve(START[0], START[1]);
+  return steps;
+}
+
+function renderMaze(s) {
+  const el = document.getElementById('maze-grid');
+  el.style.gridTemplateColumns = `repeat(${COLS}, 36px)`;
+  el.innerHTML = '';
+  const pathSet = new Set(s.path.map(([r, c]) => `${r},${c}`));
+  const curKey = s.current ? `${s.current[0]},${s.current[1]}` : '';
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement('div');
+      const key = `${r},${c}`;
+      let cls = '';
+      if (mazeLayout[r][c] === 1) cls = 'wall';
+      else if (r === START[0] && c === START[1]) cls = 'start';
+      else if (r === END[0] && c === END[1]) cls = 'end';
+      else if (key === curKey) cls = 'current';
+      else if (pathSet.has(key)) cls = 'path';
+      else if (s.phase === 'blocked' && key === curKey) cls = 'dead';
+      else cls = 'open';
+
+      if (s.phase === 'backtrack' && key === curKey) cls = 'backtrack';
+
+      cell.className = `maze-cell ${cls}`;
+      if (r === START[0] && c === START[1]) cell.textContent = 'S';
+      else if (r === END[0] && c === END[1]) cell.textContent = 'E';
+      else if (mazeLayout[r][c] === 1) cell.textContent = '■';
+      else if (key === curKey) cell.textContent = '●';
+      el.appendChild(cell);
+    }
+  }
+
+  document.getElementById('mz-pos').textContent = s.current ? `(${s.current.join(',')})` : '—';
+  document.getElementById('mz-len').textContent = s.path.length;
+  document.getElementById('mz-backs').textContent = s.backtracks;
+  document.getElementById('maze-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
+  document.getElementById('info-backs').textContent = s.backtracks;
+  if (s.done) {
+    document.getElementById('maze-result').style.display = 'block';
+    document.getElementById('maze-ans').textContent = s.ans;
+  }
+}
+
+// ============================================================
+// SUDOKU GENERATOR (simplified 9x9)
+// ============================================================
+const sudokuGiven = [
+  [5,3,0,0,7,0,0,0,0],
+  [6,0,0,1,9,5,0,0,0],
+  [0,9,8,0,0,0,0,6,0],
+  [8,0,0,0,6,0,0,0,3],
+  [4,0,0,8,0,3,0,0,1],
+  [7,0,0,0,2,0,0,0,6],
+  [0,6,0,0,0,0,2,8,0],
+  [0,0,0,4,1,9,0,0,5],
+  [0,0,0,0,8,0,0,7,9],
+];
+
+function genSudokuSteps() {
+  const board = sudokuGiven.map(r => [...r]);
+  const givenMask = sudokuGiven.map(r => r.map(v => v !== 0));
+  const steps = [];
+  let backtracks = 0;
+  let filled = 0;
+
+  function isValid(r, c, num) {
+    for (let j = 0; j < 9; j++) if (board[r][j] === num) return false;
+    for (let i = 0; i < 9; i++) if (board[i][c] === num) return false;
+    const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+    for (let i = br; i < br + 3; i++) for (let j = bc; j < bc + 3; j++) if (board[i][j] === num) return false;
+    return true;
+  }
+
+  function findEmpty() {
+    for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) if (!board[r][c]) return [r, c];
+    return null;
+  }
+
+  let stepLimit = 0;
+
+  function solve() {
+    if (stepLimit > 200) return true; // cap for demo
+    const empty = findEmpty();
+    if (!empty) return true;
+    const [r, c] = empty;
+
+    for (let num = 1; num <= 9; num++) {
+      stepLimit++;
+      const valid = isValid(r, c, num);
+      if (stepLimit % 3 === 0) { // only record some steps for perf
+        steps.push({
+          board: board.map(row => [...row]), given: givenMask, r, c, num,
+          phase: valid ? 'try' : 'conflict', backtracks, filled,
+          desc: `Ô (${r},${c}): thử ${num} — ${valid ? '✅ Hợp lệ' : '❌ Xung đột'}`,
+          codeLine: valid ? 10 : 14
+        });
+      }
+      if (valid) {
+        board[r][c] = num;
+        filled++;
+        if (solve()) return true;
+        board[r][c] = 0;
+        filled--;
+        backtracks++;
+        if (stepLimit % 5 === 0) {
+          steps.push({
+            board: board.map(row => [...row]), given: givenMask, r, c, num: 0,
+            phase: 'backtrack', backtracks, filled,
+            desc: `↩️ Backtrack ô (${r},${c}) — thử số tiếp`,
+            codeLine: 14
+          });
+        }
+      }
+    }
+    return false;
+  }
+
+  steps.push({ board: board.map(r => [...r]), given: givenMask, r: -1, c: -1, num: 0, phase: 'init', backtracks: 0, filled: 0, desc: 'Bắt đầu — tìm ô trống đầu tiên', codeLine: 3 });
+  solve();
+  steps.push({ board: board.map(r => [...r]), given: givenMask, done: true, backtracks, filled, desc: `✅ Sudoku solved! Backtracks: ${backtracks}`, ans: `Solved! ${backtracks} lần backtrack`, codeLine: 4 });
+  return steps;
+}
+
+function renderSudoku(s) {
+  const el = document.getElementById('sudoku-grid');
+  el.innerHTML = '';
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      const cell = document.createElement('div');
+      let cls = '';
+      if (s.given && s.given[r][c]) cls = 'given';
+      else if (r === s.r && c === s.c) {
+        cls = s.phase === 'conflict' ? 'conflict' : s.phase === 'backtrack' ? 'backtrack-cell' : s.num ? 'trying' : 'filled';
+      } else if (s.board[r][c] && !(s.given && s.given[r][c])) cls = 'filled';
+      cell.className = `sudoku-cell ${cls}`;
+      cell.textContent = s.board[r][c] || '';
+      el.appendChild(cell);
+    }
+  }
+  document.getElementById('sk-cell').textContent = s.r >= 0 ? `(${s.r},${s.c})` : '—';
+  document.getElementById('sk-try').textContent = s.num || '—';
+  document.getElementById('sk-backs').textContent = s.backtracks;
+  document.getElementById('sk-filled').textContent = s.filled;
+  document.getElementById('sudoku-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
+  document.getElementById('info-backs').textContent = s.backtracks;
+  if (s.done) {
+    document.getElementById('sudoku-result').style.display = 'block';
+    document.getElementById('sudoku-ans').textContent = s.ans;
+  }
+}
+
+// ============================================================
+// PLAYBACK
+// ============================================================
+function highlightCode(line) {
+  document.querySelectorAll('.code-line').forEach((el, i) => el.classList.toggle('hl', i === line));
+}
+
+function applyStep(s) {
+  if (currentProblem === 'queens') renderQueens(s);
+  else if (currentProblem === 'maze') renderMaze(s);
+  else if (currentProblem === 'sudoku') renderSudoku(s);
+  if (s.codeLine !== undefined) highlightCode(s.codeLine);
+  document.getElementById('info-step').textContent = stepIndex;
+  document.getElementById('info-backs').textContent = s.backtracks || 0;
+}
+
+function getDelay() { return [900,650,450,280,150][parseInt(document.getElementById('speed-slider').value) - 1]; }
+
+function stepOnce() {
+  if (stepIndex >= steps.length) return;
+  applyStep(steps[stepIndex]);
+  stepIndex++;
+  if (stepIndex >= steps.length) stopPlay();
+}
+
+function togglePlay() {
+  if (playing) { stopPlay(); return; }
+  playing = true;
+  document.getElementById('btn-play').textContent = '⏸ Pause';
+  function tick() {
+    if (stepIndex >= steps.length) { stopPlay(); return; }
+    stepOnce(); timer = setTimeout(tick, getDelay());
+  }
+  tick();
+}
+
+function stopPlay() {
+  playing = false; clearTimeout(timer);
+  document.getElementById('btn-play').textContent = '▶ Play';
+}
+
+function resetAll() {
+  stopPlay(); stepIndex = 0;
+  ['queens-result','maze-result','sudoku-result'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  document.getElementById('info-backs').textContent = '0';
+  initProblem(currentProblem);
+}
+
+function renderCode(prob) {
+  document.getElementById('code-body').innerHTML = codes[prob].map((l, i) =>
+    `<div class="code-line" data-line="${i}">${l || '&nbsp;'}</div>`).join('');
+}
+
+function initProblem(prob) {
+  renderCode(prob);
+  if (prob === 'queens') {
+    steps = genQueensSteps();
+    renderQueens(steps[0]);
+  } else if (prob === 'maze') {
+    steps = genMazeSteps();
+    renderMaze(steps[0]);
+  } else if (prob === 'sudoku') {
+    steps = genSudokuSteps();
+    renderSudoku(steps[0]);
+  }
+}
+
+function switchProblem(prob) {
+  stopPlay(); currentProblem = prob; stepIndex = 0;
+  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['queens','maze','sudoku'][i] === prob));
+  document.querySelectorAll('.prob').forEach(s => s.classList.remove('active'));
+  document.getElementById(`prob-${prob}`).classList.add('active');
+  initProblem(prob);
+}
+
+initProblem('queens');
+</script>
+</body>
+</html>

@@ -115,6 +115,48 @@
   .demo-tip-icon{font-size:1.5rem;margin-bottom:8px}
   .demo-tip-text{font-size:.8rem;color:#c9d1d9}
 
+
+  .nav-bar{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #30363d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .nav-links{display:flex;gap:8px;flex-wrap:wrap}
+  .nav-link{color:#8b949e;text-decoration:none;font-size:.8rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s;white-space:nowrap}
+  .nav-link:hover{color:#58a6ff;border-color:#58a6ff}
+  .nav-link.current{color:#58a6ff;border-color:#58a6ff;background:#0d1a2d}
+  .nav-center{font-size:.8rem;color:#484f58}
+  .prereq{background:#1a0d2d;border:1px solid #6e40c9;border-radius:8px;padding:14px 16px;margin:0 0 32px;display:flex;align-items:flex-start;gap:10px}
+  .prereq-icon{font-size:1.1rem;flex-shrink:0;margin-top:2px}
+  .prereq-label{font-size:.78rem;font-weight:700;color:#bc8cff;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .prereq-links{display:flex;flex-wrap:wrap;gap:6px}
+  .prereq-link{font-size:.78rem;padding:2px 8px;border-radius:8px;background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e;text-decoration:none;transition:background .2s}
+  .prereq-link:hover{background:#1f4a9e}
+  .xref{display:inline;font-size:.8rem;padding:1px 7px;border-radius:6px;background:#0d2d1a;color:#3fb950;border:1px solid #238636;text-decoration:none;white-space:nowrap;transition:background .2s}
+  .xref:hover{background:#238636;color:#fff}
+  .exercises{margin:48px 0}
+  .exercises-title{font-size:1.2rem;color:#79c0ff;margin-bottom:24px;padding-left:12px;border-left:3px solid #58a6ff}
+  .ex-card{border-radius:12px;padding:20px 24px;margin:16px 0}
+  .ex-green{background:#0a1f0a;border:1px solid #238636}
+  .ex-yellow{background:#1f1a0a;border:1px solid #9e6c1e}
+  .ex-red{background:#1f0a0a;border:1px solid #9e1e1e}
+  .ex-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .ex-diff{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
+  .diff-green{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .diff-yellow{background:#3b2a0d;color:#d4a843;border:1px solid #9e6c1e}
+  .diff-red{background:#3b0d0d;color:#ff7b72;border:1px solid #9e1e1e}
+  .ex-num{font-size:.8rem;font-weight:700;color:#8b949e}
+  .ex-title{font-size:.95rem;font-weight:700;color:#c9d1d9}
+  .ex-desc{font-size:.88rem;color:#8b949e;margin-top:4px}
+  .ex-solution{margin-top:12px}
+  .ex-sol-toggle{background:none;border:1px solid #30363d;color:#8b949e;border-radius:6px;padding:4px 12px;font-size:.75rem;cursor:pointer;transition:all .2s}
+  .ex-sol-toggle:hover{border-color:#58a6ff;color:#58a6ff}
+  .ex-sol-body{display:none;margin-top:10px;padding:12px;background:#0d1117;border-radius:8px;font-size:.83rem;color:#c9d1d9;line-height:1.6}
+  .ex-sol-body.open{display:block}
+  /* Graduation */
+  .graduation{background:linear-gradient(135deg,#0d2d1a,#0d1a2d,#1a0d2d);border:2px solid #3fb950;border-radius:20px;padding:40px;margin:40px 0;text-align:center}
+  .graduation h2{font-size:1.8rem;color:#3fb950;margin-bottom:24px}
+  .phase-progress-final{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin:24px 0}
+  .phase-progress-final .done{padding:8px 20px;border-radius:20px;background:#0d3b1f;color:#3fb950;border:1px solid #238636;font-weight:600;font-size:.9rem}
+  .transformation{font-size:1.1rem;color:#58a6ff;font-style:italic;margin:24px 0;padding:16px;background:rgba(88,166,255,.08);border-radius:10px;border:1px solid rgba(88,166,255,.2)}
+  .graduation a{color:#79c0ff;text-decoration:none;font-size:.9rem;border:1px solid #30363d;padding:6px 16px;border-radius:8px;transition:all .2s;display:inline-block;margin-top:16px}
+  .graduation a:hover{border-color:#58a6ff;color:#58a6ff}
   @media(max-width:600px){
     .project-grid,.cv-compare,.demo-tips,.reshaded{grid-template-columns:1fr}
     .eng-checklist{grid-template-columns:1fr}
@@ -123,6 +165,14 @@
 </style>
 </head>
 <body>
+<nav class="nav-bar">
+  <div class="nav-links">
+    <a class="nav-link" href="18-documentation.html">← Bài 18: Documentation</a>
+    <span class="nav-link current">Bài 19: Capstone</span>
+    <a class="nav-link" href="../../index.html">↩ Teaching Hub</a>
+  </div>
+  <div class="nav-center">Phase 5 — Professional · Bài cuối cùng 🎓</div>
+</nav>
 <div class="container">
   <div style="margin-bottom:20px">
     <span class="badge badge-purple">Phase 5</span>
@@ -134,7 +184,7 @@
 
   <!-- PRODUCTION READY -->
   <h2>1. "Production-Ready" Nghĩa Là Gì?</h2>
-  <p>Không phải "code chạy được". Production-ready = code có thể deploy, maintain, và scale trong môi trường thực tế với real users.</p>
+  <p>Không phải "code chạy được". Tổng hợp từ <a class="xref" href="16-engineering-workflow.html">Bài 16</a>, <a class="xref" href="18-documentation.html">Bài 18</a>, và <a class="xref" href="../phase-4-production/14-devops.html">Bài 14 DevOps</a>. Production-ready = code có thể deploy, maintain, và scale trong môi trường thực tế với real users.</p>
 
   <div class="card">
     <h3>16 Engineering Requirements — Hover để check</h3>
@@ -484,6 +534,76 @@
     </div>
   </div>
 
+
+  <hr class="section-divider">
+  <div class="exercises">
+    <div class="exercises-title">🎯 Bài Tập Capstone</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 1</span></div>
+      <div class="ex-title">Chọn project topic → viết 1-paragraph description</div>
+      <div class="ex-desc">Chọn một trong 4 project topics gợi ý (E-commerce, Blog, Task Manager, Chat) hoặc tự đề xuất. Viết 1 đoạn văn mô tả project: problem nó giải quyết, target users, core value proposition, và 3 tính năng chính.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Template description:</strong><br>"[Project Name] là một [type of app] giúp [target users] giải quyết vấn đề [problem]. Thay vì [current painful solution], [Project Name] cung cấp [core value]. 3 tính năng chính: (1) [feature 1], (2) [feature 2], (3) [feature 3]."<br><br><strong>Ví dụ Task Manager:</strong><br>"TaskFlow là một project management app giúp small teams (2-10 người) tránh việc quản lý tasks qua chat groups. Thay vì nhắn tin trong Slack và quên mất tasks, TaskFlow cung cấp một nguồn sự thật duy nhất với accountability rõ ràng. 3 tính năng chính: (1) Task với assignee + deadline, (2) Real-time updates khi status thay đổi, (3) Daily digest email."<br><br>Đánh giá tốt nếu: đọc xong biết ngay đây là gì, ai dùng, tại sao dùng</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 2</span></div>
+      <div class="ex-title">Vẽ architecture diagram cho project đã chọn</div>
+      <div class="ex-desc">Vẽ C4 Level 1 (System Context) và Level 2 (Container) cho project của bạn. Phải identify: external users, external systems (payment, email, storage), và tất cả internal containers (web app, API, DB, cache, queue, v.v.).</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>E-commerce example:</strong><br><strong>C1 Context:</strong> Customer → [E-commerce System] → Stripe (payment), SendGrid (email), AWS S3 (images)<br>Admin → [E-commerce System]<br><br><strong>C2 Container:</strong><br>- React Frontend (SPA)<br>- NestJS API Server<br>- MongoDB (products, orders, users)<br>- Redis (cart, sessions, cache)<br>- BullMQ (email queue, order processing)<br>- S3 Bucket (product images)<br><br><strong>Tools:</strong> draw.io C4 template hoặc structurizr.com (code-based)</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 3</span></div>
+      <div class="ex-title">Thiết kế ERD (ít nhất 5 entities)</div>
+      <div class="ex-desc">Thiết kế ERD cho project của bạn với ít nhất 5 entities. Mỗi entity phải có: tên, fields (với data type), PK, và relationships với entities khác (1:1, 1:N, M:N). Identify indexes cần thiết.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>E-commerce ERD (6 entities):</strong><br>Users (_id, email[unique], name, role, passwordHash, createdAt)<br>Products (_id, name, price, stock, categoryId[FK], images[])<br>Categories (_id, name, slug[unique], parentId[FK])<br>Orders (_id, userId[FK], status, total, createdAt)<br>OrderItems (_id, orderId[FK], productId[FK], qty, priceAtTime)<br>Reviews (_id, userId[FK], productId[FK], rating, comment)<br><br><strong>Relationships:</strong><br>User 1→N Orders<br>Order 1→N OrderItems<br>OrderItem N→1 Product<br>Product N→1 Category<br>User 1→N Reviews, Product 1→N Reviews<br><br><strong>Indexes:</strong> email (unique), productId+orderId (compound), userId, categoryId</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 4</span></div>
+      <div class="ex-title">Thiết kế API endpoints (ít nhất 15 endpoints)</div>
+      <div class="ex-desc">Thiết kế RESTful API cho project của bạn: ít nhất 15 endpoints với HTTP method, path, description, request/response schema, và auth requirement. Group theo resource.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>E-commerce API (16 endpoints):</strong><br>Auth: POST /auth/register, POST /auth/login, POST /auth/refresh, POST /auth/logout<br>Users: GET /users/me, PATCH /users/me, DELETE /users/me<br>Products: GET /products, GET /products/:id, POST /products [Admin], PATCH /products/:id [Admin], DELETE /products/:id [Admin]<br>Orders: POST /orders, GET /orders, GET /orders/:id, PATCH /orders/:id/status [Admin]<br>Reviews: POST /products/:id/reviews, GET /products/:id/reviews<br><br><strong>Cho mỗi endpoint ghi:</strong><br>- Method + Path<br>- Auth: public / user / admin<br>- Request: params, query, body schema<br>- Response: 200 schema + error codes</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header"><span class="ex-diff diff-red">🔴 Khó</span><span class="ex-num">Bài 5</span></div>
+      <div class="ex-title">Setup project: Git repo + CI + Docker + README — chạy được</div>
+      <div class="ex-desc">Setup đầy đủ infrastructure cho capstone project: (1) GitHub repo với README, (2) .github/workflows/ci.yml green, (3) Dockerfile multi-stage build, (4) docker-compose.yml với app + DB, (5) curl localhost:3000/health trả 200. Đây là foundation thực sự của production-ready project.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Step-by-step checklist:</strong><br>1. <code>npx @nestjs/cli new project-name</code> → push GitHub<br>2. README: title + quick start (3 commands) + prerequisites<br>3. Dockerfile: multi-stage (builder + runner, node:20-alpine)<br>4. docker-compose.yml: app + mongodb + redis<br>5. <code>docker-compose up -d</code> → verify app healthy<br>6. GET /health endpoint → return {status: "ok", timestamp}<br>7. .github/workflows/ci.yml: checkout → setup-node → npm ci → lint → test → build<br>8. Push → GitHub Actions → CI green ✅<br>9. Commit message: "feat: initial project setup with CI/CD and Docker"<br><br><strong>Definition of Done:</strong> CI green, docker-compose up works, /health returns 200. Không có hardcoded credentials.</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- GRADUATION -->
+  <div class="graduation">
+    <h2>🎓 Chúc mừng! Bạn đã hoàn thành toàn bộ chương trình!</h2>
+    <div class="phase-progress-final">
+      <div class="done">Phase 1: Think ✓</div>
+      <div class="done">Phase 2: Build ✓</div>
+      <div class="done">Phase 3: Engineer ✓</div>
+      <div class="done">Phase 4: Production ✓</div>
+      <div class="done">Phase 5: Professional ✓</div>
+    </div>
+    <div class="transformation">
+      "Em biết code" → "Em biết giải quyết vấn đề bằng software"
+    </div>
+    <p style="color:#c9d1d9;max-width:600px;margin:0 auto;font-size:.95rem">Hành trình thực sự bắt đầu từ bây giờ — mỗi project, mỗi bug, mỗi code review là cơ hội để grow. Build things, ship things, break things (trong staging), learn from everything.</p>
+    <div style="margin-top:16px;font-size:1.1rem;color:#3fb950;font-weight:700">"The best way to learn engineering is to engineer."</div>
+    <a href="../../index.html">← Về Teaching Hub</a>
+  </div>
+
   <!-- Final message -->
   <div style="background:linear-gradient(135deg,#0d2d6b,#1a0d2d);border:1px solid #58a6ff;border-radius:16px;padding:32px;margin:40px 0;text-align:center">
     <div style="font-size:2.5rem;margin-bottom:16px">🎓</div>
@@ -503,8 +623,25 @@
   </div>
 </div>
 
+
 <script>
+function toggleSol(btn){const b=btn.nextElementSibling;const o=b.classList.toggle('open');btn.textContent=o?'Ẩn gợi ý':'Xem gợi ý';}
 // Animate rubric bars on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      document.querySelectorAll('.rubric-bar').forEach(bar => {
+        const w = bar.dataset.width;
+        bar.style.width = w + '%';
+      });
+      observer.disconnect();
+    }
+  });
+}, { threshold: 0.3 });
+const rubric = document.getElementById('rubric');
+if (rubric) observer.observe(rubric);
+
+// already replaced
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {

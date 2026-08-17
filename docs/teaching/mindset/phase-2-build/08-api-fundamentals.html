@@ -14,7 +14,18 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 25% 20%, rgba(167,139,250,0.06) 0%, transparent 50%), radial-gradient(ellipse at 75% 80%, rgba(255,183,71,0.05) 0%, transparent 50%); pointer-events:none; z-index:0; }
-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; position: sticky; top: 0; z-index: 100; }
+.top-nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 24px; position: sticky; top: 0; z-index: 200; }
+.top-nav-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: .82rem; }
+.top-nav-home { color: var(--muted); text-decoration: none; transition: color .2s; }
+.top-nav-home:hover { color: var(--accent); }
+.top-nav-sep { color: var(--border); }
+.top-nav-phase { color: var(--accent); font-weight: 700; }
+.top-nav-pos { color: var(--muted); margin-left: auto; }
+.top-nav-arrows { display: flex; gap: 6px; }
+.top-nav-link { color: var(--muted); text-decoration: none; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; transition: all .2s; font-size: .78rem; }
+.top-nav-link:hover { border-color: var(--accent); color: var(--accent); }
+.top-nav-link.phase3 { border-color: rgba(167,139,250,0.4); color: var(--accent); }
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; position: sticky; top: 41px; z-index: 100; }
 .header-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .phase-badge { background: linear-gradient(135deg,#6c5ce7,#a78bfa); color:#fff; padding: 3px 12px; border-radius: 20px; font-size: .7rem; font-weight: 700; }
 header h1 { font-size: 1.3rem; font-weight: 800; background: linear-gradient(135deg,#a78bfa,#ffd43b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
@@ -51,29 +62,57 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 .dot { width:8px; height:8px; border-radius:50%; background:var(--border); transition:all .3s; cursor:pointer; }
 .dot.active { background:var(--accent); transform:scale(1.3); }
 .dot.done { background:rgba(167,139,250,0.4); }
-.kw { color:#ff9f7f; }
-.fn { color:#7ec8e3; }
-.str { color:#a8d8a8; }
-.num { color:#ffd43b; }
-.cmt { color:#5a7a6a; }
-
-/* RESTAURANT ANALOGY */
+.prereq { background: linear-gradient(135deg,rgba(167,139,250,0.08),rgba(167,139,250,0.04)); border: 1px solid rgba(167,139,250,0.3); border-radius: 12px; padding: 16px 20px; margin-bottom: 28px; }
+.prereq-label { font-size: .7rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.prereq-list { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+.prereq-list li a { color: var(--accent); text-decoration: none; font-size: .85rem; background: rgba(167,139,250,0.1); padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(167,139,250,0.3); transition: all .2s; }
+.prereq-list li a:hover { background: rgba(167,139,250,0.2); }
+.xref { display: inline; color: var(--accent); text-decoration: none; font-size: .85em; background: rgba(167,139,250,0.1); padding: 1px 7px; border-radius: 10px; border: 1px solid rgba(167,139,250,0.3); white-space: nowrap; transition: all .2s; }
+.xref:hover { background: rgba(167,139,250,0.2); }
+.exercises { margin-top: 36px; }
+.ex-title { font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: 16px; }
+.exercise { border-radius: 14px; margin-bottom: 12px; overflow: hidden; }
+.exercise.easy { border: 1px solid rgba(46,204,113,0.4); }
+.exercise.medium { border: 1px solid rgba(255,211,59,0.4); }
+.exercise.hard { border: 1px solid rgba(231,76,60,0.4); }
+.ex-header { padding: 14px 18px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none; }
+.exercise.easy .ex-header { background: rgba(46,204,113,0.07); }
+.exercise.medium .ex-header { background: rgba(255,211,59,0.07); }
+.exercise.hard .ex-header { background: rgba(231,76,60,0.07); }
+.ex-badge { font-size: .7rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+.exercise.easy .ex-badge { background: rgba(46,204,113,0.2); color: var(--green); }
+.exercise.medium .ex-badge { background: rgba(255,211,59,0.2); color: var(--yellow); }
+.exercise.hard .ex-badge { background: rgba(231,76,60,0.2); color: var(--red); }
+.ex-q { font-size: .9rem; font-weight: 600; flex: 1; }
+.ex-toggle { color: var(--muted); font-size: .8rem; transition: transform .3s; }
+.ex-body { display: none; padding: 0 18px 16px; }
+.ex-body.open { display: block; animation: fadeUp .3s; }
+.ex-solution { background: var(--surface2); border-radius: 10px; padding: 14px; margin-top: 10px; }
+.ex-solution-label { font-size: .7rem; color: var(--muted); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.code-block { background: #0a1020; border-radius: 8px; padding: 14px; font-family: monospace; font-size: .8rem; line-height: 1.8; color: #c9d1d9; overflow-x: auto; margin-top: 8px; border: 1px solid var(--border); white-space: pre; }
+/* PHASE COMPLETE BANNER */
+.phase-complete { background: linear-gradient(135deg,rgba(46,204,113,0.15),rgba(0,206,201,0.08)); border: 2px solid rgba(46,204,113,0.5); border-radius: 20px; padding: 32px; margin-top: 36px; text-align: center; }
+.phase-complete-icon { font-size: 3rem; margin-bottom: 16px; }
+.phase-complete-title { font-size: 1.5rem; font-weight: 800; color: var(--green); margin-bottom: 10px; }
+.phase-complete-desc { color: var(--muted); font-size: .95rem; line-height: 1.7; margin-bottom: 24px; }
+.phase2-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin: 20px 0; text-align: left; }
+.phase2-item { background: var(--surface2); border-radius: 10px; padding: 12px 14px; font-size: .85rem; display: flex; gap: 8px; align-items: flex-start; }
+.phase3-preview { background: linear-gradient(135deg,rgba(167,139,250,0.12),rgba(167,139,250,0.06)); border: 2px solid rgba(167,139,250,0.4); border-radius: 16px; padding: 24px; margin-top: 20px; text-align: left; }
+.phase3-title { font-size: 1rem; font-weight: 800; color: var(--accent); margin-bottom: 12px; }
+.phase3-items { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+.phase3-item { background: rgba(167,139,250,0.08); border: 1px solid rgba(167,139,250,0.2); border-radius: 8px; padding: 10px 12px; font-size: .82rem; color: var(--muted); }
+.phase3-item strong { color: var(--accent); display: block; margin-bottom: 2px; }
+/* REST/HTTP specific */
 .restaurant { display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap; margin:24px 0; }
 .rest-box { border-radius:14px; padding:20px; text-align:center; min-width:120px; }
 .rest-icon { font-size:2rem; margin-bottom:8px; }
 .rest-label { font-size:.82rem; font-weight:700; }
 .rest-sub { font-size:.72rem; color:var(--muted); margin-top:4px; line-height:1.4; }
-.rest-arrow { color:var(--muted); font-size:1.6rem; }
-
-/* HTTP FLOW */
 .http-flow { margin:20px 0; }
 .hf-step { display:flex; gap:12px; padding:14px 16px; background:var(--surface2); border-radius:10px; margin-bottom:8px; align-items:flex-start; }
 .hf-num { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,#6c5ce7,#a78bfa); color:#fff; font-weight:800; font-size:.82rem; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.hf-content { flex:1; }
-.hf-title { font-size:.85rem; font-weight:700; color:var(--text); margin-bottom:4px; }
+.hf-title { font-size:.85rem; font-weight:700; margin-bottom:4px; }
 .hf-detail { font-size:.78rem; color:var(--muted); font-family:monospace; line-height:1.7; }
-
-/* REST TABLE */
 .rest-table { width:100%; border-collapse:separate; border-spacing:0; border-radius:10px; overflow:hidden; border:1px solid var(--border); margin:16px 0; }
 .rest-table th { background:var(--surface2); padding:10px 14px; font-size:.75rem; text-align:left; border-bottom:1px solid var(--border); }
 .rest-table td { padding:10px 14px; font-size:.82rem; border-bottom:1px solid rgba(42,58,92,0.5); }
@@ -84,8 +123,6 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 .method.put { background:rgba(91,141,239,0.15); color:var(--blue); }
 .method.delete { background:rgba(231,76,60,0.15); color:var(--red); }
 .method.patch { background:rgba(167,139,250,0.15); color:var(--accent); }
-
-/* STATUS CODES */
 .status-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
 .status-group { border-radius:12px; padding:16px; }
 .status-group.s2xx { background:rgba(46,204,113,0.06); border:1px solid rgba(46,204,113,0.25); }
@@ -100,25 +137,17 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 .status-item { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
 .status-code { font-family:monospace; font-weight:700; font-size:.82rem; width:36px; }
 .status-desc { font-size:.78rem; color:var(--muted); }
-
-/* JWT FLOW */
-.jwt-flow { margin:20px 0; }
 .jwt-step { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-.jwt-arrow { color:var(--muted); font-size:1.2rem; flex-shrink:0; }
 .jwt-box { border-radius:10px; padding:10px 14px; font-size:.82rem; flex:1; }
 .jwt-box.client { background:rgba(91,141,239,0.08); border:1px solid rgba(91,141,239,0.25); color:var(--blue); }
 .jwt-box.server { background:rgba(46,204,113,0.08); border:1px solid rgba(46,204,113,0.25); color:var(--green); }
 .jwt-box.token { background:rgba(255,183,71,0.08); border:1px solid rgba(255,183,71,0.25); color:var(--orange); font-family:monospace; font-size:.72rem; }
-
-/* API BUILDER */
 .api-builder { background:var(--surface2); border-radius:12px; padding:20px; margin:20px 0; }
 .api-row { display:flex; gap:8px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
 .api-label { font-size:.78rem; color:var(--muted); width:80px; flex-shrink:0; }
-.api-select { background:var(--surface); border:1px solid var(--border); color:var(--text); padding:6px 10px; border-radius:6px; font-size:.82rem; flex:0 0 auto; }
+.api-select { background:var(--surface); border:1px solid var(--border); color:var(--text); padding:6px 10px; border-radius:6px; font-size:.82rem; }
 .api-input { background:var(--surface); border:1px solid var(--border); color:var(--text); padding:6px 10px; border-radius:6px; font-size:.82rem; flex:1; min-width:120px; }
-.api-output { background:var(--bg); border-radius:8px; padding:14px; font-family:monospace; font-size:.8rem; line-height:1.8; color:var(--muted); min-height:80px; }
-
-/* CONTRACT DIAGRAM */
+.api-output { background:var(--bg); border-radius:8px; padding:14px; font-family:monospace; font-size:.8rem; line-height:1.8; color:var(--muted); min-height:60px; }
 .contract { display:grid; grid-template-columns:1fr auto 1fr; gap:16px; align-items:start; margin:20px 0; }
 .ct-side { background:var(--surface2); border-radius:12px; padding:16px; }
 .ct-middle { display:flex; flex-direction:column; align-items:center; gap:8px; padding-top:20px; }
@@ -129,10 +158,25 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 </head>
 <body>
 
+<nav class="top-nav">
+  <div class="top-nav-inner">
+    <a href="../../index.html" class="top-nav-home">&#127968; Trang chủ</a>
+    <span class="top-nav-sep">/</span>
+    <span class="top-nav-phase">Phase 2: Build</span>
+    <span class="top-nav-sep">/</span>
+    <span style="color:var(--text)">Bài 8 — API Fundamentals</span>
+    <span class="top-nav-pos">Bài 4/4 trong Phase 2</span>
+    <div class="top-nav-arrows">
+      <a href="07-database-thinking.html" class="top-nav-link">← Bài 7</a>
+      <a href="../phase-3-engineer/09-testing.html" class="top-nav-link phase3">Phase 3: Bài 9 →</a>
+    </div>
+  </div>
+</nav>
+
 <header>
   <div class="header-inner">
     <span class="phase-badge">PHASE 2 · BUILD</span>
-    <h1>🌐 API Fundamentals</h1>
+    <h1>&#127758; API Fundamentals</h1>
     <span class="header-sub">Bài 08 / 08</span>
     <div class="progress-bar" style="width:100%">
       <div class="progress-fill" id="progressFill" style="width:100%"></div>
@@ -142,63 +186,47 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 
 <main>
 
-<!-- SEC 0: What is API -->
 <div class="section active" id="sec-0">
+  <div class="prereq">
+    <div class="prereq-label">Yêu cầu trước khi học</div>
+    <ul class="prereq-list">
+      <li><a href="07-database-thinking.html">Bài 7: Database Thinking ★</a></li>
+      <li><a href="06-architecture.html">Bài 6: Architecture (layered)</a></li>
+      <li><a href="../phase-1-think/02-oop-thinking.html">Bài 2: Contract / Interface</a></li>
+    </ul>
+  </div>
   <div class="section-header">
     <div class="section-num">Khái niệm 01</div>
     <div class="section-title">API là gì?</div>
-    <div class="section-desc">API = Application Programming Interface. Cầu nối giữa hai phần mềm — như thực đơn nhà hàng.</div>
+    <div class="section-desc">API = Application Programming Interface. Cầu nối giữa hai phần mềm. API là <strong>contract</strong> — giống như Interface trong <a href="../phase-1-think/02-oop-thinking.html" class="xref">OOP Thinking (Bài 2)</a>: caller không cần biết implementation bên trong.</div>
   </div>
-
   <div class="card">
-    <div class="card-title">🍽️ Nhà hàng analogy</div>
+    <div class="card-title">&#127869;&#65039; Nhà hàng analogy</div>
     <div class="restaurant">
       <div class="rest-box" style="background:rgba(91,141,239,0.1);border:1px solid rgba(91,141,239,0.3)">
-        <div class="rest-icon">👤</div>
+        <div class="rest-icon">&#128100;</div>
         <div class="rest-label" style="color:var(--blue)">Khách hàng</div>
         <div class="rest-sub">Frontend / App / Developer</div>
       </div>
-      <div class="rest-arrow">→</div>
+      <div style="color:var(--muted);font-size:1.6rem">→</div>
       <div class="rest-box" style="background:rgba(167,139,250,0.1);border:2px solid var(--accent)">
-        <div class="rest-icon">📋</div>
+        <div class="rest-icon">&#128203;</div>
         <div class="rest-label" style="color:var(--accent)">Menu (API)</div>
         <div class="rest-sub">Endpoint docs, request format, response format</div>
       </div>
-      <div class="rest-arrow">→</div>
+      <div style="color:var(--muted);font-size:1.6rem">→</div>
       <div class="rest-box" style="background:rgba(255,183,71,0.1);border:1px solid rgba(255,183,71,0.3)">
-        <div class="rest-icon">🧑‍🍳</div>
+        <div class="rest-icon">&#129473;&#8205;&#127859;</div>
         <div class="rest-label" style="color:var(--orange)">Bếp (Server)</div>
         <div class="rest-sub">Xử lý business logic, trả kết quả</div>
       </div>
     </div>
     <div style="color:var(--muted);font-size:.88rem;line-height:1.7;text-align:center">
-      Khách không cần vào bếp. Bếp không cần biết khách là ai. <strong>Menu = API contract</strong>.
+      Khách không cần vào bếp. Bếp không cần biết khách là ai. <strong>Menu = API contract.</strong>
     </div>
   </div>
-
-  <div class="card">
-    <div class="card-title">🌍 APIs ở khắp mọi nơi</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-      <div style="background:var(--surface2);border-radius:10px;padding:12px;text-align:center;font-size:.82rem">
-        <div style="font-size:1.4rem;margin-bottom:6px">🗺️</div>
-        <div style="color:var(--text);margin-bottom:4px">Google Maps API</div>
-        <div style="color:var(--muted);font-size:.72rem">Nhúng bản đồ vào app của bạn</div>
-      </div>
-      <div style="background:var(--surface2);border-radius:10px;padding:12px;text-align:center;font-size:.82rem">
-        <div style="font-size:1.4rem;margin-bottom:6px">💳</div>
-        <div style="color:var(--text);margin-bottom:4px">Stripe Payment API</div>
-        <div style="color:var(--muted);font-size:.72rem">Xử lý thanh toán</div>
-      </div>
-      <div style="background:var(--surface2);border-radius:10px;padding:12px;text-align:center;font-size:.82rem">
-        <div style="font-size:1.4rem;margin-bottom:6px">🤖</div>
-        <div style="color:var(--text);margin-bottom:4px">OpenAI API</div>
-        <div style="color:var(--muted);font-size:.72rem">GPT trong app của bạn</div>
-      </div>
-    </div>
-  </div>
-
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
       <li>API là interface, không phải implementation</li>
       <li>Caller không biết và không cần biết server làm gì bên trong</li>
@@ -207,66 +235,51 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   </div>
 </div>
 
-<!-- SEC 1: HTTP Basics -->
 <div class="section" id="sec-1">
   <div class="section-header">
     <div class="section-num">Khái niệm 02</div>
     <div class="section-title">HTTP — Ngôn Ngữ Của Web</div>
-    <div class="section-desc">HTTP là giao thức request/response. Client gửi request, server trả response. Đơn giản vậy thôi.</div>
+    <div class="section-desc">HTTP là giao thức request/response. Client gửi request, server trả response. Mọi query trong <a href="07-database-thinking.html" class="xref">Database (Bài 7)</a> đều được trigger bởi HTTP request này.</div>
   </div>
-
   <div class="card">
-    <div class="card-title">🔄 Request/Response Flow</div>
+    <div class="card-title">&#128260; Request/Response Flow</div>
     <div class="http-flow">
       <div class="hf-step">
         <div class="hf-num">1</div>
-        <div class="hf-content">
+        <div>
           <div class="hf-title">Client gửi HTTP Request</div>
-          <div class="hf-detail">POST /api/users HTTP/1.1<br>Host: api.example.com<br>Content-Type: application/json<br>Authorization: Bearer eyJhbG...<br><br>{"name": "Nguyễn A", "email": "a@mail.com"}</div>
+          <div class="hf-detail">POST /api/users HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+Authorization: Bearer eyJhbG...
+
+{"name": "Nguyễn A", "email": "a@mail.com"}</div>
         </div>
       </div>
       <div class="hf-step">
         <div class="hf-num">2</div>
-        <div class="hf-content">
+        <div>
           <div class="hf-title">Server xử lý</div>
-          <div class="hf-detail">→ Parse request body<br>→ Validate dữ liệu<br>→ Business logic<br>→ Ghi vào database</div>
+          <div class="hf-detail">→ Parse request body
+→ Validate dữ liệu (Controller layer)
+→ Business logic (Service layer)
+→ Ghi vào database (Repository layer)</div>
         </div>
       </div>
       <div class="hf-step">
         <div class="hf-num">3</div>
-        <div class="hf-content">
+        <div>
           <div class="hf-title">Server trả HTTP Response</div>
-          <div class="hf-detail">HTTP/1.1 201 Created<br>Content-Type: application/json<br><br>{"id": "u_123", "name": "Nguyễn A", "email": "a@mail.com", "createdAt": "2026-08-14T..."}</div>
+          <div class="hf-detail">HTTP/1.1 201 Created
+Content-Type: application/json
+
+{"id": "u_123", "name": "Nguyễn A", "createdAt": "2026-08-14T..."}</div>
         </div>
       </div>
     </div>
   </div>
-
-  <div class="card">
-    <div class="card-title">📨 Anatomy of an HTTP Request</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-      <div style="background:var(--surface2);border-radius:10px;padding:14px">
-        <div style="color:var(--accent);font-size:.75rem;font-weight:700;margin-bottom:8px;">Request</div>
-        <div style="font-family:monospace;font-size:.78rem;line-height:1.9;color:var(--muted)">
-          <span style="color:var(--orange)">Method</span>: GET, POST, PUT...<br>
-          <span style="color:var(--blue)">URL</span>: /api/users/123<br>
-          <span style="color:var(--green)">Headers</span>: Auth, Content-Type...<br>
-          <span style="color:var(--teal)">Body</span>: JSON payload (POST/PUT)
-        </div>
-      </div>
-      <div style="background:var(--surface2);border-radius:10px;padding:14px">
-        <div style="color:var(--teal);font-size:.75rem;font-weight:700;margin-bottom:8px;">Response</div>
-        <div style="font-family:monospace;font-size:.78rem;line-height:1.9;color:var(--muted)">
-          <span style="color:var(--green)">Status</span>: 200, 404, 500...<br>
-          <span style="color:var(--green)">Headers</span>: Content-Type...<br>
-          <span style="color:var(--teal)">Body</span>: JSON/HTML/Binary
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
       <li>HTTP là stateless — mỗi request độc lập, server không nhớ request trước</li>
       <li>Headers mang metadata: auth token, content type, caching hints</li>
@@ -275,95 +288,57 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   </div>
 </div>
 
-<!-- SEC 2: REST -->
 <div class="section" id="sec-2">
   <div class="section-header">
     <div class="section-num">Khái niệm 03</div>
     <div class="section-title">REST — Cách Thiết Kế API</div>
-    <div class="section-desc">REST là convention để thiết kế API nhất quán. Resources = nouns, HTTP methods = verbs.</div>
+    <div class="section-desc">REST là convention để thiết kế API nhất quán. Resources = nouns, HTTP methods = verbs. API layer là Presentation Layer trong <a href="06-architecture.html" class="xref">Layered Architecture (Bài 6)</a>.</div>
   </div>
-
   <div class="card">
-    <div class="card-title">🔗 REST Resource Mapping</div>
+    <div class="card-title">&#128279; REST Resource Mapping</div>
     <table class="rest-table">
-      <tr>
-        <th>Method</th><th>URL</th><th>Action</th><th>Body</th>
-      </tr>
-      <tr>
-        <td><span class="method get">GET</span></td>
-        <td style="font-family:monospace;font-size:.8rem">/users</td>
-        <td>Lấy danh sách users</td>
-        <td>–</td>
-      </tr>
-      <tr>
-        <td><span class="method get">GET</span></td>
-        <td style="font-family:monospace;font-size:.8rem">/users/:id</td>
-        <td>Lấy 1 user</td>
-        <td>–</td>
-      </tr>
-      <tr>
-        <td><span class="method post">POST</span></td>
-        <td style="font-family:monospace;font-size:.8rem">/users</td>
-        <td>Tạo user mới</td>
-        <td>JSON</td>
-      </tr>
-      <tr>
-        <td><span class="method put">PUT</span></td>
-        <td style="font-family:monospace;font-size:.8rem">/users/:id</td>
-        <td>Update toàn bộ user</td>
-        <td>JSON</td>
-      </tr>
-      <tr>
-        <td><span class="method patch">PATCH</span></td>
-        <td style="font-family:monospace;font-size:.8rem">/users/:id</td>
-        <td>Update một phần user</td>
-        <td>JSON</td>
-      </tr>
-      <tr>
-        <td><span class="method delete">DELETE</span></td>
-        <td style="font-family:monospace;font-size:.8rem">/users/:id</td>
-        <td>Xóa user</td>
-        <td>–</td>
-      </tr>
+      <tr><th>Method</th><th>URL</th><th>Action</th><th>Body</th></tr>
+      <tr><td><span class="method get">GET</span></td><td style="font-family:monospace;font-size:.8rem">/users</td><td>Lấy danh sách users</td><td>–</td></tr>
+      <tr><td><span class="method get">GET</span></td><td style="font-family:monospace;font-size:.8rem">/users/:id</td><td>Lấy 1 user</td><td>–</td></tr>
+      <tr><td><span class="method post">POST</span></td><td style="font-family:monospace;font-size:.8rem">/users</td><td>Tạo user mới</td><td>JSON</td></tr>
+      <tr><td><span class="method put">PUT</span></td><td style="font-family:monospace;font-size:.8rem">/users/:id</td><td>Update toàn bộ user</td><td>JSON</td></tr>
+      <tr><td><span class="method patch">PATCH</span></td><td style="font-family:monospace;font-size:.8rem">/users/:id</td><td>Update một phần user</td><td>JSON</td></tr>
+      <tr><td><span class="method delete">DELETE</span></td><td style="font-family:monospace;font-size:.8rem">/users/:id</td><td>Xóa user</td><td>–</td></tr>
     </table>
   </div>
-
   <div class="highlight">
     <div class="highlight-label">REST URL Best Practices</div>
     <div class="highlight-text">
       ✅ <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--green)">/users</code> · <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--green)">/orders/:id/items</code><br>
-      ❌ <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--red)">/getUsers</code> · <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--red)">/createOrder</code> · <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--red)">/User</code>
+      ❌ <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--red)">/getUsers</code> · <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--red)">/createOrder</code>
     </div>
   </div>
-
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
       <li>URL = resource (noun), Method = action (verb)</li>
       <li>Plural nouns: /users, /orders, /products</li>
-      <li>Nested resources: /orders/:id/items → items của order cụ thể</li>
+      <li>Nested: /orders/:id/items → items của order cụ thể</li>
     </ul>
   </div>
 </div>
 
-<!-- SEC 3: Status Codes -->
 <div class="section" id="sec-3">
   <div class="section-header">
     <div class="section-num">Khái niệm 04</div>
     <div class="section-title">HTTP Status Codes</div>
     <div class="section-desc">Status code là cách server "nói chuyện" với client về kết quả request. Phải dùng đúng!</div>
   </div>
-
   <div class="status-grid">
     <div class="status-group s2xx">
       <div class="status-header">✅ 2xx — Thành công</div>
       <div class="status-item"><div class="status-code" style="color:var(--green)">200</div><div class="status-desc">OK — Request thành công</div></div>
       <div class="status-item"><div class="status-code" style="color:var(--green)">201</div><div class="status-desc">Created — Tạo mới thành công</div></div>
-      <div class="status-item"><div class="status-code" style="color:var(--green)">204</div><div class="status-desc">No Content — Success, không có data trả về</div></div>
+      <div class="status-item"><div class="status-code" style="color:var(--green)">204</div><div class="status-desc">No Content — Success, không có data</div></div>
     </div>
     <div class="status-group s3xx">
       <div class="status-header">↪️ 3xx — Redirect</div>
-      <div class="status-item"><div class="status-code" style="color:var(--teal)">301</div><div class="status-desc">Moved Permanently — URL đã đổi</div></div>
+      <div class="status-item"><div class="status-code" style="color:var(--teal)">301</div><div class="status-desc">Moved Permanently</div></div>
       <div class="status-item"><div class="status-code" style="color:var(--teal)">302</div><div class="status-desc">Found — Redirect tạm thời</div></div>
       <div class="status-item"><div class="status-code" style="color:var(--teal)">304</div><div class="status-desc">Not Modified — Dùng cache</div></div>
     </div>
@@ -372,29 +347,27 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
       <div class="status-item"><div class="status-code" style="color:var(--red)">400</div><div class="status-desc">Bad Request — Dữ liệu sai</div></div>
       <div class="status-item"><div class="status-code" style="color:var(--red)">401</div><div class="status-desc">Unauthorized — Chưa đăng nhập</div></div>
       <div class="status-item"><div class="status-code" style="color:var(--red)">403</div><div class="status-desc">Forbidden — Không có quyền</div></div>
-      <div class="status-item"><div class="status-code" style="color:var(--red)">404</div><div class="status-desc">Not Found — Không tìm thấy</div></div>
+      <div class="status-item"><div class="status-code" style="color:var(--red)">404</div><div class="status-desc">Not Found</div></div>
       <div class="status-item"><div class="status-code" style="color:var(--red)">422</div><div class="status-desc">Unprocessable — Validation error</div></div>
       <div class="status-item"><div class="status-code" style="color:var(--red)">429</div><div class="status-desc">Too Many Requests — Rate limit</div></div>
     </div>
     <div class="status-group s5xx">
-      <div class="status-header">💥 5xx — Lỗi từ Server</div>
-      <div class="status-item"><div class="status-code" style="color:var(--orange)">500</div><div class="status-desc">Internal Server Error — Lỗi không xác định</div></div>
+      <div class="status-header">&#128165; 5xx — Lỗi từ Server</div>
+      <div class="status-item"><div class="status-code" style="color:var(--orange)">500</div><div class="status-desc">Internal Server Error</div></div>
       <div class="status-item"><div class="status-code" style="color:var(--orange)">502</div><div class="status-desc">Bad Gateway — Upstream error</div></div>
-      <div class="status-item"><div class="status-code" style="color:var(--orange)">503</div><div class="status-desc">Service Unavailable — Server quá tải</div></div>
+      <div class="status-item"><div class="status-code" style="color:var(--orange)">503</div><div class="status-desc">Service Unavailable</div></div>
     </div>
   </div>
-
   <div class="highlight">
     <div class="highlight-label">Lỗi phổ biến về Status Code</div>
     <div class="highlight-text">
-      ❌ Return 200 với body <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace">{"success": false, "error": "..."}</code><br>
+      ❌ Return 200 với body {"success": false, "error": "..."}<br>
       ✅ Return 400/404/422 đúng → Frontend dễ handle, monitoring alert đúng<br><br>
-      401 vs 403: "Ai?" (401) vs "Biết anh là ai, nhưng không cho vào" (403)
+      401 vs 403: "Ai vậy?" (401) vs "Biết anh là ai, nhưng không cho vào" (403)
     </div>
   </div>
-
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
       <li>Dùng status code semantically đúng — không phải mọi thứ là 200</li>
       <li>4xx = lỗi của client (họ cần sửa request)</li>
@@ -403,53 +376,32 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   </div>
 </div>
 
-<!-- SEC 4: Auth + Pagination -->
 <div class="section" id="sec-4">
   <div class="section-header">
     <div class="section-num">Khái niệm 05 + 06</div>
     <div class="section-title">Authentication & Pagination</div>
-    <div class="section-desc">JWT authentication flow và cách xử lý large datasets với pagination.</div>
+    <div class="section-desc">JWT authentication flow và cách xử lý large datasets. Queries phía sau pagination chính là những gì bạn học ở <a href="07-database-thinking.html" class="xref">Database (Bài 7)</a>.</div>
   </div>
-
   <div class="card">
-    <div class="card-title">🔐 JWT Authentication Flow</div>
-    <div class="jwt-flow">
-      <div class="jwt-step">
-        <div class="jwt-box client">👤 Client: POST /auth/login<br><small>{"email":"...", "password":"..."}</small></div>
-      </div>
-      <div class="jwt-step">
-        <div class="jwt-arrow">↓</div>
-        <div class="jwt-box server">🔐 Server: verify credentials → tạo JWT</div>
-      </div>
-      <div class="jwt-step">
-        <div class="jwt-arrow">↓</div>
-        <div class="jwt-box token">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.<br>eyJzdWIiOiJ1c2VyXzEyMyIsImVtYWlsIjoiYUBtYWlsIn0.<br>SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c</div>
-      </div>
-      <div class="jwt-step">
-        <div class="jwt-arrow">↓</div>
-        <div class="jwt-box client">👤 Client lưu token → gửi theo mọi request sau:<br><small>Authorization: Bearer eyJhbG...</small></div>
-      </div>
-      <div class="jwt-step">
-        <div class="jwt-arrow">↓</div>
-        <div class="jwt-box server">🔐 Server verify signature → biết user là ai → cho phép</div>
-      </div>
+    <div class="card-title">&#128272; JWT Authentication Flow</div>
+    <div>
+      <div class="jwt-step"><div class="jwt-box client">&#128100; Client: POST /auth/login<br><small>{"email":"...", "password":"..."}</small></div></div>
+      <div class="jwt-step"><div style="color:var(--muted);font-size:1.2rem;flex-shrink:0">↓</div><div class="jwt-box server">&#128272; Server: verify credentials → tạo JWT</div></div>
+      <div class="jwt-step"><div style="color:var(--muted);font-size:1.2rem;flex-shrink:0">↓</div><div class="jwt-box token">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.<br>eyJzdWIiOiJ1c2VyXzEyMyIsImVtYWlsIjoiYUBtYWlsIn0.<br>SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c</div></div>
+      <div class="jwt-step"><div style="color:var(--muted);font-size:1.2rem;flex-shrink:0">↓</div><div class="jwt-box client">&#128100; Client lưu token → gửi theo mọi request:<br><small>Authorization: Bearer eyJhbG...</small></div></div>
+      <div class="jwt-step"><div style="color:var(--muted);font-size:1.2rem;flex-shrink:0">↓</div><div class="jwt-box server">&#128272; Server verify signature → biết user là ai → cho phép</div></div>
     </div>
     <div style="margin-top:12px;background:var(--surface2);border-radius:8px;padding:12px;font-size:.78rem;color:var(--muted)">
-      <strong style="color:var(--yellow)">JWT = 3 phần:</strong> Header (algo) + Payload (user data) + Signature (verify). Payload không bị mã hóa — chỉ signed. Đừng lưu secret data trong JWT.
+      <strong style="color:var(--yellow)">JWT = 3 phần:</strong> Header (algo) + Payload (user data) + Signature (verify). Payload không bị mã hóa — chỉ signed. Đừng lưu secret trong JWT.
     </div>
   </div>
-
   <div class="card">
-    <div class="card-title">📄 Pagination, Filter, Sort</div>
+    <div class="card-title">&#128196; Pagination, Filter, Sort</div>
     <div class="api-builder">
       <div style="color:var(--accent);font-size:.78rem;font-weight:700;margin-bottom:14px;">API Query Builder — thử nghiệm:</div>
       <div class="api-row">
-        <div class="api-label">Endpoint</div>
-        <div style="font-family:monospace;font-size:.85rem;flex:1">/api/products</div>
-      </div>
-      <div class="api-row">
         <div class="api-label">Page</div>
-        <input class="api-input" type="number" id="pg-page" value="1" min="1" onchange="buildQuery()">
+        <input class="api-input" type="number" id="pg-page" value="1" min="1" oninput="buildQuery()">
         <div class="api-label" style="width:50px">Limit</div>
         <select class="api-select" id="pg-limit" onchange="buildQuery()">
           <option>10</option><option>20</option><option>50</option>
@@ -469,15 +421,14 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
       </div>
       <div class="api-row">
         <div class="api-label">Category</div>
-        <input class="api-input" type="text" id="pg-cat" placeholder="electronics" onchange="buildQuery()">
+        <input class="api-input" type="text" id="pg-cat" placeholder="electronics" oninput="buildQuery()">
       </div>
       <div style="margin-top:12px;font-size:.72rem;color:var(--muted);margin-bottom:6px;">Generated URL:</div>
-      <div class="api-output" id="apiOutput">GET /api/products?page=1&limit=10&sortBy=price&order=asc</div>
+      <div class="api-output" id="apiOutput">GET /api/products?page=1&amp;limit=10&amp;sortBy=price&amp;order=asc</div>
     </div>
   </div>
-
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
       <li>JWT: stateless auth — không cần store session ở server</li>
       <li>Luôn set token expiry (accessToken 15m, refreshToken 7d)</li>
@@ -486,81 +437,64 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   </div>
 </div>
 
-<!-- SEC 5: Validation + Contract -->
 <div class="section" id="sec-5">
   <div class="section-header">
     <div class="section-num">Khái niệm 07 + 08</div>
     <div class="section-title">Validation & API Contract</div>
-    <div class="section-desc">Validate input sớm. Treat API spec như hợp đồng giữa frontend và backend.</div>
+    <div class="section-desc">Validate input sớm. Treat API spec như hợp đồng — giống Interface trong <a href="../phase-1-think/02-oop-thinking.html" class="xref">OOP (Bài 2)</a>. API là cầu nối giữa <a href="06-architecture.html" class="xref">Architecture layers (Bài 6)</a> và <a href="07-database-thinking.html" class="xref">Database queries (Bài 7)</a>.</div>
   </div>
-
   <div class="card">
     <div class="card-title">✅ Validation — Fail Fast</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
       <div style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:16px">
         <div style="color:var(--red);font-size:.78rem;font-weight:700;margin-bottom:10px;">❌ Không validate sớm</div>
-        <div style="font-family:monospace;font-size:.78rem;line-height:1.8;color:var(--muted)">
-          POST /orders<br>
-          {"productId": "abc", "qty": -5}<br><br>
-          → Service gọi DB<br>
-          → DB gọi payment<br>
-          → Crash ở payment<br>
-          → Error message mơ hồ
-        </div>
+        <div style="font-family:monospace;font-size:.78rem;line-height:1.8;color:var(--muted)">POST /orders
+{"productId": "abc", "qty": -5}
+
+→ Service gọi DB
+→ DB gọi payment
+→ Crash ở payment
+→ Error message mơ hồ</div>
       </div>
       <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.25);border-radius:10px;padding:16px">
         <div style="color:var(--green);font-size:.78rem;font-weight:700;margin-bottom:10px;">✅ Validate ở Controller</div>
-        <div style="font-family:monospace;font-size:.78rem;line-height:1.8;color:var(--muted)">
-          POST /orders<br>
-          {"productId": "abc", "qty": -5}<br><br>
-          → Validate ở Controller<br>
-          → 422 Unprocessable:<br>
-          {"errors": [<br>
-          &nbsp;&nbsp;"qty must be &gt; 0"<br>
-          ]}
-        </div>
+        <div style="font-family:monospace;font-size:.78rem;line-height:1.8;color:var(--muted)">POST /orders
+{"productId": "abc", "qty": -5}
+
+→ Validate ở Controller
+→ 422 Unprocessable:
+{"errors": [
+  "qty must be > 0"
+]}</div>
       </div>
     </div>
   </div>
-
   <div class="card">
-    <div class="card-title">📋 API as Contract — 2 teams, 1 spec</div>
+    <div class="card-title">&#128203; API as Contract — 2 teams, 1 spec</div>
     <div class="contract">
       <div class="ct-side">
         <div style="color:var(--blue);font-weight:700;margin-bottom:10px;">Frontend Team</div>
-        <div style="font-size:.82rem;color:var(--muted);line-height:1.7">
-          • Đọc API spec<br>
-          • Mock API để dev song song<br>
-          • Không phụ thuộc BE xong mới làm được<br>
-          • Integration khi cả hai xong
-        </div>
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.7">• Đọc API spec<br>• Mock API để dev song song<br>• Không phụ thuộc BE xong<br>• Integration khi cả hai xong</div>
       </div>
       <div class="ct-middle">
         <div class="ct-spec">
-          <div class="ct-spec-title">📋 API Spec</div>
+          <div class="ct-spec-title">&#128203; API Spec</div>
           <div style="font-size:.72rem;color:var(--muted);margin-top:6px;line-height:1.6">OpenAPI<br>Swagger<br>Postman</div>
         </div>
         <div class="ct-label">Cả hai team<br>đồng thuận spec<br>trước khi code</div>
       </div>
       <div class="ct-side">
         <div style="color:var(--orange);font-weight:700;margin-bottom:10px;">Backend Team</div>
-        <div style="font-size:.82rem;color:var(--muted);line-height:1.7">
-          • Implement theo spec<br>
-          • Viết tests theo spec<br>
-          • Không thay đổi spec mà không thông báo<br>
-          • Breaking change → version API
-        </div>
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.7">• Implement theo spec<br>• Viết tests theo spec<br>• Không đổi spec không báo<br>• Breaking change → version</div>
       </div>
     </div>
   </div>
-
   <div class="highlight">
     <div class="highlight-label">API Versioning</div>
-    <div class="highlight-text">Khi cần thay đổi API breaking (đổi response format, xóa field) → tạo version mới: <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace">/api/v1/users</code> → <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace">/api/v2/users</code>. Giữ v1 chạy cho client cũ, migrate dần.</div>
+    <div class="highlight-text">Khi cần thay đổi API breaking → tạo version mới: <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace">/api/v1/users</code> → <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace">/api/v2/users</code>. Giữ v1 chạy cho client cũ, migrate dần.</div>
   </div>
-
   <div class="takeaway">
-    <div class="takeaway-title">🏆 Tổng kết Bài 08 & Phase 2</div>
+    <div class="takeaway-title">&#127942; Tổng kết Bài 08 &amp; Phase 2</div>
     <ul class="takeaway-list">
       <li><strong>API</strong>: interface giữa hai systems, không lộ implementation</li>
       <li><strong>HTTP</strong>: stateless request/response với method + status code</li>
@@ -570,6 +504,230 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
       <li><strong>Validation</strong>: fail fast ở Controller</li>
       <li><strong>Contract</strong>: spec trước khi code — FE và BE song song</li>
     </ul>
+  </div>
+
+  <div class="exercises">
+    <div class="ex-title">&#127947;&#65039; Bài tập thực hành</div>
+
+    <div class="exercise easy">
+      <div class="ex-header" onclick="toggleEx(this)">
+        <span class="ex-badge">&#127744; Dễ</span>
+        <span class="ex-q">Ex 1: Thiết kế REST endpoints cho Blog (Post, Comment, Like)</span>
+        <span class="ex-toggle">▼</span>
+      </div>
+      <div class="ex-body">
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7;margin-bottom:12px;">Thiết kế đầy đủ REST endpoints cho Blog system với: Posts (CRUD), Comments (nested), Likes (toggle). Follow REST conventions.</div>
+        <div class="ex-solution">
+          <div class="ex-solution-label">Giải</div>
+          <div class="code-block">Posts:
+GET    /posts              → list (paginated)
+GET    /posts/:id          → single post
+POST   /posts              → create (auth required)
+PUT    /posts/:id          → full update (owner only)
+PATCH  /posts/:id          → partial update
+DELETE /posts/:id          → delete (owner/admin)
+
+Comments (nested resource):
+GET    /posts/:id/comments → list comments
+POST   /posts/:id/comments → add comment (auth)
+DELETE /posts/:id/comments/:commentId → delete
+
+Likes (toggle pattern):
+POST   /posts/:id/likes    → like (idempotent)
+DELETE /posts/:id/likes    → unlike
+
+Bonus — useful filters:
+GET /posts?author=userId&tag=nestjs&page=1&limit=20</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="exercise easy">
+      <div class="ex-header" onclick="toggleEx(this)">
+        <span class="ex-badge">&#127744; Dễ</span>
+        <span class="ex-q">Ex 2: Map HTTP status code đúng cho 10 tình huống</span>
+        <span class="ex-toggle">▼</span>
+      </div>
+      <div class="ex-body">
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7;margin-bottom:12px;">Chọn status code đúng cho: (1) User created, (2) Login wrong password, (3) User not found, (4) Validation failed, (5) Server crash, (6) No auth token, (7) No permission, (8) Rate limited, (9) Success delete, (10) Redirect.</div>
+        <div class="ex-solution">
+          <div class="ex-solution-label">Giải</div>
+          <div class="code-block">1. User created        → 201 Created
+2. Wrong password      → 401 Unauthorized
+3. User not found      → 404 Not Found
+4. Validation failed   → 422 Unprocessable Entity
+5. Server crash        → 500 Internal Server Error
+6. No auth token       → 401 Unauthorized
+7. No permission       → 403 Forbidden
+8. Rate limited        → 429 Too Many Requests
+9. Success delete      → 204 No Content
+10. Redirect           → 301 (permanent) or 302 (temp)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="exercise medium">
+      <div class="ex-header" onclick="toggleEx(this)">
+        <span class="ex-badge">&#127745; Trung bình</span>
+        <span class="ex-q">Ex 3: Thiết kế pagination + filtering + sorting cho GET /products</span>
+        <span class="ex-toggle">▼</span>
+      </div>
+      <div class="ex-body">
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7;margin-bottom:12px;">Thiết kế query parameters + response schema cho endpoint GET /products với: cursor/offset pagination, multi-field filter, sort by nhiều field, response kèm metadata.</div>
+        <div class="ex-solution">
+          <div class="ex-solution-label">Giải</div>
+          <div class="code-block">Request:
+GET /products
+  ?page=2&limit=20          // offset pagination
+  &category=electronics     // filter
+  &minPrice=100&maxPrice=500
+  &inStock=true
+  &sortBy=price,name        // multi-field sort
+  &order=asc,desc
+
+Response schema:
+{
+  "data": [...products],
+  "meta": {
+    "page": 2,
+    "limit": 20,
+    "total": 156,
+    "totalPages": 8,
+    "hasNext": true,
+    "hasPrev": true
+  }
+}
+
+// Cursor pagination (better for large datasets):
+GET /products?cursor=eyJpZCI6MTIzfQ==&limit=20
+Response: { "data": [...], "nextCursor": "eyJpZCI6MTQzfQ==" }</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="exercise medium">
+      <div class="ex-header" onclick="toggleEx(this)">
+        <span class="ex-badge">&#127745; Trung bình</span>
+        <span class="ex-q">Ex 4: Viết validation rules cho registration form (class-validator style)</span>
+        <span class="ex-toggle">▼</span>
+      </div>
+      <div class="ex-body">
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7;margin-bottom:12px;">Viết DTO với class-validator decorators cho registration form: name, email, password, confirmPassword, age (optional), role.</div>
+        <div class="ex-solution">
+          <div class="ex-solution-label">Giải — NestJS DTO</div>
+          <div class="code-block">import { IsEmail, IsString, MinLength, MaxLength,
+         IsInt, Min, Max, IsEnum, IsOptional,
+         Matches } from 'class-validator';
+import { Match } from './match.decorator'; // custom
+
+export class RegisterDto {
+  @IsString()
+  @MinLength(2)
+  @MaxLength(50)
+  name: string;
+
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @MinLength(8)
+  @Matches(/^(?=.*[A-Z])(?=.*[0-9])/, {
+    message: 'Password must have uppercase + number'
+  })
+  password: string;
+
+  @Match('password', { message: 'Passwords must match' })
+  confirmPassword: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(13)
+  @Max(120)
+  age?: number;
+
+  @IsEnum(['user', 'seller'])
+  role: 'user' | 'seller';
+}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="exercise hard">
+      <div class="ex-header" onclick="toggleEx(this)">
+        <span class="ex-badge">&#128308; Khó</span>
+        <span class="ex-q">Ex 5: API Versioning — thiết kế v1 → v2 migration strategy</span>
+        <span class="ex-toggle">▼</span>
+      </div>
+      <div class="ex-body">
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7;margin-bottom:12px;">API v1 trả về user object với field "name". v2 cần tách thành "firstName" và "lastName". Thiết kế migration strategy không breaking client v1, và viết NestJS controller cho cả 2 versions.</div>
+        <div class="ex-solution">
+          <div class="ex-solution-label">Migration Strategy</div>
+          <div class="code-block">// Strategy: URL versioning + backward compatibility
+
+// NestJS controllers
+@Controller('v1/users')
+export class UsersV1Controller {
+  @Get(':id')
+  async getUser(@Param('id') id: string) {
+    const user = await this.usersService.findById(id);
+    return {
+      id: user.id,
+      name: user.name,  // legacy: full name
+      email: user.email,
+    };
+  }
+}
+
+@Controller('v2/users')
+export class UsersV2Controller {
+  @Get(':id')
+  async getUser(@Param('id') id: string) {
+    const user = await this.usersService.findById(id);
+    const [firstName, ...rest] = user.name.split(' ');
+    return {
+      id: user.id,
+      firstName,
+      lastName: rest.join(' ') || null,  // new fields
+      email: user.email,
+    };
+  }
+}
+
+// Migration timeline:
+// Month 1: Launch v2, keep v1, add deprecation header:
+//   Deprecation: true
+//   Sunset: Mon, 1 Jan 2027 00:00:00 GMT
+// Month 6: Warn all v1 clients via email + docs
+// Month 12: Sunset v1, return 410 Gone</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 2 COMPLETE BANNER -->
+  <div class="phase-complete">
+    <div class="phase-complete-icon">&#127881;</div>
+    <div class="phase-complete-title">Phase 2: Build — Hoàn thành!</div>
+    <div class="phase-complete-desc">Bạn đã hoàn thành 4 bài học cốt lõi của giai đoạn Build. Giờ bạn có thể thiết kế UI systems, tổ chức code theo architecture, thiết kế database, và build REST APIs.</div>
+    <div class="phase2-grid">
+      <div class="phase2-item"><span>&#127912;</span><span><strong>Bài 5</strong> — Design System: Tokens, Colors, Spacing, Atomic Design</span></div>
+      <div class="phase2-item"><span>&#127963;</span><span><strong>Bài 6</strong> — Architecture: Layered, Monolith/Micro, Clean, Events</span></div>
+      <div class="phase2-item"><span>&#128476;</span><span><strong>Bài 7</strong> — Database: ERD, Normalization, Index, ACID, N+1</span></div>
+      <div class="phase2-item"><span>&#127758;</span><span><strong>Bài 8</strong> — API: HTTP, REST, Status Codes, JWT, Validation</span></div>
+    </div>
+    <div class="phase3-preview">
+      <div class="phase3-title">&#128640; Phase 3: Engineer — Nâng cao</div>
+      <div style="color:var(--muted);font-size:.85rem;margin-bottom:14px;">Phase tiếp theo sẽ đưa bạn từ "build" lên "engineer" — những kỹ năng tạo ra software production-ready.</div>
+      <div class="phase3-items">
+        <div class="phase3-item"><strong>Bài 9 — Testing</strong>Unit, Integration, E2E, TDD</div>
+        <div class="phase3-item"><strong>Bài 10 — Performance</strong>Profiling, Caching, CDN, Optimization</div>
+        <div class="phase3-item"><strong>Bài 11 — Security</strong>OWASP Top 10, Auth, Encryption</div>
+        <div class="phase3-item"><strong>Bài 12 — DevOps</strong>CI/CD, Docker, Monitoring, SLO/SLA</div>
+      </div>
+      <div style="margin-top:16px;text-align:center;">
+        <a href="../phase-3-engineer/09-testing.html" style="display:inline-block;background:linear-gradient(135deg,#6c5ce7,#a78bfa);color:#fff;text-decoration:none;padding:12px 28px;border-radius:10px;font-weight:700;font-size:.9rem;box-shadow:0 4px 16px rgba(167,139,250,0.4);">Vào Phase 3: Engineer →</a>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -598,24 +756,29 @@ function goTo(n) {
   current = n;
   document.getElementById(SECTIONS[current]).classList.add('active');
   document.getElementById('btnPrev').disabled = current === 0;
-  document.getElementById('btnNext').textContent = current === SECTIONS.length-1 ? '🏁 Hoàn thành!' : 'Tiếp theo →';
+  document.getElementById('btnNext').textContent = current === SECTIONS.length-1 ? '&#127881; Hoàn thành Phase 2!' : 'Tiếp theo →';
   document.querySelectorAll('.dot').forEach((d,i) => d.className='dot'+(i===current?' active':(i<current?' done':'')));
   document.getElementById('progressFill').style.width = '100%';
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function navigate(dir) { if(current+dir>=0 && current+dir<SECTIONS.length) goTo(current+dir); }
-
 function buildQuery() {
   const page = document.getElementById('pg-page').value;
   const limit = document.getElementById('pg-limit').value;
   const sort = document.getElementById('pg-sort').value;
   const order = document.getElementById('pg-order').value;
   const cat = document.getElementById('pg-cat').value;
-  let url = `/api/products?page=${page}&limit=${limit}&sortBy=${sort}&order=${order}`;
-  if(cat) url += `&category=${cat}`;
+  let url = '/api/products?page=' + page + '&limit=' + limit + '&sortBy=' + sort + '&order=' + order;
+  if(cat) url += '&category=' + cat;
   document.getElementById('apiOutput').textContent = 'GET ' + url;
 }
 buildQuery();
+function toggleEx(header) {
+  const body = header.nextElementSibling;
+  const toggle = header.querySelector('.ex-toggle');
+  body.classList.toggle('open');
+  toggle.style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
+}
 </script>
 </body>
 </html>

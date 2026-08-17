@@ -27,12 +27,44 @@
   .danger{background:#2d0d0d;border:1px solid #9e1e1e;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
   .danger::before{content:'🚨';position:absolute;left:14px;top:14px}
   .section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
-  .exercise{background:#0d1a2d;border:1px solid #1f4a9e;border-radius:12px;padding:24px;margin:32px 0}
-  .checklist{list-style:none;padding:0}
-  .checklist li{padding:8px 0;color:#c9d1d9;display:flex;align-items:flex-start;gap:10px;border-bottom:1px solid #21262d;font-size:.9rem}
-  .checklist li:last-child{border-bottom:none}
-
-  /* Augmented Engineer Diagram */
+  /* Sticky Nav */
+  .nav-bar{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #30363d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .nav-links{display:flex;gap:8px;flex-wrap:wrap}
+  .nav-link{color:#8b949e;text-decoration:none;font-size:.8rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s;white-space:nowrap}
+  .nav-link:hover{color:#58a6ff;border-color:#58a6ff}
+  .nav-link.current{color:#58a6ff;border-color:#58a6ff;background:#0d1a2d}
+  .nav-center{font-size:.8rem;color:#484f58}
+  /* Prerequisites */
+  .prereq{background:#1a0d2d;border:1px solid #6e40c9;border-radius:8px;padding:14px 16px;margin:0 0 32px;display:flex;align-items:flex-start;gap:10px}
+  .prereq-icon{font-size:1.1rem;flex-shrink:0;margin-top:2px}
+  .prereq-label{font-size:.78rem;font-weight:700;color:#bc8cff;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .prereq-links{display:flex;flex-wrap:wrap;gap:6px}
+  .prereq-link{font-size:.78rem;padding:2px 8px;border-radius:8px;background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e;text-decoration:none;transition:background .2s}
+  .prereq-link:hover{background:#1f4a9e}
+  /* Cross-references */
+  .xref{display:inline;font-size:.8rem;padding:1px 7px;border-radius:6px;background:#0d2d1a;color:#3fb950;border:1px solid #238636;text-decoration:none;white-space:nowrap;transition:background .2s}
+  .xref:hover{background:#238636;color:#fff}
+  /* Exercises */
+  .exercises{margin:48px 0}
+  .exercises-title{font-size:1.2rem;color:#79c0ff;margin-bottom:24px;padding-left:12px;border-left:3px solid #58a6ff}
+  .ex-card{border-radius:12px;padding:20px 24px;margin:16px 0}
+  .ex-green{background:#0a1f0a;border:1px solid #238636}
+  .ex-yellow{background:#1f1a0a;border:1px solid #9e6c1e}
+  .ex-red{background:#1f0a0a;border:1px solid #9e1e1e}
+  .ex-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .ex-diff{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
+  .diff-green{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .diff-yellow{background:#3b2a0d;color:#d4a843;border:1px solid #9e6c1e}
+  .diff-red{background:#3b0d0d;color:#ff7b72;border:1px solid #9e1e1e}
+  .ex-num{font-size:.8rem;font-weight:700;color:#8b949e}
+  .ex-title{font-size:.95rem;font-weight:700;color:#c9d1d9}
+  .ex-desc{font-size:.88rem;color:#8b949e;margin-top:4px}
+  .ex-solution{margin-top:12px}
+  .ex-sol-toggle{background:none;border:1px solid #30363d;color:#8b949e;border-radius:6px;padding:4px 12px;font-size:.75rem;cursor:pointer;transition:all .2s}
+  .ex-sol-toggle:hover{border-color:#58a6ff;color:#58a6ff}
+  .ex-sol-body{display:none;margin-top:10px;padding:12px;background:#0d1117;border-radius:8px;font-size:.83rem;color:#c9d1d9;line-height:1.6}
+  .ex-sol-body.open{display:block}
+  /* Augmented Engineer */
   .augmented{display:flex;align-items:center;justify-content:center;gap:32px;margin:32px 0;flex-wrap:wrap}
   .aug-person{text-align:center}
   .aug-icon{font-size:3.5rem;display:block;margin-bottom:8px}
@@ -42,27 +74,21 @@
   .aug-result{background:linear-gradient(135deg,#0d2d6b,#1a0d2d);border:2px solid #58a6ff;border-radius:16px;padding:20px 30px;text-align:center}
   .aug-result .big{font-size:2rem;font-weight:700;color:#58a6ff}
   .aug-result .sub{font-size:.8rem;color:#8b949e;margin-top:4px}
-
   /* Capability Matrix */
   .matrix{width:100%;border-collapse:collapse;margin:20px 0}
   .matrix th{background:#21262d;color:#c9d1d9;padding:10px 14px;text-align:left;font-size:.85rem;border-bottom:2px solid #30363d}
   .matrix td{padding:10px 14px;border-bottom:1px solid #21262d;font-size:.85rem}
   .matrix tr:hover td{background:#161b22}
-  .can{color:#3fb950}
-  .cannot{color:#ff7b72}
-  .partial{color:#f0883e}
-
+  .can{color:#3fb950}.cannot{color:#ff7b72}.partial{color:#f0883e}
   /* Prompt comparison */
   .prompt-compare{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:20px 0}
-  .prompt-box{border-radius:10px;padding:20px;position:relative}
+  .prompt-box{border-radius:10px;padding:20px}
   .prompt-bad{background:#2d0d0d;border:1px solid #9e1e1e}
   .prompt-good{background:#0d2d1a;border:1px solid #238636}
   .prompt-label{font-size:.8rem;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-  .prompt-label.bad{color:#ff7b72}
-  .prompt-label.good{color:#3fb950}
+  .prompt-label.bad{color:#ff7b72}.prompt-label.good{color:#3fb950}
   .prompt-text{font-family:'Fira Code',monospace;font-size:.8rem;color:#c9d1d9;white-space:pre-wrap;line-height:1.5}
   .prompt-result{margin-top:12px;padding-top:12px;border-top:1px solid #30363d;font-size:.78rem;color:#8b949e}
-
   /* Workflow steps */
   .workflow{display:flex;flex-direction:column;gap:0;margin:20px 0}
   .wf-step{display:flex;align-items:flex-start;gap:16px;padding:16px;border-radius:10px;margin:4px 0;transition:background .2s}
@@ -77,10 +103,9 @@
   .own-ai{background:#1a0d2d;color:#bc8cff;border:1px solid #6e40c9}
   .own-dev{background:#0d2d1a;color:#3fb950;border:1px solid #238636}
   .own-both{background:#0d1a2d;color:#58a6ff;border:1px solid #1f4a9e}
-
-  /* Hallucination animation */
-  .hallucination{position:relative;overflow:hidden;border-radius:12px;margin:20px 0}
-  .hall-code{background:#0d1117;border:1px solid #30363d;padding:16px;font-family:'Fira Code',monospace;font-size:.82rem}
+  /* Hallucination */
+  .hallucination{border-radius:12px;margin:20px 0}
+  .hall-code{background:#0d1117;border:1px solid #30363d;padding:16px;font-family:'Fira Code',monospace;font-size:.82rem;border-radius:8px}
   .hall-strike{position:relative}
   .hall-strike::after{content:'';position:absolute;top:50%;left:0;right:0;height:2px;background:#ff7b72;transform:scaleX(0);transform-origin:left;animation:strikethrough 1s 2s ease forwards}
   @keyframes strikethrough{to{transform:scaleX(1)}}
@@ -88,33 +113,19 @@
   .hall-badge.wrong{background:#2d0d0d;color:#ff7b72;border:1px solid #9e1e1e}
   .hall-badge.caught{background:#0d2d1a;color:#3fb950;border:1px solid #238636}
   @keyframes fadein{to{opacity:1}}
-
-  /* Security risk example */
+  /* Security */
   .risk-compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
   .risk-box{border-radius:10px;padding:16px}
   .risk-bad{background:#2d0d0d;border:1px solid #9e1e1e}
   .risk-good{background:#0d2d1a;border:1px solid #238636}
   .risk-label{font-size:.8rem;font-weight:700;margin-bottom:8px}
-  .risk-label.bad{color:#ff7b72}
-  .risk-label.good{color:#3fb950}
-
+  .risk-label.bad{color:#ff7b72}.risk-label.good{color:#3fb950}
   /* Verify loop */
   .verify-loop{display:flex;justify-content:center;margin:24px 0}
-  .vl-circle{width:200px;height:200px;border-radius:50%;border:3px solid #58a6ff;display:flex;align-items:center;justify-content:center;position:relative;animation:spin-border 4s linear infinite}
-  @keyframes spin-border{
-    0%{box-shadow:0 0 0 0 rgba(88,166,255,.4)}
-    50%{box-shadow:0 0 20px 6px rgba(88,166,255,.2)}
-    100%{box-shadow:0 0 0 0 rgba(88,166,255,.4)}
-  }
-  .vl-inner{text-align:center}
-  .vl-text{font-size:.8rem;color:#c9d1d9;font-weight:600}
-  .vl-arrows{position:absolute;width:100%;height:100%;top:0;left:0}
-
   /* Anti-pattern */
   .antipattern{background:#2d0d0d;border:1px solid #9e1e1e;border-radius:12px;padding:20px;margin:20px 0}
   .antipattern h3{color:#ff7b72;margin-bottom:12px}
-
-  /* Context engineering */
+  /* Context layers */
   .context-layers{display:flex;flex-direction:column;gap:8px;margin:20px 0}
   .ctx-layer{display:flex;align-items:center;gap:14px;padding:12px 16px;background:#161b22;border:1px solid #30363d;border-radius:8px;font-size:.88rem}
   .ctx-icon{font-size:1.3rem;width:32px;text-align:center;flex-shrink:0}
@@ -123,8 +134,9 @@
   .ctx-quality{margin-left:auto;font-size:.75rem;padding:2px 8px;border-radius:10px;white-space:nowrap}
   .ctx-high{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
   .ctx-med{background:#3b1e0d;color:#f0883e;border:1px solid #9e4f1e}
-  .ctx-low{background:#2d0d0d;color:#ff7b72;border:1px solid #9e1e1e}
-
+  .checklist{list-style:none;padding:0}
+  .checklist li{padding:8px 0;color:#c9d1d9;display:flex;align-items:flex-start;gap:10px;border-bottom:1px solid #21262d;font-size:.9rem}
+  .checklist li:last-child{border-bottom:none}
   @media(max-width:600px){
     .prompt-compare,.risk-compare{grid-template-columns:1fr}
     .augmented{flex-direction:column}
@@ -132,6 +144,14 @@
 </style>
 </head>
 <body>
+<nav class="nav-bar">
+  <div class="nav-links">
+    <a class="nav-link" href="14-devops.html">← Bài 14: DevOps</a>
+    <span class="nav-link current">Bài 15: AI Programming</span>
+    <a class="nav-link" href="../phase-5-professional/16-engineering-workflow.html">Bài 16: Engineering Workflow →</a>
+  </div>
+  <div class="nav-center">Phase 4 — Production</div>
+</nav>
 <div class="container">
   <div style="margin-bottom:20px">
     <span class="badge badge-orange">Phase 4</span>
@@ -141,43 +161,38 @@
   <h1>AI Programming</h1>
   <p class="subtitle">AI là <em>công cụ</em>, không phải sự thay thế. Dùng đúng cách = tăng tốc 10x. Dùng sai = tạo ra debt và security holes.</p>
 
-  <!-- AI AS TOOL -->
-  <h2>1. AI là Tool, không phải Replacement</h2>
-
-  <div class="augmented">
-    <div class="aug-person">
-      <span class="aug-icon">👨‍💻</span>
-      <div class="aug-label">Engineer<br>Thinking + Judgment</div>
-    </div>
-    <div class="aug-plus">+</div>
-    <div class="aug-person">
-      <span class="aug-icon">🤖</span>
-      <div class="aug-label">AI Assistant<br>Speed + Breadth</div>
-    </div>
-    <div class="aug-equals">=</div>
-    <div class="aug-result">
-      <div class="big">10x</div>
-      <div class="sub">Augmented Engineer</div>
+  <div class="prereq">
+    <div class="prereq-icon">📚</div>
+    <div>
+      <div class="prereq-label">Kiến thức cần có trước</div>
+      <div class="prereq-links">
+        <a class="prereq-link" href="../phase-1-think/03-clean-code.html">Bài 3: Clean Code (verify AI output)</a>
+        <a class="prereq-link" href="../phase-2-build/09-testing.html">Bài 9: Testing (test AI code)</a>
+      </div>
     </div>
   </div>
 
-  <p>AI không thay thế kỹ sư — nó <strong>amplify</strong> kỹ năng của kỹ sư. Kỹ sư giỏi với AI = kỹ sư rất giỏi. Kỹ sư yếu với AI = kỹ sư tạo ra bugs nhanh hơn.</p>
+  <h2>1. AI là Tool, không phải Replacement</h2>
+  <div class="augmented">
+    <div class="aug-person"><span class="aug-icon">👨‍💻</span><div class="aug-label">Engineer<br>Thinking + Judgment</div></div>
+    <div class="aug-plus">+</div>
+    <div class="aug-person"><span class="aug-icon">🤖</span><div class="aug-label">AI Assistant<br>Speed + Breadth</div></div>
+    <div class="aug-equals">=</div>
+    <div class="aug-result"><div class="big">10x</div><div class="sub">Augmented Engineer</div></div>
+  </div>
+  <p>AI không thay thế kỹ sư — nó <strong>amplify</strong> kỹ năng của kỹ sư. Nền tảng <a class="xref" href="../phase-1-think/03-clean-code.html">Clean Code (Bài 3)</a> quyết định bạn có review được AI output hay không.</p>
 
   <hr class="section-divider">
 
-  <!-- CAPABILITIES MATRIX -->
-  <h2>2. AI Coding Assistants — Can & Cannot</h2>
-
+  <h2>2. AI Coding Assistants — Can &amp; Cannot</h2>
   <table class="matrix">
-    <thead>
-      <tr><th>Task</th><th>AI có thể làm</th><th>Giới hạn</th></tr>
-    </thead>
+    <thead><tr><th>Task</th><th>AI có thể làm</th><th>Giới hạn</th></tr></thead>
     <tbody>
       <tr><td>Boilerplate code</td><td><span class="can">✓ Rất tốt</span></td><td><span class="partial">~ Cần review naming/style</span></td></tr>
       <tr><td>CRUD operations</td><td><span class="can">✓ Nhanh</span></td><td><span class="partial">~ Có thể thiếu edge case</span></td></tr>
       <tr><td>Regex patterns</td><td><span class="can">✓ Xuất sắc</span></td><td><span class="partial">~ Test kỹ với real data</span></td></tr>
       <tr><td>Explain code</td><td><span class="can">✓ Rất tốt</span></td><td><span class="partial">~ Context-dependent</span></td></tr>
-      <tr><td>Unit test scaffolding</td><td><span class="can">✓ Tốt</span></td><td><span class="partial">~ Logic test phải tự viết</span></td></tr>
+      <tr><td>Unit test scaffolding</td><td><span class="can">✓ Tốt</span></td><td><span class="partial">~ Logic test phải tự viết — <a class="xref" href="../phase-2-build/09-testing.html">Bài 9</a></span></td></tr>
       <tr><td>Architecture decisions</td><td><span class="cannot">✗ Không nên phụ thuộc</span></td><td><span class="cannot">Cần domain knowledge thực tế</span></td></tr>
       <tr><td>Business logic phức tạp</td><td><span class="cannot">✗ Nguy hiểm</span></td><td><span class="cannot">Không hiểu context business</span></td></tr>
       <tr><td>Security review</td><td><span class="cannot">✗ Không đủ</span></td><td><span class="cannot">Có thể miss subtle vulns</span></td></tr>
@@ -188,15 +203,13 @@
 
   <hr class="section-divider">
 
-  <!-- PROMPTING -->
   <h2>3. Prompting for Code — Good vs Bad</h2>
-  <p>Chất lượng prompt quyết định chất lượng output. "Garbage in, garbage out."</p>
-
+  <p>Chất lượng prompt quyết định chất lượng output. Prompt tốt = áp dụng <a class="xref" href="../phase-1-think/03-clean-code.html">tư duy Clean Code</a> vào communication với AI.</p>
   <div class="prompt-compare">
     <div class="prompt-box prompt-bad">
       <div class="prompt-label bad">❌ Prompt tệ</div>
       <div class="prompt-text">Write a function to handle users</div>
-      <div class="prompt-result">→ AI đoán mò, tạo ra code generic, không fit codebase của bạn. Có thể cần rewrite hoàn toàn.</div>
+      <div class="prompt-result">→ AI đoán mò, tạo ra code generic, không fit codebase.</div>
     </div>
     <div class="prompt-box prompt-good">
       <div class="prompt-label good">✓ Prompt tốt</div>
@@ -208,118 +221,43 @@ Create a UserService method:
 - Hash password with bcrypt (10 rounds)
 - Return UserEntity (exclude password field)
 - Add JSDoc comments</div>
-      <div class="prompt-result">→ AI có đủ context để tạo code chính xác, fit stack, ít cần sửa.</div>
+      <div class="prompt-result">→ AI có đủ context để tạo code chính xác, fit stack.</div>
     </div>
   </div>
 
   <div class="card">
     <h3>Formula của một prompt code tốt</h3>
     <div class="context-layers">
-      <div class="ctx-layer">
-        <div class="ctx-icon">🏗️</div>
-        <div class="ctx-label">Stack / Framework</div>
-        <div class="ctx-desc">NestJS, TypeScript, MongoDB...</div>
-        <div class="ctx-quality ctx-high">Critical</div>
-      </div>
-      <div class="ctx-layer">
-        <div class="ctx-icon">📥</div>
-        <div class="ctx-label">Input / Output</div>
-        <div class="ctx-desc">Interface, types cụ thể</div>
-        <div class="ctx-quality ctx-high">Critical</div>
-      </div>
-      <div class="ctx-layer">
-        <div class="ctx-icon">⚙️</div>
-        <div class="ctx-label">Constraints</div>
-        <div class="ctx-desc">Error handling, edge cases, performance</div>
-        <div class="ctx-quality ctx-med">Important</div>
-      </div>
-      <div class="ctx-layer">
-        <div class="ctx-icon">🎨</div>
-        <div class="ctx-label">Style / Pattern</div>
-        <div class="ctx-desc">Naming convention, code style hiện tại</div>
-        <div class="ctx-quality ctx-med">Helpful</div>
-      </div>
-      <div class="ctx-layer">
-        <div class="ctx-icon">📝</div>
-        <div class="ctx-label">Examples</div>
-        <div class="ctx-desc">Existing code làm reference</div>
-        <div class="ctx-quality ctx-med">Helpful</div>
-      </div>
+      <div class="ctx-layer"><div class="ctx-icon">🏗️</div><div class="ctx-label">Stack / Framework</div><div class="ctx-desc">NestJS, TypeScript, MongoDB...</div><div class="ctx-quality ctx-high">Critical</div></div>
+      <div class="ctx-layer"><div class="ctx-icon">📥</div><div class="ctx-label">Input / Output</div><div class="ctx-desc">Interface, types cụ thể</div><div class="ctx-quality ctx-high">Critical</div></div>
+      <div class="ctx-layer"><div class="ctx-icon">⚙️</div><div class="ctx-label">Constraints</div><div class="ctx-desc">Error handling, edge cases, performance</div><div class="ctx-quality ctx-med">Important</div></div>
+      <div class="ctx-layer"><div class="ctx-icon">🎨</div><div class="ctx-label">Style / Pattern</div><div class="ctx-desc">Naming convention, code style — <a class="xref" href="../phase-1-think/03-clean-code.html">Bài 3</a></div><div class="ctx-quality ctx-med">Helpful</div></div>
+      <div class="ctx-layer"><div class="ctx-icon">📝</div><div class="ctx-label">Examples</div><div class="ctx-desc">Existing code làm reference</div><div class="ctx-quality ctx-med">Helpful</div></div>
     </div>
   </div>
 
   <hr class="section-divider">
 
-  <!-- CODE GENERATION WORKFLOW -->
   <h2>4. Code Generation Workflow</h2>
-  <p>AI generate → Developer là người sở hữu và chịu trách nhiệm. Không bao giờ paste code mà không hiểu.</p>
-
+  <p>AI generate → Developer là người sở hữu và chịu trách nhiệm. Bước 5 (Test) liên kết trực tiếp với <a class="xref" href="../phase-2-build/09-testing.html">Bài 9 Testing</a>.</p>
   <div class="workflow">
-    <div class="wf-step">
-      <div class="wf-num wf-ai">1</div>
-      <div class="wf-content">
-        <div class="wf-title">AI Generates Code</div>
-        <div class="wf-desc">Cung cấp context đầy đủ → AI tạo draft code</div>
-        <span class="wf-owner own-ai">🤖 AI làm</span>
-      </div>
-    </div>
-    <div class="wf-step">
-      <div class="wf-num wf-dev">2</div>
-      <div class="wf-content">
-        <div class="wf-title">Developer Reads &amp; Understands</div>
-        <div class="wf-desc">Đọc từng dòng — hiểu logic, không chỉ "nó hoạt động"</div>
-        <span class="wf-owner own-dev">👨‍💻 Dev làm</span>
-      </div>
-    </div>
-    <div class="wf-step">
-      <div class="wf-num wf-dev" style="background:#0d1a2d;border-color:#1f4a9e;color:#58a6ff">3</div>
-      <div class="wf-content">
-        <div class="wf-title">Code Review</div>
-        <div class="wf-desc">Kiểm tra: security, edge cases, performance, style fit codebase</div>
-        <span class="wf-owner own-both">🔍 Dev + AI</span>
-      </div>
-    </div>
-    <div class="wf-step">
-      <div class="wf-num wf-dev">4</div>
-      <div class="wf-content">
-        <div class="wf-title">Adapt to Codebase</div>
-        <div class="wf-desc">Sửa naming, integrate với existing patterns, remove unneeded parts</div>
-        <span class="wf-owner own-dev">👨‍💻 Dev làm</span>
-      </div>
-    </div>
-    <div class="wf-step">
-      <div class="wf-num wf-dev" style="background:#2d0d1a;border-color:#9e1e1e;color:#ff7b72">5</div>
-      <div class="wf-content">
-        <div class="wf-title">Test</div>
-        <div class="wf-desc">Viết test, chạy test, verify behavior đúng với requirements</div>
-        <span class="wf-owner own-dev">👨‍💻 Dev chịu trách nhiệm</span>
-      </div>
-    </div>
-    <div class="wf-step">
-      <div class="wf-num wf-dev" style="background:#0d2d1a;border-color:#238636;color:#3fb950">6</div>
-      <div class="wf-content">
-        <div class="wf-title">Own the Code</div>
-        <div class="wf-desc">Commit, document, maintain. "AI-generated" không là lý do để không hiểu code</div>
-        <span class="wf-owner own-dev">👨‍💻 Dev owns it</span>
-      </div>
-    </div>
+    <div class="wf-step"><div class="wf-num wf-ai">1</div><div class="wf-content"><div class="wf-title">AI Generates Code</div><div class="wf-desc">Cung cấp context đầy đủ → AI tạo draft code</div><span class="wf-owner own-ai">🤖 AI làm</span></div></div>
+    <div class="wf-step"><div class="wf-num wf-dev">2</div><div class="wf-content"><div class="wf-title">Developer Reads &amp; Understands</div><div class="wf-desc">Đọc từng dòng — hiểu logic, không chỉ "nó hoạt động"</div><span class="wf-owner own-dev">👨‍💻 Dev làm</span></div></div>
+    <div class="wf-step"><div class="wf-num wf-dev" style="background:#0d1a2d;border-color:#1f4a9e;color:#58a6ff">3</div><div class="wf-content"><div class="wf-title">Code Review</div><div class="wf-desc">Kiểm tra: security, edge cases, performance, style fit codebase</div><span class="wf-owner own-both">🔍 Dev + AI</span></div></div>
+    <div class="wf-step"><div class="wf-num wf-dev">4</div><div class="wf-content"><div class="wf-title">Adapt to Codebase</div><div class="wf-desc">Sửa naming, integrate với existing patterns — áp dụng <a class="xref" href="../phase-1-think/03-clean-code.html">Clean Code</a></div><span class="wf-owner own-dev">👨‍💻 Dev làm</span></div></div>
+    <div class="wf-step"><div class="wf-num wf-dev" style="background:#2d0d1a;border-color:#9e1e1e;color:#ff7b72">5</div><div class="wf-content"><div class="wf-title">Test</div><div class="wf-desc">Viết test, chạy test — xem <a class="xref" href="../phase-2-build/09-testing.html">Bài 9 Testing</a></div><span class="wf-owner own-dev">👨‍💻 Dev chịu trách nhiệm</span></div></div>
+    <div class="wf-step"><div class="wf-num wf-dev" style="background:#0d2d1a;border-color:#238636;color:#3fb950">6</div><div class="wf-content"><div class="wf-title">Own the Code</div><div class="wf-desc">Commit, document, maintain. "AI-generated" không là lý do để không hiểu code</div><span class="wf-owner own-dev">👨‍💻 Dev owns it</span></div></div>
   </div>
 
   <hr class="section-divider">
 
-  <!-- HALLUCINATION -->
   <h2>5. Hallucination — AI Tự Tin Sai</h2>
-  <p>AI có thể generate code <em>trông đúng nhưng sai</em> — package không tồn tại, API đã deprecated, logic sai. Luôn verify.</p>
-
+  <p>AI có thể generate code <em>trông đúng nhưng sai</em>. Đây là lý do <a class="xref" href="../phase-2-build/09-testing.html">testing</a> không thể skip.</p>
   <div class="hallucination">
     <div class="hall-code">
 <span class="cm">// AI generates this confidently... ❌</span>
 <span class="kw">import</span> { <span class="fn">validateEmail</span> } <span class="kw">from</span> <span class="str hall-strike">'@nestjs/common/utils/email'</span>; <span class="hall-badge wrong">✗ không tồn tại</span>
-
-<span class="cm">// Uses deprecated MongoDB method...</span>
 <span class="kw">await</span> collection.<span class="fn hall-strike">insert</span>(doc);  <span class="hall-badge wrong">✗ deprecated từ MongoDB 4</span>
-
-<span class="cm">// Wrong HTTP status code...</span>
 <span class="kw">throw new</span> <span class="fn">HttpException</span>(<span class="str">'Not found'</span>, <span class="num hall-strike">401</span>); <span class="hall-badge wrong">✗ nên là 404</span>
 
 <span class="cm">// Developer catches it, fixes it ✅</span>
@@ -328,41 +266,27 @@ Create a UserService method:
 <span class="kw">throw new</span> <span class="fn">NotFoundException</span>(<span class="str">'Resource'</span>); <span class="hall-badge caught">✓ 404</span>
     </div>
   </div>
-
-  <div class="warning">
-    <strong>Hallucination phổ biến nhất:</strong> Package names không tồn tại, deprecated API, wrong method signatures, outdated syntax (AI training data có cutoff), logic bugs trong edge cases.
-  </div>
+  <div class="warning"><strong>Hallucination phổ biến nhất:</strong> Package names không tồn tại, deprecated API, wrong method signatures, outdated syntax, logic bugs trong edge cases.</div>
 
   <hr class="section-divider">
 
-  <!-- SECURITY RISKS -->
   <h2>6. AI-generated Security Risks</h2>
-  <p>AI có thể suggest code <em>chạy được nhưng không secure</em>. Đây là loại bug nguy hiểm nhất vì không crash ngay.</p>
-
+  <p>AI có thể suggest code <em>chạy được nhưng không secure</em>. Kỹ năng từ <a class="xref" href="../phase-1-think/03-clean-code.html">Clean Code</a> giúp nhận ra code smells.</p>
   <div class="risk-compare">
     <div class="risk-box risk-bad">
       <div class="risk-label bad">❌ AI suggests — SQL Injection</div>
-      <div class="code-block" style="margin:0;font-size:.78rem">
-<span class="cm">// "Works" but dangerous!</span>
-<span class="kw">const</span> <span class="var">query</span> = <span class="str">`
-  SELECT * FROM users
-  WHERE email = '<span class="var">${email}</span>'
-`</span>;
-<span class="cm">// Attacker: email = "' OR '1'='1"</span>
-<span class="cm">// → dumps entire DB</span></div>
+      <div class="code-block" style="margin:0;font-size:.78rem"><span class="cm">// "Works" but dangerous!</span>
+<span class="kw">const</span> <span class="var">query</span> = <span class="str">`SELECT * FROM users WHERE email = '${email}'`</span>;
+<span class="cm">// Attacker: email = "'  OR '1'='1" → dumps entire DB</span></div>
     </div>
     <div class="risk-box risk-good">
       <div class="risk-label good">✓ Correct — Parameterized</div>
-      <div class="code-block" style="margin:0;font-size:.78rem">
-<span class="cm">// Safe! Parameters escaped</span>
+      <div class="code-block" style="margin:0;font-size:.78rem"><span class="cm">// Safe! Parameters escaped</span>
 <span class="kw">const</span> <span class="var">result</span> = <span class="kw">await</span> db.<span class="fn">query</span>(
-  <span class="str">'SELECT * FROM users WHERE email = $1'</span>,
-  [email]
-);
-<span class="cm">// DB driver handles escaping</span></div>
+  <span class="str">'SELECT * FROM users WHERE email = $1'</span>, [email]
+);</div>
     </div>
   </div>
-
   <div class="card">
     <h3>Security checklist khi dùng AI-generated code</h3>
     <ul class="checklist">
@@ -377,62 +301,41 @@ Create a UserService method:
 
   <hr class="section-divider">
 
-  <!-- CONTEXT ENGINEERING -->
   <h2>7. Context Engineering</h2>
-  <p>AI giỏi hơn khi có context tốt hơn. "Context Engineering" = nghệ thuật cung cấp đúng context cho AI.</p>
-
-  <div class="code-block"><span class="cm">// ❌ Thiếu context — AI đoán mò</span>
-<span class="str">"Create a service to handle orders"</span>
-
-<span class="cm">// ✓ Đủ context — AI tạo code fit</span>
+  <div class="code-block"><span class="cm">// ✓ Đủ context — AI tạo code fit</span>
 <span class="str">"I'm building a NestJS microservice.
-Existing code uses:
-- MongoDB with Mongoose
-- Event-driven: OrderCreatedEvent
-- Pattern: CQRS (commands/queries separate)
-- All DTOs use class-validator
-
-Create OrderCommandService with:
-- createOrder(dto: CreateOrderDto)
+Existing code uses MongoDB + Mongoose, CQRS pattern, class-validator DTOs.
+Create OrderCommandService.createOrder(dto: CreateOrderDto):
+- Validate items array non-empty
 - Emit OrderCreatedEvent after save
-- Validate: items array non-empty
 - Return OrderDocument"</span></div>
-
-  <div class="tip">
-    <strong>Pro tip:</strong> Paste đoạn code hiện có vào prompt. "Here is my existing UserService pattern. Follow the same pattern for OrderService." — AI sẽ copy style, naming, error handling của bạn.
-  </div>
+  <div class="tip"><strong>Pro tip:</strong> Paste đoạn code hiện có vào prompt làm reference pattern — AI sẽ copy style, naming, error handling của bạn.</div>
 
   <hr class="section-divider">
 
-  <!-- VERIFICATION LOOP -->
   <h2>8. The Verification Loop</h2>
-  <p>Never Trust, Always Verify. Với AI-generated code, verification là bước bắt buộc, không phải tùy chọn.</p>
-
+  <p>Never Trust, Always Verify. <a class="xref" href="../phase-2-build/09-testing.html">Viết test (Bài 9)</a> là cách verify hiệu quả nhất.</p>
   <div class="verify-loop">
     <svg viewBox="0 0 400 200" width="400" style="max-width:100%">
-      <!-- Circular arrows -->
       <circle cx="200" cy="100" r="70" stroke="#30363d" stroke-width="1" fill="none" stroke-dasharray="4 4"/>
-      <path d="M200,30 A70,70 0 0 1 270,100" stroke="#58a6ff" stroke-width="3" fill="none" marker-end="url(#varrow)"/>
-      <path d="M270,100 A70,70 0 0 1 200,170" stroke="#3fb950" stroke-width="3" fill="none" marker-end="url(#varrow2)"/>
-      <path d="M200,170 A70,70 0 0 1 130,100" stroke="#f0883e" stroke-width="3" fill="none" marker-end="url(#varrow3)"/>
-      <path d="M130,100 A70,70 0 0 1 200,30" stroke="#bc8cff" stroke-width="3" fill="none" marker-end="url(#varrow4)"/>
+      <path d="M200,30 A70,70 0 0 1 270,100" stroke="#58a6ff" stroke-width="3" fill="none" marker-end="url(#va1)"/>
+      <path d="M270,100 A70,70 0 0 1 200,170" stroke="#3fb950" stroke-width="3" fill="none" marker-end="url(#va2)"/>
+      <path d="M200,170 A70,70 0 0 1 130,100" stroke="#f0883e" stroke-width="3" fill="none" marker-end="url(#va3)"/>
+      <path d="M130,100 A70,70 0 0 1 200,30" stroke="#bc8cff" stroke-width="3" fill="none" marker-end="url(#va4)"/>
       <defs>
-        <marker id="varrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#58a6ff"/></marker>
-        <marker id="varrow2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#3fb950"/></marker>
-        <marker id="varrow3" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#f0883e"/></marker>
-        <marker id="varrow4" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#bc8cff"/></marker>
+        <marker id="va1" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#58a6ff"/></marker>
+        <marker id="va2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#3fb950"/></marker>
+        <marker id="va3" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#f0883e"/></marker>
+        <marker id="va4" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#bc8cff"/></marker>
       </defs>
-      <!-- Labels -->
       <text x="220" y="55" fill="#58a6ff" font-size="11" font-family="sans-serif" font-weight="600">UNDERSTAND</text>
       <text x="278" y="108" fill="#3fb950" font-size="11" font-family="sans-serif" font-weight="600">TEST</text>
       <text x="148" y="178" fill="#f0883e" font-size="11" font-family="sans-serif" font-weight="600">VERIFY</text>
       <text x="50" y="108" fill="#bc8cff" font-size="11" font-family="sans-serif" font-weight="600">REVIEW</text>
-      <!-- Center -->
       <text x="200" y="95" fill="#c9d1d9" font-size="11" text-anchor="middle" font-family="sans-serif">AI Output</text>
       <text x="200" y="112" fill="#c9d1d9" font-size="11" text-anchor="middle" font-family="sans-serif">→ Yours</text>
     </svg>
   </div>
-
   <ul class="checklist" style="margin:0 0 20px">
     <li><span style="color:#58a6ff">①</span><strong>Understand:</strong> Đọc và hiểu từng dòng code AI generate</li>
     <li><span style="color:#3fb950">②</span><strong>Test:</strong> Chạy với input thực, test edge cases, check logs</li>
@@ -442,19 +345,16 @@ Create OrderCommandService with:
 
   <hr class="section-divider">
 
-  <!-- MINDSET -->
   <h2>9. The Right Mindset</h2>
-
   <div class="card">
     <h3>✅ "Productivity tool with guardrails"</h3>
     <ul style="color:#c9d1d9;padding-left:20px;margin-top:8px">
       <li style="margin:6px 0">Dùng AI để <em>accelerate</em> — tạo boilerplate, explain concepts, suggest patterns</li>
       <li style="margin:6px 0">Luôn review và adapt code vào codebase của mình</li>
-      <li style="margin:6px 0">Test kỹ trước khi commit</li>
+      <li style="margin:6px 0">Test kỹ trước khi commit — <a class="xref" href="../phase-2-build/09-testing.html">Bài 9</a></li>
       <li style="margin:6px 0">Chịu trách nhiệm 100% với code mình commit, dù AI viết</li>
     </ul>
   </div>
-
   <div class="antipattern">
     <h3>❌ Anti-pattern: Blindly Accept AI Output</h3>
     <ul style="color:#ff7b72;padding-left:20px;margin-top:8px">
@@ -463,37 +363,84 @@ Create OrderCommandService with:
       <li style="margin:6px 0">Để AI quyết định architecture → technical debt khổng lồ</li>
       <li style="margin:6px 0">Nói "AI generate" khi bị hỏi về code → không chuyên nghiệp</li>
     </ul>
-    <div class="code-block" style="margin-top:12px;border-color:#9e1e1e">
-<span class="cm">// ❌ Scenario thực tế</span>
-<span class="cm">// Dev A: "Tại sao function này có bug?"</span>
-<span class="cm">// Dev B: "Tôi không biết, AI generate"</span>
-<span class="cm">// → Dev B không hiểu code mình commit</span>
-<span class="cm">// → Team mất trust</span></div>
   </div>
+  <div class="tip"><strong>Key Takeaway:</strong> Kỹ sư dùng AI giỏi nhất = người biết <em>khi nào dùng</em>, <em>khi nào không</em>, và luôn <em>verify output</em>.</div>
 
+  <!-- EXERCISES -->
   <hr class="section-divider">
+  <div class="exercises">
+    <div class="exercises-title">🎯 Bài Tập Thực Hành</div>
 
-  <!-- EXERCISE -->
-  <div class="exercise">
-    <h3>🎯 Exercise: AI-Assisted Code Review</h3>
-    <p style="color:#8b949e;margin-bottom:16px;font-size:.9rem">Thực hành identify vấn đề trong AI-generated code</p>
-    <ul class="checklist">
-      <li><span style="color:#58a6ff">①</span>Dùng AI generate một REST API endpoint (create + get + delete user)</li>
-      <li><span style="color:#3fb950">②</span>Review code — tìm ít nhất 3 vấn đề (security, missing validation, style)</li>
-      <li><span style="color:#f0883e">③</span>Fix các vấn đề, viết unit test cho edge cases</li>
-      <li><span style="color:#bc8cff">④</span>Thử prompt xấu vs prompt tốt — so sánh chất lượng output</li>
-      <li><span style="color:#a5d6ff">⑤</span>Document: những gì AI làm tốt, những gì phải sửa</li>
-    </ul>
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 1</span></div>
+      <div class="ex-title">Viết 3 prompts tốt vs 3 prompts tệ cho cùng 1 task</div>
+      <div class="ex-desc">Chọn task "tạo endpoint reset password". Viết 3 prompt vague và 3 prompt đầy đủ context. So sánh chất lượng output từ Claude/GPT và ghi lại sự khác biệt.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Prompts tệ:</strong> "Add reset password", "Handle forgot password", "Email user"<br><br><strong>Prompt tốt mẫu:</strong> "NestJS + Nodemailer. Create POST /auth/forgot-password: input {email}, find user by email, generate 6-digit OTP, store in Redis TTL 15min, send via nodemailer, return {message: 'OTP sent'}. Throw NotFoundException if email not found."<br><br>Kết quả: prompt tốt → code fit stack, ít sửa, naming match pattern codebase</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 2</span></div>
+      <div class="ex-title">Review AI-generated code: tìm 3 vấn đề trong output</div>
+      <div class="ex-desc">Prompt AI tạo một UserService (createUser, findAll, deleteUser). Review output và liệt kê ít nhất 3 vấn đề: security holes, missing validation, no error handling, v.v.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Vấn đề thường gặp:</strong><br>1. Password không được hash (plain text lưu DB)<br>2. findAll() không có pagination → memory leak<br>3. deleteUser không check ownership<br>4. Không throw NotFoundException đúng loại<br>5. Missing @IsEmail() validation trong DTO</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 3</span></div>
+      <div class="ex-title">Dùng AI generate function → viết test verify → fix nếu sai</div>
+      <div class="ex-desc">Prompt AI tạo function tính discount (VIP -20%, weekend +10%, min price $5). Viết unit tests bao phủ các cases. Nếu test fail → AI code sai → fix và re-run.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Test cases cần viết:</strong><br>- VIP weekday → -20%<br>- Regular weekend → +10%<br>- VIP weekend → ưu tiên rule nào? (AI có thể đoán sai)<br>- Price sau discount &lt; $5 → return $5<br>- Input = 0 hoặc negative → edge case<br><br>AI thường fail case "VIP + weekend" và "min price floor"</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 4</span></div>
+      <div class="ex-title">Refactor with AI: cho code messy, prompt AI refactor, review output</div>
+      <div class="ex-desc">Viết code messy (vars a/b/c, no validation, deeply nested ifs). Prompt AI refactor theo Clean Code. Review: AI có thực sự improve hay chỉ rename?</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Prompt tốt:</strong> "Refactor theo Clean Code: meaningful names, single responsibility, early return, no magic numbers. Giữ nguyên logic."<br><br><strong>Checklist review:</strong><br>✓ Variable names descriptive?<br>✓ Nested ifs → guard clauses?<br>✓ Magic numbers → constants?<br>✗ AI thường quên extract helper functions, giữ lại dead code</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header"><span class="ex-diff diff-red">🔴 Khó</span><span class="ex-num">Bài 5</span></div>
+      <div class="ex-title">AI security audit: phát hiện SQL injection trong AI-generated code</div>
+      <div class="ex-desc">Prompt AI tạo search endpoint GET /products?q=laptop với raw SQL. Tìm SQL injection vulnerability. Viết exploit proof-of-concept. Fix bằng parameterized query. Verify fix bằng test.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Bước 1:</strong> AI generate <code>WHERE name LIKE '%${q}%'</code> → vulnerable<br><strong>Bước 2 exploit:</strong> q = "'  OR '1'='1' --" → return all rows<br><strong>Bước 3 fix:</strong> <code>WHERE name LIKE $1</code> với param <code>[`%${q}%`]</code><br><strong>Bước 4 test:</strong> Unit test verify special chars không return extra rows<br><br>Bonus: tìm thêm NoSQL injection nếu dùng MongoDB</div>
+      </div>
+    </div>
   </div>
 
-  <div class="tip">
-    <strong>Key Takeaway:</strong> Kỹ sư dùng AI giỏi nhất không phải người dùng AI nhiều nhất — mà là người biết <em>khi nào dùng AI</em>, <em>khi nào không</em>, và luôn <em>verify output</em>.
+  <!-- SUMMARY -->
+  <hr class="section-divider">
+  <div class="card">
+    <h3>📌 Tóm Tắt Bài 15</h3>
+    <ul style="color:#c9d1d9;padding-left:20px;margin-top:8px">
+      <li style="margin:6px 0"><strong>AI = tool</strong>, không phải replacement. Engineer giỏi = biết dùng AI đúng cách</li>
+      <li style="margin:6px 0"><strong>Prompt quality</strong> quyết định output quality. Stack + input/output + constraints = formula</li>
+      <li style="margin:6px 0"><strong>Hallucination</strong> là thật. Verify mọi package, API, logic trước khi dùng</li>
+      <li style="margin:6px 0"><strong>Security risks</strong> — AI code "chạy được" ≠ "secure". Luôn review security checklist</li>
+      <li style="margin:6px 0"><strong>Verification loop</strong>: Understand → Test → Verify → Review — không bao giờ skip</li>
+      <li style="margin:6px 0"><strong>Code ownership</strong> — bạn chịu 100% trách nhiệm dù AI viết</li>
+    </ul>
   </div>
 
   <div style="text-align:center;margin-top:48px;padding:24px;border-top:1px solid #21262d">
     <p style="color:#8b949e;font-size:.85rem">Bài 15 / Phase 4 — Production</p>
-    <p style="margin-top:8px"><a href="../phase-5-professional/16-engineering-workflow.html" style="color:#58a6ff;text-decoration:none">Tiếp theo: Bài 16 — Engineering Workflow →</a></p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="14-devops.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← Bài 14: DevOps</a>
+      <a href="../phase-5-professional/16-engineering-workflow.html" style="color:#58a6ff;text-decoration:none;font-size:.85rem">Tiếp theo: Bài 16 — Engineering Workflow →</a>
+    </div>
   </div>
 </div>
+<script>
+function toggleSol(btn){const b=btn.nextElementSibling;const o=b.classList.toggle('open');btn.textContent=o?'Ẩn gợi ý':'Xem gợi ý';}
+</script>
 </body>
 </html>

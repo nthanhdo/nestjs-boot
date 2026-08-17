@@ -16,7 +16,7 @@
     --accent: #a78bfa; --yellow: #ffd43b;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: auto; }
   body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 25% 15%, rgba(91,141,239,0.07) 0%, transparent 55%), radial-gradient(ellipse at 75% 85%, rgba(167,139,250,0.05) 0%, transparent 55%); pointer-events:none; }
 
   header { background: var(--surface); padding: 10px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); z-index: 2; }
@@ -26,7 +26,7 @@
   .cx { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 9px; font-size: .72rem; color: var(--muted); }
   .cx span { color: var(--yellow); font-weight: 700; }
 
-  main { flex: 1; display: flex; overflow: hidden; z-index: 1; min-height: 0; }
+  main { flex: 1; display: flex; overflow: auto; z-index: 1; min-height: 0; }
 
   #viz { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
@@ -56,7 +56,7 @@
   #step-counter { font-size: .72rem; color: var(--muted); white-space: nowrap; }
 
   /* ARRAY VISUALIZATION */
-  #array-area { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 20px; padding: 20px 32px; position: relative; overflow: hidden; }
+  #array-area { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 20px; padding: 20px 32px; position: relative; overflow: auto; }
   #array-container { display: flex; align-items: stretch; gap: 4px; position: relative; }
 
   .cell-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; }
@@ -67,7 +67,7 @@
     border: 2px solid rgba(255,255,255,0.1);
     box-shadow: 0 3px 10px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12);
     transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-    position: relative; overflow: hidden;
+    position: relative; overflow: auto;
   }
   .cell::before { content:''; position:absolute; top:0; left:0; width:40%; height:100%; background: linear-gradient(90deg,rgba(255,255,255,0.1),transparent); border-radius:6px 0 0 6px; }
   .cell-idx { font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; transition: all 0.3s; }

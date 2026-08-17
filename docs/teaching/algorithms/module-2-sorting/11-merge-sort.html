@@ -5,355 +5,394 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Merge Sort — Sắp xếp trộn</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',sans-serif;background:#080c14;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(56,189,248,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.04) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;z-index:0}
-
-header{background:linear-gradient(135deg,#020d1a,#051524);padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #0c3352;position:relative;z-index:1}
-header h1{font-size:1.1rem;color:#38bdf8;text-shadow:0 0 20px rgba(56,189,248,.4)}
-.badge{background:#0c4a6e;color:#7dd3fc;padding:2px 8px;border-radius:4px;font-size:.75rem}
-.complexity{display:flex;gap:8px;margin-left:auto}
-.cx{background:#1e293b;border:1px solid #334155;border-radius:4px;padding:2px 8px;font-size:.75rem;color:#94a3b8}
-.cx span{color:#fbbf24}
-
-main{flex:1;display:flex;overflow:hidden;min-height:0;position:relative;z-index:1}
-#viz{width:60%;background:transparent;display:flex;flex-direction:column;overflow:hidden}
-#bar-area{flex:1;position:relative;padding:8px 16px 0;min-height:0}
-#bars-container{position:absolute;bottom:0;left:16px;right:16px;top:8px;display:flex;align-items:flex-end;gap:3px}
-
-.bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;transition:margin .3s ease}
-.bar{width:100%;border-radius:4px 4px 0 0;background:linear-gradient(to top,#1d4ed8,#60a5fa);position:relative;overflow:hidden;transition:background .3s,box-shadow .2s}
-.bar::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.15) 50%,transparent 60%);background-size:200% 100%;opacity:0}
-.bar-val{font-size:9px;color:#94a3b8;margin-top:2px;font-weight:600}
-
-.bar.left-half{background:linear-gradient(to top,#0c4a6e,#38bdf8);box-shadow:0 0 6px rgba(56,189,248,.3)}
-.bar.right-half{background:linear-gradient(to top,#3730a3,#818cf8);box-shadow:0 0 6px rgba(129,140,248,.3)}
-.bar.comparing-l{background:linear-gradient(to top,#881337,#f43f5e);box-shadow:0 0 14px rgba(244,63,94,.6);animation:pulseBar .4s ease-in-out infinite}
-.bar.comparing-r{background:linear-gradient(to top,#9a3412,#f97316);box-shadow:0 0 14px rgba(249,115,22,.6);animation:pulseBar .4s ease-in-out infinite}
-.bar.merged{background:linear-gradient(to top,#065f46,#34d399);box-shadow:0 0 10px rgba(52,211,153,.4)}
-.bar.sorted{background:linear-gradient(to top,#065f46,#34d399);box-shadow:0 0 8px rgba(52,211,153,.2)}
-.bar.sorted::after{animation:shimmer 2s linear infinite;opacity:1}
-
-/* Sub-array separators: gap between groups */
-.bar-wrap.left-group{margin-right:0px}
-.bar-wrap.right-group{margin-left:0px}
-.bar-wrap.gap-right{margin-right:6px!important;border-right:1px solid rgba(56,189,248,.4)}
-
-#tree-area{height:120px;background:#020a14;border-top:1px solid #0c3352;position:relative;overflow:hidden}
-#tree-canvas{width:100%;height:100%}
-
-#legend{display:flex;gap:10px;padding:5px 16px;background:rgba(2,13,26,.9);font-size:.7rem;flex-wrap:wrap}
-.leg{display:flex;align-items:center;gap:4px}
-.leg-dot{width:9px;height:9px;border-radius:2px}
-
-#code-panel{width:40%;background:#020d1a;border-left:1px solid #0c3352;display:flex;flex-direction:column}
-.panel-title{padding:8px 14px;background:#010810;font-size:.8rem;color:#8b92c4;border-bottom:1px solid #0c3352}
-#code{flex:1;overflow-y:auto;padding:8px 0;font-family:'Courier New',monospace;font-size:.78rem;line-height:1.7}
-.code-line{padding:2px 14px;color:#8b92c4;white-space:pre;border-left:3px solid transparent;transition:all .2s}
-.code-line.active{background:linear-gradient(90deg,rgba(251,191,36,.12),transparent);color:#fde68a;border-left-color:#fbbf24}
-#explain{padding:8px 14px;background:#080c14;border-top:1px solid #0c3352;font-size:.78rem;color:#94a3b8;min-height:52px;line-height:1.4}
-
-#controls{background:linear-gradient(135deg,#020d1a,#111827);padding:7px 14px;display:flex;align-items:center;gap:8px;border-top:1px solid #1e293b;flex-wrap:wrap;position:relative;z-index:1}
-button{background:#1d4ed8;color:#e2e8f0;border:1px solid #2563eb;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:.8rem;transition:all .2s}
-button:hover{background:#2563eb;box-shadow:0 0 12px rgba(37,99,235,.3)}
-#btn-play{background:#0369a1;border-color:#0284c7}
-#btn-play:hover{background:#0284c7;box-shadow:0 0 12px rgba(2,132,199,.4)}
-#stats{display:flex;gap:10px;margin-left:auto;font-size:.78rem}
-.stat{background:#1e293b;padding:3px 8px;border-radius:6px;border:1px solid #2d3748}
-.stat span{color:#f59e0b;font-weight:700}
-label{font-size:.75rem;color:#64748b}
-input[type=range]{accent-color:#38bdf8;width:80px}
-select{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:3px 5px;font-size:.75rem}
-#phase-info{background:#1e293b;padding:3px 8px;border-radius:6px;font-size:.78rem;color:#38bdf8;border:1px solid #0c3352}
-
-@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
-@keyframes pulseBar{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.07);transform-origin:bottom}}
-@keyframes dropIn{0%{transform:translateY(-30px);opacity:0}100%{transform:translateY(0);opacity:1}}
-@keyframes mergeIn{0%{transform:translateY(-8px);opacity:.5}100%{transform:translateY(0);opacity:1}}
-@keyframes nodePop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+  :root {
+    --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+    --text: #eef1f8; --muted: #8899bb;
+    --default-top: #5b8def; --default-bot: #2c5aa0;
+    --compare-top: #ff5e7a; --compare-bot: #c0143c; --compare-glow: rgba(255,94,122,0.65);
+    --sorted-top: #2ecc71; --sorted-bot: #1a9c54; --sorted-glow: rgba(46,204,113,0.4);
+    --left-top: #5b8def; --left-bot: #2c5aa0; --left-glow: rgba(91,141,239,0.5);
+    --right-top: #fd79a8; --right-bot: #e84393; --right-glow: rgba(253,121,168,0.5);
+    --merge-top: #00cec9; --merge-bot: #00a896; --merge-glow: rgba(0,206,201,0.5);
+    --accent: #a78bfa; --yellow: #ffd43b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  body::before { content:''; position: fixed; inset: 0; background: radial-gradient(ellipse at 30% 20%, rgba(91,141,239,0.07) 0%, transparent 55%), radial-gradient(ellipse at 70% 80%, rgba(0,206,201,0.05) 0%, transparent 55%); pointer-events: none; }
+  header { background: var(--surface); padding: 10px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); z-index: 2; }
+  header h1 { font-size: 1.15rem; font-weight: 700; background: linear-gradient(135deg,#00cec9,#5b8def); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .badge { background: linear-gradient(135deg,#5b8def,#00cec9); color: #fff; padding: 2px 10px; border-radius: 12px; font-size: .68rem; font-weight: 700; }
+  .complexity { display: flex; gap: 6px; margin-left: auto; }
+  .cx { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 9px; font-size: .72rem; color: var(--muted); }
+  .cx span { color: var(--yellow); font-weight: 700; }
+  main { flex: 1; display: flex; overflow: hidden; z-index: 1; min-height: 0; }
+  #viz { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  #compare-display { text-align: center; padding: 10px 20px; min-height: 56px; display: flex; align-items: center; justify-content: center; gap: 12px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .cd-idle { color: var(--muted); font-size: .95rem; }
+  .cd-box { display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 10px; font-size: 1.2rem; font-weight: 800; color: #fff; transition: all 0.3s; }
+  .cd-box.left { background: linear-gradient(135deg,var(--left-top),var(--left-bot)); box-shadow: 0 0 16px var(--left-glow); }
+  .cd-box.right { background: linear-gradient(135deg,var(--right-top),var(--right-bot)); box-shadow: 0 0 16px var(--right-glow); }
+  .cd-op { font-size: 1.5rem; color: var(--yellow); text-shadow: 0 0 10px rgba(255,212,59,0.5); }
+  .cd-tag { padding: 4px 12px; border-radius: 6px; font-size: .82rem; font-weight: 700; color: #fff; animation: fadeIn 0.25s ease; }
+  .cd-tag.take-left { background: linear-gradient(135deg,var(--left-top),var(--left-bot)); }
+  .cd-tag.take-right { background: linear-gradient(135deg,var(--right-top),var(--right-bot)); }
+  #explain-viz { padding: 10px 24px; min-height: 52px; background: linear-gradient(135deg, rgba(21,29,50,0.95), rgba(28,39,68,0.9)); border-bottom: 1px solid var(--border); font-size: .88rem; line-height: 1.55; color: var(--text); display: flex; align-items: center; gap: 12px; backdrop-filter: blur(4px); }
+  #explain-viz .step-icon { flex-shrink: 0; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: all 0.3s; }
+  #explain-viz .step-icon.compare { background: rgba(255,94,122,0.15); border: 1px solid rgba(255,94,122,0.3); }
+  #explain-viz .step-icon.sorted { background: rgba(46,204,113,0.15); border: 1px solid rgba(46,204,113,0.3); }
+  #explain-viz .step-icon.divide { background: rgba(167,139,250,0.15); border: 1px solid rgba(167,139,250,0.3); }
+  #explain-viz .step-icon.merge { background: rgba(0,206,201,0.15); border: 1px solid rgba(0,206,201,0.3); }
+  #explain-viz .step-icon.info { background: rgba(91,141,239,0.15); border: 1px solid rgba(91,141,239,0.3); }
+  #explain-text { flex: 1; }
+  #explain-text b { color: var(--yellow); }
+  #explain-text code { background: var(--surface2); padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: .8rem; color: var(--accent); }
+  #step-counter { font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  #bar-area { flex: 1; position: relative; padding: 14px 32px 0; }
+  #bars-container { position: absolute; bottom: 40px; left: 32px; right: 32px; top: 14px; display: flex; align-items: flex-end; gap: 3px; }
+  .bar-wrap { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; }
+  .bar { width: 100%; border-radius: 5px 5px 1px 1px; background: linear-gradient(180deg,var(--default-top),var(--default-bot)); position: relative; overflow: hidden; min-height: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12); transition: box-shadow 0.3s, background 0.3s; }
+  .bar::before { content:''; position: absolute; top:0; left:0; width: 45%; height: 100%; background: linear-gradient(90deg,rgba(255,255,255,0.1),transparent); border-radius: 5px 0 0 1px; }
+  .bar::after { content:''; position: absolute; inset: 0; background: linear-gradient(105deg,transparent 25%,rgba(255,255,255,0.22) 50%,transparent 75%); background-size: 300% 100%; opacity: 0; border-radius: inherit; }
+  .bar-val-inside { position: absolute; top: 5px; left: 0; right: 0; text-align: center; font-size: 12px; font-weight: 800; color: rgba(255,255,255,0.95); text-shadow: 0 1px 3px rgba(0,0,0,0.6); z-index: 2; pointer-events: none; }
+  .bar-idx { font-size: 10px; color: var(--muted); margin-top: 3px; font-variant-numeric: tabular-nums; transition: all 0.3s; }
+  #pointers { position: absolute; bottom: 2px; left: 32px; right: 32px; height: 22px; }
+  .ptr { position: absolute; bottom: 0; padding: 1px 5px; border-radius: 3px; font-size: 10px; font-weight: 800; color: #fff; transition: left 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s; opacity: 0; white-space: nowrap; }
+  .ptr::before { content:'▲'; display: block; text-align: center; font-size: 8px; line-height: 1; margin-bottom: 1px; }
+  .ptr-l { background: var(--left-bot); }
+  .ptr-r { background: var(--right-bot); }
+  .bar.left-half { background: linear-gradient(180deg,var(--left-top),var(--left-bot)); box-shadow: 0 0 14px var(--left-glow), inset 0 1px 0 rgba(255,255,255,0.12); }
+  .bar-wrap:has(.bar.left-half) .bar-idx { color: var(--left-top); }
+  .bar.right-half { background: linear-gradient(180deg,var(--right-top),var(--right-bot)); box-shadow: 0 0 14px var(--right-glow), inset 0 1px 0 rgba(255,255,255,0.12); }
+  .bar-wrap:has(.bar.right-half) .bar-idx { color: var(--right-top); }
+  .bar.comparing { animation: barPulse 0.5s ease-in-out infinite; }
+  .bar.comparing.left-half { box-shadow: 0 0 22px var(--left-glow); }
+  .bar.comparing.right-half { box-shadow: 0 0 22px var(--right-glow); }
+  .bar.placing { background: linear-gradient(180deg,var(--merge-top),var(--merge-bot)); box-shadow: 0 0 20px var(--merge-glow), inset 0 1px 0 rgba(255,255,255,0.2); }
+  .bar-wrap:has(.bar.placing) .bar-idx { color: var(--merge-top); }
+  .bar.sorted { background: linear-gradient(180deg,var(--sorted-top),var(--sorted-bot)); box-shadow: 0 0 10px var(--sorted-glow), inset 0 1px 0 rgba(255,255,255,0.12); }
+  .bar.sorted::after { animation: shimmer 2.5s linear infinite; opacity: 1; }
+  .bar-wrap:has(.bar.sorted) .bar-idx { color: var(--sorted-top); }
+  #depth-display { position: absolute; top: 8px; left: 32px; font-size: .72rem; color: var(--accent); background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.2); padding: 2px 8px; border-radius: 4px; }
+  #bottom-bar { display: flex; align-items: center; background: var(--surface); border-top: 1px solid var(--border); }
+  #legend { flex: 1; display: flex; gap: 16px; padding: 7px 24px; font-size: .74rem; color: var(--muted); }
+  .leg { display: flex; align-items: center; gap: 6px; }
+  .leg-dot { width: 14px; height: 14px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.08); }
+  #progress-wrap { width: 180px; height: 5px; background: var(--surface2); border-radius: 3px; margin-right: 20px; overflow: hidden; }
+  #progress-bar { height: 100%; width: 0%; border-radius: 3px; background: linear-gradient(90deg,var(--accent),var(--sorted-top)); transition: width 0.4s; box-shadow: 0 0 6px rgba(167,139,250,0.4); }
+  #code-panel { width: 340px; min-width: 300px; background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+  .panel-title { padding: 10px 14px; background: var(--surface2); font-size: .78rem; font-weight: 600; color: var(--accent); border-bottom: 1px solid var(--border); }
+  #code { flex: 1; overflow-y: auto; padding: 10px 0; font-family: 'SF Mono','Fira Code',Consolas,monospace; font-size: .82rem; line-height: 2; }
+  .code-line { padding: 0 14px; color: #5a6d8e; white-space: pre; border-left: 3px solid transparent; transition: all 0.2s; }
+  .code-line.comment { color: #3a4d6e; font-style: italic; }
+  .code-line.active { background: linear-gradient(90deg,rgba(255,212,59,0.1),transparent); color: var(--yellow); border-left-color: var(--yellow); font-weight: 600; }
+  #insight { padding: 12px 14px; background: var(--bg); border-top: 1px solid var(--border); font-size: .8rem; line-height: 1.5; color: var(--muted); }
+  #insight .insight-title { color: var(--accent); font-weight: 700; font-size: .72rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  #insight b { color: var(--text); }
+  #controls { background: var(--surface); padding: 8px 24px; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--border); z-index: 2; flex-wrap: wrap; }
+  button { border: none; border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: .8rem; font-weight: 600; transition: all 0.2s; }
+  button:active { transform: scale(0.95); }
+  button:disabled { background: var(--surface2)!important; color: #3a4d6e!important; cursor: not-allowed; }
+  #btn-play { background: linear-gradient(135deg,#00b894,#05c46b); color: #fff; box-shadow: 0 2px 10px rgba(5,196,107,0.25); min-width: 85px; }
+  #btn-step { background: linear-gradient(135deg,#7c5ce7,#a78bfa); color: #fff; }
+  #btn-reset,#btn-new { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  label { font-size: .76rem; color: var(--muted); }
+  input[type=range] { accent-color: var(--accent); width: 85px; }
+  select { background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 5px; padding: 3px 6px; font-size: .76rem; }
+  #stats { display: flex; gap: 8px; margin-left: auto; }
+  .stat { background: var(--surface2); padding: 4px 10px; border-radius: 6px; font-size: .8rem; color: var(--muted); border: 1px solid var(--border); }
+  .stat span { color: var(--yellow); font-weight: 800; font-variant-numeric: tabular-nums; }
+  #pass-info { background: rgba(0,206,201,0.1); border: 1px solid rgba(0,206,201,0.3); padding: 4px 10px; border-radius: 6px; font-size: .82rem; color: #00cec9; font-weight: 700; }
+  @keyframes barPulse { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(1.04)} }
+  @keyframes shimmer { 0%{background-position:-300% center} 100%{background-position:300% center} }
+  @keyframes dropIn { 0%{transform:scaleY(0);opacity:0;transform-origin:bottom} 70%{transform:scaleY(1.03);opacity:1} 100%{transform:scaleY(1);opacity:1} }
+  @keyframes celebrate { 0%,100%{transform:scaleY(1)} 40%{transform:scaleY(1.08)} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
 </style>
 </head>
 <body>
 <header>
-  <h1>🔀 Merge Sort — Sắp xếp trộn (Divide &amp; Conquer)</h1>
-  <span class="badge">Module 2</span>
+  <h1>🔀 Merge Sort</h1>
+  <span class="badge">SORTING</span>
   <div class="complexity">
-    <div class="cx">Best: <span>O(n log n)</span></div>
-    <div class="cx">Avg: <span>O(n log n)</span></div>
-    <div class="cx">Worst: <span>O(n log n)</span></div>
-    <div class="cx">Space: <span>O(n)</span></div>
-    <div class="cx">Stable: <span>✓</span></div>
+    <div class="cx">Best <span>O(n log n)</span></div>
+    <div class="cx">Avg <span>O(n log n)</span></div>
+    <div class="cx">Worst <span>O(n log n)</span></div>
+    <div class="cx">Space <span>O(n)</span></div>
   </div>
 </header>
 <main>
   <div id="viz">
-    <div id="bar-area"><div id="bars-container"></div></div>
-    <canvas id="tree-canvas"></canvas>
-    <div id="legend">
-      <div class="leg"><div class="leg-dot" style="background:#38bdf8"></div>Nửa trái</div>
-      <div class="leg"><div class="leg-dot" style="background:#818cf8"></div>Nửa phải</div>
-      <div class="leg"><div class="leg-dot" style="background:#f43f5e"></div>So sánh trái</div>
-      <div class="leg"><div class="leg-dot" style="background:#f97316"></div>So sánh phải</div>
-      <div class="leg"><div class="leg-dot" style="background:#34d399"></div>Đã trộn</div>
+    <div id="compare-display"><span class="cd-idle">Nhấn Play để bắt đầu trình diễn thuật toán</span></div>
+    <div id="explain-viz">
+      <div class="step-icon info">💡</div>
+      <div id="explain-text">Merge Sort dùng chiến lược Chia để Trị: chia mảng thành 2 nửa, đệ quy sắp xếp từng nửa, rồi trộn 2 nửa đã sắp xếp lại với nhau.</div>
+      <div id="step-counter"></div>
+    </div>
+    <div id="bar-area">
+      <div id="bars-container"></div>
+      <div id="depth-display">Depth: 0</div>
+      <div id="pointers">
+        <div class="ptr ptr-l" id="ptr-l">L</div>
+        <div class="ptr ptr-r" id="ptr-r">R</div>
+      </div>
+    </div>
+    <div id="bottom-bar">
+      <div id="legend">
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(180deg,var(--left-top),var(--left-bot));box-shadow:0 0 6px var(--left-glow)"></div>Nửa trái</div>
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(180deg,var(--right-top),var(--right-bot));box-shadow:0 0 6px var(--right-glow)"></div>Nửa phải</div>
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(180deg,var(--merge-top),var(--merge-bot));box-shadow:0 0 6px var(--merge-glow)"></div>Đang trộn</div>
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(180deg,var(--sorted-top),var(--sorted-bot));box-shadow:0 0 6px var(--sorted-glow)"></div>Đã xếp ✓</div>
+      </div>
+      <div id="progress-wrap"><div id="progress-bar"></div></div>
     </div>
   </div>
   <div id="code-panel">
-    <div class="panel-title">📄 Code — Merge Sort (Divide &amp; Conquer)</div>
+    <div class="panel-title">📝 Merge Sort</div>
     <div id="code"></div>
-    <div id="explain">👋 Nhấn Play để bắt đầu!</div>
+    <div id="insight">
+      <div class="insight-title">💡 Divide & Conquer</div>
+      Merge Sort <b>chia đôi</b> mảng (O(log n) cấp), rồi <b>trộn</b> (O(n) mỗi cấp) → tổng O(n log n). Luôn ổn định và predictable, nhưng cần thêm O(n) bộ nhớ phụ.
+    </div>
   </div>
 </main>
 <div id="controls">
   <button id="btn-play">▶ Play</button>
   <button id="btn-step">⏭ Step</button>
   <button id="btn-reset">↺ Reset</button>
-  <button id="btn-new">🎲 Mảng mới</button>
-  <label>Tốc độ: <input type="range" id="speed" min="1" max="10" value="5"></label>
-  <label>Kích thước: <select id="size-sel">
-    <option value="8" selected>8</option><option value="12">12</option>
-    <option value="16">16</option><option value="24">24</option>
-  </select></label>
-  <div id="phase-info">Phase: —</div>
+  <button id="btn-new">🎲 Mới</button>
+  <label>Speed <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <label>Size <select id="size-sel"><option value="8">8</option><option value="16" selected>16</option><option value="24">24</option></select></label>
+  <div id="pass-info">Merge —</div>
   <div id="stats">
-    <div class="stat">So sánh: <span id="s-cmp">0</span></div>
-    <div class="stat">Ghi: <span id="s-write">0</span></div>
-    <div class="stat">Truy cập: <span id="s-acc">0</span></div>
+    <div class="stat">Cmp <span id="s-cmp">0</span></div>
+    <div class="stat">Merge <span id="s-swap">0</span></div>
   </div>
 </div>
 <script>
-const CODE=[
-  {t:'function mergeSort(arr, l, r) {'},
-  {t:'  // Base case: 1 phần tử đã sorted'},
-  {t:'  if (l >= r) return;'},
-  {t:'  // Chia đôi mảng'},
-  {t:'  const mid = Math.floor((l + r) / 2);'},
-  {t:'  mergeSort(arr, l, mid);    // đệ quy trái'},
-  {t:'  mergeSort(arr, mid+1, r);  // đệ quy phải'},
-  {t:'  // Trộn hai nửa đã sắp xếp'},
-  {t:'  merge(arr, l, mid, r);'},
-  {t:'}'},
-  {t:''},
-  {t:'function merge(arr, l, mid, r) {'},
-  {t:'  const left = arr.slice(l, mid+1);'},
-  {t:'  const right = arr.slice(mid+1, r+1);'},
-  {t:'  let i=0, j=0, k=l;'},
-  {t:'  while (i<left.length && j<right.length) {'},
-  {t:'    if (left[i] <= right[j]) {'},
-  {t:'      arr[k++] = left[i++]; // lấy từ trái'},
-  {t:'    } else {'},
-  {t:'      arr[k++] = right[j++]; // lấy từ phải'},
-  {t:'    }'},
-  {t:'  }'},
-  {t:'  // Copy phần còn lại'},
-  {t:'  while (i<left.length) arr[k++]=left[i++];'},
-  {t:'  while (j<right.length) arr[k++]=right[j++];'},
-  {t:'}'},
+const CODE_LINES = [
+  'function mergeSort(arr, l, r) {',
+  '  if (l >= r) return; // Base case',
+  '  const mid = Math.floor((l+r)/2);',
+  '  mergeSort(arr, l, mid);   // Sắp xếp nửa trái',
+  '  mergeSort(arr, mid+1, r); // Sắp xếp nửa phải',
+  '  merge(arr, l, mid, r);    // Trộn hai nửa',
+  '}',
+  'function merge(arr, l, mid, r) {',
+  '  let i=l, j=mid+1, k=0;',
+  '  const tmp = [];',
+  '  while (i<=mid && j<=r) {',
+  '    if (arr[i] <= arr[j]) tmp.push(arr[i++]);',
+  '    else tmp.push(arr[j++]);',
+  '  }',
+  '  // Sao chép phần còn lại',
+  '  while (i<=mid) tmp.push(arr[i++]);',
+  '  while (j<=r)   tmp.push(arr[j++]);',
+  '  // Ghi lại vào mảng gốc',
+  '  for (let k=0;k<tmp.length;k++) arr[l+k]=tmp[k];',
+  '}',
 ];
+let arr=[], steps=[], stepIdx=0, playing=false, timer=null;
+let cmpCount=0, mergeCount=0;
 
-let arr=[],steps=[],stepIdx=0,playing=false,timer=null,cmp=0,write=0,acc=0;
-let treeNodes=[];
-
-function buildCode(){
-  document.getElementById('code').innerHTML=CODE.map((c,i)=>`<div class="code-line" data-i="${i}">${c.t||' '}</div>`).join('');
+function buildCode() {
+  document.getElementById('code').innerHTML = CODE_LINES.map((l,i) =>
+    `<div class="code-line${l.trim().startsWith('//')?' comment':''}" data-i="${i}">${l}</div>`
+  ).join('');
 }
-function hl(i){document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));if(i>=0)document.querySelector(`[data-i="${i}"]`)?.classList.add('active');}
-function genArray(){const n=+document.getElementById('size-sel').value;arr=Array.from({length:n},()=>Math.floor(Math.random()*85)+15);}
-
-function buildSteps(){
-  steps=[];treeNodes=[];
-  const a=[...arr];
-  steps.push({type:'init',arr:[...a],line:-1});
-  function mergeSortSteps(arr2,l,r,depth){
+function hl(i) {
+  document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));
+  if(i>=0) document.querySelector(`[data-i="${i}"]`)?.classList.add('active');
+}
+function setExplain(icon, iconClass, html) {
+  const ic=document.querySelector('#explain-viz .step-icon');
+  ic.textContent=icon; ic.className='step-icon '+iconClass;
+  document.getElementById('explain-text').innerHTML=html;
+  document.getElementById('step-counter').textContent=`${stepIdx}/${steps.length}`;
+}
+function setInsight(title, html) {
+  document.getElementById('insight').innerHTML=`<div class="insight-title">${title}</div>${html}`;
+}
+function genArray() {
+  const n=+document.getElementById('size-sel').value;
+  arr=Array.from({length:n},()=>Math.floor(Math.random()*80)+15);
+}
+function buildSteps() {
+  steps=[]; const a=[...arr];
+  steps.push({type:'init',arr:[...a]});
+  function mergeSortSteps(a, l, r, depth) {
     if(l>=r){
-      steps.push({type:'base',l,r,depth,arr:[...arr2],line:2});
+      steps.push({type:'base',l,r,depth,arr:[...a]});
       return;
     }
     const mid=Math.floor((l+r)/2);
-    steps.push({type:'divide',l,r,mid,depth,arr:[...arr2],line:4});
-    treeNodes.push({l,r,mid,depth,status:'pending'});
-    mergeSortSteps(arr2,l,mid,depth+1);
-    mergeSortSteps(arr2,mid+1,r,depth+1);
-    steps.push({type:'mergeStart',l,r,mid,depth,arr:[...arr2],line:8});
-    const left=arr2.slice(l,mid+1);
-    const right=arr2.slice(mid+1,r+1);
-    let i=0,j=0,k=l;
-    steps.push({type:'mergeCopy',l,r,mid,depth,arr:[...arr2],line:12,left:[...left],right:[...right]});
-    while(i<left.length&&j<right.length){
-      cmp++;acc+=2;
-      steps.push({type:'mergeCompare',l,r,mid,depth,arr:[...arr2],li:l+i,ri:mid+1+j,left:[...left],right:[...right],i,j,k,line:16});
-      if(left[i]<=right[j]){write++;acc++;arr2[k]=left[i];i++;k++;steps.push({type:'mergePick',from:'left',k:k-1,l,r,mid,depth,arr:[...arr2],line:17});}
-      else{write++;acc++;arr2[k]=right[j];j++;k++;steps.push({type:'mergePick',from:'right',k:k-1,l,r,mid,depth,arr:[...arr2],line:19});}
+    steps.push({type:'divide',l,r,mid,depth,arr:[...a]});
+    mergeSortSteps(a,l,mid,depth+1);
+    mergeSortSteps(a,mid+1,r,depth+1);
+    // merge
+    steps.push({type:'merge-start',l,r,mid,depth,arr:[...a]});
+    let i=l, j=mid+1;
+    const tmp=[];
+    while(i<=mid&&j<=r){
+      cmpCount++;
+      const takeLeft=a[i]<=a[j];
+      steps.push({type:'merge-cmp',l,r,mid,i,j,depth,takeLeft,vl:a[i],vr:a[j],arr:[...a]});
+      if(takeLeft){tmp.push(a[i++]);}else{tmp.push(a[j++]);}
+      mergeCount++;
+      steps.push({type:'merge-pick',l,r,mid,depth,arr:[...a],tmp:[...tmp]});
     }
-    while(i<left.length){write++;acc++;arr2[k]=left[i];i++;k++;steps.push({type:'mergeTail',k:k-1,l,r,arr:[...arr2],line:23});}
-    while(j<right.length){write++;acc++;arr2[k]=right[j];j++;k++;steps.push({type:'mergeTail',k:k-1,l,r,arr:[...arr2],line:24});}
-    steps.push({type:'mergeDone',l,r,depth,arr:[...arr2],line:9});
+    while(i<=mid){tmp.push(a[i++]); mergeCount++;}
+    while(j<=r){tmp.push(a[j++]); mergeCount++;}
+    for(let k=0;k<tmp.length;k++) a[l+k]=tmp[k];
+    steps.push({type:'merge-done',l,r,mid,depth,arr:[...a]});
   }
   mergeSortSteps(a,0,a.length-1,0);
   steps.push({type:'done',arr:[...a]});
-  cmp=0;write=0;acc=0;
 }
-
-function buildBarsDOM(a){
-  const con=document.getElementById('bars-container');
-  con.innerHTML='';
+function buildBarsDOM(a) {
+  const con=document.getElementById('bars-container'); con.innerHTML='';
   const max=Math.max(...a);
   a.forEach((v,i)=>{
-    const wrap=document.createElement('div');wrap.className='bar-wrap';wrap.dataset.idx=i;
-    const bar=document.createElement('div');bar.className='bar';
+    const wrap=document.createElement('div'); wrap.className='bar-wrap';
+    const bar=document.createElement('div'); bar.className='bar';
     bar.style.height=Math.round((v/max)*100)+'%';
-    bar.style.animation='dropIn .4s ease both';
-    bar.style.animationDelay=(i*0.03)+'s';
-    const val=document.createElement('div');val.className='bar-val';val.textContent=v;
-    wrap.appendChild(bar);wrap.appendChild(val);con.appendChild(wrap);
+    bar.style.animation=`dropIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both`;
+    bar.style.animationDelay=(i*25)+'ms';
+    const valIn=document.createElement('div'); valIn.className='bar-val-inside'; valIn.textContent=v;
+    bar.appendChild(valIn);
+    const idx=document.createElement('div'); idx.className='bar-idx'; idx.textContent=i;
+    wrap.appendChild(bar); wrap.appendChild(idx); con.appendChild(wrap);
   });
 }
-
-function renderBars(state){
+function updateBars(s) {
   const wraps=document.querySelectorAll('.bar-wrap');
-  const a=state.arr||arr;
-  const max=Math.max(...a);
-  const {l,r,mid,li,ri}=state;
-
+  const cur=[...wraps].map(w=>+w.querySelector('.bar-idx').textContent);
   wraps.forEach((wrap,idx)=>{
     const bar=wrap.querySelector('.bar');
-    const val=wrap.querySelector('.bar-val');
-    bar.className='bar';
-    bar.style.height=Math.round((a[idx]/max)*100)+'%';
-    val.textContent=a[idx];
-
-    if(state.type==='done') bar.classList.add('sorted');
-    else if(state.mergedRange&&idx>=state.mergedRange[0]&&idx<=state.mergedRange[1]) bar.classList.add('merged');
-    else if(idx===li) bar.classList.add('comparing-l');
-    else if(idx===ri) bar.classList.add('comparing-r');
-    else if(l!==undefined&&r!==undefined&&mid!==undefined){
-      if(idx>=l&&idx<=mid) bar.classList.add('left-half');
-      else if(idx>mid&&idx<=r) bar.classList.add('right-half');
+    bar.classList.remove('left-half','right-half','comparing','placing','sorted');
+    if(!s){return;}
+    const i=idx;
+    if(s.type==='merge-done'||s.type==='base'){
+      if(i>=s.l&&i<=s.r) bar.classList.add('sorted');
+    } else if(s.l!=null){
+      if(i>=s.l&&i<=s.mid) bar.classList.add('left-half');
+      else if(s.mid!=null&&i>s.mid&&i<=s.r) bar.classList.add('right-half');
     }
+    if(s.i!=null&&i===s.i) bar.classList.add('comparing');
+    if(s.j!=null&&i===s.j) bar.classList.add('comparing');
   });
 }
-
-function drawTree(activeL,activeR,status){
-  const canvas=document.getElementById('tree-canvas');
-  const ctx=canvas.getContext('2d');
-  canvas.width=canvas.clientWidth;canvas.height=canvas.clientHeight;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(treeNodes.length===0) return;
-  const W=canvas.width,H=canvas.height;
-  const maxDepth=Math.max(...treeNodes.map(n=>n.depth));
-  const nodeH=Math.min(18,H/(maxDepth+2));
-
-  treeNodes.forEach(n=>{
-    const totalW=arr.length;
-    const x1=W*(n.l/totalW)+4;const x2=W*((n.r+1)/totalW)-4;
-    const cx=(x1+x2)/2;const y=8+n.depth*(H-16)/(maxDepth+1);
-    const isActive=n.l===activeL&&n.r===activeR;
-    let col='#1e3a5f';
-    if(n.status==='done') col='#065f46';
-    else if(isActive) col='#0c4a6e';
-
-    // Animated border for active node
-    ctx.save();
-    ctx.shadowColor=isActive?'#38bdf8':n.status==='done'?'#34d399':'transparent';
-    ctx.shadowBlur=isActive?12:0;
-    ctx.fillStyle=col;ctx.globalAlpha=0.9;
-    const rr=4;const w=x2-x1;const h2=nodeH-2;
-    ctx.beginPath();ctx.roundRect(x1,y,w,h2,rr);ctx.fill();
-    ctx.globalAlpha=1;
-    if(isActive){ctx.strokeStyle='#38bdf8';ctx.lineWidth=1.5;ctx.stroke();}
-    ctx.restore();
-
-    ctx.fillStyle=isActive?'#ffffff':n.status==='done'?'#6ee7b7':'#94a3b8';
-    ctx.font=`${Math.max(8,nodeH*0.55)}px monospace`;
-    ctx.textAlign='center';ctx.fillText(`[${n.l}..${n.r}]`,cx,y+nodeH*0.72);
+function updateBarsFromArr(a, mergedL, mergedR) {
+  const con=document.getElementById('bars-container');
+  const wraps=[...con.querySelectorAll('.bar-wrap')];
+  const max=Math.max(...arr);
+  wraps.forEach((wrap,i)=>{
+    const bar=wrap.querySelector('.bar');
+    const valIn=wrap.querySelector('.bar-val-inside');
+    const newH=Math.round((a[i]/max)*100)+'%';
+    bar.style.height=newH;
+    valIn.textContent=a[i];
+    bar.classList.remove('left-half','right-half','comparing','placing','sorted');
+    if(mergedL!=null&&i>=mergedL&&i<=mergedR) bar.classList.add('sorted');
   });
 }
-
-function applyStep(s){
-  if(!s)return;
-  hl(s.line>=0?s.line:-1);
-  const phaseEl=document.getElementById('phase-info');
-
-  if(s.type==='init'){
-    buildBarsDOM(s.arr);drawTree(-1,-1);
-    document.getElementById('explain').textContent='Merge Sort: chia đôi liên tục đến 1 phần tử, rồi trộn lại theo thứ tự.';
-  }
-  else if(s.type==='divide'){
-    phaseEl.textContent='Phase: DIVIDE';
-    const nd=treeNodes.find(n=>n.l===s.l&&n.r===s.r);
-    if(nd) nd.status='active';
-    renderBars(s);drawTree(s.l,s.r);
-    document.getElementById('explain').innerHTML=`✂️ <b>DIVIDE</b>: [${s.l}..${s.r}] → [${s.l}..${s.mid}] + [${s.mid+1}..${s.r}]`;
-  }
-  else if(s.type==='base'){
-    document.getElementById('explain').innerHTML=`📌 Base case [${s.l}..${s.r}] — 1 phần tử → đã sắp xếp!`;
-    renderBars({...s,l:-1,r:-1});
-  }
-  else if(s.type==='mergeStart'){
-    phaseEl.textContent='Phase: MERGE';
-    document.getElementById('explain').innerHTML=`🔀 <b>MERGE</b>: Trộn [${s.l}..${s.mid}] và [${s.mid+1}..${s.r}]`;
-    renderBars(s);drawTree(s.l,s.r);
-  }
-  else if(s.type==='mergeCopy'){
-    document.getElementById('explain').innerHTML=`📋 left=[${s.left}], right=[${s.right}]. Bắt đầu trộn...`;
-    renderBars(s);
-  }
-  else if(s.type==='mergeCompare'){
-    cmp++;document.getElementById('s-cmp').textContent=cmp;
-    acc+=2;document.getElementById('s-acc').textContent=acc;
-    document.getElementById('explain').innerHTML=`🔴 So sánh left[${s.i}]=${s.left[s.i]} vs right[${s.j}]=${s.right[s.j]}`;
-    renderBars({...s});
-  }
-  else if(s.type==='mergePick'){
-    write++;document.getElementById('s-write').textContent=write;
-    acc++;document.getElementById('s-acc').textContent=acc;
-    document.getElementById('explain').innerHTML=`✅ Lấy từ <b>${s.from==='left'?'trái 🔵':'phải 🟣'}</b> → vị trí ${s.k}`;
-    renderBars({...s,mergedRange:[s.l,s.k]});
-    // flash the merged bar
-    const wraps=document.querySelectorAll('.bar-wrap');
-    const bar=wraps[s.k]?.querySelector('.bar');
-    if(bar){bar.style.animation='none';bar.offsetHeight;bar.style.animation='mergeIn .25s ease';}
-  }
-  else if(s.type==='mergeTail'){
-    write++;document.getElementById('s-write').textContent=write;
-    acc++;document.getElementById('s-acc').textContent=acc;
-    document.getElementById('explain').innerHTML=`📋 Copy còn lại → vị trí ${s.k}`;
-    renderBars({...s,mergedRange:[s.l,s.k]});
-  }
-  else if(s.type==='mergeDone'){
-    const nd=treeNodes.find(n=>n.l===s.l&&n.r===s.r);
-    if(nd) nd.status='done';
-    renderBars({...s,mergedRange:[s.l,s.r]});
-    drawTree(-1,-1);
-    document.getElementById('explain').innerHTML=`✅ Trộn xong [${s.l}..${s.r}]. Đã sắp xếp!`;
-  }
-  else if(s.type==='done'){
-    buildBarsDOM(s.arr);
-    setTimeout(()=>document.querySelectorAll('.bar').forEach(b=>b.classList.add('sorted')),50);
-    document.getElementById('explain').textContent='🎉 Merge Sort hoàn tất! O(n log n) — luôn ổn định.';
-    phaseEl.textContent='Phase: DONE ✓';
-    stopPlay();
+function showPointers(l, r) {
+  const wraps=[...document.querySelectorAll('.bar-wrap')];
+  const pl=document.getElementById('ptr-l'), pr=document.getElementById('ptr-r');
+  if(l>=0&&wraps[l]){pl.style.opacity='1';pl.style.left=(wraps[l].offsetLeft+wraps[l].offsetWidth/2-8)+'px';}else pl.style.opacity='0';
+  if(r>=0&&wraps[r]){pr.style.opacity='1';pr.style.left=(wraps[r].offsetLeft+wraps[r].offsetWidth/2-8)+'px';}else pr.style.opacity='0';
+}
+function showCompare(type, vl, vr, takeLeft) {
+  const d=document.getElementById('compare-display');
+  if(type==='idle'){d.innerHTML=`<span class="cd-idle">Nhấn Play để bắt đầu trình diễn thuật toán</span>`;return;}
+  if(type==='done'){d.innerHTML=`<span style="color:var(--sorted-top);font-size:1.2rem;font-weight:700">🎉 Sắp xếp hoàn tất — ${cmpCount} so sánh, ${mergeCount} lần trộn</span>`;return;}
+  if(type==='divide'){d.innerHTML=`<span style="color:var(--accent);font-size:1rem">✂️ Chia mảng thành 2 nửa</span>`;return;}
+  if(type==='merge-start'){d.innerHTML=`<span style="color:#00cec9;font-size:1rem">🔀 Bắt đầu trộn 2 nửa đã xếp</span>`;return;}
+  d.innerHTML=`
+    <span class="cd-box left">${vl}</span>
+    <span class="cd-op">${takeLeft?'≤':'>'}</span>
+    <span class="cd-box right">${vr}</span>
+    <span class="cd-tag ${takeLeft?'take-left':'take-right'}">${takeLeft?'← Lấy trái':'Lấy phải →'}</span>
+  `;
+}
+let lastMergedArr=null;
+function applyStep(s) {
+  if(!s) return;
+  document.getElementById('depth-display').textContent=s.depth!=null?`Depth: ${s.depth}`:'';
+  switch(s.type) {
+    case 'init':
+      cmpCount=0;mergeCount=0;lastMergedArr=null;
+      buildBarsDOM(s.arr); showCompare('idle'); hl(-1); showPointers(-1,-1);
+      setExplain('💡','info','Merge Sort: Chia mảng thành 2 nửa, đệ quy sắp xếp từng nửa, rồi trộn lại. Chiến lược Divide & Conquer!');
+      setInsight('💡 Divide & Conquer','Merge Sort <b>chia đôi</b> mảng (O(log n) cấp), rồi <b>trộn</b> (O(n) mỗi cấp) → tổng O(n log n). Luôn ổn định nhưng cần thêm O(n) bộ nhớ phụ.');
+      break;
+    case 'divide':
+      hl(2); showCompare('divide');
+      updateBars(s); showPointers(s.l,s.r);
+      document.getElementById('pass-info').textContent=`[${s.l}..${s.r}]`;
+      setExplain('✂️','divide',`Chia mảng <b>[${s.l}..${s.r}]</b> tại mid=<b>${s.mid}</b>. Nửa trái: <b>[${s.l}..${s.mid}]</b> (xanh). Nửa phải: <b>[${s.mid+1}..${s.r}]</b> (hồng). Đệ quy depth=${s.depth+1}.`);
+      setInsight(`✂️ Chia đôi [${s.l}..${s.r}]`,`Độ sâu đệ quy: <b>${s.depth}</b>. Khi mảng còn 1 phần tử → base case, không cần chia nữa. log₂(${arr.length}) ≈ ${Math.ceil(Math.log2(arr.length))} cấp chia.`);
+      break;
+    case 'base':
+      hl(1); updateBars(s); showPointers(s.l,s.r);
+      setExplain('📌','sorted',`Base case: <b>[${s.l}..${s.r}]</b> chỉ có 1 phần tử = đã sắp xếp. Quay lại để trộn.`);
+      break;
+    case 'merge-start':
+      hl(7); showCompare('merge-start');
+      updateBars(s); showPointers(s.l,s.r);
+      document.getElementById('pass-info').textContent=`Merge [${s.l}..${s.r}]`;
+      setExplain('🔀','merge',`Trộn 2 nửa <b>[${s.l}..${s.mid}]</b> và <b>[${s.mid+1}..${s.r}]</b>. Cả hai đều đã được sắp xếp. So sánh từng cặp đầu danh sách.`);
+      setInsight(`🔀 Merge [${s.l}..${s.r}]`,`Hai nửa đã sắp xếp sẽ được trộn thành một mảng lớn hơn cũng được sắp xếp. Kỹ thuật hai con trỏ (two-pointer) — O(n) thời gian.`);
+      break;
+    case 'merge-cmp':
+      cmpCount++; document.getElementById('s-cmp').textContent=cmpCount;
+      hl(11); updateBars(s); showPointers(s.i,s.j);
+      showCompare('cmp',s.vl,s.vr,s.takeLeft);
+      setExplain('🔍','compare',`So sánh <b>arr[${s.i}]=${s.vl}</b> (trái) với <b>arr[${s.j}]=${s.vr}</b> (phải). ${s.takeLeft?`<b>${s.vl} ≤ ${s.vr}</b> → lấy ${s.vl} từ nửa trái.`:`<b>${s.vl} > ${s.vr}</b> → lấy ${s.vr} từ nửa phải.`}`);
+      break;
+    case 'merge-pick':
+      mergeCount++; document.getElementById('s-swap').textContent=mergeCount;
+      hl(18);
+      break;
+    case 'merge-done':
+      lastMergedArr=s.arr;
+      updateBarsFromArr(s.arr, s.l, s.r);
+      showPointers(-1,-1);
+      document.getElementById('progress-bar').style.width=((s.r-s.l+1)/arr.length*100*(s.depth===0?1:0.5))+'%';
+      setExplain('✅','sorted',`Trộn xong <b>[${s.l}..${s.r}]</b>! ${s.r-s.l+1} phần tử đã được sắp xếp đúng thứ tự. Quay lại cấp trên.`);
+      setInsight(`✅ Merge [${s.l}..${s.r}] hoàn tất`,`${s.r-s.l+1} phần tử đã được trộn thành công. Phân đoạn này không cần xử lý nữa. Tiếp tục trộn các cấp cao hơn.`);
+      if(s.l===0&&s.r===arr.length-1) document.getElementById('progress-bar').style.width='95%';
+      break;
+    case 'done':
+      updateBarsFromArr(s.arr,0,arr.length-1);
+      showPointers(-1,-1); showCompare('done'); hl(-1);
+      document.getElementById('progress-bar').style.width='100%';
+      stopPlay();
+      setExplain('🎉','sorted',`Hoàn tất! Tổng cộng <b>${cmpCount}</b> so sánh và <b>${mergeCount}</b> lần trộn phần tử.`);
+      setInsight('📈 Phân tích',`Với ${arr.length} phần tử: <b>${cmpCount}</b> so sánh (lý thuyết ≈ n·log₂n = ${Math.round(arr.length*Math.log2(arr.length))}). Merge Sort <b>ổn định</b>, predictable O(n log n) — được dùng trong Python sorted(), Java Arrays.sort(Object[]).`);
+      document.querySelectorAll('.bar').forEach((b,i)=>{b.style.animation=`celebrate 0.5s ease ${i*30}ms`});
+      break;
   }
 }
-
-function getDelay(){return Math.round(1100-document.getElementById('speed').value*100);}
+function getDelay(){return Math.round(1200-document.getElementById('speed').value*110);}
 function tick(){if(stepIdx>=steps.length){stopPlay();return;}applyStep(steps[stepIdx++]);if(playing)timer=setTimeout(tick,getDelay());}
 function startPlay(){if(stepIdx>=steps.length)reset();playing=true;document.getElementById('btn-play').textContent='⏸ Pause';tick();}
 function stopPlay(){playing=false;clearTimeout(timer);document.getElementById('btn-play').textContent='▶ Play';}
 function reset(){
-  stopPlay();stepIdx=0;cmp=0;write=0;acc=0;buildSteps();
-  ['s-cmp','s-write','s-acc'].forEach(id=>document.getElementById(id).textContent=0);
-  document.getElementById('phase-info').textContent='Phase: —';
-  hl(-1);buildBarsDOM(arr);drawTree(-1,-1);
-  document.getElementById('explain').textContent='👋 Nhấn Play để bắt đầu!';
+  stopPlay();stepIdx=0;cmpCount=0;mergeCount=0;lastMergedArr=null;
+  buildSteps();
+  document.getElementById('s-cmp').textContent='0';document.getElementById('s-swap').textContent='0';
+  document.getElementById('pass-info').textContent='Merge —';
+  document.getElementById('progress-bar').style.width='0%';
+  document.getElementById('depth-display').textContent='';
+  hl(-1);buildBarsDOM(arr);showCompare('idle');showPointers(-1,-1);
+  setExplain('💡','info','Merge Sort: Chia mảng thành 2 nửa, đệ quy sắp xếp từng nửa, rồi trộn lại. Chiến lược Divide & Conquer!');
+  setInsight('💡 Divide & Conquer','Merge Sort <b>chia đôi</b> mảng (O(log n) cấp), rồi <b>trộn</b> (O(n) mỗi cấp) → tổng O(n log n). Luôn ổn định nhưng cần thêm O(n) bộ nhớ phụ.');
 }
-
 document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
 document.getElementById('btn-step').onclick=()=>{stopPlay();if(stepIdx<steps.length)applyStep(steps[stepIdx++]);};
 document.getElementById('btn-reset').onclick=reset;
 document.getElementById('btn-new').onclick=()=>{genArray();reset();};
 document.getElementById('size-sel').onchange=()=>{genArray();reset();};
-window.addEventListener('resize',()=>drawTree(-1,-1));
-
 buildCode();genArray();reset();
 </script>
 </body>

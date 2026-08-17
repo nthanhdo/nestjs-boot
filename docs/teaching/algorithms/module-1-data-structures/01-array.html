@@ -3,498 +3,436 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>01 — Mảng (Array) | Data Structures</title>
+<title>Mảng (Array) — Cấu trúc dữ liệu</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #0d0d1a; --panel-bg: #111128; --code-bg: #080816;
-    --accent: #00d4ff; --accent2: #ff4d6d; --accent3: #ffd60a;
-    --accent4: #00ff88;
-    --text: #e8e8f0; --text-dim: #6b6d8a; --border: #1e1e3a;
-    --node: #0e2040; --node-border: #1d5080; --node-active: #00d4ff;
-    --node-found: #00ff88; --node-delete: #ff4d6d; --node-insert: #ffd60a;
-    --glow-blue: rgba(0,212,255,0.5); --glow-green: rgba(0,255,136,0.5);
-    --glow-red: rgba(255,77,109,0.5); --glow-yellow: rgba(255,214,10,0.5);
+    --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+    --text: #eef1f8; --muted: #8899bb;
+    --blue-top: #5b8def; --blue-bot: #2c5aa0;
+    --pink-top: #ff5e7a; --pink-bot: #c0143c; --pink-glow: rgba(255,94,122,0.6);
+    --orange-top: #ffb347; --orange-bot: #e67e22; --orange-glow: rgba(255,179,71,0.6);
+    --green-top: #2ecc71; --green-bot: #1a9c54; --green-glow: rgba(46,204,113,0.4);
+    --red-top: #e74c3c; --red-bot: #c0392b; --red-glow: rgba(231,76,60,0.5);
+    --accent: #a78bfa; --yellow: #ffd43b;
   }
-  body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif;
-    display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-  body::before { content:''; position:fixed; inset:0; pointer-events:none;
-    background: radial-gradient(ellipse at 20% 20%, rgba(0,212,255,0.04) 0%, transparent 60%),
-                radial-gradient(ellipse at 80% 80%, rgba(139,92,246,0.04) 0%, transparent 60%); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 25% 15%, rgba(91,141,239,0.07) 0%, transparent 55%), radial-gradient(ellipse at 75% 85%, rgba(167,139,250,0.05) 0%, transparent 55%); pointer-events:none; }
 
-  header { background: linear-gradient(90deg, #111128, #0d0d1a);
-    border-bottom: 1px solid var(--border); padding: 10px 20px;
-    display: flex; align-items: center; gap: 16px; flex-shrink: 0;
-    box-shadow: 0 2px 20px rgba(0,0,0,0.5); }
-  header h1 { font-size: 1.1rem; color: var(--accent);
-    text-shadow: 0 0 20px rgba(0,212,255,0.4); }
-  .badge { background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-    backdrop-filter: blur(10px); padding: 2px 10px; border-radius: 20px;
-    font-size: 0.75rem; color: var(--text-dim); }
+  header { background: var(--surface); padding: 10px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); z-index: 2; }
+  header h1 { font-size: 1.15rem; font-weight: 700; background: linear-gradient(135deg,#a78bfa,#7c5ce7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .badge { background: linear-gradient(135deg,#2c5aa0,#5b8def); color: #fff; padding: 2px 10px; border-radius: 12px; font-size: .68rem; font-weight: 700; }
+  .complexity { display: flex; gap: 6px; margin-left: auto; }
+  .cx { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 9px; font-size: .72rem; color: var(--muted); }
+  .cx span { color: var(--yellow); font-weight: 700; }
 
-  .main { display: flex; flex: 1; overflow: hidden; }
-  .viz { flex: 0 0 60%; display: flex; flex-direction: column; padding: 20px; gap: 16px; overflow: hidden; }
+  main { flex: 1; display: flex; overflow: hidden; z-index: 1; min-height: 0; }
 
-  .ops-bar { display: flex; gap: 8px; flex-wrap: wrap; }
-  .op-btn { background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text-dim);
-    padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 0.85rem;
-    transition: all 0.25s cubic-bezier(0.4,0,0.2,1); backdrop-filter: blur(4px); }
-  .op-btn:hover { border-color: var(--accent); color: var(--accent);
-    box-shadow: 0 0 14px rgba(0,212,255,0.2); background: rgba(0,212,255,0.06); }
-  .op-btn.active { background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(0,212,255,0.08));
-    color: var(--accent); border-color: var(--accent);
-    box-shadow: 0 0 20px rgba(0,212,255,0.3); font-weight: 600; }
+  #viz { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
-  .input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .input-row input { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text);
-    padding: 6px 10px; border-radius: 8px; width: 70px; font-size: 0.85rem;
-    transition: border-color 0.2s; }
-  .input-row input:focus { outline: none; border-color: var(--accent);
-    box-shadow: 0 0 12px rgba(0,212,255,0.2); }
-  .input-row label { font-size: 0.8rem; color: var(--text-dim); }
-  .run-btn { background: linear-gradient(135deg, var(--accent), rgba(0,180,220,0.8));
-    color: #000; border: none; padding: 6px 18px; border-radius: 8px;
-    cursor: pointer; font-weight: 700; font-size: 0.85rem;
-    transition: all 0.2s; box-shadow: 0 0 16px rgba(0,212,255,0.3); }
-  .run-btn:hover { transform: translateY(-1px); box-shadow: 0 0 24px rgba(0,212,255,0.5); }
+  /* STATUS DISPLAY */
+  #status-display { text-align: center; padding: 10px 20px; min-height: 56px; display: flex; align-items: center; justify-content: center; gap: 12px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .sd-idle { color: var(--muted); font-size: .95rem; }
+  .sd-box { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; height: 44px; border-radius: 8px; font-size: 1.1rem; font-weight: 800; color: #fff; padding: 0 8px; }
+  .sd-box.insert { background: linear-gradient(135deg,var(--orange-top),var(--orange-bot)); box-shadow: 0 0 16px var(--orange-glow); }
+  .sd-box.search { background: linear-gradient(135deg,var(--pink-top),var(--pink-bot)); box-shadow: 0 0 16px var(--pink-glow); }
+  .sd-box.found { background: linear-gradient(135deg,var(--green-top),var(--green-bot)); box-shadow: 0 0 16px var(--green-glow); }
+  .sd-box.delete { background: linear-gradient(135deg,var(--red-top),var(--red-bot)); box-shadow: 0 0 16px var(--red-glow); }
+  .sd-label { font-size: .85rem; color: var(--muted); }
+  .sd-arrow { font-size: 1.3rem; color: var(--yellow); }
 
-  .canvas-area { flex: 1; background: rgba(255,255,255,0.02);
-    border: 1px solid var(--border); backdrop-filter: blur(10px);
-    border-radius: 16px; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; padding: 24px; gap: 24px; overflow: hidden; position: relative; }
-  .canvas-area::before { content:''; position:absolute; inset:0; border-radius:16px;
-    background: linear-gradient(135deg, rgba(0,212,255,0.03) 0%, transparent 50%, rgba(139,92,246,0.03) 100%);
-    pointer-events:none; }
+  /* EXPLAIN BAR */
+  #explain-bar { padding: 10px 24px; min-height: 52px; background: linear-gradient(135deg,rgba(21,29,50,0.95),rgba(28,39,68,0.9)); border-bottom: 1px solid var(--border); font-size: .88rem; line-height: 1.55; color: var(--text); display: flex; align-items: center; gap: 12px; }
+  .step-icon { flex-shrink: 0; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: all 0.3s; }
+  .step-icon.info { background: rgba(91,141,239,0.15); border: 1px solid rgba(91,141,239,0.3); }
+  .step-icon.insert { background: rgba(255,179,71,0.15); border: 1px solid rgba(255,179,71,0.3); }
+  .step-icon.search { background: rgba(255,94,122,0.15); border: 1px solid rgba(255,94,122,0.3); }
+  .step-icon.found { background: rgba(46,204,113,0.15); border: 1px solid rgba(46,204,113,0.3); }
+  .step-icon.delete { background: rgba(231,76,60,0.15); border: 1px solid rgba(231,76,60,0.3); }
+  .step-icon.shift { background: rgba(167,139,250,0.15); border: 1px solid rgba(167,139,250,0.3); }
+  #explain-text { flex: 1; }
+  #explain-text b { color: var(--yellow); }
+  #explain-text code { background: var(--surface2); padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: .8rem; color: var(--accent); }
+  #step-counter { font-size: .72rem; color: var(--muted); white-space: nowrap; }
 
-  .complexity-row { display: flex; gap: 12px; flex-wrap: wrap; }
-  .complexity-badge { background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-    backdrop-filter: blur(8px); border-radius: 10px; padding: 8px 16px;
-    text-align: center; min-width: 110px; transition: all 0.3s; }
-  .complexity-badge .label { font-size: 0.68rem; color: var(--text-dim); }
-  .complexity-badge .value { font-size: 1.05rem; font-weight: 700; margin-top: 3px; }
-  .complexity-badge.green .value { color: var(--accent4); }
-  .complexity-badge.yellow .value { color: var(--accent3); }
-  .complexity-badge.red .value { color: var(--accent2); }
-  .complexity-badge.active-badge { border-color: var(--accent);
-    box-shadow: 0 0 20px rgba(0,212,255,0.25);
-    background: rgba(0,212,255,0.06); }
-  @keyframes badgePop { 0%{transform:scale(1)} 50%{transform:scale(1.08)} 100%{transform:scale(1)} }
-  .complexity-badge.active-badge { animation: badgePop 0.4s ease; }
+  /* ARRAY VISUALIZATION */
+  #array-area { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 20px; padding: 20px 32px; position: relative; overflow: hidden; }
+  #array-container { display: flex; align-items: stretch; gap: 4px; position: relative; }
 
-  /* Array visualization */
-  .array-wrapper { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
-  .pointer-row { display: flex; gap: 4px; justify-content: center; height: 22px; }
-  .pointer { width: 60px; display: flex; justify-content: center;
-    font-size: 0.7rem; color: var(--accent); font-weight: 800;
-    transition: all 0.4s cubic-bezier(0.4,0,0.2,1);
-    text-shadow: 0 0 10px var(--accent); }
+  .cell-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; }
+  .cell {
+    width: 60px; height: 60px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; font-weight: 800; color: #fff;
+    background: linear-gradient(135deg,var(--blue-top),var(--blue-bot));
+    border: 2px solid rgba(255,255,255,0.1);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12);
+    transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+    position: relative; overflow: hidden;
+  }
+  .cell::before { content:''; position:absolute; top:0; left:0; width:40%; height:100%; background: linear-gradient(90deg,rgba(255,255,255,0.1),transparent); border-radius:6px 0 0 6px; }
+  .cell-idx { font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; transition: all 0.3s; }
+  .cell-empty { width: 60px; height: 60px; border-radius: 8px; border: 2px dashed var(--border); opacity: 0.4; }
 
-  .array-container { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;
-    min-height: 90px; align-items: flex-end; perspective: 600px; }
-  .cell { display: flex; flex-direction: column; align-items: center; gap: 5px;
-    transition: transform 0.45s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s; }
-  .cell-box { width: 56px; height: 56px;
-    background: linear-gradient(145deg, #0e2040, #081530);
-    border: 2px solid var(--node-border); border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.05rem; font-weight: 700;
-    transition: all 0.35s cubic-bezier(0.4,0,0.2,1); position: relative;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
-  .cell-index { font-size: 0.65rem; color: var(--text-dim); font-family: monospace; }
+  /* Cell states */
+  .cell.active { background: linear-gradient(135deg,var(--pink-top),var(--pink-bot)); box-shadow: 0 0 22px var(--pink-glow), inset 0 1px 0 rgba(255,255,255,0.2); animation: cellPulse 0.5s ease-in-out infinite; }
+  .cell-wrap:has(.cell.active) .cell-idx { color: var(--pink-top); font-weight: 700; }
+  .cell.inserting { background: linear-gradient(135deg,var(--orange-top),var(--orange-bot)); box-shadow: 0 0 22px var(--orange-glow), inset 0 1px 0 rgba(255,255,255,0.2); animation: bounceIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+  .cell-wrap:has(.cell.inserting) .cell-idx { color: var(--orange-top); font-weight: 700; }
+  .cell.found { background: linear-gradient(135deg,var(--green-top),var(--green-bot)); box-shadow: 0 0 22px var(--green-glow), inset 0 1px 0 rgba(255,255,255,0.2); animation: foundPulse 0.6s ease; }
+  .cell-wrap:has(.cell.found) .cell-idx { color: var(--green-top); font-weight: 700; }
+  .cell.deleting { background: linear-gradient(135deg,var(--red-top),var(--red-bot)); box-shadow: 0 0 22px var(--red-glow); animation: deleteOut 0.5s ease forwards; }
+  .cell.shifting { animation: shiftLeft 0.35s ease; }
 
-  .cell.active .cell-box {
-    background: linear-gradient(145deg, rgba(0,212,255,0.25), rgba(0,180,220,0.1));
-    border-color: var(--node-active); color: var(--accent);
-    box-shadow: 0 0 24px var(--glow-blue), 0 4px 12px rgba(0,0,0,0.3);
-    animation: pulse 0.6s ease infinite alternate; }
-  .cell.found .cell-box {
-    background: linear-gradient(145deg, rgba(0,255,136,0.2), rgba(0,200,100,0.08));
-    border-color: var(--node-found); color: var(--node-found);
-    box-shadow: 0 0 24px var(--glow-green); }
-  .cell.deleting .cell-box {
-    background: linear-gradient(145deg, rgba(255,77,109,0.2), rgba(200,40,60,0.08));
-    border-color: var(--node-delete); color: var(--node-delete);
-    box-shadow: 0 0 24px var(--glow-red); animation: shake 0.4s ease; }
-  .cell.inserting .cell-box {
-    background: linear-gradient(145deg, rgba(255,214,10,0.2), rgba(200,160,0,0.08));
-    border-color: var(--node-insert); color: var(--node-insert);
-    box-shadow: 0 0 24px var(--glow-yellow); }
+  /* Pointer */
+  .ptr-arrow { position: absolute; top: -26px; left: 50%; transform: translateX(-50%); font-size: .7rem; font-weight: 700; color: var(--pink-top); white-space: nowrap; transition: all 0.3s; }
+  .ptr-arrow::after { content:'▼'; display: block; text-align: center; line-height: 1; }
 
-  @keyframes pulse { 0%{transform:scale(1)} 100%{transform:scale(1.12)} }
-  @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
-  @keyframes glow { 0%,100%{box-shadow:0 0 12px var(--glow-blue)} 50%{box-shadow:0 0 28px var(--glow-blue), 0 0 50px var(--glow-blue)} }
-  @keyframes fadeInDrop {
-    from { opacity:0; transform:translateY(-50px) scale(0.6); }
-    to   { opacity:1; transform:translateY(0) scale(1); } }
-  @keyframes fadeOutUp {
-    from { opacity:1; transform:translateY(0) scale(1); }
-    to   { opacity:0; transform:translateY(-50px) scale(0.6); } }
-  @keyframes bounce {
-    0% { transform:translateY(-40px) scale(0.7); opacity:0; }
-    60% { transform:translateY(8px) scale(1.05); opacity:1; }
-    80% { transform:translateY(-4px) scale(0.98); }
-    100% { transform:translateY(0) scale(1); opacity:1; } }
-  .cell.entering { animation: bounce 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards; }
-  .cell.exiting  { animation: fadeOutUp 0.35s ease forwards; pointer-events:none; }
+  /* Complexity info row */
+  #complexity-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .cx-badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; font-size: .78rem; color: var(--muted); }
+  .cx-badge b { color: var(--yellow); }
 
-  /* Slide animations for shifting */
-  .cell.shift-right { animation: slideRight 0.4s ease forwards; }
-  .cell.shift-left  { animation: slideLeft 0.4s ease forwards; }
-  @keyframes slideRight { 0%{transform:translateX(0)} 40%{transform:translateX(62px)} 100%{transform:translateX(0)} }
-  @keyframes slideLeft  { 0%{transform:translateX(0)} 40%{transform:translateX(-62px)} 100%{transform:translateX(0)} }
+  /* RIGHT CODE PANEL */
+  #code-panel { width: 340px; min-width: 300px; background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+  .panel-title { padding: 10px 14px; background: var(--surface2); font-size: .78rem; font-weight: 600; color: var(--accent); border-bottom: 1px solid var(--border); }
+  #code { flex: 1; overflow-y: auto; padding: 10px 0; font-family: 'SF Mono','Fira Code',Consolas,monospace; font-size: .82rem; line-height: 2; }
+  .code-line { padding: 0 14px; color: #5a6d8e; white-space: pre; border-left: 3px solid transparent; transition: all 0.2s; }
+  .code-line.comment { color: #3a4d6e; font-style: italic; }
+  .code-line.active { background: linear-gradient(90deg,rgba(255,212,59,0.1),transparent); color: var(--yellow); border-left-color: var(--yellow); font-weight: 600; }
+  #insight { padding: 12px 14px; background: var(--bg); border-top: 1px solid var(--border); font-size: .8rem; line-height: 1.5; color: var(--muted); }
+  #insight .insight-title { color: var(--accent); font-weight: 700; font-size: .72rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  #insight b { color: var(--text); }
 
-  .status-msg { background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-    backdrop-filter: blur(8px); border-radius: 10px;
-    padding: 9px 18px; font-size: 0.85rem; color: var(--text-dim);
-    text-align: center; min-width: 320px; transition: all 0.3s; }
-  .status-msg.info { border-color: var(--accent); color: var(--accent);
-    background: rgba(0,212,255,0.06); box-shadow: 0 0 16px rgba(0,212,255,0.15); }
-  .status-msg.success { border-color: var(--node-found); color: var(--node-found);
-    background: rgba(0,255,136,0.06); box-shadow: 0 0 16px rgba(0,255,136,0.15); }
-  .status-msg.error { border-color: var(--node-delete); color: var(--node-delete);
-    background: rgba(255,77,109,0.06); }
+  /* CONTROLS */
+  #controls { background: var(--surface); padding: 8px 24px; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); z-index: 2; flex-wrap: wrap; }
+  button { border: none; border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: .8rem; font-weight: 600; transition: all 0.2s; }
+  button:active { transform: scale(0.95); }
+  .btn-insert { background: linear-gradient(135deg,var(--orange-top),var(--orange-bot)); color: #fff; box-shadow: 0 2px 8px var(--orange-glow); }
+  .btn-delete { background: linear-gradient(135deg,var(--red-top),var(--red-bot)); color: #fff; box-shadow: 0 2px 8px var(--red-glow); }
+  .btn-search { background: linear-gradient(135deg,var(--pink-top),var(--pink-bot)); color: #fff; box-shadow: 0 2px 8px var(--pink-glow); }
+  .btn-access { background: linear-gradient(135deg,var(--green-top),var(--green-bot)); color: #fff; box-shadow: 0 2px 8px var(--green-glow); }
+  .btn-traverse { background: linear-gradient(135deg,#7c5ce7,#a78bfa); color: #fff; }
+  .btn-reset { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  input[type=number] { background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-size: .8rem; width: 64px; }
+  label { font-size: .76rem; color: var(--muted); }
 
-  /* Code panel */
-  .code-panel { flex: 0 0 40%; background: var(--code-bg); border-left: 1px solid var(--border);
-    display: flex; flex-direction: column; overflow: hidden; }
-  .code-panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border);
-    font-size: 0.8rem; color: var(--text-dim); display: flex; gap: 8px; align-items: center;
-    background: linear-gradient(90deg, rgba(0,212,255,0.04), transparent); }
-  .code-panel-header span { color: var(--accent); font-weight: 600; font-size: 0.85rem; }
-  .code-body { flex: 1; overflow-y: auto; padding: 12px 0;
-    font-family: 'Courier New', monospace; font-size: 0.82rem; }
-  .code-line { display: flex; padding: 3px 0; transition: background 0.25s, border-left 0.25s; }
-  .code-line.highlight { background: rgba(0,212,255,0.1); border-left: 3px solid var(--accent);
-    box-shadow: inset 0 0 20px rgba(0,212,255,0.05); }
-  .ln { width: 36px; text-align: right; padding-right: 12px; color: #333; flex-shrink: 0; user-select: none; }
-  .code-text { color: #abb2bf; white-space: pre; }
-  .kw { color: #c678dd; } .fn { color: #61afef; }
-  .cm { color: #4a4f60; font-style: italic; } .num { color: #d19a66; } .str { color: #98c379; }
-
-  /* Controls */
-  .controls { background: linear-gradient(90deg, var(--panel-bg), var(--bg));
-    border-top: 1px solid var(--border); padding: 10px 20px;
-    display: flex; align-items: center; gap: 16px; flex-shrink: 0; flex-wrap: wrap; }
-  .ctrl-btn { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text);
-    width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1rem; transition: all 0.2s; }
-  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent);
-    box-shadow: 0 0 12px rgba(0,212,255,0.2); }
-  .ctrl-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-  .speed-group { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-dim); }
-  input[type=range] { -webkit-appearance: none; width: 100px; height: 4px;
-    background: linear-gradient(90deg, var(--accent), var(--border));
-    border-radius: 2px; outline: none; cursor: pointer; }
-  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px;
-    background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--glow-blue); }
-  .step-info { font-size: 0.78rem; color: var(--text-dim); }
+  @keyframes cellPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+  @keyframes bounceIn { 0%{transform:scale(0);opacity:0} 70%{transform:scale(1.08);opacity:1} 100%{transform:scale(1)} }
+  @keyframes foundPulse { 0%,100%{transform:scale(1)} 30%{transform:scale(1.15)} 60%{transform:scale(0.95)} }
+  @keyframes deleteOut { 0%{transform:scale(1);opacity:1} 100%{transform:scale(0);opacity:0} }
+  @keyframes shiftLeft { 0%{transform:translateX(64px)} 100%{transform:translateX(0)} }
+  @keyframes ripple { 0%{box-shadow:0 0 0 0 rgba(46,204,113,0.6)} 100%{box-shadow:0 0 0 20px transparent} }
 </style>
 </head>
 <body>
 <header>
-  <h1>🗂 Mảng — Array</h1>
-  <span class="badge">Module 1 · Cấu trúc dữ liệu</span>
-  <span class="badge">O(1) access · O(n) insert/delete</span>
+  <h1>📦 Mảng (Array)</h1>
+  <span class="badge">DATA STRUCTURE</span>
+  <div class="complexity">
+    <div class="cx">Access <span>O(1)</span></div>
+    <div class="cx">Search <span>O(n)</span></div>
+    <div class="cx">Insert <span>O(n)</span></div>
+    <div class="cx">Delete <span>O(n)</span></div>
+  </div>
 </header>
+<main>
+  <div id="viz">
+    <div id="status-display"><span class="sd-idle">Chọn thao tác để bắt đầu minh họa</span></div>
 
-<div class="main">
-  <div class="viz">
-    <div class="ops-bar" id="opsBar">
-      <button class="op-btn active" onclick="selectOp('access')">🔍 Access [i]</button>
-      <button class="op-btn" onclick="selectOp('search')">🔎 Search</button>
-      <button class="op-btn" onclick="selectOp('insert')">➕ Insert</button>
-      <button class="op-btn" onclick="selectOp('delete')">🗑 Delete</button>
+    <div id="explain-bar">
+      <div class="step-icon info" id="step-icon">💡</div>
+      <div id="explain-text">Mảng lưu trữ các phần tử <b>liên tiếp trong bộ nhớ</b>. Truy cập bất kỳ phần tử nào bằng index trong thời gian <b>O(1)</b> — không cần duyệt!</div>
+      <div id="step-counter"></div>
     </div>
-    <div class="input-row" id="inputRow">
-      <label id="lbl1">Chỉ số (index):</label>
-      <input type="number" id="inp1" value="2" min="0" max="9">
-      <span id="extraLabel" style="display:none">
-        <label id="lbl2">Giá trị:</label>
-        <input type="number" id="inp2" value="42" min="0" max="99">
-      </span>
-      <button class="run-btn" onclick="runOperation()">▶ Chạy</button>
-    </div>
-    <div class="canvas-area">
-      <div class="complexity-row" id="complexityRow">
-        <div class="complexity-badge green" id="cBadge0"><div class="label">Access by index</div><div class="value">O(1)</div></div>
-        <div class="complexity-badge yellow" id="cBadge1"><div class="label">Search (unsorted)</div><div class="value">O(n)</div></div>
-        <div class="complexity-badge red" id="cBadge2"><div class="label">Insert at index</div><div class="value">O(n)</div></div>
-        <div class="complexity-badge red" id="cBadge3"><div class="label">Delete at index</div><div class="value">O(n)</div></div>
+
+    <div id="array-area">
+      <div id="array-container"></div>
+      <div id="complexity-row">
+        <div class="cx-badge">Truy cập: <b>O(1)</b> — nhảy thẳng đến index</div>
+        <div class="cx-badge">Tìm kiếm: <b>O(n)</b> — duyệt từng phần tử</div>
+        <div class="cx-badge">Chèn/Xóa: <b>O(n)</b> — phải dịch phần tử</div>
       </div>
-      <div class="array-wrapper">
-        <div class="pointer-row" id="pointerRow"></div>
-        <div class="array-container" id="arrayContainer"></div>
-      </div>
-      <div class="status-msg" id="statusMsg">Chọn thao tác và nhấn ▶ Chạy</div>
     </div>
   </div>
 
-  <div class="code-panel">
-    <div class="code-panel-header">📄 Pseudocode — <span id="codeTitle">Array Access</span></div>
-    <div class="code-body" id="codeBody"></div>
+  <div id="code-panel">
+    <div class="panel-title">📝 Pseudocode</div>
+    <div id="code"></div>
+    <div id="insight">
+      <div class="insight-title">💡 Tại sao mảng nhanh?</div>
+      Mảng dùng <b>địa chỉ liên tiếp</b> trong RAM. Để truy cập index <code>i</code>: địa chỉ = <b>base + i × size</b>. CPU tính ngay — không cần duyệt!
+    </div>
   </div>
-</div>
-
-<div class="controls">
-  <button class="ctrl-btn" id="btnBack" onclick="stepBack()" title="Step Back">⏮</button>
-  <button class="ctrl-btn" id="btnPlay" onclick="togglePlay()" title="Play/Pause">▶</button>
-  <button class="ctrl-btn" id="btnFwd"  onclick="stepForward()" title="Step Forward">⏭</button>
-  <button class="ctrl-btn" onclick="resetAll()" title="Reset">🔄</button>
-  <div class="speed-group">🐢 <input type="range" id="speedSlider" min="1" max="5" value="3"> 🐇</div>
-  <div class="step-info" id="stepInfo">Bước 0 / 0</div>
-  <div class="step-info" id="stepDesc" style="color:var(--accent)"></div>
+</main>
+<div id="controls">
+  <label>Giá trị: <input type="number" id="val-input" value="42" min="1" max="99"></label>
+  <label>Index: <input type="number" id="idx-input" value="2" min="0" max="9"></label>
+  <button class="btn-insert" onclick="opInsert()">➕ Chèn</button>
+  <button class="btn-delete" onclick="opDelete()">🗑 Xóa</button>
+  <button class="btn-search" onclick="opSearch()">🔍 Tìm</button>
+  <button class="btn-access" onclick="opAccess()">⚡ Truy cập</button>
+  <button class="btn-traverse" onclick="opTraverse()">▶ Duyệt</button>
+  <button class="btn-reset" onclick="initArray()">↺ Reset</button>
 </div>
 
 <script>
-let arr = [15, 8, 42, 3, 27, 61, 9, 35];
-let currentOp = 'access';
-let steps = [];
-let stepIdx = -1;
-let playing = false;
-let playTimer = null;
-const speedMap = { 1:1200, 2:900, 3:600, 4:350, 5:180 };
-
-const codes = {
-  access: {
-    title: 'Array Access — O(1)',
-    lines: [
-      ['cm','// Truy cập phần tử theo chỉ số'],
-      ['kw','function ','fn','access','(arr, index):'],
-      ['','  ','cm','// Mảng lưu liên tiếp trong bộ nhớ'],
-      ['','  ','cm','// địa chỉ = base_addr + index × size'],
-      ['kw','  if ','','index < 0 or index ≥ arr.length:'],
-      ['','    ','kw','return ','','⚠ "Index out of bounds"'],
-      ['','  '],
-      ['kw','  return ','','arr[index]'],
-      ['cm','  // ✓ Một bước duy nhất → O(1)'],
-    ]
-  },
-  search: {
-    title: 'Linear Search — O(n)',
-    lines: [
-      ['cm','// Tìm kiếm tuyến tính (chưa sắp xếp)'],
-      ['kw','function ','fn','linearSearch','(arr, target):'],
-      ['kw','  for ','','i = 0; i < arr.length; i++:'],
-      ['','    ','kw','if ','','arr[i] == target:'],
-      ['kw','      return ','','i   ','cm','// Tìm thấy ở vị trí i'],
-      ['cm','  // Duyệt hết mảng không tìm thấy'],
-      ['kw','  return ','num','-1  ','cm','// Không tìm thấy'],
-      ['cm','// Worst case: phải duyệt n phần tử → O(n)'],
-    ]
-  },
-  insert: {
-    title: 'Insert at Index — O(n)',
-    lines: [
-      ['cm','// Chèn phần tử vào vị trí index'],
-      ['kw','function ','fn','insert','(arr, index, value):'],
-      ['','  arr.length++   ','cm','// tăng kích thước'],
-      ['cm','  // Dịch phần tử sang phải từ cuối'],
-      ['kw','  for ','','i = arr.length-1; i > index; i--:'],
-      ['','    arr[i] = arr[i-1]   ','cm','// shift right'],
-      ['','  '],
-      ['','  arr[index] = value   ','cm','// ghi vào'],
-      ['kw','  return ','','arr'],
-      ['cm','// Worst: dịch n phần tử → O(n)'],
-    ]
-  },
-  delete: {
-    title: 'Delete at Index — O(n)',
-    lines: [
-      ['cm','// Xóa phần tử tại vị trí index'],
-      ['kw','function ','fn','delete','(arr, index):'],
-      ['','  value = arr[index]'],
-      ['cm','  // Dịch phần tử sang trái'],
-      ['kw','  for ','','i = index; i < arr.length-1; i++:'],
-      ['','    arr[i] = arr[i+1]   ','cm','// shift left'],
-      ['','  '],
-      ['','  arr.length--   ','cm','// giảm kích thước'],
-      ['kw','  return ','','value'],
-      ['cm','// Worst: dịch n phần tử → O(n)'],
-    ]
-  }
+const CODE_MAP = {
+  insert: [
+    '// Chèn tại index i',
+    'function insert(arr, i, val) {',
+    '  for (let j=arr.length; j>i; j--)',
+    '    arr[j] = arr[j-1]; // dịch phải',
+    '  arr[i] = val;        // đặt giá trị',
+    '  arr.length++;',
+    '}',
+  ],
+  delete: [
+    '// Xóa tại index i',
+    'function delete(arr, i) {',
+    '  for (let j=i; j<arr.length-1; j++)',
+    '    arr[j] = arr[j+1]; // dịch trái',
+    '  arr.length--;',
+    '}',
+  ],
+  search: [
+    '// Tìm kiếm tuyến tính',
+    'function search(arr, val) {',
+    '  for (let i=0; i<arr.length; i++) {',
+    '    if (arr[i] === val) return i; // tìm thấy',
+    '  }',
+    '  return -1; // không tìm thấy',
+    '}',
+  ],
+  access: [
+    '// Truy cập O(1)',
+    'function access(arr, i) {',
+    '  // Địa chỉ = base + i × size',
+    '  return arr[i]; // nhảy thẳng!',
+    '}',
+  ],
+  traverse: [
+    '// Duyệt toàn bộ mảng',
+    'function traverse(arr) {',
+    '  for (let i=0; i<arr.length; i++) {',
+    '    process(arr[i]);',
+    '  }',
+    '}',
+  ],
 };
 
-function renderCode(op, highlightLine = -1) {
-  const c = codes[op];
-  document.getElementById('codeTitle').textContent = c.title;
-  const body = document.getElementById('codeBody');
-  body.innerHTML = '';
-  c.lines.forEach((parts, i) => {
-    const div = document.createElement('div');
-    div.className = 'code-line' + (i === highlightLine ? ' highlight' : '');
-    const ln = document.createElement('span'); ln.className = 'ln'; ln.textContent = i + 1;
-    const txt = document.createElement('span'); txt.className = 'code-text';
-    let html = '';
-    for (let j = 0; j < parts.length; j += 2) {
-      const cls = parts[j]; const content = parts[j + 1] || '';
-      html += cls ? `<span class="${cls}">${content}</span>` : content;
-    }
-    txt.innerHTML = html;
-    div.appendChild(ln); div.appendChild(txt);
-    body.appendChild(div);
-    if (i === highlightLine) div.scrollIntoView({ block: 'nearest' });
-  });
+let arr = [];
+let busy = false;
+let stepIdx = 0, totalSteps = 0;
+
+function initArray() {
+  arr = [17, 42, 8, 63, 25, 91, 34];
+  busy = false; stepIdx = 0; totalSteps = 0;
+  renderArray();
+  showStatus('idle');
+  setExplain('💡','info','Mảng lưu trữ các phần tử <b>liên tiếp trong bộ nhớ</b>. Truy cập bất kỳ phần tử nào bằng index trong thời gian <b>O(1)</b> — không cần duyệt!');
+  setCode('access', -1);
+  setInsight('💡 Tại sao mảng nhanh?','Mảng dùng <b>địa chỉ liên tiếp</b> trong RAM. Để truy cập index <code>i</code>: địa chỉ = <b>base + i × size</b>. CPU tính ngay — không cần duyệt!');
 }
 
-function renderArray(highlights = {}) {
-  const container = document.getElementById('arrayContainer');
-  const pointerRow = document.getElementById('pointerRow');
-  container.innerHTML = '';
-  pointerRow.innerHTML = '';
-  arr.forEach((val, i) => {
-    const cell = document.createElement('div'); cell.className = 'cell';
-    const box = document.createElement('div'); box.className = 'cell-box';
-    box.textContent = val;
-    const idx = document.createElement('div'); idx.className = 'cell-index';
+function renderArray(states={}) {
+  const con = document.getElementById('array-container');
+  con.innerHTML = '';
+  arr.forEach((v, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'cell-wrap';
+    wrap.id = `cell-wrap-${i}`;
+    const cell = document.createElement('div');
+    cell.className = 'cell' + (states[i] ? ' ' + states[i] : '');
+    cell.textContent = v;
+    cell.id = `cell-${i}`;
+    const idx = document.createElement('div');
+    idx.className = 'cell-idx';
     idx.textContent = `[${i}]`;
-    if (highlights[i]) cell.classList.add(highlights[i]);
-    cell.appendChild(box); cell.appendChild(idx);
-    container.appendChild(cell);
-    const ptr = document.createElement('div'); ptr.className = 'pointer';
-    if (highlights[i] === 'active' || highlights[i] === 'found' || highlights[i] === 'inserting')
-      ptr.textContent = '▲';
-    pointerRow.appendChild(ptr);
+    wrap.appendChild(cell);
+    wrap.appendChild(idx);
+    con.appendChild(wrap);
   });
 }
 
-function buildSteps(op, index, value) {
-  steps = [];
-  const n = arr.length;
-  if (op === 'access') {
-    steps.push({ highlights: {}, code: -1, msg: `Truy cập arr[${index}] — địa chỉ = base + ${index}×size`, badge: 0 });
-    steps.push({ highlights: { [index]: 'active' }, code: 7, msg: `✓ arr[${index}] = ${arr[index]} — Tức thì! O(1)`, badge: 0 });
-    steps.push({ highlights: { [index]: 'found' }, code: 7, msg: `Kết quả: ${arr[index]}`, badge: 0 });
-    complexityFocus(0);
-  } else if (op === 'search') {
-    complexityFocus(1);
-    steps.push({ highlights: {}, code: 1, msg: `Tìm kiếm giá trị ${value} trong mảng`, badge: 1 });
-    let found = -1;
-    for (let i = 0; i < n; i++) {
-      steps.push({ highlights: { [i]: 'active' }, code: 2, msg: `Bước ${i+1}: Kiểm tra arr[${i}] = ${arr[i]}` });
-      if (arr[i] === value) {
-        steps.push({ highlights: { [i]: 'found' }, code: 4, msg: `✓ Tìm thấy ${value} tại chỉ số [${i}]!` });
-        found = i; break;
-      } else {
-        steps.push({ highlights: { [i]: 'active' }, code: 3, msg: `arr[${i}] = ${arr[i]} ≠ ${value}, tiếp tục...` });
-      }
+function showStatus(type, ...args) {
+  const d = document.getElementById('status-display');
+  if (type === 'idle') { d.innerHTML = `<span class="sd-idle">Chọn thao tác để bắt đầu minh họa</span>`; return; }
+  if (type === 'insert') d.innerHTML = `<span class="sd-label">CHÈN</span><span class="sd-arrow">→</span><span class="sd-box insert">${args[0]}</span><span class="sd-label">→ index</span><span class="sd-box insert">[${args[1]}]</span>`;
+  if (type === 'search') d.innerHTML = `<span class="sd-label">TÌM:</span><span class="sd-box search">${args[0]}</span><span class="sd-label">đang kiểm tra index</span><span class="sd-box search">[${args[1]}]</span>`;
+  if (type === 'found') d.innerHTML = `<span class="sd-label">TÌM THẤY</span><span class="sd-box found">${args[0]}</span><span class="sd-label">tại index</span><span class="sd-box found">[${args[1]}]</span>`;
+  if (type === 'access') d.innerHTML = `<span class="sd-label">TRUY CẬP</span><span class="sd-arrow">⚡</span><span class="sd-label">index</span><span class="sd-box found">[${args[0]}]</span><span class="sd-label">=</span><span class="sd-box found">${args[1]}</span>`;
+  if (type === 'delete') d.innerHTML = `<span class="sd-label">XÓA tại index</span><span class="sd-box delete">[${args[0]}]</span><span class="sd-label">dịch trái</span>`;
+  if (type === 'traverse') d.innerHTML = `<span class="sd-label">DUYỆT index</span><span class="sd-box search">[${args[0]}]</span><span class="sd-label">=</span><span class="sd-box search">${args[1]}</span>`;
+  if (type === 'done') d.innerHTML = `<span style="color:var(--green-top);font-size:1rem;font-weight:700">✅ ${args[0]}</span>`;
+}
+
+function setExplain(icon, cls, html) {
+  document.querySelector('#step-icon').textContent = icon;
+  document.querySelector('#step-icon').className = 'step-icon ' + cls;
+  document.getElementById('explain-text').innerHTML = html;
+  if (totalSteps > 0) document.getElementById('step-counter').textContent = `${stepIdx}/${totalSteps}`;
+  else document.getElementById('step-counter').textContent = '';
+}
+
+function setInsight(title, html) {
+  document.getElementById('insight').innerHTML = `<div class="insight-title">${title}</div>${html}`;
+}
+
+function setCode(op, activeLine) {
+  const lines = CODE_MAP[op] || CODE_MAP.access;
+  document.getElementById('code').innerHTML = lines.map((l,i) =>
+    `<div class="code-line${l.trim().startsWith('//')?' comment':''}${i===activeLine?' active':''}" data-i="${i}">${l}</div>`
+  ).join('');
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function opAccess() {
+  if (busy) return; busy = true;
+  const i = +document.getElementById('idx-input').value;
+  if (i < 0 || i >= arr.length) { busy=false; return; }
+  setCode('access', -1);
+  setExplain('⚡','found',`Truy cập O(1): tính địa chỉ = <b>base + ${i} × size</b>. Nhảy thẳng đến index!`);
+  showStatus('idle');
+  await delay(300);
+  setCode('access', 3);
+  showStatus('access', i, arr[i]);
+  const states = {}; states[i] = 'found';
+  renderArray(states);
+  setInsight('⚡ Truy cập O(1)',`Index <b>[${i}]</b> → địa chỉ = <b>base + ${i} × 4 bytes</b>. CPU nhảy thẳng — không cần duyệt. Đây là sức mạnh của mảng!`);
+  await delay(1500);
+  renderArray();
+  busy = false;
+}
+
+async function opSearch() {
+  if (busy) return; busy = true;
+  const val = +document.getElementById('val-input').value;
+  setCode('search', 0);
+  totalSteps = arr.length; stepIdx = 0;
+  setExplain('🔍','search',`Tìm kiếm tuyến tính: duyệt từng phần tử, so sánh với <b>${val}</b>.`);
+  setInsight('🔍 Tìm kiếm tuyến tính',`Mảng KHÔNG hỗ trợ tìm nhanh (trừ khi đã sort). Phải duyệt từ đầu đến cuối: <b>O(n)</b> trong worst case.`);
+  for (let i = 0; i < arr.length; i++) {
+    if (!busy) break;
+    stepIdx = i + 1;
+    setCode('search', 2);
+    showStatus('search', val, i);
+    const states = {}; states[i] = 'active';
+    renderArray(states);
+    setExplain('🔍','search',`Kiểm tra index <b>[${i}]</b> = <b>${arr[i]}</b>. ${arr[i] === val ? `✅ Tìm thấy <b>${val}</b>!` : `${arr[i]} ≠ ${val}, tiếp tục...`}`);
+    await delay(500);
+    if (arr[i] === val) {
+      setCode('search', 3);
+      const s2 = {}; s2[i] = 'found';
+      renderArray(s2);
+      showStatus('found', val, i);
+      setInsight('✅ Tìm thấy!',`Phần tử <b>${val}</b> ở index <b>[${i}]</b>. Duyệt qua <b>${i+1}</b> phần tử. Best case O(1) nếu ở đầu, worst case O(n) nếu ở cuối.`);
+      await delay(1500);
+      renderArray();
+      busy = false; return;
     }
-    if (found === -1) steps.push({ highlights: {}, code: 6, msg: `✗ Không tìm thấy ${value} — đã duyệt ${n} phần tử` });
-  } else if (op === 'insert') {
-    complexityFocus(2);
-    const tempArr = [...arr];
-    steps.push({ arr: [...tempArr], highlights: {}, code: 1, msg: `Chèn ${value} tại chỉ số [${index}]` });
-    steps.push({ arr: [...tempArr], highlights: {}, code: 2, msg: `Tăng kích thước mảng lên ${n+1}` });
-    for (let i = n; i > index; i--) {
-      const h = {}; h[i-1] = 'active';
-      steps.push({ arr: [...tempArr], highlights: h, code: 5, msg: `Dịch arr[${i-1}]=${tempArr[i-1]} sang phải → arr[${i}]` });
-      tempArr.splice(i, 0, tempArr.splice(i - 1, 1)[0]);
-    }
-    tempArr[index] = value;
-    steps.push({ arr: [...tempArr], highlights: { [index]: 'inserting' }, code: 7, msg: `✓ Ghi arr[${index}] = ${value}` });
-    steps.push({ arr: [...tempArr], highlights: { [index]: 'found' }, code: 8, msg: `Hoàn thành! Đã chèn ${value} tại [${index}]` });
-    arr = [...tempArr];
-  } else if (op === 'delete') {
-    complexityFocus(3);
-    const tempArr = [...arr];
-    const deletedVal = tempArr[index];
-    steps.push({ arr: [...tempArr], highlights: { [index]: 'deleting' }, code: 2, msg: `Xóa arr[${index}] = ${deletedVal}` });
-    for (let i = index; i < n - 1; i++) {
-      const h = {}; h[i+1] = 'active';
-      steps.push({ arr: [...tempArr], highlights: h, code: 5, msg: `Dịch arr[${i+1}]=${tempArr[i+1]} sang trái → arr[${i}]` });
-      tempArr[i] = tempArr[i + 1];
-    }
-    tempArr.pop();
-    steps.push({ arr: [...tempArr], highlights: {}, code: 7, msg: `Giảm kích thước mảng xuống ${tempArr.length}` });
-    steps.push({ arr: [...tempArr], highlights: {}, code: 8, msg: `✓ Đã xóa ${deletedVal} khỏi mảng` });
-    arr = [...tempArr];
   }
+  showStatus('done', `Không tìm thấy ${val} trong mảng`);
+  setExplain('❌','search',`Đã duyệt toàn bộ mảng — không tìm thấy <b>${val}</b>. Phải duyệt hết n phần tử: <b>O(n)</b>.`);
+  renderArray();
+  busy = false;
 }
 
-function complexityFocus(idx) {
-  document.querySelectorAll('.complexity-badge').forEach((b, i) => {
-    b.classList.toggle('active-badge', i === idx);
-  });
-}
+async function opInsert() {
+  if (busy || arr.length >= 10) return; busy = true;
+  const val = +document.getElementById('val-input').value;
+  let idx = +document.getElementById('idx-input').value;
+  idx = Math.max(0, Math.min(idx, arr.length));
+  totalSteps = arr.length - idx + 1; stepIdx = 0;
+  setCode('insert', 0);
+  showStatus('insert', val, idx);
+  setExplain('➕','insert',`Chèn <b>${val}</b> vào index <b>[${idx}]</b>. Trước tiên phải dịch các phần tử từ [${idx}..${arr.length-1}] sang phải 1 ô.`);
+  setInsight('➕ Chèn O(n)',`Chèn vào giữa mảng = tốn kém! Phải dịch <b>${arr.length - idx}</b> phần tử sang phải. Nếu chèn vào cuối thì O(1) — không cần dịch.`);
+  await delay(600);
 
-function applyStep(idx) {
-  if (idx < 0 || idx >= steps.length) return;
-  const s = steps[idx];
-  if (s.arr) arr = [...s.arr];
-  renderArray(s.highlights || {});
-  renderCode(currentOp, s.code);
-  const msg = document.getElementById('statusMsg');
-  msg.textContent = s.msg || '';
-  msg.className = 'status-msg' + (s.msg?.startsWith('✓') ? ' success' : s.msg?.startsWith('✗') ? ' error' : ' info');
-  document.getElementById('stepInfo').textContent = `Bước ${idx + 1} / ${steps.length}`;
-}
-
-function stepForward() {
-  if (stepIdx < steps.length - 1) { stepIdx++; applyStep(stepIdx); } else stopPlay();
-}
-function stepBack() {
-  if (stepIdx > 0) { stepIdx--; applyStep(stepIdx); }
-}
-function togglePlay() { playing ? stopPlay() : startPlay(); }
-function startPlay() {
-  playing = true;
-  document.getElementById('btnPlay').textContent = '⏸';
-  function tick() {
-    if (stepIdx < steps.length - 1) {
-      stepIdx++; applyStep(stepIdx);
-      playTimer = setTimeout(tick, speedMap[document.getElementById('speedSlider').value]);
-    } else stopPlay();
+  // Shift right animation
+  for (let j = arr.length - 1; j >= idx; j--) {
+    stepIdx++;
+    setCode('insert', 2);
+    const states = {}; states[j] = 'active';
+    renderArray(states);
+    setExplain('🔀','shift',`Dịch phần tử <b>[${j}]=${arr[j]}</b> sang vị trí <b>[${j+1}]</b>.`);
+    await delay(300);
   }
-  tick();
-}
-function stopPlay() {
-  playing = false;
-  document.getElementById('btnPlay').textContent = '▶';
-  clearTimeout(playTimer);
+
+  // Insert
+  arr.splice(idx, 0, val);
+  setCode('insert', 4);
+  renderArray({[idx]: 'inserting'});
+  showStatus('done', `Chèn ${val} vào [${idx}] thành công!`);
+  setExplain('✅','insert',`Chèn <b>${val}</b> vào index <b>[${idx}]</b> thành công! Đã dịch <b>${arr.length - idx - 1}</b> phần tử. Độ phức tạp: O(n).`);
+  await delay(1000);
+  renderArray();
+  busy = false;
 }
 
-function selectOp(op) {
-  currentOp = op;
-  document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
-  const extraLabel = document.getElementById('extraLabel');
-  const lbl1 = document.getElementById('lbl1');
-  const inp1 = document.getElementById('inp1');
-  if (op === 'access') { lbl1.textContent = 'Chỉ số (index):'; extraLabel.style.display='none'; }
-  else if (op === 'search') { lbl1.textContent = 'Giá trị cần tìm:'; extraLabel.style.display='none'; inp1.value=27; }
-  else if (op === 'insert') { lbl1.textContent = 'Chỉ số (index):'; extraLabel.style.display=''; }
-  else if (op === 'delete') { lbl1.textContent = 'Chỉ số (index):'; extraLabel.style.display='none'; }
-  resetAll();
+async function opDelete() {
+  if (busy || arr.length === 0) return; busy = true;
+  let idx = +document.getElementById('idx-input').value;
+  idx = Math.max(0, Math.min(idx, arr.length - 1));
+  const deletedVal = arr[idx];
+  totalSteps = arr.length - idx;
+  setCode('delete', 0);
+  showStatus('delete', idx);
+  setExplain('🗑','delete',`Xóa phần tử <b>[${idx}]=${deletedVal}</b>. Cần dịch các phần tử từ [${idx+1}..${arr.length-1}] sang trái 1 ô.`);
+  setInsight('🗑 Xóa O(n)',`Xóa giữa mảng = phải dịch <b>${arr.length - idx - 1}</b> phần tử sang trái để lấp chỗ trống. Xóa cuối mảng thì O(1)!`);
+
+  // Mark delete
+  renderArray({[idx]: 'deleting'});
+  await delay(500);
+
+  // Shift left
+  for (let j = idx; j < arr.length - 1; j++) {
+    stepIdx++;
+    setCode('delete', 2);
+    const states = {}; states[j] = 'shifting'; states[j+1] = 'active';
+    renderArray(states);
+    setExplain('🔀','shift',`Dịch phần tử <b>[${j+1}]=${arr[j+1]}</b> sang vị trí <b>[${j}]</b>.`);
+    await delay(350);
+  }
+
+  arr.splice(idx, 1);
+  renderArray();
+  showStatus('done', `Xóa [${idx}]=${deletedVal} thành công!`);
+  setExplain('✅','delete',`Xóa <b>[${idx}]=${deletedVal}</b> hoàn tất. Đã dịch <b>${arr.length - idx}</b> phần tử sang trái.`);
+  busy = false;
 }
 
-function runOperation() {
-  stopPlay();
-  const idx = parseInt(document.getElementById('inp1').value);
-  const val = parseInt(document.getElementById('inp2').value) || 42;
-  arr = [15, 8, 42, 3, 27, 61, 9, 35];
-  buildSteps(currentOp, idx, val);
-  stepIdx = -1;
-  renderArray({});
-  renderCode(currentOp, -1);
-  document.getElementById('statusMsg').textContent = 'Nhấn ▶ để bắt đầu hoặc ⏭ để từng bước';
-  document.getElementById('statusMsg').className = 'status-msg';
-  document.getElementById('stepInfo').textContent = `Bước 0 / ${steps.length}`;
+async function opTraverse() {
+  if (busy) return; busy = true;
+  totalSteps = arr.length; stepIdx = 0;
+  setCode('traverse', 0);
+  setInsight('▶ Duyệt O(n)',`Duyệt tuần tự từ index <b>[0]</b> đến <b>[${arr.length-1}]</b>. Mỗi lần truy cập O(1), tổng cộng n lần = <b>O(n)</b>.`);
+  for (let i = 0; i < arr.length; i++) {
+    if (!busy) break;
+    stepIdx = i + 1;
+    setCode('traverse', 2);
+    showStatus('traverse', i, arr[i]);
+    const states = {}; states[i] = 'active';
+    renderArray(states);
+    setExplain('▶','search',`Duyệt index <b>[${i}]</b> = <b>${arr[i]}</b>. Bước ${i+1}/${arr.length}.`);
+    await delay(400);
+  }
+  setCode('traverse', -1);
+  showStatus('done', `Duyệt xong ${arr.length} phần tử`);
+  setExplain('✅','found',`Duyệt hoàn tất <b>${arr.length}</b> phần tử. Tổng thời gian: <b>O(n)</b>.`);
+  renderArray();
+  busy = false;
 }
 
-function resetAll() {
-  stopPlay();
-  arr = [15, 8, 42, 3, 27, 61, 9, 35];
-  steps = []; stepIdx = -1;
-  renderArray({});
-  renderCode(currentOp, -1);
-  document.getElementById('statusMsg').textContent = 'Chọn thao tác và nhấn ▶ Chạy';
-  document.getElementById('statusMsg').className = 'status-msg';
-  document.getElementById('stepInfo').textContent = 'Bước 0 / 0';
-  complexityFocus(-1);
+function setCode(op, activeLine) {
+  const lines = CODE_MAP[op] || CODE_MAP.access;
+  document.getElementById('code').innerHTML = lines.map((l,i) =>
+    `<div class="code-line${l.trim().startsWith('//')?' comment':''}${i===activeLine?' active':''}">${l}</div>`
+  ).join('');
 }
 
-renderArray({});
-renderCode('access', -1);
+initArray();
 </script>
 </body>
 </html>

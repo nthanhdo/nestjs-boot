@@ -2,602 +2,538 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>28 - Thuật toán Dijkstra</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dijkstra — Đường đi ngắn nhất</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',sans-serif;background:#0a0c14;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-@keyframes nodeGlow{0%,100%{filter:drop-shadow(0 0 6px rgba(99,179,237,0.5))}50%{filter:drop-shadow(0 0 22px rgba(99,179,237,1))}}
-@keyframes nodeActive{0%,100%{filter:drop-shadow(0 0 8px rgba(236,201,75,0.6))}50%{filter:drop-shadow(0 0 28px rgba(236,201,75,1))}}
-@keyframes relaxPulse{0%{stroke-width:2;stroke:rgba(72,187,120,0.5)}50%{stroke-width:6;stroke:rgba(72,187,120,1)}100%{stroke-width:3;stroke:#48bb78}}
-@keyframes edgeDraw{from{stroke-dashoffset:300}to{stroke-dashoffset:0}}
-@keyframes distUpdate{0%{transform:scale(1.4);fill:#ecc94b}100%{transform:scale(1);fill:#68d391}}
-@keyframes pqSlideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-@keyframes flash{0%{background:rgba(116,66,16,0.7)}100%{background:transparent}}
-@keyframes pulse{from{opacity:0.7}to{opacity:1}}
-@keyframes rejectFlash{0%{stroke:#fc8181;stroke-width:4}50%{stroke:#fc8181;stroke-width:2;stroke-dasharray:6,4}100%{stroke:#3a4455;stroke-width:1.5}}
-header{background:linear-gradient(135deg,#141825,#1a1f2e);padding:10px 20px;border-bottom:1px solid #252d3e;display:flex;align-items:center;gap:16px;flex-shrink:0;box-shadow:0 2px 12px rgba(0,0,0,0.4)}
-header h1{font-size:1.1rem;background:linear-gradient(135deg,#63b3ed,#4299e1);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.badge{background:linear-gradient(135deg,#2b6cb0,#2c5282);color:#bee3f8;padding:2px 10px;border-radius:12px;font-size:0.75rem;box-shadow:0 0 8px rgba(43,108,176,0.4)}
-.main{display:flex;flex:1;overflow:hidden}
-.left-panel{width:224px;background:linear-gradient(180deg,#141825,#111420);border-right:1px solid #1e2535;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
-.panel-title{padding:8px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;color:#4a6080;border-bottom:1px solid #1e2535;letter-spacing:1.5px}
-.center{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.right-panel{width:264px;background:linear-gradient(180deg,#141825,#111420);border-left:1px solid #1e2535;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
-#svg-container{flex:1;position:relative;overflow:hidden;background:radial-gradient(ellipse at center,#0d1220 0%,#080a12 100%)}
-svg{width:100%;height:100%}
-.controls{background:#141825;border-top:1px solid #1e2535;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap}
-button{padding:5px 14px;border:none;border-radius:8px;cursor:pointer;font-size:0.8rem;font-weight:600;transition:all 0.2s}
-.btn-play{background:linear-gradient(135deg,#2f855a,#276749);color:#fff;box-shadow:0 2px 10px rgba(47,133,90,0.4)}
-.btn-play:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(47,133,90,0.6)}
-.btn-step{background:linear-gradient(135deg,#2b6cb0,#2c5282);color:#fff}
-.btn-reset{background:linear-gradient(135deg,#c53030,#9b2c2c);color:#fff}
-.btn-sm{background:#1e2535;color:#a0aec0;padding:4px 10px;font-size:0.75rem;border:1px solid #2d3748}
-.btn-sm:hover{background:#2d3748}
-.btn-sm.active{background:linear-gradient(135deg,#553c9a,#44337a);color:#e9d8fd;border-color:#9f7aea}
-label{font-size:0.8rem;color:#718096}
-input[type=range]{accent-color:#63b3ed;width:80px}
-.info-box{padding:10px 12px;font-size:0.8rem;line-height:1.6;color:#8896ab;border-bottom:1px solid #1e2535}
-.info-box strong{color:#63b3ed}
-.dist-table{padding:8px 12px}
-.dist-table table{width:100%;border-collapse:collapse;font-size:0.8rem}
-.dist-table th{color:#4a6080;text-align:left;padding:3px 6px;border-bottom:1px solid #1e2535}
-.dist-table td{padding:4px 6px;border-bottom:1px solid #111420;transition:all 0.4s}
-.dist-table tr.current td{background:rgba(45,74,122,0.6);box-shadow:inset 2px 0 0 #63b3ed}
-.dist-table tr.finalized td{color:#68d391}
-.dist-table td.updated{animation:flash 0.5s ease}
-.pq-list{padding:8px 12px;display:flex;flex-direction:column;gap:5px}
-.pq-item{background:linear-gradient(135deg,#1e2535,#252d3e);border-radius:8px;padding:6px 10px;font-size:0.8rem;display:flex;justify-content:space-between;align-items:center;transition:all 0.35s;animation:pqSlideIn 0.25s ease;border:1px solid #2d3748}
-.pq-item.top{background:linear-gradient(135deg,#2b6cb0,#1a4a8a);color:#fff;border-color:#4299e1;box-shadow:0 0 12px rgba(43,108,176,0.4)}
-.pq-item.extracting{background:linear-gradient(135deg,#744210,#5c3d00);border-color:#ecc94b;animation:pulse 0.5s ease infinite alternate;box-shadow:0 0 14px rgba(236,201,75,0.5)}
-.code-panel{padding:8px 12px;font-family:'Courier New',monospace;font-size:0.75rem;line-height:1.8}
-.code-line{padding:2px 6px;border-radius:5px;color:#718096;white-space:pre;transition:background 0.25s,transform 0.2s}
-.code-line.active{background:linear-gradient(135deg,#2d4a7a,#1a3560);color:#90cdf4;transform:translateX(3px);box-shadow:0 0 10px rgba(45,74,122,0.4)}
-.node-editor{padding:8px 12px;display:flex;flex-direction:column;gap:6px}
-.node-editor input{background:#1e2535;border:1px solid #2d3748;color:#e2e8f0;padding:4px 8px;border-radius:6px;font-size:0.8rem;width:100%}
-.step-log{padding:8px 12px;font-size:0.78rem;line-height:1.7;color:#8896ab;max-height:140px;overflow-y:auto}
-.step-log .entry{margin-bottom:5px;border-left:2px solid #2d3748;padding-left:8px;transition:all 0.2s}
-.step-log .entry.relax{border-color:#48bb78;color:#9ae6b4}
-.step-log .entry.extract{border-color:#63b3ed;color:#90cdf4}
-.step-log .entry.reject{border-color:#fc8181;color:#fc8181}
-.node-circle{cursor:pointer;transition:all 0.35s}
-.node-label{font-size:13px;font-weight:700;pointer-events:none;user-select:none}
-.edge-line{transition:stroke 0.35s,stroke-width 0.35s,filter 0.35s}
-.weight-label{font-size:11px;fill:#8896ab;pointer-events:none;user-select:none}
-.neg-warning{background:linear-gradient(135deg,#742a2a,#5a1f1f);color:#fc8181;padding:8px 12px;border-radius:8px;font-size:0.78rem;margin:8px 12px;display:none;border:1px solid #fc8181}
+  :root {
+    --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+    --text: #eef1f8; --muted: #8899bb;
+    --accent: #a78bfa; --yellow: #ffd43b;
+    --blue: #5b8def; --green: #2ecc71; --red: #fc5c7d; --orange: #ffb347;
+    --node-default-top: #5b8def; --node-default-bot: #2c5aa0;
+    --node-visit-top: #ffd43b; --node-visit-bot: #e67e22;
+    --node-done-top: #2ecc71; --node-done-bot: #1a9c54;
+    --node-src-top: #a78bfa; --node-src-bot: #7c5ce7;
+    --edge-try: #ffd43b; --edge-improve: #2ecc71; --edge-reject: #fc5c7d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 25% 15%,rgba(91,141,239,0.07) 0%,transparent 55%), radial-gradient(ellipse at 75% 85%,rgba(167,139,250,0.05) 0%,transparent 55%); pointer-events:none; }
+
+  header { background:var(--surface); padding:10px 24px; display:flex; align-items:center; gap:14px; border-bottom:1px solid var(--border); z-index:2; flex-shrink:0; }
+  header h1 { font-size:1.15rem; font-weight:700; background:linear-gradient(135deg,#a78bfa,#7c5ce7); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .badge { background:linear-gradient(135deg,#7c5ce7,#a78bfa); color:#fff; padding:2px 10px; border-radius:12px; font-size:.68rem; font-weight:700; }
+  .complexity { display:flex; gap:6px; margin-left:auto; }
+  .cx { background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:2px 9px; font-size:.72rem; color:var(--muted); }
+  .cx span { color:var(--yellow); font-weight:700; }
+
+  main { flex:1; display:flex; overflow:hidden; z-index:1; min-height:0; }
+
+  /* STATUS DISPLAY */
+  #status-display { text-align:center; padding:10px 20px; min-height:56px; display:flex; align-items:center; justify-content:center; gap:12px; background:var(--surface); border-bottom:1px solid var(--border); flex-shrink:0; }
+  .sd-idle { color:var(--muted); font-size:.95rem; }
+  .sd-node { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:50%; font-size:1rem; font-weight:800; color:#fff; border:2px solid rgba(255,255,255,0.2); }
+  .sd-node.visit { background:linear-gradient(135deg,var(--node-visit-top),var(--node-visit-bot)); box-shadow:0 0 16px rgba(255,212,59,0.6); }
+  .sd-node.done { background:linear-gradient(135deg,var(--node-done-top),var(--node-done-bot)); box-shadow:0 0 16px rgba(46,204,113,0.5); }
+  .sd-arrow { font-size:1.3rem; color:var(--yellow); }
+  .sd-dist { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:4px 12px; font-size:.9rem; font-weight:700; }
+  .sd-dist.improved { color:var(--green); border-color:var(--green); box-shadow:0 0 8px rgba(46,204,113,0.3); }
+  .sd-dist.rejected { color:var(--red); border-color:var(--red); }
+  .sd-tag { padding:4px 12px; border-radius:6px; font-size:.82rem; font-weight:700; color:#fff; }
+  .sd-tag.try { background:linear-gradient(135deg,#f6d365,#e67e22); }
+  .sd-tag.improved { background:linear-gradient(135deg,#2ecc71,#1a9c54); }
+  .sd-tag.rejected { background:linear-gradient(135deg,#fc5c7d,#c0143c); }
+
+  /* EXPLAIN BAR */
+  #explain-viz { padding:10px 24px; min-height:52px; background:linear-gradient(135deg,rgba(21,29,50,0.95),rgba(28,39,68,0.9)); border-bottom:1px solid var(--border); font-size:.88rem; line-height:1.55; color:var(--text); display:flex; align-items:center; gap:12px; flex-shrink:0; }
+  #explain-viz .step-icon { flex-shrink:0; width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transition:all 0.3s; }
+  .step-icon.info { background:rgba(91,141,239,0.15); border:1px solid rgba(91,141,239,0.3); }
+  .step-icon.visit { background:rgba(255,212,59,0.15); border:1px solid rgba(255,212,59,0.3); }
+  .step-icon.improve { background:rgba(46,204,113,0.15); border:1px solid rgba(46,204,113,0.3); }
+  .step-icon.reject { background:rgba(252,92,125,0.15); border:1px solid rgba(252,92,125,0.3); }
+  .step-icon.done { background:rgba(46,204,113,0.15); border:1px solid rgba(46,204,113,0.3); }
+  #explain-text { flex:1; }
+  #explain-text b { color:var(--yellow); }
+  #explain-text code { background:var(--surface2); padding:1px 5px; border-radius:3px; font-family:monospace; font-size:.8rem; color:var(--accent); }
+  #step-counter { font-size:.72rem; color:var(--muted); white-space:nowrap; }
+
+  /* VIZ CENTER */
+  #viz-center { flex:1; display:flex; flex-direction:column; min-width:0; overflow:hidden; }
+  #svg-area { flex:1; position:relative; background:radial-gradient(ellipse at center,#0d1525 0%,#070c18 100%); }
+  svg { width:100%; height:100%; }
+
+  /* SVG node states via filter */
+  .node-circle { transition:all 0.4s; }
+  .node-label { font-weight:800; font-size:13px; fill:#fff; pointer-events:none; }
+  .dist-label { font-size:10px; font-weight:700; fill:var(--yellow); pointer-events:none; transition:all 0.3s; }
+  .edge-line { transition:stroke 0.3s, stroke-width 0.3s; }
+
+  /* RIGHT PANEL */
+  #right-panel { width:280px; min-width:260px; background:var(--surface); border-left:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; }
+  .panel-title { padding:10px 14px; background:var(--surface2); font-size:.78rem; font-weight:600; color:var(--accent); border-bottom:1px solid var(--border); flex-shrink:0; }
+
+  /* PRIORITY QUEUE */
+  #pq-panel { padding:10px 12px; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .pq-title { font-size:.72rem; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+  .pq-items { display:flex; flex-wrap:wrap; gap:5px; min-height:28px; }
+  .pq-item { background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:3px 8px; font-size:.78rem; font-weight:700; animation:pqSlideIn 0.25s ease; }
+  .pq-item.current { background:linear-gradient(135deg,rgba(255,212,59,0.2),rgba(230,126,34,0.1)); border-color:var(--yellow); color:var(--yellow); }
+
+  /* DISTANCE TABLE */
+  #dist-panel { flex:1; overflow-y:auto; padding:10px 12px; }
+  .dist-title { font-size:.72rem; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+  .dist-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+  .dist-table th { text-align:left; color:var(--muted); font-weight:600; padding:4px 6px; border-bottom:1px solid var(--border); font-size:.72rem; }
+  .dist-table td { padding:5px 6px; border-bottom:1px solid rgba(42,58,92,0.4); transition:all 0.3s; }
+  .dist-table tr.visited td { color:var(--green); }
+  .dist-table tr.current td { color:var(--yellow); background:rgba(255,212,59,0.05); }
+  .dist-table td.dist-val { font-weight:800; font-variant-numeric:tabular-nums; }
+  .dist-table td.dist-val.updated { animation:distFlash 0.4s ease; color:var(--green); }
+  .dist-table td.dist-val.inf { color:var(--muted); }
+  .node-dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:4px; }
+
+  /* INSIGHT */
+  #insight { padding:12px 14px; background:var(--bg); border-top:1px solid var(--border); font-size:.8rem; line-height:1.5; color:var(--muted); flex-shrink:0; }
+  #insight .insight-title { color:var(--accent); font-weight:700; font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+  #insight b { color:var(--text); }
+
+  /* CONTROLS */
+  #controls { background:var(--surface); padding:8px 24px; display:flex; align-items:center; gap:10px; border-top:1px solid var(--border); z-index:2; flex-wrap:wrap; flex-shrink:0; }
+  button { border:none; border-radius:8px; padding:7px 14px; cursor:pointer; font-size:.8rem; font-weight:600; transition:all 0.2s; }
+  button:active { transform:scale(0.95); }
+  button:disabled { background:var(--surface2)!important; color:#3a4d6e!important; cursor:not-allowed; }
+  #btn-play { background:linear-gradient(135deg,#00b894,#05c46b); color:#fff; box-shadow:0 2px 10px rgba(5,196,107,0.25); min-width:85px; }
+  #btn-step { background:linear-gradient(135deg,#7c5ce7,#a78bfa); color:#fff; }
+  #btn-reset,#btn-new { background:var(--surface2); color:var(--muted); border:1px solid var(--border); }
+  label { font-size:.76rem; color:var(--muted); }
+  input[type=range] { accent-color:var(--accent); width:85px; }
+  select { background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:5px; padding:3px 6px; font-size:.76rem; }
+  #stats { display:flex; gap:8px; margin-left:auto; }
+  .stat { background:var(--surface2); padding:4px 10px; border-radius:6px; font-size:.8rem; color:var(--muted); border:1px solid var(--border); }
+  .stat span { color:var(--yellow); font-weight:800; }
+
+  /* PROGRESS */
+  #progress-wrap { width:160px; height:5px; background:var(--surface2); border-radius:3px; overflow:hidden; }
+  #progress-bar { height:100%; width:0%; border-radius:3px; background:linear-gradient(90deg,var(--accent),var(--green)); transition:width 0.4s; }
+
+  @keyframes pqSlideIn { from{opacity:0;transform:translateY(-5px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes distFlash { 0%{background:rgba(46,204,113,0.3);transform:scale(1.05)} 100%{background:transparent;transform:scale(1)} }
+  @keyframes edgeDraw { from{stroke-dashoffset:400} to{stroke-dashoffset:0} }
+  @keyframes nodePulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
 </style>
 </head>
 <body>
 <header>
-  <h1>🗺️ Thuật toán Dijkstra — Đường đi ngắn nhất</h1>
-  <span class="badge">Module 6 · Bài 28</span>
-  <button class="btn-sm" id="btn-neg-toggle">⚠️ Thêm cạnh âm</button>
-  <button class="btn-sm" id="btn-add-edge">+ Cạnh</button>
-  <button class="btn-sm" id="btn-rm-edge">- Cạnh</button>
+  <h1>🗺️ Dijkstra</h1>
+  <span class="badge">GRAPH — SHORTEST PATH</span>
+  <div class="complexity">
+    <div class="cx">Time <span>O((V+E) log V)</span></div>
+    <div class="cx">Space <span>O(V)</span></div>
+    <div class="cx">No negative edges <span>⚠️</span></div>
+  </div>
 </header>
-<div class="main">
-  <!-- Left panel -->
-  <div class="left-panel">
-    <div class="panel-title">📋 Giải thích</div>
-    <div class="info-box">
-      <strong>Dijkstra</strong> tìm đường đi ngắn nhất từ một nguồn đến tất cả đỉnh trong đồ thị có <em>trọng số không âm</em>.<br><br>
-      <strong>Ý tưởng:</strong> Luôn mở rộng đỉnh có khoảng cách nhỏ nhất chưa xử lý (greedy).
-    </div>
-    <div class="panel-title">🔢 Bảng khoảng cách</div>
-    <div class="dist-table" id="dist-table"></div>
-    <div class="panel-title">📝 Nhật ký bước</div>
-    <div class="step-log" id="step-log"></div>
-  </div>
-  <!-- Center -->
-  <div class="center">
-    <div id="svg-container">
-      <svg id="graph-svg">
-        <defs>
-          <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L8,3 z" fill="#718096"/>
-          </marker>
-          <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L8,3 z" fill="#48bb78"/>
-          </marker>
-          <marker id="arrow-yellow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L8,3 z" fill="#ecc94b"/>
-          </marker>
-          <marker id="arrow-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L8,3 z" fill="#fc8181"/>
-          </marker>
-        </defs>
-        <g id="edges-group"></g>
-        <g id="nodes-group"></g>
-      </svg>
-    </div>
-    <div class="controls">
-      <button class="btn-play" id="btn-play">▶ Chạy</button>
-      <button class="btn-step" id="btn-step">⏭ Bước</button>
-      <button class="btn-reset" id="btn-reset">↺ Reset</button>
-      <label>Tốc độ:</label>
-      <input type="range" id="speed" min="100" max="2000" value="800" step="100">
-      <label id="speed-label">1.0x</label>
-      <span style="margin-left:auto;font-size:0.8rem;color:#718096" id="status-bar">Chọn đỉnh nguồn</span>
+
+<div id="status-display"><span class="sd-idle">Nhấn Play để bắt đầu trình diễn thuật toán Dijkstra</span></div>
+
+<div id="explain-viz">
+  <div class="step-icon info">💡</div>
+  <div id="explain-text">Dijkstra tìm đường đi ngắn nhất từ nguồn đến tất cả đỉnh. Dùng Priority Queue để luôn xử lý đỉnh có khoảng cách nhỏ nhất trước.</div>
+  <div id="step-counter"></div>
+</div>
+
+<main>
+  <div id="viz-center">
+    <div id="svg-area">
+      <svg id="graph-svg" viewBox="0 0 700 420" preserveAspectRatio="xMidYMid meet"></svg>
     </div>
   </div>
-  <!-- Right panel -->
-  <div class="right-panel">
-    <div class="panel-title">🎯 Hàng ưu tiên (Min-Heap)</div>
-    <div class="pq-list" id="pq-list"></div>
-    <div class="neg-warning" id="neg-warning">⚠️ Kết quả SAI khi có cạnh âm! Dijkstra không xử lý được cạnh có trọng số âm.</div>
-    <div class="panel-title">💻 Code (Python)</div>
-    <div class="code-panel" id="code-panel"></div>
-    <div class="panel-title">🏁 Đường đi ngắn nhất</div>
-    <div class="info-box" id="path-info">Click vào đỉnh đích để xem đường đi ngắn nhất</div>
+
+  <div id="right-panel">
+    <div class="panel-title">📊 Dijkstra State</div>
+    <div id="pq-panel">
+      <div class="pq-title">🔢 Priority Queue (min-heap)</div>
+      <div class="pq-items" id="pq-display"><span style="color:var(--muted);font-size:.78rem">Chưa bắt đầu</span></div>
+    </div>
+    <div class="panel-title" style="border-top:1px solid var(--border)">📏 Bảng khoảng cách</div>
+    <div id="dist-panel">
+      <table class="dist-table">
+        <thead><tr><th>Node</th><th>dist[]</th><th>prev</th><th>Trạng thái</th></tr></thead>
+        <tbody id="dist-tbody"></tbody>
+      </table>
+    </div>
+    <div id="insight">
+      <div class="insight-title">💡 Tại sao Dijkstra không dùng cạnh âm?</div>
+      Khi đỉnh đã được <b>DONE</b> (visited), thuật toán giả định không có đường ngắn hơn. Cạnh âm có thể phá vỡ giả định này → dùng <b>Bellman-Ford</b> thay thế.
+    </div>
+  </div>
+</main>
+
+<div id="controls">
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-step">⏭ Step</button>
+  <button id="btn-reset">↺ Reset</button>
+  <button id="btn-new">🎲 Graph mới</button>
+  <label>Speed <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <div id="stats">
+    <div class="stat">Relaxations <span id="s-relax">0</span></div>
+    <div class="stat">Visited <span id="s-visited">0</span></div>
+    <div id="progress-wrap"><div id="progress-bar"></div></div>
   </div>
 </div>
 
 <script>
-// ─── Graph Data ───────────────────────────────────────────────────────────────
-const W = () => document.getElementById('svg-container').clientWidth;
-const H = () => document.getElementById('svg-container').clientHeight;
-
-let nodes = [
-  {id:'A',x:0,y:0,label:'A'},
-  {id:'B',x:0,y:0,label:'B'},
-  {id:'C',x:0,y:0,label:'C'},
-  {id:'D',x:0,y:0,label:'D'},
-  {id:'E',x:0,y:0,label:'E'},
-  {id:'F',x:0,y:0,label:'F'},
-];
-let edges = [
-  {from:'A',to:'B',w:4},
-  {from:'A',to:'C',w:2},
-  {from:'B',to:'C',w:1},
-  {from:'B',to:'D',w:5},
-  {from:'C',to:'B',w:1},
-  {from:'C',to:'D',w:8},
-  {from:'C',to:'E',w:10},
-  {from:'D',to:'E',w:2},
-  {from:'D',to:'F',w:6},
-  {from:'E',to:'F',w:3},
-];
-let negEdge = null;
-let negEnabled = false;
-
-// Position nodes in a nice layout
-function initPositions(){
-  const cx = W()/2, cy = H()/2;
-  const layout = [
-    {id:'A',x:cx-200,y:cy-60},
-    {id:'B',x:cx-50,y:cy-130},
-    {id:'C',x:cx-60,y:cy+60},
-    {id:'D',x:cx+100,y:cy-80},
-    {id:'E',x:cx+100,y:cy+80},
-    {id:'F',x:cx+240,y:cy},
-  ];
-  layout.forEach(p=>{ const n=nodes.find(n=>n.id===p.id); if(n){n.x=p.x;n.y=p.y;} });
-}
-
-// ─── State ────────────────────────────────────────────────────────────────────
-let source = null;
-let dist = {}, prev = {}, visited = new Set(), pq = [];
-let steps = [], stepIdx = 0;
-let playing = false, timer = null;
-let nodeColors = {}, edgeColors = {};
-
-const CODE = [
-  'import heapq',
-  'def dijkstra(graph, src):',
-  '    dist = {v: ∞ for v in graph}',
-  '    dist[src] = 0',
-  '    pq = [(0, src)]  # (cost, node)',
-  '    visited = set()',
-  '    while pq:',
-  '        d, u = heapq.heappop(pq)',
-  '        if u in visited: continue',
-  '        visited.add(u)',
-  '        for v, w in graph[u]:',
-  '            if dist[u] + w < dist[v]:',
-  '                dist[v] = dist[u] + w',
-  '                heapq.heappush(pq,(dist[v],v))',
-  '    return dist',
-];
-
-// ─── Build steps ─────────────────────────────────────────────────────────────
-function buildSteps(src){
-  steps = [];
-  dist = {}; prev = {}; visited = new Set();
-  nodes.forEach(n=>{ dist[n.id]=Infinity; prev[n.id]=null; });
-  dist[src]=0;
-  pq = [[0,src]];
-  const allEdges = negEnabled && negEdge ? [...edges, negEdge] : edges;
-
-  steps.push({type:'init',src,dist:{...dist},pq:[...pq],code:4,log:'Khởi tạo dist['+src+']=0, thêm vào PQ'});
-
-  while(pq.length){
-    pq.sort((a,b)=>a[0]-b[0]);
-    const [d,u] = pq.shift();
-    if(visited.has(u)){
-      steps.push({type:'skip',node:u,dist:{...dist},pq:[...pq],code:8,log:'Bỏ qua '+u+' (đã thăm)'});
-      continue;
-    }
-    visited.add(u);
-    steps.push({type:'extract',node:u,dist:d,distAll:{...dist},pq:[...pq],code:8,log:'Rút '+u+' từ PQ, khoảng cách='+d,visitedSnap:new Set(visited)});
-
-    const neighbors = allEdges.filter(e=>e.from===u);
-    for(const e of neighbors){
-      const v=e.to, w=e.w;
-      const newD = dist[u]+w;
-      steps.push({type:'relax_try',from:u,to:v,w,newD,oldD:dist[v],dist:{...dist},pq:[...pq],code:11,visitedSnap:new Set(visited),log:`Thử cạnh ${u}→${v} (w=${w}): dist[${u}]+${w}=${newD} vs dist[${v}]=${dist[v]===Infinity?'∞':dist[v]}`});
-      if(newD < dist[v]){
-        dist[v]=newD; prev[v]=u;
-        pq.push([newD,v]);
-        steps.push({type:'relax_ok',from:u,to:v,w,newD,dist:{...dist},pq:[...pq],code:13,visitedSnap:new Set(visited),log:`✓ Cập nhật dist[${v}]=${newD}, thêm (${newD},${v}) vào PQ`});
-      } else {
-        steps.push({type:'relax_fail',from:u,to:v,w,newD,oldD:dist[v],dist:{...dist},pq:[...pq],code:11,visitedSnap:new Set(visited),log:`✗ Không cải thiện dist[${v}]`});
-      }
-    }
+// ─── GRAPH DEFINITION ────────────────────────────────────────────────────────
+const GRAPHS = [
+  {
+    nodes: [
+      {id:'A', x:110, y:210, label:'A'},
+      {id:'B', x:260, y:100, label:'B'},
+      {id:'C', x:260, y:320, label:'C'},
+      {id:'D', x:420, y:100, label:'D'},
+      {id:'E', x:420, y:320, label:'E'},
+      {id:'F', x:580, y:210, label:'F'},
+    ],
+    edges: [
+      {from:'A',to:'B',w:4},{from:'A',to:'C',w:2},
+      {from:'B',to:'D',w:5},{from:'B',to:'E',w:11},{from:'B',to:'C',w:1},
+      {from:'C',to:'E',w:7},
+      {from:'D',to:'F',w:3},
+      {from:'E',to:'F',w:1},
+    ],
+    source: 'A'
   }
-  steps.push({type:'done',dist:{...dist},prev:{...prev},pq:[],code:14,log:'Hoàn thành! Tất cả đỉnh đã được xử lý.',visitedSnap:new Set(visited)});
-}
+];
 
-// ─── Render ───────────────────────────────────────────────────────────────────
-function renderCode(activeLine){
-  const panel = document.getElementById('code-panel');
-  panel.innerHTML = CODE.map((l,i)=>`<div class="code-line${i===activeLine?' active':''}">${escHtml(l)}</div>`).join('');
-}
+const NODE_COLORS = {
+  default: {top:'#5b8def', bot:'#2c5aa0', glow:'rgba(91,141,239,0.5)'},
+  source:  {top:'#a78bfa', bot:'#7c5ce7', glow:'rgba(167,139,250,0.6)'},
+  current: {top:'#ffd43b', bot:'#e67e22', glow:'rgba(255,212,59,0.7)'},
+  visited: {top:'#2ecc71', bot:'#1a9c54', glow:'rgba(46,204,113,0.5)'},
+};
 
-function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+let graph, steps=[], stepIdx=0, playing=false, timer=null;
+let relaxCount=0, visitedCount=0;
 
-function renderDistTable(distObj, visitedSet, currentNode){
-  const cont = document.getElementById('dist-table');
-  let html = '<table><tr><th>Đỉnh</th><th>Khoảng cách</th><th>Qua</th></tr>';
-  nodes.forEach(n=>{
-    const d = distObj[n.id];
-    const isCur = n.id===currentNode;
-    const isFin = visitedSet && visitedSet.has(n.id);
-    html += `<tr class="${isCur?'current':isFin?'finalized':''}">
-      <td>${n.id}</td>
-      <td>${d===Infinity?'∞':d}</td>
-      <td>${prev[n.id]||'-'}</td>
-    </tr>`;
-  });
-  html += '</table>';
-  cont.innerHTML = html;
-}
+function getGraph() { return GRAPHS[0]; }
 
-function renderPQ(pqArr, extracting){
-  const cont = document.getElementById('pq-list');
-  if(!pqArr || pqArr.length===0){ cont.innerHTML='<div style="color:#718096;font-size:0.8rem;padding:4px">PQ rỗng</div>'; return; }
-  const sorted = [...pqArr].sort((a,b)=>a[0]-b[0]);
-  cont.innerHTML = sorted.map((item,i)=>`
-    <div class="pq-item${i===0?' top':''}${item[1]===extracting?' extracting':''}">
-      <span>${item[1]}</span>
-      <span style="color:#63b3ed;font-weight:700">d=${item[0]===Infinity?'∞':item[0]}</span>
-    </div>`).join('');
-}
-
-function addLog(entry, cls){
-  const log = document.getElementById('step-log');
-  const div = document.createElement('div');
-  div.className = 'entry '+(cls||'');
-  div.textContent = entry;
-  log.appendChild(div);
-  log.scrollTop = log.scrollHeight;
-}
-
-// ─── SVG Rendering ────────────────────────────────────────────────────────────
-let dragging = null, dragOffX=0, dragOffY=0;
-
-function getNodePos(id){ const n=nodes.find(n=>n.id===id); return n?{x:n.x,y:n.y}:{x:0,y:0}; }
-
-function edgeKey(from,to){return from+'→'+to;}
-
-function calcEdgeEndpoints(from, to, r=22){
-  const f=getNodePos(from), t=getNodePos(to);
-  const dx=t.x-f.x, dy=t.y-f.y, len=Math.sqrt(dx*dx+dy*dy)||1;
-  return {
-    x1: f.x+dx/len*r, y1: f.y+dy/len*r,
-    x2: t.x-dx/len*(r+8), y2: t.y-dy/len*(r+8),
-    mx: (f.x+t.x)/2, my: (f.y+t.y)/2
-  };
-}
-
-function markerForColor(c){
-  if(c==='#48bb78') return 'url(#arrow-green)';
-  if(c==='#ecc94b') return 'url(#arrow-yellow)';
-  if(c==='#fc8181') return 'url(#arrow-red)';
-  return 'url(#arrow)';
-}
-
-function renderGraph(){
+// ─── SVG RENDERING ───────────────────────────────────────────────────────────
+function renderGraph(g) {
   const svg = document.getElementById('graph-svg');
-  const eg = document.getElementById('edges-group');
-  const ng = document.getElementById('nodes-group');
-  eg.innerHTML=''; ng.innerHTML='';
+  svg.innerHTML = '';
 
-  // Add gradient defs if not present
-  let defs = svg.querySelector('defs');
-  if(!defs){ defs=document.createElementNS('http://www.w3.org/2000/svg','defs'); svg.insertBefore(defs,svg.firstChild); }
+  // Defs for gradients and glows
+  const defs = svgEl('defs');
 
-  const allEdges = negEnabled && negEdge ? [...edges, negEdge] : edges;
+  Object.entries(NODE_COLORS).forEach(([key, c]) => {
+    const rg = svgEl('radialGradient'); rg.id = 'ng-'+key;
+    rg.setAttribute('cx','35%'); rg.setAttribute('cy','30%');
+    rg.setAttribute('r','70%');
+    const s1=svgEl('stop'); s1.setAttribute('offset','0%'); s1.setAttribute('stop-color',c.top);
+    const s2=svgEl('stop'); s2.setAttribute('offset','100%'); s2.setAttribute('stop-color',c.bot);
+    rg.appendChild(s1); rg.appendChild(s2); defs.appendChild(rg);
 
-  allEdges.forEach(e=>{
-    const key = edgeKey(e.from,e.to);
-    const color = edgeColors[key] || '#2d3748';
-    const isPath = color==='#48bb78';
-    const isTrying = color==='#ecc94b';
-    const isRejected = color==='#fc8181';
-    const width = isPath ? 4 : isTrying ? 3 : 1.5;
-    const ep = calcEdgeEndpoints(e.from, e.to);
-    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-    line.setAttribute('x1',ep.x1); line.setAttribute('y1',ep.y1);
-    line.setAttribute('x2',ep.x2); line.setAttribute('y2',ep.y2);
-    line.setAttribute('stroke',color); line.setAttribute('stroke-width',width);
-    line.setAttribute('marker-end',markerForColor(color));
-    line.className.baseVal='edge-line';
-    if(isPath) line.style.filter='drop-shadow(0 0 6px rgba(72,187,120,0.8))';
-    if(isTrying) line.style.animation='relaxPulse 0.6s ease forwards';
-    eg.appendChild(line);
+    const fil = svgEl('filter'); fil.id = 'glow-'+key;
+    const fe = svgEl('feGaussianBlur'); fe.setAttribute('stdDeviation','4'); fe.setAttribute('result','blur');
+    const fm = svgEl('feMerge');
+    const fn1=svgEl('feMergeNode'); fn1.setAttribute('in','blur');
+    const fn2=svgEl('feMergeNode'); fn2.setAttribute('in','SourceGraphic');
+    fm.appendChild(fn1); fm.appendChild(fn2);
+    fil.appendChild(fe); fil.appendChild(fm); defs.appendChild(fil);
+  });
 
-    // Weight badge
-    const wBg = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    wBg.setAttribute('x',ep.mx-10); wBg.setAttribute('y',ep.my-16); wBg.setAttribute('width',20); wBg.setAttribute('height',14);
-    wBg.setAttribute('rx',4); wBg.setAttribute('fill','rgba(10,12,20,0.85)');
-    eg.appendChild(wBg);
-    const wt = document.createElementNS('http://www.w3.org/2000/svg','text');
-    wt.setAttribute('x',ep.mx); wt.setAttribute('y',ep.my-6);
-    wt.setAttribute('text-anchor','middle');
-    wt.className.baseVal='weight-label';
-    wt.style.fill = e.w<0?'#fc8181': isPath?'#9ae6b4' : isTrying?'#fbd38d':'#8896ab';
-    wt.style.fontWeight = isPath||isTrying?'700':'400';
+  svg.appendChild(defs);
+
+  // Edge group
+  const edgeG = svgEl('g'); edgeG.id='edge-group'; svg.appendChild(edgeG);
+  g.edges.forEach(e => {
+    const n1=g.nodes.find(n=>n.id===e.from), n2=g.nodes.find(n=>n.id===e.to);
+    const dx=n2.x-n1.x, dy=n2.y-n1.y, len=Math.sqrt(dx*dx+dy*dy);
+    const r=22;
+    const x1=n1.x+dx/len*r, y1=n1.y+dy/len*r;
+    const x2=n2.x-dx/len*r, y2=n2.y-dy/len*r;
+
+    const line = svgEl('line');
+    line.id = 'edge-'+e.from+'-'+e.to;
+    line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+    line.setAttribute('x2',x2); line.setAttribute('y2',y2);
+    line.setAttribute('stroke','#2a3a5c'); line.setAttribute('stroke-width','2');
+    line.setAttribute('marker-end','url(#arrow)');
+    line.setAttribute('stroke-dasharray', len);
+    line.setAttribute('stroke-dashoffset', '0');
+    edgeG.appendChild(line);
+
+    // Weight label
+    const mx=(n1.x+n2.x)/2, my=(n1.y+n2.y)/2;
+    const wt = svgEl('text');
+    wt.setAttribute('x', mx+8); wt.setAttribute('y', my-6);
+    wt.setAttribute('font-size','11'); wt.setAttribute('fill','#5b7aaa');
+    wt.setAttribute('font-weight','700'); wt.setAttribute('font-family','monospace');
     wt.textContent = e.w;
-    eg.appendChild(wt);
+    svg.appendChild(wt);
   });
 
-  nodes.forEach(n=>{
-    const nc = nodeColors[n.id];
-    let fillColor = '#1e2535';
-    let strokeColor = '#2d3748';
-    let glowAnim = '';
-    if(nc==='#2b6cb0'){ fillColor='#1a4a8a'; strokeColor='#63b3ed'; glowAnim='nodeGlow 1.5s ease-in-out infinite'; }
-    else if(nc==='#ecc94b'){ fillColor='#744210'; strokeColor='#ecc94b'; glowAnim='nodeActive 0.7s ease-in-out infinite'; }
-    else if(nc==='#276749'||nc==='#68d391'||nc==='#2f855a'){ fillColor='#1a4a36'; strokeColor='#48bb78'; glowAnim=''; }
-    else if(nc==='#742a2a'){ fillColor='#3d1515'; strokeColor='#fc8181'; }
+  // Arrow marker
+  const marker = svgEl('marker'); marker.id='arrow';
+  marker.setAttribute('viewBox','0 0 10 10'); marker.setAttribute('refX','5'); marker.setAttribute('refY','5');
+  marker.setAttribute('markerWidth','6'); marker.setAttribute('markerHeight','6');
+  marker.setAttribute('orient','auto-start-reverse');
+  const path = svgEl('path'); path.setAttribute('d','M 0 0 L 10 5 L 0 10 z'); path.setAttribute('fill','#2a3a5c');
+  marker.appendChild(path); defs.appendChild(marker);
 
-    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
-    g.setAttribute('transform',`translate(${n.x},${n.y})`);
-    g.style.cursor='pointer';
+  // Node group
+  const nodeG = svgEl('g'); nodeG.id='node-group'; svg.appendChild(nodeG);
+  g.nodes.forEach(n => {
+    const g2 = svgEl('g'); g2.id='node-'+n.id; g2.setAttribute('cursor','default');
 
-    // Glow ring
-    if(glowAnim){
-      const ring = document.createElementNS('http://www.w3.org/2000/svg','circle');
-      ring.setAttribute('r',26); ring.setAttribute('fill','none');
-      ring.setAttribute('stroke',strokeColor); ring.setAttribute('stroke-width',1.5);
-      ring.setAttribute('opacity','0.4');
-      ring.style.animation=glowAnim;
-      g.appendChild(ring);
-    }
+    const circle = svgEl('circle');
+    circle.setAttribute('cx',n.x); circle.setAttribute('cy',n.y); circle.setAttribute('r','22');
+    circle.setAttribute('fill','url(#ng-default)'); circle.setAttribute('filter','url(#glow-default)');
+    circle.setAttribute('stroke','rgba(255,255,255,0.15)'); circle.setAttribute('stroke-width','1.5');
+    g2.appendChild(circle);
 
-    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    circle.setAttribute('r',22);
-    circle.setAttribute('fill',fillColor);
-    circle.setAttribute('stroke',strokeColor); circle.setAttribute('stroke-width',n.id===source?3:2);
-    circle.className.baseVal='node-circle';
-    if(glowAnim) circle.style.filter=`drop-shadow(0 0 8px ${strokeColor})`;
+    const lbl = svgEl('text');
+    lbl.setAttribute('x',n.x); lbl.setAttribute('y',n.y+1);
+    lbl.setAttribute('text-anchor','middle'); lbl.setAttribute('dominant-baseline','middle');
+    lbl.setAttribute('font-size','13'); lbl.setAttribute('font-weight','800');
+    lbl.setAttribute('fill','#fff'); lbl.setAttribute('font-family','sans-serif');
+    lbl.textContent = n.label; g2.appendChild(lbl);
 
-    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
-    text.setAttribute('text-anchor','middle'); text.setAttribute('dy','0.35em');
-    text.setAttribute('fill','#e2e8f0'); text.className.baseVal='node-label';
-    text.textContent=n.id;
+    const dist = svgEl('text');
+    dist.id='dist-'+n.id;
+    dist.setAttribute('x',n.x); dist.setAttribute('y',n.y-30);
+    dist.setAttribute('text-anchor','middle');
+    dist.setAttribute('font-size','11'); dist.setAttribute('font-weight','700');
+    dist.setAttribute('fill','#5b7aaa'); dist.setAttribute('font-family','monospace');
+    dist.textContent = '∞'; g2.appendChild(dist);
 
-    // Distance badge on node
-    const curDist = dist[n.id];
-    if(curDist !== undefined && curDist !== Infinity && curDist !== null){
-      const dbg = document.createElementNS('http://www.w3.org/2000/svg','rect');
-      dbg.setAttribute('x',12); dbg.setAttribute('y',-32); dbg.setAttribute('width',26); dbg.setAttribute('height',14);
-      dbg.setAttribute('rx',4); dbg.setAttribute('fill','rgba(10,12,20,0.9)');
-      g.appendChild(dbg);
-      const dt = document.createElementNS('http://www.w3.org/2000/svg','text');
-      dt.setAttribute('x',25); dt.setAttribute('y',-22);
-      dt.setAttribute('text-anchor','middle');
-      dt.setAttribute('style','font-size:9px;font-weight:700;fill:#fbd38d');
-      dt.textContent='d='+curDist;
-      g.appendChild(dt);
-    }
+    nodeG.appendChild(g2);
+  });
+}
 
-    g.appendChild(circle); g.appendChild(text);
+function svgEl(tag) { return document.createElementNS('http://www.w3.org/2000/svg', tag); }
 
-    // Drag
-    g.addEventListener('mousedown',ev=>{
-      dragging=n.id;
-      const r=svg.getBoundingClientRect();
-      dragOffX=ev.clientX-r.left-n.x;
-      dragOffY=ev.clientY-r.top-n.y;
-      ev.preventDefault();
-    });
+function setNodeState(id, state) {
+  const c = document.querySelector(`#node-${id} circle`);
+  if (!c) return;
+  c.setAttribute('fill', `url(#ng-${state})`);
+  c.setAttribute('filter', `url(#glow-${state})`);
+}
 
-    // Click to select source or show path
-    g.addEventListener('click',()=>{
-      if(!source && steps.length===0){
-        source=n.id; nodeColors[n.id]='#2b6cb0';
-        buildSteps(n.id); stepIdx=0;
-        renderGraph(); renderDistTable(dist,new Set(),null);
-        renderPQ([[0,n.id]],null);
-        renderCode(4);
-        document.getElementById('status-bar').textContent='Nhấn Chạy hoặc Bước';
-      } else if(steps.length>0 && stepIdx===steps.length){
-        showPath(n.id);
+function setEdgeState(from, to, state) {
+  const line = document.getElementById('edge-'+from+'-'+to);
+  if (!line) return;
+  const colors = {
+    default: {stroke:'#2a3a5c', w:'2', dash:''},
+    try:     {stroke:'#ffd43b', w:'3', dash:'6,3'},
+    improve: {stroke:'#2ecc71', w:'3.5', dash:''},
+    reject:  {stroke:'#fc5c7d', w:'2.5', dash:'5,4'},
+    result:  {stroke:'#2ecc71', w:'4', dash:''},
+  };
+  const s = colors[state] || colors.default;
+  line.setAttribute('stroke', s.stroke);
+  line.setAttribute('stroke-width', s.w);
+  if (s.dash) line.setAttribute('stroke-dasharray', s.dash);
+  else line.setAttribute('stroke-dasharray', '');
+  // animate draw for result
+  if (state==='result') {
+    const len = line.getTotalLength?.() || 200;
+    line.setAttribute('stroke-dasharray', len);
+    line.setAttribute('stroke-dashoffset', len);
+    line.style.animation = 'edgeDraw 0.5s ease forwards';
+    const marker2 = document.getElementById('arrow-result') || (() => {
+      const m=svgEl('marker'); m.id='arrow-result';
+      m.setAttribute('viewBox','0 0 10 10'); m.setAttribute('refX','5'); m.setAttribute('refY','5');
+      m.setAttribute('markerWidth','6'); m.setAttribute('markerHeight','6');
+      m.setAttribute('orient','auto-start-reverse');
+      const p=svgEl('path'); p.setAttribute('d','M 0 0 L 10 5 L 0 10 z'); p.setAttribute('fill','#2ecc71');
+      m.appendChild(p);
+      document.querySelector('defs').appendChild(m); return m;
+    })();
+    line.setAttribute('marker-end','url(#arrow-result)');
+  }
+}
+
+function setDistLabel(id, val) {
+  const el = document.getElementById('dist-'+id);
+  if (!el) return;
+  el.textContent = val === Infinity ? '∞' : val;
+  el.setAttribute('fill', val===Infinity ? '#5b7aaa' : '#ffd43b');
+}
+
+// ─── ALGORITHM STEPS ─────────────────────────────────────────────────────────
+function buildSteps(g) {
+  const steps = [];
+  const dist = {}, prev = {}, visited = new Set();
+  g.nodes.forEach(n => { dist[n.id]=Infinity; prev[n.id]=null; });
+  dist[g.source] = 0;
+
+  const pq = [{node:g.source, d:0}]; // min-heap simulated
+  steps.push({type:'init', dist:{...dist}, pq:[...pq]});
+
+  while (pq.length) {
+    pq.sort((a,b)=>a.d-b.d);
+    const {node:u, d:du} = pq.shift();
+    if (visited.has(u)) continue;
+    visited.add(u);
+    steps.push({type:'dequeue', node:u, d:du, dist:{...dist}, visited:[...visited], pq:[...pq]});
+
+    const neighbors = g.edges.filter(e=>e.from===u);
+    for (const e of neighbors) {
+      const v=e.to, newDist=dist[u]+e.w;
+      const old=dist[v];
+      if (newDist < dist[v]) {
+        dist[v]=newDist; prev[v]=u;
+        pq.push({node:v, d:newDist});
+        steps.push({type:'relax', from:u, to:v, w:e.w, old, newDist, dist:{...dist}, prev:{...prev}, result:'improve', pq:[...pq], visited:[...visited]});
+      } else {
+        steps.push({type:'relax', from:u, to:v, w:e.w, old, newDist, dist:{...dist}, prev:{...prev}, result:'reject', pq:[...pq], visited:[...visited]});
       }
-    });
+    }
+  }
+  steps.push({type:'done', dist:{...dist}, prev:{...prev}});
+  return steps;
+}
 
-    ng.appendChild(g);
+// ─── UI UPDATE ───────────────────────────────────────────────────────────────
+function setExplain(icon, cls, html) {
+  const ic=document.querySelector('#explain-viz .step-icon');
+  ic.textContent=icon; ic.className='step-icon '+cls;
+  document.getElementById('explain-text').innerHTML=html;
+  document.getElementById('step-counter').textContent=`${stepIdx}/${steps.length}`;
+}
+function setInsight(title,html) { document.getElementById('insight').innerHTML=`<div class="insight-title">${title}</div>${html}`; }
+
+function updateDistTable(dist, prev, visited, current) {
+  const tbody=document.getElementById('dist-tbody');
+  tbody.innerHTML='';
+  graph.nodes.forEach(n => {
+    const tr=document.createElement('tr');
+    if (visited?.includes(n.id)) tr.className='visited';
+    if (current===n.id) tr.className='current';
+    const dot=`<span class="node-dot" style="background:${current===n.id?'#ffd43b':visited?.includes(n.id)?'#2ecc71':'#5b8def'}"></span>`;
+    const d=dist[n.id]; const isInf=d===Infinity||d===undefined;
+    tr.innerHTML=`<td>${dot}${n.id}</td><td class="dist-val ${!isInf?'updated':''} ${isInf?'inf':''}">${isInf?'∞':d}</td><td>${prev&&prev[n.id]?prev[n.id]:'—'}</td><td style="font-size:.72rem;color:${current===n.id?'#ffd43b':visited?.includes(n.id)?'#2ecc71':'#8899bb'}">${current===n.id?'🔄 Đang xét':visited?.includes(n.id)?'✅ Done':'⏳ Chờ'}</td>`;
+    tbody.appendChild(tr);
   });
 }
 
-svg.addEventListener = (type,fn)=>{}; // placeholder
-document.getElementById('graph-svg').addEventListener('mousemove',ev=>{
-  if(!dragging) return;
-  const r=document.getElementById('svg-container').getBoundingClientRect();
-  const n=nodes.find(n=>n.id===dragging);
-  if(n){ n.x=ev.clientX-r.left-dragOffX; n.y=ev.clientY-r.top-dragOffY; renderGraph(); }
-});
-document.getElementById('graph-svg').addEventListener('mouseup',()=>{ dragging=null; });
-
-// ─── Step execution ───────────────────────────────────────────────────────────
-function applyStep(s){
-  // Reset edge highlights first
-  const allEdges = negEnabled && negEdge ? [...edges, negEdge] : edges;
-  allEdges.forEach(e=>{ if(edgeColors[edgeKey(e.from,e.to)]==='#ecc94b') edgeColors[edgeKey(e.from,e.to)]='#4a5568'; });
-  nodes.forEach(n=>{ if(nodeColors[n.id]==='#ecc94b') nodeColors[n.id]='#2d3748'; });
-
-  if(s.type==='init'){
-    nodeColors[s.src]='#2b6cb0';
-    renderDistTable(s.dist, new Set(), s.src);
-    renderPQ(s.pq, null);
-    renderCode(s.code);
-    addLog(s.log,'extract');
-  }
-  if(s.type==='extract'){
-    // Restore previous node
-    nodes.forEach(n=>{ if(nodeColors[n.id]==='#ecc94b') nodeColors[n.id]='#68d391'; });
-    nodeColors[s.node]='#ecc94b';
-    renderDistTable(s.distAll, s.visitedSnap, s.node);
-    renderPQ(s.pq, s.node);
-    renderCode(s.code);
-    addLog(s.log,'extract');
-  }
-  if(s.type==='skip'){
-    renderPQ(s.pq, s.node);
-    renderCode(s.code);
-    addLog(s.log,'reject');
-  }
-  if(s.type==='relax_try'){
-    edgeColors[edgeKey(s.from,s.to)]='#ecc94b';
-    renderDistTable(s.dist, s.visitedSnap, s.from);
-    renderPQ(s.pq, null);
-    renderCode(s.code);
-    addLog(s.log,'');
-  }
-  if(s.type==='relax_ok'){
-    edgeColors[edgeKey(s.from,s.to)]='#48bb78';
-    nodeColors[s.to]='#276749';
-    renderDistTable(s.dist, s.visitedSnap, s.from);
-    renderPQ(s.pq, null);
-    renderCode(s.code);
-    addLog(s.log,'relax');
-  }
-  if(s.type==='relax_fail'){
-    edgeColors[edgeKey(s.from,s.to)]='#fc8181';
-    renderCode(s.code);
-    addLog(s.log,'reject');
-  }
-  if(s.type==='done'){
-    // Finalize all
-    nodes.forEach(n=>{ nodeColors[n.id]=s.visitedSnap.has(n.id)?'#276749':'#742a2a'; });
-    nodeColors[source]='#2b6cb0';
-    renderDistTable(s.dist, s.visitedSnap, null);
-    renderPQ([], null);
-    renderCode(s.code);
-    addLog(s.log,'relax');
-    document.getElementById('status-bar').textContent='Xong! Click đỉnh đích để xem đường đi';
-    if(negEnabled) document.getElementById('neg-warning').style.display='block';
-  }
-  renderGraph();
+function updatePQ(pq, current) {
+  const el=document.getElementById('pq-display');
+  if (!pq||!pq.length) { el.innerHTML='<span style="color:var(--muted);font-size:.78rem">Trống</span>'; return; }
+  const sorted=[...pq].sort((a,b)=>a.d-b.d);
+  el.innerHTML=sorted.map((item,i)=>`<span class="pq-item${i===0?'current':''}">${item.node}(${item.d===Infinity?'∞':item.d})</span>`).join('');
 }
 
-function showPath(dest){
-  if(!prev || !dist) return;
-  // Trace path
-  const path=[]; let cur=dest;
-  while(cur){ path.unshift(cur); cur=prev[cur]; }
-  const cost=dist[dest];
-
-  // Highlight edges on path
-  const allEdges = negEnabled && negEdge ? [...edges, negEdge] : edges;
-  allEdges.forEach(e=>{ edgeColors[edgeKey(e.from,e.to)]='#4a5568'; });
-  for(let i=0;i<path.length-1;i++) edgeColors[edgeKey(path[i],path[i+1])]='#48bb78';
-  nodes.forEach(n=>{ nodeColors[n.id]=path.includes(n.id)?'#2f855a':'#2d3748'; });
-  nodeColors[source]='#2b6cb0';
-  renderGraph();
-  document.getElementById('path-info').innerHTML=`<strong>${source} → ${dest}</strong><br>Đường đi: ${path.join(' → ')}<br>Chi phí: <span style="color:#68d391;font-weight:700">${cost===Infinity?'Không thể đến':''+cost}</span>`;
+function updateStatusRelax(from,to,w,old,newDist,result) {
+  const d=document.getElementById('status-display');
+  const oldStr=old===Infinity?'∞':old;
+  const tag=result==='improve'?'<span class="sd-tag improved">✅ Cập nhật!</span>':'<span class="sd-tag rejected">❌ Giữ nguyên</span>';
+  d.innerHTML=`
+    <span class="sd-node ${result==='improve'?'visit':'done'}">${from}</span>
+    <span class="sd-arrow">→</span>
+    <span class="sd-node ${result==='improve'?'visit':'done'}">${to}</span>
+    <span style="font-size:.85rem;color:var(--muted)">w=${w}</span>
+    <span class="sd-dist">${dist[from]??'?'}+${w}=${newDist}</span>
+    <span style="color:var(--muted)">vs</span>
+    <span class="sd-dist ${result}">dist[${to}]=${oldStr}</span>
+    ${tag}
+  `;
 }
 
-function step(){
-  if(!source){ document.getElementById('status-bar').textContent='Click vào đỉnh để chọn nguồn'; return; }
-  if(stepIdx>=steps.length) return;
+function applyStep(s) {
+  if (!s) return;
+  // reset all edge states
+  graph.edges.forEach(e => {
+    const el=document.getElementById('edge-'+e.from+'-'+e.to);
+    if (el) { el.setAttribute('stroke','#2a3a5c'); el.setAttribute('stroke-width','2'); el.setAttribute('stroke-dasharray',''); el.style.animation=''; }
+  });
+
+  switch(s.type) {
+    case 'init':
+      relaxCount=0; visitedCount=0;
+      graph.nodes.forEach(n => { setNodeState(n.id,'default'); setDistLabel(n.id,Infinity); });
+      setNodeState(graph.source,'source'); setDistLabel(graph.source,0);
+      updateDistTable(s.dist,{},[],'');
+      updatePQ(s.pq,'');
+      document.getElementById('status-display').innerHTML='<span class="sd-idle">Khởi tạo: dist['+graph.source+']=0, tất cả còn lại=∞. Push '+graph.source+'(0) vào Priority Queue.</span>';
+      setExplain('💡','info',`Khởi tạo Dijkstra từ đỉnh <b>${graph.source}</b>. dist[${graph.source}]=0, mọi đỉnh khác=∞. Push <b>${graph.source}(0)</b> vào Priority Queue.`);
+      setInsight('📚 Greedy Strategy','Dijkstra là thuật toán <b>tham lam</b>: luôn xử lý đỉnh có dist nhỏ nhất trước. Priority Queue (min-heap) đảm bảo điều này hiệu quả.');
+      break;
+    case 'dequeue':
+      visitedCount++; document.getElementById('s-visited').textContent=visitedCount;
+      document.getElementById('progress-bar').style.width=(visitedCount/graph.nodes.length*100)+'%';
+      graph.nodes.forEach(n=>{ if(s.visited.includes(n.id)) setNodeState(n.id,'visited'); });
+      setNodeState(s.node,'current');
+      graph.nodes.forEach(n=>setDistLabel(n.id,s.dist[n.id]));
+      updateDistTable(s.dist,{},s.visited,s.node);
+      updatePQ(s.pq,s.node);
+      document.getElementById('status-display').innerHTML=`<span class="sd-node visit">${s.node}</span><span style="margin:0 10px;color:var(--muted)">Dequeue đỉnh gần nhất</span><span class="sd-dist improved">dist[${s.node}]=${s.d}</span>`;
+      setExplain('🔄','visit',`<b>Dequeue đỉnh ${s.node}</b> (dist=${s.d}) từ Priority Queue. Đây là đỉnh chưa visited có khoảng cách nhỏ nhất. Bắt đầu xét các cạnh kề.`);
+      setInsight('🔑 Tại sao đúng?',`Khi dequeue đỉnh <b>${s.node}</b>, dist[${s.node}]=${s.d} là đường ngắn nhất thực sự. Không có đường nào qua đỉnh chưa visited ngắn hơn (do mọi edge weight ≥ 0).`);
+      break;
+    case 'relax':
+      relaxCount++; document.getElementById('s-relax').textContent=relaxCount;
+      graph.nodes.forEach(n=>setDistLabel(n.id,s.dist[n.id]));
+      setEdgeState(s.from, s.to, s.result==='improve'?'improve':'reject');
+      if (s.result==='improve') {
+        setNodeState(s.to,'current');
+        setEdgeState(s.from,s.to,'improve');
+      }
+      updateDistTable(s.dist, s.prev, s.visited, s.from);
+      updatePQ(s.pq, '');
+      updateStatusRelax(s.from,s.to,s.w,s.old,s.newDist,s.result);
+      if (s.result==='improve') {
+        setExplain('✅','improve',`Xét cạnh <b>${s.from}→${s.to}</b> (w=${s.w}). dist[${s.from}]+${s.w}=${s.newDist} &lt; dist[${s.to}]=${s.old===Infinity?'∞':s.old} → <b>Cập nhật dist[${s.to}]=${s.newDist}</b>. Push ${s.to}(${s.newDist}) vào PQ.`);
+        setInsight('📉 Edge Relaxation','Tìm được đường ngắn hơn! <b>Relaxation</b> thành công = cập nhật dist và prev. Đẩy node mới vào PQ để xét sau.');
+      } else {
+        setExplain('❌','reject',`Xét cạnh <b>${s.from}→${s.to}</b> (w=${s.w}). dist[${s.from}]+${s.w}=${s.newDist} ≥ dist[${s.to}]=${s.old===Infinity?'∞':s.old} → <b>Giữ nguyên</b>, không cải thiện.`);
+        setInsight('🚫 Rejected','Đường qua <b>${s.from}</b> không ngắn hơn → bỏ qua. Dijkstra chỉ cập nhật khi thực sự tìm được đường ngắn hơn.');
+      }
+      break;
+    case 'done':
+      graph.nodes.forEach(n=>{ setNodeState(n.id,'visited'); setDistLabel(n.id,s.dist[n.id]); });
+      // draw result tree
+      graph.nodes.forEach(n=>{ if(s.prev[n.id]) setEdgeState(s.prev[n.id],n.id,'result'); });
+      updateDistTable(s.dist, s.prev, graph.nodes.map(n=>n.id), '');
+      updatePQ([]);
+      document.getElementById('status-display').innerHTML=`<span style="color:var(--green);font-size:1.1rem;font-weight:700">🎉 Dijkstra hoàn tất! Tất cả đường đi ngắn nhất từ ${graph.source} đã tìm được.</span>`;
+      setExplain('🎉','done',`Dijkstra hoàn tất! Đã xét <b>${relaxCount}</b> edge relaxations, visited <b>${visitedCount}</b> đỉnh. Cạnh xanh = cây đường ngắn nhất (Shortest Path Tree).`);
+      setInsight('🌳 Shortest Path Tree',`Các cạnh xanh tạo thành <b>SPT</b> — cây đường ngắn nhất. Theo dõi prev[] từ bất kỳ đỉnh nào về <b>${graph.source}</b> để tìm đường đi cụ thể.`);
+      stopPlay();
+      break;
+  }
+}
+
+// ─── PLAYBACK ─────────────────────────────────────────────────────────────────
+function getDelay() { return Math.round(1200 - document.getElementById('speed').value*110); }
+function tick() {
+  if (stepIdx>=steps.length) { stopPlay(); return; }
   applyStep(steps[stepIdx++]);
-  document.getElementById('status-bar').textContent=`Bước ${stepIdx}/${steps.length}`;
+  if (playing) timer=setTimeout(tick, getDelay());
 }
-
-function play(){
-  if(!source) return;
-  playing=!playing;
-  document.getElementById('btn-play').textContent = playing?'⏸ Dừng':'▶ Chạy';
-  if(playing) runNext();
+function startPlay() { if(stepIdx>=steps.length) reset(); playing=true; document.getElementById('btn-play').textContent='⏸ Pause'; tick(); }
+function stopPlay() { playing=false; clearTimeout(timer); document.getElementById('btn-play').textContent='▶ Play'; }
+function reset() {
+  stopPlay(); stepIdx=0; relaxCount=0; visitedCount=0;
+  document.getElementById('s-relax').textContent='0';
+  document.getElementById('s-visited').textContent='0';
+  document.getElementById('progress-bar').style.width='0%';
+  renderGraph(graph);
+  steps=buildSteps(graph);
+  applyStep(steps[stepIdx++]);
 }
+function newGraph() { graph=getGraph(); reset(); }
 
-function runNext(){
-  if(!playing || stepIdx>=steps.length){ playing=false; document.getElementById('btn-play').textContent='▶ Chạy'; return; }
-  step();
-  const speed = parseInt(document.getElementById('speed').value);
-  timer = setTimeout(runNext, speed);
-}
-
-function reset(){
-  playing=false; clearTimeout(timer);
-  source=null; steps=[]; stepIdx=0; dist={}; prev={}; visited=new Set(); pq=[];
-  nodeColors={}; edgeColors={};
-  negEnabled=false; negEdge=null;
-  document.getElementById('neg-warning').style.display='none';
-  document.getElementById('neg-toggle') && (document.getElementById('btn-neg-toggle').classList.remove('active'));
-  document.getElementById('btn-play').textContent='▶ Chạy';
-  document.getElementById('status-bar').textContent='Chọn đỉnh nguồn';
-  document.getElementById('step-log').innerHTML='';
-  document.getElementById('pq-list').innerHTML='';
-  document.getElementById('dist-table').innerHTML='';
-  document.getElementById('path-info').textContent='Click vào đỉnh đích để xem đường đi ngắn nhất';
-  renderCode(-1);
-  renderGraph();
-}
-
-document.getElementById('btn-play').onclick=play;
-document.getElementById('btn-step').onclick=step;
+document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
+document.getElementById('btn-step').onclick=()=>{ stopPlay(); if(stepIdx<steps.length) applyStep(steps[stepIdx++]); };
 document.getElementById('btn-reset').onclick=reset;
-document.getElementById('speed').oninput=function(){
-  const v=parseInt(this.value);
-  document.getElementById('speed-label').textContent=(2100-v)/1000+'x';
-};
+document.getElementById('btn-new').onclick=newGraph;
 
-document.getElementById('btn-neg-toggle').onclick=function(){
-  negEnabled=!negEnabled;
-  this.classList.toggle('active',negEnabled);
-  if(negEnabled){
-    negEdge={from:'D',to:'A',w:-15};
-    document.getElementById('neg-warning').style.display='block';
-  } else {
-    negEdge=null;
-    document.getElementById('neg-warning').style.display='none';
-  }
-  reset();
-  initPositions();
-  renderGraph();
-};
-
-document.getElementById('btn-add-edge').onclick=function(){
-  const from=prompt('Từ đỉnh (A-F):','A');
-  const to=prompt('Đến đỉnh (A-F):','B');
-  const w=parseInt(prompt('Trọng số:','5'));
-  if(from&&to&&!isNaN(w)&&nodes.find(n=>n.id===from)&&nodes.find(n=>n.id===to)){
-    edges.push({from,to,w}); reset(); renderGraph();
-  }
-};
-
-document.getElementById('btn-rm-edge').onclick=function(){
-  const from=prompt('Xóa cạnh từ:','A');
-  const to=prompt('Đến:','B');
-  edges=edges.filter(e=>!(e.from===from&&e.to===to));
-  reset(); renderGraph();
-};
-
-// ─── Init ─────────────────────────────────────────────────────────────────────
-window.addEventListener('resize', ()=>{ initPositions(); renderGraph(); });
-window.addEventListener('load',()=>{ initPositions(); renderGraph(); renderCode(-1); });
+graph=getGraph();
+renderGraph(graph);
+steps=buildSteps(graph);
+applyStep(steps[stepIdx++]);
 </script>
 </body>
 </html>

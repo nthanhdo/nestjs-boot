@@ -3,646 +3,452 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DP #25 — Bài toán Ba lô (0/1 Knapsack)</title>
+<title>DP Knapsack — Bài toán Ba lô 0/1</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #0a0a1a;
-  color: #e0e0e0;
-  min-height: 100vh;
-  background-image:
-    radial-gradient(ellipse at 15% 25%, rgba(34,197,94,0.07) 0%, transparent 60%),
-    radial-gradient(ellipse at 85% 75%, rgba(99,102,241,0.05) 0%, transparent 60%),
-    linear-gradient(rgba(34,197,94,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(34,197,94,0.025) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
-}
-header {
-  background: linear-gradient(135deg, #0a1a0f, #0f2018);
-  padding: 16px 24px;
-  border-bottom: 2px solid #22c55e;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  box-shadow: 0 2px 20px rgba(34,197,94,0.15);
-}
-header h1 { font-size: 1.3rem; color: #4ade80; }
-header .badge { background: #14532d; color: #4ade80; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
-.main { display: grid; grid-template-columns: 1fr 320px; height: calc(100vh - 60px); }
-.left-panel { padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-.right-panel { background: #070f0a; border-left: 2px solid #0f2018; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  :root {
+    --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+    --text: #eef1f8; --muted: #8899bb;
+    --accent: #a78bfa; --yellow: #ffd43b;
+    --take-top: #2ecc71; --take-bot: #1a9c54; --take-glow: rgba(46,204,113,0.4);
+    --skip-top: #5b8def; --skip-bot: #2c5aa0;
+    --cur-top: #ff5e7a; --cur-bot: #c0143c; --cur-glow: rgba(255,94,122,0.5);
+    --src-top: #ffd43b; --src-bot: #e67e22; --src-glow: rgba(255,212,59,0.4);
+    --back-top: #f97316; --back-bot: #c2410c; --back-glow: rgba(249,115,22,0.5);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  body::before { content:''; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 15%, rgba(46,204,113,0.06) 0%, transparent 55%), radial-gradient(ellipse at 80% 85%, rgba(167,139,250,0.05) 0%, transparent 55%); pointer-events: none; }
 
-/* ── Keyframes ──────────────────────────────────────────────────────── */
-@keyframes fillCell {
-  0%   { transform: scaleX(0) scaleY(0.8); opacity: 0; }
-  60%  { transform: scaleX(1.04) scaleY(1.02); opacity: 1; }
-  100% { transform: scaleX(1) scaleY(1); opacity: 1; }
-}
-@keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(34,197,94,0.3); }
-  50%       { box-shadow: 0 0 20px rgba(34,197,94,0.8); }
-}
-@keyframes itemFloat {
-  0%   { transform: translateY(0) scale(1); }
-  40%  { transform: translateY(-12px) scale(1.12); }
-  70%  { transform: translateY(-8px) scale(1.08); }
-  100% { transform: translateY(0) scale(1); }
-}
-@keyframes itemDrop {
-  0%   { transform: translateY(-30px) scale(0.6); opacity: 0; }
-  60%  { transform: translateY(4px) scale(1.08); opacity: 1; }
-  100% { transform: translateY(0) scale(1); opacity: 1; }
-}
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(245,158,11,0.4); }
-  50%       { box-shadow: 0 0 22px rgba(245,158,11,0.9); }
-}
-@keyframes arrowDraw {
-  0%   { stroke-dashoffset: 40; opacity: 0; }
-  100% { stroke-dashoffset: 0; opacity: 1; }
-}
-@keyframes backtrackGlow {
-  0%, 100% { box-shadow: 0 0 8px rgba(34,197,94,0.4); }
-  50%       { box-shadow: 0 0 24px rgba(34,197,94,0.9); }
-}
-@keyframes waveIn {
-  0%   { transform: translateX(-6px); opacity: 0; }
-  100% { transform: translateX(0); opacity: 1; }
-}
-@keyframes bounceIn {
-  0%   { transform: scale(0.5); opacity: 0; }
-  60%  { transform: scale(1.15); }
-  100% { transform: scale(1); opacity: 1; }
-}
+  header { background: var(--surface); padding: 10px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); z-index: 2; }
+  header h1 { font-size: 1.15rem; font-weight: 700; background: linear-gradient(135deg,#2ecc71,#05c46b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .badge { background: linear-gradient(135deg,#1a9c54,#2ecc71); color: #fff; padding: 2px 10px; border-radius: 12px; font-size: .68rem; font-weight: 700; }
+  .complexity { display: flex; gap: 6px; margin-left: auto; }
+  .cx { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 9px; font-size: .72rem; color: var(--muted); }
+  .cx span { color: var(--yellow); font-weight: 700; }
 
-/* Approach toggle */
-.toggle-row { display: flex; gap: 6px; }
-.toggle-btn { padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 0.82rem; font-weight: 600; border: 2px solid #0f2018; background: #070f0a; color: #3a6050; transition: all 0.2s; }
-.toggle-btn.active { background: #0a2018; border-color: #22c55e; color: #4ade80; }
+  main { flex: 1; display: flex; overflow: hidden; z-index: 1; min-height: 0; }
+  #viz { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
-/* Items row */
-.items-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
-.item-card {
-  background: #0a1a0f; border-radius: 10px; padding: 10px 12px;
-  border: 2px solid #0f2018; min-width: 80px; text-align: center;
-  cursor: pointer; transition: all 0.3s; position: relative;
-}
-.item-card .item-icon { font-size: 1.8rem; }
-.item-card .item-name { font-size: 0.72rem; color: #4a7060; margin-top: 2px; }
-.item-card .item-stats { font-size: 0.7rem; margin-top: 4px; }
-.item-card .wt { color: #fb923c; }
-.item-card .vl { color: #22c55e; }
-.item-card.selected { border-color: #22c55e; background: #071a0f; box-shadow: 0 0 12px rgba(34,197,94,0.3); }
-.item-card.in-knapsack { border-color: #f59e0b; background: #1a1000; animation: itemFloat 0.5s cubic-bezier(0.34,1.56,0.64,1); }
-.item-card.active-compute { border-color: #f59e0b; background: #1a1000; box-shadow: 0 0 16px rgba(245,158,11,0.5); }
+  /* STATUS DISPLAY */
+  #status-display { padding: 8px 20px; min-height: 50px; display: flex; align-items: center; justify-content: center; gap: 12px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .sd-idle { color: var(--muted); font-size: .9rem; }
+  .sd-cell { display: inline-flex; align-items: center; justify-content: center; padding: 4px 12px; border-radius: 8px; font-size: .9rem; font-weight: 800; color: #fff; }
+  .sd-cell.cur { background: linear-gradient(135deg,var(--cur-top),var(--cur-bot)); box-shadow: 0 0 12px var(--cur-glow); }
+  .sd-cell.take { background: linear-gradient(135deg,var(--take-top),var(--take-bot)); box-shadow: 0 0 12px var(--take-glow); }
+  .sd-cell.skip { background: linear-gradient(135deg,var(--skip-top),var(--skip-bot)); }
+  .sd-cell.back { background: linear-gradient(135deg,var(--back-top),var(--back-bot)); box-shadow: 0 0 12px var(--back-glow); }
+  .sd-op { font-size: 1rem; color: var(--yellow); padding: 0 4px; }
 
-/* Knapsack visual */
-.knapsack-row { display: flex; gap: 16px; align-items: flex-start; }
-.knapsack-visual {
-  background: #0a100f; border: 3px solid #22c55e; border-radius: 12px;
-  padding: 12px; min-width: 160px; min-height: 120px; position: relative;
-  box-shadow: 0 0 16px rgba(34,197,94,0.15);
-}
-.knapsack-visual .ks-title { font-size: 0.72rem; color: #4a7060; margin-bottom: 6px; }
-.ks-capacity-bar { height: 8px; background: #0f2018; border-radius: 4px; margin-bottom: 8px; overflow: hidden; }
-.ks-capacity-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #4ade80); border-radius: 4px; transition: width 0.5s cubic-bezier(0.34,1.56,0.64,1); }
-.ks-items { display: flex; flex-wrap: wrap; gap: 4px; }
-.ks-item {
-  padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold;
-  animation: itemDrop 0.4s cubic-bezier(0.34,1.56,0.64,1);
-}
-.ks-stats { margin-top: 8px; font-size: 0.78rem; }
-.ks-stats .total-val { color: #f59e0b; font-weight: bold; }
+  /* EXPLAIN BAR */
+  #explain-viz { padding: 10px 24px; min-height: 52px; background: linear-gradient(135deg,rgba(21,29,50,0.95),rgba(28,39,68,0.9)); border-bottom: 1px solid var(--border); font-size: .88rem; line-height: 1.55; color: var(--text); display: flex; align-items: center; gap: 12px; }
+  #explain-viz .step-icon { flex-shrink: 0; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: all 0.3s; }
+  #explain-viz .step-icon.info { background: rgba(91,141,239,0.15); border: 1px solid rgba(91,141,239,0.3); }
+  #explain-viz .step-icon.compute { background: rgba(255,94,122,0.15); border: 1px solid rgba(255,94,122,0.3); }
+  #explain-viz .step-icon.take { background: rgba(46,204,113,0.15); border: 1px solid rgba(46,204,113,0.3); }
+  #explain-viz .step-icon.back { background: rgba(249,115,22,0.15); border: 1px solid rgba(249,115,22,0.3); }
+  #explain-text { flex: 1; }
+  #explain-text b { color: var(--yellow); }
+  #explain-text code { background: var(--surface2); padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: .8rem; color: var(--accent); }
+  #step-counter { font-size: .72rem; color: var(--muted); white-space: nowrap; }
 
-/* DP Table */
-.table-section { overflow: auto; }
-.dp-grid { display: grid; gap: 2px; width: fit-content; }
-.dp-cell {
-  width: 44px; height: 44px; border-radius: 6px; border: 1.5px solid #0f2018;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 0.82rem; font-weight: bold; transition: border-color 0.3s, box-shadow 0.3s;
-  position: relative; cursor: default;
-}
-.dp-cell.header { background: #0a1510; color: #3a5040; font-size: 0.68rem; border: none; font-weight: 600; }
-.dp-cell.empty    { background: #070f0a; color: #1a3020; }
-.dp-cell.computing { background: #1a1000; border-color: #f59e0b; color: #f59e0b; animation: pulse 1s ease-in-out infinite; }
-.dp-cell.computed  { background: #080f0a; border-color: #1a4028; color: #4a8060; animation: fillCell 0.35s cubic-bezier(0.34,1.56,0.64,1); }
-.dp-cell.source-include { background: #071a0f; border-color: #22c55e !important; color: #22c55e !important; box-shadow: 0 0 10px rgba(34,197,94,0.5); }
-.dp-cell.source-exclude { background: #080a12; border-color: #6366f1 !important; color: #818cf8 !important; }
-.dp-cell.backtrack { background: #0a1a0f; border-color: #22c55e !important; color: #22c55e !important; animation: backtrackGlow 1.5s ease-in-out infinite; }
-.dp-cell.optimal  { background: #071a0f; border-color: #22c55e !important; color: #4ade80 !important; }
-.dp-cell:hover { z-index: 10; transform: scale(1.1); }
+  /* VIZ AREA */
+  #viz-area { flex: 1; display: flex; gap: 16px; overflow: hidden; padding: 12px 16px; min-height: 0; }
 
-/* Arrow SVG overlay */
-.table-wrap { position: relative; }
-.arrow-svg { position: absolute; top: 0; left: 0; pointer-events: none; }
+  /* DP TABLE */
+  #dp-section { flex: 1; display: flex; flex-direction: column; gap: 8px; overflow: auto; }
+  #dp-section h3 { font-size: .78rem; color: var(--muted); font-weight: 600; }
+  #dp-table-wrap { overflow: auto; }
+  table { border-collapse: collapse; font-size: .8rem; }
+  th { background: var(--surface2); color: var(--muted); padding: 5px 10px; border: 1px solid var(--border); font-size: .72rem; text-align: center; position: sticky; top: 0; z-index: 1; }
+  td { border: 1px solid var(--border); padding: 0; }
+  .dp-cell {
+    width: 48px; height: 38px; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .82rem; color: var(--muted);
+    background: var(--surface); cursor: default;
+    transition: all 0.3s; position: relative;
+  }
+  .dp-cell.computing { background: rgba(255,94,122,0.15); color: var(--cur-top); box-shadow: inset 0 0 12px rgba(255,94,122,0.3); animation: computePulse 0.8s ease infinite; }
+  .dp-cell.src { background: rgba(255,212,59,0.1); color: var(--yellow); box-shadow: inset 0 0 8px rgba(255,212,59,0.2); }
+  .dp-cell.filled { background: rgba(46,204,113,0.1); color: var(--take-top); }
+  .dp-cell.filling { animation: cellFill 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  .dp-cell.backtrack { background: rgba(249,115,22,0.2); color: var(--back-top); box-shadow: inset 0 0 10px rgba(249,115,22,0.3); animation: backPulse 0.5s ease; }
+  .dp-cell.optimal { background: rgba(249,115,22,0.3); color: var(--back-top); box-shadow: inset 0 0 14px rgba(249,115,22,0.5); font-weight: 900; }
+  .row-label { background: var(--surface2); color: var(--accent); font-size: .72rem; font-weight: 700; padding: 4px 8px; text-align: right; white-space: nowrap; }
 
-/* Controls */
-.controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
-.btn-primary { background: linear-gradient(135deg, #15803d, #22c55e); color: #0a1a0f; box-shadow: 0 2px 10px rgba(34,197,94,0.3); }
-.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(34,197,94,0.4); }
-.btn-secondary { background: #0a1510; color: #3a6050; border: 1px solid #0f2018; }
-.btn-secondary:hover { background: #0f1a14; }
-.btn-danger { background: #1a0808; color: #ef4444; border: 1px solid #3a1010; }
-.btn-danger:hover { background: #250a0a; }
-select { background: #070f0a; color: #3a6050; border: 1px solid #0f2018; border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; }
+  /* KNAPSACK VISUAL */
+  #knapsack-section { width: 220px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
+  #knapsack-section h3 { font-size: .78rem; color: var(--muted); font-weight: 600; }
+  #items-list { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex: 1; }
+  .item-card {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 10px; font-size: .78rem; display: flex; align-items: center; gap: 8px;
+    transition: all 0.3s;
+  }
+  .item-card.active { border-color: var(--cur-top); box-shadow: 0 0 10px var(--cur-glow); }
+  .item-card.taken { border-color: var(--take-top); background: rgba(46,204,113,0.08); }
+  .item-card.floating { animation: itemFloat 0.6s ease; }
+  .item-icon { font-size: 1.2rem; }
+  .item-info { flex: 1; }
+  .item-name { font-weight: 700; color: var(--text); }
+  .item-stats { color: var(--muted); font-size: .7rem; }
+  .item-badge { padding: 2px 6px; border-radius: 4px; font-size: .65rem; font-weight: 700; color: #fff; }
+  .item-badge.take { background: var(--take-bot); }
+  .item-badge.skip { background: #334155; color: var(--muted); }
 
-/* Code */
-.code-panel { background: #040808; border-radius: 10px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.76rem; line-height: 1.7; border: 1px solid #0f2018; }
-.code-line { padding: 1px 6px; border-radius: 4px; transition: background 0.2s; white-space: pre; color: #2a5040; }
-.code-line.active   { background: rgba(34,197,94,0.12); color: #a7f3d0; border-left: 3px solid #22c55e; }
-.code-line.highlight { background: rgba(245,158,11,0.12); color: #fcd34d; border-left: 3px solid #f59e0b; }
-.kw { color: #c678dd; } .fn { color: #61afef; } .num { color: #d19a66; } .cm { color: #1a3028; font-style: italic; }
+  #knapsack-visual { background: var(--surface2); border: 2px solid var(--border); border-radius: 10px; padding: 10px; text-align: center; }
+  #knapsack-visual .ks-title { font-size: .72rem; color: var(--muted); margin-bottom: 6px; }
+  #knapsack-capacity-bar { height: 10px; background: var(--surface); border-radius: 5px; overflow: hidden; margin-top: 4px; }
+  #knapsack-fill { height: 100%; width: 0%; background: linear-gradient(90deg,var(--take-top),var(--take-bot)); border-radius: 5px; transition: width 0.5s; }
+  #knapsack-stats { font-size: .8rem; margin-top: 6px; color: var(--text); }
+  #knapsack-taken { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; justify-content: center; min-height: 30px; }
+  .ks-item { padding: 2px 8px; border-radius: 4px; background: rgba(46,204,113,0.15); border: 1px solid var(--take-top); font-size: .72rem; color: var(--take-top); animation: itemFloat 0.5s ease; }
 
-/* Stats */
-.stats-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.stat-box { background: #070f0a; border-radius: 8px; padding: 8px 12px; flex: 1; min-width: 80px; border: 1px solid #0f2018; }
-.stat-box .label { font-size: 0.68rem; color: #2a5040; text-transform: uppercase; }
-.stat-box .value { font-size: 1.2rem; font-weight: bold; color: #22c55e; }
+  /* BOTTOM BAR */
+  #bottom-bar { display: flex; align-items: center; background: var(--surface); border-top: 1px solid var(--border); }
+  #legend { flex: 1; display: flex; gap: 14px; padding: 7px 24px; font-size: .74rem; color: var(--muted); }
+  .leg { display: flex; align-items: center; gap: 6px; }
+  .leg-dot { width: 14px; height: 14px; border-radius: 3px; }
+  #progress-wrap { width: 160px; height: 5px; background: var(--surface2); border-radius: 3px; margin-right: 20px; overflow: hidden; }
+  #progress-bar { height: 100%; width: 0%; border-radius: 3px; background: linear-gradient(90deg,var(--accent),var(--take-top)); transition: width 0.4s; }
 
-/* Explanation */
-.explanation {
-  background: #070f0a; border-radius: 8px; padding: 8px 14px;
-  font-size: 0.82rem; color: #6a9080; min-height: 36px;
-  border-left: 3px solid #22c55e; animation: waveIn 0.3s ease;
-}
+  /* RIGHT PANEL */
+  #code-panel { width: 300px; min-width: 270px; background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+  .panel-title { padding: 10px 14px; background: var(--surface2); font-size: .78rem; font-weight: 600; color: var(--accent); border-bottom: 1px solid var(--border); }
+  #code { flex: 1; overflow-y: auto; padding: 10px 0; font-family: 'SF Mono','Fira Code',Consolas,monospace; font-size: .77rem; line-height: 2; }
+  .code-line { padding: 0 14px; color: #5a6d8e; white-space: pre; border-left: 3px solid transparent; transition: all 0.2s; }
+  .code-line.comment { color: #3a4d6e; font-style: italic; }
+  .code-line.active { background: linear-gradient(90deg,rgba(255,212,59,0.1),transparent); color: var(--yellow); border-left-color: var(--yellow); font-weight: 600; }
+  #insight { padding: 12px 14px; background: var(--bg); border-top: 1px solid var(--border); font-size: .8rem; line-height: 1.5; color: var(--muted); }
+  #insight .insight-title { color: var(--accent); font-weight: 700; font-size: .72rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  #insight b { color: var(--text); }
 
-/* Info */
-.info-box { background: #070f0a; border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.5; color: #3a6050; border-left: 3px solid #22c55e; }
-.info-box strong { color: #4ade80; }
+  /* CONTROLS */
+  #controls { background: var(--surface); padding: 8px 24px; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--border); z-index: 2; flex-wrap: wrap; }
+  button { border: none; border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: .8rem; font-weight: 600; transition: all 0.2s; }
+  button:active { transform: scale(0.95); }
+  button:disabled { background: var(--surface2)!important; color: #3a4d6e!important; cursor: not-allowed; }
+  #btn-play { background: linear-gradient(135deg,#00b894,#05c46b); color: #fff; box-shadow: 0 2px 10px rgba(5,196,107,0.25); min-width: 85px; }
+  #btn-step { background: linear-gradient(135deg,#7c5ce7,#a78bfa); color: #fff; }
+  #btn-reset,#btn-new { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  label { font-size: .76rem; color: var(--muted); }
+  input[type=range] { accent-color: var(--accent); width: 80px; }
+  #stats { display: flex; gap: 8px; margin-left: auto; }
+  .stat { background: var(--surface2); padding: 4px 10px; border-radius: 6px; font-size: .8rem; color: var(--muted); border: 1px solid var(--border); }
+  .stat span { color: var(--yellow); font-weight: 800; }
 
-.section-title { font-size: 0.78rem; font-weight: 700; color: #2a5040; text-transform: uppercase; letter-spacing: 0.06em; }
-
-/* Capacity control */
-.cap-row { display: flex; gap: 10px; align-items: center; background: #070f0a; border-radius: 8px; padding: 8px 14px; border: 1px solid #0f2018; }
-.cap-row label { font-size: 0.82rem; color: #3a6050; }
-input[type=range] { accent-color: #22c55e; flex: 1; }
-.cap-display { background: #0a1a0f; color: #22c55e; font-weight: bold; padding: 4px 10px; border-radius: 6px; border: 1px solid #22c55e; }
-
-/* Legend */
-.legend { display: flex; gap: 10px; flex-wrap: wrap; }
-.legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: #3a5040; }
-.legend-dot { width: 14px; height: 14px; border-radius: 3px; }
+  @keyframes cellFill { 0%{transform:scale(0.5);opacity:0} 70%{transform:scale(1.08);opacity:1} 100%{transform:scale(1);opacity:1} }
+  @keyframes computePulse { 0%,100%{box-shadow:inset 0 0 8px rgba(255,94,122,0.2)} 50%{box-shadow:inset 0 0 20px rgba(255,94,122,0.5)} }
+  @keyframes backPulse { 0%{transform:scale(1)} 30%{transform:scale(1.1)} 60%{transform:scale(0.97)} 100%{transform:scale(1)} }
+  @keyframes itemFloat { 0%{transform:translateY(0) scale(1)} 30%{transform:translateY(-10px) scale(1.1)} 60%{transform:translateY(-6px) scale(1.05)} 100%{transform:translateY(0) scale(1)} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
 </style>
 </head>
 <body>
 <header>
-  <div class="badge">Module 5</div>
-  <h1>🎒 Bài toán Ba lô — 0/1 Knapsack</h1>
-  <div class="badge">#25</div>
+  <h1>🎒 DP Knapsack 0/1</h1>
+  <span class="badge">DYNAMIC PROGRAMMING</span>
+  <div class="complexity">
+    <div class="cx">Time <span>O(n·W)</span></div>
+    <div class="cx">Space <span>O(n·W)</span></div>
+    <div class="cx">Type <span>0/1 Knapsack</span></div>
+  </div>
 </header>
+<main>
+  <div id="viz">
+    <div id="status-display"><span class="sd-idle">Nhấn Play để xem quá trình điền bảng DP</span></div>
 
-<div class="main">
-  <div class="left-panel">
-    <!-- Mode toggle -->
-    <div class="toggle-row">
-      <div class="toggle-btn active" id="btn-fill" onclick="setMode('fill')">📊 Điền bảng DP</div>
-      <div class="toggle-btn" id="btn-back" onclick="setMode('backtrack')">🔍 Backtrack (tìm items)</div>
+    <div id="explain-viz">
+      <div class="step-icon info">💡</div>
+      <div id="explain-text">0/1 Knapsack: Cho n items, mỗi item có weight và value. Chọn items sao cho tổng weight ≤ W và tổng value lớn nhất. Mỗi item chỉ dùng 1 lần.</div>
+      <div id="step-counter"></div>
     </div>
 
-    <!-- Capacity -->
-    <div class="cap-row">
-      <label>Sức chứa W =</label>
-      <input type="range" id="capSlider" min="4" max="12" value="7" oninput="onCapChange(this.value)">
-      <div class="cap-display" id="capDisplay">7</div>
-      <label style="font-size:0.78rem;color:#2a5040">kg</label>
-    </div>
-
-    <!-- Items -->
-    <div>
-      <div class="section-title" style="margin-bottom:8px">📦 Các vật phẩm</div>
-      <div class="items-row" id="itemsRow"></div>
-    </div>
-
-    <!-- Knapsack visual + table -->
-    <div class="knapsack-row">
-      <div class="knapsack-visual" id="knapsackViz">
-        <div class="ks-title">🎒 Ba lô (W = <span id="ksCapLabel">7</span>)</div>
-        <div class="ks-capacity-bar"><div class="ks-capacity-fill" id="ksBar" style="width:0%"></div></div>
-        <div class="ks-items" id="ksItems"></div>
-        <div class="ks-stats">Giá trị: <span class="total-val" id="ksValue">0</span></div>
+    <div id="viz-area">
+      <div id="dp-section">
+        <h3>📊 Bảng DP — dp[item][capacity]</h3>
+        <div id="dp-table-wrap"></div>
       </div>
-      <div style="flex:1; overflow:auto">
-        <div class="section-title" style="margin-bottom:6px">📋 Bảng dp[item][weight]</div>
-        <div id="dpTableWrap" class="table-wrap">
-          <div id="dpGrid" class="dp-grid"></div>
+      <div id="knapsack-section">
+        <h3>🎒 Items & Ba lô</h3>
+        <div id="items-list"></div>
+        <div id="knapsack-visual">
+          <div class="ks-title">🎒 Ba lô hiện tại</div>
+          <div id="knapsack-capacity-bar"><div id="knapsack-fill"></div></div>
+          <div id="knapsack-stats">Weight: 0/W • Value: 0</div>
+          <div id="knapsack-taken"></div>
         </div>
       </div>
     </div>
 
-    <!-- Legend -->
-    <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#1a1000;border:1px solid #f59e0b"></div>Đang tính</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#071a0f;border:1px solid #22c55e"></div>Chọn item</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#080a12;border:1px solid #6366f1"></div>Bỏ qua</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#0a1a0f;border:1px solid #22c55e"></div>Backtrack path</div>
-    </div>
-
-    <!-- Explanation -->
-    <div class="explanation" id="explanation">Nhấn ▶ Play để bắt đầu điền bảng DP từng bước.</div>
-
-    <!-- Stats -->
-    <div class="stats-row">
-      <div class="stat-box"><div class="label">Bước hiện tại</div><div class="value" id="statStep">0</div></div>
-      <div class="stat-box"><div class="label">Giá trị tối ưu</div><div class="value" id="statOpt">—</div></div>
-      <div class="stat-box"><div class="label">Items chọn</div><div class="value" id="statItems">—</div></div>
-    </div>
-
-    <!-- Controls -->
-    <div class="controls">
-      <button class="btn btn-primary" id="btnPlay" onclick="togglePlay()">▶ Play</button>
-      <button class="btn btn-secondary" onclick="stepForward()">⏭ Step</button>
-      <button class="btn btn-danger" onclick="resetAnim()">↺ Reset</button>
-      <select id="speedSel">
-        <option value="1200">Chậm</option>
-        <option value="700" selected>Bình thường</option>
-        <option value="300">Nhanh</option>
-        <option value="80">Rất nhanh</option>
-      </select>
+    <div id="bottom-bar">
+      <div id="legend">
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(135deg,var(--cur-top),var(--cur-bot));box-shadow:0 0 6px var(--cur-glow)"></div>Đang tính</div>
+        <div class="leg"><div class="leg-dot" style="background:rgba(255,212,59,0.3);border:1px solid var(--yellow)"></div>Source cells</div>
+        <div class="leg"><div class="leg-dot" style="background:rgba(46,204,113,0.15);border:1px solid var(--take-top)"></div>Đã điền</div>
+        <div class="leg"><div class="leg-dot" style="background:rgba(249,115,22,0.3);border:1px solid var(--back-top)"></div>Backtrack path</div>
+      </div>
+      <div id="progress-wrap"><div id="progress-bar"></div></div>
     </div>
   </div>
 
-  <div class="right-panel">
-    <div class="section-title">💻 Code (Bottom-Up)</div>
-    <div class="code-panel" id="codePanel">
-<div class="code-line"><span class="kw">function</span> <span class="fn">knapsack</span>(items, W):</div>
-<div class="code-line">  n = items.length</div>
-<div class="code-line">  dp = array (n+1) × (W+1), fill 0</div>
-<div class="code-line">  <span class="kw">for</span> i = 1 <span class="kw">to</span> n:  <span class="cm">// each item</span></div>
-<div class="code-line">    <span class="kw">for</span> w = 0 <span class="kw">to</span> W:  <span class="cm">// each capacity</span></div>
-<div class="code-line">      <span class="cm">// exclude item i</span></div>
-<div class="code-line">      dp[i][w] = dp[i-1][w]</div>
-<div class="code-line">      <span class="kw">if</span> items[i].w <= w:</div>
-<div class="code-line">        <span class="cm">// include item i</span></div>
-<div class="code-line">        include = dp[i-1][w - items[i].w] + items[i].v</div>
-<div class="code-line">        dp[i][w] = <span class="fn">max</span>(dp[i][w], include)</div>
-<div class="code-line">  <span class="kw">return</span> dp[n][W]</div>
-<div class="code-line"><span class="cm">// Độ phức tạp: O(n × W)</span></div>
+  <div id="code-panel">
+    <div class="panel-title">📝 0/1 Knapsack DP</div>
+    <div id="code"></div>
+    <div id="insight">
+      <div class="insight-title">💡 Công thức DP</div>
+      dp[i][w] = max(dp[i-1][w], dp[i-1][w-wi]+vi). <b>Lấy item i</b>: dp[i-1][w-wi]+vi. <b>Bỏ qua</b>: dp[i-1][w].
     </div>
-
-    <div class="section-title">🔍 Backtrack</div>
-    <div class="code-panel" style="font-size:0.74rem">
-<div class="code-line">i = n, w = W</div>
-<div class="code-line"><span class="kw">while</span> i > 0 <span class="kw">and</span> w > 0:</div>
-<div class="code-line">  <span class="kw">if</span> dp[i][w] != dp[i-1][w]:</div>
-<div class="code-line">    <span class="cm">// item i được chọn</span></div>
-<div class="code-line">    selected.add(items[i])</div>
-<div class="code-line">    w -= items[i].weight</div>
-<div class="code-line">  i -= 1</div>
-    </div>
-
-    <div class="info-box">
-      <strong>Công thức DP:</strong><br>
-      dp[i][w] = dp[i-1][w] nếu bỏ qua item i<br>
-      dp[i][w] = max(above, dp[i-1][w - wᵢ] + vᵢ) nếu thêm item i<br><br>
-      <strong>dp[i][w]</strong> = giá trị tối đa khi xét <strong>i items đầu</strong> với sức chứa <strong>w</strong>
-    </div>
-
-    <div class="section-title">📈 Trạng thái</div>
-    <div id="currentCellInfo" style="background:#070f0a;border-radius:8px;padding:10px;font-size:0.78rem;color:#3a6050;line-height:1.6;border:1px solid #0f2018">
-      Chưa có cell nào đang được tính.
-    </div>
+  </div>
+</main>
+<div id="controls">
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-step">⏭ Step</button>
+  <button id="btn-reset">↺ Reset</button>
+  <button id="btn-new">🎲 Mới</button>
+  <label>Speed <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <div id="stats">
+    <div class="stat">Cells <span id="s-cells">0</span></div>
+    <div class="stat">Max Value <span id="s-val">0</span></div>
+    <div class="stat">Weight <span id="s-wt">0</span>/<span id="s-cap">0</span></div>
   </div>
 </div>
 
 <script>
-// ── Items data ─────────────────────────────────────────────────────────
-const ITEM_POOL = [
-  { name: 'Laptop',     icon: '💻', w: 3, v: 4, color: '#6366f1' },
-  { name: 'Điện thoại', icon: '📱', w: 1, v: 3, color: '#22c55e' },
-  { name: 'Sách',       icon: '📚', w: 2, v: 1, color: '#f59e0b' },
-  { name: 'Máy ảnh',    icon: '📷', w: 2, v: 6, color: '#c678dd' },
-  { name: 'Bình nước',  icon: '🧴', w: 1, v: 2, color: '#fb923c' },
-  { name: 'Đồng hồ',   icon: '⌚', w: 1, v: 5, color: '#ef4444' },
+const CODE_LINES = [
+  'function knapsack(items, W) {',
+  '  const n = items.length;',
+  '  const dp = Array(n+1).fill(0)',
+  '    .map(() => Array(W+1).fill(0));',
+  '  for (let i = 1; i <= n; i++) {',
+  '    const {w, v} = items[i-1];',
+  '    for (let cap = 0; cap <= W; cap++) {',
+  '      // Bỏ qua item i',
+  '      dp[i][cap] = dp[i-1][cap];',
+  '      if (cap >= w) {',
+  '        // Lấy item i nếu tốt hơn',
+  '        const take = dp[i-1][cap-w] + v;',
+  '        dp[i][cap] = Math.max(dp[i][cap], take);',
+  '      }',
+  '    }',
+  '  }',
+  '  return dp[n][W]; // backtrack để tìm items',
+  '}',
 ];
 
-let items = ITEM_POOL.slice(0, 4);
-let W = 7;
-let mode = 'fill';
-let steps = [];
-let stepIdx = 0;
-let playing = false;
-let playTimer = null;
-let dpTable = [];
-let selectedItems = [];
+const ITEM_ICONS = ['📱','💎','🎮','👟','⌚','📷','🎸','💻'];
+const ITEM_NAMES = ['iPhone','Kim cương','Game','Giày','Đồng hồ','Máy ảnh','Guitar','Laptop'];
 
-// ── Setup ──────────────────────────────────────────────────────────────
-function setMode(m) {
-  mode = m;
-  document.getElementById('btn-fill').classList.toggle('active', m === 'fill');
-  document.getElementById('btn-back').classList.toggle('active', m === 'backtrack');
-  resetAnim();
+let items = [], W = 0, dp = [], steps = [], stepIdx = 0, playing = false, timer = null;
+let cellCount = 0, currentMax = 0, takenItems = [];
+
+function genItems() {
+  const n = 4 + Math.floor(Math.random()*2); // 4-5 items
+  W = 7 + Math.floor(Math.random()*4); // W=7-10
+  const perm = [...Array(ITEM_NAMES.length).keys()].sort(()=>Math.random()-0.5).slice(0,n);
+  items = perm.map((idx,i) => ({
+    id: i+1,
+    name: ITEM_NAMES[idx],
+    icon: ITEM_ICONS[idx],
+    w: 1 + Math.floor(Math.random()*4),
+    v: 2 + Math.floor(Math.random()*9)
+  }));
 }
 
-function onCapChange(v) {
-  W = parseInt(v);
-  document.getElementById('capDisplay').textContent = W;
-  document.getElementById('ksCapLabel').textContent = W;
-  resetAnim();
-}
-
-// ── Render items ───────────────────────────────────────────────────────
-function renderItems(inKnapsack) {
-  const row = document.getElementById('itemsRow');
-  row.innerHTML = '';
-  items.forEach((item, i) => {
-    const card = document.createElement('div');
-    card.className = 'item-card';
-    if (inKnapsack && inKnapsack.includes(i)) card.classList.add('in-knapsack');
-    card.innerHTML = `
-      <div class="item-icon">${item.icon}</div>
-      <div class="item-name">${item.name}</div>
-      <div class="item-stats"><span class="wt">⚖ ${item.w}kg</span> <span class="vl">💎 ${item.v}</span></div>`;
-    row.appendChild(card);
-  });
-}
-
-// ── Build DP steps ─────────────────────────────────────────────────────
-function buildFillSteps() {
+function buildSteps() {
   steps = [];
   const n = items.length;
-  const dp = Array.from({length: n+1}, () => new Array(W+1).fill(0));
+  dp = Array.from({length:n+1}, ()=>new Array(W+1).fill(0));
+  steps.push({ type:'init', dp: dp.map(r=>[...r]) });
 
-  steps.push({ type: 'init', dp: JSON.parse(JSON.stringify(dp)), hl: null, src: null,
-    explanation: `Khởi tạo bảng dp[${n+1}][${W+1}] = 0 (0 items, bất kỳ capacity nào = 0)`, codeLine: 2 });
-
-  for (let i = 1; i <= n; i++) {
-    const item = items[i-1];
-    for (let w = 0; w <= W; w++) {
-      const excVal = dp[i-1][w];
-      steps.push({ type: 'computing', dp: JSON.parse(JSON.stringify(dp)), hl: {r:i,c:w},
-        srcExclude: {r:i-1, c:w}, srcInclude: null,
-        codeLine: 6,
-        explanation: `dp[${i}][${w}]: Xét item "${item.name}" (w=${item.w}, v=${item.v}) — Bỏ qua: dp[${i-1}][${w}] = ${excVal}` });
-
-      dp[i][w] = excVal;
-
-      if (item.w <= w) {
-        const includeVal = dp[i-1][w - item.w] + item.v;
-        if (includeVal > excVal) {
-          dp[i][w] = includeVal;
-          steps.push({ type: 'fill', dp: JSON.parse(JSON.stringify(dp)), hl: {r:i,c:w},
-            srcExclude: {r:i-1, c:w}, srcInclude: {r:i-1, c: w - item.w},
-            codeLine: 10,
-            explanation: `dp[${i}][${w}]: Thêm "${item.name}" → ${dp[i-1][w-item.w]} + ${item.v} = ${includeVal} > ${excVal} → CHỌN!` });
-        } else {
-          steps.push({ type: 'fill', dp: JSON.parse(JSON.stringify(dp)), hl: {r:i,c:w},
-            srcExclude: {r:i-1, c:w}, srcInclude: {r:i-1, c: w - item.w},
-            codeLine: 6,
-            explanation: `dp[${i}][${w}]: Thêm "${item.name}" → ${includeVal} ≤ ${excVal} → BỎ QUA` });
-        }
-      } else {
-        steps.push({ type: 'fill', dp: JSON.parse(JSON.stringify(dp)), hl: {r:i,c:w},
-          srcExclude: {r:i-1, c:w}, srcInclude: null,
-          codeLine: 7,
-          explanation: `dp[${i}][${w}]: item.w=${item.w} > w=${w} — không thể thêm, giữ dp[${i-1}][${w}] = ${excVal}` });
-      }
+  for (let i=1; i<=n; i++) {
+    const {w,v} = items[i-1];
+    steps.push({ type:'row-start', i, item: items[i-1], dp: dp.map(r=>[...r]) });
+    for (let cap=0; cap<=W; cap++) {
+      const skipVal = dp[i-1][cap];
+      const canTake = cap >= w;
+      const takeVal = canTake ? dp[i-1][cap-w]+v : -1;
+      const best = Math.max(skipVal, takeVal);
+      steps.push({ type:'computing', i, cap, skipVal, takeVal, canTake, item: items[i-1], dp: dp.map(r=>[...r]) });
+      dp[i][cap] = best;
+      steps.push({ type:'filled', i, cap, val: best, took: canTake && takeVal>skipVal, skipVal, takeVal, item: items[i-1], dp: dp.map(r=>[...r]) });
     }
   }
-  steps.push({ type: 'done', dp: JSON.parse(JSON.stringify(dp)), hl: {r:n, c:W},
-    result: dp[n][W], codeLine: 11,
-    explanation: `✅ Hoàn thành! Giá trị tối ưu = dp[${n}][${W}] = ${dp[n][W]}` });
-  dpTable = JSON.parse(JSON.stringify(dp));
-}
 
-function buildBacktrackSteps() {
-  const n = items.length;
-  const dp = Array.from({length: n+1}, () => new Array(W+1).fill(0));
-  for (let i = 1; i <= n; i++) {
-    const item = items[i-1];
-    for (let w = 0; w <= W; w++) {
-      dp[i][w] = dp[i-1][w];
-      if (item.w <= w) dp[i][w] = Math.max(dp[i][w], dp[i-1][w - item.w] + item.v);
-    }
-  }
-  dpTable = JSON.parse(JSON.stringify(dp));
-
-  steps = [];
-  steps.push({ type: 'bt-start', dp: dpTable, hl: {r:n, c:W}, btSel: [],
-    explanation: `Bắt đầu backtrack từ dp[${n}][${W}] = ${dp[n][W]}. Đây là kết quả tối ưu.` });
-
-  let i = n, w = W;
-  const sel = [];
-  while (i > 0 && w > 0) {
-    if (dp[i][w] !== dp[i-1][w]) {
-      sel.push(i-1);
-      const item = items[i-1];
-      steps.push({ type: 'bt-pick', dp: dpTable, hl: {r:i, c:w}, btSel: [...sel],
-        pickedItem: i-1, newW: w - item.w,
-        explanation: `dp[${i}][${w}]=${dp[i][w]} ≠ dp[${i-1}][${w}]=${dp[i-1][w]} → "${item.name}" được chọn! w: ${w} → ${w - item.w}` });
-      w -= item.w;
-    } else {
-      steps.push({ type: 'bt-skip', dp: dpTable, hl: {r:i, c:w}, btSel: [...sel],
-        explanation: `dp[${i}][${w}] = dp[${i-1}][${w}] = ${dp[i][w]} → "${items[i-1].name}" KHÔNG được chọn` });
+  // Backtrack
+  const backPath = [];
+  let i=n, cap=W;
+  while (i>0) {
+    if (dp[i][cap] !== dp[i-1][cap]) {
+      backPath.push({i, cap, item: items[i-1]});
+      cap -= items[i-1].w;
     }
     i--;
   }
-  selectedItems = sel;
-  steps.push({ type: 'bt-done', dp: dpTable, hl: null, btSel: [...sel],
-    result: dp[n][W],
-    explanation: `✅ Xong! Đã chọn: ${sel.map(j => items[j].name).join(', ')} — Tổng giá trị: ${dp[n][W]}` });
-}
-
-// ── Render DP grid ─────────────────────────────────────────────────────
-// Track previous cell classes to trigger animation only on new cells
-const prevCellClasses = {};
-
-function renderGrid(dp, hl, srcExclude, srcInclude, btSel) {
-  const grid = document.getElementById('dpGrid');
-  const n = items.length;
-  const cols = W + 2;
-  grid.style.gridTemplateColumns = `repeat(${cols}, 44px)`;
-  grid.innerHTML = '';
-
-  // Header row
-  const corner = document.createElement('div');
-  corner.className = 'dp-cell header';
-  corner.textContent = 'i\\w';
-  grid.appendChild(corner);
-  for (let w = 0; w <= W; w++) {
-    const h = document.createElement('div');
-    h.className = 'dp-cell header';
-    h.textContent = w;
-    grid.appendChild(h);
-  }
-
-  // Data rows
-  for (let i = 0; i <= n; i++) {
-    const rowHeader = document.createElement('div');
-    rowHeader.className = 'dp-cell header';
-    rowHeader.textContent = i === 0 ? '0' : items[i-1].icon;
-    rowHeader.title = i === 0 ? 'No items' : items[i-1].name;
-    grid.appendChild(rowHeader);
-
-    for (let w = 0; w <= W; w++) {
-      const cell = document.createElement('div');
-      cell.className = 'dp-cell';
-
-      const val = dp && dp[i] !== undefined ? dp[i][w] : 0;
-      const key = `${i}-${w}`;
-      let cls = '';
-
-      if (hl && hl.r === i && hl.c === w) {
-        cls = 'computing';
-      } else if (srcInclude && srcInclude.r === i && srcInclude.c === w) {
-        cls = 'source-include';
-      } else if (srcExclude && srcExclude.r === i && srcExclude.c === w) {
-        cls = 'source-exclude';
-      } else if (btSel && btSel.length > 0 && val > 0) {
-        cls = 'backtrack';
-      } else {
-        cls = val > 0 ? 'computed' : 'empty';
-      }
-
-      cell.classList.add(cls);
-
-      // Only trigger fillCell animation if cell just became computed
-      if (cls === 'computed' && prevCellClasses[key] !== 'computed') {
-        cell.style.animation = 'none';
-        cell.offsetHeight;
-        cell.style.animation = 'fillCell 0.35s cubic-bezier(0.34,1.56,0.64,1)';
-      }
-      prevCellClasses[key] = cls;
-
-      cell.textContent = val;
-      cell.title = `dp[${i}][${w}] = ${val}`;
-      grid.appendChild(cell);
-    }
-  }
-}
-
-// ── Knapsack visual update ─────────────────────────────────────────────
-let prevKsItemCount = 0;
-
-function updateKnapsack(selIndices, optVal) {
-  const ksItems = document.getElementById('ksItems');
-  const ksBar = document.getElementById('ksBar');
-
-  // Only re-render if selection changed
-  const countChanged = (selIndices || []).length !== prevKsItemCount;
-  prevKsItemCount = (selIndices || []).length;
-
-  if (countChanged) {
-    ksItems.innerHTML = '';
-  }
-
-  let totalW = 0, totalV = 0;
-  if (selIndices) {
-    selIndices.forEach(idx => {
-      const item = items[idx];
-      totalW += item.w;
-      totalV += item.v;
-      if (countChanged) {
-        const el = document.createElement('div');
-        el.className = 'ks-item';
-        el.style.background = item.color + '22';
-        el.style.border = `1px solid ${item.color}`;
-        el.style.color = item.color;
-        el.textContent = `${item.icon} ${item.name}`;
-        ksItems.appendChild(el);
-      }
-    });
-  }
-
-  ksBar.style.width = `${Math.min(100, totalW / W * 100)}%`;
-  document.getElementById('ksValue').textContent = totalV;
-  if (optVal !== undefined) document.getElementById('statOpt').textContent = optVal;
-}
-
-// ── Highlight code line ────────────────────────────────────────────────
-function highlightCode(lineIdx) {
-  const lines = document.querySelectorAll('#codePanel .code-line');
-  lines.forEach((l, i) => {
-    l.classList.remove('highlight', 'active');
-    if (i === lineIdx) l.classList.add('highlight');
+  steps.push({ type:'backtrack-start', dp: dp.map(r=>[...r]) });
+  takenItems = backPath.map(b=>b.item);
+  let totalW=0, totalV=0;
+  backPath.forEach(b => {
+    totalW += b.item.w; totalV += b.item.v;
+    steps.push({ type:'backtrack', i:b.i, cap:b.cap, item:b.item, backPath:[...backPath], totalW, totalV, dp: dp.map(r=>[...r]) });
   });
+  steps.push({ type:'done', totalW, totalV, items: takenItems, dp: dp.map(r=>[...r]) });
 }
 
-// ── Apply step ─────────────────────────────────────────────────────────
-function applyStep(idx) {
-  if (idx >= steps.length) { stopPlay(); return; }
-  const s = steps[idx];
-
-  // Animate explanation
-  const expEl = document.getElementById('explanation');
-  expEl.style.animation = 'none';
-  expEl.offsetHeight;
-  expEl.style.animation = 'waveIn 0.3s ease';
-  expEl.textContent = s.explanation || '';
-
-  document.getElementById('statStep').textContent = idx + 1;
-  if (s.result !== undefined) {
-    const optEl = document.getElementById('statOpt');
-    optEl.style.animation = 'none';
-    optEl.offsetHeight;
-    optEl.style.animation = 'bounceIn 0.4s cubic-bezier(0.34,1.56,0.64,1)';
-    optEl.textContent = s.result;
+function buildTable() {
+  const n = items.length;
+  let html = '<table><thead><tr><th>Item \\ Cap</th>';
+  for (let w=0; w<=W; w++) html += `<th>${w}</th>`;
+  html += '</tr></thead><tbody>';
+  for (let i=0; i<=n; i++) {
+    html += `<tr><td class="row-label">${i===0 ? '∅' : `${items[i-1].icon} i${i}(w=${items[i-1].w},v=${items[i-1].v})`}</td>`;
+    for (let cap=0; cap<=W; cap++) {
+      html += `<td><div class="dp-cell" id="dp-${i}-${cap}">-</div></td>`;
+    }
+    html += '</tr>';
   }
-  if (s.btSel !== undefined) {
-    document.getElementById('statItems').textContent = s.btSel.length > 0 ? s.btSel.map(j => items[j].icon).join(' ') : '—';
+  html += '</tbody></table>';
+  document.getElementById('dp-table-wrap').innerHTML = html;
+}
+
+function buildItemsList() {
+  document.getElementById('items-list').innerHTML = items.map((it,i) => `
+    <div class="item-card" id="ic-${i+1}">
+      <div class="item-icon">${it.icon}</div>
+      <div class="item-info">
+        <div class="item-name">${it.name}</div>
+        <div class="item-stats">Weight: ${it.w} | Value: ${it.v}</div>
+      </div>
+      <span class="item-badge skip" id="ib-${i+1}">?</span>
+    </div>`).join('');
+}
+
+function clearCellStates() {
+  document.querySelectorAll('.dp-cell').forEach(c => c.classList.remove('computing','src','filling','backtrack','optimal'));
+}
+
+function applyStep(s) {
+  if (!s) return;
+  document.getElementById('progress-bar').style.width = (stepIdx/steps.length*100)+'%';
+
+  if (s.type === 'init') {
+    for (let i=0; i<=items.length; i++) {
+      for (let cap=0; cap<=W; cap++) {
+        const cell = document.getElementById(`dp-${i}-${cap}`);
+        if (cell) { cell.textContent = '0'; cell.classList.add('filled'); }
+      }
+    }
+    setExplain('📊','info','Khởi tạo bảng dp[0..n][0..W] = 0. Hàng 0 = không có item nào, value luôn = 0.');
+    hl(3);
+  } else if (s.type === 'row-start') {
+    document.querySelectorAll('.item-card').forEach(c=>c.classList.remove('active'));
+    document.getElementById(`ic-${s.i}`)?.classList.add('active');
+    setStatus(`<span class="sd-cell cur">${s.item.icon} Item ${s.i}: w=${s.item.w}, v=${s.item.v}</span><span class="sd-op">→</span><span style="font-size:.85rem;color:var(--muted)">Duyệt từng capacity...</span>`);
+    setExplain('🔍','compute',`<b>Xét item ${s.i} (${s.item.name})</b>: weight=${s.item.w}, value=${s.item.v}. Duyệt qua từng capacity 0→${W}.`);
+    hl(4);
+  } else if (s.type === 'computing') {
+    cellCount++;
+    clearCellStates();
+    const cell = document.getElementById(`dp-${s.i}-${s.cap}`);
+    const skipCell = document.getElementById(`dp-${s.i-1}-${s.cap}`);
+    if (cell) cell.classList.add('computing');
+    if (skipCell) skipCell.classList.add('src');
+    if (s.canTake) {
+      const takeCell = document.getElementById(`dp-${s.i-1}-${s.cap-s.item.w}`);
+      if (takeCell) takeCell.classList.add('src');
+    }
+    const takeStr = s.canTake ? `dp[${s.i-1}][${s.cap-s.item.w}]+${s.item.v}=${s.takeVal}` : `cap(${s.cap})<w(${s.item.w})`;
+    setStatus(`<span class="sd-cell cur">dp[${s.i}][${s.cap}]</span><span class="sd-op">:</span><span class="sd-cell skip">bỏ=${s.skipVal}</span><span class="sd-op">vs</span><span class="sd-cell take">${s.canTake?'lấy='+s.takeVal:'không lấy được'}</span>`);
+    setExplain('🧮','compute',`<b>Cell [${s.i}][${s.cap}]</b>: nếu bỏ qua item ${s.i} → <b>${s.skipVal}</b>. ${s.canTake?`Nếu lấy → dp[${s.i-1}][${s.cap}-${s.item.w}]+${s.item.v} = dp[${s.i-1}][${s.cap-s.item.w}]+${s.item.v} = <b>${s.takeVal}</b>. Max = <b>${Math.max(s.skipVal,s.takeVal)}</b>`:'Cap < weight → không thể lấy!'}`);
+    hl(8);
+    document.getElementById('s-cells').textContent = cellCount;
+  } else if (s.type === 'filled') {
+    const cell = document.getElementById(`dp-${s.i}-${s.cap}`);
+    if (cell) { cell.textContent = s.val; cell.classList.remove('computing'); cell.classList.add('filled','filling'); }
+    if (s.val > currentMax) { currentMax = s.val; document.getElementById('s-val').textContent = currentMax; }
+    if (s.took) {
+      setExplain('✅','take',`<b>dp[${s.i}][${s.cap}] = ${s.val}</b> → <b>Lấy item ${s.i}</b>! (lấy=${s.takeVal} > bỏ=${s.skipVal})`);
+      hl(12);
+    } else {
+      setExplain('➡️','info',`<b>dp[${s.i}][${s.cap}] = ${s.val}</b> → ${s.canTake?'Bỏ qua (bỏ='+s.skipVal+' ≥ lấy='+s.takeVal+')':'Không thể lấy (cap<weight)'}`);
+      hl(8);
+    }
+  } else if (s.type === 'backtrack-start') {
+    clearCellStates();
+    setStatus(`<span class="sd-cell back">🔍 Backtrack</span><span class="sd-op">→</span><span style="color:var(--muted)">Truy vết optimal items...</span>`);
+    setExplain('🔍','back',`<b>Backtrack</b>: bắt đầu từ dp[${items.length}][${W}], truy ngược lên để tìm những item nào đã được chọn.`);
+    document.getElementById('knapsack-taken').innerHTML = '';
+    hl(16);
+  } else if (s.type === 'backtrack') {
+    const cell = document.getElementById(`dp-${s.i}-${s.cap}`);
+    if (cell) cell.classList.add('optimal');
+    document.getElementById(`ic-${s.i}`)?.classList.add('taken');
+    document.getElementById(`ib-${s.i}`).className = 'item-badge take';
+    document.getElementById(`ib-${s.i}`).textContent = '✓';
+    document.getElementById(`ic-${s.i}`)?.classList.add('floating');
+    const fill = Math.min(100, (s.totalW/W)*100);
+    document.getElementById('knapsack-fill').style.width = fill+'%';
+    document.getElementById('knapsack-stats').textContent = `Weight: ${s.totalW}/${W} • Value: ${s.totalV}`;
+    document.getElementById('knapsack-taken').innerHTML += `<div class="ks-item">${s.item.icon} ${s.item.name}</div>`;
+    document.getElementById('s-wt').textContent = s.totalW;
+    document.getElementById('s-cap').textContent = W;
+    setStatus(`<span class="sd-cell back">${s.item.icon} ${s.item.name}</span><span class="sd-op">✓</span><span class="sd-cell take">Trong ba lô!</span>`);
+    setExplain('🎒','back',`<b>Lấy ${s.item.icon} ${s.item.name}</b> (w=${s.item.w}, v=${s.item.v})! dp[${s.i}][${s.cap}] ≠ dp[${s.i-1}][${s.cap}] → item này đã được chọn. Tổng: weight=${s.totalW}, value=${s.totalV}.`);
+  } else if (s.type === 'done') {
+    setStatus(`<span style="color:var(--take-top);font-size:1rem;font-weight:700">🎉 Tối ưu! Value=${s.totalV}, Weight=${s.totalW}/${W}</span>`);
+    setExplain('🎉','take',`Hoàn tất! Giá trị tối ưu = <b>${s.totalV}</b>, sử dụng <b>${s.totalW}/${W}</b> trọng lượng. Items: ${s.items.map(it=>it.icon+it.name).join(', ')}`);
+    setInsight('🎒 Kết quả tối ưu',`Đã chọn <b>${s.items.length} items</b> với tổng value = <b>${s.totalV}</b>. Bảng DP có <b>${(items.length+1)*(W+1)}</b> cells — O(n·W) thời gian và không gian.`);
+    stopPlay();
   }
-  if (s.codeLine !== undefined) highlightCode(s.codeLine);
-  renderGrid(s.dp, s.hl, s.srcExclude, s.srcInclude, s.btSel);
-  renderItems(s.btSel);
-  updateKnapsack(s.btSel || [], s.result);
-
-  if (s.hl) {
-    const i = s.hl.r, w = s.hl.c;
-    const item = i > 0 ? items[i-1] : null;
-    document.getElementById('currentCellInfo').innerHTML =
-      `<b style="color:#22c55e">dp[${i}][${w}]</b><br>` +
-      (item ? `Item: ${item.icon} ${item.name} (w=${item.w}, v=${item.v})<br>` : '') +
-      `Capacity: ${w}<br>` +
-      (s.srcExclude ? `Exclude: dp[${s.srcExclude.r}][${s.srcExclude.c}]<br>` : '') +
-      (s.srcInclude ? `Include: dp[${s.srcInclude.r}][${s.srcInclude.c}] + ${item?.v || 0}` : '');
-  }
 }
 
-// ── Playback ───────────────────────────────────────────────────────────
-function togglePlay() {
-  if (playing) stopPlay(); else startPlay();
+function setStatus(html) { document.getElementById('status-display').innerHTML = html; }
+function setExplain(icon, cls, html) {
+  const ic = document.querySelector('#explain-viz .step-icon');
+  ic.textContent = icon; ic.className = 'step-icon ' + cls;
+  document.getElementById('explain-text').innerHTML = html;
+  document.getElementById('step-counter').textContent = `${stepIdx}/${steps.length}`;
 }
-function startPlay() {
-  playing = true;
-  document.getElementById('btnPlay').textContent = '⏸ Pause';
-  tick();
+function setInsight(title, html) {
+  document.getElementById('insight').innerHTML = `<div class="insight-title">${title}</div>${html}`;
 }
-function stopPlay() {
-  playing = false;
-  document.getElementById('btnPlay').textContent = '▶ Play';
-  clearTimeout(playTimer);
-}
-function tick() {
-  if (!playing) return;
-  if (stepIdx >= steps.length) { stopPlay(); return; }
-  applyStep(stepIdx++);
-  playTimer = setTimeout(tick, parseInt(document.getElementById('speedSel').value));
-}
-function stepForward() {
-  stopPlay();
-  if (stepIdx < steps.length) applyStep(stepIdx++);
-}
-function resetAnim() {
-  stopPlay(); stepIdx = 0;
-  prevKsItemCount = 0;
-  Object.keys(prevCellClasses).forEach(k => delete prevCellClasses[k]);
-  document.getElementById('statStep').textContent = '0';
-  document.getElementById('statOpt').textContent = '—';
-  document.getElementById('statItems').textContent = '—';
-  document.getElementById('explanation').textContent = 'Nhấn ▶ Play để bắt đầu.';
-  document.getElementById('currentCellInfo').textContent = 'Chưa có cell nào đang được tính.';
-  if (mode === 'fill') buildFillSteps(); else buildBacktrackSteps();
-  const emptyDp = Array.from({length: items.length+1}, () => new Array(W+1).fill(0));
-  renderGrid(emptyDp, null, null, null, null);
-  renderItems([]);
-  updateKnapsack([], 0);
+function hl(i) {
+  document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));
+  if (i>=0) document.querySelector(`[data-i="${i}"]`)?.classList.add('active');
 }
 
-// ── Init ──────────────────────────────────────────────────────────────
-renderItems([]);
-resetAnim();
+function buildCode() {
+  document.getElementById('code').innerHTML = CODE_LINES.map((l,i) =>
+    `<div class="code-line${l.trim().startsWith('//')?' comment':''}" data-i="${i}">${l}</div>`
+  ).join('');
+}
+
+function doReset() {
+  stopPlay(); stepIdx=0; cellCount=0; currentMax=0;
+  buildSteps(); buildTable(); buildItemsList();
+  document.getElementById('progress-bar').style.width='0%';
+  document.getElementById('s-cells').textContent='0';
+  document.getElementById('s-val').textContent='0';
+  document.getElementById('s-wt').textContent='0';
+  document.getElementById('s-cap').textContent=W;
+  document.getElementById('knapsack-fill').style.width='0%';
+  document.getElementById('knapsack-stats').textContent=`Weight: 0/${W} • Value: 0`;
+  document.getElementById('knapsack-taken').innerHTML='';
+  document.getElementById('status-display').innerHTML='<span class="sd-idle">Nhấn Play để xem quá trình điền bảng DP</span>';
+  setExplain('💡','info',`0/1 Knapsack: ${items.length} items, capacity W=${W}. Bảng dp[${items.length+1}][${W+1}] sẽ điền cell-by-cell từ trái sang phải, trên xuống dưới.`);
+  setInsight('🎒 0/1 Knapsack',`Với mỗi cell dp[i][cap]: xét item i có nên lấy không? <b>Lấy</b>: dp[i-1][cap-w]+v. <b>Bỏ</b>: dp[i-1][cap]. Chọn max. O(n·W) time.`);
+}
+
+function getDelay() { return Math.round(1200 - document.getElementById('speed').value*110); }
+function tick() { if(stepIdx>=steps.length){stopPlay();return;} applyStep(steps[stepIdx++]); if(playing) timer=setTimeout(tick,getDelay()); }
+function startPlay() { if(stepIdx>=steps.length) doReset(); playing=true; document.getElementById('btn-play').textContent='⏸ Pause'; tick(); }
+function stopPlay() { playing=false; clearTimeout(timer); document.getElementById('btn-play').textContent='▶ Play'; }
+
+document.getElementById('btn-play').onclick = ()=>playing?stopPlay():startPlay();
+document.getElementById('btn-step').onclick = ()=>{ stopPlay(); if(stepIdx<steps.length) applyStep(steps[stepIdx++]); };
+document.getElementById('btn-reset').onclick = doReset;
+document.getElementById('btn-new').onclick = ()=>{ genItems(); doReset(); };
+
+buildCode(); genItems(); doReset();
 </script>
 </body>
 </html>

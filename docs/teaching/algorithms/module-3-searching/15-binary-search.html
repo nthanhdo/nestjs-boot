@@ -3,566 +3,472 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>15 - Tìm Kiếm Nhị Phân (Binary Search)</title>
+<title>Binary Search — Tìm kiếm nhị phân</title>
 <style>
+  :root {
+    --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+    --text: #eef1f8; --muted: #8899bb;
+    --default-top: #5b8def; --default-bot: #2c5aa0;
+    --low-color: #00b4d8; --high-color: #e9c46a; --mid-color: #ff5e7a;
+    --mid-glow: rgba(255,94,122,0.65);
+    --elim-top: #2a3652; --elim-bot: #1e2840;
+    --found-top: #2ecc71; --found-bot: #1a9c54; --found-glow: rgba(46,204,113,0.5);
+    --accent: #a78bfa; --yellow: #ffd43b;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', sans-serif; background: #0a0c14; color: #e0e0e0; min-height: 100vh; }
+  body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  body::before { content:''; position: fixed; inset: 0; background: radial-gradient(ellipse at 25% 15%, rgba(0,180,216,0.07) 0%, transparent 55%), radial-gradient(ellipse at 75% 85%, rgba(167,139,250,0.05) 0%, transparent 55%); pointer-events: none; }
 
-  @keyframes nodeGlow {
-    0%,100% { box-shadow: 0 0 10px rgba(249,168,37,0.6), inset 0 0 10px rgba(249,168,37,0.15); }
-    50% { box-shadow: 0 0 32px rgba(249,168,37,1), inset 0 0 18px rgba(249,168,37,0.35); }
+  header { background: var(--surface); padding: 10px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); z-index: 2; }
+  header h1 { font-size: 1.15rem; font-weight: 700; background: linear-gradient(135deg,#00b4d8,#a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .badge { background: linear-gradient(135deg,#0096c7,#00b4d8); color: #fff; padding: 2px 10px; border-radius: 12px; font-size: .68rem; font-weight: 700; }
+  .complexity { display: flex; gap: 6px; margin-left: auto; }
+  .cx { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 9px; font-size: .72rem; color: var(--muted); }
+  .cx span { color: var(--yellow); font-weight: 700; }
+
+  main { flex: 1; display: flex; overflow: hidden; z-index: 1; min-height: 0; }
+  #viz { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  #status-display { padding: 10px 20px; min-height: 56px; display: flex; align-items: center; justify-content: center; gap: 14px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .sd-idle { color: var(--muted); font-size: .95rem; }
+  .sd-chip { display: flex; align-items: center; gap: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: .82rem; }
+  .sd-chip .label { color: var(--muted); font-size: .72rem; }
+  .sd-chip .val { font-weight: 800; font-size: 1rem; }
+  .sd-chip.low .val { color: var(--low-color); }
+  .sd-chip.high .val { color: var(--high-color); }
+  .sd-chip.mid-chip .val { color: var(--mid-color); }
+  .sd-chip.target-chip .val { color: var(--accent); }
+  .sd-mid-calc { background: rgba(255,94,122,0.1); border: 1px solid rgba(255,94,122,0.3); border-radius: 8px; padding: 4px 12px; font-size: .85rem; color: var(--mid-color); font-weight: 700; }
+  .sd-tag { padding: 4px 12px; border-radius: 6px; font-size: .82rem; font-weight: 700; color: #fff; }
+  .sd-tag.found { background: linear-gradient(135deg,var(--found-top),var(--found-bot)); }
+  .sd-tag.notfound { background: linear-gradient(135deg,#e74c3c,#c0392b); }
+
+  #explain-viz {
+    padding: 10px 24px; min-height: 52px;
+    background: linear-gradient(135deg,rgba(21,29,50,0.95),rgba(28,39,68,0.9));
+    border-bottom: 1px solid var(--border);
+    font-size: .88rem; line-height: 1.55; color: var(--text);
+    display: flex; align-items: center; gap: 12px;
   }
-  @keyframes foundGlow {
-    0%,100% { box-shadow: 0 0 14px rgba(102,187,106,0.7), inset 0 0 12px rgba(102,187,106,0.2); }
-    50% { box-shadow: 0 0 40px rgba(102,187,106,1), inset 0 0 22px rgba(102,187,106,0.45); }
+  #explain-viz .step-icon { flex-shrink:0; width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transition:all 0.3s; }
+  #explain-viz .step-icon.check { background:rgba(255,94,122,0.15); border:1px solid rgba(255,94,122,0.3); }
+  #explain-viz .step-icon.elim { background:rgba(91,141,239,0.1); border:1px solid rgba(91,141,239,0.2); }
+  #explain-viz .step-icon.found { background:rgba(46,204,113,0.15); border:1px solid rgba(46,204,113,0.3); }
+  #explain-viz .step-icon.info { background:rgba(0,180,216,0.15); border:1px solid rgba(0,180,216,0.3); }
+  #explain-viz .step-icon.notfound { background:rgba(231,76,60,0.15); border:1px solid rgba(231,76,60,0.3); }
+  #explain-text { flex:1; }
+  #explain-text b { color:var(--yellow); }
+  #explain-text code { background:var(--surface2); padding:1px 5px; border-radius:3px; font-family:monospace; font-size:.8rem; color:var(--accent); }
+  #step-counter { font-size:.72rem; color:var(--muted); white-space:nowrap; }
+
+  #bar-area { flex:1; position:relative; padding:14px 32px 0; }
+  #bars-container { position:absolute; bottom:60px; left:32px; right:32px; top:14px; display:flex; align-items:flex-end; gap:3px; }
+
+  .bar-wrap { display:flex; flex-direction:column; align-items:center; flex:1; position:relative; }
+  .bar {
+    width:100%; border-radius:5px 5px 1px 1px;
+    background:linear-gradient(180deg,var(--default-top),var(--default-bot));
+    position:relative; overflow:hidden; min-height:20px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12);
+    transition:background 0.35s, box-shadow 0.35s, opacity 0.5s, filter 0.5s;
   }
-  @keyframes foundBounce {
-    0% { transform: translateY(0) scale(1); }
-    25% { transform: translateY(-22px) scale(1.12); }
-    50% { transform: translateY(-12px) scale(1.06); }
-    75% { transform: translateY(-20px) scale(1.09); }
-    100% { transform: translateY(-12px) scale(1); }
-  }
-  @keyframes elimFade {
-    from { opacity: 1; filter: grayscale(0); }
-    to { opacity: 0.15; filter: grayscale(100%); }
-  }
-  @keyframes calcBlink {
-    0%,100% { background: linear-gradient(145deg, #f57f17, #f9a825); }
-    50% { background: linear-gradient(145deg, #ff8f00, #ffca28); box-shadow: 0 0 20px rgba(255,213,79,0.8); }
-  }
-  @keyframes calcPop {
-    0% { transform: translateY(-8px) scale(0.8); opacity: 0; }
-    60% { transform: translateY(-14px) scale(1.1); opacity: 1; }
-    100% { transform: translateY(-12px) scale(1); opacity: 1; }
-  }
-  @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes sparkle {
-    0% { opacity: 0; transform: scale(0) translateY(0); }
-    50% { opacity: 1; transform: scale(1) translateY(-22px); }
-    100% { opacity: 0; transform: scale(0.4) translateY(-38px); }
-  }
+  .bar::before { content:''; position:absolute; top:0; left:0; width:45%; height:100%; background:linear-gradient(90deg,rgba(255,255,255,0.1),transparent); border-radius:5px 0 0 1px; }
+  .bar-val-inside { position:absolute; top:5px; left:0; right:0; text-align:center; font-size:12px; font-weight:800; color:rgba(255,255,255,0.95); text-shadow:0 1px 3px rgba(0,0,0,0.6); z-index:2; pointer-events:none; }
+  .bar-idx { font-size:10px; color:var(--muted); margin-top:3px; transition:all 0.3s; }
 
-  h1 { text-align: center; padding: 20px; font-size: 1.6rem; background: linear-gradient(135deg, #80cbc4, #26a69a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; }
-  .subtitle { text-align: center; color: #607d8b; margin-bottom: 20px; font-size: 0.95rem; }
+  .bar.mid { background:linear-gradient(180deg,var(--mid-color),#c0143c); box-shadow:0 0 22px var(--mid-glow), inset 0 1px 0 rgba(255,255,255,0.2); animation:barPulse 0.5s ease-in-out infinite; }
+  .bar-wrap:has(.bar.mid) .bar-idx { color:var(--mid-color); font-weight:700; }
+  .bar.eliminated { background:linear-gradient(180deg,var(--elim-top),var(--elim-bot)); opacity:0.2; filter:grayscale(80%); }
+  .bar.found { background:linear-gradient(180deg,var(--found-top),var(--found-bot)); box-shadow:0 0 28px var(--found-glow), 0 0 56px rgba(46,204,113,0.15); animation:celebrate 0.4s ease infinite; }
+  .bar-wrap:has(.bar.found) .bar-idx { color:var(--found-top); font-weight:700; }
 
-  .layout { display: grid; grid-template-columns: 1fr 340px; gap: 20px; padding: 0 20px 20px; max-width: 1200px; margin: 0 auto; }
-  .left-panel { display: flex; flex-direction: column; gap: 16px; }
+  /* LOW/MID/HIGH pointer labels */
+  #pointers { position:absolute; bottom:2px; left:32px; right:32px; height:50px; }
+  .ptr { position:absolute; bottom:0; text-align:center; font-size:9px; font-weight:800; color:#fff; transition:left 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.35s; opacity:0; white-space:nowrap; }
+  .ptr-label { display:block; padding:1px 4px; border-radius:3px; margin-bottom:1px; }
+  .ptr::before { content:'▲'; display:block; text-align:center; font-size:8px; line-height:1; }
+  .ptr-low .ptr-label { background:var(--low-color); }
+  .ptr-low::before { color:var(--low-color); }
+  .ptr-high .ptr-label { background:var(--high-color); }
+  .ptr-high::before { color:var(--high-color); }
+  .ptr-mid .ptr-label { background:var(--mid-color); }
+  .ptr-mid::before { color:var(--mid-color); }
 
-  .card { background: linear-gradient(145deg, #1a1d27, #151821); border-radius: 14px; padding: 20px; border: 1px solid #252836; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
-  .card-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: #80cbc4; margin-bottom: 14px; }
+  /* Range bracket */
+  #range-line { position:absolute; height:3px; background:linear-gradient(90deg,var(--low-color),var(--high-color)); border-radius:2px; bottom:46px; transition:left 0.4s cubic-bezier(0.4,0,0.2,1), width 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.3s; opacity:0; box-shadow:0 0 8px rgba(0,180,216,0.4); }
 
-  .input-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  .input-row input { background: #1e2130; border: 1px solid #2e3347; color: #e0e0e0; padding: 8px 12px; border-radius: 8px; font-size: 0.95rem; width: 200px; transition: border-color 0.2s; }
-  .input-row input:focus { outline: none; border-color: #80cbc4; box-shadow: 0 0 0 3px rgba(128,203,196,0.15); }
-  .btn { padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; }
-  .btn-teal { background: linear-gradient(135deg, #00695c, #00796b); color: #fff; box-shadow: 0 2px 10px rgba(0,105,92,0.4); }
-  .btn-teal:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,105,92,0.6); }
-  .btn-green { background: linear-gradient(135deg, #2e7d32, #388e3c); color: #fff; }
-  .btn-green:hover { transform: translateY(-1px); }
-  .btn-gray { background: #252836; color: #b0bec5; border: 1px solid #2e3347; }
-  .btn-gray:hover { background: #2e3347; }
+  .particle { position:absolute; border-radius:50%; pointer-events:none; animation:particleRise 0.8s ease-out forwards; z-index:10; }
 
-  /* ARRAY VIZ */
-  .array-scene { overflow-x: auto; padding: 8px 0 56px; position: relative; }
-  .array-outer { display: flex; flex-direction: column; gap: 0; }
+  #bottom-bar { display:flex; align-items:center; background:var(--surface); border-top:1px solid var(--border); }
+  #legend { flex:1; display:flex; gap:16px; padding:7px 24px; font-size:.74rem; color:var(--muted); }
+  .leg { display:flex; align-items:center; gap:6px; }
+  .leg-dot { width:14px; height:14px; border-radius:3px; border:1px solid rgba(255,255,255,0.08); }
+  .leg-line { width:22px; height:3px; border-radius:2px; }
+  #progress-wrap { width:180px; height:5px; background:var(--surface2); border-radius:3px; margin-right:20px; overflow:hidden; }
+  #progress-bar { height:100%; width:0%; border-radius:3px; background:linear-gradient(90deg,var(--accent),var(--found-top)); transition:width 0.4s; }
 
-  /* Pointer labels ABOVE array */
-  .ptr-label-row { position: relative; height: 34px; min-width: max-content; padding: 0 10px; }
-  .ptr-label {
-    position: absolute; font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;
-    transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
-    white-space: nowrap; top: 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  }
-  .ptr-label.low { background: linear-gradient(135deg, #1565c0, #1976d2); color: #fff; }
-  .ptr-label.mid { background: linear-gradient(135deg, #f57f17, #f9a825); color: #000; }
-  .ptr-label.high { background: linear-gradient(135deg, #b71c1c, #c62828); color: #fff; }
+  #code-panel { width:340px; min-width:300px; background:var(--surface); border-left:1px solid var(--border); display:flex; flex-direction:column; }
+  .panel-title { padding:10px 14px; background:var(--surface2); font-size:.78rem; font-weight:600; color:var(--accent); border-bottom:1px solid var(--border); }
+  #code { flex:1; overflow-y:auto; padding:10px 0; font-family:'SF Mono','Fira Code',Consolas,monospace; font-size:.82rem; line-height:2; }
+  .code-line { padding:0 14px; color:#5a6d8e; white-space:pre; border-left:3px solid transparent; transition:all 0.2s; }
+  .code-line.comment { color:#3a4d6e; font-style:italic; }
+  .code-line.active { background:linear-gradient(90deg,rgba(255,212,59,0.1),transparent); color:var(--yellow); border-left-color:var(--yellow); font-weight:600; }
+  #insight { padding:12px 14px; background:var(--bg); border-top:1px solid var(--border); font-size:.8rem; line-height:1.5; color:var(--muted); }
+  #insight .insight-title { color:var(--accent); font-weight:700; font-size:.72rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; }
+  #insight b { color:var(--text); }
 
-  .array-container { display: flex; gap: 10px; min-width: max-content; padding: 4px 10px 8px; }
-  .array-box {
-    width: 64px; height: 64px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem; font-weight: 700; border: 2px solid #252836;
-    background: linear-gradient(145deg, #1e2130, #181c28);
-    position: relative; transition: all 0.45s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .array-box .idx { position: absolute; bottom: -22px; font-size: 0.68rem; color: #546e7a; }
+  #controls { background:var(--surface); padding:8px 24px; display:flex; align-items:center; gap:10px; border-top:1px solid var(--border); z-index:2; flex-wrap:wrap; }
+  button { border:none; border-radius:8px; padding:7px 14px; cursor:pointer; font-size:.8rem; font-weight:600; transition:all 0.2s; }
+  button:active { transform:scale(0.95); }
+  button:disabled { background:var(--surface2)!important; color:#3a4d6e!important; cursor:not-allowed; }
+  #btn-play { background:linear-gradient(135deg,#00b894,#05c46b); color:#fff; box-shadow:0 2px 10px rgba(5,196,107,0.25); min-width:85px; }
+  #btn-step { background:linear-gradient(135deg,#7c5ce7,#a78bfa); color:#fff; }
+  #btn-reset,#btn-new { background:var(--surface2); color:var(--muted); border:1px solid var(--border); }
+  label { font-size:.76rem; color:var(--muted); }
+  input[type=range] { accent-color:var(--accent); width:85px; }
+  input[type=number] { background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:5px; padding:3px 6px; font-size:.76rem; width:60px; }
+  select { background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:5px; padding:3px 6px; font-size:.76rem; }
+  #stats { display:flex; gap:8px; margin-left:auto; }
+  .stat { background:var(--surface2); padding:4px 10px; border-radius:6px; font-size:.8rem; color:var(--muted); border:1px solid var(--border); }
+  .stat span { color:var(--yellow); font-weight:800; }
 
-  .array-box.eliminated {
-    opacity: 0.15 !important; filter: grayscale(100%) !important;
-    background: linear-gradient(145deg, #141720, #111420) !important;
-    border-color: #1e2130 !important;
-    animation: elimFade 0.5s ease forwards;
-  }
-  .array-box.active-range {
-    background: linear-gradient(145deg, #1a2744, #152038) !important;
-    border-color: #1565c0 !important;
-  }
-  .array-box.mid-box {
-    background: linear-gradient(145deg, #f57f17, #f9a825) !important;
-    border-color: #ffd54f !important; color: #000;
-    transform: translateY(-12px);
-    animation: calcBlink 0.5s ease 2, calcPop 0.4s cubic-bezier(0.4,0,0.2,1) forwards;
-  }
-  .array-box.low-marker { border-color: #1976d2 !important; }
-  .array-box.high-marker { border-color: #c62828 !important; }
-  .array-box.found {
-    background: linear-gradient(145deg, #1b5e20, #2e7d32) !important;
-    border-color: #66bb6a !important; color: #fff !important;
-    animation: foundBounce 0.9s cubic-bezier(0.4,0,0.2,1) forwards, foundGlow 1s ease-in-out infinite 0.9s;
-  }
-
-  /* CALCULATOR popup for mid */
-  .calc-popup {
-    position: absolute; top: -46px; left: 50%; transform: translateX(-50%);
-    background: #1a1d27; border: 1px solid #f9a825; border-radius: 8px;
-    padding: 4px 10px; font-size: 0.68rem; color: #ffd54f; white-space: nowrap;
-    animation: calcPop 0.4s ease forwards;
-    box-shadow: 0 0 12px rgba(249,168,37,0.4);
-    pointer-events: none;
-  }
-
-  /* DECISION TREE */
-  .tree-section { overflow-x: auto; }
-  #decisionTree { width: 100%; min-height: 180px; }
-  .tree-node circle { stroke-width: 2; fill: #1e2130; stroke: #2e3347; transition: fill 0.4s, stroke 0.4s, r 0.3s; }
-  .tree-node circle.visited { fill: #1565c0; stroke: #42a5f5; }
-  .tree-node circle.current { fill: #f9a825; stroke: #ffd54f; filter: drop-shadow(0 0 8px rgba(249,168,37,0.8)); }
-  .tree-node circle.found-node { fill: #2e7d32; stroke: #66bb6a; filter: drop-shadow(0 0 10px rgba(102,187,106,0.8)); }
-  .tree-node text { fill: #e0e0e0; font-size: 11px; text-anchor: middle; dominant-baseline: central; }
-  .tree-edge { stroke: #2e3347; stroke-width: 1.5; fill: none; transition: stroke 0.4s; }
-  .tree-edge.active { stroke: #42a5f5; stroke-width: 2.5; }
-
-  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  .stat-box { background: #1e2130; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid #252836; }
-  .stat-num { font-size: 1.6rem; font-weight: 700; background: linear-gradient(135deg, #80cbc4, #26a69a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .stat-label { font-size: 0.7rem; color: #607d8b; margin-top: 3px; }
-
-  .complexity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .comp-item { background: #1e2130; border-radius: 10px; padding: 12px; border-left: 3px solid; }
-  .comp-item.best { border-color: #66bb6a; } .comp-item.worst { border-color: #ef5350; }
-  .comp-item.avg { border-color: #ffd54f; } .comp-item.space { border-color: #ce93d8; }
-  .comp-label { font-size: 0.72rem; color: #78909c; }
-  .comp-val { font-size: 1.1rem; font-weight: 700; margin-top: 4px; font-family: monospace; }
-  .comp-item.best .comp-val { color: #66bb6a; } .comp-item.worst .comp-val { color: #ef5350; }
-  .comp-item.avg .comp-val { color: #ffd54f; } .comp-item.space .comp-val { color: #ce93d8; }
-
-  .explanation-box { background: #1e2130; border-radius: 12px; padding: 16px; min-height: 64px; border-left: 3px solid #80cbc4; font-size: 0.9rem; line-height: 1.7; }
-
-  .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
-  .speed-row { display: flex; align-items: center; gap: 10px; margin-left: auto; }
-  .speed-row label { font-size: 0.8rem; color: #78909c; }
-  input[type=range] { accent-color: #80cbc4; width: 100px; }
-
-  .right-panel { display: flex; flex-direction: column; gap: 16px; }
-  .code-panel { background: linear-gradient(145deg, #141720, #111420); border-radius: 14px; padding: 20px; border: 1px solid #1e2130; font-family: 'Courier New', monospace; font-size: 0.82rem; }
-  .code-line { padding: 4px 10px; border-radius: 6px; line-height: 1.8; white-space: pre; transition: background 0.25s, transform 0.2s; }
-  .code-line.active { background: linear-gradient(135deg, #00695c, #004d40); color: #fff; transform: translateX(4px); box-shadow: 0 0 12px rgba(0,105,92,0.4); }
-  .kw { color: #ce93d8; } .fn { color: #80cbc4; } .cm { color: #455a64; } .num { color: #ffcc02; }
-
-  .trace-log { background: #141720; border-radius: 12px; padding: 14px; border: 1px solid #1e2130; max-height: 230px; overflow-y: auto; }
-  .trace-log::-webkit-scrollbar { width: 5px; }
-  .trace-log::-webkit-scrollbar-thumb { background: #2e3347; border-radius: 3px; }
-  .trace-entry { font-size: 0.79rem; padding: 5px 0; border-bottom: 1px solid #1e2130; color: #78909c; animation: slideDown 0.2s ease; }
-  .trace-entry.found { color: #66bb6a; font-weight: 600; }
-  .trace-entry.nf { color: #ef5350; }
-
-  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #78909c; }
-  .legend-dot { width: 14px; height: 14px; border-radius: 5px; }
+  @keyframes barPulse { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(1.04)} }
+  @keyframes celebrate { 0%,100%{transform:scaleY(1)} 40%{transform:scaleY(1.06)} }
+  @keyframes dropIn { 0%{transform:scaleY(0);opacity:0;transform-origin:bottom} 70%{transform:scaleY(1.03)} 100%{transform:scaleY(1)} }
+  @keyframes particleRise { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-70px) scale(0.2)} }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 </style>
 </head>
 <body>
-<h1>🔍 Tìm Kiếm Nhị Phân — Binary Search</h1>
-<p class="subtitle">Yêu cầu mảng đã sắp xếp — loại bỏ nửa mảng mỗi bước → O(log n)</p>
+<header>
+  <h1>🔎 Binary Search</h1>
+  <span class="badge">SEARCHING</span>
+  <div class="complexity">
+    <div class="cx">Best <span>O(1)</span></div>
+    <div class="cx">Avg <span>O(log n)</span></div>
+    <div class="cx">Worst <span>O(log n)</span></div>
+    <div class="cx">Space <span>O(1)</span></div>
+  </div>
+</header>
+<main>
+  <div id="viz">
+    <div id="status-display"><span class="sd-idle">Nhấn Play để bắt đầu tìm kiếm nhị phân</span></div>
 
-<div class="layout">
-  <div class="left-panel">
+    <div id="explain-viz">
+      <div class="step-icon info">💡</div>
+      <div id="explain-text">Binary Search chia đôi không gian tìm kiếm mỗi bước. Yêu cầu mảng đã sắp xếp. Hiệu quả O(log n) — nhanh hơn Linear Search nhiều lần.</div>
+      <div id="step-counter"></div>
+    </div>
 
-    <div class="card">
-      <div class="card-title">⚙ Cấu hình</div>
-      <div class="input-row">
-        <input type="text" id="arrayInput" value="3, 11, 23, 34, 45, 56, 67, 78, 90, 99" placeholder="Mảng đã sắp xếp">
-        <input type="number" id="targetInput" value="34" placeholder="Giá trị cần tìm" style="width:130px">
-        <button class="btn btn-teal" onclick="initSearch()">▶ Bắt đầu</button>
-        <button class="btn btn-gray" onclick="generateRandom()">🎲 Ngẫu nhiên</button>
+    <div id="bar-area">
+      <div id="bars-container"></div>
+      <div id="range-line"></div>
+      <div id="pointers">
+        <div class="ptr ptr-low" id="ptr-low"><span class="ptr-label">LOW</span></div>
+        <div class="ptr ptr-mid" id="ptr-mid"><span class="ptr-label">MID</span></div>
+        <div class="ptr ptr-high" id="ptr-high"><span class="ptr-label">HIGH</span></div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-title">📊 Mảng đã sắp xếp & Pointer Low / Mid / High</div>
-      <div class="array-scene">
-        <div class="array-outer">
-          <div class="ptr-label-row" id="ptrLabelRow"></div>
-          <div class="array-container" id="arrayContainer"></div>
-        </div>
+    <div id="bottom-bar">
+      <div id="legend">
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(180deg,var(--default-top),var(--default-bot))"></div>Vùng xét</div>
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(180deg,var(--mid-color),#c0143c);box-shadow:0 0 6px var(--mid-glow)"></div>MID</div>
+        <div class="leg"><div class="leg-dot" style="opacity:0.3;background:var(--elim-top)"></div>Đã loại</div>
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(180deg,var(--found-top),var(--found-bot));box-shadow:0 0 6px var(--found-glow)"></div>Tìm thấy</div>
+        <div class="leg"><div class="leg-line" style="background:linear-gradient(90deg,var(--low-color),var(--high-color))"></div>Vùng tìm kiếm</div>
       </div>
-      <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#1565c0"></div>Low</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#f9a825"></div>Mid (đang so sánh)</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#c62828"></div>High</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#1e2130;border:1px solid #2e3347;opacity:0.3"></div>Đã loại</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#2e7d32"></div>Tìm thấy</div>
-      </div>
+      <div id="progress-wrap"><div id="progress-bar"></div></div>
     </div>
-
-    <div class="card tree-section">
-      <div class="card-title">🌲 Cây quyết định (Decision Tree)</div>
-      <svg id="decisionTree"></svg>
-    </div>
-
-    <div class="card">
-      <div class="card-title">🎮 Điều khiển</div>
-      <div class="controls">
-        <button class="btn btn-green" id="playPauseBtn" onclick="togglePlayPause()">▶ Chạy</button>
-        <button class="btn btn-gray" onclick="stepForward()">⏭ Bước</button>
-        <button class="btn btn-gray" onclick="resetSearch()">↺ Reset</button>
-        <div class="speed-row">
-          <label>Tốc độ:</label>
-          <input type="range" id="speedSlider" min="1" max="5" value="3">
-          <span id="speedLabel">3x</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">📈 Thống kê</div>
-      <div class="stats-grid">
-        <div class="stat-box"><div class="stat-num" id="statComp">0</div><div class="stat-label">So sánh</div></div>
-        <div class="stat-box"><div class="stat-num" id="statLow">0</div><div class="stat-label">Low</div></div>
-        <div class="stat-box"><div class="stat-num" id="statMid">-</div><div class="stat-label">Mid</div></div>
-        <div class="stat-box"><div class="stat-num" id="statHigh">-</div><div class="stat-label">High</div></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">⏱ Độ phức tạp Big-O</div>
-      <div class="complexity-grid">
-        <div class="comp-item best"><div class="comp-label">Tốt nhất</div><div class="comp-val">O(1)</div><div style="font-size:0.73rem;color:#78909c;margin-top:4px">Target ở chính giữa ngay lần đầu</div></div>
-        <div class="comp-item worst"><div class="comp-label">Xấu nhất</div><div class="comp-val">O(log n)</div><div style="font-size:0.73rem;color:#78909c;margin-top:4px">n=1024 → tối đa 10 bước!</div></div>
-        <div class="comp-item avg"><div class="comp-label">Trung bình</div><div class="comp-val">O(log n)</div><div style="font-size:0.73rem;color:#78909c;margin-top:4px">Giảm nửa không gian tìm mỗi bước</div></div>
-        <div class="comp-item space"><div class="comp-label">Không gian</div><div class="comp-val">O(1)</div><div style="font-size:0.73rem;color:#78909c;margin-top:4px">Chỉ cần 3 biến: low, mid, high</div></div>
-      </div>
-      <div style="background:#1e2130;border-radius:10px;padding:12px;margin-top:10px;font-size:0.82rem;color:#b0bec5">
-        <strong style="color:#80cbc4">Sức mạnh logarithm:</strong><br>
-        n=1,000 → max <strong style="color:#66bb6a">10</strong> bước | n=1,000,000 → max <strong style="color:#66bb6a">20</strong> bước | n=1 tỷ → max <strong style="color:#66bb6a">30</strong> bước
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">💬 Giải thích bước hiện tại</div>
-      <div class="explanation-box" id="explanation">Nhập mảng đã sắp xếp và giá trị cần tìm, sau đó nhấn "Bắt đầu".</div>
-    </div>
-
   </div>
 
-  <div class="right-panel">
-    <div class="code-panel">
-      <div class="card-title" style="margin-bottom:12px">📝 Mã nguồn</div>
-      <div class="code-line" id="cl0"><span class="kw">function</span> <span class="fn">binarySearch</span>(arr, target) {</div>
-      <div class="code-line" id="cl1">  <span class="kw">let</span> low = <span class="num">0</span>;</div>
-      <div class="code-line" id="cl2">  <span class="kw">let</span> high = arr.length - <span class="num">1</span>;</div>
-      <div class="code-line" id="cl3">  </div>
-      <div class="code-line" id="cl4">  <span class="kw">while</span> (low &lt;= high) {</div>
-      <div class="code-line" id="cl5">    <span class="cm">// Tính điểm giữa (tránh tràn số)</span></div>
-      <div class="code-line" id="cl6">    <span class="kw">let</span> mid = low + Math.floor((high-low)/<span class="num">2</span>);</div>
-      <div class="code-line" id="cl7">    </div>
-      <div class="code-line" id="cl8">    <span class="kw">if</span> (arr[mid] === target) {</div>
-      <div class="code-line" id="cl9">      <span class="kw">return</span> mid; <span class="cm">// Tìm thấy!</span></div>
-      <div class="code-line" id="cl10">    } <span class="kw">else if</span> (arr[mid] &lt; target) {</div>
-      <div class="code-line" id="cl11">      low = mid + <span class="num">1</span>; <span class="cm">// Nửa phải</span></div>
-      <div class="code-line" id="cl12">    } <span class="kw">else</span> {</div>
-      <div class="code-line" id="cl13">      high = mid - <span class="num">1</span>; <span class="cm">// Nửa trái</span></div>
-      <div class="code-line" id="cl14">    }</div>
-      <div class="code-line" id="cl15">  }</div>
-      <div class="code-line" id="cl16">  <span class="kw">return</span> -<span class="num">1</span>; <span class="cm">// Không tìm thấy</span></div>
-      <div class="code-line" id="cl17">}</div>
+  <div id="code-panel">
+    <div class="panel-title">📝 Binary Search</div>
+    <div id="code"></div>
+    <div id="insight">
+      <div class="insight-title">⚡ Sức mạnh chia đôi</div>
+      Mỗi bước loại <b>một nửa</b> số phần tử. Với 1 triệu phần tử, Binary Search chỉ cần tối đa <b>20 bước</b> (log₂ 1,000,000 ≈ 20). Linear Search cần đến <b>1,000,000 bước</b>.
     </div>
-
-    <div class="card">
-      <div class="card-title">📋 Nhật ký tìm kiếm</div>
-      <div class="trace-log" id="traceLog"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">💡 Binary vs Linear Search</div>
-      <div style="font-size:0.82rem;line-height:1.9;color:#b0bec5">
-        <div>✅ Mảng <strong style="color:#80cbc4">đã sắp xếp</strong> → Binary Search</div>
-        <div>✅ Tập dữ liệu <strong style="color:#80cbc4">lớn</strong> → Binary nhanh hơn rất nhiều</div>
-        <div>✅ <strong style="color:#80cbc4">Database index, dictionary</strong></div>
-        <div>❌ Mảng chưa sắp xếp → phải sort trước</div>
-        <div>❌ Linked list → không dùng được</div>
-        <div style="margin-top:8px;color:#ffd54f">⚡ Dùng <code>(high-low)/2</code> không phải <code>(low+high)/2</code> để tránh overflow!</div>
-      </div>
-    </div>
+  </div>
+</main>
+<div id="controls">
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-step">⏭ Step</button>
+  <button id="btn-reset">↺ Reset</button>
+  <button id="btn-new">🎲 Mới</button>
+  <label>Target <input type="number" id="target-input" min="1" max="99" value="50"></label>
+  <label>Speed <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <label>Size <select id="size-sel"><option value="10">10</option><option value="16" selected>16</option><option value="24">24</option><option value="32">32</option></select></label>
+  <div id="stats">
+    <div class="stat">Bước <span id="s-step">0</span></div>
+    <div class="stat">Loại <span id="s-elim">0</span></div>
+    <div class="stat">Vị trí <span id="s-pos">—</span></div>
   </div>
 </div>
 
 <script>
-let arr = [], target = 0;
-let steps = [], stepIdx = 0;
-let playing = false, timer = null;
-let treeNodes = [];
-const BOX_W = 74;
+const CODE_LINES = [
+  'function binarySearch(arr, target) {',
+  '  let low = 0, high = arr.length - 1;',
+  '  while (low <= high) {',
+  '    // Tính mid, tránh overflow',
+  '    const mid = low + Math.floor((high-low)/2);',
+  '    if (arr[mid] === target) {',
+  '      return mid;   // Tìm thấy!',
+  '    } else if (arr[mid] < target) {',
+  '      low = mid + 1; // Loại nửa trái',
+  '    } else {',
+  '      high = mid - 1; // Loại nửa phải',
+  '    }',
+  '  }',
+  '  return -1;  // Không tìm thấy',
+  '}',
+];
 
-function getSpeed() {
-  const v = parseInt(document.getElementById('speedSlider').value);
-  document.getElementById('speedLabel').textContent = v + 'x';
-  return [1500, 1050, 650, 340, 140][v - 1];
+let arr=[], steps=[], stepIdx=0, playing=false, timer=null, stepCount=0, elimCount=0;
+
+function buildCode() {
+  document.getElementById('code').innerHTML = CODE_LINES.map((l,i)=>
+    `<div class="code-line${l.trim().startsWith('//')?' comment':''}" data-i="${i}">${l}</div>`
+  ).join('');
 }
-document.getElementById('speedSlider').addEventListener('input', getSpeed);
-
-function generateRandom() {
-  const size = 12;
-  const set = new Set();
-  while (set.size < size) set.add(Math.floor(Math.random() * 150) + 1);
-  const a = [...set].sort((a, b) => a - b);
-  document.getElementById('arrayInput').value = a.join(', ');
-  document.getElementById('targetInput').value = a[Math.floor(Math.random() * a.length)];
+function hl(i) {
+  document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));
+  if(i>=0) document.querySelector(`[data-i="${i}"]`)?.classList.add('active');
 }
+function setExplain(icon,cls,html) {
+  const ic=document.querySelector('#explain-viz .step-icon');
+  ic.textContent=icon; ic.className='step-icon '+cls;
+  document.getElementById('explain-text').innerHTML=html;
+  document.getElementById('step-counter').textContent=steps.length?`${stepIdx}/${steps.length}`:'';
+}
+function setInsight(title,html) {
+  document.getElementById('insight').innerHTML=`<div class="insight-title">${title}</div>${html}`;
+}
+function getTarget() { return +document.getElementById('target-input').value||50; }
 
-function initSearch() {
-  const raw = document.getElementById('arrayInput').value;
-  arr = raw.split(',').map(x => parseInt(x.trim())).filter(x => !isNaN(x)).sort((a, b) => a - b);
-  document.getElementById('arrayInput').value = arr.join(', ');
-  target = parseInt(document.getElementById('targetInput').value);
-  if (!arr.length || isNaN(target)) return;
-  buildSteps();
-  buildTreeLayout(0, arr.length - 1, null, null);
-  stepIdx = 0;
-  renderStep(steps[0]);
-  document.getElementById('traceLog').innerHTML = '';
+function genSortedArray() {
+  const n=+document.getElementById('size-sel').value;
+  const set=new Set();
+  while(set.size<n) set.add(Math.floor(Math.random()*90)+5);
+  arr=[...set].sort((a,b)=>a-b);
 }
 
 function buildSteps() {
-  steps = [];
-  let low = 0, high = arr.length - 1;
-  steps.push({ low, high, mid: -1, phase: 'init', code: 1 });
-  while (low <= high) {
-    const mid = low + Math.floor((high - low) / 2);
-    steps.push({ low, high, mid, phase: 'calc-mid', code: 6 });
-    if (arr[mid] === target) {
-      steps.push({ low, high, mid, phase: 'found', code: 9 });
-      return;
-    } else if (arr[mid] < target) {
-      steps.push({ low, high, mid, phase: 'go-right', code: 11 });
-      low = mid + 1;
+  steps=[];
+  const a=[...arr], target=getTarget();
+  steps.push({type:'init',arr:[...a],target,low:0,high:a.length-1});
+  let low=0, high=a.length-1;
+  while(low<=high) {
+    const mid=low+Math.floor((high-low)/2);
+    steps.push({type:'calc-mid',low,mid,high,arr:[...a],target});
+    if(a[mid]===target) {
+      steps.push({type:'found',low,mid,high,arr:[...a],target});
+      break;
+    } else if(a[mid]<target) {
+      steps.push({type:'go-right',low,mid,high,arr:[...a],target,newLow:mid+1});
+      low=mid+1;
     } else {
-      steps.push({ low, high, mid, phase: 'go-left', code: 13 });
-      high = mid - 1;
+      steps.push({type:'go-left',low,mid,high,arr:[...a],target,newHigh:mid-1});
+      high=mid-1;
     }
   }
-  steps.push({ low, high: -1, mid: -1, phase: 'notfound', code: 16 });
+  if(low>high) steps.push({type:'notfound',arr:[...a],target});
 }
 
-function buildTreeLayout(l, h, parentNode, side) {
-  if (l > h) return null;
-  const mid = l + Math.floor((h - l) / 2);
-  const id = treeNodes.length;
-  let x, y;
-  if (parentNode === null) { x = 50; y = 20; }
-  else {
-    const pw = parentNode.w / 2;
-    x = side === 'left' ? parentNode.x - pw : parentNode.x + pw;
-    y = parentNode.y + 16;
-  }
-  const node = { id, val: arr[mid], mid, l, h, x, y, w: (h - l + 1) * 10, parentId: parentNode ? parentNode.id : null, visited: false, current: false, found: false };
-  treeNodes.push(node);
-  buildTreeLayout(l, mid - 1, node, 'left');
-  buildTreeLayout(mid + 1, h, node, 'right');
-  return node;
-}
-
-function renderDecisionTree() {
-  const svg = document.getElementById('decisionTree');
-  if (!treeNodes.length) { svg.innerHTML = ''; return; }
-  const W = svg.parentElement.clientWidth || 600;
-  const H = 180;
-  svg.setAttribute('viewBox', `0 0 100 ${H / (W / 100)}`);
-  svg.setAttribute('width', W);
-  svg.setAttribute('height', H);
-  svg.innerHTML = '';
-
-  const xs = treeNodes.map(n => n.x);
-  const minX = Math.min(...xs), maxX = Math.max(...xs);
-  const scaleX = n => ((n.x - minX) / (maxX - minX || 1)) * 88 + 6;
-  const ys = treeNodes.map(n => n.y);
-  const minY = Math.min(...ys), maxY = Math.max(...ys);
-  const scaleY = n => ((n.y - minY) / (maxY - minY || 1)) * (H / (W / 100) - 12) + 8;
-
-  treeNodes.forEach(node => {
-    if (node.parentId !== null) {
-      const parent = treeNodes[node.parentId];
-      if (parent) {
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', scaleX(parent)); line.setAttribute('y1', scaleY(parent));
-        line.setAttribute('x2', scaleX(node)); line.setAttribute('y2', scaleY(node));
-        line.setAttribute('class', node.visited && parent.visited ? 'tree-edge active' : 'tree-edge');
-        svg.appendChild(line);
-      }
-    }
-  });
-
-  treeNodes.forEach(node => {
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.setAttribute('class', 'tree-node');
-    const cx = scaleX(node), cy = scaleY(node);
-    const circ = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    circ.setAttribute('cx', cx); circ.setAttribute('cy', cy); circ.setAttribute('r', 5.5);
-    let cls = '';
-    if (node.found) cls = 'found-node';
-    else if (node.current) cls = 'current';
-    else if (node.visited) cls = 'visited';
-    if (cls) circ.setAttribute('class', cls);
-    g.appendChild(circ);
-    const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    txt.setAttribute('x', cx); txt.setAttribute('y', cy);
-    txt.setAttribute('style', 'fill:#e0e0e0;font-size:4px;text-anchor:middle;dominant-baseline:central');
-    txt.textContent = node.val;
-    g.appendChild(txt);
-    svg.appendChild(g);
+function buildBarsDOM(a) {
+  const con=document.getElementById('bars-container'); con.innerHTML='';
+  const max=Math.max(...a);
+  a.forEach((v,i)=>{
+    const wrap=document.createElement('div'); wrap.className='bar-wrap';
+    const bar=document.createElement('div'); bar.className='bar';
+    bar.style.height=Math.round((v/max)*100)+'%';
+    bar.style.animation=`dropIn 0.4s cubic-bezier(0.34,1.56,0.64,1) ${i*15}ms both`;
+    const valIn=document.createElement('div'); valIn.className='bar-val-inside'; valIn.textContent=v;
+    bar.appendChild(valIn);
+    const idx=document.createElement('div'); idx.className='bar-idx'; idx.textContent=i;
+    wrap.appendChild(bar); wrap.appendChild(idx); con.appendChild(wrap);
   });
 }
 
-function renderStep(step) {
-  if (!step) return;
-
-  for (let k = 0; k <= 17; k++) document.getElementById('cl' + k).classList.remove('active');
-  document.getElementById('cl' + step.code).classList.add('active');
-
-  // Render array
-  const container = document.getElementById('arrayContainer');
-  container.innerHTML = '';
-  arr.forEach((val, idx) => {
-    const box = document.createElement('div');
-    box.className = 'array-box';
-    box.textContent = val;
-    const idxLabel = document.createElement('span');
-    idxLabel.className = 'idx';
-    idxLabel.textContent = idx;
-    box.appendChild(idxLabel);
-
-    if (step.phase !== 'init' && step.phase !== 'notfound') {
-      if (idx < step.low || idx > step.high) {
-        box.classList.add('eliminated');
-      } else if (idx === step.mid) {
-        if (step.phase === 'found') {
-          box.classList.add('found');
-          // Calculator popup
-          const popup = document.createElement('div');
-          popup.className = 'calc-popup';
-          popup.textContent = `mid=${step.mid} ✓`;
-          box.appendChild(popup);
-        } else {
-          box.classList.add('mid-box');
-          // Calculator popup
-          const popup = document.createElement('div');
-          popup.className = 'calc-popup';
-          popup.textContent = `${step.low}+⌊(${step.high}-${step.low})/2⌋=${step.mid}`;
-          box.appendChild(popup);
-        }
-      } else {
-        box.classList.add('active-range');
-      }
-      if (idx === step.low) box.classList.add('low-marker');
-      if (idx === step.high) box.classList.add('high-marker');
-    }
-    container.appendChild(box);
+function updateBars(low,mid,high,foundIdx,eliminated) {
+  document.querySelectorAll('.bar-wrap').forEach((wrap,i)=>{
+    const bar=wrap.querySelector('.bar');
+    bar.classList.remove('mid','eliminated','found');
+    if(foundIdx!==undefined && i===foundIdx) bar.classList.add('found');
+    else if(eliminated && (i<low||i>high)) bar.classList.add('eliminated');
+    else if(mid!==undefined && i===mid) bar.classList.add('mid');
   });
+}
 
-  // Pointer labels (smoothly sliding)
-  const ptrRow = document.getElementById('ptrLabelRow');
-  ptrRow.innerHTML = '';
-  const offset = 10;
-  if (step.phase !== 'init' && step.mid >= 0) {
-    [['low', step.low], ['mid', step.mid], ['high', step.high]].forEach(([type, i]) => {
-      if (i < 0 || i >= arr.length) return;
-      const lbl = document.createElement('div');
-      lbl.className = 'ptr-label ' + type;
-      lbl.textContent = type.toUpperCase() + '=' + i;
-      lbl.style.left = (offset + i * BOX_W) + 'px';
-      ptrRow.appendChild(lbl);
-    });
-  }
-
-  // Stats
-  document.getElementById('statLow').textContent = step.low >= 0 ? step.low : '-';
-  document.getElementById('statHigh').textContent = step.high >= 0 ? step.high : '-';
-  document.getElementById('statMid').textContent = step.mid >= 0 ? step.mid : '-';
-  const comps = steps.slice(0, stepIdx + 1).filter(s => s.phase === 'calc-mid').length;
-  document.getElementById('statComp').textContent = comps;
-
-  // Tree update
-  treeNodes.forEach(n => { n.current = false; n.found = false; });
-  if (step.mid >= 0) {
-    const tn = treeNodes.find(n => n.mid === step.mid && n.l === step.low && n.h === step.high);
-    if (tn) {
-      tn.visited = true;
-      tn.current = step.phase !== 'found';
-      tn.found = step.phase === 'found';
-    }
-    steps.slice(0, stepIdx).filter(s => s.mid >= 0).forEach(s => {
-      const node = treeNodes.find(n => n.mid === s.mid);
-      if (node) node.visited = true;
-    });
-  }
-  renderDecisionTree();
-
-  // Explanation
-  const expls = {
-    init: `🚀 Khởi tạo: <strong style="color:#1976d2">low=0</strong>, <strong style="color:#c62828">high=${arr.length - 1}</strong>. Mảng đã sắp xếp tăng dần. Target: <strong style="color:#ffd54f">${target}</strong>.`,
-    'calc-mid': `🔢 Tính mid = ${step.low} + ⌊(${step.high}-${step.low})/2⌋ = <strong style="color:#f9a825">${step.mid}</strong>. arr[${step.mid}] = <strong style="color:#f9a825">${arr[step.mid]}</strong>. So sánh với target = <strong style="color:#ffd54f">${target}</strong>...`,
-    'go-right': `➡ arr[${step.mid}]=${arr[step.mid]} < ${target}. Target ở <strong style="color:#80cbc4">nửa phải</strong>. Đặt <strong style="color:#1976d2">low = ${step.mid + 1}</strong>. Loại bỏ ${step.mid + 1} phần tử bên trái.`,
-    'go-left': `⬅ arr[${step.mid}]=${arr[step.mid]} > ${target}. Target ở <strong style="color:#80cbc4">nửa trái</strong>. Đặt <strong style="color:#c62828">high = ${step.mid - 1}</strong>. Loại bỏ ${arr.length - step.mid} phần tử bên phải.`,
-    found: `✅ <strong style="color:#66bb6a">TÌM THẤY!</strong> arr[${step.mid}] = ${arr[step.mid]} = target. Chỉ số: <strong style="color:#66bb6a">${step.mid}</strong>. Chỉ ${comps} lần so sánh thay vì tối đa ${arr.length} (linear search)!`,
-    notfound: `🔚 <strong style="color:#ef5350">Không tìm thấy</strong> ${target}. low > high → không gian tìm kiếm rỗng. Chỉ ${steps.filter(s => s.phase === 'calc-mid').length} lần so sánh.`
+function showPointers(low,mid,high,visible) {
+  const wraps=[...document.querySelectorAll('.bar-wrap')];
+  const pLow=document.getElementById('ptr-low');
+  const pMid=document.getElementById('ptr-mid');
+  const pHigh=document.getElementById('ptr-high');
+  if(!visible||!wraps.length){[pLow,pMid,pHigh].forEach(p=>p.style.opacity='0'); hideRangeLine(); return;}
+  const place=(ptr,i)=>{
+    if(i<0||i>=wraps.length){ptr.style.opacity='0';return;}
+    const w=wraps[i];
+    ptr.style.opacity='1';
+    ptr.style.left=(w.offsetLeft+w.offsetWidth/2-14)+'px';
   };
-  document.getElementById('explanation').innerHTML = expls[step.phase] || '';
+  place(pLow,low); place(pMid,mid); place(pHigh,high);
+  showRangeLine(low,high,wraps);
+}
 
-  // Trace
-  if (step.phase !== 'init') {
-    const log = document.getElementById('traceLog');
-    const entry = document.createElement('div');
-    entry.className = 'trace-entry' + (step.phase === 'found' ? ' found' : step.phase === 'notfound' ? ' nf' : '');
-    const msgs = {
-      'calc-mid': `[B${comps}] low=${step.low} high=${step.high} → mid=${step.mid} arr[mid]=${arr[step.mid]}`,
-      'go-right': `    → ${arr[step.mid]} < ${target}: nửa PHẢI, low→${step.mid + 1}`,
-      'go-left': `    → ${arr[step.mid]} > ${target}: nửa TRÁI, high→${step.mid - 1}`,
-      found: `✓ arr[${step.mid}]=${arr[step.mid]} == ${target} → TÌM THẤY index ${step.mid}`,
-      notfound: `✗ Không tìm thấy ${target}, return -1`
-    };
-    entry.textContent = msgs[step.phase] || '';
-    if (entry.textContent) { log.appendChild(entry); log.scrollTop = log.scrollHeight; }
+function showRangeLine(low,high,wraps) {
+  const rl=document.getElementById('range-line');
+  if(!wraps[low]||!wraps[high]){rl.style.opacity='0';return;}
+  const wl=wraps[low], wh=wraps[high];
+  const area=document.getElementById('bar-area');
+  const aRect=area.getBoundingClientRect();
+  const lRect=wl.getBoundingClientRect();
+  const hRect=wh.getBoundingClientRect();
+  rl.style.left=(lRect.left-aRect.left)+'px';
+  rl.style.width=(hRect.right-lRect.left)+'px';
+  rl.style.opacity='1';
+}
+
+function hideRangeLine(){document.getElementById('range-line').style.opacity='0';}
+
+function setStatus(type,data) {
+  const d=document.getElementById('status-display');
+  if(type==='idle'){d.innerHTML=`<span class="sd-idle">Nhấn Play để bắt đầu tìm kiếm nhị phân</span>`;return;}
+  if(type==='init'){
+    d.innerHTML=`<div class="sd-chip target-chip"><span class="label">Target</span><span class="val">${data.target}</span></div>
+    <div class="sd-chip low"><span class="label">LOW</span><span class="val">${data.low}</span></div>
+    <div class="sd-chip high"><span class="label">HIGH</span><span class="val">${data.high}</span></div>`;
+    return;
+  }
+  if(type==='calc'){
+    d.innerHTML=`<div class="sd-chip target-chip"><span class="label">Target</span><span class="val">${data.target}</span></div>
+    <div class="sd-chip low"><span class="label">LOW</span><span class="val">${data.low}</span></div>
+    <div class="sd-chip mid-chip"><span class="label">MID</span><span class="val">${data.mid}</span></div>
+    <div class="sd-chip high"><span class="label">HIGH</span><span class="val">${data.high}</span></div>
+    <div class="sd-mid-calc">mid = (${data.low}+${data.high})/2 = ${data.mid} → arr[${data.mid}]=${data.arr[data.mid]}</div>`;
+    return;
+  }
+  if(type==='found'){
+    d.innerHTML=`<div class="sd-chip target-chip"><span class="label">Target</span><span class="val">${data.target}</span></div>
+    <span class="sd-tag found">🎉 TÌM THẤY tại [${data.mid}]</span>`;
+    return;
+  }
+  if(type==='notfound'){
+    d.innerHTML=`<span class="sd-tag notfound">❌ Không tìm thấy ${data.target}</span>`;
   }
 }
 
-function stepForward() {
-  if (stepIdx >= steps.length - 1) { stopPlaying(); return; }
-  stepIdx++;
-  renderStep(steps[stepIdx]);
-  if (stepIdx >= steps.length - 1) stopPlaying();
+function spawnParticles(i) {
+  const wraps=[...document.querySelectorAll('.bar-wrap')];
+  if(!wraps[i])return;
+  const rect=wraps[i].getBoundingClientRect();
+  const area=document.getElementById('bar-area').getBoundingClientRect();
+  const colors=['rgba(46,204,113,0.9)','rgba(255,212,59,0.9)','rgba(0,180,216,0.9)'];
+  for(let k=0;k<10;k++){
+    const p=document.createElement('div'); p.className='particle';
+    const size=4+Math.random()*9;
+    p.style.cssText=`width:${size}px;height:${size}px;background:${colors[k%3]};left:${rect.left-area.left+Math.random()*rect.width}px;top:${rect.top-area.top}px;animation-delay:${k*50}ms`;
+    document.getElementById('bar-area').appendChild(p);
+    setTimeout(()=>p.remove(),900);
+  }
 }
 
-function togglePlayPause() { playing ? stopPlaying() : startPlaying(); }
-function startPlaying() {
-  if (stepIdx >= steps.length - 1) return;
-  playing = true;
-  document.getElementById('playPauseBtn').textContent = '⏸ Tạm dừng';
-  timer = setInterval(() => { stepForward(); if (stepIdx >= steps.length - 1) stopPlaying(); }, getSpeed());
-}
-function stopPlaying() {
-  playing = false; clearInterval(timer);
-  document.getElementById('playPauseBtn').textContent = '▶ Chạy';
-}
-function resetSearch() {
-  stopPlaying(); stepIdx = 0;
-  treeNodes.forEach(n => { n.visited = false; n.current = false; n.found = false; });
-  if (steps.length) renderStep(steps[0]);
-  document.getElementById('traceLog').innerHTML = '';
+function applyStep(s) {
+  if(!s)return;
+  document.getElementById('progress-bar').style.width=(stepIdx/steps.length*100)+'%';
+  switch(s.type) {
+    case 'init':
+      buildBarsDOM(s.arr); hl(1);
+      showPointers(s.low,-1,s.high,true);
+      updateBars(s.low,-1,s.high);
+      setStatus('init',s);
+      setExplain('💡','info',`Mảng đã sắp xếp, ${s.arr.length} phần tử. Tìm <b>${s.target}</b>. Khởi tạo: low=<b>${s.low}</b>, high=<b>${s.high}</b>.`);
+      setInsight('⚡ Điều kiện tiên quyết','Binary Search <b>yêu cầu mảng đã sắp xếp</b>. Nếu chưa sort → kết quả sai. Đổi lại dùng Linear Search nếu không muốn sort trước.');
+      break;
+    case 'calc-mid':
+      stepCount++; document.getElementById('s-step').textContent=stepCount;
+      hl(4);
+      updateBars(s.low,s.mid,s.high,undefined,true);
+      showPointers(s.low,s.mid,s.high,true);
+      setStatus('calc',s);
+      setExplain('➗','check',`mid = (${s.low}+${s.high}) ÷ 2 = <b>${s.mid}</b>. arr[${s.mid}] = <b>${s.arr[s.mid]}</b>. So sánh với target <b>${s.target}</b>...`);
+      break;
+    case 'go-right':
+      elimCount+=s.mid+1-s.low; document.getElementById('s-elim').textContent=elimCount;
+      hl(8);
+      updateBars(s.newLow,undefined,s.high,undefined,true);
+      showPointers(s.newLow,undefined,s.high,true);
+      setStatus('calc',{...s,low:s.newLow,mid:undefined});
+      setExplain('➡️','elim',`arr[${s.mid}]=${s.arr[s.mid]} <b>< ${s.target}</b> → target nằm bên phải. Loại nửa trái, <b>low = ${s.mid}+1 = ${s.newLow}</b>.`);
+      setInsight(`📊 Bước ${stepCount}: loại nửa trái`,`Loại bỏ indices [${s.low}..${s.mid}] (${s.mid-s.low+1} phần tử). Còn lại: [${s.newLow}..${s.high}] (${s.high-s.newLow+1} phần tử).`);
+      break;
+    case 'go-left':
+      elimCount+=s.high-s.mid+1; document.getElementById('s-elim').textContent=elimCount;
+      hl(10);
+      updateBars(s.low,undefined,s.newHigh,undefined,true);
+      showPointers(s.low,undefined,s.newHigh,true);
+      setStatus('calc',{...s,high:s.newHigh,mid:undefined});
+      setExplain('⬅️','elim',`arr[${s.mid}]=${s.arr[s.mid]} <b>> ${s.target}</b> → target nằm bên trái. Loại nửa phải, <b>high = ${s.mid}-1 = ${s.newHigh}</b>.`);
+      setInsight(`📊 Bước ${stepCount}: loại nửa phải`,`Loại bỏ indices [${s.mid}..${s.high}] (${s.high-s.mid+1} phần tử). Còn lại: [${s.low}..${s.newHigh}] (${s.newHigh-s.low+1} phần tử).`);
+      break;
+    case 'found':
+      hl(6);
+      updateBars(undefined,undefined,undefined,s.mid,true);
+      showPointers(s.mid,s.mid,s.mid,true);
+      setStatus('found',s);
+      document.getElementById('s-pos').textContent=s.mid;
+      document.getElementById('progress-bar').style.width='100%';
+      spawnParticles(s.mid);
+      stopPlay();
+      setExplain('🎉','found',`arr[${s.mid}]=${s.arr[s.mid]} = target <b>${s.target}</b>. Tìm thấy tại index <b>${s.mid}</b> sau <b>${stepCount}</b> bước!`);
+      setInsight('✅ Hiệu quả!',`<b>${stepCount} bước</b> để tìm trong ${arr.length} phần tử. Linear Search tệ nhất cần ${arr.length} bước. <b>Binary Search nhanh hơn ${Math.round(arr.length/stepCount)}× lần.</b>`);
+      break;
+    case 'notfound':
+      hl(13); hideRangeLine();
+      updateBars(-1,-1,-1,undefined,true);
+      showPointers(-1,-1,-1,false);
+      setStatus('notfound',s);
+      document.getElementById('progress-bar').style.width='100%';
+      stopPlay();
+      setExplain('❌','notfound',`Không tìm thấy <b>${s.target}</b>. low > high → vùng tìm kiếm rỗng. Trả về <code>-1</code>.`);
+      setInsight('❌ Không tìm thấy',`Sau <b>${stepCount} bước</b>, loại <b>${elimCount} phần tử</b>. Giá trị ${s.target} không tồn tại trong mảng.`);
+      break;
+  }
 }
 
-window.onload = () => { initSearch(); };
-window.addEventListener('resize', () => renderDecisionTree());
+function getDelay(){return Math.round(1200-document.getElementById('speed').value*110);}
+function tick(){if(stepIdx>=steps.length){stopPlay();return;} applyStep(steps[stepIdx++]); if(playing) timer=setTimeout(tick,getDelay());}
+function startPlay(){if(stepIdx>=steps.length)reset(); playing=true; document.getElementById('btn-play').textContent='⏸ Pause'; tick();}
+function stopPlay(){playing=false; clearTimeout(timer); document.getElementById('btn-play').textContent='▶ Play';}
+function reset() {
+  stopPlay(); stepIdx=0; stepCount=0; elimCount=0;
+  buildSteps();
+  document.getElementById('s-step').textContent='0';
+  document.getElementById('s-elim').textContent='0';
+  document.getElementById('s-pos').textContent='—';
+  document.getElementById('progress-bar').style.width='0%';
+  hl(-1); buildBarsDOM(arr); hideRangeLine(); setStatus('idle');
+  [document.getElementById('ptr-low'),document.getElementById('ptr-mid'),document.getElementById('ptr-high')].forEach(p=>p.style.opacity='0');
+  setExplain('💡','info',`Mảng đã sắp xếp ${arr.length} phần tử. Tìm <b>${getTarget()}</b>. Binary Search chia đôi vùng tìm kiếm mỗi bước.`);
+  setInsight('⚡ Sức mạnh chia đôi','Mỗi bước loại <b>một nửa</b> số phần tử. 1 triệu phần tử → tối đa <b>20 bước</b>. Linear Search cần đến <b>1,000,000 bước</b>.');
+}
+
+document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
+document.getElementById('btn-step').onclick=()=>{stopPlay();if(stepIdx<steps.length)applyStep(steps[stepIdx++]);};
+document.getElementById('btn-reset').onclick=reset;
+document.getElementById('btn-new').onclick=()=>{genSortedArray();reset();};
+document.getElementById('size-sel').onchange=()=>{genSortedArray();reset();};
+document.getElementById('target-input').onchange=()=>{
+  // plant target sometimes
+  if(Math.random()<0.6&&arr.length>0) arr[Math.floor(Math.random()*arr.length)]=getTarget(), arr.sort((a,b)=>a-b);
+  reset();
+};
+
+buildCode(); genSortedArray();
+// Plant target
+const t=getTarget(); arr[Math.floor(Math.random()*arr.length)]=t; arr.sort((a,b)=>a-b);
+reset();
 </script>
 </body>
 </html>

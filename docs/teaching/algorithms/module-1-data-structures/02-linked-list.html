@@ -3,531 +3,336 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>02 — Danh sách liên kết (Linked List) | Data Structures</title>
+<title>Danh sách liên kết (Linked List) — Cấu trúc dữ liệu</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #0d0d1a; --panel-bg: #111128; --code-bg: #080816;
-    --accent: #a78bfa; --accent2: #ff4d6d; --accent3: #ffd60a; --accent4: #00ff88;
-    --text: #e8e8f0; --text-dim: #6b6d8a; --border: #1e1e3a;
-    --node-bg: #150e2e; --node-border: #5b4fcf; --node-active: #a78bfa;
-    --node-found: #00ff88; --node-delete: #ff4d6d; --node-insert: #ffd60a;
-    --glow-purple: rgba(167,139,250,0.5); --glow-green: rgba(0,255,136,0.5);
-    --glow-red: rgba(255,77,109,0.5); --glow-yellow: rgba(255,214,10,0.5);
+    --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+    --text: #eef1f8; --muted: #8899bb;
+    --blue-top: #5b8def; --blue-bot: #2c5aa0;
+    --pink-top: #ff5e7a; --pink-bot: #c0143c; --pink-glow: rgba(255,94,122,0.6);
+    --orange-top: #ffb347; --orange-bot: #e67e22; --orange-glow: rgba(255,179,71,0.6);
+    --green-top: #2ecc71; --green-bot: #1a9c54; --green-glow: rgba(46,204,113,0.4);
+    --red-top: #e74c3c; --red-bot: #c0392b; --red-glow: rgba(231,76,60,0.5);
+    --accent: #a78bfa; --yellow: #ffd43b;
   }
-  body { background: var(--bg); color: var(--text); font-family: system-ui,-apple-system,sans-serif;
-    display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-  body::before { content:''; position:fixed; inset:0; pointer-events:none;
-    background: radial-gradient(ellipse at 30% 30%, rgba(167,139,250,0.04) 0%, transparent 60%); }
-
-  header { background: linear-gradient(90deg, #111128, #0d0d1a);
-    border-bottom: 1px solid var(--border); padding: 10px 20px;
-    display: flex; align-items: center; gap: 16px; flex-shrink: 0;
-    box-shadow: 0 2px 20px rgba(0,0,0,0.5); }
-  header h1 { font-size: 1.1rem; color: var(--accent);
-    text-shadow: 0 0 20px rgba(167,139,250,0.4); }
-  .badge { background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-    backdrop-filter: blur(10px); padding: 2px 10px; border-radius: 20px;
-    font-size: 0.75rem; color: var(--text-dim); }
-
-  .main { display: flex; flex: 1; overflow: hidden; }
-  .viz { flex: 0 0 60%; display: flex; flex-direction: column; padding: 16px; gap: 12px; overflow: hidden; }
-
-  .ops-bar { display: flex; gap: 8px; flex-wrap: wrap; }
-  .op-btn { background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text-dim);
-    padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 0.82rem;
-    transition: all 0.25s cubic-bezier(0.4,0,0.2,1); }
-  .op-btn:hover { border-color: var(--accent); color: var(--accent);
-    box-shadow: 0 0 14px rgba(167,139,250,0.2); }
-  .op-btn.active { background: linear-gradient(135deg, rgba(167,139,250,0.2), rgba(167,139,250,0.06));
-    color: var(--accent); border-color: var(--accent);
-    box-shadow: 0 0 20px rgba(167,139,250,0.25); font-weight: 600; }
-  .toggle-btn { background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text-dim);
-    padding: 4px 12px; border-radius: 8px; cursor: pointer; font-size: 0.78rem; margin-left: auto;
-    transition: all 0.2s; }
-  .toggle-btn.on { border-color: var(--accent3); color: var(--accent3);
-    box-shadow: 0 0 12px rgba(255,214,10,0.2); }
-
-  .input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .input-row label { font-size: 0.8rem; color: var(--text-dim); }
-  .input-row input { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text);
-    padding: 6px 10px; border-radius: 8px; width: 70px; font-size: 0.85rem; transition: border-color 0.2s; }
-  .input-row input:focus { outline:none; border-color:var(--accent); box-shadow: 0 0 12px rgba(167,139,250,0.2); }
-  .run-btn { background: linear-gradient(135deg, var(--accent), rgba(140,100,230,0.8));
-    color: #000; border: none; padding: 6px 18px; border-radius: 8px;
-    cursor: pointer; font-weight: 700; font-size: 0.85rem;
-    transition: all 0.2s; box-shadow: 0 0 16px rgba(167,139,250,0.3); }
-  .run-btn:hover { transform: translateY(-1px); box-shadow: 0 0 24px rgba(167,139,250,0.5); }
-
-  .canvas-area { flex: 1; background: rgba(255,255,255,0.02); border: 1px solid var(--border);
-    backdrop-filter: blur(10px); border-radius: 16px; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; padding: 20px; gap: 20px; overflow: hidden; position: relative; }
-  .canvas-area::before { content:''; position:absolute; inset:0; border-radius:16px;
-    background: linear-gradient(135deg, rgba(167,139,250,0.02) 0%, transparent 50%); pointer-events:none; }
-
-  /* Linked List canvas */
-  .list-canvas { display: flex; align-items: center; flex-wrap: wrap; gap: 0;
-    min-height: 100px; justify-content: center; }
-
-  /* Nodes */
-  .ll-node { display: flex; align-items: stretch;
-    transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1); }
-  .node-body { display: flex; border: 2px solid var(--node-border); border-radius: 10px;
-    overflow: hidden; transition: all 0.35s; min-width: 84px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-    background: linear-gradient(145deg, var(--node-bg), #0d0a1e); }
-  .node-val { padding: 10px 14px; font-weight: 700; font-size: 1.05rem;
-    display: flex; align-items: center; justify-content: center; min-width: 46px; }
-  .node-ptr { background: rgba(255,255,255,0.03); padding: 4px 8px; font-size: 0.62rem;
-    color: #555; display: flex; align-items: center; justify-content: center;
-    border-left: 1px solid rgba(255,255,255,0.06); min-width: 38px; white-space: nowrap; }
-
-  /* Node states */
-  .ll-node.active .node-body { border-color: var(--node-active);
-    box-shadow: 0 0 24px var(--glow-purple), 0 4px 16px rgba(0,0,0,0.4); }
-  .ll-node.active .node-val { color: var(--node-active);
-    background: linear-gradient(145deg, rgba(167,139,250,0.2), rgba(167,139,250,0.05)); }
-  .ll-node.found .node-body { border-color: var(--node-found);
-    box-shadow: 0 0 24px var(--glow-green); }
-  .ll-node.found .node-val { color: var(--node-found);
-    background: linear-gradient(145deg, rgba(0,255,136,0.15), rgba(0,255,136,0.04)); }
-  .ll-node.deleting .node-body { border-color: var(--node-delete);
-    box-shadow: 0 0 24px var(--glow-red); animation: shake 0.4s ease; }
-  .ll-node.deleting .node-val { color: var(--node-delete);
-    background: linear-gradient(145deg, rgba(255,77,109,0.18), rgba(255,77,109,0.04)); }
-  .ll-node.inserting .node-body { border-color: var(--node-insert);
-    box-shadow: 0 0 24px var(--glow-yellow); }
-  .ll-node.inserting .node-val { color: var(--node-insert);
-    background: linear-gradient(145deg, rgba(255,214,10,0.2), rgba(255,214,10,0.04)); }
-
-  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
-  @keyframes nodeIn {
-    from { opacity:0; transform:scale(0.4) translateY(-30px); }
-    60%  { opacity:1; transform:scale(1.08) translateY(4px); }
-    to   { opacity:1; transform:scale(1) translateY(0); } }
-  @keyframes nodeOut {
-    from { opacity:1; transform:scale(1); }
-    to   { opacity:0; transform:scale(0.3) translateY(-30px); } }
-  @keyframes floatNode { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
-  .ll-node.entering { animation: nodeIn 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards; }
-  .ll-node.exiting  { animation: nodeOut 0.35s ease forwards; pointer-events:none; }
-  .ll-node:not(.entering):not(.exiting) { animation: floatNode 3s ease-in-out infinite; }
-
-  /* Arrows — SVG-based animated stroke */
-  .arrow-wrap { display: flex; align-items: center; padding: 0 2px; }
-  .arrow-svg { width: 36px; height: 24px; overflow: visible; }
-  .arrow-line { stroke: var(--node-border); stroke-width: 2; fill: none;
-    transition: stroke 0.3s;
-    stroke-dasharray: 40; stroke-dashoffset: 40;
-    animation: drawArrow 0.5s ease forwards; }
-  .arrow-head { fill: var(--node-border); transition: fill 0.3s; }
-  @keyframes drawArrow { to { stroke-dashoffset: 0; } }
-  .arrow-line.active { stroke: var(--node-active); animation: drawArrow 0.4s ease forwards; }
-  .arrow-head.active { fill: var(--node-active); }
-  .arrow-line.rewire { stroke: var(--node-insert); animation: drawArrow 0.4s ease forwards, arrowPulse 0.7s ease infinite alternate; }
-  .arrow-head.rewire { fill: var(--node-insert); }
-  @keyframes arrowPulse { 0%{opacity:1} 100%{opacity:0.3} }
-
-  .head-label { font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; font-weight: 700;
-    background: rgba(167,139,250,0.15); color: var(--accent); border: 1px solid rgba(167,139,250,0.4);
-    box-shadow: 0 0 12px rgba(167,139,250,0.2); }
-  .null-label { background: rgba(255,77,109,0.12); color: var(--accent2);
-    border: 1px solid rgba(255,77,109,0.35); font-size: 0.72rem; padding: 4px 8px;
-    border-radius: 6px; box-shadow: 0 0 10px rgba(255,77,109,0.15); }
-
-  .complexity-row { display: flex; gap: 10px; flex-wrap: wrap; }
-  .complexity-badge { background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-    backdrop-filter: blur(8px); border-radius: 10px; padding: 6px 14px; text-align: center; }
-  .complexity-badge .label { font-size: 0.68rem; color: var(--text-dim); }
-  .complexity-badge .value { font-size: 0.95rem; font-weight: 700; margin-top: 2px; }
-  .green { color: #00ff88; } .yellow { color: var(--accent3); } .red { color: var(--accent2); }
-  .complexity-badge.active-badge { border-color: var(--accent);
-    box-shadow: 0 0 14px rgba(167,139,250,0.25); }
-
-  .status-msg { background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-    backdrop-filter: blur(8px); border-radius: 10px;
-    padding: 8px 16px; font-size: 0.85rem; color: var(--text-dim); text-align: center; min-width: 300px;
-    transition: all 0.3s; }
-  .status-msg.info { border-color: var(--accent); color: var(--accent);
-    background: rgba(167,139,250,0.06); }
-  .status-msg.success { border-color: var(--node-found); color: var(--node-found);
-    background: rgba(0,255,136,0.06); }
-  .status-msg.error { border-color: var(--node-delete); color: var(--node-delete);
-    background: rgba(255,77,109,0.06); }
-
-  .code-panel { flex: 0 0 40%; background: var(--code-bg); border-left: 1px solid var(--border);
-    display: flex; flex-direction: column; overflow: hidden; }
-  .code-panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border);
-    font-size: 0.8rem; color: var(--text-dim); display: flex; gap: 8px; align-items: center;
-    background: linear-gradient(90deg, rgba(167,139,250,0.04), transparent); }
-  .code-panel-header span { color: var(--accent); font-weight: 600; font-size: 0.85rem; }
-  .code-body { flex: 1; overflow-y: auto; padding: 12px 0; font-family: 'Courier New',monospace; font-size: 0.82rem; }
-  .code-line { display: flex; padding: 3px 0; transition: background 0.25s; }
-  .code-line.highlight { background: rgba(167,139,250,0.1); border-left: 3px solid var(--accent); }
-  .ln { width: 36px; text-align: right; padding-right: 12px; color: #333; flex-shrink: 0; user-select: none; }
-  .code-text { color: #abb2bf; white-space: pre; }
-  .kw { color: #c678dd; } .fn { color: #61afef; } .cm { color: #4a4f60; font-style: italic; }
-  .num { color: #d19a66; } .str { color: #98c379; }
-
-  .controls { background: linear-gradient(90deg, var(--panel-bg), var(--bg));
-    border-top: 1px solid var(--border); padding: 10px 20px;
-    display: flex; align-items: center; gap: 16px; flex-shrink: 0; flex-wrap: wrap; }
-  .ctrl-btn { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text);
-    width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: all 0.2s; }
-  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 12px rgba(167,139,250,0.2); }
-  .speed-group { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-dim); }
-  input[type=range] { -webkit-appearance: none; width: 100px; height: 4px;
-    background: linear-gradient(90deg, var(--accent), var(--border)); border-radius: 2px; outline: none; cursor: pointer; }
-  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px;
-    background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--glow-purple); }
-  .step-info { font-size: 0.78rem; color: var(--text-dim); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 25% 15%, rgba(91,141,239,0.07) 0%, transparent 55%), radial-gradient(ellipse at 75% 85%, rgba(167,139,250,0.05) 0%, transparent 55%); pointer-events:none; }
+  header { background: var(--surface); padding: 10px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); z-index: 2; flex-wrap: wrap; }
+  header h1 { font-size: 1.15rem; font-weight: 700; background: linear-gradient(135deg,#a78bfa,#7c5ce7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .badge { background: linear-gradient(135deg,#2c5aa0,#5b8def); color: #fff; padding: 2px 10px; border-radius: 12px; font-size: .68rem; font-weight: 700; }
+  .complexity { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+  .cx { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 9px; font-size: .72rem; color: var(--muted); }
+  .cx span { color: var(--yellow); font-weight: 700; }
+  .toggle-wrap { display: flex; gap: 6px; }
+  .toggle-btn { padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); font-size: .72rem; cursor: pointer; transition: all 0.2s; font-weight: 600; }
+  .toggle-btn.on { background: linear-gradient(135deg,#7c5ce7,#a78bfa); border-color: #a78bfa; color: #fff; }
+  main { flex: 1; display: flex; overflow: hidden; z-index: 1; min-height: 0; }
+  #viz { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  #status-display { padding: 10px 20px; min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 10px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .sd-idle { color: var(--muted); font-size: .9rem; }
+  .sd-box { display:inline-flex; align-items:center; justify-content:center; min-width:40px; height:38px; border-radius:8px; font-size:1rem; font-weight:800; color:#fff; padding:0 10px; }
+  .sd-box.insert { background: linear-gradient(135deg,var(--orange-top),var(--orange-bot)); box-shadow:0 0 12px var(--orange-glow); }
+  .sd-box.found { background: linear-gradient(135deg,var(--green-top),var(--green-bot)); box-shadow:0 0 12px var(--green-glow); }
+  .sd-box.search { background: linear-gradient(135deg,var(--pink-top),var(--pink-bot)); box-shadow:0 0 12px var(--pink-glow); }
+  .sd-label { font-size:.8rem; color:var(--muted); }
+  #explain-bar { padding: 10px 24px; min-height: 52px; background: linear-gradient(135deg,rgba(21,29,50,0.95),rgba(28,39,68,0.9)); border-bottom: 1px solid var(--border); font-size: .88rem; line-height: 1.55; color: var(--text); display: flex; align-items: center; gap: 12px; }
+  .step-icon { flex-shrink:0; width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transition:all 0.3s; }
+  .step-icon.info { background:rgba(91,141,239,0.15); border:1px solid rgba(91,141,239,0.3); }
+  .step-icon.insert { background:rgba(255,179,71,0.15); border:1px solid rgba(255,179,71,0.3); }
+  .step-icon.search { background:rgba(255,94,122,0.15); border:1px solid rgba(255,94,122,0.3); }
+  .step-icon.found { background:rgba(46,204,113,0.15); border:1px solid rgba(46,204,113,0.3); }
+  .step-icon.delete { background:rgba(231,76,60,0.15); border:1px solid rgba(231,76,60,0.3); }
+  #explain-text { flex:1; }
+  #explain-text b { color:var(--yellow); }
+  #explain-text code { background:var(--surface2); padding:1px 5px; border-radius:3px; font-family:monospace; font-size:.8rem; color:var(--accent); }
+  #step-counter { font-size:.72rem; color:var(--muted); white-space:nowrap; }
+  #ll-area { flex:1; position:relative; overflow:hidden; }
+  #ll-svg { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  #nodes-layer { position:absolute; inset:0; }
+  .node-wrap { position:absolute; display:flex; flex-direction:column; align-items:center; gap:6px; transition:left 0.4s cubic-bezier(0.4,0,0.2,1), top 0.4s ease; }
+  .node { display:flex; border-radius:10px; overflow:hidden; border:2px solid rgba(255,255,255,0.1); box-shadow:0 4px 14px rgba(0,0,0,0.4); transition:all 0.3s; }
+  .node-val { width:60px; height:56px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:800; color:#fff; background:linear-gradient(135deg,var(--blue-top),var(--blue-bot)); position:relative; }
+  .node-val::before { content:''; position:absolute; top:0; left:0; width:40%; height:100%; background:linear-gradient(90deg,rgba(255,255,255,0.1),transparent); }
+  .node-ptr { width:32px; height:56px; display:flex; align-items:center; justify-content:center; font-size:.75rem; color:var(--muted); background:var(--surface2); }
+  .node-ptr.next { border-left:1px solid var(--border); }
+  .node-ptr.prev { border-right:1px solid var(--border); }
+  .node-label { font-size:.68rem; font-weight:700; color:var(--muted); }
+  .node.active .node-val { background:linear-gradient(135deg,var(--pink-top),var(--pink-bot)); box-shadow:0 0 18px var(--pink-glow); animation:nodePulse 0.5s ease-in-out infinite; }
+  .node.inserting .node-val { background:linear-gradient(135deg,var(--orange-top),var(--orange-bot)); box-shadow:0 0 18px var(--orange-glow); animation:bounceIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+  .node.found .node-val { background:linear-gradient(135deg,var(--green-top),var(--green-bot)); box-shadow:0 0 18px var(--green-glow); }
+  .node.deleting .node-val { background:linear-gradient(135deg,var(--red-top),var(--red-bot)); animation:deleteOut 0.5s ease forwards; }
+  #code-panel { width:340px; min-width:280px; background:var(--surface); border-left:1px solid var(--border); display:flex; flex-direction:column; }
+  .panel-title { padding:10px 14px; background:var(--surface2); font-size:.78rem; font-weight:600; color:var(--accent); border-bottom:1px solid var(--border); }
+  #code { flex:1; overflow-y:auto; padding:10px 0; font-family:'SF Mono','Fira Code',Consolas,monospace; font-size:.8rem; line-height:2; }
+  .code-line { padding:0 14px; color:#5a6d8e; white-space:pre; border-left:3px solid transparent; transition:all 0.2s; }
+  .code-line.comment { color:#3a4d6e; font-style:italic; }
+  .code-line.active { background:linear-gradient(90deg,rgba(255,212,59,0.1),transparent); color:var(--yellow); border-left-color:var(--yellow); font-weight:600; }
+  #insight { padding:12px 14px; background:var(--bg); border-top:1px solid var(--border); font-size:.8rem; line-height:1.5; color:var(--muted); }
+  #insight .insight-title { color:var(--accent); font-weight:700; font-size:.72rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; }
+  #insight b { color:var(--text); }
+  #controls { background:var(--surface); padding:8px 24px; display:flex; align-items:center; gap:8px; border-top:1px solid var(--border); z-index:2; flex-wrap:wrap; }
+  button { border:none; border-radius:8px; padding:7px 14px; cursor:pointer; font-size:.8rem; font-weight:600; transition:all 0.2s; }
+  button:active { transform:scale(0.95); }
+  .btn-ins-h { background:linear-gradient(135deg,var(--orange-top),var(--orange-bot)); color:#fff; }
+  .btn-ins-t { background:linear-gradient(135deg,#f39c12,#d35400); color:#fff; }
+  .btn-del { background:linear-gradient(135deg,var(--red-top),var(--red-bot)); color:#fff; }
+  .btn-srch { background:linear-gradient(135deg,var(--pink-top),var(--pink-bot)); color:#fff; }
+  .btn-trav { background:linear-gradient(135deg,#7c5ce7,#a78bfa); color:#fff; }
+  .btn-rst { background:var(--surface2); color:var(--muted); border:1px solid var(--border); }
+  input[type=number] { background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:5px 8px; font-size:.8rem; width:64px; }
+  label { font-size:.76rem; color:var(--muted); }
+  @keyframes nodePulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+  @keyframes bounceIn { 0%{transform:scale(0);opacity:0} 70%{transform:scale(1.1);opacity:1} 100%{transform:scale(1)} }
+  @keyframes deleteOut { 0%{transform:scale(1);opacity:1} 100%{transform:scale(0);opacity:0} }
+  @keyframes drawArrow { from{stroke-dashoffset:300} to{stroke-dashoffset:0} }
 </style>
 </head>
 <body>
 <header>
-  <h1>🔗 Danh sách liên kết — Linked List</h1>
-  <span class="badge">Module 1 · Cấu trúc dữ liệu</span>
-  <span class="badge">Head + Next pointers · O(1) insert head · O(n) search</span>
-  <button class="toggle-btn" id="toggleMode" onclick="toggleListType()">Singly LL</button>
+  <h1>🔗 Danh sách liên kết</h1>
+  <span class="badge">DATA STRUCTURE</span>
+  <div class="toggle-wrap">
+    <button class="toggle-btn on" id="btn-singly" onclick="setType('singly')">Singly</button>
+    <button class="toggle-btn" id="btn-doubly" onclick="setType('doubly')">Doubly</button>
+  </div>
+  <div class="complexity">
+    <div class="cx">Insert Head <span>O(1)</span></div>
+    <div class="cx">Insert Tail <span>O(1)</span></div>
+    <div class="cx">Search <span>O(n)</span></div>
+    <div class="cx">Delete <span>O(n)</span></div>
+  </div>
 </header>
-
-<div class="main">
-  <div class="viz">
-    <div class="ops-bar" id="opsBar">
-      <button class="op-btn active" onclick="selectOp('insertHead',event)">➕ Insert Head</button>
-      <button class="op-btn" onclick="selectOp('insertTail',event)">➕ Insert Tail</button>
-      <button class="op-btn" onclick="selectOp('insertMid',event)">➕ Insert At</button>
-      <button class="op-btn" onclick="selectOp('delete',event)">🗑 Delete</button>
-      <button class="op-btn" onclick="selectOp('traverse',event)">🔍 Traverse</button>
+<main>
+  <div id="viz">
+    <div id="status-display"><span class="sd-idle">Chọn thao tác để bắt đầu minh họa</span></div>
+    <div id="explain-bar">
+      <div class="step-icon info" id="step-icon">💡</div>
+      <div id="explain-text">Linked List gồm các <b>node</b> chứa giá trị + con trỏ next. Chèn đầu/cuối <b>O(1)</b> — không cần dịch phần tử như mảng!</div>
+      <div id="step-counter"></div>
     </div>
-    <div class="input-row">
-      <label id="lbl1">Giá trị:</label>
-      <input type="number" id="inp1" value="50" min="0" max="99">
-      <span id="extra2" style="display:none"><label>Sau node:</label>
-        <input type="number" id="inp2" value="1" min="0" max="9"></span>
-      <button class="run-btn" onclick="runOperation()">▶ Chạy</button>
-    </div>
-    <div class="canvas-area">
-      <div class="complexity-row">
-        <div class="complexity-badge" id="cb0"><div class="label">Insert Head</div><div class="value green">O(1)</div></div>
-        <div class="complexity-badge" id="cb1"><div class="label">Insert Tail</div><div class="value yellow">O(n)</div></div>
-        <div class="complexity-badge" id="cb2"><div class="label">Delete</div><div class="value yellow">O(n)</div></div>
-        <div class="complexity-badge" id="cb3"><div class="label">Traverse</div><div class="value red">O(n)</div></div>
-        <div class="complexity-badge" id="cb4"><div class="label">Access [i]</div><div class="value red">O(n)</div></div>
-      </div>
-      <div class="list-canvas" id="listCanvas"></div>
-      <div class="status-msg" id="statusMsg">Chọn thao tác và nhấn ▶ Chạy</div>
+    <div id="ll-area">
+      <svg id="ll-svg"></svg>
+      <div id="nodes-layer"></div>
     </div>
   </div>
-  <div class="code-panel">
-    <div class="code-panel-header">📄 Pseudocode — <span id="codeTitle">Insert Head</span></div>
-    <div class="code-body" id="codeBody"></div>
+  <div id="code-panel">
+    <div class="panel-title">📝 Pseudocode</div>
+    <div id="code"></div>
+    <div id="insight">
+      <div class="insight-title">💡 Mảng vs Linked List</div>
+      Mảng: truy cập <b>O(1)</b>, chèn giữa <b>O(n)</b>. Linked List: truy cập <b>O(n)</b>, chèn đầu <b>O(1)</b>. Không có winner tuyệt đối — chọn theo use case!
+    </div>
   </div>
+</main>
+<div id="controls">
+  <label>Giá trị: <input type="number" id="val-input" value="42" min="1" max="99"></label>
+  <button class="btn-ins-h" onclick="opInsertHead()">⬅ Chèn đầu</button>
+  <button class="btn-ins-t" onclick="opInsertTail()">➡ Chèn cuối</button>
+  <button class="btn-del" onclick="opDelete()">🗑 Xóa đầu</button>
+  <button class="btn-srch" onclick="opSearch()">🔍 Tìm</button>
+  <button class="btn-trav" onclick="opTraverse()">▶ Duyệt</button>
+  <button class="btn-rst" onclick="initList()">↺ Reset</button>
 </div>
-
-<div class="controls">
-  <button class="ctrl-btn" onclick="stepBack()">⏮</button>
-  <button class="ctrl-btn" id="btnPlay" onclick="togglePlay()">▶</button>
-  <button class="ctrl-btn" onclick="stepForward()">⏭</button>
-  <button class="ctrl-btn" onclick="resetAll()">🔄</button>
-  <div class="speed-group">🐢 <input type="range" id="speedSlider" min="1" max="5" value="3"> 🐇</div>
-  <div class="step-info" id="stepInfo">Bước 0 / 0</div>
-</div>
-
 <script>
-let list = [12, 25, 37, 48, 61];
-let isDoubly = false;
-let currentOp = 'insertHead';
-let steps = [], stepIdx = -1, playing = false, playTimer = null;
-const speedMap = { 1:1400, 2:1000, 3:650, 4:380, 5:200 };
+let nodes=[], busy=false, idCtr=0, listType='singly';
+const NW=92, NH=56, GAP=40;
 
-const codes = {
-  insertHead: {
-    title: 'Insert Head — O(1)',
-    lines: [
-      ['cm','// Chèn node mới vào đầu danh sách'],
-      ['kw','function ','fn','insertHead','(head, value):'],
-      ['','  newNode = ','kw','new ','','Node(value)'],
-      ['cm','  // Trỏ next của node mới về head cũ'],
-      ['','  newNode.next = head'],
-      ['cm','  // Cập nhật head về node mới'],
-      ['','  head = newNode'],
-      ['kw','  return ','','head'],
-      ['cm','// Chỉ cần 2 bước → O(1) !'],
-    ]
-  },
-  insertTail: {
-    title: 'Insert Tail — O(n)',
-    lines: [
-      ['cm','// Chèn node mới vào cuối danh sách'],
-      ['kw','function ','fn','insertTail','(head, value):'],
-      ['','  newNode = ','kw','new ','','Node(value)'],
-      ['kw','  if ','','head == null: ','kw','return ','','newNode'],
-      ['','  current = head   ','cm','// bắt đầu duyệt'],
-      ['kw','  while ','','current.next ≠ null:'],
-      ['','    current = current.next   ','cm','// tiến lên'],
-      ['cm','  // Đến được node cuối cùng'],
-      ['','  current.next = newNode'],
-      ['kw','  return ','','head'],
-      ['cm','// Phải duyệt đến cuối → O(n)'],
-    ]
-  },
-  insertMid: {
-    title: 'Insert After Node — O(n)',
-    lines: [
-      ['cm','// Chèn sau node tại vị trí pos'],
-      ['kw','function ','fn','insertAfter','(head, pos, val):'],
-      ['','  newNode = ','kw','new ','','Node(val)'],
-      ['','  current = head; i = 0'],
-      ['kw','  while ','','current ≠ null and i < pos:'],
-      ['','    current = current.next; i++'],
-      ['kw','  if ','','current == null: ','kw','return'],
-      ['cm','  // Rewire pointers'],
-      ['','  newNode.next = current.next'],
-      ['','  current.next = newNode'],
-      ['kw','  return ','','head'],
-    ]
-  },
-  delete: {
-    title: 'Delete by Value — O(n)',
-    lines: [
-      ['cm','// Xóa node có giá trị target'],
-      ['kw','function ','fn','deleteNode','(head, target):'],
-      ['kw','  if ','','head.val == target:'],
-      ['kw','    return ','','head.next ','cm','// xóa head'],
-      ['','  prev = head; curr = head.next'],
-      ['kw','  while ','','curr ≠ null:'],
-      ['','    ','kw','if ','','curr.val == target:'],
-      ['','      prev.next = curr.next ','cm','// bypass'],
-      ['kw','      return ','','head'],
-      ['','    prev = curr; curr = curr.next'],
-      ['kw','  return ','','head ','cm','// không tìm thấy'],
-    ]
-  },
-  traverse: {
-    title: 'Traverse — O(n)',
-    lines: [
-      ['cm','// Duyệt toàn bộ danh sách'],
-      ['kw','function ','fn','traverse','(head):'],
-      ['','  current = head'],
-      ['kw','  while ','','current ≠ null:'],
-      ['','    print(current.val)'],
-      ['','    current = current.next'],
-      ['kw','  return ','cm','"// Đã duyệt xong"'],
-      ['cm','// Thăm n node → O(n)'],
-    ]
-  }
-};
+function setType(t) {
+  listType=t;
+  document.getElementById('btn-singly').className='toggle-btn'+(t==='singly'?' on':'');
+  document.getElementById('btn-doubly').className='toggle-btn'+(t==='doubly'?' on':'');
+  setExplain('💡','info', t==='doubly'
+    ? 'Doubly Linked List: mỗi node có <b>prev</b> (trái) và <b>next</b> (phải). Duyệt được cả 2 chiều!'
+    : 'Singly Linked List: mỗi node chỉ trỏ về <b>node tiếp theo</b>. Chỉ duyệt 1 chiều head→tail.');
+  render();
+}
 
-function renderCode(op, hl = -1) {
-  const c = codes[op];
-  document.getElementById('codeTitle').textContent = c.title;
-  const body = document.getElementById('codeBody');
-  body.innerHTML = '';
-  c.lines.forEach((parts, i) => {
-    const div = document.createElement('div');
-    div.className = 'code-line' + (i === hl ? ' highlight' : '');
-    const ln = document.createElement('span'); ln.className = 'ln'; ln.textContent = i + 1;
-    const txt = document.createElement('span'); txt.className = 'code-text';
-    let html = '';
-    for (let j = 0; j < parts.length; j += 2) {
-      const cls = parts[j], content = parts[j+1] || '';
-      html += cls ? `<span class="${cls}">${content}</span>` : content;
+function initList() {
+  nodes=[15,42,8,63,27].map(v=>({val:v,id:idCtr++,state:''}));
+  busy=false;
+  render(); showStatus('idle');
+  setExplain('💡','info','Linked List gồm các <b>node</b> chứa giá trị + con trỏ next. Chèn đầu/cuối <b>O(1)</b> — không cần dịch phần tử như mảng!');
+  setInsight('💡 Mảng vs Linked List','Mảng: truy cập <b>O(1)</b>, chèn giữa <b>O(n)</b>. Linked List: truy cập <b>O(n)</b>, chèn đầu <b>O(1)</b>. Chọn theo use case!');
+  setCode([
+    '// Node structure',
+    'class Node {',
+    '  constructor(val) {',
+    '    this.val = val;',
+    '    this.next = null;',
+    listType==='doubly'?'    this.prev = null;':'',
+    '  }',
+    '}',
+  ], -1);
+}
+
+function getPos(i) {
+  const area=document.getElementById('ll-area');
+  const W = listType==='doubly'?NW+32:NW;
+  const total=nodes.length*(W+GAP)-GAP;
+  const sx=Math.max(20,(area.offsetWidth-total)/2);
+  return {x:sx+i*(W+GAP), y:area.offsetHeight/2-NH/2-10};
+}
+
+function render(activeMap={}) {
+  const layer=document.getElementById('nodes-layer');
+  const svg=document.getElementById('ll-svg');
+  layer.innerHTML=''; svg.innerHTML='';
+  const W=listType==='doubly'?NW+32:NW;
+
+  nodes.forEach((n,i)=>{
+    const pos=getPos(i);
+    const wrap=document.createElement('div');
+    wrap.className='node-wrap'; wrap.style.left=pos.x+'px'; wrap.style.top=pos.y+'px';
+
+    const node=document.createElement('div');
+    const st=activeMap[n.id]||'';
+    node.className='node'+(st?' '+st:'');
+
+    if(listType==='doubly'){
+      const prev=document.createElement('div');
+      prev.className='node-ptr prev'; prev.textContent=i>0?'◀':'∅';
+      node.appendChild(prev);
     }
-    txt.innerHTML = html; div.appendChild(ln); div.appendChild(txt);
-    body.appendChild(div);
-    if (i === hl) div.scrollIntoView({ block: 'nearest' });
-  });
-}
+    const vd=document.createElement('div'); vd.className='node-val'; vd.textContent=n.val;
+    node.appendChild(vd);
+    const nd=document.createElement('div'); nd.className='node-ptr next'; nd.textContent=i<nodes.length-1?'▶':'∅';
+    node.appendChild(nd);
 
-function makeArrow(cls='') {
-  const wrap = document.createElement('div'); wrap.className = 'arrow-wrap';
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('class', 'arrow-svg'); svg.setAttribute('viewBox', '0 0 36 24');
-  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  line.setAttribute('x1', '2'); line.setAttribute('y1', '12');
-  line.setAttribute('x2', '28'); line.setAttribute('y2', '12');
-  line.setAttribute('class', 'arrow-line' + (cls ? ' ' + cls : ''));
-  const head = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-  head.setAttribute('points', '28,7 36,12 28,17');
-  head.setAttribute('class', 'arrow-head' + (cls ? ' ' + cls : ''));
-  svg.appendChild(line); svg.appendChild(head);
-  wrap.appendChild(svg);
-  return wrap;
-}
+    const lbl=document.createElement('div'); lbl.className='node-label';
+    lbl.style.color=i===0?'var(--orange-top)':i===nodes.length-1?'var(--green-top)':'var(--muted)';
+    lbl.textContent=i===0?'HEAD':i===nodes.length-1?'TAIL':'node '+i;
+    wrap.appendChild(node); wrap.appendChild(lbl); layer.appendChild(wrap);
 
-function renderListFromState(lst, highlights, arrow) {
-  const canvas = document.getElementById('listCanvas');
-  canvas.innerHTML = '';
-  const headLbl = document.createElement('span'); headLbl.className = 'head-label';
-  headLbl.textContent = 'HEAD'; canvas.appendChild(headLbl);
-  canvas.appendChild(makeArrow());
-  if (lst.length === 0) {
-    const nl = document.createElement('span'); nl.className = 'null-label'; nl.textContent = 'NULL';
-    canvas.appendChild(nl); return;
-  }
-  lst.forEach((val, i) => {
-    const nw = document.createElement('div'); nw.className = 'll-node';
-    if (highlights[i]) nw.classList.add(highlights[i]);
-    const nb = document.createElement('div'); nb.className = 'node-body';
-    const vd = document.createElement('div'); vd.className = 'node-val'; vd.textContent = val;
-    const pd = document.createElement('div'); pd.className = 'node-ptr';
-    pd.textContent = isDoubly ? '⇆next' : 'next→';
-    nb.appendChild(vd); nb.appendChild(pd); nw.appendChild(nb); canvas.appendChild(nw);
-    if (i < lst.length - 1) {
-      const arwCls = arrow === i ? 'active' : '';
-      canvas.appendChild(makeArrow(arwCls));
-    } else {
-      canvas.appendChild(makeArrow());
-      const nl = document.createElement('span'); nl.className = 'null-label'; nl.textContent = 'NULL';
-      canvas.appendChild(nl);
+    // Arrow to next
+    if(i<nodes.length-1){
+      const np=getPos(i+1);
+      const x1=pos.x+W, y1=pos.y+NH/2, x2=np.x, y2=np.y+NH/2;
+      const len=x2-x1;
+      const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+      const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1',x1); line.setAttribute('y1',y1);
+      line.setAttribute('x2',x2-6); line.setAttribute('y2',y2);
+      line.setAttribute('stroke','rgba(91,141,239,0.7)'); line.setAttribute('stroke-width','2');
+      line.setAttribute('stroke-dasharray',len); line.setAttribute('stroke-dashoffset','0');
+      line.style.animation='drawArrow 0.5s ease';
+      const arr=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+      arr.setAttribute('points',`${x2-6},${y2-5} ${x2},${y2} ${x2-6},${y2+5}`);
+      arr.setAttribute('fill','rgba(91,141,239,0.7)');
+      g.appendChild(line); g.appendChild(arr); svg.appendChild(g);
     }
   });
 }
 
-function buildSteps(op, val, pos) {
-  steps = [];
-  const n = list.length;
-  if (op === 'insertHead') {
-    steps.push({ list:[...list], highlights:{}, code:1, msg:`Tạo node mới với giá trị ${val}` });
-    steps.push({ list:[...list], highlights:{0:'active'}, code:4, msg:`Trỏ newNode.next → HEAD (node ${list[0]})` });
-    const newList = [val, ...list];
-    steps.push({ list:newList, highlights:{0:'inserting'}, code:6, msg:`Cập nhật HEAD = node mới (${val})` });
-    steps.push({ list:newList, highlights:{0:'found'}, code:7, msg:`✓ Đã chèn ${val} vào đầu — O(1)!` });
-    list = newList; complexityFocus(0);
-  } else if (op === 'insertTail') {
-    complexityFocus(1);
-    steps.push({ list:[...list], highlights:{}, code:1, msg:`Tạo node mới: ${val}, bắt đầu từ HEAD` });
-    steps.push({ list:[...list], highlights:{0:'active'}, code:4, msg:`current = HEAD (${list[0]}), bắt đầu duyệt` });
-    for (let i = 0; i < n - 1; i++) {
-      steps.push({ list:[...list], highlights:{[i]:'active'}, arrow:i, code:6, msg:`Kiểm tra node[${i}].next ≠ null → tiếp tục` });
+function showStatus(t,...a) {
+  const d=document.getElementById('status-display');
+  if(t==='idle'){d.innerHTML='<span class="sd-idle">Chọn thao tác để bắt đầu minh họa</span>';return;}
+  if(t==='insert-h') d.innerHTML=`<span class="sd-label">CHÈN ĐẦU</span><span class="sd-box insert">${a[0]}</span>`;
+  if(t==='insert-t') d.innerHTML=`<span class="sd-label">CHÈN CUỐI</span><span class="sd-box insert">${a[0]}</span>`;
+  if(t==='search') d.innerHTML=`<span class="sd-label">TÌM:</span><span class="sd-box search">${a[0]}</span><span class="sd-label">đang kiểm tra bước</span><span class="sd-box search">${a[1]}</span>`;
+  if(t==='found') d.innerHTML=`<span class="sd-label">TÌM THẤY</span><span class="sd-box found">${a[0]}</span><span class="sd-label">sau ${a[1]} bước</span>`;
+  if(t==='traverse') d.innerHTML=`<span class="sd-label">DUYỆT</span><span class="sd-box search">${a[0]}</span><span class="sd-label">${a[1]}/${a[2]}</span>`;
+  if(t==='done') d.innerHTML=`<span style="color:var(--green-top);font-weight:700">✅ ${a[0]}</span>`;
+}
+
+function setExplain(icon,cls,html) {
+  document.getElementById('step-icon').textContent=icon;
+  document.getElementById('step-icon').className='step-icon '+cls;
+  document.getElementById('explain-text').innerHTML=html;
+}
+function setInsight(title,html) {
+  document.getElementById('insight').innerHTML=`<div class="insight-title">${title}</div>${html}`;
+}
+function setCode(lines,active) {
+  document.getElementById('code').innerHTML=lines.filter(Boolean).map((l,i)=>
+    `<div class="code-line${l.trim().startsWith('//')?' comment':''}${i===active?' active':''}">${l}</div>`
+  ).join('');
+}
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+
+async function opInsertHead() {
+  if(busy||nodes.length>=8)return; busy=true;
+  const val=+document.getElementById('val-input').value;
+  const n={val,id:idCtr++,state:''};
+  showStatus('insert-h',val);
+  setExplain('⬅','insert',`Tạo node <b>${val}</b>. Gán <code>node.next = head</code>. Cập nhật <code>head = node</code>. Chỉ <b>O(1)</b>!`);
+  setInsight('⬅ Chèn đầu O(1)','Không cần dịch phần tử. Chỉ thay đổi <b>2 con trỏ</b>: node.next + head. Dù list có 1 hay 1 triệu node — vẫn O(1)!');
+  setCode(['// Chèn đầu — O(1)','insertHead(val) {','  const node = new Node(val);','  node.next = this.head;','  this.head = node;','}'],2);
+  nodes.unshift(n);
+  render({[n.id]:'inserting'});
+  await delay(700); render();
+  showStatus('done',`Chèn ${val} vào đầu thành công!`);
+  busy=false;
+}
+
+async function opInsertTail() {
+  if(busy||nodes.length>=8)return; busy=true;
+  const val=+document.getElementById('val-input').value;
+  const n={val,id:idCtr++,state:''};
+  showStatus('insert-t',val);
+  setExplain('➡','insert',`Tạo node <b>${val}</b>. Gán <code>tail.next = node</code>. Cập nhật <code>tail = node</code>. <b>O(1)</b> nhờ con trỏ tail!`);
+  setInsight('➡ Chèn cuối O(1)','Nếu duy trì con trỏ <b>tail</b>, chèn cuối cũng O(1)! Không có tail pointer thì phải duyệt đến cuối = O(n).');
+  setCode(['// Chèn cuối — O(1) với tail ptr','insertTail(val) {','  const node = new Node(val);','  if (!this.tail) { this.head = this.tail = node; }','  else { this.tail.next = node; this.tail = node; }','}'],3);
+  nodes.push(n);
+  render({[n.id]:'inserting'});
+  await delay(700); render();
+  showStatus('done',`Chèn ${val} vào cuối thành công!`);
+  busy=false;
+}
+
+async function opDelete() {
+  if(busy||nodes.length===0)return; busy=true;
+  const del=nodes[0];
+  setExplain('🗑','delete',`Xóa HEAD <b>${del.val}</b>: lưu head, cập nhật <code>head = head.next</code>. <b>O(1)</b>!`);
+  setInsight('🗑 Xóa đầu O(1)','Chỉ cần 1 thao tác con trỏ. Xóa giữa/cuối cần tìm node trước = <b>O(n)</b>. Doubly list có thể xóa cuối O(1) nếu có tail!');
+  setCode(['// Xóa đầu — O(1)','removeHead() {','  if (!this.head) return null;','  const val = this.head.val;','  this.head = this.head.next;','  return val;','}'],4);
+  render({[del.id]:'deleting'});
+  await delay(500);
+  nodes.shift(); render();
+  showStatus('done',`Xóa HEAD = ${del.val} thành công!`);
+  busy=false;
+}
+
+async function opSearch() {
+  if(busy)return; busy=true;
+  const val=+document.getElementById('val-input').value;
+  setCode(['// Tìm kiếm — O(n)','search(val) {','  let cur = this.head; let i = 0;','  while (cur) {','    if (cur.val === val) return i;','    cur = cur.next; i++;','  }','  return -1;','}'],-1);
+  setExplain('🔍','search',`Tìm <b>${val}</b>: bắt đầu từ HEAD, duyệt từng node...`);
+  setInsight('🔍 Tìm kiếm O(n)','Linked list không hỗ trợ random access. Phải duyệt tuần tự qua mỗi <b>next pointer</b>. Worst case O(n) khi phần tử ở cuối.');
+  for(let i=0;i<nodes.length;i++) {
+    showStatus('search',val,i+1);
+    render({[nodes[i].id]:'active'});
+    setExplain('🔍','search',`Bước <b>${i+1}</b>: node <b>${nodes[i].val}</b>. ${nodes[i].val===val?'✅ Khớp!':nodes[i].val+' ≠ '+val+' → next...'}`);
+    await delay(500);
+    if(nodes[i].val===val){
+      render({[nodes[i].id]:'found'});
+      showStatus('found',val,i+1);
+      setInsight('✅ Tìm thấy!',`Node <b>${val}</b> tìm thấy sau <b>${i+1}</b> bước. Worst case = ${nodes.length} bước (O(n)).`);
+      await delay(1200); render(); busy=false; return;
     }
-    const newList = [...list, val];
-    steps.push({ list:[...list], highlights:{[n-1]:'active'}, code:8, msg:`Đến cuối: node[${n-1}].next == null` });
-    steps.push({ list:newList, highlights:{[n]:'inserting'}, code:8, msg:`Gắn newNode(${val}) vào current.next` });
-    steps.push({ list:newList, highlights:{[n]:'found'}, code:9, msg:`✓ Chèn tail xong — duyệt ${n} bước → O(n)` });
-    list = newList;
-  } else if (op === 'insertMid') {
-    complexityFocus(1);
-    const safePos = Math.min(pos, n - 1);
-    steps.push({ list:[...list], highlights:{}, code:1, msg:`Chèn ${val} sau node tại vị trí [${safePos}]` });
-    for (let i = 0; i <= safePos; i++) {
-      steps.push({ list:[...list], highlights:{[i]:'active'}, code:i < safePos ? 5 : 6,
-        msg:i < safePos ? `Duyệt: node[${i}] = ${list[i]}, chưa đến [${safePos}]` : `Đến vị trí [${safePos}]: ${list[safePos]}` });
-    }
-    const newList = [...list.slice(0, safePos+1), val, ...list.slice(safePos+1)];
-    steps.push({ list:[...list], highlights:{[safePos]:'active'}, code:8, msg:`newNode.next = node[${safePos}].next (${list[safePos+1]||'NULL'})` });
-    steps.push({ list:newList, highlights:{[safePos]:'active',[safePos+1]:'inserting'}, code:9, msg:`node[${safePos}].next = newNode(${val})` });
-    steps.push({ list:newList, highlights:{[safePos+1]:'found'}, code:10, msg:`✓ Đã chèn ${val} sau vị trí [${safePos}]` });
-    list = newList;
-  } else if (op === 'delete') {
-    complexityFocus(2);
-    const target = val;
-    let found = -1;
-    for (let i = 0; i < n; i++) if (list[i] === target) { found = i; break; }
-    if (found === -1) {
-      steps.push({ list:[...list], highlights:{}, code:1, msg:`Tìm kiếm ${target} để xóa...` });
-      for (let i = 0; i < n; i++)
-        steps.push({ list:[...list], highlights:{[i]:'active'}, code:6, msg:`node[${i}]=${list[i]} ≠ ${target}` });
-      steps.push({ list:[...list], highlights:{}, code:10, msg:`✗ Không tìm thấy ${target}` });
-      return;
-    }
-    for (let i = 0; i < found; i++)
-      steps.push({ list:[...list], highlights:{[i]:'active'}, code:6, msg:`node[${i}]=${list[i]} ≠ ${target}, tiếp tục` });
-    steps.push({ list:[...list], highlights:{[found]:'deleting'}, code:7, msg:`Tìm thấy: node[${found}] = ${target}` });
-    const newList = list.filter((_, i) => i !== found);
-    steps.push({ list:newList, highlights:{}, code:7, msg:`prev.next = curr.next — bỏ qua node bị xóa` });
-    steps.push({ list:newList, highlights:{}, code:8, msg:`✓ Đã xóa ${target} khỏi danh sách` });
-    list = newList;
-  } else if (op === 'traverse') {
-    complexityFocus(3);
-    steps.push({ list:[...list], highlights:{}, code:2, msg:`Bắt đầu từ HEAD` });
-    for (let i = 0; i < n; i++)
-      steps.push({ list:[...list], highlights:{[i]:'found'}, arrow:i-1, code:4, msg:`Thăm node[${i}] = ${list[i]}` });
-    steps.push({ list:[...list], highlights:{}, code:6, msg:`✓ Hoàn tất duyệt ${n} phần tử — O(n)` });
   }
+  render(); showStatus('done',`Không tìm thấy ${val}`);
+  setExplain('❌','search',`Đã duyệt hết <b>${nodes.length}</b> node — không tìm thấy <b>${val}</b>.`);
+  busy=false;
 }
 
-function complexityFocus(idx) {
-  ['cb0','cb1','cb2','cb3','cb4'].forEach((id, i) =>
-    document.getElementById(id).classList.toggle('active-badge', i === idx));
-}
-
-function applyStep(idx) {
-  if (idx < 0 || idx >= steps.length) return;
-  const s = steps[idx];
-  if (s.list) renderListFromState(s.list, s.highlights||{}, s.arrow??-1);
-  renderCode(currentOp, s.code);
-  const msg = document.getElementById('statusMsg');
-  msg.textContent = s.msg || '';
-  msg.className = 'status-msg' + (s.msg?.startsWith('✓') ? ' success' : s.msg?.startsWith('✗') ? ' error' : ' info');
-  document.getElementById('stepInfo').textContent = `Bước ${idx+1} / ${steps.length}`;
-}
-
-function stepForward() { if (stepIdx < steps.length-1) { stepIdx++; applyStep(stepIdx); } else stopPlay(); }
-function stepBack()    { if (stepIdx > 0) { stepIdx--; applyStep(stepIdx); } }
-function togglePlay()  { playing ? stopPlay() : startPlay(); }
-function startPlay() {
-  playing = true; document.getElementById('btnPlay').textContent = '⏸';
-  function tick() {
-    if (stepIdx < steps.length - 1) {
-      stepIdx++; applyStep(stepIdx);
-      playTimer = setTimeout(tick, speedMap[document.getElementById('speedSlider').value]);
-    } else stopPlay();
+async function opTraverse() {
+  if(busy)return; busy=true;
+  setExplain('▶','search',`Duyệt từ HEAD → TAIL theo từng <code>next</code> pointer.`);
+  setInsight('▶ Duyệt O(n)',listType==='doubly'?'Doubly list duyệt được <b>2 chiều</b>: head→tail hoặc tail→head. Singly chỉ được 1 chiều.':'Singly list chỉ duyệt được <b>1 chiều</b>: head → tail. Không thể quay ngược!');
+  for(let i=0;i<nodes.length;i++){
+    showStatus('traverse',nodes[i].val,i+1,nodes.length);
+    render({[nodes[i].id]:'active'});
+    setExplain('▶','search',`Node <b>${i+1}/${nodes.length}</b>: val=<b>${nodes[i].val}</b>, next=${i<nodes.length-1?nodes[i+1].val:'null'}`);
+    await delay(450);
   }
-  tick();
-}
-function stopPlay() { playing = false; document.getElementById('btnPlay').textContent = '▶'; clearTimeout(playTimer); }
-
-function toggleListType() {
-  isDoubly = !isDoubly;
-  const btn = document.getElementById('toggleMode');
-  btn.textContent = isDoubly ? 'Doubly LL' : 'Singly LL';
-  btn.classList.toggle('on', isDoubly);
-  resetAll();
+  render(); showStatus('done',`Duyệt xong ${nodes.length} node`);
+  setExplain('✅','found',`Duyệt hoàn tất <b>${nodes.length}</b> node. Thời gian: <b>O(n)</b>.`);
+  busy=false;
 }
 
-function selectOp(op, e) {
-  currentOp = op;
-  document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
-  e.target.classList.add('active');
-  const lbl1 = document.getElementById('lbl1');
-  const extra2 = document.getElementById('extra2');
-  if (op === 'insertHead' || op === 'insertTail') { lbl1.textContent='Giá trị:'; extra2.style.display='none'; }
-  else if (op === 'insertMid') { lbl1.textContent='Giá trị:'; extra2.style.display=''; }
-  else if (op === 'delete') { lbl1.textContent='Giá trị cần xóa:'; extra2.style.display='none'; }
-  else if (op === 'traverse') { lbl1.textContent='(không cần)'; extra2.style.display='none'; }
-  resetAll();
-}
-
-function runOperation() {
-  stopPlay();
-  list = [12, 25, 37, 48, 61];
-  const val = parseInt(document.getElementById('inp1').value) || 50;
-  const pos = parseInt(document.getElementById('inp2').value) || 1;
-  buildSteps(currentOp, val, pos);
-  stepIdx = -1;
-  renderListFromState(list, {}, -1);
-  renderCode(currentOp, -1);
-  document.getElementById('statusMsg').textContent = 'Nhấn ⏭ để từng bước hoặc ▶ để tự động';
-  document.getElementById('statusMsg').className = 'status-msg';
-  document.getElementById('stepInfo').textContent = `Bước 0 / ${steps.length}`;
-}
-
-function resetAll() {
-  stopPlay();
-  list = [12, 25, 37, 48, 61]; steps = []; stepIdx = -1;
-  renderListFromState(list, {}, -1);
-  renderCode(currentOp, -1);
-  document.getElementById('statusMsg').textContent = 'Chọn thao tác và nhấn ▶ Chạy';
-  document.getElementById('statusMsg').className = 'status-msg';
-  document.getElementById('stepInfo').textContent = 'Bước 0 / 0';
-  complexityFocus(-1);
-}
-
-renderListFromState(list, {}, -1);
-renderCode('insertHead', -1);
+window.addEventListener('resize',()=>render());
+initList();
 </script>
 </body>
 </html>

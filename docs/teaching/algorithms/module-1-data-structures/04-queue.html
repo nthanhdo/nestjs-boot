@@ -3,517 +3,392 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>04 — Hàng đợi (Queue) | Data Structures</title>
+<title>Hàng đợi (Queue) — Cấu trúc dữ liệu</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #0d0d1a; --panel-bg: #111128; --code-bg: #080816;
-    --accent: #10b981; --accent2: #ff4d6d; --accent3: #ffd60a; --accent4: #00ff88;
-    --text: #e8e8f0; --text-dim: #6b6d8a; --border: #1e1e3a;
-    --node: #041a10; --node-border: #059669; --node-active: #10b981;
-    --node-found: #34d399; --node-delete: #ff4d6d; --node-insert: #ffd60a;
-    --glow-green: rgba(16,185,129,0.5); --glow-teal: rgba(52,211,153,0.4);
-    --glow-red: rgba(255,77,109,0.5); --glow-yellow: rgba(255,214,10,0.5);
+    --bg:#0e1525;--surface:#151d32;--surface2:#1c2744;--border:#2a3a5c;
+    --text:#eef1f8;--muted:#8899bb;
+    --blue-top:#5b8def;--blue-bot:#2c5aa0;
+    --pink-top:#ff5e7a;--pink-bot:#c0143c;--pink-glow:rgba(255,94,122,0.6);
+    --orange-top:#ffb347;--orange-bot:#e67e22;--orange-glow:rgba(255,179,71,0.6);
+    --green-top:#2ecc71;--green-bot:#1a9c54;--green-glow:rgba(46,204,113,0.4);
+    --red-top:#e74c3c;--red-bot:#c0392b;--red-glow:rgba(231,76,60,0.5);
+    --purple-top:#9b59b6;--purple-bot:#6c3483;
+    --accent:#a78bfa;--yellow:#ffd43b;
   }
-  body { background: var(--bg); color: var(--text); font-family: system-ui,-apple-system,sans-serif;
-    display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-  body::before { content:''; position:fixed; inset:0; pointer-events:none;
-    background: radial-gradient(ellipse at 50% 70%, rgba(16,185,129,0.04) 0%, transparent 60%); }
-
-  header { background: linear-gradient(90deg, #111128, #0d0d1a);
-    border-bottom: 1px solid var(--border); padding: 10px 20px;
-    display: flex; align-items: center; gap: 16px; flex-shrink: 0; box-shadow: 0 2px 20px rgba(0,0,0,0.5); }
-  header h1 { font-size: 1.1rem; color: var(--accent); text-shadow: 0 0 20px rgba(16,185,129,0.4); }
-  .badge { background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-    backdrop-filter: blur(10px); padding: 2px 10px; border-radius: 20px;
-    font-size: 0.75rem; color: var(--text-dim); }
-
-  .main { display: flex; flex: 1; overflow: hidden; }
-  .viz { flex: 0 0 60%; display: flex; flex-direction: column; padding: 14px; gap: 10px; overflow: hidden; }
-  .ops-bar { display: flex; gap: 8px; flex-wrap: wrap; }
-  .op-btn { background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text-dim);
-    padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 0.82rem;
-    transition: all 0.25s cubic-bezier(0.4,0,0.2,1); }
-  .op-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 14px rgba(16,185,129,0.2); }
-  .op-btn.active { background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(16,185,129,0.06));
-    color: var(--accent); border-color: var(--accent);
-    box-shadow: 0 0 20px rgba(16,185,129,0.25); font-weight: 600; }
-  .input-row { display: flex; gap: 8px; align-items: center; }
-  .input-row label { font-size: 0.8rem; color: var(--text-dim); }
-  .input-row input { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text);
-    padding: 6px 10px; border-radius: 8px; width: 70px; font-size: 0.85rem; transition: border-color 0.2s; }
-  .input-row input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 12px rgba(16,185,129,0.2); }
-  .run-btn { background: linear-gradient(135deg, var(--accent), rgba(5,150,100,0.8));
-    color: #000; border: none; padding: 6px 18px; border-radius: 8px;
-    cursor: pointer; font-weight: 700; font-size: 0.85rem;
-    transition: all 0.2s; box-shadow: 0 0 16px rgba(16,185,129,0.3); }
-  .run-btn:hover { transform: translateY(-1px); box-shadow: 0 0 24px rgba(16,185,129,0.5); }
-
-  .canvas-area { flex: 1; background: rgba(255,255,255,0.02); border: 1px solid var(--border);
-    backdrop-filter: blur(10px); border-radius: 16px; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; padding: 16px; gap: 14px; overflow: hidden; position: relative; }
-  .canvas-area::before { content:''; position:absolute; inset:0; border-radius:16px;
-    background: linear-gradient(135deg, rgba(16,185,129,0.02) 0%, transparent 50%); pointer-events:none; }
-
-  /* Linear queue */
-  .queue-section { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
-  .queue-labels { display: flex; justify-content: space-between; width: 100%; max-width: 560px;
-    font-size: 0.72rem; color: var(--text-dim); }
-  .queue-label-rear { color: var(--accent3); font-weight: 700;
-    text-shadow: 0 0 10px rgba(255,214,10,0.3); }
-  .queue-label-front { color: var(--accent); font-weight: 700;
-    text-shadow: 0 0 10px rgba(16,185,129,0.3); }
-  .queue-track { display: flex; align-items: center; gap: 4px; min-height: 68px; }
-
-  .q-item { width: 58px; height: 56px;
-    background: linear-gradient(145deg, var(--node), #020e08);
-    border: 2px solid var(--node-border); border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 0.95rem; transition: all 0.35s; flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
-  .q-item.front { border-color: var(--node-active); color: var(--node-active);
-    background: linear-gradient(145deg, rgba(16,185,129,0.2), rgba(5,150,100,0.06));
-    box-shadow: 0 0 20px var(--glow-green); }
-  .q-item.rear  { border-color: var(--accent3); color: var(--accent3);
-    background: linear-gradient(145deg, rgba(255,214,10,0.15), rgba(200,160,0,0.04));
-    box-shadow: 0 0 20px var(--glow-yellow); }
-  .q-item.found { border-color: var(--node-found); color: var(--node-found);
-    background: linear-gradient(145deg, rgba(52,211,153,0.2), rgba(20,180,100,0.06));
-    box-shadow: 0 0 20px var(--glow-teal); }
-  .q-item.enqueuing { animation: slideInRight 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards; }
-  @keyframes slideInRight {
-    from { opacity:0; transform:translateX(60px) scale(0.7); }
-    60%  { transform:translateX(-6px) scale(1.04); }
-    to   { opacity:1; transform:translateX(0) scale(1); } }
-  .q-item.dequeuing { animation: slideOutLeft 0.4s cubic-bezier(0.4,0,0.6,1) forwards; }
-  @keyframes slideOutLeft {
-    from { opacity:1; transform:translateX(0) scale(1); }
-    to   { opacity:0; transform:translateX(-60px) scale(0.7); } }
-  .q-empty { color: var(--text-dim); font-size: 0.85rem; padding: 20px; }
-
-  .fifo-banner { background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.03));
-    border: 1px solid rgba(16,185,129,0.3); border-radius: 10px;
-    padding: 6px 16px; font-size: 0.78rem; text-align: center;
-    box-shadow: 0 0 16px rgba(16,185,129,0.1); }
-  .fifo-banner strong { color: var(--accent); }
-
-  /* Circular Queue */
-  .circle-section { display: none; flex-direction: column; align-items: center; gap: 10px; }
-  .circle-section.show { display: flex; }
-  .cq-canvas { position: relative; width: 220px; height: 220px; }
-  .cq-slot { position: absolute; width: 44px; height: 44px; border: 2px solid var(--border);
-    border-radius: 8px; display: flex; align-items: center; justify-content: center;
-    font-size: 0.85rem; font-weight: 600; background: var(--code-bg); transition: all 0.35s; }
-  .cq-slot.used { background: linear-gradient(145deg, var(--node), #020e08);
-    border-color: var(--node-border); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
-  .cq-slot.front-slot { border-color: var(--node-active); color: var(--node-active);
-    background: linear-gradient(145deg, rgba(16,185,129,0.2), rgba(5,150,100,0.04));
-    box-shadow: 0 0 16px var(--glow-green); }
-  .cq-slot.rear-slot  { border-color: var(--accent3); color: var(--accent3);
-    background: linear-gradient(145deg, rgba(255,214,10,0.15), rgba(200,160,0,0.04));
-    box-shadow: 0 0 16px var(--glow-yellow); }
-  .cq-slot.active-slot { box-shadow: 0 0 20px var(--glow-green);
-    animation: slotPulse 0.5s ease; }
-  @keyframes slotPulse { 0%{transform:scale(1)} 50%{transform:scale(1.15)} 100%{transform:scale(1)} }
-
-  /* Priority queue */
-  .pq-section { display: none; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
-  .pq-section.show { display: flex; }
-  .pq-track { display: flex; gap: 6px; align-items: flex-end; min-height: 90px; }
-  .pq-item { display: flex; flex-direction: column; align-items: center; gap: 3px; transition: all 0.4s; }
-  .pq-bar { width: 52px; background: linear-gradient(145deg, var(--node), #020e08);
-    border: 2px solid var(--node-border); border-radius: 8px 8px 0 0;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 0.85rem; transition: all 0.4s;
-    box-shadow: 0 -4px 10px rgba(0,0,0,0.3); }
-  .pq-priority { font-size: 0.62rem; color: var(--text-dim); font-family: monospace; }
-  .pq-item.highest .pq-bar { border-color: var(--node-active); color: var(--node-active);
-    background: linear-gradient(145deg, rgba(16,185,129,0.2), rgba(5,150,100,0.06));
-    box-shadow: 0 0 16px var(--glow-green); }
-
-  .complexity-row { display: flex; gap: 10px; flex-wrap: wrap; }
-  .complexity-badge { background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-    backdrop-filter: blur(8px); border-radius: 10px; padding: 5px 12px; text-align: center; }
-  .complexity-badge .label { font-size: 0.65rem; color: var(--text-dim); }
-  .complexity-badge .value { font-size: 0.9rem; font-weight: 700; margin-top: 1px; }
-  .green { color: #00ff88; } .yellow { color: var(--accent3); }
-  .complexity-badge.active-badge { border-color: var(--accent); box-shadow: 0 0 12px rgba(16,185,129,0.25); }
-
-  .status-msg { background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-    backdrop-filter: blur(8px); border-radius: 10px;
-    padding: 7px 14px; font-size: 0.82rem; color: var(--text-dim); text-align: center; min-width: 300px;
-    transition: all 0.3s; }
-  .status-msg.info { border-color: var(--accent); color: var(--accent); background: rgba(16,185,129,0.06); }
-  .status-msg.success { border-color: var(--node-found); color: var(--node-found); background: rgba(52,211,153,0.06); }
-  .status-msg.error { border-color: var(--node-delete); color: var(--node-delete); background: rgba(255,77,109,0.06); }
-
-  .code-panel { flex: 0 0 40%; background: var(--code-bg); border-left: 1px solid var(--border);
-    display: flex; flex-direction: column; overflow: hidden; }
-  .code-panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border);
-    font-size: 0.8rem; color: var(--text-dim); display: flex; gap: 8px; align-items: center;
-    background: linear-gradient(90deg, rgba(16,185,129,0.04), transparent); }
-  .code-panel-header span { color: var(--accent); font-weight: 600; font-size: 0.85rem; }
-  .code-body { flex: 1; overflow-y: auto; padding: 12px 0; font-family: 'Courier New',monospace; font-size: 0.82rem; }
-  .code-line { display: flex; padding: 3px 0; transition: background 0.25s; }
-  .code-line.highlight { background: rgba(16,185,129,0.1); border-left: 3px solid var(--accent); }
-  .ln { width: 36px; text-align: right; padding-right: 12px; color: #333; flex-shrink: 0; user-select: none; }
-  .code-text { color: #abb2bf; white-space: pre; }
-  .kw { color: #c678dd; } .fn { color: #61afef; } .cm { color: #4a4f60; font-style: italic; }
-  .num { color: #d19a66; } .str { color: #98c379; }
-
-  .controls { background: linear-gradient(90deg, var(--panel-bg), var(--bg));
-    border-top: 1px solid var(--border); padding: 10px 20px;
-    display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
-  .ctrl-btn { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text);
-    width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: all 0.2s; }
-  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 12px rgba(16,185,129,0.2); }
-  .speed-group { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-dim); }
-  input[type=range] { -webkit-appearance: none; width: 100px; height: 4px;
-    background: linear-gradient(90deg, var(--accent), var(--border)); border-radius: 2px; outline: none; cursor: pointer; }
-  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px;
-    background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--glow-green); }
-  .step-info { font-size: 0.78rem; color: var(--text-dim); }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 25% 15%,rgba(91,141,239,0.07) 0%,transparent 55%),radial-gradient(ellipse at 75% 85%,rgba(167,139,250,0.05) 0%,transparent 55%);pointer-events:none;}
+  header{background:var(--surface);padding:10px 24px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border);z-index:2;flex-wrap:wrap;}
+  header h1{font-size:1.15rem;font-weight:700;background:linear-gradient(135deg,#a78bfa,#7c5ce7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .badge{background:linear-gradient(135deg,#2c5aa0,#5b8def);color:#fff;padding:2px 10px;border-radius:12px;font-size:.68rem;font-weight:700;}
+  .complexity{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;}
+  .cx{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:2px 9px;font-size:.72rem;color:var(--muted);}
+  .cx span{color:var(--yellow);font-weight:700;}
+  .tab-wrap{display:flex;gap:4px;}
+  .tab-btn{padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:.72rem;cursor:pointer;transition:all 0.2s;font-weight:600;}
+  .tab-btn.on{background:linear-gradient(135deg,#7c5ce7,#a78bfa);border-color:#a78bfa;color:#fff;}
+  main{flex:1;display:flex;overflow:hidden;z-index:1;min-height:0;}
+  #viz{flex:1;display:flex;flex-direction:column;min-width:0;}
+  #status-display{padding:10px 20px;min-height:52px;display:flex;align-items:center;justify-content:center;gap:10px;background:var(--surface);border-bottom:1px solid var(--border);}
+  .sd-idle{color:var(--muted);font-size:.9rem;}
+  .sd-box{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:40px;border-radius:8px;font-size:1rem;font-weight:800;color:#fff;padding:0 10px;}
+  .sd-box.enq{background:linear-gradient(135deg,var(--green-top),var(--green-bot));box-shadow:0 0 12px var(--green-glow);}
+  .sd-box.deq{background:linear-gradient(135deg,var(--orange-top),var(--orange-bot));box-shadow:0 0 12px var(--orange-glow);}
+  .sd-box.peek{background:linear-gradient(135deg,var(--pink-top),var(--pink-bot));box-shadow:0 0 12px var(--pink-glow);}
+  .sd-label{font-size:.82rem;color:var(--muted);}
+  #explain-bar{padding:10px 24px;min-height:52px;background:linear-gradient(135deg,rgba(21,29,50,0.95),rgba(28,39,68,0.9));border-bottom:1px solid var(--border);font-size:.88rem;line-height:1.55;color:var(--text);display:flex;align-items:center;gap:12px;}
+  .step-icon{flex-shrink:0;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all 0.3s;}
+  .step-icon.info{background:rgba(91,141,239,0.15);border:1px solid rgba(91,141,239,0.3);}
+  .step-icon.enq{background:rgba(46,204,113,0.15);border:1px solid rgba(46,204,113,0.3);}
+  .step-icon.deq{background:rgba(255,179,71,0.15);border:1px solid rgba(255,179,71,0.3);}
+  .step-icon.pq{background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);}
+  #explain-text{flex:1;}
+  #explain-text b{color:var(--yellow);}
+  #explain-text code{background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.8rem;color:var(--accent);}
+  /* QUEUE AREA */
+  #queue-section{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;gap:20px;}
+  /* LINEAR QUEUE */
+  #linear-view{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;}
+  #queue-labels{display:flex;justify-content:space-between;width:100%;max-width:680px;font-size:.72rem;font-weight:700;}
+  .qlbl-rear{color:var(--green-top);}
+  .qlbl-front{color:var(--orange-top);}
+  #queue-track{display:flex;gap:4px;justify-content:center;align-items:center;flex-wrap:wrap;min-height:70px;}
+  .qcell{
+    width:64px;height:60px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-size:1.2rem;font-weight:800;color:#fff;
+    background:linear-gradient(135deg,var(--blue-top),var(--blue-bot));
+    border:2px solid rgba(255,255,255,0.1);
+    box-shadow:0 3px 10px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.12);
+    transition:all 0.3s;position:relative;overflow:hidden;
+  }
+  .qcell::before{content:'';position:absolute;top:0;left:0;width:40%;height:100%;background:linear-gradient(90deg,rgba(255,255,255,0.1),transparent);}
+  .qcell.enqueuing{background:linear-gradient(135deg,var(--green-top),var(--green-bot));box-shadow:0 0 20px var(--green-glow);animation:slideInRight 0.5s cubic-bezier(0.34,1.56,0.64,1);}
+  .qcell.dequeuing{background:linear-gradient(135deg,var(--orange-top),var(--orange-bot));box-shadow:0 0 20px var(--orange-glow);animation:slideOutLeft 0.5s ease forwards;}
+  .qcell.front{background:linear-gradient(135deg,var(--orange-top),var(--orange-bot));box-shadow:0 0 14px var(--orange-glow);}
+  /* CIRCULAR QUEUE */
+  #circular-view{display:none;position:relative;width:260px;height:260px;}
+  #cq-svg{width:100%;height:100%;}
+  /* PRIORITY QUEUE */
+  #pq-view{display:none;width:100%;max-width:500px;display:none;flex-direction:column;gap:6px;}
+  .pq-row{display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);transition:all 0.3s;}
+  .pq-row.pq-top{border-color:var(--orange-top);background:rgba(255,179,71,0.08);}
+  .pq-val{font-size:1.1rem;font-weight:800;color:#fff;min-width:40px;text-align:center;}
+  .pq-pri{font-size:.75rem;color:var(--muted);}
+  .pq-bar{flex:1;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--orange-top),var(--orange-bot));}
+  /* stats */
+  #queue-stats{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  .stat-badge{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-size:.76rem;color:var(--muted);}
+  .stat-badge b{color:var(--yellow);}
+  /* CODE PANEL */
+  #code-panel{width:320px;min-width:270px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;}
+  .panel-title{padding:10px 14px;background:var(--surface2);font-size:.78rem;font-weight:600;color:var(--accent);border-bottom:1px solid var(--border);}
+  #code{flex:1;overflow-y:auto;padding:10px 0;font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:.8rem;line-height:2;}
+  .code-line{padding:0 14px;color:#5a6d8e;white-space:pre;border-left:3px solid transparent;transition:all 0.2s;}
+  .code-line.comment{color:#3a4d6e;font-style:italic;}
+  .code-line.active{background:linear-gradient(90deg,rgba(255,212,59,0.1),transparent);color:var(--yellow);border-left-color:var(--yellow);font-weight:600;}
+  #insight{padding:12px 14px;background:var(--bg);border-top:1px solid var(--border);font-size:.8rem;line-height:1.5;color:var(--muted);}
+  #insight .insight-title{color:var(--accent);font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+  #insight b{color:var(--text);}
+  /* CONTROLS */
+  #controls{background:var(--surface);padding:8px 24px;display:flex;align-items:center;gap:8px;border-top:1px solid var(--border);z-index:2;flex-wrap:wrap;}
+  button{border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:.8rem;font-weight:600;transition:all 0.2s;}
+  button:active{transform:scale(0.95);}
+  .btn-enq{background:linear-gradient(135deg,var(--green-top),var(--green-bot));color:#fff;}
+  .btn-deq{background:linear-gradient(135deg,var(--orange-top),var(--orange-bot));color:#fff;}
+  .btn-peek{background:linear-gradient(135deg,var(--pink-top),var(--pink-bot));color:#fff;}
+  .btn-rst{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+  input[type=number]{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:.8rem;width:64px;}
+  label{font-size:.76rem;color:var(--muted);}
+  @keyframes slideInRight{0%{transform:translateX(80px);opacity:0}70%{transform:translateX(-6px)}100%{transform:translateX(0);opacity:1}}
+  @keyframes slideOutLeft{0%{transform:translateX(0);opacity:1}100%{transform:translateX(-80px);opacity:0}}
+  @keyframes pqDrop{0%{transform:translateY(-30px);opacity:0}100%{transform:translateY(0);opacity:1}}
 </style>
 </head>
 <body>
 <header>
-  <h1>🚶 Hàng đợi — Queue</h1>
-  <span class="badge">Module 1 · Cấu trúc dữ liệu</span>
-  <span class="badge">FIFO — First In, First Out</span>
-  <span class="badge">Enqueue/Dequeue: O(1)</span>
+  <h1>🚶 Hàng đợi (Queue)</h1>
+  <span class="badge">DATA STRUCTURE</span>
+  <div class="tab-wrap">
+    <button class="tab-btn on" onclick="setView('linear')">Linear</button>
+    <button class="tab-btn" onclick="setView('circular')">Circular</button>
+    <button class="tab-btn" onclick="setView('priority')">Priority</button>
+  </div>
+  <div class="complexity">
+    <div class="cx">Enqueue <span>O(1)</span></div>
+    <div class="cx">Dequeue <span>O(1)</span></div>
+    <div class="cx">Peek <span>O(1)</span></div>
+  </div>
 </header>
-
-<div class="main">
-  <div class="viz">
-    <div class="ops-bar">
-      <button class="op-btn active" onclick="selectOp('enqueue',event)">⬅ Enqueue</button>
-      <button class="op-btn" onclick="selectOp('dequeue',event)">➡ Dequeue</button>
-      <button class="op-btn" onclick="selectOp('circular',event)">🔄 Circular Queue</button>
-      <button class="op-btn" onclick="selectOp('priority',event)">⭐ Priority Queue</button>
+<main>
+  <div id="viz">
+    <div id="status-display"><span class="sd-idle">Queue theo nguyên tắc FIFO — First In, First Out</span></div>
+    <div id="explain-bar">
+      <div class="step-icon info" id="step-icon">💡</div>
+      <div id="explain-text">Queue hoạt động như hàng người xếp hàng — vào từ <b>REAR</b> (đuôi), ra từ <b>FRONT</b> (đầu). FIFO: vào trước thì ra trước!</div>
     </div>
-    <div class="input-row">
-      <label id="lbl1">Giá trị:</label>
-      <input type="number" id="inp1" value="75" min="0" max="99">
-      <span id="lblPri" style="display:none"><label>Độ ưu tiên:</label>
-        <input type="number" id="inp2" value="3" min="1" max="9"></span>
-      <button class="run-btn" onclick="runOperation()">▶ Chạy</button>
-    </div>
-    <div class="canvas-area">
-      <div class="queue-section" id="linearSection">
-        <div class="queue-labels">
-          <span class="queue-label-rear">REAR (vào đây) ⟵</span>
-          <span class="queue-label-front">⟶ FRONT (ra đây)</span>
+    <div id="queue-section">
+      <div id="linear-view">
+        <div id="queue-labels">
+          <span class="qlbl-rear">REAR (enqueue →)</span>
+          <span class="qlbl-front">(← dequeue) FRONT</span>
         </div>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span style="font-size:0.78rem;color:var(--accent3);text-shadow:0 0 10px rgba(255,214,10,0.3)">⟵ Enqueue</span>
-          <div class="queue-track" id="queueTrack"></div>
-          <span style="font-size:0.78rem;color:var(--accent);text-shadow:0 0 10px rgba(16,185,129,0.3)">Dequeue ⟶</span>
-        </div>
-        <div class="fifo-banner"><strong>FIFO</strong> — Vào trước, ra trước</div>
-        <div class="complexity-row">
-          <div class="complexity-badge active-badge" id="cb0"><div class="label">Enqueue</div><div class="value green">O(1)</div></div>
-          <div class="complexity-badge" id="cb1"><div class="label">Dequeue</div><div class="value green">O(1)</div></div>
-          <div class="complexity-badge" id="cb2"><div class="label">Peek</div><div class="value green">O(1)</div></div>
+        <div id="queue-track"></div>
+        <div id="queue-stats">
+          <div class="stat-badge">Size: <b id="s-size">0</b></div>
+          <div class="stat-badge">Front: <b id="s-front">—</b></div>
+          <div class="stat-badge">Rear: <b id="s-rear">—</b></div>
         </div>
       </div>
-      <div class="circle-section" id="circularSection">
-        <div style="font-size:0.8rem;color:var(--text-dim)">Circular Queue — size 8</div>
-        <div class="cq-canvas" id="cqCanvas"></div>
-        <div style="font-size:0.75rem;color:var(--text-dim);text-align:center">
-          <span style="color:var(--accent)">● FRONT</span> &nbsp;
-          <span style="color:var(--accent3)">● REAR</span>
-        </div>
+      <div id="circular-view">
+        <svg id="cq-svg"></svg>
       </div>
-      <div class="pq-section" id="prioritySection">
-        <div style="font-size:0.8rem;color:var(--text-dim)">Priority Queue — cao nhất ra trước</div>
-        <div class="pq-track" id="pqTrack"></div>
-        <div style="font-size:0.75rem;color:var(--text-dim)">↑ Chiều cao = độ ưu tiên (cao = ra trước)</div>
-      </div>
-      <div class="status-msg" id="statusMsg">Chọn thao tác và nhấn ▶ Chạy</div>
+      <div id="pq-view"></div>
     </div>
   </div>
-  <div class="code-panel">
-    <div class="code-panel-header">📄 Pseudocode — <span id="codeTitle">Queue Enqueue</span></div>
-    <div class="code-body" id="codeBody"></div>
+  <div id="code-panel">
+    <div class="panel-title">📝 Pseudocode</div>
+    <div id="code"></div>
+    <div id="insight">
+      <div class="insight-title">💡 Queue trong thực tế</div>
+      <b>Printer queue</b>: lệnh in đến trước in trước. <b>BFS</b>: duyệt đồ thị theo chiều rộng dùng queue. <b>OS scheduler</b>: tiến trình xếp hàng vào CPU.
+    </div>
   </div>
+</main>
+<div id="controls">
+  <label>Giá trị: <input type="number" id="val-input" value="42" min="1" max="99"></label>
+  <label id="pri-label" style="display:none">Ưu tiên: <input type="number" id="pri-input" value="3" min="1" max="10"></label>
+  <button class="btn-enq" onclick="opEnqueue()">➡ Enqueue</button>
+  <button class="btn-deq" onclick="opDequeue()">⬅ Dequeue</button>
+  <button class="btn-peek" onclick="opPeek()">👁 Peek</button>
+  <button class="btn-rst" onclick="initQueue()">↺ Reset</button>
 </div>
-
-<div class="controls">
-  <button class="ctrl-btn" onclick="stepBack()">⏮</button>
-  <button class="ctrl-btn" id="btnPlay" onclick="togglePlay()">▶</button>
-  <button class="ctrl-btn" onclick="stepForward()">⏭</button>
-  <button class="ctrl-btn" onclick="resetAll()">🔄</button>
-  <div class="speed-group">🐢 <input type="range" id="speedSlider" min="1" max="5" value="3"> 🐇</div>
-  <div class="step-info" id="stepInfo">Bước 0 / 0</div>
-</div>
-
 <script>
-let queue = [34, 56, 78, 12];
-let cqData = { arr: new Array(8).fill(null), front: 0, rear: 3, size: 4 };
-cqData.arr[0]=34; cqData.arr[1]=56; cqData.arr[2]=78; cqData.arr[3]=12;
-let pqData = [{val:42,pri:5},{val:18,pri:8},{val:73,pri:2},{val:55,pri:6}];
-let currentOp = 'enqueue';
-let steps = [], stepIdx = -1, playing = false, playTimer = null;
-const speedMap = { 1:1400, 2:1000, 3:650, 4:380, 5:200 };
+let queue=[], pqQueue=[], busy=false, viewMode='linear';
+const CQ_SIZE=8; let cqArr=new Array(CQ_SIZE).fill(null), cqHead=0, cqTail=0, cqCount=0;
 
-const codes = {
-  enqueue: { title:'Queue Enqueue — O(1)', lines:[
-    ['cm','// Thêm phần tử vào cuối hàng đợi'],
-    ['kw','function ','fn','enqueue','(queue, value):'],
-    ['kw','  if ','','queue.isFull():'],
-    ['kw','    throw ','','QueueFullError'],
-    ['cm','  // Tăng rear và ghi giá trị'],
-    ['','  rear = (rear + 1) % capacity'],
-    ['','  queue[rear] = value'],
-    ['','  size++'],
-    ['kw','  return ','cm','"// O(1)!"'],
-  ]},
-  dequeue: { title:'Queue Dequeue — O(1)', lines:[
-    ['cm','// Lấy phần tử từ đầu hàng đợi'],
-    ['kw','function ','fn','dequeue','(queue):'],
-    ['kw','  if ','','queue.isEmpty():'],
-    ['kw','    throw ','','QueueEmptyError'],
-    ['cm','  // Lấy giá trị tại front'],
-    ['','  value = queue[front]'],
-    ['','  front = (front + 1) % capacity'],
-    ['','  size--'],
-    ['kw','  return ','','value ','cm','// O(1)!'],
-  ]},
-  circular: { title:'Circular Queue — O(1)', lines:[
-    ['cm','// Circular Queue — dùng modulo'],
-    ['cm','// Tránh lãng phí không gian'],
-    ['kw','function ','fn','enqueue','(value):'],
-    ['kw','  if ','','isFull(): ','kw','throw ','','Error'],
-    ['cm','  // Dùng modulo để "quay vòng"'],
-    ['','  rear = (rear + 1) % capacity'],
-    ['','  arr[rear] = value'],
-    ['','  size++'],
-    ['cm','// (rear+1)%N → quay về 0 khi đến N-1'],
-    ['cm','// Không bao giờ tràn nếu còn chỗ'],
-  ]},
-  priority: { title:'Priority Queue — O(log n)', lines:[
-    ['cm','// Priority Queue — cao nhất ra trước'],
-    ['cm','// Thường dùng Heap bên trong'],
-    ['kw','function ','fn','enqueue','(pq, val, pri):'],
-    ['','  pq.push({val, pri})'],
-    ['cm','  // Sắp xếp lại theo độ ưu tiên'],
-    ['','  heapifyUp(pq)   ','cm','// O(log n)'],
-    ['kw','function ','fn','dequeue','(pq):'],
-    ['cm','  // Luôn lấy phần tử có pri cao nhất'],
-    ['','  max = pq[0]'],
-    ['','  swap(pq[0], pq[last])'],
-    ['','  pq.pop(); heapifyDown(pq)'],
-    ['kw','  return ','','max'],
-  ]}
-};
+function setView(v) {
+  viewMode=v;
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.className='tab-btn'+((['linear','circular','priority'][i]===v)?' on':''));
+  document.getElementById('linear-view').style.display=v==='linear'?'flex':'none';
+  document.getElementById('circular-view').style.display=v==='circular'?'block':'none';
+  document.getElementById('pq-view').style.display=v==='priority'?'flex':'none';
+  document.getElementById('pri-label').style.display=v==='priority'?'':'none';
+  if(v==='circular') renderCircular();
+  if(v==='priority') renderPQ();
+  updateCodeForView(v);
+  setExplain('💡','info',v==='linear'?'Linear Queue: FIFO, enqueue từ REAR, dequeue từ FRONT.'
+    :v==='circular'?'Circular Queue: REAR quay vòng về đầu mảng. Tránh lãng phí bộ nhớ!'
+    :'Priority Queue: phần tử có <b>ưu tiên cao hơn</b> luôn được dequeue trước, bất kể thứ tự vào!');
+}
 
-function renderCode(op, hl=-1) {
-  const c = codes[op];
-  document.getElementById('codeTitle').textContent = c.title;
-  const body = document.getElementById('codeBody');
-  body.innerHTML = '';
-  c.lines.forEach((parts,i) => {
-    const div = document.createElement('div');
-    div.className = 'code-line'+(i===hl?' highlight':'');
-    const ln = document.createElement('span'); ln.className='ln'; ln.textContent=i+1;
-    const txt = document.createElement('span'); txt.className='code-text';
-    let html='';
-    for(let j=0;j<parts.length;j+=2){
-      const cls=parts[j],content=parts[j+1]||'';
-      html+=cls?`<span class="${cls}">${content}</span>`:content;
+function initQueue() {
+  queue=[17,42,8,63,25]; busy=false;
+  cqArr=new Array(CQ_SIZE).fill(null); cqHead=0; cqTail=0; cqCount=0;
+  [17,42,8].forEach(v=>{cqArr[cqTail]=v;cqTail=(cqTail+1)%CQ_SIZE;cqCount++;});
+  pqQueue=[{val:30,pri:3},{val:10,pri:7},{val:60,pri:1},{val:20,pri:9},{val:50,pri:5}];
+  pqQueue.sort((a,b)=>b.pri-a.pri);
+  renderLinear(); renderCircular(); renderPQ();
+  showStatus('idle');
+  setExplain('💡','info','Queue hoạt động như hàng người xếp hàng — vào từ <b>REAR</b> (đuôi), ra từ <b>FRONT</b> (đầu). FIFO: vào trước thì ra trước!');
+  setInsight('💡 Queue trong thực tế','<b>Printer queue</b>: lệnh in đến trước in trước. <b>BFS</b>: duyệt đồ thị theo chiều rộng. <b>OS scheduler</b>: tiến trình xếp hàng vào CPU.');
+  updateCodeForView(viewMode);
+}
+
+function updateCodeForView(v) {
+  const lines = v==='circular' ? [
+    '// Circular Queue',
+    'enqueue(val) {',
+    '  if (isFull()) throw Error;',
+    '  this.arr[this.tail] = val;',
+    '  this.tail = (this.tail+1) % SIZE;',
+    '  this.count++;',
+    '}',
+    'dequeue() {',
+    '  const v = this.arr[this.head];',
+    '  this.head = (this.head+1) % SIZE;',
+    '  this.count--;  return v;',
+    '}',
+  ] : v==='priority' ? [
+    '// Priority Queue (Min-Heap)',
+    'enqueue(val, priority) {',
+    '  this.heap.push({val,priority});',
+    '  this.bubbleUp();',
+    '}',
+    'dequeue() {',
+    '  // luôn trả về priority cao nhất',
+    '  return this.heap.shift();',
+    '}',
+  ] : [
+    '// Linear Queue — FIFO',
+    'enqueue(val) {',
+    '  this.data.push(val); // vào REAR',
+    '}',
+    'dequeue() {',
+    '  return this.data.shift(); // ra FRONT',
+    '}',
+    'peek() {',
+    '  return this.data[0];',
+    '}',
+  ];
+  setCode(lines,-1);
+}
+
+function renderLinear(activeIdx=-1, st='') {
+  const track=document.getElementById('queue-track');
+  track.innerHTML='';
+  // display right-to-left: front on right
+  [...queue].reverse().forEach((v,ri)=>{
+    const i=queue.length-1-ri;
+    const cell=document.createElement('div');
+    cell.className='qcell'+(i===0?' front':'')+(i===activeIdx?' '+st:'');
+    cell.textContent=v;
+    track.appendChild(cell);
+  });
+  document.getElementById('s-size').textContent=queue.length;
+  document.getElementById('s-front').textContent=queue.length>0?queue[0]:'—';
+  document.getElementById('s-rear').textContent=queue.length>0?queue[queue.length-1]:'—';
+}
+
+function renderCircular() {
+  const svg=document.getElementById('cq-svg');
+  svg.innerHTML='';
+  const cx=130,cy=130,R=100,r=26;
+  // ring background
+  const ring=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  ring.setAttribute('cx',cx);ring.setAttribute('cy',cy);ring.setAttribute('r',R);
+  ring.setAttribute('stroke','rgba(91,141,239,0.2)');ring.setAttribute('stroke-width','54');ring.setAttribute('fill','none');
+  svg.appendChild(ring);
+  for(let i=0;i<CQ_SIZE;i++){
+    const angle=(i/CQ_SIZE)*Math.PI*2-Math.PI/2;
+    const x=cx+R*Math.cos(angle), y=cy+R*Math.sin(angle);
+    const isFront=cqCount>0&&i===cqHead;
+    const isRear=cqCount>0&&i===(cqTail-1+CQ_SIZE)%CQ_SIZE;
+    const hasVal=cqArr[i]!==null;
+    const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx',x);circle.setAttribute('cy',y);circle.setAttribute('r',r);
+    circle.setAttribute('fill',hasVal?(isFront?'#e67e22':isRear?'#27ae60':'#2c5aa0'):'#1c2744');
+    circle.setAttribute('stroke',isFront?'#ffb347':isRear?'#2ecc71':'rgba(91,141,239,0.4)');
+    circle.setAttribute('stroke-width','2');
+    svg.appendChild(circle);
+    if(hasVal){
+      const txt=document.createElementNS('http://www.w3.org/2000/svg','text');
+      txt.setAttribute('x',x);txt.setAttribute('y',y+1);txt.setAttribute('text-anchor','middle');txt.setAttribute('dominant-baseline','middle');
+      txt.setAttribute('fill','#fff');txt.setAttribute('font-size','14');txt.setAttribute('font-weight','800');
+      txt.textContent=cqArr[i]; svg.appendChild(txt);
     }
-    txt.innerHTML=html; div.appendChild(ln); div.appendChild(txt);
-    body.appendChild(div);
-    if(i===hl) div.scrollIntoView({block:'nearest'});
+    if(isFront||isRear){
+      const lbl=document.createElementNS('http://www.w3.org/2000/svg','text');
+      const lx=cx+(R+40)*Math.cos(angle), ly=cy+(R+40)*Math.sin(angle);
+      lbl.setAttribute('x',lx);lbl.setAttribute('y',ly);lbl.setAttribute('text-anchor','middle');lbl.setAttribute('dominant-baseline','middle');
+      lbl.setAttribute('fill',isFront?'#ffb347':'#2ecc71');lbl.setAttribute('font-size','11');lbl.setAttribute('font-weight','700');
+      lbl.textContent=isFront?'F':'R'; svg.appendChild(lbl);
+    }
+  }
+  const info=document.createElementNS('http://www.w3.org/2000/svg','text');
+  info.setAttribute('x',cx);info.setAttribute('y',cy);info.setAttribute('text-anchor','middle');info.setAttribute('dominant-baseline','middle');
+  info.setAttribute('fill','var(--muted)');info.setAttribute('font-size','12');
+  info.textContent=`${cqCount}/${CQ_SIZE}`;svg.appendChild(info);
+}
+
+function renderPQ() {
+  const view=document.getElementById('pq-view');
+  view.innerHTML='';
+  const maxPri=pqQueue.length>0?pqQueue[0].pri:10;
+  pqQueue.forEach((item,i)=>{
+    const row=document.createElement('div');
+    row.className='pq-row'+(i===0?' pq-top':'');
+    const barW=Math.round((item.pri/10)*100);
+    row.innerHTML=`<div class="pq-val">${item.val}</div><div class="pq-pri">Ưu tiên: ${item.pri}</div><div class="pq-bar" style="width:${barW}%;background:linear-gradient(90deg,${i===0?'var(--orange-top),var(--orange-bot)':'var(--blue-top),var(--blue-bot)'})"></div>`;
+    view.appendChild(row);
   });
 }
 
-function renderLinearQueue(q, frontCls='', rearCls='') {
-  const track = document.getElementById('queueTrack');
-  track.innerHTML = '';
-  if (q.length === 0) {
-    const e = document.createElement('div'); e.className='q-empty'; e.textContent='(hàng đợi rỗng)';
-    track.appendChild(e); return;
+function showStatus(t,...a) {
+  const d=document.getElementById('status-display');
+  if(t==='idle'){d.innerHTML='<span class="sd-idle">Queue theo nguyên tắc FIFO — First In, First Out</span>';return;}
+  if(t==='enq') d.innerHTML=`<span class="sd-label">ENQUEUE vào REAR</span><span class="sd-box enq">${a[0]}</span>`;
+  if(t==='deq') d.innerHTML=`<span class="sd-label">DEQUEUE từ FRONT →</span><span class="sd-box deq">${a[0]}</span>`;
+  if(t==='peek') d.innerHTML=`<span class="sd-label">FRONT =</span><span class="sd-box peek">${a[0]}</span>`;
+  if(t==='done') d.innerHTML=`<span style="color:var(--green-top);font-weight:700">✅ ${a[0]}</span>`;
+}
+function setExplain(icon,cls,html){document.getElementById('step-icon').textContent=icon;document.getElementById('step-icon').className='step-icon '+cls;document.getElementById('explain-text').innerHTML=html;}
+function setInsight(title,html){document.getElementById('insight').innerHTML=`<div class="insight-title">${title}</div>${html}`;}
+function setCode(lines,active){document.getElementById('code').innerHTML=lines.map((l,i)=>`<div class="code-line${l.trim().startsWith('//')?' comment':''}${i===active?' active':''}">${l}</div>`).join('');}
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+
+async function opEnqueue() {
+  if(busy)return; busy=true;
+  const val=+document.getElementById('val-input').value;
+  if(viewMode==='linear') {
+    if(queue.length>=8){busy=false;return;}
+    showStatus('enq',val);
+    setExplain('➡','enq',`Enqueue <b>${val}</b> vào REAR. Phần tử xếp vào cuối hàng. <b>O(1)</b>!`);
+    setInsight('➡ Enqueue O(1)','Thêm vào đuôi hàng (REAR). Không ảnh hưởng các phần tử đang chờ. Như xếp hàng: đứng vào cuối!');
+    queue.push(val);
+    renderLinear(queue.length-1,'enqueuing');
+    await delay(700); renderLinear();
+    showStatus('done',`Enqueue ${val} vào REAR`);
+  } else if(viewMode==='circular') {
+    if(cqCount>=CQ_SIZE){busy=false;return;}
+    cqArr[cqTail]=val; cqTail=(cqTail+1)%CQ_SIZE; cqCount++;
+    renderCircular();
+    setExplain('➡','enq',`Enqueue <b>${val}</b>. Tail = <b>${(cqTail-1+CQ_SIZE)%CQ_SIZE}</b>. Tail quay vòng = (tail+1) % ${CQ_SIZE}.`);
+    showStatus('enq',val);
+  } else {
+    if(pqQueue.length>=8){busy=false;return;}
+    const pri=+document.getElementById('pri-input').value;
+    pqQueue.push({val,pri}); pqQueue.sort((a,b)=>b.pri-a.pri);
+    renderPQ();
+    setExplain('⬆','pq',`Enqueue <b>${val}</b> với ưu tiên <b>${pri}</b>. Tự động sắp xếp — phần tử ưu tiên cao nhất luôn ở đầu!`);
+    setInsight('⬆ Priority Queue',`Luôn lấy phần tử ưu tiên cao nhất. Thường dùng <b>Heap</b> để O(log n). Dùng trong: Dijkstra, task scheduler, A*.`);
+    showStatus('enq',val);
   }
-  q.forEach((val, i) => {
-    const item = document.createElement('div'); item.className='q-item';
-    item.textContent = val;
-    if (i === q.length-1 && rearCls) item.classList.add(rearCls);
-    if (i === 0 && frontCls) item.classList.add(frontCls);
-    track.appendChild(item);
-  });
+  busy=false;
 }
 
-function renderCircularQueue(cq, hlSlot=-1) {
-  const canvas = document.getElementById('cqCanvas');
-  canvas.innerHTML = '';
-  const n = 8, R = 90, cx = 110, cy = 110;
-  for (let i = 0; i < n; i++) {
-    const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
-    const x = cx + R * Math.cos(angle) - 22;
-    const y = cy + R * Math.sin(angle) - 22;
-    const slot = document.createElement('div'); slot.className='cq-slot';
-    slot.style.left = x + 'px'; slot.style.top = y + 'px';
-    if (cq.arr[i] !== null) { slot.classList.add('used'); slot.textContent = cq.arr[i]; }
-    else { slot.textContent = '-'; }
-    if (i === cq.front) slot.classList.add('front-slot');
-    if (i === cq.rear)  slot.classList.add('rear-slot');
-    if (i === hlSlot)   slot.classList.add('active-slot');
-    canvas.appendChild(slot);
+async function opDequeue() {
+  if(busy)return; busy=true;
+  if(viewMode==='linear') {
+    if(queue.length===0){busy=false;return;}
+    const val=queue[0];
+    showStatus('deq',val);
+    setExplain('⬅','deq',`Dequeue: lấy phần tử <b>FRONT = ${val}</b> ra. Tất cả người đứng trước tiến lên. <b>O(1)</b> với linked list!`);
+    setInsight('⬅ Dequeue O(1)','Lấy từ đầu hàng (FRONT). Dùng linked list thì O(1). Dùng mảng thì phải shift → O(n) — tránh!');
+    renderLinear(0,'dequeuing');
+    await delay(500);
+    queue.shift(); renderLinear();
+    showStatus('done',`Dequeue → ${val}`);
+  } else if(viewMode==='circular') {
+    if(cqCount===0){busy=false;return;}
+    const val=cqArr[cqHead]; cqArr[cqHead]=null; cqHead=(cqHead+1)%CQ_SIZE; cqCount--;
+    renderCircular();
+    setExplain('⬅','deq',`Dequeue <b>${val}</b>. Head = <b>${cqHead}</b>. Head quay vòng tránh lãng phí slot đã dùng!`);
+    showStatus('deq',val);
+  } else {
+    if(pqQueue.length===0){busy=false;return;}
+    const top=pqQueue.shift();
+    renderPQ();
+    setExplain('⬅','deq',`Dequeue phần tử ưu tiên cao nhất: <b>${top.val}</b> (pri=${top.pri}).`);
+    showStatus('deq',top.val);
   }
-  const center = document.createElement('div');
-  center.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;font-size:0.7rem;';
-  center.innerHTML = `<div style="color:var(--accent)">F:${cq.front}</div><div style="color:var(--accent3)">R:${cq.rear}</div><div style="color:var(--text-dim)">sz:${cq.size}</div>`;
-  canvas.appendChild(center);
+  busy=false;
 }
 
-function renderPriorityQueue(pq) {
-  const track = document.getElementById('pqTrack');
-  track.innerHTML = '';
-  const sorted = [...pq].sort((a,b) => b.pri - a.pri);
-  sorted.forEach((item, i) => {
-    const wrap = document.createElement('div'); wrap.className='pq-item';
-    if (i===0) wrap.classList.add('highest');
-    const bar = document.createElement('div'); bar.className='pq-bar';
-    bar.style.height = (item.pri * 9 + 22) + 'px';
-    bar.textContent = item.val;
-    const lbl = document.createElement('div'); lbl.className='pq-priority';
-    lbl.textContent = `pri=${item.pri}`;
-    wrap.appendChild(bar); wrap.appendChild(lbl);
-    track.appendChild(wrap);
-  });
+async function opPeek() {
+  if(busy)return; busy=true;
+  let front;
+  if(viewMode==='linear') front=queue.length>0?queue[0]:null;
+  else if(viewMode==='circular') front=cqCount>0?cqArr[cqHead]:null;
+  else front=pqQueue.length>0?pqQueue[0].val:null;
+  if(front===null){busy=false;return;}
+  showStatus('peek',front);
+  setExplain('👁','deq',`Peek: FRONT = <b>${front}</b>. Xem không xóa. Queue không thay đổi!`);
+  await delay(1000);
+  busy=false;
 }
 
-function buildSteps(op, val, pri) {
-  steps = [];
-  if (op === 'enqueue') {
-    complexityFocus(0);
-    steps.push({ q:[...queue], code:-1, msg:`Enqueue ${val} vào cuối hàng đợi` });
-    steps.push({ q:[...queue], code:5, msg:`rear = (rear+1) — cập nhật vị trí rear` });
-    const nq = [...queue, val];
-    steps.push({ q:nq, rearCls:'rear', code:6, msg:`queue[rear] = ${val} — ghi vào` });
-    steps.push({ q:nq, rearCls:'rear', code:7, msg:`size++ — tăng kích thước` });
-    steps.push({ q:nq, rearCls:'found', code:8, msg:`✓ Enqueue thành công — O(1)` });
-    queue = nq;
-  } else if (op === 'dequeue') {
-    if (!queue.length) { alert('Hàng đợi rỗng!'); return; }
-    complexityFocus(1);
-    const dequeuedVal = queue[0];
-    steps.push({ q:[...queue], frontCls:'front', code:1, msg:`Chuẩn bị dequeue từ front` });
-    steps.push({ q:[...queue], frontCls:'found', code:5, msg:`Đọc queue[front] = ${dequeuedVal}` });
-    steps.push({ q:[...queue], frontCls:'dequeuing', code:6, msg:`front = (front+1) — dịch front` });
-    const nq = queue.slice(1);
-    steps.push({ q:nq, code:7, msg:`size-- — giảm kích thước` });
-    steps.push({ q:nq, code:8, msg:`✓ Dequeue thành công — trả về ${dequeuedVal}` });
-    queue = nq;
-  } else if (op === 'circular') {
-    const cq = { arr: [...cqData.arr], front: cqData.front, rear: cqData.rear, size: cqData.size };
-    steps.push({ cq:{...cq,arr:[...cq.arr]}, hlSlot:-1, code:2, msg:`Circular Queue hiện tại — front:${cq.front}, rear:${cq.rear}` });
-    const newRear = (cq.rear + 1) % 8;
-    steps.push({ cq:{...cq,arr:[...cq.arr]}, hlSlot:newRear, code:5, msg:`rear = (${cq.rear}+1) % 8 = ${newRear}` });
-    const na = [...cq.arr]; na[newRear] = val;
-    const ncq = { arr: na, front: cq.front, rear: newRear, size: cq.size+1 };
-    steps.push({ cq:ncq, hlSlot:newRear, code:6, msg:`arr[${newRear}] = ${val} — quay vòng!` });
-    steps.push({ cq:ncq, hlSlot:-1, code:7, msg:`✓ Enqueue circular thành công` });
-    cqData = ncq;
-  } else if (op === 'priority') {
-    steps.push({ pq:[...pqData], code:2, msg:`Priority Queue — enqueue(val=${val}, pri=${pri})` });
-    steps.push({ pq:[...pqData], code:3, msg:`Thêm {val:${val}, pri:${pri}} vào cuối` });
-    const npq = [...pqData, {val, pri}];
-    steps.push({ pq:npq, code:5, msg:`heapifyUp — sắp xếp lại theo độ ưu tiên` });
-    const sorted = [...npq].sort((a,b)=>b.pri-a.pri);
-    steps.push({ pq:sorted, code:5, msg:`Phần tử pri cao nhất luôn ở đầu` });
-    steps.push({ pq:sorted, code:6, msg:`✓ Priority Queue cập nhật xong — O(log n)` });
-    pqData = sorted;
-  }
-}
-
-function complexityFocus(idx) {
-  ['cb0','cb1','cb2'].forEach((id,i)=>
-    document.getElementById(id)?.classList.toggle('active-badge',i===idx));
-}
-
-function showSection(op) {
-  document.getElementById('linearSection').style.display = (op==='enqueue'||op==='dequeue') ? '' : 'none';
-  document.getElementById('circularSection').className = 'circle-section' + (op==='circular'?' show':'');
-  document.getElementById('prioritySection').className = 'pq-section' + (op==='priority'?' show':'');
-}
-
-function applyStep(idx) {
-  if (idx<0||idx>=steps.length) return;
-  const s = steps[idx];
-  renderCode(currentOp, s.code);
-  const msg = document.getElementById('statusMsg');
-  msg.textContent = s.msg||'';
-  msg.className = 'status-msg'+(s.msg?.startsWith('✓')?' success':s.msg?.startsWith('✗')?' error':' info');
-  document.getElementById('stepInfo').textContent = `Bước ${idx+1} / ${steps.length}`;
-  if (s.q !== undefined) renderLinearQueue(s.q, s.frontCls||'', s.rearCls||'');
-  if (s.cq !== undefined) renderCircularQueue(s.cq, s.hlSlot??-1);
-  if (s.pq !== undefined) renderPriorityQueue(s.pq);
-}
-
-function stepForward() { if(stepIdx<steps.length-1){stepIdx++;applyStep(stepIdx);}else stopPlay(); }
-function stepBack()    { if(stepIdx>0){stepIdx--;applyStep(stepIdx);} }
-function togglePlay()  { playing?stopPlay():startPlay(); }
-function startPlay() {
-  playing=true; document.getElementById('btnPlay').textContent='⏸';
-  function tick() {
-    if(stepIdx<steps.length-1){stepIdx++;applyStep(stepIdx);
-      playTimer=setTimeout(tick,speedMap[document.getElementById('speedSlider').value]);
-    } else stopPlay();
-  }
-  tick();
-}
-function stopPlay() { playing=false;document.getElementById('btnPlay').textContent='▶';clearTimeout(playTimer); }
-
-function selectOp(op, e) {
-  currentOp=op;
-  document.querySelectorAll('.op-btn').forEach(b=>b.classList.remove('active'));
-  e.target.classList.add('active');
-  document.getElementById('lblPri').style.display = op==='priority'?'':'none';
-  showSection(op);
-  resetAll();
-}
-
-function runOperation() {
-  stopPlay();
-  queue=[34,56,78,12];
-  cqData={arr:[34,56,78,12,null,null,null,null],front:0,rear:3,size:4};
-  pqData=[{val:42,pri:5},{val:18,pri:8},{val:73,pri:2},{val:55,pri:6}];
-  const val=parseInt(document.getElementById('inp1').value)||75;
-  const pri=parseInt(document.getElementById('inp2').value)||3;
-  buildSteps(currentOp,val,pri);
-  stepIdx=-1;
-  if(currentOp==='enqueue'||currentOp==='dequeue') renderLinearQueue(queue,'front','rear');
-  if(currentOp==='circular') renderCircularQueue(cqData);
-  if(currentOp==='priority') renderPriorityQueue(pqData);
-  renderCode(currentOp,-1);
-  document.getElementById('statusMsg').textContent='Nhấn ⏭ để từng bước';
-  document.getElementById('statusMsg').className='status-msg';
-  document.getElementById('stepInfo').textContent=`Bước 0 / ${steps.length}`;
-}
-
-function resetAll() {
-  stopPlay();
-  queue=[34,56,78,12];
-  cqData={arr:[34,56,78,12,null,null,null,null],front:0,rear:3,size:4};
-  pqData=[{val:42,pri:5},{val:18,pri:8},{val:73,pri:2},{val:55,pri:6}];
-  steps=[]; stepIdx=-1;
-  if(currentOp==='enqueue'||currentOp==='dequeue') renderLinearQueue(queue,'front','rear');
-  if(currentOp==='circular') renderCircularQueue(cqData);
-  if(currentOp==='priority') renderPriorityQueue(pqData);
-  renderCode(currentOp,-1);
-  document.getElementById('statusMsg').textContent='Chọn thao tác và nhấn ▶ Chạy';
-  document.getElementById('statusMsg').className='status-msg';
-  document.getElementById('stepInfo').textContent='Bước 0 / 0';
-}
-
-showSection('enqueue');
-renderLinearQueue(queue,'front','rear');
-renderCircularQueue(cqData);
-renderPriorityQueue(pqData);
-renderCode('enqueue',-1);
+initQueue();
 </script>
 </body>
 </html>

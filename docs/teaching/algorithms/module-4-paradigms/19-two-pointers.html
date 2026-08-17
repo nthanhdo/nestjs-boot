@@ -3,576 +3,373 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>19 - Hai Con Trỏ (Two Pointers)</title>
+<title>Two Pointers — Con Trỏ Đôi</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0a0a1a; color: #e0e0f0; font-family: 'Segoe UI', monospace; min-height: 100vh;
-    background-image: radial-gradient(ellipse at 30% 30%, rgba(59,130,246,0.06) 0%, transparent 60%),
-      radial-gradient(ellipse at 70% 70%, rgba(239,68,68,0.06) 0%, transparent 60%); }
-  h1 { text-align: center; padding: 18px; background: linear-gradient(135deg, #0d1a2e, #0f2035);
-    font-size: 1.5rem; color: #38bdf8; border-bottom: 2px solid #0284c7; letter-spacing: 2px;
-    text-shadow: 0 0 20px rgba(56,189,248,0.5); }
-  .subtitle { text-align: center; font-size: 0.85rem; color: #94a3b8; padding: 6px; background: #0d1a2e; }
-
-  @keyframes fadeScale { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-  @keyframes bounce { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-12px); } 70% { transform: translateY(-6px); } }
-  @keyframes sparkle { 0% { box-shadow: 0 0 0 rgba(34,197,94,0); }
-    50% { box-shadow: 0 0 0 8px rgba(34,197,94,0.3), 0 0 0 16px rgba(34,197,94,0.1); }
-    100% { box-shadow: 0 0 0 20px rgba(34,197,94,0); } }
-  @keyframes slidePtr { 0% { transform: translateX(0); } 100% { transform: translateX(var(--target-x)); } }
-  @keyframes ptrPulse { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-4px) scale(1.15); } }
-  @keyframes ripple { 0% { box-shadow: 0 0 0 0 rgba(56,189,248,0.5); }
-    100% { box-shadow: 0 0 0 14px rgba(56,189,248,0); } }
-  @keyframes slideInLeft { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-  @keyframes countTick { 0% { transform: translateY(6px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
-
-  .tabs { display: flex; gap: 4px; padding: 10px 16px; background: #0d1a2e; border-bottom: 1px solid #1a3050; }
-  .tab { padding: 8px 18px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem;
-    border: 1px solid #1a3050; border-bottom: none; transition: all 0.25s; color: #64748b; background: #0f2035; }
-  .tab.active { background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; border-color: #0284c7;
-    box-shadow: 0 -4px 15px rgba(2,132,199,0.4); }
-
-  .main { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 110px); }
-  .viz-panel { padding: 16px; overflow-y: auto; background: #0a0a1a; }
-  .code-panel { background: #0d1020; border-left: 2px solid #1a3050; display: flex; flex-direction: column; }
-
-  /* Array visualization with smooth pointer movement */
-  .array-wrapper { position: relative; padding: 0 0 60px; margin: 8px 0; }
-  .array-track { display: flex; gap: 6px; padding: 8px 12px; justify-content: center; align-items: flex-end; }
-
-  .array-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; }
-  .cell-box { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;
-    border-radius: 8px; font-size: 1.1rem; font-weight: bold; border: 2px solid #1e3a5f;
-    background: linear-gradient(135deg, #1e293b, #162030); color: #e0e0f0;
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .cell-box.ptr-left { border-color: #3b82f6; background: linear-gradient(135deg, #1e3a5f, #1a3060);
-    box-shadow: 0 0 20px rgba(59,130,246,0.5), 0 0 40px rgba(59,130,246,0.2); transform: translateY(-6px); }
-  .cell-box.ptr-right { border-color: #ef4444; background: linear-gradient(135deg, #3b1a1a, #3b0f0f);
-    box-shadow: 0 0 20px rgba(239,68,68,0.5), 0 0 40px rgba(239,68,68,0.2); transform: translateY(-6px); }
-  .cell-box.ptr-both { border-color: #a855f7; background: linear-gradient(135deg, #3b1a4e, #2d1060);
-    box-shadow: 0 0 20px rgba(168,85,247,0.5); transform: translateY(-6px); }
-  .cell-box.selected { border-color: #22c55e; background: linear-gradient(135deg, #052e16, #064e20);
-    box-shadow: 0 0 20px rgba(34,197,94,0.4); animation: bounce 0.6s ease, sparkle 0.8s ease; }
-  .cell-box.removed { background: #1a1a1a; border-color: #374151; opacity: 0.35; }
-  .cell-box.in-window { border-color: #f59e0b; background: linear-gradient(135deg, #1c1209, #2a1a05);
-    box-shadow: 0 0 10px rgba(245,158,11,0.3); }
-  .cell-box.wrote-to { animation: fadeScale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); border-color: #22c55e; }
-  .cell-idx { font-size: 0.65rem; color: #4b5563; }
-
-  /* Pointer arrows that slide */
-  .ptrs-row { position: absolute; bottom: 8px; left: 0; right: 0; display: flex;
-    gap: 6px; padding: 0 12px; justify-content: center; pointer-events: none; }
-  .ptr-slot { width: 50px; display: flex; justify-content: center; }
-  .ptr-label { font-size: 0.72rem; font-weight: bold; padding: 2px 8px; border-radius: 10px;
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .ptr-label.left-ptr { color: #60a5fa; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3);
-    animation: ptrPulse 1.2s ease-in-out infinite; }
-  .ptr-label.right-ptr { color: #f87171; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3);
-    animation: ptrPulse 1.2s ease-in-out 0.3s infinite; }
-  .ptr-label.slow-ptr { color: #60a5fa; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); }
-  .ptr-label.fast-ptr { color: #f87171; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); }
-
-  /* Status */
-  .status-row { display: flex; gap: 10px; margin: 10px 0; }
-  .status-card { flex: 1; padding: 10px 14px; border-radius: 10px;
-    background: linear-gradient(135deg, #0f1a2e, #0d1525); border: 1px solid #1a3050; font-size: 0.82rem; }
-  .status-card .label { font-size: 0.7rem; color: #4b6080; margin-bottom: 4px; }
-  .status-card .val { font-size: 1.15rem; font-weight: bold; color: #38bdf8;
-    transition: all 0.3s; animation: countTick 0.3s ease; }
-
-  /* Water viz */
-  .water-viz { display: flex; align-items: flex-end; gap: 4px; padding: 10px 12px 36px;
-    background: linear-gradient(180deg, #0a0a1a, #0d1020); border-radius: 12px;
-    border: 1px solid #1a3050; position: relative; min-height: 180px; overflow: visible; }
-  .water-bar { display: flex; flex-direction: column; align-items: center; gap: 2px; position: relative; }
-  .bar-fill { width: 36px; border-radius: 4px 4px 0 0; transition: all 0.4s ease; min-height: 4px; }
-  .bar-fill.ptr-l { box-shadow: 0 0 15px rgba(59,130,246,0.6); border: 2px solid #3b82f6; }
-  .bar-fill.ptr-r { box-shadow: 0 0 15px rgba(239,68,68,0.6); border: 2px solid #ef4444; }
-  .bar-idx-w { font-size: 0.6rem; color: #4b5563; }
-  .water-level { position: absolute; border: 2px dashed; border-radius: 3px; transition: all 0.5s ease;
-    pointer-events: none; display: flex; align-items: center; justify-content: center; }
-  .water-label { font-size: 0.7rem; font-weight: bold; }
-
-  /* Concept cards */
-  .concept-row { display: flex; gap: 10px; margin: 10px 0; }
-  .concept-card { flex: 1; padding: 12px; border-radius: 10px; font-size: 0.8rem; transition: all 0.3s; }
-  .concept-card:hover { transform: translateY(-2px); }
-  .concept-blue { background: linear-gradient(135deg, #1e3a5f22, #1a306022); border: 1px solid #3b82f6; }
-  .concept-red { background: linear-gradient(135deg, #3b1a1a22, #3b0f0f22); border: 1px solid #ef4444; }
-  .concept-title { font-weight: bold; margin-bottom: 4px; }
-  .concept-blue .concept-title { color: #60a5fa; }
-  .concept-red .concept-title { color: #f87171; }
-
-  .complexity-box { display: flex; gap: 10px; margin: 10px 0; }
-  .complexity-item { flex: 1; padding: 10px; border-radius: 8px; font-size: 0.8rem; text-align: center; transition: all 0.3s; }
-  .complexity-good { background: linear-gradient(135deg, #052e1622, #064e2022); border: 1px solid #22c55e; }
-  .complexity-bad { background: linear-gradient(135deg, #7f1d1d22, #6b0000); border: 1px solid #ef4444; }
-  .complexity-title { font-weight: bold; margin-bottom: 4px; }
-  .complexity-good .complexity-title { color: #22c55e; }
-  .complexity-bad .complexity-title { color: #ef4444; }
-
-  .result-box { padding: 12px 16px; border-radius: 10px; background: linear-gradient(135deg, #052e16, #064e20);
-    border: 2px solid #22c55e; font-size: 0.85rem; color: #86efac; margin: 8px 0;
-    animation: fadeScale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .result-box strong { color: #22c55e; font-size: 1rem; text-shadow: 0 0 10px rgba(34,197,94,0.6); }
-
-  .step-desc { padding: 10px 14px; border-radius: 8px; background: linear-gradient(90deg, #0f1a2e, #0d1525);
-    border-left: 3px solid #38bdf8; font-size: 0.82rem; color: #94a3b8; margin: 8px 0; min-height: 42px; }
-  .step-desc strong { color: #38bdf8; }
-
-  .code-header { padding: 10px 14px; background: #0f1a2e; border-bottom: 1px solid #1a3050;
-    font-size: 0.78rem; color: #0284c7; font-weight: bold; }
-  .code-body { flex: 1; overflow-y: auto; padding: 12px; font-size: 0.75rem;
-    font-family: 'Courier New', monospace; line-height: 1.7; }
-  .code-line { padding: 2px 8px; border-radius: 4px; transition: all 0.25s; white-space: pre; color: #4a6080; }
-  .code-line.hl { background: linear-gradient(90deg, #0284c733, transparent);
-    border-left: 3px solid #38bdf8; color: #e0f0ff; }
-  .kw { color: #c084fc; } .fn { color: #60a5fa; } .num { color: #fbbf24; }
-  .cmt { color: #3a5060; font-style: italic; } .str { color: #34d399; }
-
-  .controls { display: flex; gap: 8px; align-items: center; padding: 10px 16px;
-    background: #0d1a2e; border-top: 1px solid #1a3050; flex-wrap: wrap; }
-  .btn { padding: 7px 16px; border-radius: 8px; border: none; cursor: pointer;
-    font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
-  .btn-play { background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; }
-  .btn-play:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(2,132,199,0.4); }
-  .btn-step { background: #0e7490; color: #fff; }
-  .btn-reset { background: #374151; color: #d1d5db; }
-  .speed-label { font-size: 0.78rem; color: #94a3b8; }
-  input[type=range] { width: 90px; accent-color: #0284c7; }
-
-  .info-bar { padding: 8px 16px; background: #0d1a2e; font-size: 0.78rem; color: #94a3b8;
-    display: flex; gap: 16px; flex-wrap: wrap; }
-  .info-item strong { color: #38bdf8; }
-
-  section.prob { display: none; }
-  section.prob.active { display: block; }
+  :root {
+    --bg:#0e1525;--surface:#151d32;--surface2:#1c2744;--border:#2a3a5c;
+    --text:#eef1f8;--muted:#8899bb;--accent:#a78bfa;--yellow:#ffd43b;
+    --L-top:#00cec9;--L-bot:#00a8a8;--L-glow:rgba(0,206,201,.6);
+    --R-top:#fd79a8;--R-bot:#c0006a;--R-glow:rgba(253,121,168,.6);
+    --match-top:#2ecc71;--match-bot:#1a9c54;--match-glow:rgba(46,204,113,.5);
+    --def-top:#5b8def;--def-bot:#2c5aa0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 25% 20%,rgba(0,206,201,.06) 0%,transparent 55%),radial-gradient(ellipse at 75% 80%,rgba(253,121,168,.05) 0%,transparent 55%);pointer-events:none}
+  header{background:var(--surface);padding:10px 24px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border)}
+  header h1{font-size:1.15rem;font-weight:700;background:linear-gradient(135deg,#00cec9,#fd79a8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .badge{background:linear-gradient(135deg,#00cec9,#0984e3);color:#fff;padding:2px 10px;border-radius:12px;font-size:.68rem;font-weight:700}
+  .complexity{display:flex;gap:6px;margin-left:auto}
+  .cx{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:2px 9px;font-size:.72rem;color:var(--muted)}
+  .cx span{color:var(--yellow);font-weight:700}
+  main{flex:1;display:flex;overflow:hidden;z-index:1;min-height:0}
+  #viz{flex:1;display:flex;flex-direction:column;min-width:0}
+  /* Status Display */
+  #status-display{text-align:center;padding:10px 20px;min-height:58px;display:flex;align-items:center;justify-content:center;gap:14px;background:var(--surface);border-bottom:1px solid var(--border)}
+  .sd-idle{color:var(--muted);font-size:.95rem}
+  .pb{display:inline-flex;align-items:center;justify-content:center;flex-direction:column;padding:5px 14px;border-radius:10px;font-weight:800;color:#fff;min-width:80px}
+  .pb.L{background:linear-gradient(135deg,var(--L-top),var(--L-bot));box-shadow:0 0 16px var(--L-glow)}
+  .pb.R{background:linear-gradient(135deg,var(--R-top),var(--R-bot));box-shadow:0 0 16px var(--R-glow)}
+  .pb .pl{font-size:.62rem;opacity:.8;font-weight:600}
+  .pb .pv{font-size:1.15rem}
+  .sd-op{font-size:1.3rem;color:var(--yellow)}
+  .sd-result{padding:5px 14px;border-radius:10px;font-size:.9rem;font-weight:700;animation:fadeIn .3s ease}
+  .sd-result.high{background:rgba(253,121,168,.15);border:1px solid rgba(253,121,168,.4);color:var(--R-top)}
+  .sd-result.low{background:rgba(0,206,201,.15);border:1px solid rgba(0,206,201,.4);color:var(--L-top)}
+  .sd-result.match{background:rgba(46,204,113,.15);border:1px solid rgba(46,204,113,.4);color:var(--match-top)}
+  /* Explain */
+  #explain-viz{padding:10px 24px;min-height:52px;background:linear-gradient(135deg,rgba(21,29,50,.95),rgba(28,39,68,.9));border-bottom:1px solid var(--border);font-size:.88rem;line-height:1.55;color:var(--text);display:flex;align-items:center;gap:12px}
+  #explain-viz .step-icon{flex-shrink:0;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all .3s}
+  .step-icon.L{background:rgba(0,206,201,.15);border:1px solid rgba(0,206,201,.3)}
+  .step-icon.R{background:rgba(253,121,168,.15);border:1px solid rgba(253,121,168,.3)}
+  .step-icon.match{background:rgba(46,204,113,.15);border:1px solid rgba(46,204,113,.3)}
+  .step-icon.info{background:rgba(91,141,239,.15);border:1px solid rgba(91,141,239,.3)}
+  #explain-text{flex:1}
+  #explain-text b{color:var(--yellow)}
+  #explain-text code{background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.8rem;color:var(--accent)}
+  #step-counter{font-size:.72rem;color:var(--muted);white-space:nowrap}
+  /* Mode tabs */
+  #mode-tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border)}
+  .mode-tab{padding:8px 18px;font-size:.78rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+  .mode-tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--surface2)}
+  /* Array area */
+  #array-area{flex:1;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:20px 40px 10px}
+  #target-info{display:flex;gap:20px;align-items:center}
+  .tbox{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 20px;text-align:center}
+  .tbox .tl{font-size:.7rem;color:var(--muted)}
+  .tbox .tv{font-size:1.4rem;font-weight:800;color:var(--yellow)}
+  #array-row{display:flex;gap:6px;align-items:flex-end}
+  .aw{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .ac{width:52px;height:52px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:800;color:#fff;background:linear-gradient(135deg,var(--def-top),var(--def-bot));border:2px solid rgba(255,255,255,.08);box-shadow:0 2px 8px rgba(0,0,0,.3);transition:all .4s cubic-bezier(.34,1.56,.64,1);position:relative;overflow:hidden}
+  .ac::before{content:'';position:absolute;top:0;left:0;width:40%;height:100%;background:linear-gradient(90deg,rgba(255,255,255,.1),transparent)}
+  .ac.lp{background:linear-gradient(135deg,var(--L-top),var(--L-bot));box-shadow:0 0 20px var(--L-glow);transform:translateY(-8px) scale(1.08);border-color:rgba(0,206,201,.5)}
+  .ac.rp{background:linear-gradient(135deg,var(--R-top),var(--R-bot));box-shadow:0 0 20px var(--R-glow);transform:translateY(-8px) scale(1.08);border-color:rgba(253,121,168,.5)}
+  .ac.matched{background:linear-gradient(135deg,var(--match-top),var(--match-bot));box-shadow:0 0 18px var(--match-glow);animation:celebrate .5s ease}
+  .ac.used{background:linear-gradient(135deg,#636e72,#4a5568);opacity:.45}
+  .ai{font-size:10px;color:var(--muted)}
+  #ptr-row{display:flex;gap:6px;height:26px}
+  .pa{width:52px;height:24px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;font-size:.68rem;font-weight:800;border-radius:5px;padding:2px 0;transition:all .3s;opacity:0}
+  .pa::after{content:'▲';display:block;font-size:9px;margin-top:1px}
+  .pa.L{background:rgba(0,206,201,.18);color:var(--L-top);border:1px solid rgba(0,206,201,.3);opacity:1}
+  .pa.R{background:rgba(253,121,168,.18);color:var(--R-top);border:1px solid rgba(253,121,168,.3);opacity:1}
+  .pa.LR{background:rgba(255,212,59,.18);color:var(--yellow);border:1px solid rgba(255,212,59,.3);opacity:1}
+  /* Bottom */
+  #bottom-bar{display:flex;align-items:center;background:var(--surface);border-top:1px solid var(--border)}
+  #legend{flex:1;display:flex;gap:14px;padding:7px 24px;font-size:.74rem;color:var(--muted)}
+  .leg{display:flex;align-items:center;gap:6px}
+  .ld{width:12px;height:12px;border-radius:3px}
+  /* Code panel */
+  #code-panel{width:310px;min-width:270px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column}
+  .panel-title{padding:10px 14px;background:var(--surface2);font-size:.78rem;font-weight:600;color:var(--accent);border-bottom:1px solid var(--border)}
+  #code{flex:1;overflow-y:auto;padding:10px 0;font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:.78rem;line-height:2}
+  .code-line{padding:0 14px;color:#5a6d8e;white-space:pre;border-left:3px solid transparent;transition:all .2s}
+  .code-line.comment{color:#3a4d6e;font-style:italic}
+  .code-line.active{background:linear-gradient(90deg,rgba(255,212,59,.1),transparent);color:var(--yellow);border-left-color:var(--yellow);font-weight:600}
+  #insight{padding:12px 14px;background:var(--bg);border-top:1px solid var(--border);font-size:.8rem;line-height:1.5;color:var(--muted)}
+  #insight .insight-title{color:var(--accent);font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  #insight b{color:var(--text)}
+  /* Controls */
+  #controls{background:var(--surface);padding:8px 24px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);flex-wrap:wrap}
+  button{border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:.8rem;font-weight:600;transition:all .2s}
+  button:active{transform:scale(.95)}
+  #btn-play{background:linear-gradient(135deg,#00b894,#05c46b);color:#fff;box-shadow:0 2px 10px rgba(5,196,107,.25);min-width:85px}
+  #btn-step{background:linear-gradient(135deg,#7c5ce7,#a78bfa);color:#fff}
+  #btn-reset,#btn-new{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+  label{font-size:.76rem;color:var(--muted)}
+  input[type=range]{accent-color:var(--accent);width:80px}
+  select{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:3px 6px;font-size:.76rem}
+  #stats{display:flex;gap:8px;margin-left:auto}
+  .stat{background:var(--surface2);padding:4px 10px;border-radius:6px;font-size:.8rem;color:var(--muted);border:1px solid var(--border)}
+  .stat span{color:var(--yellow);font-weight:800}
+  @keyframes celebrate{0%,100%{transform:scale(1)}40%{transform:scale(1.12)}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
-
-<h1>👉👈 Hai Con Trỏ (Two Pointers)</h1>
-<div class="subtitle">Tư duy: Thay vì 2 vòng lặp O(n²) → dùng 2 con trỏ thông minh O(n)</div>
-
-<div class="tabs">
-  <div class="tab active" onclick="switchProblem('twosum')">🎯 Two Sum</div>
-  <div class="tab" onclick="switchProblem('dedup')">🔁 Remove Duplicates</div>
-  <div class="tab" onclick="switchProblem('water')">💧 Container Water</div>
-</div>
-
-<div class="main">
-  <div class="viz-panel">
-
-    <section class="prob active" id="prob-twosum">
-      <div class="concept-row">
-        <div class="concept-card concept-blue">
-          <div class="concept-title">👉 Left Pointer</div>
-          <div>Bắt đầu từ trái, tăng khi sum &lt; target</div>
-        </div>
-        <div class="concept-card concept-red">
-          <div class="concept-title">👈 Right Pointer</div>
-          <div>Bắt đầu từ phải, giảm khi sum &gt; target</div>
-        </div>
-      </div>
-      <p style="font-size:0.8rem;color:#4b6080;margin:6px 0;">
-        Mảng đã sắp xếp: [2, 7, 11, 15, 18, 21] | Target = 22
-      </p>
-      <div class="array-wrapper">
-        <div class="array-track" id="twosum-array"></div>
-        <div class="ptrs-row" id="twosum-ptrs"></div>
-      </div>
-      <div class="step-desc" id="twosum-desc">Nhấn Play để bắt đầu</div>
-      <div class="status-row">
-        <div class="status-card"><div class="label">👉 Left index</div><div class="val" id="ts-left">—</div></div>
-        <div class="status-card"><div class="label">👈 Right index</div><div class="val" id="ts-right">—</div></div>
-        <div class="status-card"><div class="label">Sum hiện tại</div><div class="val" id="ts-sum">—</div></div>
-      </div>
-      <div class="result-box" id="twosum-result" style="display:none">
-        ✅ Tìm thấy! <strong id="twosum-ans">—</strong>
-      </div>
-      <div class="complexity-box">
-        <div class="complexity-item complexity-good"><div class="complexity-title">Two Pointers</div><div>O(n) time · O(1) space</div></div>
-        <div class="complexity-item complexity-bad"><div class="complexity-title">Brute Force</div><div>O(n²) time · O(1) space</div></div>
-      </div>
-    </section>
-
-    <section class="prob" id="prob-dedup">
-      <div class="concept-row">
-        <div class="concept-card concept-blue">
-          <div class="concept-title">🐢 Slow Pointer</div>
-          <div>Vị trí để ghi phần tử unique tiếp theo</div>
-        </div>
-        <div class="concept-card concept-red">
-          <div class="concept-title">🐇 Fast Pointer</div>
-          <div>Quét tìm phần tử khác với slow</div>
-        </div>
-      </div>
-      <p style="font-size:0.8rem;color:#4b6080;margin:6px 0;">
-        Mảng: [1, 1, 2, 2, 3, 4, 4, 5] — Xóa trùng in-place
-      </p>
-      <div class="array-wrapper">
-        <div class="array-track" id="dedup-array"></div>
-        <div class="ptrs-row" id="dedup-ptrs"></div>
-      </div>
-      <div class="step-desc" id="dedup-desc">Nhấn Play để bắt đầu</div>
-      <div class="status-row">
-        <div class="status-card"><div class="label">🐢 Slow (ghi vào)</div><div class="val" id="dd-slow">—</div></div>
-        <div class="status-card"><div class="label">🐇 Fast (quét)</div><div class="val" id="dd-fast">—</div></div>
-        <div class="status-card"><div class="label">Unique count</div><div class="val" id="dd-count">—</div></div>
-      </div>
-      <div class="result-box" id="dedup-result" style="display:none">
-        ✅ Hoàn thành! <strong id="dedup-ans">—</strong>
-      </div>
-    </section>
-
-    <section class="prob" id="prob-water">
-      <div class="concept-row">
-        <div class="concept-card concept-blue">
-          <div class="concept-title">💡 Insight</div>
-          <div>Area = min(left, right) × width<br>Di chuyển cạnh NGẮN HƠN (tại sao?)</div>
-        </div>
-        <div class="concept-card concept-red">
-          <div class="concept-title">❓ Tại sao di cạnh ngắn?</div>
-          <div>Giữ nguyên cạnh ngắn → width giảm → không thể tốt hơn</div>
-        </div>
-      </div>
-      <p style="font-size:0.8rem;color:#4b6080;margin:6px 0;">
-        Heights: [1, 8, 6, 2, 5, 4, 8, 3, 7] — Tìm max water
-      </p>
-      <div class="water-viz" id="water-viz"></div>
-      <div class="step-desc" id="water-desc">Nhấn Play để bắt đầu</div>
-      <div class="status-row">
-        <div class="status-card"><div class="label">👉 Left</div><div class="val" id="wt-left">—</div></div>
-        <div class="status-card"><div class="label">👈 Right</div><div class="val" id="wt-right">—</div></div>
-        <div class="status-card"><div class="label">Current Area</div><div class="val" id="wt-cur">—</div></div>
-        <div class="status-card"><div class="label">Max Area</div><div class="val" id="wt-max" style="color:#22c55e">—</div></div>
-      </div>
-      <div class="result-box" id="water-result" style="display:none">
-        ✅ Max water: <strong id="water-ans">—</strong>
-      </div>
-    </section>
-
+<header>
+  <h1>👈👉 Two Pointers</h1>
+  <span class="badge">PARADIGM</span>
+  <div class="complexity">
+    <div class="cx">Time <span>O(n)</span></div>
+    <div class="cx">Space <span>O(1)</span></div>
+    <div class="cx">vs Brute <span>O(n²)</span></div>
   </div>
-
-  <div class="code-panel">
-    <div class="code-header">📄 Pseudocode</div>
-    <div class="code-body" id="code-body"></div>
-    <div class="info-bar">
-      <div class="info-item"><strong>L:</strong> <span id="info-left">—</span></div>
-      <div class="info-item"><strong>R:</strong> <span id="info-right">—</span></div>
-      <div class="info-item"><strong>Step:</strong> <span id="info-step">0</span></div>
+</header>
+<main>
+  <div id="viz">
+    <div id="status-display"><span class="sd-idle">Nhấn Play để bắt đầu trình diễn thuật toán</span></div>
+    <div id="explain-viz">
+      <div class="step-icon info">💡</div>
+      <div id="explain-text">Two Pointers: hai con trỏ L/R di chuyển từ hai đầu mảng vào giữa. Chỉ cần O(n) thay vì O(n²) của brute force.</div>
+      <div id="step-counter"></div>
     </div>
-    <div class="controls">
-      <button class="btn btn-play" id="btn-play" onclick="togglePlay()">▶ Play</button>
-      <button class="btn btn-step" onclick="stepOnce()">⏭ Step</button>
-      <button class="btn btn-reset" onclick="resetAll()">↺ Reset</button>
-      <span class="speed-label">Tốc độ:</span>
-      <input type="range" min="1" max="5" value="3" id="speed-slider">
+    <div id="mode-tabs">
+      <div class="mode-tab active" onclick="switchMode('twosum')">🎯 Two Sum (Sorted)</div>
+      <div class="mode-tab" onclick="switchMode('reverse')">🔃 Reverse Array</div>
+      <div class="mode-tab" onclick="switchMode('remove')">🗑️ Remove Duplicates</div>
+    </div>
+    <div id="array-area">
+      <div id="target-info">
+        <div class="tbox"><div class="tl">Target</div><div class="tv" id="tv-target">—</div></div>
+        <div class="tbox"><div class="tl">Tổng hiện tại</div><div class="tv" id="tv-sum">—</div></div>
+        <div class="tbox"><div class="tl">Kết quả</div><div class="tv" id="tv-result">—</div></div>
+      </div>
+      <div id="array-row"></div>
+      <div id="ptr-row"></div>
+    </div>
+    <div id="bottom-bar">
+      <div id="legend">
+        <div class="leg"><div class="ld" style="background:linear-gradient(135deg,var(--L-top),var(--L-bot))"></div>Con trỏ L (trái)</div>
+        <div class="leg"><div class="ld" style="background:linear-gradient(135deg,var(--R-top),var(--R-bot))"></div>Con trỏ R (phải)</div>
+        <div class="leg"><div class="ld" style="background:linear-gradient(135deg,var(--match-top),var(--match-bot))"></div>Tìm thấy ✓</div>
+        <div class="leg"><div class="ld" style="background:#636e72"></div>Đã xử lý</div>
+      </div>
     </div>
   </div>
+  <div id="code-panel">
+    <div class="panel-title">📝 Two Sum — Two Pointers</div>
+    <div id="code"></div>
+    <div id="insight">
+      <div class="insight-title">💡 Tại sao O(n)?</div>
+      Mỗi bước <b>một trong hai con trỏ tiến vào giữa</b>. Tổng bước ≤ n. Brute force thử mọi cặp (i,j) = <b>n²/2</b> cặp.
+    </div>
+  </div>
+</main>
+<div id="controls">
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-step">⏭ Step</button>
+  <button id="btn-reset">↺ Reset</button>
+  <button id="btn-new">🎲 Mới</button>
+  <label>Speed <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <div id="stats">
+    <div class="stat">Steps <span id="s-steps">0</span></div>
+    <div class="stat">L <span id="s-l">—</span></div>
+    <div class="stat">R <span id="s-r">—</span></div>
+  </div>
 </div>
-
 <script>
-let currentProblem = 'twosum';
-let playing = false;
-let timer = null;
-let stepIndex = 0;
-let steps = [];
-
-const codes = {
-  twosum: [
-    '// Two Sum trên mảng đã sort',
-    'function twoSum(arr, target):',
-    '  left = 0',
-    '  right = arr.length - 1',
-    '',
-    '  while left < right:',
-    '    sum = arr[left] + arr[right]',
-    '    // Tìm thấy!',
-    '    if sum == target:',
-    '      return [left, right]',
-    '    // Sum quá nhỏ → tăng left',
-    '    elif sum < target:',
-    '      left++',
-    '    // Sum quá lớn → giảm right',
-    '    else:',
-    '      right--',
-    '',
-    '  return không tìm thấy',
+const CODES={
+  twosum:[
+    'function twoSum(arr, target) {',
+    '  let L=0, R=arr.length-1;',
+    '  while (L < R) {',
+    '    const sum = arr[L] + arr[R];',
+    '    if (sum === target)',
+    '      return [L, R];  // Tìm thấy!',
+    '    else if (sum > target)',
+    '      R--;  // Tổng lớn → thu nhỏ R',
+    '    else',
+    '      L++;  // Tổng nhỏ → mở rộng L',
+    '  }',
+    '  return [];  // Không tìm thấy',
+    '}',
   ],
-  dedup: [
-    '// Xóa trùng in-place — O(n)',
-    'function removeDuplicates(arr):',
-    '  slow = 0  // vị trí ghi',
-    '  fast = 1  // vị trí quét',
-    '',
-    '  while fast < arr.length:',
-    '    // Phần tử mới (khác slow)',
-    '    if arr[fast] != arr[slow]:',
-    '      slow++',
-    '      arr[slow] = arr[fast]',
-    '    // Trùng → chỉ tăng fast',
-    '    fast++',
-    '',
-    '  return slow + 1  // độ dài mới',
+  reverse:[
+    'function reverse(arr) {',
+    '  let L=0, R=arr.length-1;',
+    '  while (L < R) {',
+    '    // Hoán đổi arr[L] ↔ arr[R]',
+    '    [arr[L],arr[R]]=[arr[R],arr[L]];',
+    '    L++; R--;',
+    '  }',
+    '  return arr;',
+    '}',
   ],
-  water: [
-    '// Container With Most Water',
-    'function maxWater(heights):',
-    '  left = 0',
-    '  right = heights.length - 1',
-    '  maxArea = 0',
-    '',
-    '  while left < right:',
-    '    h = min(heights[left], heights[right])',
-    '    area = h * (right - left)',
-    '    maxArea = max(maxArea, area)',
-    '',
-    '    // Di chuyển cạnh NGẮN hơn',
-    '    if heights[left] < heights[right]:',
-    '      left++',
-    '    else:',
-    '      right--',
-    '',
-    '  return maxArea',
-  ]
+  remove:[
+    'function removeDuplicates(arr) {',
+    '  let slow=0;',
+    '  for (let fast=1; fast<arr.length; fast++) {',
+    '    if (arr[fast] !== arr[slow]) {',
+    '      slow++;',
+    '      arr[slow] = arr[fast]; // sao chép',
+    '    }',
+    '    // Else: bỏ qua phần tử trùng',
+    '  }',
+    '  return slow+1;  // số phần tử unique',
+    '}',
+  ],
 };
-
-function genTwoSumSteps() {
-  const arr = [2, 7, 11, 15, 18, 21];
-  const target = 22;
-  let L = 0, R = arr.length - 1;
-  const steps = [];
-  steps.push({ L, R, arr: [...arr], desc: `Bắt đầu: L=0, R=${R}`, codeLine: 2, done: false });
-  while (L < R) {
-    const sum = arr[L] + arr[R];
-    if (sum === target) {
-      steps.push({ L, R, arr: [...arr], sum, desc: `✅ ${arr[L]} + ${arr[R]} = ${target} — TÌM THẤY!`, codeLine: 8, done: true, ans: `[${L}, ${R}] → (${arr[L]}, ${arr[R]})` });
+let mode='twosum',arr=[],target=0,steps=[],stepIdx=0,playing=false,timer=null,stepCount=0;
+function genArray(){
+  if(mode==='twosum'){
+    const n=10;
+    arr=Array.from({length:n},()=>Math.floor(Math.random()*20)+1).sort((a,b)=>a-b);
+    const i=Math.floor(Math.random()*(n-1));
+    target=arr[i]+arr[n-1-i];
+  }else if(mode==='reverse'){
+    arr=Array.from({length:10},()=>Math.floor(Math.random()*50)+1);
+  }else{
+    arr=[];let p=0;
+    for(let i=0;i<12;i++){if(Math.random()>.4||!arr.length)p+=Math.floor(Math.random()*3)+1;arr.push(p);}
+  }
+}
+function buildSteps(){
+  steps=[];const a=[...arr];
+  if(mode==='twosum'){
+    let L=0,R=a.length-1;
+    steps.push({type:'init',a:[...a],L,R,target});
+    while(L<R){
+      const sum=a[L]+a[R];
+      steps.push({type:'cmp',a:[...a],L,R,sum,target});
+      if(sum===target){steps.push({type:'found',a:[...a],L,R,sum});break;}
+      else if(sum>target){steps.push({type:'mvR',a:[...a],L,R,sum,target});R--;}
+      else{steps.push({type:'mvL',a:[...a],L,R,sum,target});L++;}
+    }
+    if(steps[steps.length-1].type!=='found')steps.push({type:'nf'});
+    steps.push({type:'done'});
+  }else if(mode==='reverse'){
+    let L=0,R=a.length-1;
+    steps.push({type:'init',a:[...a],L,R});
+    while(L<R){
+      steps.push({type:'cmp',a:[...a],L,R});
+      [a[L],a[R]]=[a[R],a[L]];
+      steps.push({type:'swap',a:[...a],L,R});
+      L++;R--;
+    }
+    steps.push({type:'done',a:[...a]});
+  }else{
+    let slow=0;
+    steps.push({type:'init',a:[...a],slow,fast:1});
+    for(let fast=1;fast<a.length;fast++){
+      steps.push({type:'cmp',a:[...a],slow,fast});
+      if(a[fast]!==a[slow]){slow++;a[slow]=a[fast];steps.push({type:'copy',a:[...a],slow,fast});}
+      else steps.push({type:'skip',a:[...a],slow,fast});
+    }
+    steps.push({type:'done',a:[...a],unique:slow+1});
+  }
+}
+function renderArr(a,L,R,extra){
+  const row=document.getElementById('array-row');
+  row.innerHTML='';
+  a.forEach((v,i)=>{
+    const w=document.createElement('div');w.className='aw';
+    const c=document.createElement('div');c.className='ac';
+    if(extra?.matched?.includes(i))c.classList.add('matched');
+    else if(extra?.used?.includes(i))c.classList.add('used');
+    else if(i===L&&i===R)c.classList.add('lp');
+    else if(i===L)c.classList.add('lp');
+    else if(i===R)c.classList.add('rp');
+    c.textContent=v;
+    const ix=document.createElement('div');ix.className='ai';ix.textContent=i;
+    w.appendChild(c);w.appendChild(ix);row.appendChild(w);
+  });
+  const pr=document.getElementById('ptr-row');pr.innerHTML='';
+  a.forEach((_,i)=>{
+    const p=document.createElement('div');p.className='pa';
+    if(mode!=='remove'){
+      if(i===L&&i===R){p.classList.add('LR');p.textContent='L=R';}
+      else if(i===L){p.classList.add('L');p.textContent='L';}
+      else if(i===R){p.classList.add('R');p.textContent='R';}
+    }else{
+      if(i===L){p.classList.add('L');p.textContent='slow';}
+      if(i===R){p.classList.add('R');p.textContent='fast';}
+    }
+    pr.appendChild(p);
+  });
+  document.getElementById('s-l').textContent=L??'—';
+  document.getElementById('s-r').textContent=R??'—';
+}
+function setStatus(type,L,R,a,sum,tgt){
+  const d=document.getElementById('status-display');
+  if(type==='idle'){d.innerHTML='<span class="sd-idle">Nhấn Play để bắt đầu</span>';return;}
+  if(mode==='twosum'&&(type==='cmp'||type==='mvR'||type==='mvL')){
+    const sc=sum>tgt?'high':sum<tgt?'low':'match';
+    const msg=sum>tgt?`${sum} > ${tgt} → R--`:sum<tgt?`${sum} < ${tgt} → L++`:`${sum} = ${tgt} ✓`;
+    d.innerHTML=`<div class="pb L"><div class="pl">L[${L}]</div><div class="pv">${a[L]}</div></div><span class="sd-op">+</span><div class="pb R"><div class="pl">R[${R}]</div><div class="pv">${a[R]}</div></div><span class="sd-op">=</span><div class="sd-result ${sc}">${msg}</div>`;
+  }else{d.innerHTML='<span class="sd-idle">Đang thực hiện...</span>';}
+}
+function applyStep(s){
+  if(!s)return;
+  stepCount++;document.getElementById('s-steps').textContent=stepCount;
+  switch(s.type){
+    case'init':
+      renderArr(s.a,s.L!==undefined?s.L:s.slow,s.R!==undefined?s.R:s.fast??s.a.length-1);
+      if(mode==='twosum'){document.getElementById('target-info').style.display='flex';document.getElementById('tv-target').textContent=s.target;document.getElementById('tv-sum').textContent='?';document.getElementById('tv-result').textContent='—';}
+      else document.getElementById('target-info').style.display='none';
+      hl(1);setStatus('idle');
+      setExp('💡','info',mode==='twosum'?`Mảng đã sắp xếp tăng dần. L=<b>0</b>, R=<b>${s.a.length-1}</b>. Target=<b>${s.target}</b>. Hai con trỏ bắt đầu từ hai đầu, co vào giữa.`:mode==='reverse'?`Đảo ngược mảng bằng L/R. Hoán đổi arr[L] ↔ arr[R], rồi L++, R-- đến khi gặp nhau.`:`slow=con trỏ ghi (phần tử unique), fast=con trỏ đọc. Nếu khác → sao chép. Nếu giống → bỏ qua.`);
+      setInsight('💡 Two Pointers là gì?','Hai con trỏ di chuyển hướng nhau → mỗi bước loại 1 khả năng. <b>O(n)</b> thay vì O(n²) brute force.');
       break;
-    } else if (sum < target) {
-      steps.push({ L, R, arr: [...arr], sum, desc: `${arr[L]} + ${arr[R]} = ${sum} < ${target} → tăng L`, codeLine: 11 });
-      L++;
-    } else {
-      steps.push({ L, R, arr: [...arr], sum, desc: `${arr[L]} + ${arr[R]} = ${sum} > ${target} → giảm R`, codeLine: 14 });
-      R--;
-    }
-  }
-  return steps;
-}
-
-function genDedupSteps() {
-  const arr = [1, 1, 2, 2, 3, 4, 4, 5];
-  let work = [...arr], slow = 0, fast = 1;
-  const steps = [];
-  steps.push({ arr: [...work], slow, fast, desc: 'Bắt đầu: slow=0, fast=1', codeLine: 2 });
-  while (fast < work.length) {
-    if (work[fast] !== work[slow]) {
-      slow++;
-      work[slow] = work[fast];
-      steps.push({ arr: [...work], slow, fast, desc: `arr[${fast}]=${work[fast]} ≠ arr[${slow-1}]=${work[slow-1]} → ghi arr[${slow}]=${work[fast]}`, codeLine: 8, wrote: slow });
-    } else {
-      steps.push({ arr: [...work], slow, fast, desc: `arr[${fast}]=${work[fast]} == arr[${slow}]=${work[slow]} → bỏ qua (duplicate)`, codeLine: 7, dup: true });
-    }
-    fast++;
-  }
-  steps.push({ arr: [...work], slow, fast: work.length, desc: `Hoàn thành! ${slow + 1} phần tử unique`, codeLine: 13, done: true, ans: `${slow + 1} unique: [${work.slice(0, slow + 1).join(', ')}]` });
-  return steps;
-}
-
-function genWaterSteps() {
-  const h = [1, 8, 6, 2, 5, 4, 8, 3, 7];
-  let L = 0, R = h.length - 1, maxA = 0, maxL = 0, maxR = 0;
-  const steps = [];
-  steps.push({ L, R, h, area: 0, maxA, maxL, maxR, desc: `Bắt đầu: L=0, R=${R}`, codeLine: 2 });
-  while (L < R) {
-    const area = Math.min(h[L], h[R]) * (R - L);
-    const prev = maxA;
-    if (area > maxA) { maxA = area; maxL = L; maxR = R; }
-    const move = h[L] < h[R] ? 'L' : 'R';
-    steps.push({ L, R, h, area, maxA, maxL, maxR,
-      desc: `Area = min(${h[L]},${h[R]}) × ${R-L} = ${area}${area > prev ? ' ← NEW MAX!' : ''} → di ${move}++`,
-      codeLine: area > prev ? 9 : 12, isNewMax: area > prev });
-    if (h[L] < h[R]) L++; else R--;
-  }
-  steps.push({ L, R, h, area: 0, maxA, maxL, maxR, desc: `L≥R — hoàn thành! Max = ${maxA}`, codeLine: 17, done: true, ans: maxA });
-  return steps;
-}
-
-// RENDER
-function renderArray(containerId, ptrsId, arr, L, R, extraCls = {}, ptrLabels = {}) {
-  const el = document.getElementById(containerId);
-  const ptrsEl = document.getElementById(ptrsId);
-
-  el.innerHTML = arr.map((v, i) => {
-    let cls = extraCls[i] || '';
-    if (!cls) {
-      if (i === L && i === R) cls = 'ptr-both';
-      else if (i === L) cls = 'ptr-left';
-      else if (i === R) cls = 'ptr-right';
-    }
-    return `<div class="array-cell">
-      <div class="cell-box ${cls}">${v}</div>
-      <div class="cell-idx">[${i}]</div>
-    </div>`;
-  }).join('');
-
-  if (ptrsEl) {
-    ptrsEl.innerHTML = arr.map((_, i) => {
-      const labels = [];
-      if (ptrLabels[i]) labels.push(...ptrLabels[i]);
-      return `<div class="ptr-slot">${labels.map(l => `<span class="ptr-label ${l.cls}">${l.text}</span>`).join('')}</div>`;
-    }).join('');
+    case'cmp':
+      renderArr(s.a,s.L!==undefined?s.L:s.slow,s.R!==undefined?s.R:s.fast);
+      hl(3);setStatus('cmp',s.L??s.slow,s.R??s.fast,s.a,s.sum,s.target);
+      if(mode==='twosum'){
+        document.getElementById('tv-sum').textContent=s.sum;
+        setExp('🔍','info',`Con trỏ trái [${s.L}]=<b>${s.a[s.L]}</b>, phải [${s.R}]=<b>${s.a[s.R]}</b>. Tổng=<b>${s.sum}</b> ${s.sum>s.target?'> ':'< '}target <b>${s.target}</b>. ${s.sum>s.target?'→ thu nhỏ: R--':'→ mở rộng: L++'}`);
+        setInsight(`📊 Tổng = ${s.sum}`,s.sum>s.target?`Tổng quá lớn → <b>R--</b>. arr[R] là phần tử LỚN nhất còn lại, giảm R → tổng giảm.`:s.sum<s.target?`Tổng quá nhỏ → <b>L++</b>. arr[L] là phần tử NHỎ nhất, tăng L → tổng tăng.`:`Tổng = target → <b>Tìm thấy!</b>`);
+      }else if(mode==='remove'){
+        setExp('🔍','info',`slow=[${s.slow}]=<b>${s.a[s.slow]}</b>, fast=[${s.fast}]=<b>${s.a[s.fast]}</b>. ${s.a[s.fast]!==s.a[s.slow]?'→ Khác nhau! Sao chép vào slow+1.':'→ Giống nhau! Bỏ qua.'}`);
+      }else{
+        setExp('🔃','info',`Hoán đổi arr[${s.L}]=<b>${s.a[s.L]}</b> ↔ arr[${s.R}]=<b>${s.a[s.R]}</b>. Sau đó L++, R--.`);
+      }
+      break;
+    case'mvR':renderArr(s.a,s.L,s.R-1);hl(7);setStatus('mvR',s.L,s.R-1,s.a,s.sum,s.target);setExp('👉','R',`Tổng <b>${s.sum} > ${s.target}</b> → <b>R--</b>: dịch con trỏ phải sang trái. R: ${s.R} → ${s.R-1}.`);setInsight('➡️ R-- vì sao?','Mảng tăng dần: arr[R] là lớn nhất. Giảm R → số nhỏ hơn → tổng giảm. Loại bỏ 1 khả năng O(1).');break;
+    case'mvL':renderArr(s.a,s.L+1,s.R);hl(9);setStatus('mvL',s.L+1,s.R,s.a,s.sum,s.target);setExp('👈','L',`Tổng <b>${s.sum} < ${s.target}</b> → <b>L++</b>: dịch con trỏ trái sang phải. L: ${s.L} → ${s.L+1}.`);setInsight('⬅️ L++ vì sao?','arr[L] là nhỏ nhất. Tăng L → số lớn hơn → tổng tăng. Mỗi bước loại bỏ 1 cặp không hợp lệ.');break;
+    case'found':renderArr(s.a,s.L,s.R,{matched:[s.L,s.R]});hl(5);document.getElementById('tv-result').textContent=`[${s.L},${s.R}]`;document.getElementById('tv-result').style.color='#2ecc71';setExp('🎯','match',`<b>Tìm thấy!</b> arr[${s.L}]+arr[${s.R}] = ${s.a[s.L]}+${s.a[s.R]} = <b>${s.sum}</b> = target.`);setInsight('✅ Two Pointers thắng!',`Chỉ <b>${stepCount}</b> bước so với ${Math.floor(arr.length*(arr.length-1)/2)} bước brute force!`);break;
+    case'nf':setExp('❌','info',`L ≥ R — hai con trỏ đã gặp nhau. Không tìm thấy cặp nào có tổng = ${target}.`);break;
+    case'swap':renderArr(s.a,s.L,s.R,{matched:[s.L,s.R]});hl(4);setExp('🔃','match',`Hoán đổi arr[${s.L}] ↔ arr[${s.R}] xong. Sau đó L++, R--.`);break;
+    case'copy':renderArr(s.a,s.slow,s.fast);hl(5);setExp('✏️','match',`Khác! Sao chép arr[${s.fast}]=<b>${s.a[s.slow]}</b> vào slow=<b>${s.slow}</b>.`);break;
+    case'skip':renderArr(s.a,s.slow,s.fast,{used:[s.fast]});hl(7);setExp('🗑️','R',`arr[${s.fast}]=<b>${s.a[s.fast]}</b> trùng với arr[slow] → Bỏ qua! fast++.`);break;
+    case'done':
+      stopPlay();
+      if(mode==='remove'&&s.unique){setExp('🎉','match',`Hoàn tất! <b>${s.unique}</b> phần tử unique.`);setInsight('📈 Remove Duplicates O(n)',`slow ghi đúng ${s.unique} phần tử. fast duyệt mảng 1 lần. O(n) total.`);}
+      else if(mode==='reverse'){setExp('🎉','match',`Mảng đã đảo ngược! Chỉ cần <b>${Math.floor(arr.length/2)}</b> lần hoán đổi.`);setInsight('📈 Reverse O(n/2)=O(n)','Two Pointers từ hai đầu vào giữa — tối ưu nhất có thể.');}
+      else{setExp('🎉','match',`Hoàn tất sau <b>${stepCount}</b> bước.`);setInsight('📈 Kết luận','Two Pointers: O(n). Luôn cần mảng đã sắp xếp (two sum) hoặc cấu trúc đặc biệt.');}
+      break;
   }
 }
-
-function renderTwoSumArray(s) {
-  const extraCls = {};
-  if (s.done) { extraCls[s.L] = 'selected'; extraCls[s.R] = 'selected'; }
-
-  const ptrLabels = {};
-  if (s.L === s.R) ptrLabels[s.L] = [{ text: 'L=R', cls: 'left-ptr' }];
-  else {
-    if (s.L !== undefined) ptrLabels[s.L] = [{ text: 'L', cls: 'left-ptr' }];
-    if (s.R !== undefined) ptrLabels[s.R] = [{ text: 'R', cls: 'right-ptr' }];
-  }
-
-  renderArray('twosum-array', 'twosum-ptrs', s.arr, s.L, s.R, extraCls, ptrLabels);
-  document.getElementById('ts-left').textContent = `${s.L} (${s.arr[s.L]})`;
-  document.getElementById('ts-right').textContent = `${s.R} (${s.arr[s.R]})`;
-  document.getElementById('ts-sum').textContent = s.sum !== undefined ? s.sum : '—';
-  document.getElementById('twosum-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
-  if (s.ans) { document.getElementById('twosum-result').style.display = 'block'; document.getElementById('twosum-ans').textContent = s.ans; }
+function setExp(icon,cls,html){
+  const ic=document.querySelector('#explain-viz .step-icon');
+  ic.textContent=icon;ic.className='step-icon '+cls;
+  document.getElementById('explain-text').innerHTML=html;
+  document.getElementById('step-counter').textContent=`${stepIdx}/${steps.length}`;
 }
-
-function renderDedupArray(s) {
-  const extraCls = {};
-  s.arr.forEach((_, i) => {
-    if (i === s.slow && i === s.fast) extraCls[i] = 'ptr-both';
-    else if (i === s.slow) extraCls[i] = 'ptr-left';
-    else if (i === s.fast) extraCls[i] = 'ptr-right';
-    else if (i > s.slow && s.done) extraCls[i] = 'removed';
-    if (s.wrote === i) extraCls[i] = (extraCls[i] || '') + ' wrote-to';
-  });
-
-  const ptrLabels = {};
-  if (s.slow !== undefined) ptrLabels[s.slow] = [{ text: 'slow', cls: 'slow-ptr' }];
-  if (s.fast < s.arr.length && s.fast !== s.slow) ptrLabels[s.fast] = [{ text: 'fast', cls: 'fast-ptr' }];
-
-  renderArray('dedup-array', 'dedup-ptrs', s.arr, s.slow, s.fast, extraCls, ptrLabels);
-  document.getElementById('dd-slow').textContent = s.slow;
-  document.getElementById('dd-fast').textContent = s.fast < s.arr.length ? s.fast : 'end';
-  document.getElementById('dd-count').textContent = s.slow + 1;
-  document.getElementById('dedup-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
-  if (s.ans) { document.getElementById('dedup-result').style.display = 'block'; document.getElementById('dedup-ans').textContent = s.ans; }
+function setInsight(title,html){document.getElementById('insight').innerHTML=`<div class="insight-title">${title}</div>${html}`;}
+function hl(i){document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));document.querySelector(`[data-i="${i}"]`)?.classList.add('active');}
+function buildCode(lines){document.getElementById('code').innerHTML=lines.map((l,i)=>`<div class="code-line${l.trim().startsWith('//')?' comment':''}" data-i="${i}">${l}</div>`).join('');}
+function switchMode(m){
+  mode=m;
+  document.querySelectorAll('.mode-tab').forEach((t,i)=>t.classList.toggle('active',['twosum','reverse','remove'][i]===m));
+  const titles={twosum:'📝 Two Sum — Two Pointers',reverse:'📝 Reverse Array',remove:'📝 Remove Duplicates'};
+  document.querySelector('.panel-title').textContent=titles[m];
+  buildCode(CODES[m]);genArray();reset();
 }
-
-function renderWater(s) {
-  const el = document.getElementById('water-viz');
-  const maxH = Math.max(...s.h);
-  el.innerHTML = s.h.map((v, i) => {
-    const isL = i === s.L, isR = i === s.R;
-    const heightPx = Math.round((v / maxH) * 120);
-    const bg = isL ? 'linear-gradient(180deg,#3b82f6,#1e3a5f)' : isR ? 'linear-gradient(180deg,#ef4444,#3b0f0f)' : 'linear-gradient(180deg,#374151,#1e293b)';
-    const cls = isL ? 'ptr-l' : isR ? 'ptr-r' : '';
-    return `<div class="water-bar">
-      <div class="bar-fill ${cls}" style="height:${heightPx}px;background:${bg};">
-        <div style="font-size:0.65rem;color:#e0e0f0;text-align:center;padding-top:2px;">${v}</div>
-      </div>
-      <div class="bar-idx-w" style="color:${isL?'#60a5fa':isR?'#f87171':'#4b5563'}">${i}${isL?'(L)':isR?'(R)':''}</div>
-    </div>`;
-  }).join('');
-
-  // Draw water level line between L and R
-  if (s.L !== undefined && s.R !== undefined && s.L < s.R) {
-    const waterH = Math.min(s.h[s.L], s.h[s.R]);
-    const pct = (waterH / maxH) * 120;
-    const waterDiv = document.createElement('div');
-    waterDiv.className = 'water-level';
-    waterDiv.style.cssText = `left:${s.L * 44}px;right:${(s.h.length - 1 - s.R) * 44}px;
-      bottom:${pct + 20}px;height:${pct}px;
-      border-color:rgba(59,130,246,0.4);background:rgba(59,130,246,0.08);`;
-    waterDiv.innerHTML = `<span class="water-label" style="color:#60a5fa;">${s.area}</span>`;
-    el.style.position = 'relative';
-    el.appendChild(waterDiv);
-  }
-
-  document.getElementById('wt-left').textContent = `${s.L} (h=${s.h[s.L]})`;
-  document.getElementById('wt-right').textContent = `${s.R} (h=${s.h[s.R]})`;
-  document.getElementById('wt-cur').textContent = s.area;
-  document.getElementById('wt-max').textContent = s.maxA;
-  document.getElementById('water-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
-  if (s.done) { document.getElementById('water-result').style.display = 'block'; document.getElementById('water-ans').textContent = s.ans; }
+function getDelay(){return Math.round(1200-document.getElementById('speed').value*110);}
+function tick(){if(stepIdx>=steps.length){stopPlay();return;}applyStep(steps[stepIdx++]);if(playing)timer=setTimeout(tick,getDelay());}
+function startPlay(){if(stepIdx>=steps.length)reset();playing=true;document.getElementById('btn-play').textContent='⏸ Pause';tick();}
+function stopPlay(){playing=false;clearTimeout(timer);document.getElementById('btn-play').textContent='▶ Play';}
+function reset(){
+  stopPlay();stepIdx=0;stepCount=0;
+  document.getElementById('s-steps').textContent='0';
+  buildSteps();
+  const i=steps.find(s=>s.type==='init');if(i){applyStep(i);stepIdx=1;}
+  hl(-1);
 }
-
-// PLAYBACK
-function highlightCode(line) {
-  document.querySelectorAll('.code-line').forEach((el, i) => el.classList.toggle('hl', i === line));
-}
-
-function applyStep(s) {
-  if (currentProblem === 'twosum') renderTwoSumArray(s);
-  else if (currentProblem === 'dedup') renderDedupArray(s);
-  else if (currentProblem === 'water') renderWater(s);
-  if (s.codeLine !== undefined) highlightCode(s.codeLine);
-  document.getElementById('info-step').textContent = stepIndex;
-  document.getElementById('info-left').textContent = s.L !== undefined ? s.L : (s.slow !== undefined ? s.slow : '—');
-  document.getElementById('info-right').textContent = s.R !== undefined ? s.R : (s.fast !== undefined ? s.fast : '—');
-}
-
-function getDelay() { return [900,650,450,280,150][parseInt(document.getElementById('speed-slider').value)-1]; }
-
-function stepOnce() {
-  if (stepIndex >= steps.length) return;
-  applyStep(steps[stepIndex]);
-  stepIndex++;
-  if (stepIndex >= steps.length) stopPlay();
-}
-
-function togglePlay() {
-  if (playing) { stopPlay(); return; }
-  playing = true;
-  document.getElementById('btn-play').textContent = '⏸ Pause';
-  function tick() {
-    if (stepIndex >= steps.length) { stopPlay(); return; }
-    stepOnce(); timer = setTimeout(tick, getDelay());
-  }
-  tick();
-}
-
-function stopPlay() { playing = false; clearTimeout(timer); document.getElementById('btn-play').textContent = '▶ Play'; }
-
-function resetAll() {
-  stopPlay(); stepIndex = 0;
-  document.getElementById('info-step').textContent = '0';
-  ['twosum-result','dedup-result','water-result'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.style.display = 'none';
-  });
-  initProblem(currentProblem);
-}
-
-function renderCode(prob) {
-  document.getElementById('code-body').innerHTML = codes[prob].map((l, i) =>
-    `<div class="code-line" data-line="${i}">${l || '&nbsp;'}</div>`).join('');
-}
-
-function initProblem(prob) {
-  renderCode(prob);
-  if (prob === 'twosum') { steps = genTwoSumSteps(); renderTwoSumArray(steps[0]); }
-  else if (prob === 'dedup') { steps = genDedupSteps(); renderDedupArray(steps[0]); }
-  else if (prob === 'water') { steps = genWaterSteps(); renderWater(steps[0]); }
-}
-
-function switchProblem(prob) {
-  stopPlay(); currentProblem = prob; stepIndex = 0;
-  document.querySelectorAll('.tab').forEach((t, i) =>
-    t.classList.toggle('active', ['twosum','dedup','water'][i] === prob));
-  document.querySelectorAll('.prob').forEach(s => s.classList.remove('active'));
-  document.getElementById(`prob-${prob}`).classList.add('active');
-  initProblem(prob);
-}
-
-initProblem('twosum');
+document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
+document.getElementById('btn-step').onclick=()=>{stopPlay();if(stepIdx<steps.length)applyStep(steps[stepIdx++]);};
+document.getElementById('btn-reset').onclick=reset;
+document.getElementById('btn-new').onclick=()=>{genArray();reset();};
+buildCode(CODES.twosum);genArray();reset();
 </script>
 </body>
 </html>

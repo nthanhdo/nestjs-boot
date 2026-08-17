@@ -16,7 +16,7 @@
     --accent:#a78bfa;--yellow:#ffd43b;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+  body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:auto;}
   body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 25% 15%,rgba(91,141,239,0.07) 0%,transparent 55%),radial-gradient(ellipse at 75% 85%,rgba(167,139,250,0.05) 0%,transparent 55%);pointer-events:none;}
   header{background:var(--surface);padding:10px 24px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border);z-index:2;flex-wrap:wrap;}
   header h1{font-size:1.15rem;font-weight:700;background:linear-gradient(135deg,#a78bfa,#7c5ce7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
@@ -24,7 +24,7 @@
   .complexity{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;}
   .cx{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:2px 9px;font-size:.72rem;color:var(--muted);}
   .cx span{color:var(--yellow);font-weight:700;}
-  main{flex:1;display:flex;overflow:hidden;z-index:1;min-height:0;}
+  main{flex:1;display:flex;overflow:auto;z-index:1;min-height:0;}
   #viz{flex:1;display:flex;flex-direction:column;min-width:0;}
   #status-display{padding:10px 20px;min-height:52px;display:flex;align-items:center;justify-content:center;gap:10px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap;}
   .sd-idle{color:var(--muted);font-size:.9rem;}
@@ -47,7 +47,7 @@
   #explain-text b{color:var(--yellow);}
   #explain-text code{background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.8rem;color:var(--accent);}
   /* MAIN AREA */
-  #ht-area{flex:1;display:flex;gap:16px;padding:16px 20px;overflow:hidden;}
+  #ht-area{flex:1;display:flex;gap:16px;padding:16px 20px;overflow:auto;}
   /* HASH FUNCTION PANEL */
   #hash-fn-panel{width:200px;flex-shrink:0;background:var(--surface);border-radius:10px;border:1px solid var(--border);padding:12px;display:flex;flex-direction:column;gap:8px;}
   .hfp-title{font-size:.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;}

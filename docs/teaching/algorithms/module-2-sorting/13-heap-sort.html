@@ -17,7 +17,7 @@
     --accent: #a78bfa; --yellow: #ffd43b;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: auto; }
   body::before { content:''; position: fixed; inset: 0; background: radial-gradient(ellipse at 25% 15%, rgba(167,139,250,0.07) 0%, transparent 55%), radial-gradient(ellipse at 75% 85%, rgba(255,212,59,0.04) 0%, transparent 55%); pointer-events: none; }
   header { background: var(--surface); padding: 10px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); z-index: 2; }
   header h1 { font-size: 1.15rem; font-weight: 700; background: linear-gradient(135deg,#a78bfa,#ffd43b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -25,7 +25,7 @@
   .complexity { display: flex; gap: 6px; margin-left: auto; }
   .cx { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 9px; font-size: .72rem; color: var(--muted); }
   .cx span { color: var(--yellow); font-weight: 700; }
-  main { flex: 1; display: flex; overflow: hidden; z-index: 1; min-height: 0; }
+  main { flex: 1; display: flex; overflow: auto; z-index: 1; min-height: 0; }
   #viz { flex: 1; display: flex; flex-direction: column; min-width: 0; }
   #compare-display { text-align: center; padding: 10px 20px; min-height: 56px; display: flex; align-items: center; justify-content: center; gap: 12px; background: var(--surface); border-bottom: 1px solid var(--border); }
   .cd-idle { color: var(--muted); font-size: .95rem; }
@@ -55,7 +55,7 @@
   #split-view { flex: 1; display: flex; flex-direction: column; min-height: 0; }
   #bar-area { flex: 0 0 55%; position: relative; padding: 10px 32px 0; border-bottom: 1px solid var(--border); }
   #bars-container { position: absolute; bottom: 36px; left: 32px; right: 32px; top: 10px; display: flex; align-items: flex-end; gap: 3px; }
-  #tree-area { flex: 1; position: relative; overflow: hidden; }
+  #tree-area { flex: 1; position: relative; overflow: auto; }
   #tree-canvas { width: 100%; height: 100%; }
   #tree-label { position: absolute; top: 4px; left: 12px; font-size: .7rem; color: var(--accent); background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.2); padding: 2px 8px; border-radius: 4px; }
 

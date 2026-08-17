@@ -15,7 +15,7 @@
     --def-top:#5b8def;--def-bot:#2c5aa0;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+  body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:auto}
   body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(162,155,254,.06) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(253,121,168,.05) 0%,transparent 55%);pointer-events:none}
   header{background:var(--surface);padding:10px 24px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border)}
   header h1{font-size:1.15rem;font-weight:700;background:linear-gradient(135deg,#a29bfe,#fd79a8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -23,7 +23,7 @@
   .complexity{display:flex;gap:6px;margin-left:auto}
   .cx{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:2px 9px;font-size:.72rem;color:var(--muted)}
   .cx span{color:var(--yellow);font-weight:700}
-  main{flex:1;display:flex;overflow:hidden;z-index:1;min-height:0}
+  main{flex:1;display:flex;overflow:auto;z-index:1;min-height:0}
   #viz{flex:1;display:flex;flex-direction:column;min-width:0}
   /* Status Display */
   #status-display{padding:10px 24px;min-height:58px;display:flex;align-items:center;justify-content:center;gap:14px;background:var(--surface);border-bottom:1px solid var(--border)}
@@ -48,7 +48,7 @@
   .mode-tab{padding:8px 18px;font-size:.78rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
   .mode-tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--surface2)}
   /* Recursion tree */
-  #tree-area{flex:1;overflow:hidden;position:relative}
+  #tree-area{flex:1;overflow:auto;position:relative}
   #tree-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
   /* Array rows at each level */
   .tree-level{position:absolute;display:flex;gap:12px;left:0;right:0;justify-content:center}

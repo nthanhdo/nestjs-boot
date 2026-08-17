@@ -16,7 +16,7 @@
     --disk1: #ff6b6b; --disk2: #ffd43b; --disk3: #48dbfb; --disk4: #ff9f43; --disk5: #a29bfe;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: auto; }
   body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 20% 15%, rgba(124,92,231,0.07) 0%, transparent 55%), radial-gradient(ellipse at 80% 85%, rgba(167,139,250,0.05) 0%, transparent 55%); pointer-events:none; }
 
   header { background: var(--surface); padding: 10px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); z-index: 2; }
@@ -26,7 +26,7 @@
   .cx { background: var(--surface2); border:1px solid var(--border); border-radius:6px; padding:2px 9px; font-size:.72rem; color:var(--muted); }
   .cx span { color:var(--yellow); font-weight:700; }
 
-  main { flex:1; display:flex; overflow:hidden; z-index:1; min-height:0; }
+  main { flex:1; display:flex; overflow:auto; z-index:1; min-height:0; }
   #viz { flex:1; display:flex; flex-direction:column; min-width:0; }
 
   /* Status Display */
@@ -56,12 +56,12 @@
   .mode-tab.active { color:var(--accent); border-bottom-color:var(--accent); background:var(--surface2); }
 
   /* Viz area */
-  #viz-area { flex:1; display:flex; overflow:hidden; position:relative; }
+  #viz-area { flex:1; display:flex; overflow:auto; position:relative; }
 
   /* === STACK VIZ === */
   #stack-view { width:220px; border-right:1px solid var(--border); display:flex; flex-direction:column; background:var(--surface); }
   #stack-title { padding:8px 14px; font-size:.72rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid var(--border); }
-  #stack-frames { flex:1; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end; padding:8px; gap:4px; }
+  #stack-frames { flex:1; overflow:auto; display:flex; flex-direction:column; justify-content:flex-end; padding:8px; gap:4px; }
   .stack-frame {
     border-radius:8px; padding:8px 12px; font-size:.82rem; font-weight:700;
     background: linear-gradient(135deg,var(--call-top),var(--call-bot));
@@ -76,7 +76,7 @@
   #stack-depth { padding:6px 14px; font-size:.72rem; color:var(--muted); border-top:1px solid var(--border); text-align:center; }
 
   /* === FIB TREE === */
-  #fib-view { flex:1; position:relative; overflow:hidden; }
+  #fib-view { flex:1; position:relative; overflow:auto; }
   #fib-canvas { position:absolute; inset:0; }
   #fib-svg { position:absolute; inset:0; width:100%; height:100%; }
   .fib-node {

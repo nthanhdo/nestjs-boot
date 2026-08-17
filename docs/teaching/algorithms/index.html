@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thuật toán & Giải thuật — Lộ trình học</title>
+<style>
+  :root { --bg: #0b1120; --surface: #131a2e; --surface2: #1a2340; --border: #2a3a5c; --text: #eef1f8; --muted: #8899bb; --accent: #a78bfa; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  body::before { content:''; position: fixed; inset: 0; background: radial-gradient(ellipse at 30% 10%, rgba(108,92,231,0.06) 0%, transparent 50%), radial-gradient(ellipse at 70% 90%, rgba(46,204,113,0.04) 0%, transparent 50%); pointer-events: none; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; position: relative; z-index: 1; }
+
+  h1 { font-size: 2rem; font-weight: 800; text-align: center; margin-bottom: 8px;
+    background: linear-gradient(135deg, #a78bfa, #6c5ce7, #0984e3);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { text-align: center; color: var(--muted); font-size: 1rem; margin-bottom: 40px; line-height: 1.6; }
+  .subtitle b { color: var(--text); }
+
+  /* Roadmap */
+  .roadmap { display: flex; justify-content: center; gap: 8px; margin-bottom: 48px; flex-wrap: wrap; }
+  .roadmap-item { padding: 8px 16px; border-radius: 8px; font-size: .78rem; font-weight: 600; border: 1px solid var(--border); color: var(--muted); position: relative; }
+  .roadmap-item.active { border-color: var(--accent); color: var(--accent); background: rgba(167,139,250,0.08); }
+  .roadmap-arrow { color: var(--border); font-size: 1.2rem; display: flex; align-items: center; }
+
+  /* Module section */
+  .module { margin-bottom: 48px; }
+  .module-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .module-num { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: .85rem; font-weight: 800; color: #fff; flex-shrink: 0; }
+  .module-title { font-size: 1.2rem; font-weight: 700; }
+  .module-desc { color: var(--muted); font-size: .88rem; line-height: 1.6; margin-bottom: 16px; padding-left: 50px; }
+  .module-desc b { color: var(--text); }
+
+  /* Cards */
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; padding-left: 50px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 18px; display: flex; align-items: center; gap: 14px;
+    text-decoration: none; color: var(--text);
+    transition: all 0.25s ease;
+    cursor: pointer;
+  }
+  .card:hover { border-color: var(--accent); background: var(--surface2); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+  .card-num { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 800; color: #fff; flex-shrink: 0; }
+  .card-body { flex: 1; min-width: 0; }
+  .card-title { font-size: .92rem; font-weight: 700; margin-bottom: 3px; }
+  .card-hint { font-size: .76rem; color: var(--muted); line-height: 1.4; }
+  .card-complexity { font-size: .68rem; color: #ffd43b; font-weight: 600; margin-top: 4px; }
+  .card-arrow { color: var(--muted); font-size: 1.1rem; transition: transform 0.2s; }
+  .card:hover .card-arrow { transform: translateX(4px); color: var(--accent); }
+
+  /* Module colors */
+  .m1 { background: linear-gradient(135deg, #0984e3, #74b9ff); }
+  .m2 { background: linear-gradient(135deg, #6c5ce7, #a29bfe); }
+  .m3 { background: linear-gradient(135deg, #00b894, #55efc4); }
+  .m4 { background: linear-gradient(135deg, #e17055, #fab1a0); }
+  .m5 { background: linear-gradient(135deg, #fdcb6e, #f39c12); }
+  .m6 { background: linear-gradient(135deg, #e84393, #fd79a8); }
+
+  /* Philosophy */
+  .philosophy { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px 32px; margin-top: 48px; text-align: center; }
+  .philosophy h2 { font-size: 1.1rem; color: var(--accent); margin-bottom: 12px; }
+  .philosophy p { color: var(--muted); font-size: .9rem; line-height: 1.7; max-width: 700px; margin: 0 auto; }
+  .philosophy .highlight { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Thuật toán & Giải thuật</h1>
+  <p class="subtitle">
+    31 bài giảng interactive — mỗi bài là 1 file HTML, mở browser là chạy.<br>
+    Học từ <b>trực quan</b>, không phải từ sách. Hiểu <b>tại sao</b>, không chỉ <b>làm thế nào</b>.
+  </p>
+
+  <!-- Roadmap -->
+  <div class="roadmap">
+    <div class="roadmap-item active">1. Cấu trúc dữ liệu</div>
+    <div class="roadmap-arrow">→</div>
+    <div class="roadmap-item">2. Sắp xếp</div>
+    <div class="roadmap-arrow">→</div>
+    <div class="roadmap-item">3. Tìm kiếm</div>
+    <div class="roadmap-arrow">→</div>
+    <div class="roadmap-item">4. Tư duy giải thuật</div>
+    <div class="roadmap-arrow">→</div>
+    <div class="roadmap-item">5. Quy hoạch động</div>
+    <div class="roadmap-arrow">→</div>
+    <div class="roadmap-item">6. Đồ thị nâng cao</div>
+  </div>
+
+  <!-- Module 1 -->
+  <div class="module">
+    <div class="module-header">
+      <div class="module-num m1">01</div>
+      <div class="module-title">Cấu trúc dữ liệu — Data Structures</div>
+    </div>
+    <p class="module-desc">
+      Nền tảng của mọi chương trình. Dữ liệu được <b>tổ chức như thế nào</b> quyết định thuật toán <b>nhanh hay chậm</b>.
+      Mỗi cấu trúc có trade-off riêng — Array truy cập nhanh O(1) nhưng chèn chậm O(n), Linked List ngược lại.
+      Hiểu đúng → chọn đúng → code nhanh.
+    </p>
+    <div class="cards">
+      <a class="card" href="module-1-data-structures/01-array.html">
+        <div class="card-num m1">01</div>
+        <div class="card-body">
+          <div class="card-title">Array — Mảng</div>
+          <div class="card-hint">Ô nhớ liên tiếp. Truy cập tức thì, chèn/xóa phải dịch.</div>
+          <div class="card-complexity">Access O(1) · Insert O(n) · Search O(n)</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-1-data-structures/02-linked-list.html">
+        <div class="card-num m1">02</div>
+        <div class="card-body">
+          <div class="card-title">Linked List — Danh sách liên kết</div>
+          <div class="card-hint">Node nối nhau bằng pointer. Chèn/xóa nhanh, truy cập chậm.</div>
+          <div class="card-complexity">Access O(n) · Insert O(1) · Search O(n)</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-1-data-structures/03-stack.html">
+        <div class="card-num m1">03</div>
+        <div class="card-body">
+          <div class="card-title">Stack — Ngăn xếp</div>
+          <div class="card-hint">Last In First Out. Undo, bracket matching, call stack.</div>
+          <div class="card-complexity">Push O(1) · Pop O(1) · Peek O(1)</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-1-data-structures/04-queue.html">
+        <div class="card-num m1">04</div>
+        <div class="card-body">
+          <div class="card-title">Queue — Hàng đợi</div>
+          <div class="card-hint">First In First Out. BFS, task scheduling, message queue.</div>
+          <div class="card-complexity">Enqueue O(1) · Dequeue O(1)</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-1-data-structures/05-hash-table.html">
+        <div class="card-num m1">05</div>
+        <div class="card-body">
+          <div class="card-title">Hash Table — Bảng băm</div>
+          <div class="card-hint">Key → hash → index. Tra cứu gần như tức thì. Collision handling.</div>
+          <div class="card-complexity">Avg O(1) · Worst O(n) · Space O(n)</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-1-data-structures/06-tree-bst.html">
+        <div class="card-num m1">06</div>
+        <div class="card-body">
+          <div class="card-title">BST — Cây nhị phân tìm kiếm</div>
+          <div class="card-hint">Trái nhỏ hơn, phải lớn hơn. Search/Insert O(log n).</div>
+          <div class="card-complexity">Avg O(log n) · Worst O(n) — suy biến</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-1-data-structures/07-heap.html">
+        <div class="card-num m1">07</div>
+        <div class="card-body">
+          <div class="card-title">Heap — Đống</div>
+          <div class="card-hint">Cây nhị phân hoàn chỉnh. Lấy min/max O(1). Priority Queue.</div>
+          <div class="card-complexity">Insert O(log n) · Extract O(log n)</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Module 2 -->
+  <div class="module">
+    <div class="module-header">
+      <div class="module-num m2">02</div>
+      <div class="module-title">Thuật toán sắp xếp — Sorting</div>
+    </div>
+    <p class="module-desc">
+      Sắp xếp là bài toán cơ bản nhất nhưng chứa đựng mọi khái niệm quan trọng: <b>so sánh, hoán đổi, đệ quy, chia để trị, trade-off thời gian/không gian</b>.
+      Từ O(n²) đơn giản đến O(n log n) tối ưu — mỗi thuật toán dạy 1 cách tư duy khác nhau.
+    </p>
+    <div class="cards">
+      <a class="card" href="module-2-sorting/08-bubble-sort.html">
+        <div class="card-num m2">08</div>
+        <div class="card-body">
+          <div class="card-title">Bubble Sort — Nổi bọt</div>
+          <div class="card-hint">So sánh cặp kề nhau, đẩy lớn nhất về cuối. Đơn giản nhất.</div>
+          <div class="card-complexity">O(n²) · Stable · In-place</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-2-sorting/09-selection-sort.html">
+        <div class="card-num m2">09</div>
+        <div class="card-body">
+          <div class="card-title">Selection Sort — Chọn</div>
+          <div class="card-hint">Tìm min trong phần chưa sắp xếp, đặt vào đúng vị trí.</div>
+          <div class="card-complexity">O(n²) · Unstable · In-place</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-2-sorting/10-insertion-sort.html">
+        <div class="card-num m2">10</div>
+        <div class="card-body">
+          <div class="card-title">Insertion Sort — Chèn</div>
+          <div class="card-hint">Chèn từng phần tử vào đúng vị trí trong dãy đã sắp. Best O(n).</div>
+          <div class="card-complexity">O(n²) avg · O(n) best · Stable</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-2-sorting/11-merge-sort.html">
+        <div class="card-num m2">11</div>
+        <div class="card-body">
+          <div class="card-title">Merge Sort — Trộn</div>
+          <div class="card-hint">Chia đôi → sắp xếp → trộn lại. Luôn O(n log n). Cần thêm bộ nhớ.</div>
+          <div class="card-complexity">O(n log n) · Stable · O(n) space</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-2-sorting/12-quick-sort.html">
+        <div class="card-num m2">12</div>
+        <div class="card-body">
+          <div class="card-title">Quick Sort — Nhanh</div>
+          <div class="card-hint">Chọn pivot, chia nhỏ hơn/lớn hơn. Nhanh nhất trong thực tế.</div>
+          <div class="card-complexity">O(n log n) avg · O(n²) worst · In-place</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-2-sorting/13-heap-sort.html">
+        <div class="card-num m2">13</div>
+        <div class="card-body">
+          <div class="card-title">Heap Sort — Đống</div>
+          <div class="card-hint">Build heap → extract max lặp lại. O(n log n) guaranteed.</div>
+          <div class="card-complexity">O(n log n) · Unstable · In-place</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Module 3 -->
+  <div class="module">
+    <div class="module-header">
+      <div class="module-num m3">03</div>
+      <div class="module-title">Thuật toán tìm kiếm — Searching</div>
+    </div>
+    <p class="module-desc">
+      Tìm kiếm là thao tác phổ biến nhất. <b>Linear Search</b> đơn giản nhưng chậm O(n).
+      <b>Binary Search</b> nhanh O(log n) nhưng cần dữ liệu đã sắp xếp.
+      <b>DFS/BFS</b> mở rộng tìm kiếm lên đồ thị — nền tảng cho hàng trăm bài toán phức tạp.
+    </p>
+    <div class="cards">
+      <a class="card" href="module-3-searching/14-linear-search.html">
+        <div class="card-num m3">14</div>
+        <div class="card-body">
+          <div class="card-title">Linear Search — Tuyến tính</div>
+          <div class="card-hint">Duyệt từng phần tử. Đơn giản, hoạt động trên mọi mảng.</div>
+          <div class="card-complexity">O(n) · Không cần sắp xếp</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-3-searching/15-binary-search.html">
+        <div class="card-num m3">15</div>
+        <div class="card-body">
+          <div class="card-title">Binary Search — Nhị phân</div>
+          <div class="card-hint">Chia đôi liên tục. 1 tỷ phần tử chỉ cần 30 bước.</div>
+          <div class="card-complexity">O(log n) · Cần mảng đã sắp xếp</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-3-searching/16-dfs.html">
+        <div class="card-num m3">16</div>
+        <div class="card-body">
+          <div class="card-title">DFS — Tìm kiếm theo chiều sâu</div>
+          <div class="card-hint">Đi sâu hết 1 nhánh trước khi quay lại. Dùng Stack.</div>
+          <div class="card-complexity">O(V+E) · Phát hiện cycle · Backtracking</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-3-searching/17-bfs.html">
+        <div class="card-num m3">17</div>
+        <div class="card-body">
+          <div class="card-title">BFS — Tìm kiếm theo chiều rộng</div>
+          <div class="card-hint">Duyệt theo lớp. Tìm đường ngắn nhất. Dùng Queue.</div>
+          <div class="card-complexity">O(V+E) · Shortest path · Wavefront</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Module 4 -->
+  <div class="module">
+    <div class="module-header">
+      <div class="module-num m4">04</div>
+      <div class="module-title">Tư duy giải thuật — Algorithm Paradigms</div>
+    </div>
+    <p class="module-desc">
+      Không chỉ học thuật toán cụ thể — học <b>cách tư duy</b> để giải quyết bài toán mới chưa từng gặp.
+      Mỗi paradigm là 1 "khuôn mẫu tư duy": <b>chia nhỏ</b> (Divide & Conquer), <b>chọn tốt nhất ngay</b> (Greedy),
+      <b>thử và quay lui</b> (Backtracking). Biết chọn đúng paradigm = giải được 80% bài toán.
+    </p>
+    <div class="cards">
+      <a class="card" href="module-4-paradigms/18-recursion.html">
+        <div class="card-num m4">18</div>
+        <div class="card-body">
+          <div class="card-title">Recursion — Đệ quy</div>
+          <div class="card-hint">Hàm gọi chính nó. Base case + recursive case. Call stack.</div>
+          <div class="card-complexity">Fibonacci · Tower of Hanoi · Tree traversal</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-4-paradigms/19-two-pointers.html">
+        <div class="card-num m4">19</div>
+        <div class="card-body">
+          <div class="card-title">Two Pointers — Hai con trỏ</div>
+          <div class="card-hint">2 pointer di chuyển cùng/ngược chiều. Giảm O(n²) → O(n).</div>
+          <div class="card-complexity">Two Sum · Remove Duplicates · Container Water</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-4-paradigms/20-sliding-window.html">
+        <div class="card-num m4">20</div>
+        <div class="card-body">
+          <div class="card-title">Sliding Window — Cửa sổ trượt</div>
+          <div class="card-hint">Cửa sổ trượt qua mảng. Tối ưu subarray/substring.</div>
+          <div class="card-complexity">Max Sum K · Longest Unique Substring</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-4-paradigms/21-divide-and-conquer.html">
+        <div class="card-num m4">21</div>
+        <div class="card-body">
+          <div class="card-title">Divide & Conquer — Chia để trị</div>
+          <div class="card-hint">Chia nhỏ → giải riêng → gộp lại. Merge Sort, Quick Sort.</div>
+          <div class="card-complexity">T(n) = 2T(n/2) + O(n) → O(n log n)</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-4-paradigms/22-greedy.html">
+        <div class="card-num m4">22</div>
+        <div class="card-body">
+          <div class="card-title">Greedy — Tham lam</div>
+          <div class="card-hint">Chọn tối ưu cục bộ tại mỗi bước. Không phải lúc nào cũng đúng!</div>
+          <div class="card-complexity">Activity Selection · Knapsack · Coin Change (fail demo)</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-4-paradigms/23-backtracking.html">
+        <div class="card-num m4">23</div>
+        <div class="card-body">
+          <div class="card-title">Backtracking — Quay lui</div>
+          <div class="card-hint">Thử → kiểm tra → quay lui nếu sai. Prune nhánh không cần.</div>
+          <div class="card-complexity">N-Queens · Maze Solving · Sudoku</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Module 5 -->
+  <div class="module">
+    <div class="module-header">
+      <div class="module-num m5">05</div>
+      <div class="module-title">Quy hoạch động — Dynamic Programming</div>
+    </div>
+    <p class="module-desc">
+      Kỹ thuật mạnh nhất trong giải thuật. Ý tưởng đơn giản: nếu bài toán có <b>bài toán con trùng lặp</b> (overlapping subproblems),
+      <b>tính 1 lần, lưu lại, dùng lại</b>. Biến O(2ⁿ) thành O(n). DP = Recursion + Memoization.
+    </p>
+    <div class="cards">
+      <a class="card" href="module-5-dynamic-programming/24-dp-fibonacci.html">
+        <div class="card-num m5">24</div>
+        <div class="card-body">
+          <div class="card-title">Fibonacci & Intro DP</div>
+          <div class="card-hint">3 cách: naive O(2ⁿ) → memo O(n) → table O(n). Thấy DP hoạt động.</div>
+          <div class="card-complexity">Naive vs Memoization vs Bottom-up</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-5-dynamic-programming/25-dp-knapsack.html">
+        <div class="card-num m5">25</div>
+        <div class="card-body">
+          <div class="card-title">0/1 Knapsack — Ba lô</div>
+          <div class="card-hint">Chọn items tối đa giá trị với giới hạn trọng lượng. DP 2D.</div>
+          <div class="card-complexity">O(n×W) · Backtrack tìm items đã chọn</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-5-dynamic-programming/26-dp-lcs.html">
+        <div class="card-num m5">26</div>
+        <div class="card-body">
+          <div class="card-title">LCS — Dãy con chung dài nhất</div>
+          <div class="card-hint">Tìm dãy con chung giữa 2 chuỗi. Ứng dụng: diff, DNA.</div>
+          <div class="card-complexity">O(m×n) · Arrow trace backtrack</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-5-dynamic-programming/27-dp-matrix-chain.html">
+        <div class="card-num m5">27</div>
+        <div class="card-body">
+          <div class="card-title">Matrix Chain — Nhân chuỗi ma trận</div>
+          <div class="card-hint">Đặt ngoặc tối ưu giảm phép nhân. DP diagonal fill.</div>
+          <div class="card-complexity">O(n³) · Optimal parenthesization</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Module 6 -->
+  <div class="module">
+    <div class="module-header">
+      <div class="module-num m6">06</div>
+      <div class="module-title">Đồ thị nâng cao — Advanced Graph Algorithms</div>
+    </div>
+    <p class="module-desc">
+      Mở rộng DFS/BFS lên bài toán thực tế: <b>đường đi ngắn nhất</b> (GPS, routing),
+      <b>cây khung nhỏ nhất</b> (network design), <b>sắp xếp tô-pô</b> (build system, course scheduling).
+      Nền tảng cho System Design và Real-world Engineering.
+    </p>
+    <div class="cards">
+      <a class="card" href="module-6-graph-advanced/28-dijkstra.html">
+        <div class="card-num m6">28</div>
+        <div class="card-body">
+          <div class="card-title">Dijkstra — Đường đi ngắn nhất</div>
+          <div class="card-hint">Greedy + PQ. Tìm shortest path từ 1 nguồn. Không âm.</div>
+          <div class="card-complexity">O((V+E)log V) · Negative edge demo</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-6-graph-advanced/29-bellman-ford.html">
+        <div class="card-num m6">29</div>
+        <div class="card-body">
+          <div class="card-title">Bellman-Ford</div>
+          <div class="card-hint">V-1 iterations. Xử lý cạnh âm. Phát hiện negative cycle.</div>
+          <div class="card-complexity">O(V×E) · Negative cycle detection</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-6-graph-advanced/30-kruskal-prim.html">
+        <div class="card-num m6">30</div>
+        <div class="card-body">
+          <div class="card-title">Kruskal & Prim — MST</div>
+          <div class="card-hint">Cây khung nhỏ nhất. Kruskal (edge sort) vs Prim (grow).</div>
+          <div class="card-complexity">O(E log E) · Union-Find · Cut property</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+      <a class="card" href="module-6-graph-advanced/31-topological-sort.html">
+        <div class="card-num m6">31</div>
+        <div class="card-body">
+          <div class="card-title">Topological Sort — Sắp xếp tô-pô</div>
+          <div class="card-hint">Thứ tự thực hiện có dependency. Build system, courses.</div>
+          <div class="card-complexity">O(V+E) · Kahn (BFS) vs DFS · Cycle detect</div>
+        </div>
+        <div class="card-arrow">→</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Philosophy -->
+  <div class="philosophy">
+    <h2>💡 Triết lý học thuật toán</h2>
+    <p>
+      Không học thuật toán chỉ để giải LeetCode. Học để hiểu <span class="highlight">Problem → Data Structure → Algorithm → Complexity → Trade-off</span>.
+      Mỗi bài toán thực tế đều là tổ hợp của các pattern cơ bản. Nắm vững nền tảng, bạn giải được mọi bài toán mới.
+    </p>
+  </div>
+</div>
+
+</body>
+</html>

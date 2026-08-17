@@ -17,7 +17,7 @@
     --accent:#a78bfa;--yellow:#ffd43b;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+  body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:auto;}
   body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 25% 15%,rgba(91,141,239,0.07) 0%,transparent 55%),radial-gradient(ellipse at 75% 85%,rgba(167,139,250,0.05) 0%,transparent 55%);pointer-events:none;}
   header{background:var(--surface);padding:10px 24px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border);z-index:2;flex-wrap:wrap;}
   header h1{font-size:1.15rem;font-weight:700;background:linear-gradient(135deg,#a78bfa,#7c5ce7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
@@ -28,7 +28,7 @@
   .tab-wrap{display:flex;gap:4px;}
   .tab-btn{padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:.72rem;cursor:pointer;transition:all 0.2s;font-weight:600;}
   .tab-btn.on{background:linear-gradient(135deg,#7c5ce7,#a78bfa);border-color:#a78bfa;color:#fff;}
-  main{flex:1;display:flex;overflow:hidden;z-index:1;min-height:0;}
+  main{flex:1;display:flex;overflow:auto;z-index:1;min-height:0;}
   #viz{flex:1;display:flex;flex-direction:column;min-width:0;}
   #status-display{padding:10px 20px;min-height:52px;display:flex;align-items:center;justify-content:center;gap:10px;background:var(--surface);border-bottom:1px solid var(--border);}
   .sd-idle{color:var(--muted);font-size:.9rem;}
@@ -60,7 +60,7 @@
     background:linear-gradient(135deg,var(--blue-top),var(--blue-bot));
     border:2px solid rgba(255,255,255,0.1);
     box-shadow:0 3px 10px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.12);
-    transition:all 0.3s;position:relative;overflow:hidden;
+    transition:all 0.3s;position:relative;overflow:auto;
   }
   .qcell::before{content:'';position:absolute;top:0;left:0;width:40%;height:100%;background:linear-gradient(90deg,rgba(255,255,255,0.1),transparent);}
   .qcell.enqueuing{background:linear-gradient(135deg,var(--green-top),var(--green-bot));box-shadow:0 0 20px var(--green-glow);animation:slideInRight 0.5s cubic-bezier(0.34,1.56,0.64,1);}

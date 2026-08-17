@@ -104,15 +104,19 @@ git clone https://github.com/nthanhdo/nestjs-boot.git
 | Capstone (tuần 16) | 25% | Hệ thống hoàn chỉnh + demo |
 | Tham gia lớp | 5% | Hỏi/trả lời, review code bạn |
 
-## Cấu trúc mỗi buổi học (3 giờ)
+## Cấu trúc mỗi buổi học (90 phút — buổi tối)
 
-| Thời gian | Nội dung |
-|-----------|----------|
-| 0:00–0:30 | Review bài tuần trước, Q&A |
-| 0:30–1:15 | Lý thuyết + demo (giảng viên code live) |
-| 1:15–1:30 | Nghỉ giải lao |
-| 1:30–2:30 | Thực hành (sinh viên code, giảng viên hỗ trợ) |
-| 2:30–3:00 | Wrap-up, giao bài tập, preview tuần sau |
+| Thời gian | Phần | Nội dung |
+|-----------|------|----------|
+| 0:00–0:10 | Warm-up | Ôn bài tuần trước + quiz nhanh + review homework |
+| 0:10–0:25 | Lý thuyết 1 | Khái niệm cốt lõi — WHY trước HOW |
+| 0:25–0:40 | Lý thuyết 2 | Đi sâu — code demo live |
+| 0:40–0:55 | Lý thuyết 3 | Pattern thực tế từ nestjs-boot source |
+| 0:55–1:00 | Nghỉ 5 phút | — |
+| 1:00–1:25 | Thực hành | Coding exercise có hướng dẫn step-by-step |
+| 1:25–1:30 | Wrap-up | Tóm tắt 3 điểm + giao bài tập + preview tuần sau |
+
+> Template chuẩn cho mỗi bài: [LESSON-TEMPLATE.md](LESSON-TEMPLATE.md)
 
 ## Sau khóa học
 

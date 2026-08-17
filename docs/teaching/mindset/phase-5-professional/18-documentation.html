@@ -120,6 +120,40 @@
   .tr-fix-title{font-weight:600;margin-bottom:6px}
   .tr-fix li{margin:4px 0;color:#c9d1d9}
 
+
+  .nav-bar{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #30363d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .nav-links{display:flex;gap:8px;flex-wrap:wrap}
+  .nav-link{color:#8b949e;text-decoration:none;font-size:.8rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s;white-space:nowrap}
+  .nav-link:hover{color:#58a6ff;border-color:#58a6ff}
+  .nav-link.current{color:#58a6ff;border-color:#58a6ff;background:#0d1a2d}
+  .nav-center{font-size:.8rem;color:#484f58}
+  .prereq{background:#1a0d2d;border:1px solid #6e40c9;border-radius:8px;padding:14px 16px;margin:0 0 32px;display:flex;align-items:flex-start;gap:10px}
+  .prereq-icon{font-size:1.1rem;flex-shrink:0;margin-top:2px}
+  .prereq-label{font-size:.78rem;font-weight:700;color:#bc8cff;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .prereq-links{display:flex;flex-wrap:wrap;gap:6px}
+  .prereq-link{font-size:.78rem;padding:2px 8px;border-radius:8px;background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e;text-decoration:none;transition:background .2s}
+  .prereq-link:hover{background:#1f4a9e}
+  .xref{display:inline;font-size:.8rem;padding:1px 7px;border-radius:6px;background:#0d2d1a;color:#3fb950;border:1px solid #238636;text-decoration:none;white-space:nowrap;transition:background .2s}
+  .xref:hover{background:#238636;color:#fff}
+  .exercises{margin:48px 0}
+  .exercises-title{font-size:1.2rem;color:#79c0ff;margin-bottom:24px;padding-left:12px;border-left:3px solid #58a6ff}
+  .ex-card{border-radius:12px;padding:20px 24px;margin:16px 0}
+  .ex-green{background:#0a1f0a;border:1px solid #238636}
+  .ex-yellow{background:#1f1a0a;border:1px solid #9e6c1e}
+  .ex-red{background:#1f0a0a;border:1px solid #9e1e1e}
+  .ex-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .ex-diff{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
+  .diff-green{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .diff-yellow{background:#3b2a0d;color:#d4a843;border:1px solid #9e6c1e}
+  .diff-red{background:#3b0d0d;color:#ff7b72;border:1px solid #9e1e1e}
+  .ex-num{font-size:.8rem;font-weight:700;color:#8b949e}
+  .ex-title{font-size:.95rem;font-weight:700;color:#c9d1d9}
+  .ex-desc{font-size:.88rem;color:#8b949e;margin-top:4px}
+  .ex-solution{margin-top:12px}
+  .ex-sol-toggle{background:none;border:1px solid #30363d;color:#8b949e;border-radius:6px;padding:4px 12px;font-size:.75rem;cursor:pointer;transition:all .2s}
+  .ex-sol-toggle:hover{border-color:#58a6ff;color:#58a6ff}
+  .ex-sol-body{display:none;margin-top:10px;padding:12px;background:#0d1117;border-radius:8px;font-size:.83rem;color:#c9d1d9;line-height:1.6}
+  .ex-sol-body.open{display:block}
   @media(max-width:600px){
     .erd-wrap{grid-template-columns:1fr}
     .tr-body{grid-template-columns:1fr}
@@ -127,14 +161,35 @@
 </style>
 </head>
 <body>
+<nav class="nav-bar">
+  <div class="nav-links">
+    <a class="nav-link" href="17-product-thinking.html">← Bài 17: Product Thinking</a>
+    <span class="nav-link current">Bài 18: Documentation</span>
+    <a class="nav-link" href="19-capstone-overview.html">Bài 19: Capstone →</a>
+  </div>
+  <div class="nav-center">Phase 5 — Professional</div>
+</nav>
 <div class="container">
   <div style="margin-bottom:20px">
     <span class="badge badge-purple">Phase 5</span>
     <span class="badge badge-blue">Bài 18</span>
     <span class="badge badge-green">Professional</span>
   </div>
+
+  <div class="prereq">
+    <div class="prereq-icon">📚</div>
+    <div>
+      <div class="prereq-label">Kiến thức cần có trước</div>
+      <div class="prereq-links">
+        <a class="prereq-link" href="../phase-3-engineer/06-architecture.html">Bài 6: Architecture (diagrams)</a>
+        <a class="prereq-link" href="../phase-2-build/08-api.html">Bài 8: API (API docs)</a>
+        <a class="prereq-link" href="../phase-2-build/11-git.html">Bài 11: Git (README)</a>
+      </div>
+    </div>
+  </div>
+
   <h1>Documentation</h1>
-  <p class="subtitle">Doc tốt = explain cho engineer khác mà không cần ngồi cạnh. Không doc = technical debt không nhìn thấy được.</p>
+  <p class="subtitle">Doc tốt = explain cho engineer khác mà không cần ngồi cạnh. Kết hợp với <a class="xref" href="../phase-3-engineer/06-architecture.html">Architecture diagrams (Bài 6)</a> và <a class="xref" href="../phase-2-build/08-api.html">API knowledge (Bài 8)</a>. Không doc = technical debt không nhìn thấy được.</p>
 
   <!-- WHY DOCS -->
   <h2>1. Tại Sao Docs Quan Trọng?</h2>
@@ -519,6 +574,71 @@
     </ul>
   </div>
 
+
+  <hr class="section-divider">
+  <div class="exercises">
+    <div class="exercises-title">🎯 Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 1</span></div>
+      <div class="ex-title">Viết README cho project cá nhân (template provided)</div>
+      <div class="ex-desc">Dùng template sau để viết README cho một project của bạn: Title + One-liner / Badges (CI status) / Quick Start (3 commands) / Prerequisites với version cụ thể / Architecture overview / API reference link / Running tests / Contributing.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Template mẫu:</strong><br># ProjectName — One-liner description<br><br>[![CI](badge-url)](actions-url)<br><br>## Quick Start<br>```bash<br>git clone https://github.com/user/project<br>npm install<br>cp .env.example .env  # điền credentials<br>npm run dev          # app chạy tại localhost:3000<br>```<br><br>## Prerequisites<br>- Node.js v20+<br>- MongoDB v7+<br>- Docker v24+ (optional)<br><br><strong>Test checklist:</strong> Đưa README cho người chưa biết project → họ có thể setup và chạy trong 10 phút không? Nếu không → README chưa đủ tốt</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 2</span></div>
+      <div class="ex-title">Viết API docs cho 3 endpoints (Swagger format)</div>
+      <div class="ex-desc">Chọn 3 endpoints trong project của bạn (ví dụ: POST /users, GET /users/:id, DELETE /users/:id). Viết đầy đủ: operation summary, request body schema, response schemas (200, 400, 401, 404), và add NestJS Swagger decorators vào code.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Checklist cho mỗi endpoint:</strong><br>✓ @ApiOperation({ summary: '...' })<br>✓ @ApiBody({ type: CreateUserDto }) — nếu có body<br>✓ @ApiParam({ name: 'id', description: '...' }) — nếu có param<br>✓ @ApiResponse({ status: 201, type: UserResponseDto }) — success<br>✓ @ApiResponse({ status: 400, description: 'Validation failed' })<br>✓ @ApiResponse({ status: 401, description: 'Unauthorized' })<br>✓ @ApiResponse({ status: 404, description: 'User not found' })<br>✓ @ApiBearerAuth() — nếu cần auth<br><br>Verify: truy cập /api/docs → xem docs tự generate</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 3</span></div>
+      <div class="ex-title">Vẽ sequence diagram cho login flow</div>
+      <div class="ex-desc">Vẽ sequence diagram đầy đủ cho flow: User nhập email+password → Frontend gửi request → Backend validate → Query DB → Verify bcrypt → Generate JWT → Response. Dùng draw.io, Mermaid.js, hoặc bản tay chụp ảnh.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Actors:</strong> User, Browser/Frontend, Backend API, Database<br><br><strong>Sequence:</strong><br>User → Browser: submit form {email, password}<br>Browser → API: POST /auth/login<br>API → DB: findOne({email})<br>DB → API: UserDocument | null<br>API: if null → throw UnauthorizedException<br>API: bcrypt.compare(password, user.hash)<br>API: if invalid → throw UnauthorizedException<br>API: jwt.sign({sub: user.id, role})<br>API → Browser: {accessToken, refreshToken}<br>Browser → User: redirect to dashboard<br><br><strong>Tools:</strong> sequencediagram.org (text-based, nhanh nhất)</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 4</span></div>
+      <div class="ex-title">Viết ADR: chọn MongoDB vs PostgreSQL cho project</div>
+      <div class="ex-desc">Viết một ADR (Architecture Decision Record) hoàn chỉnh document tại sao bạn chọn MongoDB (hoặc PostgreSQL) cho project của bạn. Phải có: Context, Decision, Consequences (✓ và ✗), Date và Author.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>ADR template:</strong><br><strong>ADR-001: Sử dụng MongoDB thay vì PostgreSQL</strong><br>Status: Accepted | Date: 2026-08-14<br><br><strong>Context:</strong> Product catalog có flexible attributes mỗi category. Team quen NoSQL. Scale read-heavy workload.<br><br><strong>Decision:</strong> MongoDB với Mongoose. Collection per entity. Indexes on frequently-queried fields.<br><br><strong>Consequences:</strong><br>✓ Flexible schema for catalog attributes<br>✓ Team ramp-up nhanh hơn<br>✗ Không có ACID transactions → cần MongoDB sessions cho multi-document ops<br>✗ Complex aggregations phải handle ở app layer<br><br><strong>ADR tốt:</strong> 6 tháng sau đọc lại là hiểu ngay context và lý do</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header"><span class="ex-diff diff-red">🔴 Khó</span><span class="ex-num">Bài 5</span></div>
+      <div class="ex-title">Full docs package: README + API docs + ERD + architecture diagram</div>
+      <div class="ex-desc">Chọn một project (capstone project hoặc project cá nhân). Tạo đầy đủ: (1) README với Quick Start, (2) Swagger API docs cho ≥5 endpoints, (3) ERD với ít nhất 3 entities, (4) C4 Level 1+2 diagram. Đây là "documentation package" như trong môi trường thực tế.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Tools khuyến nghị:</strong><br>README: Markdown trong GitHub<br>API docs: NestJS + @nestjs/swagger → /api/docs tự generate<br>ERD: dbdiagram.io (text-based, link shareable)<br>C4: structurizr.com hoặc draw.io với C4 template<br><br><strong>Thứ tự làm:</strong><br>1. ERD trước (define schema rõ ràng)<br>2. C4 C1 (system context trong 10 phút)<br>3. C4 C2 (containers: app, DB, cache, queue)<br>4. Swagger decorators trong code<br>5. README sau cùng (link tới 1,2,3,4)<br><br><strong>Tiêu chí hoàn thành:</strong> Engineer mới có thể onboard project trong 30 phút chỉ bằng docs này</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <div class="card">
+    <h3>📌 Tóm Tắt Bài 18</h3>
+    <ul style="color:#c9d1d9;padding-left:20px;margin-top:8px">
+      <li style="margin:6px 0"><strong>README</strong> = front door của project. MUST: title, quick start, prerequisites. SHOULD: architecture, API link, tests</li>
+      <li style="margin:6px 0"><strong>API docs</strong> = code-first với Swagger. Không viết tay — luôn outdated</li>
+      <li style="margin:6px 0"><strong>C4 Model</strong> = 4 levels abstraction. PM xem C1, Tech Lead xem C2, Dev xem C3</li>
+      <li style="margin:6px 0"><strong>Sequence diagram</strong> = best way to explain async flow và time-ordering</li>
+      <li style="margin:6px 0"><strong>ERD</strong> = blueprint của database. Phải có trước khi code schema</li>
+      <li style="margin:6px 0"><strong>ADR</strong> = document "tại sao" khi đưa ra architectural decision. 6 tháng sau vẫn hiểu</li>
+      <li style="margin:6px 0"><strong>Docs outdated</strong> = tệ hơn không có docs. Update docs khi thay đổi code</li>
+    </ul>
+  </div>
+
   <div class="tip">
     <strong>Key Takeaway:</strong> Documentation không phải "việc cuối cùng sau khi xong feature". Viết README trước khi code (README-Driven Development), viết ADR khi đưa ra decision, update docs khi thay đổi API. Docs outdated còn tệ hơn không có docs.
   </div>
@@ -528,5 +648,9 @@
     <p style="margin-top:8px"><a href="19-capstone-overview.html" style="color:#58a6ff;text-decoration:none">Tiếp theo: Bài 19 — Capstone & Career →</a></p>
   </div>
 </div>
+
+<script>
+function toggleSol(btn){const b=btn.nextElementSibling;const o=b.classList.toggle('open');btn.textContent=o?'Ẩn gợi ý':'Xem gợi ý';}
+</script>
 </body>
 </html>

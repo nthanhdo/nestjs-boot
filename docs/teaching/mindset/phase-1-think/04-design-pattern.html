@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Design Patterns — Phase 1: Think</title>
+<title>Design Patterns &#8212; Phase 1: Think</title>
 <style>
 :root {
   --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
@@ -14,7 +14,18 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 15% 25%, rgba(255,183,71,0.05) 0%, transparent 50%), radial-gradient(ellipse at 85% 75%, rgba(167,139,250,0.05) 0%, transparent 50%); pointer-events:none; z-index:0; }
-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; position: sticky; top: 0; z-index: 100; }
+
+/* LESSON NAV */
+.lesson-nav { background: var(--surface2); border-bottom: 1px solid var(--border); padding: 10px 24px; position: sticky; top: 0; z-index: 200; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.nav-home { background: rgba(255,183,71,0.15); color: var(--yellow); border: 1px solid rgba(255,183,71,0.3); padding: 5px 14px; border-radius: 20px; text-decoration: none; font-size: .8rem; font-weight: 600; }
+.nav-home:hover { background: rgba(255,183,71,0.25); }
+.nav-path { color: var(--muted); font-size: .8rem; flex: 1; }
+.nav-prev, .nav-next { padding: 5px 14px; border-radius: 8px; font-size: .8rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-prev:hover { border-color: var(--yellow); color: var(--text); }
+.nav-next { border-color: rgba(167,139,250,0.4); color: var(--accent); }
+.nav-next:hover { border-color: var(--accent); background: rgba(167,139,250,0.1); }
+
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; }
 .header-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .phase-badge { background: linear-gradient(135deg,#e67e22,#f39c12); color:#fff; padding: 3px 12px; border-radius: 20px; font-size: .7rem; font-weight: 700; }
 header h1 { font-size: 1.3rem; font-weight: 800; background: linear-gradient(135deg,#f39c12,#f1c40f); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
@@ -38,7 +49,7 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 .takeaway-title { color: var(--green); font-weight: 700; font-size: .9rem; margin-bottom: 14px; }
 .takeaway-list { list-style: none; }
 .takeaway-list li { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; font-size: .9rem; color: var(--text); line-height: 1.6; }
-.takeaway-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.takeaway-list li::before { content: '&#x2713;'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
 .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 14px 24px; display: flex; justify-content: center; z-index: 100; }
 .nav-inner { display: flex; align-items: center; gap: 12px; max-width: 900px; width: 100%; }
 .btn { padding: 10px 24px; border-radius: 10px; font-size: .9rem; font-weight: 600; cursor: pointer; border: none; transition: all .2s; }
@@ -56,6 +67,16 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 .str { color:#a8d8a8; }
 .num { color:#ffd43b; }
 .cmt { color:#5a7a6a; }
+
+/* CROSS REF */
+.cross-ref { background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.3); border-radius: 4px; padding: 1px 7px; font-size: .82em; color: var(--accent); cursor: help; }
+
+/* PREREQUISITES */
+.prerequisites { background: rgba(91,141,239,0.08); border: 1px solid rgba(91,141,239,0.25); border-radius: 14px; padding: 20px 24px; margin-bottom: 28px; }
+.prereq-title { color: var(--blue); font-size: .78rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+.prereq-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.prereq-tag { background: rgba(91,141,239,0.12); border: 1px solid rgba(91,141,239,0.3); border-radius: 20px; padding: 4px 14px; font-size: .82rem; color: var(--blue); text-decoration: none; }
+.prereq-tag:hover { background: rgba(91,141,239,0.22); }
 
 /* PATTERN CARD */
 .pattern-tabs { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
@@ -104,7 +125,7 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 .obs-trigger { background:linear-gradient(135deg,var(--blue),#2c5aa0); color:#fff; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-size:.85rem; margin-top:12px; }
 
 /* ADAPTER */
-.adapter-demo { display:flex; align-items:center; justify-content:center; gap:0; margin:24px 0; flex-wrap:wrap; gap:8px; }
+.adapter-demo { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:8px; margin:24px 0; }
 .ad-old { background:rgba(231,76,60,0.08); border:1px solid rgba(231,76,60,0.3); border-radius:10px; padding:12px 16px; font-size:.8rem; color:var(--red); text-align:center; }
 .ad-adapter { background:rgba(255,183,71,0.1); border:2px solid var(--orange); border-radius:10px; padding:12px 20px; font-size:.85rem; color:var(--orange); font-weight:700; text-align:center; }
 .ad-new { background:rgba(46,204,113,0.08); border:1px solid rgba(46,204,113,0.3); border-radius:10px; padding:12px 16px; font-size:.8rem; color:var(--green); text-align:center; }
@@ -124,15 +145,65 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 .anti-case { background:rgba(231,76,60,0.06); border:1px solid rgba(231,76,60,0.25); border-radius:10px; padding:14px; }
 .anti-label { color:var(--red); font-size:.78rem; font-weight:700; margin-bottom:6px; }
 .anti-desc { color:var(--muted); font-size:.82rem; line-height:1.5; }
+
+/* EXERCISES */
+.exercises-section { margin-top: 48px; border-top: 2px solid var(--border); padding-top: 36px; }
+.exercises-title { font-size: 1.5rem; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.exercises-sub { color: var(--muted); font-size: .9rem; margin-bottom: 24px; }
+.exercise { border-radius: 14px; margin-bottom: 16px; overflow: hidden; border: 1px solid var(--border); }
+.ex-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; cursor: pointer; background: var(--surface); user-select: none; transition: background .2s; }
+.ex-header:hover { background: var(--surface2); }
+.ex-num { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,183,71,0.15); color: var(--yellow); font-size: .8rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ex-title { font-weight: 600; font-size: .95rem; flex: 1; }
+.ex-diff { padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 700; }
+.ex-diff.easy { background: rgba(46,204,113,0.15); color: var(--green); }
+.ex-diff.medium { background: rgba(255,183,71,0.15); color: var(--orange); }
+.ex-diff.hard { background: rgba(231,76,60,0.15); color: var(--red); }
+.ex-toggle { color: var(--muted); font-size: .8rem; transition: transform .3s; }
+.exercise.open .ex-toggle { transform: rotate(180deg); }
+.ex-body { display: none; padding: 20px 24px; background: var(--surface2); border-top: 1px solid var(--border); }
+.exercise.open .ex-body { display: block; animation: fadeUp .3s; }
+.ex-body p { color: var(--muted); font-size: .92rem; line-height: 1.7; margin-bottom: 12px; }
+.ex-body code { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: .85em; color: var(--accent); }
+.ex-code { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; font-family: monospace; font-size: .82rem; line-height: 1.9; margin: 12px 0; overflow-x: auto; }
+.ex-reveal-btn { background: rgba(255,183,71,0.1); border: 1px solid rgba(255,183,71,0.3); color: var(--yellow); padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: .83rem; font-weight: 600; margin-top: 12px; }
+.ex-reveal-btn:hover { background: rgba(255,183,71,0.2); }
+.ex-solution { background: rgba(46,204,113,0.06); border: 1px solid rgba(46,204,113,0.25); border-radius: 10px; padding: 16px; margin-top: 12px; font-size: .88rem; line-height: 1.7; color: var(--text); }
+.ex-solution code { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: .85em; color: var(--green); }
+
+/* LESSON SUMMARY */
+.lesson-summary { background: linear-gradient(135deg, rgba(255,183,71,0.08), rgba(167,139,250,0.06)); border: 1px solid rgba(255,183,71,0.3); border-radius: 16px; padding: 28px 32px; margin-top: 48px; }
+.summary-title { font-size: 1.2rem; font-weight: 800; color: var(--yellow); margin-bottom: 16px; }
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.summary-item { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 12px 16px; font-size: .88rem; color: var(--text); line-height: 1.5; }
+.summary-item strong { color: var(--yellow); display: block; margin-bottom: 4px; font-size: .78rem; text-transform: uppercase; letter-spacing: .5px; }
+
+/* PHASE COMPLETE */
+.phase-complete { background: linear-gradient(135deg, rgba(167,139,250,0.12), rgba(91,141,239,0.08)); border: 2px solid rgba(167,139,250,0.4); border-radius: 20px; padding: 36px 32px; margin-top: 32px; text-align: center; }
+.phase-complete h2 { font-size: 1.6rem; font-weight: 900; background: linear-gradient(135deg,#a78bfa,#5b8def); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom: 10px; }
+.phase-complete p { color: var(--muted); font-size: .95rem; margin-bottom: 24px; }
+.phase-progress { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px; }
+.phase-dot { padding: 8px 16px; border-radius: 20px; font-size: .8rem; font-weight: 600; border: 1px solid var(--border); color: var(--muted); }
+.phase-dot.done { background: rgba(46,204,113,0.15); border-color: rgba(46,204,113,0.4); color: var(--green); }
+.phase-dot.current { background: rgba(167,139,250,0.15); border-color: rgba(167,139,250,0.5); color: var(--accent); font-weight: 700; }
+.phase-next-btn { display: inline-block; background: linear-gradient(135deg,#a78bfa,#5b8def); color: #fff; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 20px rgba(167,139,250,0.4); transition: all .2s; }
+.phase-next-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(167,139,250,0.5); }
 </style>
 </head>
 <body>
 
+<nav class="lesson-nav">
+  <a href="../index.html" class="nav-home">&#127968; Hub</a>
+  <span class="nav-path">Phase 1: Think &#8594; B&#224;i 4/4</span>
+  <a href="03-clean-code.html" class="nav-prev">&#8592; B&#224;i tr&#432;&#7899;c</a>
+  <a href="../phase-2-build/05-design-system.html" class="nav-next">Phase 2: Build &#8594;</a>
+</nav>
+
 <header>
   <div class="header-inner">
-    <span class="phase-badge">PHASE 1 · THINK</span>
-    <h1>🏗️ Design Patterns</h1>
-    <span class="header-sub">Bài 04 / 04</span>
+    <span class="phase-badge">PHASE 1 &middot; THINK</span>
+    <h1>&#127959;&#65039; Design Patterns</h1>
+    <span class="header-sub">B&#224;i 04 / 04</span>
     <div class="progress-bar" style="width:100%">
       <div class="progress-fill" id="progressFill" style="width:12.5%"></div>
     </div>
@@ -141,48 +212,57 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 
 <main>
 
+<div class="prerequisites">
+  <div class="prereq-title">&#128214; Ti&#234;n quy&#7871;t</div>
+  <div class="prereq-list">
+    <a href="03-clean-code.html" class="prereq-tag">&#9989; B&#224;i 3: Clean Code</a>
+    <span class="prereq-tag" style="opacity:.6;cursor:default">Hi&#7875;u SOLID principles (&#273;&#7863;c bi&#7879;t S v&#224; D)</span>
+    <span class="prereq-tag" style="opacity:.6;cursor:default">Bi&#7871;t kh&#225;i ni&#7879;m interface v&#224; abstract class</span>
+  </div>
+</div>
+
 <!-- SEC 0: WHY -->
 <div class="section active" id="sec-0">
   <div class="section-header">
-    <div class="section-num">Tại sao cần Patterns?</div>
-    <div class="section-title">Giải Pháp Đã Được Chứng Minh</div>
-    <div class="section-desc">Design patterns là các giải pháp có thể tái sử dụng cho các vấn đề thường gặp trong thiết kế phần mềm.</div>
+    <div class="section-num">T&#7841;i sao c&#7847;n Patterns?</div>
+    <div class="section-title">Gi&#7843;i Ph&#225;p &#272;&#227; &#272;&#432;&#7907;c Ch&#7913;ng Minh</div>
+    <div class="section-desc">Design patterns l&#224; c&#225;c gi&#7843;i ph&#225;p c&#243; th&#7875; t&#225;i s&#7917; d&#7909;ng cho c&#225;c v&#7845;n &#273;&#7873; th&#432;&#7901;ng g&#7863;p trong thi&#7871;t k&#7871; ph&#7847;n m&#7873;m. Li&#234;n quan m&#7853;t thi&#7871;t v&#7899;i <span class="cross-ref" title="Xem b&#224;i 3: SOLID principles">SOLID t&#7915; b&#224;i 3</span>.</div>
   </div>
 
   <div class="card">
-    <div class="card-title">🔄 Pattern xuất hiện như thế nào?</div>
+    <div class="card-title">&#128260; Pattern xu&#7845;t hi&#7879;n nh&#432; th&#7871; n&#224;o?</div>
     <div style="display:flex;flex-direction:column;gap:0;align-items:center;margin:20px 0;">
-      <div style="background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:14px 24px;text-align:center;color:var(--red);font-size:.9rem;">😤 Vấn đề lặp đi lặp lại</div>
+      <div style="background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:14px 24px;text-align:center;color:var(--red);font-size:.9rem;">&#128548; V&#7845;n &#273;&#7873; l&#7863;p &#273;i l&#7863;p l&#7841;i</div>
       <div style="width:2px;height:24px;background:var(--border)"></div>
-      <div style="background:rgba(255,183,71,0.08);border:1px solid rgba(255,183,71,0.25);border-radius:10px;padding:14px 24px;text-align:center;color:var(--orange);font-size:.9rem;">🔧 Giải pháp đặc thù cho từng dự án</div>
+      <div style="background:rgba(255,183,71,0.08);border:1px solid rgba(255,183,71,0.25);border-radius:10px;padding:14px 24px;text-align:center;color:var(--orange);font-size:.9rem;">&#128296; Gi&#7843;i ph&#225;p &#273;&#7863;c th&#249; cho t&#7915;ng d&#7921; &#225;n</div>
       <div style="width:2px;height:24px;background:var(--border)"></div>
-      <div style="background:rgba(91,141,239,0.08);border:1px solid rgba(91,141,239,0.25);border-radius:10px;padding:14px 24px;text-align:center;color:var(--blue);font-size:.9rem;">💡 Nhận ra pattern chung giữa các giải pháp</div>
+      <div style="background:rgba(91,141,239,0.08);border:1px solid rgba(91,141,239,0.25);border-radius:10px;padding:14px 24px;text-align:center;color:var(--blue);font-size:.9rem;">&#128161; Nh&#7853;n ra pattern chung gi&#7919;a c&#225;c gi&#7843;i ph&#225;p</div>
       <div style="width:2px;height:24px;background:var(--border)"></div>
-      <div style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.25);border-radius:10px;padding:14px 24px;text-align:center;color:var(--green);font-size:.9rem;">📖 Đặt tên + document → Design Pattern</div>
+      <div style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.25);border-radius:10px;padding:14px 24px;text-align:center;color:var(--green);font-size:.9rem;">&#128214; &#272;&#7863;t t&#234;n + document &#8594; Design Pattern</div>
     </div>
   </div>
 
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0;">
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
-      <div style="font-size:1.8rem;margin-bottom:8px;">🏭</div>
+      <div style="font-size:1.8rem;margin-bottom:8px;">&#127981;</div>
       <div style="font-weight:700;color:var(--yellow);font-size:.9rem;margin-bottom:4px;">Creational</div>
-      <div style="font-size:.78rem;color:var(--muted)">Cách tạo object: Factory, Singleton, Builder</div>
+      <div style="font-size:.78rem;color:var(--muted)">C&#225;ch t&#7841;o object: Factory, Singleton, Builder</div>
     </div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
-      <div style="font-size:1.8rem;margin-bottom:8px;">🏗️</div>
+      <div style="font-size:1.8rem;margin-bottom:8px;">&#127959;&#65039;</div>
       <div style="font-weight:700;color:var(--blue);font-size:.9rem;margin-bottom:4px;">Structural</div>
-      <div style="font-size:.78rem;color:var(--muted)">Cấu trúc class: Adapter, Decorator, Facade</div>
+      <div style="font-size:.78rem;color:var(--muted)">C&#7845;u tr&#250;c class: Adapter, Decorator, Facade</div>
     </div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
-      <div style="font-size:1.8rem;margin-bottom:8px;">🎭</div>
+      <div style="font-size:1.8rem;margin-bottom:8px;">&#127917;</div>
       <div style="font-weight:700;color:var(--teal);font-size:.9rem;margin-bottom:4px;">Behavioral</div>
-      <div style="font-size:.78rem;color:var(--muted)">Giao tiếp giữa objects: Strategy, Observer, Command</div>
+      <div style="font-size:.78rem;color:var(--muted)">Giao ti&#7871;p gi&#7919;a objects: Strategy, Observer, Command</div>
     </div>
   </div>
 
   <div class="highlight">
-    <div class="highlight-label">Quan trọng</div>
-    <div class="highlight-text">Học pattern không phải để áp dụng mọi lúc. Mà để nhận ra khi nào thì pattern này phù hợp — và khi nào thì <strong>không</strong>.</div>
+    <div class="highlight-label">Quan tr&#7885;ng</div>
+    <div class="highlight-text">H&#7885;c pattern kh&#244;ng ph&#7843;i &#273;&#7875; &#225;p d&#7909;ng m&#7885;i l&#250;c. M&#224; &#273;&#7875; nh&#7853;n ra khi n&#224;o th&#236; pattern n&#224;y ph&#249; h&#7907;p &#8212; v&#224; khi n&#224;o th&#236; <strong>kh&#244;ng</strong>.</div>
   </div>
 </div>
 
@@ -190,88 +270,75 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 <div class="section" id="sec-1">
   <div class="section-header">
     <div class="section-num">Creational Patterns</div>
-    <div class="section-title">Cách Tạo Objects</div>
-    <div class="section-desc">Kiểm soát quá trình khởi tạo objects — linh hoạt, có thể cấu hình, dễ thay thế.</div>
+    <div class="section-title">C&#225;ch T&#7841;o Objects</div>
+    <div class="section-desc">Ki&#7875;m so&#225;t qu&#225; tr&#236;nh kh&#7903;i t&#7841;o objects &#8212; linh ho&#7841;t, c&#243; th&#7875; c&#7845;u h&#236;nh, d&#7877; thay th&#7871;. Th&#7875; hi&#7879;n c&#7909; th&#7875; c&#7911;a <span class="cross-ref" title="Open/Closed + DIP t&#7915; b&#224;i 3">OCP v&#224; DIP &#8594; B&#224;i 3</span>.</div>
   </div>
 
   <div class="pattern-tabs">
-    <button class="ptab active" onclick="showCreational('factory')">🏭 Factory</button>
-    <button class="ptab" onclick="showCreational('singleton')">💎 Singleton</button>
-    <button class="ptab" onclick="showCreational('builder')">🧱 Builder</button>
+    <button class="ptab active" onclick="showCreational('factory')">&#127981; Factory</button>
+    <button class="ptab" onclick="showCreational('singleton')">&#128142; Singleton</button>
+    <button class="ptab" onclick="showCreational('builder')">&#129522; Builder</button>
   </div>
 
-  <!-- FACTORY -->
   <div class="pattern-panel show" id="cp-factory">
     <div class="card">
-      <div style="color:var(--yellow);font-weight:700;margin-bottom:12px;">Factory — Nhà máy sản xuất objects</div>
-      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Thay vì <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent)">new Dog()</code> hay <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent)">new Cat()</code>, bạn gọi <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent)">AnimalFactory.create(type)</code>. Factory quyết định tạo loại nào.</div>
+      <div style="color:var(--yellow);font-weight:700;margin-bottom:12px;">Factory &#8212; Nh&#224; m&#225;y s&#7843;n xu&#7845;t objects</div>
+      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Thay v&#236; <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent)">new Dog()</code> hay <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent)">new Cat()</code>, b&#7841;n g&#7885;i <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent)">AnimalFactory.create(type)</code>. Factory quy&#7871;t &#273;&#7883;nh t&#7841;o lo&#7841;i n&#224;o.</div>
       <div class="factory-anim">
         <div class="factory-inputs">
-          <div class="factory-input" onclick="runFactory('dog')">🐕 'dog'</div>
-          <div class="factory-input" onclick="runFactory('cat')">🐈 'cat'</div>
-          <div class="factory-input" onclick="runFactory('bird')">🐦 'bird'</div>
+          <div class="factory-input" onclick="runFactory('dog')">&#128021; 'dog'</div>
+          <div class="factory-input" onclick="runFactory('cat')">&#128008; 'cat'</div>
+          <div class="factory-input" onclick="runFactory('bird')">&#128038; 'bird'</div>
         </div>
-        <div>→</div>
+        <div>&#8594;</div>
         <div class="factory-machine">
-          <div class="factory-machine-label">🏭 AnimalFactory</div>
+          <div class="factory-machine-label">&#127981; AnimalFactory</div>
           <div class="factory-machine-sub">.create(type)</div>
         </div>
-        <div>→</div>
+        <div>&#8594;</div>
         <div class="factory-output" id="factoryOut">?</div>
       </div>
     </div>
     <div class="pattern-layout">
       <div class="pattern-info">
-        <div class="pi-label" style="color:var(--green)">✅ Dùng khi</div>
-        <div class="pi-content">Không biết trước sẽ tạo object loại nào. Type phụ thuộc vào runtime data. Muốn ẩn logic khởi tạo phức tạp.</div>
-        <div class="pi-tag use">Factory Method · Abstract Factory</div>
+        <div class="pi-label" style="color:var(--green)">&#9989; D&#249;ng khi</div>
+        <div class="pi-content">Kh&#244;ng bi&#7871;t tr&#432;&#7899;c s&#7869; t&#7841;o object lo&#7841;i n&#224;o. Type ph&#7909; thu&#7897;c v&#224;o runtime data. Mu&#7889;n &#7849;n logic kh&#7903;i t&#7841;o ph&#7913;c t&#7841;p.</div>
+        <div class="pi-tag use">Factory Method &middot; Abstract Factory</div>
       </div>
       <div class="pattern-info">
-        <div class="pi-label" style="color:var(--red)">❌ Không dùng khi</div>
-        <div class="pi-content">Chỉ có 1 loại object. Logic tạo object đơn giản. Việc thêm Factory tạo ra complexity không cần thiết.</div>
+        <div class="pi-label" style="color:var(--red)">&#10060; Kh&#244;ng d&#249;ng khi</div>
+        <div class="pi-content">Ch&#7881; c&#243; 1 lo&#7841;i object. Logic t&#7841;o object &#273;&#417;n gi&#7843;n. Vi&#7879;c th&#234;m Factory t&#7841;o ra complexity kh&#244;ng c&#7847;n thi&#7871;t.</div>
       </div>
     </div>
   </div>
 
-  <!-- SINGLETON -->
   <div class="pattern-panel" id="cp-singleton">
     <div class="card">
-      <div style="color:var(--yellow);font-weight:700;margin-bottom:12px;">Singleton — Chỉ 1 instance duy nhất</div>
-      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Đảm bảo class chỉ có 1 instance và cung cấp global access point. Ví dụ: Logger, DB Connection Pool, Config.</div>
+      <div style="color:var(--yellow);font-weight:700;margin-bottom:12px;">Singleton &#8212; Ch&#7881; 1 instance duy nh&#7845;t</div>
+      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">&#272;&#7843;m b&#7843;o class ch&#7881; c&#243; 1 instance v&#224; cung c&#7845;p global access point. V&#237; d&#7909;: Logger, DB Connection Pool, Config.</div>
       <div class="singleton-demo">
         <div class="client-box">Client A<br><span style="font-size:.7rem;color:var(--muted)">getInstance()</span></div>
-        <div class="sing-arrow">→</div>
+        <div class="sing-arrow">&#8594;</div>
         <div class="singleton-box">
-          <div class="singleton-label">💎 DatabasePool</div>
+          <div class="singleton-label">&#128142; DatabasePool</div>
           <div class="singleton-id">Instance: #0x4A2F</div>
           <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">maxConnections: 10</div>
         </div>
-        <div class="sing-arrow">←</div>
+        <div class="sing-arrow">&#8592;</div>
         <div class="client-box">Client B<br><span style="font-size:.7rem;color:var(--muted)">getInstance()</span></div>
       </div>
-      <div style="text-align:center;color:var(--green);font-size:.85rem;margin-top:8px;">Cả hai Client đều nhận cùng 1 instance: #0x4A2F</div>
-    </div>
-    <div class="pattern-layout">
-      <div class="pattern-info">
-        <div class="pi-label" style="color:var(--green)">✅ Dùng khi</div>
-        <div class="pi-content">Cần đúng 1 instance (DB connection, logger, config). Cần global access point được kiểm soát.</div>
-      </div>
-      <div class="pattern-info">
-        <div class="pi-label" style="color:var(--red)">❌ Cảnh báo</div>
-        <div class="pi-content">Global state = khó test. Overuse Singleton = anti-pattern. Trong NestJS, dùng <code style="font-family:monospace">@Injectable()</code> scope thay thế.</div>
-      </div>
+      <div style="text-align:center;color:var(--green);font-size:.85rem;margin-top:8px;">C&#7843; hai Client &#273;&#7873;u nh&#7853;n c&#249;ng 1 instance: #0x4A2F</div>
     </div>
   </div>
 
-  <!-- BUILDER -->
   <div class="pattern-panel" id="cp-builder">
     <div class="card">
-      <div style="color:var(--yellow);font-weight:700;margin-bottom:12px;">Builder — Tạo object phức tạp từng bước</div>
-      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Tách construction của complex object khỏi representation. Tạo object có nhiều optional params một cách readable.</div>
+      <div style="color:var(--yellow);font-weight:700;margin-bottom:12px;">Builder &#8212; T&#7841;o object ph&#7913;c t&#7841;p t&#7915;ng b&#432;&#7899;c</div>
+      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">T&#225;ch construction c&#7911;a complex object kh&#7887;i representation. T&#7841;o object c&#243; nhi&#7873;u optional params m&#7897;t c&#225;ch readable.</div>
       <div style="background:var(--surface2);border-radius:12px;padding:16px;font-family:monospace;font-size:.82rem;line-height:1.9">
-        <span class="cmt">// ❌ Không có Builder</span><br>
+        <span class="cmt">// &#10060; Kh&#244;ng c&#243; Builder</span><br>
         <span class="kw">new</span> <span class="fn">HttpRequest</span>(<span class="str">'GET'</span>, <span class="str">'/api'</span>, null, {}, <span class="num">30</span>, <span class="kw">true</span>)<br><br>
-        <span class="cmt">// ✅ Có Builder</span><br>
+        <span class="cmt">// &#9989; C&#243; Builder</span><br>
         <span class="kw">new</span> <span class="fn">HttpRequestBuilder</span>()<br>
         &nbsp;&nbsp;.<span class="fn">method</span>(<span class="str">'GET'</span>)<br>
         &nbsp;&nbsp;.<span class="fn">url</span>(<span class="str">'/api/users'</span>)<br>
@@ -283,11 +350,11 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   </div>
 
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
-      <li>Factory: khi cần linh hoạt trong việc tạo objects</li>
-      <li>Singleton: dùng cẩn thận, tránh global state</li>
-      <li>Builder: khi object có nhiều optional configurations</li>
+      <li>Factory: khi c&#7847;n linh ho&#7841;t trong vi&#7879;c t&#7841;o objects</li>
+      <li>Singleton: d&#249;ng c&#7849;n th&#7853;n, tr&#225;nh global state</li>
+      <li>Builder: khi object c&#243; nhi&#7873;u optional configurations</li>
     </ul>
   </div>
 </div>
@@ -296,77 +363,53 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 <div class="section" id="sec-2">
   <div class="section-header">
     <div class="section-num">Structural Patterns</div>
-    <div class="section-title">Cấu Trúc Classes & Objects</div>
-    <div class="section-desc">Cách tổ chức classes và objects để tạo cấu trúc lớn hơn, linh hoạt hơn.</div>
+    <div class="section-title">C&#7845;u Tr&#250;c Classes &amp; Objects</div>
+    <div class="section-desc">C&#225;ch t&#7893; ch&#7913;c classes v&#224; objects &#273;&#7875; t&#7841;o c&#7845;u tr&#250;c l&#7899;n h&#417;n, linh ho&#7841;t h&#417;n. Decorator l&#224; c&#225;ch NestJS hi&#7879;n th&#7883; <span class="cross-ref" title="Open/Closed t&#7915; b&#224;i 3">OCP t&#7915; b&#224;i 3</span>.</div>
   </div>
 
   <div class="pattern-tabs">
-    <button class="ptab active" onclick="showStructural('adapter')">🔌 Adapter</button>
-    <button class="ptab" onclick="showStructural('decorator')">🎁 Decorator</button>
-    <button class="ptab" onclick="showStructural('facade')">🏠 Facade</button>
+    <button class="ptab active" onclick="showStructural('adapter')">&#128268; Adapter</button>
+    <button class="ptab" onclick="showStructural('decorator')">&#127873; Decorator</button>
+    <button class="ptab" onclick="showStructural('facade')">&#127968; Facade</button>
   </div>
 
-  <!-- ADAPTER -->
   <div class="pattern-panel show" id="sp-adapter">
     <div class="card">
-      <div style="color:var(--blue);font-weight:700;margin-bottom:12px;">Adapter — Chuyển đổi interface</div>
-      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Giống bộ chuyển đổi ổ điện khi đi nước ngoài. Cho phép hai interfaces không tương thích làm việc với nhau.</div>
+      <div style="color:var(--blue);font-weight:700;margin-bottom:12px;">Adapter &#8212; Chuy&#7875;n &#273;&#7893;i interface</div>
+      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Gi&#7889;ng b&#7897; chuy&#7875;n &#273;&#7893;i &#7893; &#273;i&#7879;n khi &#273;i n&#432;&#7899;c ngo&#224;i. Cho ph&#233;p hai interfaces kh&#244;ng t&#432;&#417;ng th&#237;ch l&#224;m vi&#7879;c v&#7899;i nhau.</div>
       <div class="adapter-demo">
-        <div class="ad-old">🇺🇸 US Plugin<br><code style="font-size:.72rem">charge(110V)</code></div>
-        <div class="ad-arrow">→</div>
-        <div class="ad-adapter">🔌 Adapter<br><small>110V → 220V</small></div>
-        <div class="ad-arrow">→</div>
-        <div class="ad-new">🇻🇳 VN Socket<br><code style="font-size:.72rem">accept(220V)</code></div>
-      </div>
-      <div style="background:var(--surface2);border-radius:10px;padding:14px;font-family:monospace;font-size:.8rem;line-height:1.8">
-        <span class="cmt">// Old payment API</span><br>
-        legacyPay.<span class="fn">processCC</span>(cardNum, amount)<br><br>
-        <span class="cmt">// Adapter → new interface</span><br>
-        <span class="kw">class</span> <span class="fn">PaymentAdapter</span> {<br>
-        &nbsp;&nbsp;<span class="fn">pay</span>(method, amount) { <span class="cmt">// new interface</span><br>
-        &nbsp;&nbsp;&nbsp;&nbsp;legacy.<span class="fn">processCC</span>(...) <span class="cmt">// gọi old API</span><br>
-        &nbsp;&nbsp;}<br>
-        }
-      </div>
-    </div>
-    <div class="pattern-layout">
-      <div class="pattern-info">
-        <div class="pi-label" style="color:var(--green)">✅ Dùng khi</div>
-        <div class="pi-content">Tích hợp thư viện third-party với interface khác. Reuse legacy code mà không sửa nó.</div>
-      </div>
-      <div class="pattern-info">
-        <div class="pi-label" style="color:var(--red)">❌ Không dùng khi</div>
-        <div class="pi-content">Có thể sửa trực tiếp source code. Thêm Adapter chỉ tạo thêm complexity không cần.</div>
+        <div class="ad-old">&#127482;&#127480; US Plugin<br><code style="font-size:.72rem">charge(110V)</code></div>
+        <div class="ad-arrow">&#8594;</div>
+        <div class="ad-adapter">&#128268; Adapter<br><small>110V &#8594; 220V</small></div>
+        <div class="ad-arrow">&#8594;</div>
+        <div class="ad-new">&#127987;&#65039; VN Socket<br><code style="font-size:.72rem">accept(220V)</code></div>
       </div>
     </div>
   </div>
 
-  <!-- DECORATOR -->
   <div class="pattern-panel" id="sp-decorator">
     <div class="card">
-      <div style="color:var(--blue);font-weight:700;margin-bottom:12px;">Decorator — Thêm behavior mà không sửa class gốc</div>
-      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Wrap object với layers để thêm chức năng. Như gói quà — bên trong không đổi, bên ngoài thêm giấy gói, nơ, hộp...</div>
+      <div style="color:var(--blue);font-weight:700;margin-bottom:12px;">Decorator &#8212; Th&#234;m behavior m&#224; kh&#244;ng s&#7917;a class g&#7889;c</div>
+      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Wrap object v&#7899;i layers &#273;&#7875; th&#234;m ch&#7913;c n&#259;ng. NestJS <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;color:var(--accent)">@UseGuards</code>, <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;color:var(--accent)">@UseInterceptors</code> l&#224; Decorator pattern!</div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin:16px 0;">
         <div style="background:rgba(255,183,71,0.1);border:1px solid rgba(255,183,71,0.3);border-radius:8px;padding:8px 20px;width:220px;text-align:center;font-size:.82rem;color:var(--orange)">LoggingDecorator</div>
         <div style="background:rgba(91,141,239,0.1);border:1px solid rgba(91,141,239,0.3);border-radius:8px;padding:8px 20px;width:180px;text-align:center;font-size:.82rem;color:var(--blue)">CachingDecorator</div>
         <div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.3);border-radius:8px;padding:8px 20px;width:140px;text-align:center;font-size:.82rem;color:var(--green)">AuthDecorator</div>
         <div style="background:rgba(167,139,250,0.15);border:2px solid var(--accent);border-radius:8px;padding:10px 20px;width:110px;text-align:center;font-size:.82rem;color:var(--accent);font-weight:700">UserService</div>
       </div>
-      <div style="font-size:.82rem;color:var(--muted);text-align:center;">NestJS <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;color:var(--accent)">@UseGuards</code>, <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;color:var(--accent)">@UseInterceptors</code> là Decorator pattern!</div>
     </div>
   </div>
 
-  <!-- FACADE -->
   <div class="pattern-panel" id="sp-facade">
     <div class="card">
-      <div style="color:var(--blue);font-weight:700;margin-bottom:12px;">Facade — Giao diện đơn giản cho hệ thống phức tạp</div>
-      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Remote TV = Facade cho hàng trăm mạch điện phức tạp bên trong. Người dùng chỉ cần biết nút ON/OFF.</div>
+      <div style="color:var(--blue);font-weight:700;margin-bottom:12px;">Facade &#8212; Giao di&#7879;n &#273;&#417;n gi&#7843;n cho h&#7879; th&#7889;ng ph&#7913;c t&#7841;p</div>
+      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Remote TV = Facade cho h&#224;ng tr&#259;m m&#7841;ch &#273;i&#7879;n ph&#7913;c t&#7841;p b&#234;n trong. Ng&#432;&#7901;i d&#249;ng ch&#7881; c&#7847;n bi&#7871;t n&#250;t ON/OFF.</div>
       <div style="display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;">
         <div style="background:rgba(0,206,201,0.1);border:2px solid var(--teal);border-radius:12px;padding:16px 24px;text-align:center;">
-          <div style="color:var(--teal);font-weight:700;margin-bottom:8px;">🎬 OrderFacade</div>
+          <div style="color:var(--teal);font-weight:700;margin-bottom:8px;">&#127908; OrderFacade</div>
           <div style="font-family:monospace;font-size:.78rem;color:var(--muted)">placeOrder(cart)</div>
         </div>
-        <div style="color:var(--muted)">→</div>
+        <div style="color:var(--muted)">&#8594;</div>
         <div style="display:flex;flex-direction:column;gap:6px;">
           <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.75rem;color:var(--muted)">PaymentService.charge()</div>
           <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.75rem;color:var(--muted)">InventoryService.reserve()</div>
@@ -378,11 +421,11 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   </div>
 
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
-      <li>Adapter: "kết nối" hai thứ không tương thích</li>
-      <li>Decorator: thêm chức năng mà không sửa code gốc</li>
-      <li>Facade: đơn giản hóa interface cho hệ thống phức tạp</li>
+      <li>Adapter: "k&#7871;t n&#7889;i" hai th&#7913; kh&#244;ng t&#432;&#417;ng th&#237;ch</li>
+      <li>Decorator: th&#234;m ch&#7913;c n&#259;ng m&#224; kh&#244;ng s&#7917;a code g&#7889;c</li>
+      <li>Facade: &#273;&#417;n gi&#7843;n h&#243;a interface cho h&#7879; th&#7889;ng ph&#7913;c t&#7841;p</li>
     </ul>
   </div>
 </div>
@@ -391,88 +434,75 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 <div class="section" id="sec-3">
   <div class="section-header">
     <div class="section-num">Behavioral Patterns</div>
-    <div class="section-title">Giao Tiếp Giữa Objects</div>
-    <div class="section-desc">Cách các objects giao tiếp, chia sẻ trách nhiệm và thực hiện hành động.</div>
+    <div class="section-title">Giao Ti&#7871;p Gi&#7919;a Objects</div>
+    <div class="section-desc">C&#225;ch c&#225;c objects giao ti&#7871;p, chia s&#7867; tr&#225;ch nhi&#7879;m v&#224; th&#7921;c hi&#7879;n h&#224;nh &#273;&#7897;ng.</div>
   </div>
 
   <div class="pattern-tabs">
-    <button class="ptab active" onclick="showBehavioral('strategy')">🎯 Strategy</button>
-    <button class="ptab" onclick="showBehavioral('observer')">👀 Observer</button>
-    <button class="ptab" onclick="showBehavioral('command')">📋 Command</button>
+    <button class="ptab active" onclick="showBehavioral('strategy')">&#127919; Strategy</button>
+    <button class="ptab" onclick="showBehavioral('observer')">&#128064; Observer</button>
+    <button class="ptab" onclick="showBehavioral('command')">&#128203; Command</button>
   </div>
 
-  <!-- STRATEGY -->
   <div class="pattern-panel show" id="bp-strategy">
     <div class="card">
-      <div style="color:var(--teal);font-weight:700;margin-bottom:12px;">Strategy — Swap thuật toán lúc runtime</div>
-      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Định nghĩa một family of algorithms, đóng gói từng cái, và làm chúng interchangeable.</div>
+      <div style="color:var(--teal);font-weight:700;margin-bottom:12px;">Strategy &#8212; Swap thu&#7853;t to&#225;n l&#250;c runtime</div>
+      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">&#272;&#7883;nh ngh&#297;a m&#7897;t family of algorithms, &#273;&#243;ng g&#243;i t&#7915;ng c&#225;i, v&#224; l&#224;m ch&#250;ng interchangeable.</div>
       <div class="strategy-demo">
         <div class="strat-context">
-          <div class="strat-label">🛒 SortContext</div>
-          <div style="font-size:.78rem;color:var(--muted);margin-top:4px;" id="stratCurrent">Đang dùng: Bubble Sort</div>
+          <div class="strat-label">&#128722; SortContext</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:4px;" id="stratCurrent">&#272;ang d&#249;ng: Bubble Sort</div>
         </div>
         <div class="strat-grid">
-          <div class="strat-item active" onclick="selectStrat(this,'Bubble Sort')">🫧 Bubble Sort<br><small>O(n²)</small></div>
-          <div class="strat-item" onclick="selectStrat(this,'Quick Sort')">⚡ Quick Sort<br><small>O(n log n)</small></div>
-          <div class="strat-item" onclick="selectStrat(this,'Merge Sort')">🔀 Merge Sort<br><small>O(n log n)</small></div>
+          <div class="strat-item active" onclick="selectStrat(this,'Bubble Sort')">&#129403; Bubble Sort<br><small>O(n&#178;)</small></div>
+          <div class="strat-item" onclick="selectStrat(this,'Quick Sort')">&#9889; Quick Sort<br><small>O(n log n)</small></div>
+          <div class="strat-item" onclick="selectStrat(this,'Merge Sort')">&#128256; Merge Sort<br><small>O(n log n)</small></div>
         </div>
       </div>
-      <div style="color:var(--teal);font-size:.82rem;margin-top:12px;">Click để swap strategy — context code không thay đổi!</div>
     </div>
   </div>
 
-  <!-- OBSERVER -->
   <div class="pattern-panel" id="bp-observer">
     <div class="card">
-      <div style="color:var(--teal);font-weight:700;margin-bottom:12px;">Observer — Đăng ký và nhận thông báo</div>
-      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Giống đăng ký báo — khi có số mới, toà soạn tự gửi cho tất cả subscribers.</div>
+      <div style="color:var(--teal);font-weight:700;margin-bottom:12px;">Observer &#8212; &#272;&#259;ng k&#253; v&#224; nh&#7853;n th&#244;ng b&#225;o</div>
+      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Gi&#7889;ng &#273;&#259;ng k&#253; b&#225;o &#8212; khi c&#243; s&#7889; m&#7899;i, to&#224; so&#7841;n t&#7921; g&#7917;i cho t&#7845;t c&#7843; subscribers.</div>
       <div class="observer-demo">
         <div class="publisher">
-          <div class="pub-label">📰 EventBus — "order.created"</div>
-          <button class="obs-trigger" onclick="triggerObserver()">🔔 Emit Event</button>
+          <div class="pub-label">&#128240; EventBus &#8212; "order.created"</div>
+          <button class="obs-trigger" onclick="triggerObserver()">&#128276; Emit Event</button>
         </div>
         <div class="obs-grid">
-          <div class="obs-box" id="obs1">📧 EmailService<br><small style="color:var(--muted)">subscriber</small></div>
-          <div class="obs-box" id="obs2">📊 Analytics<br><small style="color:var(--muted)">subscriber</small></div>
-          <div class="obs-box" id="obs3">📦 Inventory<br><small style="color:var(--muted)">subscriber</small></div>
+          <div class="obs-box" id="obs1">&#128231; EmailService<br><small style="color:var(--muted)">subscriber</small></div>
+          <div class="obs-box" id="obs2">&#128202; Analytics<br><small style="color:var(--muted)">subscriber</small></div>
+          <div class="obs-box" id="obs3">&#128230; Inventory<br><small style="color:var(--muted)">subscriber</small></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- COMMAND -->
   <div class="pattern-panel" id="bp-command">
     <div class="card">
-      <div style="color:var(--teal);font-weight:700;margin-bottom:12px;">Command — Đóng gói action thành object</div>
-      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Biến request thành object độc lập. Cho phép queue, log, và undo operations.</div>
+      <div style="color:var(--teal);font-weight:700;margin-bottom:12px;">Command &#8212; &#272;&#243;ng g&#243;i action th&#224;nh object</div>
+      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Bi&#7871;n request th&#224;nh object &#273;&#7897;c l&#7853;p. Cho ph&#233;p queue, log, v&#224; undo operations.</div>
       <div style="display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin:16px 0;">
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;font-size:.82rem;">
-          <div>User clicks Ctrl+Z</div>
-        </div>
-        <div style="color:var(--muted)">→</div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;font-size:.82rem;">User clicks Ctrl+Z</div>
+        <div style="color:var(--muted)">&#8594;</div>
         <div style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:10px;padding:12px 16px;font-size:.82rem;color:var(--accent);">
           Command Stack<br>
-          <div style="font-family:monospace;font-size:.72rem;margin-top:6px;color:var(--muted)">
-            [DeleteCmd] ← top<br>
-            [InsertCmd]<br>
-            [MoveCmd]
-          </div>
+          <div style="font-family:monospace;font-size:.72rem;margin-top:6px;color:var(--muted)">[DeleteCmd] &#8592; top<br>[InsertCmd]<br>[MoveCmd]</div>
         </div>
-        <div style="color:var(--muted)">→</div>
-        <div style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.3);border-radius:10px;padding:12px;text-align:center;font-size:.82rem;color:var(--green);">
-          DeleteCmd.undo()<br><small>→ restore deleted text</small>
-        </div>
+        <div style="color:var(--muted)">&#8594;</div>
+        <div style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.3);border-radius:10px;padding:12px;text-align:center;font-size:.82rem;color:var(--green);">DeleteCmd.undo()<br><small>&#8594; restore deleted text</small></div>
       </div>
-      <div style="font-size:.82rem;color:var(--muted);text-align:center;">Undo/Redo, Job Queue, Transaction log — tất cả dùng Command pattern</div>
     </div>
   </div>
 
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
-      <li>Strategy: khi cần thay đổi algorithm linh hoạt</li>
-      <li>Observer: khi một event cần thông báo cho nhiều consumers</li>
-      <li>Command: khi cần queue, undo, hoặc log operations</li>
+      <li>Strategy: khi c&#7847;n thay &#273;&#7893;i algorithm linh ho&#7841;t</li>
+      <li>Observer: khi m&#7897;t event c&#7847;n th&#244;ng b&#225;o cho nhi&#7873;u consumers</li>
+      <li>Command: khi c&#7847;n queue, undo, ho&#7863;c log operations</li>
     </ul>
   </div>
 </div>
@@ -481,68 +511,287 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 <div class="section" id="sec-4">
   <div class="section-header">
     <div class="section-num">Anti-Patterns</div>
-    <div class="section-title">Khi Nào KHÔNG Dùng Patterns</div>
-    <div class="section-desc">Pattern áp dụng sai chỗ còn tệ hơn không có pattern. Over-engineering là vấn đề phổ biến nhất.</div>
+    <div class="section-title">Khi N&#224;o KH&#212;NG D&#249;ng Patterns</div>
+    <div class="section-desc">Pattern &#225;p d&#7909;ng sai ch&#7895; c&#242;n t&#7879; h&#417;n kh&#244;ng c&#243; pattern. Over-engineering l&#224; v&#7845;n &#273;&#7873; ph&#7893; bi&#7871;n nh&#7845;t.</div>
   </div>
 
   <div class="card">
-    <div class="card-title">⚠️ Over-Engineering Trap</div>
-    <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Junior dev sau khi học Design Patterns thường có xu hướng áp dụng mọi lúc mọi nơi:</div>
+    <div class="card-title">&#9888;&#65039; Over-Engineering Trap</div>
     <div class="anti-cases">
       <div class="anti-case">
-        <div class="anti-label">❌ Factory cho 1 loại object</div>
-        <div class="anti-desc">Dùng Factory khi chỉ tạo UserObject → needless complexity</div>
+        <div class="anti-label">&#10060; Factory cho 1 lo&#7841;i object</div>
+        <div class="anti-desc">D&#249;ng Factory khi ch&#7881; t&#7841;o UserObject &#8594; needless complexity</div>
       </div>
       <div class="anti-case">
-        <div class="anti-label">❌ Singleton cho mọi thứ</div>
-        <div class="anti-desc">Global state = testability nightmare. NestJS DI đã handle việc này.</div>
+        <div class="anti-label">&#10060; Singleton cho m&#7885;i th&#7913;</div>
+        <div class="anti-desc">Global state = testability nightmare. NestJS DI &#273;&#227; handle vi&#7879;c n&#224;y.</div>
       </div>
       <div class="anti-case">
-        <div class="anti-label">❌ Observer cho simple data flow</div>
-        <div class="anti-desc">Gọi function trực tiếp rõ ràng hơn event chain khó trace.</div>
+        <div class="anti-label">&#10060; Observer cho simple data flow</div>
+        <div class="anti-desc">G&#7885;i function tr&#7921;c ti&#7871;p r&#245; r&#224;ng h&#417;n event chain kh&#243; trace.</div>
       </div>
       <div class="anti-case">
-        <div class="anti-label">❌ Builder cho 2-3 params</div>
-        <div class="anti-desc">new User(email, name) đơn giản hơn UserBuilder().setEmail().setName().build()</div>
+        <div class="anti-label">&#10060; Builder cho 2-3 params</div>
+        <div class="anti-desc">new User(email, name) &#273;&#417;n gi&#7843;n h&#417;n UserBuilder().setEmail().build()</div>
       </div>
     </div>
   </div>
 
   <div class="highlight">
     <div class="highlight-label">Rule of Three</div>
-    <div class="highlight-text">Chỉ áp dụng pattern khi bạn thấy cùng vấn đề <strong>3 lần</strong>. Lần đầu — giải thẳng. Lần hai — ghi chú. Lần ba — refactor với pattern.</div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">✅ Checklist trước khi dùng Pattern</div>
-    <div style="display:flex;flex-direction:column;gap:8px;">
-      <div style="display:flex;gap:10px;padding:10px 14px;background:var(--surface2);border-radius:8px;font-size:.88rem;"><span style="color:var(--teal)">?</span> Vấn đề này có thực sự phức tạp đến mức cần pattern không?</div>
-      <div style="display:flex;gap:10px;padding:10px 14px;background:var(--surface2);border-radius:8px;font-size:.88rem;"><span style="color:var(--teal)">?</span> Giải pháp đơn giản hơn có đủ không?</div>
-      <div style="display:flex;gap:10px;padding:10px 14px;background:var(--surface2);border-radius:8px;font-size:.88nm;"><span style="color:var(--teal)">?</span> Team có hiểu pattern này không?</div>
-      <div style="display:flex;gap:10px;padding:10px 14px;background:var(--surface2);border-radius:8px;font-size:.88rem;"><span style="color:var(--teal)">?</span> Trade-off của pattern này có chấp nhận được không?</div>
-    </div>
+    <div class="highlight-text">Ch&#7881; &#225;p d&#7909;ng pattern khi b&#7841;n th&#7845;y c&#249;ng v&#7845;n &#273;&#7873; <strong>3 l&#7847;n</strong>. L&#7847;n &#273;&#7847;u &#8212; gi&#7843;i th&#7859;ng. L&#7847;n hai &#8212; ghi ch&#250;. L&#7847;n ba &#8212; refactor v&#7899;i pattern.</div>
   </div>
 
   <div class="takeaway">
-    <div class="takeaway-title">🏆 Tổng kết Bài 04</div>
+    <div class="takeaway-title">&#127942; T&#7893;ng k&#7871;t B&#224;i 04</div>
     <ul class="takeaway-list">
-      <li><strong>Patterns = vocabulary</strong> — ngôn ngữ chung cho team thảo luận</li>
-      <li>Học pattern → hiểu vấn đề nó giải quyết, không chỉ code mẫu</li>
+      <li><strong>Patterns = vocabulary</strong> &#8212; ng&#244;n ng&#7919; chung cho team th&#7843;o lu&#7853;n</li>
+      <li>H&#7885;c pattern &#8594; hi&#7875;u v&#7845;n &#273;&#7873; n&#243; gi&#7843;i quy&#7871;t, kh&#244;ng ch&#7881; code m&#7851;u</li>
       <li>Creational: Factory, Singleton, Builder</li>
       <li>Structural: Adapter, Decorator, Facade</li>
       <li>Behavioral: Strategy, Observer, Command</li>
-      <li>Anti-pattern: over-engineering > no pattern</li>
+      <li>Anti-pattern: over-engineering &gt; no pattern</li>
     </ul>
   </div>
-</div>
+
+  <!-- EXERCISES SECTION -->
+  <div class="exercises-section">
+    <div class="exercises-title">&#127919; B&#224;i T&#7853;p Th&#7921;c H&#224;nh</div>
+    <div class="exercises-sub">&#225;p d&#7909;ng patterns v&#224;o code th&#7921;c t&#7871;. &#272;&#226;y l&#224; b&#224;i t&#7853;p cu&#7889;i Phase 1 &#8212; th&#7875; hi&#7879;n t&#7893;ng h&#7907;p t&#7915; B&#224;i 1&#8211;4.</div>
+
+    <!-- Ex 1 -->
+    <div class="exercise">
+      <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="ex-num">1</div>
+        <div class="ex-title">Nh&#7853;n di&#7879;n pattern t&#7915; code snippet</div>
+        <span class="ex-diff easy">&#127802; D&#7877;</span>
+        <span class="ex-toggle">&#9660;</span>
+      </div>
+      <div class="ex-body">
+        <p>&#272;&#7885;c c&#225;c &#273;o&#7841;n code d&#432;&#7899;i &#273;&#226;y. X&#225;c &#273;&#7883;nh t&#234;n pattern &#273;&#432;&#7907;c s&#7917; d&#7909;ng v&#224; gi&#7843;i th&#237;ch t&#7841;i sao:</p>
+        <div class="ex-code">
+<span class="cmt">// Snippet A</span><br>
+<span class="kw">class</span> <span class="fn">Logger</span> {<br>
+&nbsp;&nbsp;<span class="kw">private static</span> instance: Logger<br>
+&nbsp;&nbsp;<span class="kw">static</span> <span class="fn">getInstance</span>() {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (!Logger.instance) Logger.instance = <span class="kw">new</span> <span class="fn">Logger</span>()<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> Logger.instance<br>
+&nbsp;&nbsp;}<br>
+}<br><br>
+<span class="cmt">// Snippet B</span><br>
+eventBus.<span class="fn">on</span>(<span class="str">'order.paid'</span>, sendEmail)<br>
+eventBus.<span class="fn">on</span>(<span class="str">'order.paid'</span>, updateInventory)<br>
+eventBus.<span class="fn">emit</span>(<span class="str">'order.paid'</span>, order)<br><br>
+<span class="cmt">// Snippet C</span><br>
+<span class="kw">const</span> sorter = <span class="kw">new</span> <span class="fn">Sorter</span>(<span class="kw">new</span> <span class="fn">QuickSortStrategy</span>())<br>
+sorter.<span class="fn">setStrategy</span>(<span class="kw">new</span> <span class="fn">MergeSortStrategy</span>())<br>
+sorter.<span class="fn">sort</span>(data)
+        </div>
+        <button class="ex-reveal-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">&#128273; Xem &#273;&#225;p &#225;n</button>
+        <div class="ex-solution" style="display:none">
+          <strong>&#272;&#225;p &#225;n:</strong><br><br>
+          <strong>Snippet A</strong> = <code>Singleton</code>. D&#7845;u hi&#7879;u: <code>private static instance</code> + <code>getInstance()</code> ki&#7875;m tra tr&#432;&#7899;c khi t&#7841;o. &#7870;ng d&#7909;ng: Logger n&#234;n l&#224; Singleton.<br><br>
+          <strong>Snippet B</strong> = <code>Observer (EventEmitter)</code>. D&#7845;u hi&#7879;u: nhi&#7873;u subscribers &#273;&#259;ng k&#253; c&#249;ng event, publisher emit m&#224; kh&#244;ng bi&#7871;t ai nhận.<br><br>
+          <strong>Snippet C</strong> = <code>Strategy</code>. D&#7845;u hi&#7879;u: <code>setStrategy()</code> cho ph&#233;p swap algorithm l&#250;c runtime m&#224; kh&#244;ng thay &#273;&#7893;i Sorter context.
+        </div>
+      </div>
+    </div>
+
+    <!-- Ex 2 -->
+    <div class="exercise">
+      <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="ex-num">2</div>
+        <div class="ex-title">Implement Factory cho NotificationService</div>
+        <span class="ex-diff easy">&#127802; D&#7877;</span>
+        <span class="ex-toggle">&#9660;</span>
+      </div>
+      <div class="ex-body">
+        <p>Implement <code>NotificationFactory</code> t&#7841;o ra 3 lo&#7841;i notification: Email, SMS, Push. T&#7845;t c&#7843; implement chung interface <code>INotifier</code>:</p>
+        <div class="ex-code">
+<span class="kw">interface</span> <span class="fn">INotifier</span> {<br>
+&nbsp;&nbsp;<span class="fn">send</span>(to: <span class="fn">string</span>, message: <span class="fn">string</span>): <span class="fn">Promise</span>&lt;<span class="kw">void</span>&gt;<br>
+}<br><br>
+<span class="cmt">// TODO: Implement EmailNotifier, SmsNotifier, PushNotifier</span><br>
+<span class="cmt">// TODO: Implement NotificationFactory.create(type: 'email'|'sms'|'push')</span><br><br>
+<span class="cmt">// Usage:</span><br>
+<span class="kw">const</span> notifier = <span class="fn">NotificationFactory</span>.<span class="fn">create</span>(<span class="str">'email'</span>)<br>
+<span class="kw">await</span> notifier.<span class="fn">send</span>(<span class="str">'user@example.com'</span>, <span class="str">'Welcome!'</span>)
+        </div>
+        <p>Bonus: Th&#234;m fallback: n&#7871;u type kh&#244;ng h&#7907;p l&#7879; &#8594; throw <code>UnsupportedNotifierError</code>.</p>
+        <button class="ex-reveal-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">&#128273; Xem g&#7907;i &#253;</button>
+        <div class="ex-solution" style="display:none">
+          <strong>G&#7907;i &#253; implementation:</strong><br><br>
+          <code>class EmailNotifier implements INotifier { async send(to, msg) { /* sendgrid... */ } }</code><br>
+          <code>class SmsNotifier implements INotifier { async send(to, msg) { /* twilio... */ } }</code><br>
+          <code>class PushNotifier implements INotifier { async send(to, msg) { /* firebase... */ } }</code><br><br>
+          <code>class NotificationFactory {</code><br>
+          &nbsp;&nbsp;<code>static create(type: string): INotifier {</code><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<code>const map = { email: EmailNotifier, sms: SmsNotifier, push: PushNotifier }</code><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<code>const Cls = map[type]</code><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<code>if (!Cls) throw new UnsupportedNotifierError(type)</code><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<code>return new Cls()</code><br>
+          &nbsp;&nbsp;<code>}</code><br>
+          <code>}</code><br><br>
+          L&#432;u &#253;: d&#249;ng object map thay v&#236; if/else chain &#8212; d&#7877; m&#7903; r&#7897;ng (OCP).
+        </div>
+      </div>
+    </div>
+
+    <!-- Ex 3 -->
+    <div class="exercise">
+      <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="ex-num">3</div>
+        <div class="ex-title">Observer cho Shopping Cart</div>
+        <span class="ex-diff medium">&#127825; Trung b&#236;nh</span>
+        <span class="ex-toggle">&#9660;</span>
+      </div>
+      <div class="ex-body">
+        <p>Implement Observer pattern cho Shopping Cart. Khi user th&#234;m item v&#224;o cart, 3 h&#224;nh &#273;&#7897;ng ph&#7843;i x&#7843;y ra:</p>
+        <div class="ex-code">
+<span class="cmt">// Events c&#7847;n handle khi addItem() g&#7885;i:</span><br>
+<span class="cmt">// 1. CartUI.update(cart) &#8212; re-render cart counter</span><br>
+<span class="cmt">// 2. Analytics.track('item_added', item) &#8212; analytics</span><br>
+<span class="cmt">// 3. RecommendationEngine.suggest(item) &#8212; g&#7907;i &#253;</span><br><br>
+<span class="kw">class</span> <span class="fn">ShoppingCart</span> {<br>
+&nbsp;&nbsp;items: Item[] = []<br><br>
+&nbsp;&nbsp;<span class="cmt">// TODO: implement subscribe/unsubscribe/notify</span><br>
+&nbsp;&nbsp;<span class="fn">addItem</span>(item: Item) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;this.items.push(item)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// TODO: notify all observers</span><br>
+&nbsp;&nbsp;}<br>
+}
+        </div>
+        <p>Y&#234;u c&#7847;u: (1) T&#7841;o <code>IObserver</code> interface v&#7899;i method <code>onCartUpdate(cart)</code>, (2) implement 3 observers tr&#234;n, (3) Cart c&#243; th&#7875; <code>subscribe</code>/<code>unsubscribe</code> observer.</p>
+        <button class="ex-reveal-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">&#128273; Xem g&#7907;i &#253;</button>
+        <div class="ex-solution" style="display:none">
+          <strong>G&#7907;i &#253;:</strong><br><br>
+          <code>interface IObserver { onCartUpdate(cart: Cart): void }</code><br><br>
+          <code>class ShoppingCart {</code><br>
+          &nbsp;&nbsp;<code>private observers: IObserver[] = []</code><br>
+          &nbsp;&nbsp;<code>subscribe(obs: IObserver) { this.observers.push(obs) }</code><br>
+          &nbsp;&nbsp;<code>unsubscribe(obs: IObserver) { this.observers = this.observers.filter(o => o !== obs) }</code><br>
+          &nbsp;&nbsp;<code>private notify() { this.observers.forEach(o => o.onCartUpdate(this)) }</code><br>
+          &nbsp;&nbsp;<code>addItem(item) { this.items.push(item); this.notify() }</code><br>
+          <code>}</code><br><br>
+          Observers t&#7921; qu&#7843;n l&#253; logic c&#7911;a m&#236;nh &#8212; Cart kh&#244;ng c&#7847;n bi&#7871;t Analytics hay RecommendationEngine.
+        </div>
+      </div>
+    </div>
+
+    <!-- Ex 4 -->
+    <div class="exercise">
+      <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="ex-num">4</div>
+        <div class="ex-title">Strategy cho nhi&#7873;u thu&#7853;t to&#225;n sort</div>
+        <span class="ex-diff medium">&#127825; Trung b&#236;nh</span>
+        <span class="ex-toggle">&#9660;</span>
+      </div>
+      <div class="ex-body">
+        <p>Thi&#7871;t k&#7871; <code>DataSorter</code> s&#7917; d&#7909;ng Strategy pattern. H&#7879; th&#7889;ng c&#243; 3 strategy: BubbleSort, QuickSort, MergeSort. Runtime c&#243; th&#7875; swap:</p>
+        <div class="ex-code">
+<span class="cmt">// Expected usage:</span><br>
+<span class="kw">const</span> sorter = <span class="kw">new</span> <span class="fn">DataSorter</span>(<span class="kw">new</span> <span class="fn">BubbleSortStrategy</span>())<br>
+sorter.<span class="fn">sort</span>([<span class="num">3</span>,<span class="num">1</span>,<span class="num">4</span>,<span class="num">1</span>,<span class="num">5</span>]) <span class="cmt">// dùng Bubble</span><br><br>
+<span class="cmt">// Khi dataset lớn → swap sang QuickSort</span><br>
+<span class="kw">if</span> (data.length &gt; <span class="num">10000</span>) {<br>
+&nbsp;&nbsp;sorter.<span class="fn">setStrategy</span>(<span class="kw">new</span> <span class="fn">QuickSortStrategy</span>())<br>
+}<br>
+sorter.<span class="fn">sort</span>(data) <span class="cmt">// dùng Quick</span>
+        </div>
+        <p>Challenge: Context code (<code>DataSorter</code>) kh&#244;ng thay &#273;&#7893;i khi th&#234;m strategy m&#7899;i. &#272;&#226;y l&#224; hi&#7879;n th&#7883; OCP t&#7915; b&#224;i 3.</p>
+        <button class="ex-reveal-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">&#128273; Xem g&#7907;i &#253;</button>
+        <div class="ex-solution" style="display:none">
+          <strong>G&#7907;i &#253; design:</strong><br><br>
+          <code>interface ISortStrategy { sort(data: number[]): number[] }</code><br><br>
+          <code>class BubbleSortStrategy implements ISortStrategy { sort(data) { /* O(n²) impl */ } }</code><br>
+          <code>class QuickSortStrategy implements ISortStrategy { sort(data) { /* O(n log n) */ } }</code><br><br>
+          <code>class DataSorter {</code><br>
+          &nbsp;&nbsp;<code>constructor(private strategy: ISortStrategy) {}</code><br>
+          &nbsp;&nbsp;<code>setStrategy(s: ISortStrategy) { this.strategy = s }</code><br>
+          &nbsp;&nbsp;<code>sort(data: number[]) { return this.strategy.sort(data) }</code><br>
+          <code>}</code><br><br>
+          Th&#234;m <code>RadixSortStrategy</code> sau? Ch&#7881; th&#234;m class m&#7899;i, kh&#244;ng s&#7917;a <code>DataSorter</code> &#8212; &#273;&#250;ng OCP.
+        </div>
+      </div>
+    </div>
+
+    <!-- Ex 5 -->
+    <div class="exercise">
+      <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="ex-num">5</div>
+        <div class="ex-title">K&#7871;t h&#7907;p Decorator + Strategy cho Payment</div>
+        <span class="ex-diff hard">&#128308; Kh&#243;</span>
+        <span class="ex-toggle">&#9660;</span>
+      </div>
+      <div class="ex-body">
+        <p>Thi&#7871;t k&#7871; h&#7879; th&#7889;ng Payment k&#7871;t h&#7907;p 2 patterns:</p>
+        <ul style="color:var(--muted);font-size:.9rem;line-height:1.8;margin:10px 0 10px 20px;">
+          <li><strong>Strategy</strong>: cho ph&#233;p swap payment method (Credit Card, PayPal, Crypto)</li>
+          <li><strong>Decorator</strong>: th&#234;m layers m&#224; kh&#244;ng s&#7917;a class g&#7889;c (Logging, Retry, FraudCheck)</li>
+        </ul>
+        <div class="ex-code">
+<span class="cmt">// Expected final usage:</span><br>
+<span class="kw">const</span> basePayment = <span class="kw">new</span> <span class="fn">PaymentProcessor</span>(<span class="kw">new</span> <span class="fn">CreditCardStrategy</span>())<br>
+<span class="kw">const</span> withLogging = <span class="kw">new</span> <span class="fn">LoggingDecorator</span>(basePayment)<br>
+<span class="kw">const</span> withRetry = <span class="kw">new</span> <span class="fn">RetryDecorator</span>(withLogging, maxRetries: <span class="num">3</span>)<br>
+<span class="kw">const</span> withFraud = <span class="kw">new</span> <span class="fn">FraudCheckDecorator</span>(withRetry)<br><br>
+<span class="kw">await</span> withFraud.<span class="fn">process</span>(amount, card)
+        </div>
+        <p>Gi&#7843;i th&#237;ch: t&#7841;i sao &#273;&#226;y l&#224; thi&#7871;t k&#7871; t&#7889;t? &#272;i&#7873;u g&#236; x&#7843;y ra n&#7871;u swap sang PayPal v&#224; b&#7887; Retry?</p>
+        <button class="ex-reveal-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">&#128273; Xem ph&#226;n t&#237;ch</button>
+        <div class="ex-solution" style="display:none">
+          <strong>Ph&#226;n t&#237;ch thi&#7871;t k&#7871;:</strong><br><br>
+          <strong>T&#7841;i sao t&#7889;t:</strong><br>
+          &#8226; Strategy cho ph&#233;p swap payment method kh&#244;ng &#7843;nh h&#432;&#7903;ng Logging/Retry/Fraud.<br>
+          &#8226; Decorator stack linh ho&#7841;t: c&#243; th&#7875; c&#243; FraudCheck m&#224; kh&#244;ng c&#243; Retry, ho&#7863;c ng&#432;&#7907;c l&#7841;i.<br>
+          &#8226; M&#7895;i decorator c&#243; 1 trách nhi&#7879;m &#8212; &#273;&#250;ng SRP.<br><br>
+          <strong>Swap sang PayPal + b&#7887; Retry:</strong><br>
+          <code>const base = new PaymentProcessor(new PayPalStrategy())</code><br>
+          <code>const withLogging = new LoggingDecorator(base)</code><br>
+          <code>const withFraud = new FraudCheckDecorator(withLogging)</code><br>
+          &#8594; Ch&#7881; thay 2 d&#242;ng, kh&#244;ng s&#7917;a b&#7845;t k&#7923; class n&#224;o &#8212; &#273;&#250;ng OCP.
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /exercises-section -->
+
+  <!-- LESSON SUMMARY -->
+  <div class="lesson-summary">
+    <div class="summary-title">&#9989; T&#7893;ng k&#7871;t B&#224;i 4: Design Patterns</div>
+    <div class="summary-grid">
+      <div class="summary-item"><strong>Creational</strong>Factory (linh ho&#7841;t t&#7841;o), Singleton (1 instance), Builder (complex object).</div>
+      <div class="summary-item"><strong>Structural</strong>Adapter (k&#7871;t n&#7889;i), Decorator (layer), Facade (&#273;&#417;n gi&#7843;n h&#243;a).</div>
+      <div class="summary-item"><strong>Behavioral</strong>Strategy (swap algo), Observer (event pub/sub), Command (queue/undo).</div>
+      <div class="summary-item"><strong>Anti-pattern</strong>&#193;p d&#7909;ng &#273;&#250;ng lúc &#8212; Rule of Three. Over-engineering = t&#7879; h&#417;n kh&#244;ng c&#243;.</div>
+      <div class="summary-item"><strong>K&#7871;t n&#7889;i SOLID</strong>M&#7895;i pattern th&#7875; hi&#7879;n &#237;t nh&#7845;t 1 nguy&#234;n t&#7855;c SOLID t&#7915; b&#224;i 3.</div>
+      <div class="summary-item"><strong>NestJS in real life</strong>DI = DIP, Guards/Interceptors = Decorator, EventEmitter = Observer.</div>
+    </div>
+  </div>
+
+  <!-- PHASE COMPLETE -->
+  <div class="phase-complete">
+    <h2>&#127881; Ho&#224;n th&#224;nh Phase 1: THINK!</h2>
+    <p>B&#7841;n &#273;&#227; n&#7855;m v&#7919;ng t&#432; duy n&#7873;n t&#7843;ng. S&#7861;n s&#224;ng cho Phase 2: BUILD</p>
+    <div class="phase-progress">
+      <div class="phase-dot done">1. Think &#10003;</div>
+      <div class="phase-dot current">2. Build &#8594;</div>
+      <div class="phase-dot">3. Engineer</div>
+      <div class="phase-dot">4. Production</div>
+      <div class="phase-dot">5. Professional</div>
+    </div>
+    <a href="../phase-2-build/05-design-system.html" class="phase-next-btn">B&#7855;t &#273;&#7847;u Phase 2: BUILD &#8594;</a>
+  </div>
+
+</div><!-- /sec-4 -->
 
 </main>
 
 <div class="nav-bar">
   <div class="nav-inner">
-    <button class="btn btn-prev" id="btnPrev" onclick="navigate(-1)" disabled>← Trước</button>
+    <button class="btn btn-prev" id="btnPrev" onclick="navigate(-1)" disabled>&#8592; Tr&#432;&#7899;c</button>
     <div class="section-dots" id="dots"></div>
-    <button class="btn btn-next" id="btnNext" onclick="navigate(1)">Tiếp theo →</button>
+    <button class="btn btn-next" id="btnNext" onclick="navigate(1)">Ti&#7871;p theo &#8594;</button>
   </div>
 </div>
 
@@ -563,7 +812,7 @@ function goTo(n) {
   current = n;
   document.getElementById(SECTIONS[current]).classList.add('active');
   document.getElementById('btnPrev').disabled = current === 0;
-  document.getElementById('btnNext').textContent = current === SECTIONS.length-1 ? '🏁 Hoàn thành' : 'Tiếp theo →';
+  document.getElementById('btnNext').textContent = current === SECTIONS.length-1 ? '\uD83C\uDFC1 Ho\u00E0n th\u00E0nh' : 'Ti\u1EBFp theo \u2192';
   document.querySelectorAll('.dot').forEach((d,i) => {
     d.className = 'dot' + (i===current?' active':(i<current?' done':''));
   });
@@ -589,7 +838,7 @@ function showBehavioral(id) {
   document.querySelectorAll('.ptab').forEach((t,i) => t.classList.toggle('active', ['strategy','observer','command'][i]===id));
 }
 
-const factories = { dog: '🐕', cat: '🐈', bird: '🐦' };
+const factories = { dog: '\uD83D\uDC15', cat: '\uD83D\uDC08', bird: '\uD83D\uDC26' };
 function runFactory(type) {
   document.querySelectorAll('.factory-input').forEach(f => f.classList.remove('selected'));
   event.target.classList.add('selected');
@@ -609,7 +858,7 @@ function triggerObserver() {
     setTimeout(() => {
       const el = document.getElementById('obs'+n);
       el.classList.add('notified');
-      el.querySelector('small').textContent = '✅ received!';
+      el.querySelector('small').textContent = '\u2705 received!';
       el.querySelector('small').style.color = 'var(--green)';
       setTimeout(() => {
         el.classList.remove('notified');
@@ -623,7 +872,7 @@ function triggerObserver() {
 function selectStrat(el, name) {
   document.querySelectorAll('.strat-item').forEach(s => s.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById('stratCurrent').textContent = 'Đang dùng: ' + name;
+  document.getElementById('stratCurrent').textContent = '\u0110ang d\u00F9ng: ' + name;
 }
 </script>
 </body>

@@ -14,7 +14,17 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 20% 20%, rgba(91,141,239,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(0,206,201,0.04) 0%, transparent 50%); pointer-events:none; z-index:0; }
-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; position: sticky; top: 0; z-index: 100; }
+.top-nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 24px; position: sticky; top: 0; z-index: 200; }
+.top-nav-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: .82rem; }
+.top-nav-home { color: var(--muted); text-decoration: none; transition: color .2s; }
+.top-nav-home:hover { color: var(--blue); }
+.top-nav-sep { color: var(--border); }
+.top-nav-phase { color: var(--blue); font-weight: 700; }
+.top-nav-pos { color: var(--muted); margin-left: auto; }
+.top-nav-arrows { display: flex; gap: 6px; }
+.top-nav-link { color: var(--muted); text-decoration: none; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; transition: all .2s; font-size: .78rem; }
+.top-nav-link:hover { border-color: var(--blue); color: var(--blue); }
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; position: sticky; top: 41px; z-index: 100; }
 .header-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .phase-badge { background: linear-gradient(135deg,#2980b9,#5b8def); color:#fff; padding: 3px 12px; border-radius: 20px; font-size: .7rem; font-weight: 700; }
 header h1 { font-size: 1.3rem; font-weight: 800; background: linear-gradient(135deg,#5b8def,#00cec9); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
@@ -51,14 +61,42 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 .dot { width:8px; height:8px; border-radius:50%; background:var(--border); transition:all .3s; cursor:pointer; }
 .dot.active { background:var(--blue); transform:scale(1.3); }
 .dot.done { background:rgba(91,141,239,0.4); }
-.kw { color:#ff9f7f; }
-.fn { color:#7ec8e3; }
-.str { color:#a8d8a8; }
-.cmt { color:#5a7a6a; }
-
-/* LAYERED ARCH */
+.prereq { background: linear-gradient(135deg,rgba(91,141,239,0.08),rgba(91,141,239,0.04)); border: 1px solid rgba(91,141,239,0.3); border-radius: 12px; padding: 16px 20px; margin-bottom: 28px; }
+.prereq-label { font-size: .7rem; font-weight: 700; color: var(--blue); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.prereq-list { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+.prereq-list li a { color: var(--blue); text-decoration: none; font-size: .85rem; background: rgba(91,141,239,0.1); padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(91,141,239,0.3); transition: all .2s; }
+.prereq-list li a:hover { background: rgba(91,141,239,0.2); }
+.xref { display: inline; color: var(--blue); text-decoration: none; font-size: .85em; background: rgba(91,141,239,0.1); padding: 1px 7px; border-radius: 10px; border: 1px solid rgba(91,141,239,0.3); white-space: nowrap; transition: all .2s; }
+.xref:hover { background: rgba(91,141,239,0.2); }
+.exercises { margin-top: 36px; }
+.ex-title { font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: 16px; }
+.exercise { border-radius: 14px; margin-bottom: 12px; overflow: hidden; }
+.exercise.easy { border: 1px solid rgba(46,204,113,0.4); }
+.exercise.medium { border: 1px solid rgba(255,211,59,0.4); }
+.exercise.hard { border: 1px solid rgba(231,76,60,0.4); }
+.ex-header { padding: 14px 18px; cursor: pointer; display: flex; align-items: center; gap: 10px; user-select: none; }
+.exercise.easy .ex-header { background: rgba(46,204,113,0.07); }
+.exercise.medium .ex-header { background: rgba(255,211,59,0.07); }
+.exercise.hard .ex-header { background: rgba(231,76,60,0.07); }
+.ex-badge { font-size: .7rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+.exercise.easy .ex-badge { background: rgba(46,204,113,0.2); color: var(--green); }
+.exercise.medium .ex-badge { background: rgba(255,211,59,0.2); color: var(--yellow); }
+.exercise.hard .ex-badge { background: rgba(231,76,60,0.2); color: var(--red); }
+.ex-q { font-size: .9rem; font-weight: 600; flex: 1; }
+.ex-toggle { color: var(--muted); font-size: .8rem; transition: transform .3s; }
+.ex-body { display: none; padding: 0 18px 16px; }
+.ex-body.open { display: block; animation: fadeUp .3s; }
+.ex-solution { background: var(--surface2); border-radius: 10px; padding: 14px; margin-top: 10px; }
+.ex-solution-label { font-size: .7rem; color: var(--muted); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.code-block { background: #0a1020; border-radius: 8px; padding: 14px; font-family: monospace; font-size: .8rem; line-height: 1.8; color: #c9d1d9; overflow-x: auto; margin-top: 8px; border: 1px solid var(--border); white-space: pre; }
+.summary-box { background: linear-gradient(135deg,rgba(91,141,239,0.08),rgba(0,206,201,0.06)); border: 1px solid rgba(91,141,239,0.3); border-radius: 16px; padding: 28px; margin-top: 36px; }
+.summary-title { font-size: 1.1rem; font-weight: 800; color: var(--blue); margin-bottom: 16px; }
+.summary-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-bottom: 16px; }
+.summary-item { background: var(--surface2); border-radius: 10px; padding: 12px 14px; font-size: .85rem; display: flex; gap: 8px; align-items: flex-start; }
+.next-preview { background: linear-gradient(135deg,rgba(0,206,201,0.08),rgba(0,206,201,0.04)); border: 1px solid rgba(0,206,201,0.3); border-radius: 12px; padding: 18px 22px; }
+.next-preview-label { font-size: .7rem; font-weight: 700; color: var(--teal); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
 .layer-stack { display:flex; flex-direction:column; gap:4px; margin:24px 0; }
-.layer { border-radius:10px; padding:14px 24px; display:flex; align-items:center; gap:16px; cursor:pointer; transition:all .3s; position:relative; }
+.layer { border-radius:10px; padding:14px 24px; display:flex; align-items:center; gap:16px; cursor:pointer; transition:all .3s; }
 .layer:hover { transform:translateX(4px); }
 .layer.presentation { background:linear-gradient(135deg,rgba(255,94,122,0.12),rgba(255,94,122,0.06)); border:1px solid rgba(255,94,122,0.3); }
 .layer.business { background:linear-gradient(135deg,rgba(255,183,71,0.12),rgba(255,183,71,0.06)); border:1px solid rgba(255,183,71,0.3); }
@@ -71,49 +109,48 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 .layer.data .layer-name { color:var(--blue); }
 .layer-desc { font-size:.78rem; color:var(--muted); }
 .layer-example { font-size:.72rem; font-family:monospace; margin-top:4px; }
-.layer-arrow { color:var(--muted); font-size:1.2rem; margin:2px auto; text-align:center; }
-
-/* MONO VS MICRO */
+.layer-arrow { color:var(--muted); font-size:1.2rem; text-align:center; }
 .comparison-table { width:100%; border-collapse:separate; border-spacing:0; margin:20px 0; }
 .comparison-table th { padding:10px 14px; font-size:.78rem; font-weight:700; text-align:left; }
 .comparison-table td { padding:10px 14px; font-size:.82rem; border-top:1px solid var(--border); }
-.comparison-table .th-mono { background:rgba(255,183,71,0.1); color:var(--orange); border-radius:8px 8px 0 0; }
-.comparison-table .th-micro { background:rgba(91,141,239,0.1); color:var(--blue); border-radius:8px 8px 0 0; }
+.comparison-table .th-mono { background:rgba(255,183,71,0.1); color:var(--orange); }
+.comparison-table .th-micro { background:rgba(91,141,239,0.1); color:var(--blue); }
 .comparison-table .pro { color:var(--green); }
 .comparison-table .con { color:var(--red); }
-
-/* CLEAN ARCH CIRCLES */
 .clean-arch { position:relative; width:280px; height:280px; margin:20px auto; }
 .ca-circle { position:absolute; border-radius:50%; display:flex; align-items:center; justify-content:center; text-align:center; top:50%; left:50%; transform:translate(-50%,-50%); }
-.ca-label { font-size:.72rem; font-weight:700; text-align:center; line-height:1.3; }
-
-/* EVENT DRIVEN */
-.ed-diagram { margin:20px 0; }
 .ed-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
 .ed-publisher { background:rgba(91,141,239,0.1); border:1px solid rgba(91,141,239,0.3); border-radius:8px; padding:8px 14px; font-size:.82rem; color:var(--blue); }
 .ed-bus { background:rgba(255,183,71,0.1); border:2px solid var(--orange); border-radius:8px; padding:8px 14px; font-size:.82rem; color:var(--orange); font-weight:700; flex:1; text-align:center; }
 .ed-sub { background:rgba(46,204,113,0.08); border:1px solid rgba(46,204,113,0.3); border-radius:8px; padding:8px 14px; font-size:.82rem; color:var(--green); }
-.ed-arrow { color:var(--muted); font-size:1rem; }
-
-/* DECISION FLOWCHART */
-.decision-flow { margin:20px 0; }
-.df-node { border-radius:10px; padding:10px 18px; font-size:.85rem; text-align:center; margin:4px auto; width:fit-content; min-width:200px; }
+.df-node { border-radius:10px; padding:10px 18px; font-size:.85rem; text-align:center; margin:4px auto; width:fit-content; min-width:180px; }
 .df-q { background:rgba(167,139,250,0.12); border:1px solid rgba(167,139,250,0.3); color:var(--accent); }
-.df-yes { background:rgba(46,204,113,0.1); border:1px solid rgba(46,204,113,0.3); color:var(--green); font-weight:700; }
-.df-no { background:rgba(231,76,60,0.1); border:1px solid rgba(231,76,60,0.3); color:var(--red); font-weight:700; }
 .df-result { background:rgba(255,183,71,0.1); border:1px solid rgba(255,183,71,0.3); color:var(--orange); font-weight:700; }
-.df-arrow-wrap { display:flex; justify-content:center; gap:80px; }
-.df-branch { display:flex; flex-direction:column; align-items:center; gap:4px; }
 .df-branch-label { font-size:.7rem; color:var(--muted); }
-.df-v { width:2px; height:20px; background:var(--border); }
+.df-v { width:2px; height:20px; background:var(--border); margin:0 auto; }
 </style>
 </head>
 <body>
 
+<nav class="top-nav">
+  <div class="top-nav-inner">
+    <a href="../../index.html" class="top-nav-home">&#127968; Trang chủ</a>
+    <span class="top-nav-sep">/</span>
+    <span class="top-nav-phase">Phase 2: Build</span>
+    <span class="top-nav-sep">/</span>
+    <span style="color:var(--text)">Bài 6 — Architecture</span>
+    <span class="top-nav-pos">Bài 2/4 trong Phase 2</span>
+    <div class="top-nav-arrows">
+      <a href="05-design-system.html" class="top-nav-link">← Bài 5</a>
+      <a href="07-database-thinking.html" class="top-nav-link">Bài 7 →</a>
+    </div>
+  </div>
+</nav>
+
 <header>
   <div class="header-inner">
     <span class="phase-badge">PHASE 2 · BUILD</span>
-    <h1>🏛️ Architecture</h1>
+    <h1>&#127963;&#65039; Architecture</h1>
     <span class="header-sub">Bài 06 / 08</span>
     <div class="progress-bar" style="width:100%">
       <div class="progress-fill" id="progressFill" style="width:75%"></div>
@@ -123,16 +160,22 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 
 <main>
 
-<!-- SEC 0: Why Architecture -->
 <div class="section active" id="sec-0">
+  <div class="prereq">
+    <div class="prereq-label">Yêu cầu trước khi học</div>
+    <ul class="prereq-list">
+      <li><a href="05-design-system.html">Bài 5: Design System ★</a></li>
+      <li><a href="../phase-1-think/02-oop-thinking.html">Bài 2: Module / Interface</a></li>
+      <li><a href="../phase-1-think/04-design-pattern.html">Bài 4: Design Patterns (Facade, Adapter)</a></li>
+    </ul>
+  </div>
   <div class="section-header">
     <div class="section-num">Tại sao cần Architecture?</div>
     <div class="section-title">Blueprint Trước Khi Xây</div>
-    <div class="section-desc">Không ai xây nhà mà không có bản thiết kế. Software cũng vậy — architecture là blueprint.</div>
+    <div class="section-desc">Không ai xây nhà mà không có bản thiết kế. Software cũng vậy — architecture là blueprint. <a href="../phase-1-think/04-design-pattern.html" class="xref">Facade &amp; Adapter (Bài 4)</a> là building blocks cấu thành Architecture.</div>
   </div>
-
   <div class="card">
-    <div class="card-title">🏗️ Hậu quả của "code trước, nghĩ sau"</div>
+    <div class="card-title">&#127959;&#65039; Hậu quả của "code trước, nghĩ sau"</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
       <div style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:16px">
         <div style="color:var(--red);font-size:.78rem;font-weight:700;margin-bottom:10px;">❌ Không có Architecture</div>
@@ -156,14 +199,12 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
       </div>
     </div>
   </div>
-
   <div class="highlight">
     <div class="highlight-label">Architecture = Quyết định sớm, impact lâu dài</div>
-    <div class="highlight-text">Architecture là những quyết định <strong>khó thay đổi</strong>. Chọn sai từ đầu → refactor tốn kém. Đây là lý do senior engineer cần review architecture trước khi team bắt đầu code.</div>
+    <div class="highlight-text">Architecture là những quyết định <strong>khó thay đổi</strong>. Chọn sai từ đầu → refactor tốn kém.</div>
   </div>
-
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
       <li>Architecture = cấu trúc cấp cao của system</li>
       <li>Quyết định architecture phải dựa trên constraints thực tế</li>
@@ -172,19 +213,17 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   </div>
 </div>
 
-<!-- SEC 1: Layered Architecture -->
 <div class="section" id="sec-1">
   <div class="section-header">
     <div class="section-num">Pattern 01</div>
     <div class="section-title">Layered Architecture</div>
-    <div class="section-desc">Tổ chức code theo các tầng với trách nhiệm rõ ràng. Mỗi tầng chỉ giao tiếp với tầng liền kề.</div>
+    <div class="section-desc">Tổ chức code theo các tầng với trách nhiệm rõ ràng. Controller là <a href="../phase-1-think/04-design-pattern.html" class="xref">Facade (Bài 4)</a> che giấu Business Logic bên dưới.</div>
   </div>
-
   <div class="card">
-    <div class="card-title">📚 Click vào từng tầng để xem chi tiết</div>
+    <div class="card-title">&#128218; Click vào từng tầng để xem chi tiết</div>
     <div class="layer-stack">
       <div class="layer presentation" onclick="showLayer('p')">
-        <div class="layer-icon">🖥️</div>
+        <div class="layer-icon">&#128421;&#65039;</div>
         <div class="layer-info">
           <div class="layer-name">Presentation Layer</div>
           <div class="layer-desc">Xử lý HTTP request/response, validation, serialization</div>
@@ -193,7 +232,7 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
       </div>
       <div class="layer-arrow">↓ chỉ gọi xuống</div>
       <div class="layer business" onclick="showLayer('b')">
-        <div class="layer-icon">⚙️</div>
+        <div class="layer-icon">&#9881;&#65039;</div>
         <div class="layer-info">
           <div class="layer-name">Business Logic Layer</div>
           <div class="layer-desc">Rules nghiệp vụ, orchestration, domain logic</div>
@@ -202,7 +241,7 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
       </div>
       <div class="layer-arrow">↓ chỉ gọi xuống</div>
       <div class="layer data" onclick="showLayer('d')">
-        <div class="layer-icon">🗄️</div>
+        <div class="layer-icon">&#128476;&#65039;</div>
         <div class="layer-info">
           <div class="layer-name">Data Access Layer</div>
           <div class="layer-desc">Tương tác với database, external APIs, file system</div>
@@ -214,9 +253,8 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
       <div id="layerDetailContent"></div>
     </div>
   </div>
-
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
       <li>Dependency hướng xuống — không bao giờ hướng lên</li>
       <li>Business logic KHÔNG biết về HTTP, Database cụ thể</li>
@@ -225,17 +263,15 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   </div>
 </div>
 
-<!-- SEC 2: Monolith vs Microservices -->
 <div class="section" id="sec-2">
   <div class="section-header">
     <div class="section-num">Pattern 02 vs 03</div>
     <div class="section-title">Monolith vs Microservices</div>
     <div class="section-desc">Không có winner tuyệt đối. Mỗi approach phù hợp với ngữ cảnh khác nhau.</div>
   </div>
-
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0;">
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px">
-      <div style="color:var(--orange);font-weight:700;font-size:.95rem;margin-bottom:16px;text-align:center;">🏰 Monolith</div>
+      <div style="color:var(--orange);font-weight:700;font-size:.95rem;margin-bottom:16px;text-align:center;">&#127984; Monolith</div>
       <div style="display:flex;flex-direction:column;gap:6px;align-items:center">
         <div style="background:rgba(255,183,71,0.08);border:1px solid rgba(255,183,71,0.3);border-radius:8px;padding:8px 20px;font-size:.8rem;color:var(--orange);width:80%;text-align:center">User Module</div>
         <div style="background:rgba(255,183,71,0.08);border:1px solid rgba(255,183,71,0.3);border-radius:8px;padding:8px 20px;font-size:.8rem;color:var(--orange);width:80%;text-align:center">Order Module</div>
@@ -245,7 +281,7 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
       </div>
     </div>
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px">
-      <div style="color:var(--blue);font-weight:700;font-size:.95rem;margin-bottom:16px;text-align:center;">🔬 Microservices</div>
+      <div style="color:var(--blue);font-weight:700;font-size:.95rem;margin-bottom:16px;text-align:center;">&#128302; Microservices</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
         <div style="background:rgba(91,141,239,0.08);border:1px solid rgba(91,141,239,0.3);border-radius:8px;padding:8px;font-size:.72rem;color:var(--blue);text-align:center">User Service<br>:3001</div>
         <div style="background:rgba(91,141,239,0.08);border:1px solid rgba(91,141,239,0.3);border-radius:8px;padding:8px;font-size:.72rem;color:var(--blue);text-align:center">Order Service<br>:3002</div>
@@ -255,80 +291,50 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
       <div style="font-size:.72rem;color:var(--muted);margin-top:8px;text-align:center;">→ Deploy độc lập nhau</div>
     </div>
   </div>
-
   <table class="comparison-table">
-    <tr>
-      <th></th>
-      <th class="th-mono">🏰 Monolith</th>
-      <th class="th-micro">🔬 Microservices</th>
-    </tr>
-    <tr>
-      <td style="color:var(--muted);font-size:.78rem">Complexity</td>
-      <td class="pro">✓ Đơn giản ban đầu</td>
-      <td class="con">✗ Distributed system complexity</td>
-    </tr>
-    <tr>
-      <td style="color:var(--muted);font-size:.78rem">Deploy</td>
-      <td class="con">✗ Deploy toàn bộ mỗi lần</td>
-      <td class="pro">✓ Deploy từng service riêng</td>
-    </tr>
-    <tr>
-      <td style="color:var(--muted);font-size:.78rem">Scale</td>
-      <td class="con">✗ Scale cả app dù chỉ 1 service busy</td>
-      <td class="pro">✓ Scale từng service theo nhu cầu</td>
-    </tr>
-    <tr>
-      <td style="color:var(--muted);font-size:.78rem">Team size</td>
-      <td class="pro">✓ Phù hợp team nhỏ (&lt;10)</td>
-      <td class="con">✗ Cần nhiều team chuyên biệt</td>
-    </tr>
-    <tr>
-      <td style="color:var(--muted);font-size:.78rem">Debug</td>
-      <td class="pro">✓ Dễ debug, trace</td>
-      <td class="con">✗ Distributed tracing phức tạp</td>
-    </tr>
+    <tr><th></th><th class="th-mono">&#127984; Monolith</th><th class="th-micro">&#128302; Microservices</th></tr>
+    <tr><td style="color:var(--muted);font-size:.78rem">Complexity</td><td class="pro">✓ Đơn giản ban đầu</td><td class="con">✗ Distributed system complexity</td></tr>
+    <tr><td style="color:var(--muted);font-size:.78rem">Deploy</td><td class="con">✗ Deploy toàn bộ mỗi lần</td><td class="pro">✓ Deploy từng service riêng</td></tr>
+    <tr><td style="color:var(--muted);font-size:.78rem">Scale</td><td class="con">✗ Scale cả app dù chỉ 1 service busy</td><td class="pro">✓ Scale từng service theo nhu cầu</td></tr>
+    <tr><td style="color:var(--muted);font-size:.78rem">Team size</td><td class="pro">✓ Phù hợp team nhỏ (&lt;10)</td><td class="con">✗ Cần nhiều team chuyên biệt</td></tr>
+    <tr><td style="color:var(--muted);font-size:.78rem">Debug</td><td class="pro">✓ Dễ debug, trace</td><td class="con">✗ Distributed tracing phức tạp</td></tr>
   </table>
-
   <div class="highlight">
     <div class="highlight-label">Lời khuyên thực tế</div>
-    <div class="highlight-text">Bắt đầu bằng Monolith. Khi có vấn đề về scale cụ thể → tách service đó ra. <strong>Đừng bắt đầu bằng Microservices</strong> — phức tạp hóa không cần thiết cho startup.</div>
+    <div class="highlight-text">Bắt đầu bằng Monolith. Khi có vấn đề về scale cụ thể → tách service đó ra. <strong>Đừng bắt đầu bằng Microservices</strong>.</div>
   </div>
 </div>
 
-<!-- SEC 3: Clean Architecture -->
 <div class="section" id="sec-3">
   <div class="section-header">
     <div class="section-num">Pattern 04</div>
     <div class="section-title">Clean Architecture</div>
     <div class="section-desc">Vòng tròn đồng tâm — dependency chỉ hướng vào trong. Business logic ở trung tâm, không phụ thuộc vào framework hay DB.</div>
   </div>
-
   <div class="card">
     <div class="card-title">⭕ Concentric Circles — Dependency Rule</div>
     <div class="clean-arch">
       <div class="ca-circle" style="width:280px;height:280px;background:rgba(91,141,239,0.08);border:2px solid rgba(91,141,239,0.3);">
-        <div class="ca-label" style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);color:var(--blue);font-size:.7rem">Frameworks & Drivers<br>(Express, MongoDB, React)</div>
+        <div style="position:absolute;bottom:16px;left:50%;transform:translateX(-50%);color:var(--blue);font-size:.7rem;font-weight:700;text-align:center">Frameworks &amp; Drivers<br>(Express, MongoDB, React)</div>
       </div>
       <div class="ca-circle" style="width:210px;height:210px;background:rgba(167,139,250,0.08);border:2px solid rgba(167,139,250,0.3);">
-        <div class="ca-label" style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);color:var(--accent);font-size:.7rem">Interface Adapters<br>(Controllers, Presenters)</div>
+        <div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);color:var(--accent);font-size:.7rem;font-weight:700;text-align:center">Interface Adapters<br>(Controllers, Presenters)</div>
       </div>
       <div class="ca-circle" style="width:145px;height:145px;background:rgba(255,183,71,0.08);border:2px solid rgba(255,183,71,0.3);">
-        <div class="ca-label" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);color:var(--orange);font-size:.68rem">Use Cases</div>
+        <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);color:var(--orange);font-size:.68rem;font-weight:700;text-align:center">Use Cases</div>
       </div>
       <div class="ca-circle" style="width:82px;height:82px;background:rgba(46,204,113,0.12);border:2px solid rgba(46,204,113,0.4);">
-        <div class="ca-label" style="color:var(--green);font-size:.72rem;">Entities<br>Business<br>Rules</div>
+        <div style="color:var(--green);font-size:.72rem;font-weight:700;text-align:center;line-height:1.4">Entities<br>Business<br>Rules</div>
       </div>
     </div>
     <div style="color:var(--muted);font-size:.85rem;text-align:center;margin-top:8px;">→ Dependencies chỉ hướng vào trong</div>
   </div>
-
   <div class="highlight">
     <div class="highlight-label">The Dependency Rule</div>
     <div class="highlight-text">Code ở vòng ngoài biết về vòng trong. Code ở vòng trong <strong>KHÔNG BIẾT</strong> về vòng ngoài. Entities không biết về HTTP. Use Cases không biết về Database cụ thể.</div>
   </div>
-
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
       <li>Business logic ở center → độc lập hoàn toàn với framework</li>
       <li>Có thể swap Express → Fastify, MongoDB → PostgreSQL mà không sửa business logic</li>
@@ -337,57 +343,39 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   </div>
 </div>
 
-<!-- SEC 4: Event-Driven -->
 <div class="section" id="sec-4">
   <div class="section-header">
     <div class="section-num">Pattern 05</div>
     <div class="section-title">Event-Driven Architecture</div>
-    <div class="section-desc">Components giao tiếp qua events thay vì gọi nhau trực tiếp — loose coupling ở mức architecture.</div>
+    <div class="section-desc">Components giao tiếp qua events thay vì gọi nhau trực tiếp. <a href="../phase-1-think/04-design-pattern.html" class="xref">Observer pattern (Bài 4)</a> là nền tảng của Event-Driven.</div>
   </div>
-
   <div class="card">
-    <div class="card-title">📡 Pub/Sub — Publisher không biết về Subscribers</div>
-    <div class="ed-diagram">
-      <div class="ed-row">
-        <div class="ed-publisher">OrderService<br><small style="color:var(--muted)">publishes</small></div>
-        <div class="ed-arrow">→</div>
-        <div class="ed-bus">📡 Event Bus<br>"order.created"</div>
-        <div class="ed-arrow">→</div>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <div class="ed-sub">EmailService (sub)</div>
-          <div class="ed-sub">Analytics (sub)</div>
-          <div class="ed-sub">Inventory (sub)</div>
-        </div>
+    <div class="card-title">&#128225; Pub/Sub — Publisher không biết về Subscribers</div>
+    <div class="ed-row">
+      <div class="ed-publisher">OrderService<br><small style="color:var(--muted)">publishes</small></div>
+      <div style="color:var(--muted)">→</div>
+      <div class="ed-bus">&#128225; Event Bus<br>"order.created"</div>
+      <div style="color:var(--muted)">→</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <div class="ed-sub">EmailService (sub)</div>
+        <div class="ed-sub">Analytics (sub)</div>
+        <div class="ed-sub">Inventory (sub)</div>
       </div>
     </div>
-    <div style="color:var(--muted);font-size:.85rem;line-height:1.7">
-      OrderService không biết EmailService tồn tại. Thêm subscriber mới → không sửa OrderService. <strong>Perfect loose coupling.</strong>
-    </div>
+    <div style="color:var(--muted);font-size:.85rem;line-height:1.7;margin-top:12px;">OrderService không biết EmailService tồn tại. Thêm subscriber mới → không sửa OrderService. <strong>Perfect loose coupling.</strong></div>
   </div>
-
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;">
     <div class="card" style="margin-bottom:0">
       <div style="color:var(--green);font-size:.85rem;font-weight:700;margin-bottom:8px;">✅ Strengths</div>
-      <ul style="list-style:none;font-size:.82rem;color:var(--muted);line-height:1.9">
-        <li>• Loose coupling giữa services</li>
-        <li>• Dễ thêm subscriber mới</li>
-        <li>• Async — không block</li>
-        <li>• Audit trail tự nhiên</li>
-      </ul>
+      <ul style="list-style:none;font-size:.82rem;color:var(--muted);line-height:1.9"><li>• Loose coupling giữa services</li><li>• Dễ thêm subscriber mới</li><li>• Async — không block</li><li>• Audit trail tự nhiên</li></ul>
     </div>
     <div class="card" style="margin-bottom:0">
       <div style="color:var(--red);font-size:.85rem;font-weight:700;margin-bottom:8px;">❌ Challenges</div>
-      <ul style="list-style:none;font-size:.82rem;color:var(--muted);line-height:1.9">
-        <li>• Khó trace flow phức tạp</li>
-        <li>• Event ordering issues</li>
-        <li>• At-least-once delivery</li>
-        <li>• Debugging khó hơn</li>
-      </ul>
+      <ul style="list-style:none;font-size:.82rem;color:var(--muted);line-height:1.9"><li>• Khó trace flow phức tạp</li><li>• Event ordering issues</li><li>• At-least-once delivery</li><li>• Debugging khó hơn</li></ul>
     </div>
   </div>
-
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
       <li>Dùng khi cần decouple producers và consumers</li>
       <li>Side effects (email, analytics) → perfect use case cho events</li>
@@ -396,19 +384,17 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   </div>
 </div>
 
-<!-- SEC 5: Decision Framework -->
 <div class="section" id="sec-5">
   <div class="section-header">
     <div class="section-num">Decision Framework</div>
     <div class="section-title">Chọn Architecture Nào?</div>
     <div class="section-desc">Flowchart giúp bạn đưa ra quyết định dựa trên ngữ cảnh thực tế.</div>
   </div>
-
   <div class="card">
-    <div class="card-title">🗺️ Decision Framework</div>
-    <div class="decision-flow">
+    <div class="card-title">&#128508; Decision Framework</div>
+    <div style="margin:20px 0;">
       <div class="df-node df-q">Team size?</div>
-      <div class="df-v" style="margin:4px auto;width:2px;height:20px;background:var(--border)"></div>
+      <div class="df-v"></div>
       <div style="display:flex;justify-content:center;gap:60px">
         <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
           <div class="df-branch-label">≤ 10 người</div>
@@ -418,12 +404,12 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
             <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
               <div class="df-branch-label">Thấp</div>
               <div class="df-v"></div>
-              <div class="df-node df-result" style="min-width:100px;font-size:.78rem">🏰 Monolith<br>Modular</div>
+              <div class="df-node df-result" style="min-width:100px;font-size:.78rem">&#127984; Monolith<br>Modular</div>
             </div>
             <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
               <div class="df-branch-label">Cao</div>
               <div class="df-v"></div>
-              <div class="df-node df-result" style="min-width:100px;font-size:.78rem">🏰→🔬<br>Tách dần</div>
+              <div class="df-node df-result" style="min-width:100px;font-size:.78rem">&#127984;→&#128302;<br>Tách dần</div>
             </div>
           </div>
         </div>
@@ -435,26 +421,24 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
             <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
               <div class="df-branch-label">Có</div>
               <div class="df-v"></div>
-              <div class="df-node df-result" style="min-width:100px;font-size:.78rem">🔬 Micro-<br>services</div>
+              <div class="df-node df-result" style="min-width:100px;font-size:.78rem">&#128302; Micro-<br>services</div>
             </div>
             <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
               <div class="df-branch-label">Chưa</div>
               <div class="df-v"></div>
-              <div class="df-node df-result" style="min-width:100px;font-size:.78rem">🏰 Modular<br>Monolith</div>
+              <div class="df-node df-result" style="min-width:100px;font-size:.78rem">&#127984; Modular<br>Monolith</div>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-
   <div class="highlight">
     <div class="highlight-label">Separation of Concerns — Always Apply</div>
-    <div class="highlight-text">Bất kể chọn architecture nào, luôn tách riêng: <strong>What</strong> (business rules) vs <strong>How</strong> (implementation details) vs <strong>When</strong> (orchestration) vs <strong>Where</strong> (infrastructure).</div>
+    <div class="highlight-text">Bất kể chọn architecture nào, luôn tách riêng: <strong>What</strong> (business rules) vs <strong>How</strong> (implementation) vs <strong>When</strong> (orchestration) vs <strong>Where</strong> (infrastructure).</div>
   </div>
-
   <div class="takeaway">
-    <div class="takeaway-title">🏆 Tổng kết Bài 06</div>
+    <div class="takeaway-title">&#127942; Tổng kết Bài 06</div>
     <ul class="takeaway-list">
       <li><strong>Layered</strong>: Presentation → Business → Data, đơn giản và phổ biến</li>
       <li><strong>Monolith</strong>: Phù hợp team nhỏ, bắt đầu nhanh</li>
@@ -463,6 +447,171 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
       <li><strong>Event-driven</strong>: Loose coupling, async side effects</li>
       <li>Rule: bắt đầu đơn giản, refactor khi có vấn đề thực</li>
     </ul>
+  </div>
+
+  <div class="exercises">
+    <div class="ex-title">&#127947;&#65039; Bài tập thực hành</div>
+
+    <div class="exercise easy">
+      <div class="ex-header" onclick="toggleEx(this)">
+        <span class="ex-badge">&#127744; Dễ</span>
+        <span class="ex-q">Ex 1: Identify architecture — nhận ra kiểu từ folder structure</span>
+        <span class="ex-toggle">▼</span>
+      </div>
+      <div class="ex-body">
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7;margin-bottom:12px;">Folder: controllers/, services/, repositories/, entities/ — đây là pattern gì? Giải thích dependency flow.</div>
+        <div class="ex-solution">
+          <div class="ex-solution-label">Giải</div>
+          <div class="code-block">→ Layered Architecture (3 tầng)
+controllers/   = Presentation Layer
+services/      = Business Logic Layer
+repositories/  = Data Access Layer
+entities/      = Domain Models (Data Layer)
+
+Dependency: Controller → Service → Repository → Entity
+(chỉ hướng xuống, không bao giờ ngược lại)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="exercise easy">
+      <div class="ex-header" onclick="toggleEx(this)">
+        <span class="ex-badge">&#127744; Dễ</span>
+        <span class="ex-q">Ex 2: Vẽ dependency diagram — tìm circular dependency</span>
+        <span class="ex-toggle">▼</span>
+      </div>
+      <div class="ex-body">
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7;margin-bottom:12px;">Dependencies: UserModule→OrderModule, OrderModule→PaymentModule, PaymentModule→UserModule, ProductModule→OrderModule. Tìm circular dependency và đề xuất fix.</div>
+        <div class="ex-solution">
+          <div class="ex-solution-label">Giải</div>
+          <div class="code-block">Circular dependency:
+UserModule → OrderModule → PaymentModule → UserModule
+     ^__________________________________|
+
+ProductModule → OrderModule: OK (không có vòng)
+
+Fix options:
+1. Tách UserSharedModule chứa shared logic
+2. Dùng forwardRef() trong NestJS
+3. Emit event thay vì gọi trực tiếp (event-driven)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="exercise medium">
+      <div class="ex-header" onclick="toggleEx(this)">
+        <span class="ex-badge">&#127745; Trung bình</span>
+        <span class="ex-q">Ex 3: Tách monolith — Shopping App → 3 modules (User, Product, Order)</span>
+        <span class="ex-toggle">▼</span>
+      </div>
+      <div class="ex-body">
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7;margin-bottom:12px;">App hiện có tất cả trong 1 file app.ts (500 dòng). Thiết kế cách tách thành Modular Monolith với 3 modules. Xác định: boundaries, shared code, communication pattern.</div>
+        <div class="ex-solution">
+          <div class="ex-solution-label">Thiết kế</div>
+          <div class="code-block">src/modules/
+  user/           ← User boundary
+    user.module.ts
+    user.service.ts    ← createUser, getUser, authUser
+    user.repository.ts
+  product/        ← Product boundary
+    product.module.ts
+    product.service.ts ← listProducts, updateStock
+  order/          ← Order (orchestrator)
+    order.module.ts
+    order.service.ts   ← inject UserService + ProductService
+  shared/         ← Shared utilities
+    database.module.ts
+    events.module.ts
+
+Communication:
+- Order → User/Product: Dependency Injection (sync)
+- Side effects: Event Bus (order.created → email, inventory)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="exercise medium">
+      <div class="ex-header" onclick="toggleEx(this)">
+        <span class="ex-badge">&#127745; Trung bình</span>
+        <span class="ex-q">Ex 4: Event-driven — thiết kế flow Order → Payment → Notification</span>
+        <span class="ex-toggle">▼</span>
+      </div>
+      <div class="ex-body">
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7;margin-bottom:12px;">Thiết kế event flow: User đặt hàng → thanh toán → email xác nhận + cập nhật inventory. Xác định events, publishers, subscribers, error handling.</div>
+        <div class="ex-solution">
+          <div class="ex-solution-label">Event flow</div>
+          <div class="code-block">Events &amp; Handlers:
+order.created    → PaymentService.processPayment()
+payment.success  → EmailService.sendConfirmation()
+                 → InventoryService.deductStock()
+payment.failed   → OrderService.markFailed()
+                 → EmailService.sendFailureNotice()
+
+Error handling:
+- Retry 3x với exponential backoff
+- Dead Letter Queue cho unprocessable events
+- Compensating transaction: nếu stock đã trừ
+  nhưng email fail → retry email (idempotent)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="exercise hard">
+      <div class="ex-header" onclick="toggleEx(this)">
+        <span class="ex-badge">&#128308; Khó</span>
+        <span class="ex-q">Ex 5: Architecture Decision Record — Monolith vs Microservices cho startup 3 người</span>
+        <span class="ex-toggle">▼</span>
+      </div>
+      <div class="ex-body">
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7;margin-bottom:12px;">Bạn là CTO startup 3 dev. Product: SaaS B2B, 100 users/tháng đầu. Viết Architecture Decision Record (ADR) đầy đủ cho lựa chọn architecture.</div>
+        <div class="ex-solution">
+          <div class="ex-solution-label">ADR-001</div>
+          <div class="code-block"># ADR-001: Monolith vs Microservices
+## Status: Accepted
+
+## Context:
+- Team: 3 engineers (full-stack)
+- Timeline: MVP in 3 months
+- Users: 100 → target 10K year 1
+- Budget: no dedicated DevOps
+
+## Decision: Modular Monolith
+
+## Rationale:
++ 3 devs không đủ bandwidth quản lý distributed system
++ 100 users không có scale problem
++ 1 container deploy, đơn giản
++ Debug nhanh (no distributed tracing needed)
++ Tách microservice SAU khi domain rõ
+
+## Constraints added:
+- Module boundaries STRICT (no cross-module direct DB access)
+- Each module owns its DB tables
+- Communicate via Service injection or Events only
+
+## Review trigger:
+- Team > 8 người
+- Traffic > 100K requests/day
+- Module release cycles diverge significantly</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-box">
+    <div class="summary-title">&#128203; Tóm tắt Bài 6 — Architecture</div>
+    <div class="summary-grid">
+      <div class="summary-item"><span>&#127959;</span><span>Layered: Controller→Service→Repository, dependency 1 chiều xuống</span></div>
+      <div class="summary-item"><span>&#127984;</span><span>Monolith phù hợp team nhỏ; Microservices khi domain rõ + scale</span></div>
+      <div class="summary-item"><span>⭕</span><span>Clean Architecture: business logic trung tâm, không phụ thuộc framework</span></div>
+      <div class="summary-item"><span>&#128225;</span><span>Event-driven: loose coupling, side effects qua pub/sub</span></div>
+      <div class="summary-item"><span>&#128508;</span><span>Decision dựa trên team size + scale yêu cầu thực tế</span></div>
+      <div class="summary-item"><span>&#128203;</span><span>ADR: ghi lại quyết định và reasoning cho sau này review</span></div>
+    </div>
+    <div class="next-preview">
+      <div class="next-preview-label">Tiếp theo — Bài 7: Database Thinking</div>
+      <div style="color:var(--muted);font-size:.88rem;line-height:1.7">Architecture xác định <em>nơi</em> DB layer nằm trong hệ thống. Bài 7 dạy bạn thiết kế <em>bên trong</em> DB layer đó: ERD, Normalization, Index, ACID Transactions và Scale strategy.</div>
+    </div>
   </div>
 </div>
 
@@ -491,25 +640,27 @@ function goTo(n) {
   current = n;
   document.getElementById(SECTIONS[current]).classList.add('active');
   document.getElementById('btnPrev').disabled = current === 0;
-  document.getElementById('btnNext').textContent = current === SECTIONS.length-1 ? '🏁 Hoàn thành' : 'Tiếp theo →';
+  document.getElementById('btnNext').textContent = current === SECTIONS.length-1 ? 'Hoàn thành' : 'Tiếp theo →';
   document.querySelectorAll('.dot').forEach((d,i) => d.className='dot'+(i===current?' active':(i<current?' done':'')));
   document.getElementById('progressFill').style.width = ((current+1)/SECTIONS.length*100)+'%';
   window.scrollTo({top:0,behavior:'smooth'});
 }
 function navigate(dir) { if(current+dir>=0 && current+dir<SECTIONS.length) goTo(current+dir); }
-
 const layerDetails = {
-  p: `<div style="color:var(--pink);font-weight:700;margin-bottom:8px;">Presentation Layer — "Giao diện với thế giới bên ngoài"</div>
-      <div style="font-size:.85rem;color:var(--muted);line-height:1.7">Nhận HTTP request → validate → gọi Service → format response. <strong>Không có business logic!</strong></div>`,
-  b: `<div style="color:var(--orange);font-weight:700;margin-bottom:8px;">Business Logic Layer — "Trái tim của ứng dụng"</div>
-      <div style="font-size:.85rem;color:var(--muted);line-height:1.7">Xử lý rules nghiệp vụ. Không biết HTTP là gì, không biết data đến từ đâu. Chỉ biết: nhận data, xử lý theo rules, trả kết quả.</div>`,
-  d: `<div style="color:var(--blue);font-weight:700;margin-bottom:8px;">Data Access Layer — "Cầu nối với storage"</div>
-      <div style="font-size:.85rem;color:var(--muted);line-height:1.7">Repository pattern: cung cấp interface để Service lấy/lưu data mà không cần biết DB là MongoDB hay PostgreSQL.</div>`,
+  p: '<div style="color:var(--pink);font-weight:700;margin-bottom:8px;">Presentation Layer</div><div style="font-size:.85rem;color:var(--muted);line-height:1.7">Nhận HTTP request → validate → gọi Service → format response. <strong>Không có business logic!</strong></div>',
+  b: '<div style="color:var(--orange);font-weight:700;margin-bottom:8px;">Business Logic Layer</div><div style="font-size:.85rem;color:var(--muted);line-height:1.7">Xử lý rules nghiệp vụ. Không biết HTTP là gì, không biết data đến từ đâu.</div>',
+  d: '<div style="color:var(--blue);font-weight:700;margin-bottom:8px;">Data Access Layer</div><div style="font-size:.85rem;color:var(--muted);line-height:1.7">Repository pattern: cung cấp interface để Service lấy/lưu data mà không cần biết DB cụ thể.</div>',
 };
 function showLayer(id) {
   const d = document.getElementById('layerDetail');
   d.style.display = 'block';
   document.getElementById('layerDetailContent').innerHTML = layerDetails[id];
+}
+function toggleEx(header) {
+  const body = header.nextElementSibling;
+  const toggle = header.querySelector('.ex-toggle');
+  body.classList.toggle('open');
+  toggle.style.transform = body.classList.contains('open') ? 'rotate(180deg)' : '';
 }
 </script>
 </body>

@@ -114,6 +114,41 @@
   .compare-table td:last-child{color:#c9d1d9}
   .compare-table tr:hover td{background:#161b22}
 
+
+  /* Sticky Nav */
+  .nav-bar{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #30363d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .nav-links{display:flex;gap:8px;flex-wrap:wrap}
+  .nav-link{color:#8b949e;text-decoration:none;font-size:.8rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s;white-space:nowrap}
+  .nav-link:hover{color:#58a6ff;border-color:#58a6ff}
+  .nav-link.current{color:#58a6ff;border-color:#58a6ff;background:#0d1a2d}
+  .nav-center{font-size:.8rem;color:#484f58}
+  .prereq{background:#1a0d2d;border:1px solid #6e40c9;border-radius:8px;padding:14px 16px;margin:0 0 32px;display:flex;align-items:flex-start;gap:10px}
+  .prereq-icon{font-size:1.1rem;flex-shrink:0;margin-top:2px}
+  .prereq-label{font-size:.78rem;font-weight:700;color:#bc8cff;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .prereq-links{display:flex;flex-wrap:wrap;gap:6px}
+  .prereq-link{font-size:.78rem;padding:2px 8px;border-radius:8px;background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e;text-decoration:none;transition:background .2s}
+  .prereq-link:hover{background:#1f4a9e}
+  .xref{display:inline;font-size:.8rem;padding:1px 7px;border-radius:6px;background:#0d2d1a;color:#3fb950;border:1px solid #238636;text-decoration:none;white-space:nowrap;transition:background .2s}
+  .xref:hover{background:#238636;color:#fff}
+  .exercises{margin:48px 0}
+  .exercises-title{font-size:1.2rem;color:#79c0ff;margin-bottom:24px;padding-left:12px;border-left:3px solid #58a6ff}
+  .ex-card{border-radius:12px;padding:20px 24px;margin:16px 0}
+  .ex-green{background:#0a1f0a;border:1px solid #238636}
+  .ex-yellow{background:#1f1a0a;border:1px solid #9e6c1e}
+  .ex-red{background:#1f0a0a;border:1px solid #9e1e1e}
+  .ex-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .ex-diff{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
+  .diff-green{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .diff-yellow{background:#3b2a0d;color:#d4a843;border:1px solid #9e6c1e}
+  .diff-red{background:#3b0d0d;color:#ff7b72;border:1px solid #9e1e1e}
+  .ex-num{font-size:.8rem;font-weight:700;color:#8b949e}
+  .ex-title{font-size:.95rem;font-weight:700;color:#c9d1d9}
+  .ex-desc{font-size:.88rem;color:#8b949e;margin-top:4px}
+  .ex-solution{margin-top:12px}
+  .ex-sol-toggle{background:none;border:1px solid #30363d;color:#8b949e;border-radius:6px;padding:4px 12px;font-size:.75rem;cursor:pointer;transition:all .2s}
+  .ex-sol-toggle:hover{border-color:#58a6ff;color:#58a6ff}
+  .ex-sol-body{display:none;margin-top:10px;padding:12px;background:#0d1117;border-radius:8px;font-size:.83rem;color:#c9d1d9;line-height:1.6}
+  .ex-sol-body.open{display:block}
   @media(max-width:600px){
     .req-grid{grid-template-columns:1fr}
     .dt-branches{grid-template-columns:1fr}
@@ -123,12 +158,32 @@
 </style>
 </head>
 <body>
+<nav class="nav-bar">
+  <div class="nav-links">
+    <a class="nav-link" href="16-engineering-workflow.html">← Bài 16: Engineering Workflow</a>
+    <span class="nav-link current">Bài 17: Product Thinking</span>
+    <a class="nav-link" href="18-documentation.html">Bài 18: Documentation →</a>
+  </div>
+  <div class="nav-center">Phase 5 — Professional</div>
+</nav>
 <div class="container">
   <div style="margin-bottom:20px">
     <span class="badge badge-purple">Phase 5</span>
     <span class="badge badge-blue">Bài 17</span>
     <span class="badge badge-green">Professional</span>
   </div>
+
+  <div class="prereq">
+    <div class="prereq-icon">📚</div>
+    <div>
+      <div class="prereq-label">Kiến thức cần có trước</div>
+      <div class="prereq-links">
+        <a class="prereq-link" href="../phase-1-think/01-computational-thinking.html">Bài 1: Computational Thinking (problem decomposition)</a>
+        <a class="prereq-link" href="../phase-2-build/08-api.html">Bài 8: API (technical constraints)</a>
+      </div>
+    </div>
+  </div>
+
   <h1>Product Thinking</h1>
   <p class="subtitle">Engineer giỏi không chỉ build đúng — mà build <em>đúng thứ</em>. Product thinking là kỹ năng phân biệt senior khỏi junior.</p>
 
@@ -146,7 +201,7 @@
       <tr><th>❌ Code Monkey</th><th>✅ Product Engineer</th></tr>
     </thead>
     <tbody>
-      <tr><td>Implement ticket theo mô tả literal</td><td>Hỏi "problem thực sự là gì?" trước khi code</td></tr>
+      <tr><td>Implement ticket theo mô tả literal</td><td>Hỏi "problem thực sự là gì?" trước khi code — dùng <a class="xref" href="../phase-1-think/01-computational-thinking.html">Computational Thinking (Bài 1)</a> để decompose</td></tr>
       <tr><td>Done = code chạy, ticket closed</td><td>Done = user problem được giải quyết</td></tr>
       <tr><td>Không quan tâm feature có ai dùng không</td><td>Theo dõi metrics sau khi ship</td></tr>
       <tr><td>"Đó là việc của PM, không phải của tôi"</td><td>Chủ động suggest improvements, spot risks</td></tr>
@@ -439,6 +494,71 @@
     </ul>
   </div>
 
+
+  <hr class="section-divider">
+  <div class="exercises">
+    <div class="exercises-title">🎯 Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 1</span></div>
+      <div class="ex-title">User Problem: phỏng vấn "user" → identify real problem</div>
+      <div class="ex-desc">Pair với một bạn: một người đóng vai user cần "export data ra Excel". Người kia phỏng vấn bằng 5 câu "tại sao" để tìm real problem. Ghi lại: request ban đầu là gì, real need là gì.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>5 "Why" chain mẫu:</strong><br>→ "Tại sao muốn export?" "Để gửi cho manager hàng tuần."<br>→ "Tại sao gửi bằng Excel?" "Manager dùng Excel để tổng hợp nhiều report."<br>→ "Tại sao không tổng hợp trong app?" "App không có view tổng hợp nhiều accounts."<br>→ Real problem: thiếu consolidated view, không phải thiếu export feature<br><br>Solution có thể là: dashboard tổng hợp (10x giá trị) thay vì CSV export (1x)</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 2</span></div>
+      <div class="ex-title">MVP: feature list cho Todo App → strip tới MVP (3 features)</div>
+      <div class="ex-desc">Bạn có 15 feature ideas cho Todo App. Strip xuống còn đúng 3 features cho MVP. Giải thích tại sao 3 feature đó, và tại sao 12 feature còn lại vào backlog.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Framework chọn MVP features:</strong><br>Câu hỏi: "Nếu không có feature này, user có thể dùng app không?"<br><br>MVP = (1) Tạo task, (2) Mark done, (3) Xem danh sách tasks<br><br>Backlog: tags, labels, priority, due date, reminders, share, comments, attachments, themes, keyboard shortcuts, history, analytics, bulk actions, templates<br><br>Rule: MVP phải giải quyết được core problem. Mọi thứ khác = hypothesis cần validate</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 3</span></div>
+      <div class="ex-title">Metrics: define 5 KPIs cho e-commerce app</div>
+      <div class="ex-desc">Cho e-commerce app (product catalog + cart + checkout). Define 5 KPIs quan trọng nhất: tên metric, cách đo, target value, và tại sao metric đó quan trọng với business.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>KPIs gợi ý:</strong><br>1. <strong>Conversion Rate</strong> = Orders/Sessions × 100%. Target: ≥2%. Vì: revenue metric cốt lõi<br>2. <strong>Cart Abandonment Rate</strong> = (Carts created - Orders)/Carts × 100%. Target: &lt;70%. Vì: identify UX friction<br>3. <strong>Average Order Value (AOV)</strong> = Revenue/Orders. Target: tăng 10%/quarter. Vì: revenue efficiency<br>4. <strong>Page Load Time (P95)</strong>. Target: &lt;2s. Vì: mỗi 100ms chậm = -1% conversion<br>5. <strong>Search Zero Results Rate</strong> = Searches trả 0 kết quả/Total searches. Target: &lt;5%. Vì: catalog gap indicator</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 4</span></div>
+      <div class="ex-title">Trade-off: build feature X (2 tuần) vs improve performance (1 tuần)?</div>
+      <div class="ex-desc">Feature X = "AI-powered product recommendations". Performance = "Reduce P95 API latency from 800ms to 200ms". Team có 2 tuần. Phân tích trade-offs và recommend quyết định có lý do.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Framework phân tích:</strong><br><strong>Data cần biết:</strong> Current conversion rate là bao nhiêu? Bounce rate ở trang nào cao? User feedback về gì?<br><br><strong>Argument cho Performance:</strong> 800ms → nghiên cứu: mỗi 100ms chậm → -1% conversion. Nếu 50K sessions/month, improvement có thể +$X/month ngay lập tức. ROI đo được rõ ràng.<br><br><strong>Argument cho Feature X:</strong> AI recommendations → AOV tăng, longer session, retention. Nhưng cần 2 tuần và kết quả không chắc chắn.<br><br><strong>Recommendation mẫu:</strong> Nếu bounce rate cao → Performance first. Nếu conversion rate đã tốt → Feature X. Không có đúng/sai tuyệt đối, quan trọng là lý luận có data.</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header"><span class="ex-diff diff-red">🔴 Khó</span><span class="ex-num">Bài 5</span></div>
+      <div class="ex-title">Product decision: phân tích feature request → accept/reject với lý do</div>
+      <div class="ex-desc">Feature request: "Thêm tính năng social: user có thể follow nhau, share todo lists, và comment trên task của người khác." Phân tích đầy đủ theo Product Thinking framework và đưa ra quyết định accept/reject/defer với lý do chi tiết.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Phân tích framework:</strong><br><strong>User Problem:</strong> Feature này giải quyết gì? "Cộng tác nhóm" — nhưng đã có apps chuyên (Notion, Asana). Là Todo app thì core value là cá nhân hay nhóm?<br><br><strong>Effort vs Value:</strong> Social features = L-XL (authentication cho shared resources, real-time, notification system, moderation, privacy). ROI uncertain.<br><br><strong>Risks:</strong> Mission drift (cá nhân → nhóm), security complexity (shared data), moderation cost<br><br><strong>Decision mẫu:</strong> "Defer — scope quá lớn, mission drift risk cao. Thay vào đó: M2 research — survey 50 users về collaboration need. Nếu &gt;40% confirm → thiết kế minimal version: chỉ share list (không comment, không follow) — estimate lại."<br><br>Điểm quan trọng: không chỉ accept/reject — còn propose counter-proposal</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <div class="card">
+    <h3>📌 Tóm Tắt Bài 17</h3>
+    <ul style="color:#c9d1d9;padding-left:20px;margin-top:8px">
+      <li style="margin:6px 0"><strong>Engineer ≠ Code Monkey</strong>: Product Engineer hỏi "tại sao" trước khi code</li>
+      <li style="margin:6px 0"><strong>User problem ≠ Business problem</strong>: feature tốt = giao điểm của cả hai</li>
+      <li style="margin:6px 0"><strong>Functional vs Non-functional</strong>: non-functional phải design từ đầu, không thể add-on</li>
+      <li style="margin:6px 0"><strong>MVP</strong>: strip mọi thứ không cần → ship core value → learn → iterate</li>
+      <li style="margin:6px 0"><strong>Metrics</strong>: define KPIs trước khi build. Không đo được = không cải thiện được</li>
+      <li style="margin:6px 0"><strong>ROI thinking</strong>: mọi feature = cost vs value analysis. Không phải feature nào cũng nên build</li>
+      <li style="margin:6px 0"><strong>Push back</strong>: khi có technical reason, không phải khi không thích</li>
+    </ul>
+  </div>
+
   <div class="tip">
     <strong>Key Takeaway:</strong> Product thinking không phải là "làm việc của PM". Đó là kỹ năng giúp engineer build <em>đúng thứ, đúng cách, đúng lúc</em>. Senior engineer được pay cao hơn không chỉ vì biết code tốt hơn — mà vì họ biết <em>quyết định cái gì cần code</em>.
   </div>
@@ -448,5 +568,9 @@
     <p style="margin-top:8px"><a href="18-documentation.html" style="color:#58a6ff;text-decoration:none">Tiếp theo: Bài 18 — Documentation →</a></p>
   </div>
 </div>
+
+<script>
+function toggleSol(btn){const b=btn.nextElementSibling;const o=b.classList.toggle('open');btn.textContent=o?'Ẩn gợi ý':'Xem gợi ý';}
+</script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Clean Code — Phase 1: Think</title>
+<title>Clean Code &#8212; Phase 1: Think</title>
 <style>
 :root {
   --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
@@ -14,7 +14,17 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 20% 30%, rgba(46,204,113,0.05) 0%, transparent 50%), radial-gradient(ellipse at 80% 70%, rgba(255,183,71,0.04) 0%, transparent 50%); pointer-events:none; z-index:0; }
-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; position: sticky; top: 0; z-index: 100; }
+
+/* LESSON NAV */
+.lesson-nav { background: var(--surface2); border-bottom: 1px solid var(--border); padding: 10px 24px; position: sticky; top: 0; z-index: 200; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.nav-home { background: rgba(46,204,113,0.15); color: var(--green); border: 1px solid rgba(46,204,113,0.3); padding: 5px 14px; border-radius: 20px; text-decoration: none; font-size: .8rem; font-weight: 600; }
+.nav-home:hover { background: rgba(46,204,113,0.25); }
+.nav-path { color: var(--muted); font-size: .8rem; flex: 1; }
+.nav-prev, .nav-next { padding: 5px 14px; border-radius: 8px; font-size: .8rem; font-weight: 600; text-decoration: none; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-prev:hover, .nav-next:hover { border-color: var(--green); color: var(--text); }
+.nav-disabled { opacity: .35; pointer-events: none; }
+
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; }
 .header-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .phase-badge { background: linear-gradient(135deg,#00b894,#2ecc71); color:#fff; padding: 3px 12px; border-radius: 20px; font-size: .7rem; font-weight: 700; }
 header h1 { font-size: 1.3rem; font-weight: 800; background: linear-gradient(135deg,#2ecc71,#00b894); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
@@ -38,7 +48,7 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 .takeaway-title { color: var(--green); font-weight: 700; font-size: .9rem; letter-spacing: .5px; margin-bottom: 14px; }
 .takeaway-list { list-style: none; }
 .takeaway-list li { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; font-size: .9rem; color: var(--text); line-height: 1.6; }
-.takeaway-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.takeaway-list li::before { content: '&#x2713;'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
 .nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 14px 24px; display: flex; justify-content: center; z-index: 100; }
 .nav-inner { display: flex; align-items: center; gap: 12px; max-width: 900px; width: 100%; }
 .btn { padding: 10px 24px; border-radius: 10px; font-size: .9rem; font-weight: 600; cursor: pointer; border: none; transition: all .2s; }
@@ -124,15 +134,69 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 .refactor-nav { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
 .ref-btn { background:var(--surface2); border:1px solid var(--border); color:var(--muted); padding:6px 14px; border-radius:8px; cursor:pointer; font-size:.8rem; transition:all .2s; }
 .ref-btn.active { background:rgba(46,204,113,0.1); border-color:var(--green); color:var(--green); }
+
+/* CROSS REF */
+.cross-ref { background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.3); border-radius: 4px; padding: 1px 7px; font-size: .82em; color: var(--accent); cursor: help; }
+
+/* PREREQUISITES */
+.prerequisites { background: rgba(91,141,239,0.08); border: 1px solid rgba(91,141,239,0.25); border-radius: 14px; padding: 20px 24px; margin-bottom: 28px; }
+.prereq-title { color: var(--blue); font-size: .78rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+.prereq-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.prereq-tag { background: rgba(91,141,239,0.12); border: 1px solid rgba(91,141,239,0.3); border-radius: 20px; padding: 4px 14px; font-size: .82rem; color: var(--blue); text-decoration: none; }
+.prereq-tag:hover { background: rgba(91,141,239,0.22); }
+
+/* EXERCISES */
+.exercises-section { margin-top: 48px; border-top: 2px solid var(--border); padding-top: 36px; }
+.exercises-title { font-size: 1.5rem; font-weight: 800; color: var(--text); margin-bottom: 6px; }
+.exercises-sub { color: var(--muted); font-size: .9rem; margin-bottom: 24px; }
+.exercise { border-radius: 14px; margin-bottom: 16px; overflow: hidden; border: 1px solid var(--border); }
+.ex-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; cursor: pointer; background: var(--surface); user-select: none; transition: background .2s; }
+.ex-header:hover { background: var(--surface2); }
+.ex-num { width: 28px; height: 28px; border-radius: 50%; background: rgba(46,204,113,0.15); color: var(--green); font-size: .8rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.ex-title { font-weight: 600; font-size: .95rem; flex: 1; }
+.ex-diff { padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 700; }
+.ex-diff.easy { background: rgba(46,204,113,0.15); color: var(--green); }
+.ex-diff.medium { background: rgba(255,183,71,0.15); color: var(--orange); }
+.ex-diff.hard { background: rgba(231,76,60,0.15); color: var(--red); }
+.ex-toggle { color: var(--muted); font-size: .8rem; transition: transform .3s; }
+.exercise.open .ex-toggle { transform: rotate(180deg); }
+.ex-body { display: none; padding: 20px 24px; background: var(--surface2); border-top: 1px solid var(--border); }
+.exercise.open .ex-body { display: block; animation: fadeUp .3s; }
+.ex-body p { color: var(--muted); font-size: .92rem; line-height: 1.7; margin-bottom: 12px; }
+.ex-body code { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: .85em; color: var(--accent); }
+.ex-code { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; font-family: monospace; font-size: .82rem; line-height: 1.9; margin: 12px 0; overflow-x: auto; }
+.ex-reveal-btn { background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.3); color: var(--green); padding: 8px 18px; border-radius: 8px; cursor: pointer; font-size: .83rem; font-weight: 600; margin-top: 12px; }
+.ex-reveal-btn:hover { background: rgba(46,204,113,0.2); }
+.ex-solution { background: rgba(46,204,113,0.06); border: 1px solid rgba(46,204,113,0.25); border-radius: 10px; padding: 16px; margin-top: 12px; font-size: .88rem; line-height: 1.7; color: var(--text); }
+.ex-solution code { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; font-family: monospace; font-size: .85em; color: var(--green); }
+
+/* LESSON SUMMARY */
+.lesson-summary { background: linear-gradient(135deg, rgba(46,204,113,0.08), rgba(0,206,201,0.06)); border: 1px solid rgba(46,204,113,0.3); border-radius: 16px; padding: 28px 32px; margin-top: 48px; }
+.summary-title { font-size: 1.2rem; font-weight: 800; color: var(--green); margin-bottom: 16px; }
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.summary-item { background: rgba(0,0,0,0.2); border-radius: 10px; padding: 12px 16px; font-size: .88rem; color: var(--text); line-height: 1.5; }
+.summary-item strong { color: var(--green); display: block; margin-bottom: 4px; font-size: .78rem; text-transform: uppercase; letter-spacing: .5px; }
+.next-preview { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; margin-top: 16px; display: flex; align-items: center; gap: 16px; text-decoration: none; transition: all .2s; }
+.next-preview:hover { border-color: var(--yellow); transform: translateX(4px); }
+.next-preview-label { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.next-preview-title { font-weight: 700; color: var(--text); font-size: 1rem; }
+.next-preview-arrow { color: var(--yellow); font-size: 1.5rem; margin-left: auto; }
 </style>
 </head>
 <body>
 
+<nav class="lesson-nav">
+  <a href="../index.html" class="nav-home">&#127968; Hub</a>
+  <span class="nav-path">Phase 1: Think &#8594; B&#224;i 3/4</span>
+  <a href="02-programming-thinking.html" class="nav-prev">&#8592; B&#224;i tr&#432;&#7899;c</a>
+  <a href="04-design-pattern.html" class="nav-next">B&#224;i sau &#8594;</a>
+</nav>
+
 <header>
   <div class="header-inner">
-    <span class="phase-badge">PHASE 1 · THINK</span>
-    <h1>✨ Clean Code</h1>
-    <span class="header-sub">Bài 03 / 04</span>
+    <span class="phase-badge">PHASE 1 &middot; THINK</span>
+    <h1>&#10024; Clean Code</h1>
+    <span class="header-sub">B&#224;i 03 / 04</span>
     <div class="progress-bar" style="width:100%">
       <div class="progress-fill" id="progressFill" style="width:12.5%"></div>
     </div>
@@ -141,33 +205,42 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 
 <main>
 
+<div class="prerequisites">
+  <div class="prereq-title">&#128214; Ti&#234;n quy&#7871;t</div>
+  <div class="prereq-list">
+    <a href="02-programming-thinking.html" class="prereq-tag">&#9989; B&#224;i 2: Programming Thinking</a>
+    <span class="prereq-tag" style="opacity:.6;cursor:default">Hi&#7875;u kh&#225;i ni&#7879;m h&#224;m v&#224; side effects</span>
+    <span class="prereq-tag" style="opacity:.6;cursor:default">&#272;&#227; vi&#7871;t &#237;t nh&#7845;t 1 function trong code</span>
+  </div>
+</div>
+
 <!-- SEC 0: Naming -->
 <div class="section active" id="sec-0">
   <div class="section-header">
-    <div class="section-num">Khái niệm 01</div>
-    <div class="section-title">Đặt Tên Có Ý Nghĩa</div>
-    <div class="section-desc">"Code được đọc nhiều hơn viết." Tên biến, hàm, class phải tự giải thích mà không cần comment.</div>
+    <div class="section-num">Kh&#225;i ni&#7879;m 01</div>
+    <div class="section-title">&#272;&#7863;t T&#234;n C&#243; &#221; Ngh&#297;a</div>
+    <div class="section-desc">"Code &#273;&#432;&#7907;c &#273;&#7885;c nhi&#7873;u h&#417;n vi&#7871;t." T&#234;n bi&#7871;n, h&#224;m, class ph&#7843;i t&#7921; gi&#7843;i th&#237;ch m&#224; kh&#244;ng c&#7847;n comment. Li&#234;n quan ch&#7863;t ch&#7869; v&#7899;i <span class="cross-ref" title="Xem b&#224;i 2: Abstraction">abstraction &#8594; B&#224;i 2</span>.</div>
   </div>
 
   <div class="compare">
     <div class="compare-side bad">
-      <div class="compare-header">❌ Tên xấu</div>
+      <div class="compare-header">&#10060; T&#234;n x&#7845;u</div>
       <div class="compare-code">
         <span class="kw">let</span> <span class="bad-name">d</span> = <span class="num">86400</span><br>
         <span class="kw">let</span> <span class="bad-name">tmp</span> = <span class="fn">getList</span>()<br>
         <span class="kw">function</span> <span class="bad-name">proc</span>(<span class="bad-name">l</span>) {<br>
-        &nbsp;&nbsp;<span class="kw">return</span> <span class="bad-name">l</span>.filter(<span class="bad-name">i</span> =><br>
+        &nbsp;&nbsp;<span class="kw">return</span> <span class="bad-name">l</span>.filter(<span class="bad-name">i</span> =&gt;<br>
         &nbsp;&nbsp;&nbsp;&nbsp;<span class="bad-name">i</span>.<span class="bad-name">f</span> === <span class="num">1</span>)<br>
         }
       </div>
     </div>
     <div class="compare-side good">
-      <div class="compare-header">✅ Tên tốt</div>
+      <div class="compare-header">&#9989; T&#234;n t&#7889;t</div>
       <div class="compare-code">
         <span class="kw">const</span> <span class="good-name">SECONDS_PER_DAY</span> = <span class="num">86400</span><br>
         <span class="kw">const</span> <span class="good-name">activeUsers</span> = <span class="fn">getUsers</span>()<br>
         <span class="kw">function</span> <span class="good-name">filterActive</span>(<span class="good-name">users</span>) {<br>
-        &nbsp;&nbsp;<span class="kw">return</span> <span class="good-name">users</span>.filter(<span class="good-name">user</span> =><br>
+        &nbsp;&nbsp;<span class="kw">return</span> <span class="good-name">users</span>.filter(<span class="good-name">user</span> =&gt;<br>
         &nbsp;&nbsp;&nbsp;&nbsp;<span class="good-name">user</span>.<span class="good-name">isActive</span> === <span class="num">true</span>)<br>
         }
       </div>
@@ -175,24 +248,24 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   </div>
 
   <div class="card">
-    <div class="card-title">📋 Quy tắc đặt tên</div>
+    <div class="card-title">&#128203; Quy t&#7855;c &#273;&#7863;t t&#234;n</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
       <div style="background:var(--surface2);border-radius:10px;padding:14px">
-        <div style="color:var(--green);font-size:.78rem;font-weight:700;margin-bottom:8px;">✅ BIẾN — noun phrase</div>
+        <div style="color:var(--green);font-size:.78rem;font-weight:700;margin-bottom:8px;">&#9989; BI&#7870;N &#8212; noun phrase</div>
         <div style="font-family:monospace;font-size:.8rem;color:var(--muted);line-height:1.8">elapsedTimeInDays<br>userAccountBalance<br>isEmailVerified<br>MAX_RETRY_COUNT</div>
       </div>
       <div style="background:var(--surface2);border-radius:10px;padding:14px">
-        <div style="color:var(--blue);font-size:.78rem;font-weight:700;margin-bottom:8px;">✅ HÀM — verb phrase</div>
+        <div style="color:var(--blue);font-size:.78rem;font-weight:700;margin-bottom:8px;">&#9989; H&#192;M &#8212; verb phrase</div>
         <div style="font-family:monospace;font-size:.8rem;color:var(--muted);line-height:1.8">getUserById()<br>sendWelcomeEmail()<br>calculateMonthlyFee()<br>isValidEmail()</div>
       </div>
     </div>
   </div>
 
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
-      <li>Nếu cần comment để giải thích tên → tên đó cần đổi</li>
-      <li>Tránh: d, tmp, data, info, manager, processor (quá mơ hồ)</li>
+      <li>N&#7871;u c&#7847;n comment &#273;&#7875; gi&#7843;i th&#237;ch t&#234;n &#8594; t&#234;n &#273;&#243; c&#7847;n &#273;&#7893;i</li>
+      <li>Tr&#225;nh: d, tmp, data, info, manager, processor (qu&#225; m&#417; h&#7891;)</li>
       <li>Boolean: is/has/can prefix (isActive, hasPermission, canEdit)</li>
     </ul>
   </div>
@@ -201,24 +274,24 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 <!-- SEC 1: Small Functions -->
 <div class="section" id="sec-1">
   <div class="section-header">
-    <div class="section-num">Khái niệm 02</div>
-    <div class="section-title">Hàm Nhỏ</div>
-    <div class="section-desc">Hàm lý tưởng đủ nhỏ để thấy toàn bộ trên màn hình. Khi hàm làm nhiều việc → tách ra.</div>
+    <div class="section-num">Kh&#225;i ni&#7879;m 02</div>
+    <div class="section-title">H&#224;m Nh&#7887;</div>
+    <div class="section-desc">H&#224;m l&#253; t&#432;&#7903;ng &#273;&#7911; nh&#7887; &#273;&#7875; th&#7845;y to&#224;n b&#7897; tr&#234;n m&#224;n h&#236;nh. &#272;&#226;y l&#224; &#225;p d&#7909;ng c&#7911;a <span class="cross-ref" title="Xem b&#224;i 2: SRP / decompose">SRP t&#7915; b&#224;i 2</span> v&#224;o th&#7921;c t&#7871;. Khi h&#224;m l&#224;m nhi&#7873;u vi&#7879;c &#8594; t&#225;ch ra.</div>
   </div>
 
   <div class="fn-break">
     <div class="fn-big">
-      <div class="fn-big-label">❌ processUserRegistration() — 100 dòng</div>
+      <div class="fn-big-label">&#10060; processUserRegistration() &#8212; 100 d&#242;ng</div>
       <div class="fn-lines" id="bigLines"></div>
       <div style="color:var(--red);font-size:.8rem;margin-top:10px;">Validate input + Hash password + Save DB + Send email + Create session + Log event + Notify admin...</div>
     </div>
 
     <div style="text-align:center;margin:12px 0">
-      <button onclick="showRefactored()" style="background:linear-gradient(135deg,#00b894,#2ecc71);color:#fff;border:none;padding:10px 24px;border-radius:10px;cursor:pointer;font-size:.9rem;font-weight:600">→ Tách thành hàm nhỏ</button>
+      <button onclick="showRefactored()" style="background:linear-gradient(135deg,#00b894,#2ecc71);color:#fff;border:none;padding:10px 24px;border-radius:10px;cursor:pointer;font-size:.9rem;font-weight:600">&#8594; T&#225;ch th&#224;nh h&#224;m nh&#7887;</button>
     </div>
 
     <div id="smallFns" style="display:none;animation:fadeUp .4s">
-      <div style="color:var(--green);font-size:.78rem;font-weight:700;margin-bottom:10px;">✅ 5 hàm nhỏ, mỗi hàm 15-20 dòng</div>
+      <div style="color:var(--green);font-size:.78rem;font-weight:700;margin-bottom:10px;">&#9989; 5 h&#224;m nh&#7887;, m&#7895;i h&#224;m 15-20 d&#242;ng</div>
       <div class="fn-small-grid">
         <div class="fn-small">validateInput()<div class="fn-small-lines" id="sl1"></div></div>
         <div class="fn-small">hashPassword()<div class="fn-small-lines" id="sl2"></div></div>
@@ -231,15 +304,15 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 
   <div class="highlight">
     <div class="highlight-label">Rule of Thumb</div>
-    <div class="highlight-text">Nếu bạn cần scroll để đọc hết 1 hàm → hàm đó quá dài. Nếu bạn cần comment "// Step 1:", "// Step 2:" trong 1 hàm → đó là dấu hiệu cần tách hàm.</div>
+    <div class="highlight-text">N&#7871;u b&#7841;n c&#7847;n scroll &#273;&#7875; &#273;&#7885;c h&#7871;t 1 h&#224;m &#8594; h&#224;m &#273;&#243; qu&#225; d&#224;i. N&#7871;u b&#7841;n c&#7847;n comment "// Step 1:", "// Step 2:" trong 1 h&#224;m &#8594; &#273;&#243; l&#224; d&#7845;u hi&#7879;u c&#7847;n t&#225;ch h&#224;m.</div>
   </div>
 
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
-      <li>Hàm nhỏ → dễ đọc, dễ test, dễ tái sử dụng, dễ debug</li>
-      <li>Mỗi hàm chỉ làm 1 việc ở 1 level abstraction</li>
-      <li>Extract method là refactoring an toàn nhất để học</li>
+      <li>H&#224;m nh&#7887; &#8594; d&#7877; &#273;&#7885;c, d&#7877; test, d&#7877; t&#225;i s&#7917; d&#7909;ng, d&#7877; debug</li>
+      <li>M&#7895;i h&#224;m ch&#7881; l&#224;m 1 vi&#7879;c &#7903; 1 level abstraction</li>
+      <li>Extract method l&#224; refactoring an to&#224;n nh&#7845;t &#273;&#7875; h&#7885;c</li>
     </ul>
   </div>
 </div>
@@ -247,33 +320,33 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 <!-- SEC 2: DRY/KISS/YAGNI -->
 <div class="section" id="sec-2">
   <div class="section-header">
-    <div class="section-num">Khái niệm 03</div>
-    <div class="section-title">DRY · KISS · YAGNI</div>
-    <div class="section-desc">Ba nguyên tắc cốt lõi giúp code không bị "thối" theo thời gian.</div>
+    <div class="section-num">Kh&#225;i ni&#7879;m 03</div>
+    <div class="section-title">DRY &middot; KISS &middot; YAGNI</div>
+    <div class="section-desc">Ba nguy&#234;n t&#7855;c c&#7889;t l&#245;i gi&#250;p code kh&#244;ng b&#7883; "th&#7889;i" theo th&#7901;i gian. K&#7871;t h&#7907;p v&#7899;i <span class="cross-ref" title="Xem b&#224;i 2: abstraction levels">abstraction levels &#8594; B&#224;i 2</span>.</div>
   </div>
 
   <div style="display:grid;grid-template-columns:1fr;gap:16px;margin:20px 0;">
     <div class="card" style="margin-bottom:0">
-      <div class="card-title">🔁 DRY — Don't Repeat Yourself</div>
+      <div class="card-title">&#128257; DRY &#8212; Don't Repeat Yourself</div>
       <div class="compare">
         <div class="compare-side bad">
-          <div class="compare-header">❌ Lặp code</div>
+          <div class="compare-header">&#10060; L&#7863;p code</div>
           <div class="compare-code" style="font-size:.78rem">
-            <span class="cmt">// Ở User service</span><br>
+            <span class="cmt">// &#7902; User service</span><br>
             email = email.trim()<br>
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.toLowerCase()<br><br>
-            <span class="cmt">// Ở Auth service</span><br>
+            <span class="cmt">// &#7902; Auth service</span><br>
             email = email.trim()<br>
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.toLowerCase()
           </div>
         </div>
         <div class="compare-side good">
-          <div class="compare-header">✅ Extract</div>
+          <div class="compare-header">&#9989; Extract</div>
           <div class="compare-code" style="font-size:.78rem">
             <span class="kw">function</span> <span class="fn">normalizeEmail</span>(e) {<br>
             &nbsp;&nbsp;<span class="kw">return</span> e.trim().toLowerCase()<br>
             }<br><br>
-            <span class="cmt">// Dùng ở mọi nơi</span><br>
+            <span class="cmt">// D&#249;ng &#7903; m&#7885;i n&#417;i</span><br>
             <span class="fn">normalizeEmail</span>(email)
           </div>
         </div>
@@ -281,10 +354,10 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
     </div>
 
     <div class="card" style="margin-bottom:0">
-      <div class="card-title">💎 KISS — Keep It Simple, Stupid</div>
+      <div class="card-title">&#128142; KISS &#8212; Keep It Simple, Stupid</div>
       <div class="compare">
         <div class="compare-side bad">
-          <div class="compare-header">❌ Over-engineered</div>
+          <div class="compare-header">&#10060; Over-engineered</div>
           <div class="compare-code" style="font-size:.78rem">
             <span class="kw">class</span> <span class="fn">AbstractUserFactory</span><br>
             <span class="kw">extends</span> <span class="fn">BaseEntityBuilder</span><br>
@@ -295,7 +368,7 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
           </div>
         </div>
         <div class="compare-side good">
-          <div class="compare-header">✅ Đủ đơn giản</div>
+          <div class="compare-header">&#9989; &#272;&#7911; &#273;&#417;n gi&#7843;n</div>
           <div class="compare-code" style="font-size:.78rem">
             <span class="kw">function</span> <span class="fn">createUser</span>(data) {<br>
             &nbsp;&nbsp;<span class="kw">return</span> { ...data,<br>
@@ -309,24 +382,24 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
     </div>
 
     <div class="card" style="margin-bottom:0">
-      <div class="card-title">🚫 YAGNI — You Aren't Gonna Need It</div>
+      <div class="card-title">&#128683; YAGNI &#8212; You Aren't Gonna Need It</div>
       <div style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:16px;margin-bottom:12px;">
-        <div style="color:var(--red);font-size:.8rem;font-weight:700;margin-bottom:8px;">❌ Anti-pattern</div>
-        <div style="color:var(--muted);font-size:.88rem;line-height:1.7">"Tôi sẽ thêm multi-tenancy ngay từ đầu... thêm caching layer... thêm plugin system... thêm A/B testing framework..."<br>→ Tốn 3 tuần cho tính năng mà <strong>chưa ai cần</strong>.</div>
+        <div style="color:var(--red);font-size:.8rem;font-weight:700;margin-bottom:8px;">&#10060; Anti-pattern</div>
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7">"T&#244;i s&#7869; th&#234;m multi-tenancy ngay t&#7915; &#273;&#7847;u... th&#234;m caching layer... th&#234;m plugin system..." &#8594; T&#7889;n 3 tu&#7847;n cho t&#237;nh n&#259;ng m&#224; <strong>ch&#432;a ai c&#7847;n</strong>.</div>
       </div>
       <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.25);border-radius:10px;padding:16px;">
-        <div style="color:var(--green);font-size:.8rem;font-weight:700;margin-bottom:8px;">✅ Build when needed</div>
-        <div style="color:var(--muted);font-size:.88rem;line-height:1.7">Ship MVP → nhận feedback → refactor → thêm tính năng thực sự được yêu cầu.</div>
+        <div style="color:var(--green);font-size:.8rem;font-weight:700;margin-bottom:8px;">&#9989; Build when needed</div>
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7">Ship MVP &#8594; nh&#7853;n feedback &#8594; refactor &#8594; th&#234;m t&#237;nh n&#259;ng th&#7921;c s&#7921; &#273;&#432;&#7907;c y&#234;u c&#7847;u.</div>
       </div>
     </div>
   </div>
 
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
-      <li>DRY: mỗi piece of knowledge có 1 nơi duy nhất trong hệ thống</li>
-      <li>KISS: simple code làm đúng > clever code làm sai</li>
-      <li>YAGNI: đừng viết code cho tương lai tưởng tượng</li>
+      <li>DRY: m&#7895;i piece of knowledge c&#243; 1 n&#417;i duy nh&#7845;t trong h&#7879; th&#7889;ng</li>
+      <li>KISS: simple code l&#224;m &#273;&#250;ng &gt; clever code l&#224;m sai</li>
+      <li>YAGNI: &#273;&#7915;ng vi&#7871;t code cho t&#432;&#417;ng lai t&#432;&#7903;ng t&#432;&#7907;ng</li>
     </ul>
   </div>
 </div>
@@ -334,25 +407,25 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 <!-- SEC 3: SOLID -->
 <div class="section" id="sec-3">
   <div class="section-header">
-    <div class="section-num">Khái niệm 04</div>
+    <div class="section-num">Kh&#225;i ni&#7879;m 04</div>
     <div class="section-title">SOLID Principles</div>
-    <div class="section-desc">5 nguyên tắc OOP giúp code linh hoạt, dễ mở rộng, ít bug. Click vào từng card để xem chi tiết.</div>
+    <div class="section-desc">5 nguy&#234;n t&#7855;c OOP gi&#250;p code linh ho&#7841;t, d&#7877; m&#7903; r&#7897;ng, &#237;t bug. <span class="cross-ref" title="S&#7869; th&#7845;y l&#7841;i trong b&#224;i 4">Patterns trong b&#224;i 4 &#8594;</span> s&#7869; hi&#7879;n th&#7883; r&#245; SOLID trong th&#7921;c t&#7871;. Click v&#224;o t&#7915;ng card.</div>
   </div>
 
   <div class="solid-grid">
     <div class="solid-card" onclick="toggleSolid(this)">
       <div class="solid-letter">S</div>
       <div class="solid-name">Single Responsibility</div>
-      <div class="solid-short">Mỗi class chỉ có 1 lý do để thay đổi</div>
+      <div class="solid-short">M&#7895;i class ch&#7881; c&#243; 1 l&#253; do &#273;&#7875; thay &#273;&#7893;i</div>
       <div class="solid-detail">
         <div class="solid-code">
-          <span class="cmt">// ❌ UserService làm quá nhiều</span><br>
+          <span class="cmt">// &#10060; UserService l&#224;m qu&#225; nhi&#7873;u</span><br>
           class UserService {<br>
           &nbsp;&nbsp;getUser() { ... }<br>
-          &nbsp;&nbsp;sendEmail() { ... } ← sai chỗ<br>
-          &nbsp;&nbsp;generatePDF() { ... } ← sai chỗ<br>
+          &nbsp;&nbsp;sendEmail() { ... } &#8592; sai ch&#7895;<br>
+          &nbsp;&nbsp;generatePDF() { ... } &#8592; sai ch&#7895;<br>
           }<br><br>
-          <span class="cmt">// ✅ Mỗi service 1 việc</span><br>
+          <span class="cmt">// &#9989; M&#7895;i service 1 vi&#7879;c</span><br>
           UserService, MailService, PdfService
         </div>
       </div>
@@ -360,11 +433,11 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
     <div class="solid-card" onclick="toggleSolid(this)">
       <div class="solid-letter">O</div>
       <div class="solid-name">Open/Closed</div>
-      <div class="solid-short">Mở để mở rộng, đóng để sửa đổi</div>
+      <div class="solid-short">M&#7903; &#273;&#7875; m&#7903; r&#7897;ng, &#273;&#243;ng &#273;&#7875; s&#7917;a &#273;&#7893;i</div>
       <div class="solid-detail">
         <div class="solid-code">
-          <span class="cmt">// Thêm shape mới không cần</span><br>
-          <span class="cmt">// sửa code cũ</span><br>
+          <span class="cmt">// Th&#234;m shape m&#7899;i kh&#244;ng c&#7847;n</span><br>
+          <span class="cmt">// s&#7917;a code c&#361;</span><br>
           interface Shape {<br>
           &nbsp;&nbsp;area(): number<br>
           }<br>
@@ -376,28 +449,27 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
     <div class="solid-card" onclick="toggleSolid(this)">
       <div class="solid-letter">L</div>
       <div class="solid-name">Liskov Substitution</div>
-      <div class="solid-short">Subclass thay thế được parent class</div>
+      <div class="solid-short">Subclass thay th&#7871; &#273;&#432;&#7907;c parent class</div>
       <div class="solid-detail">
         <div class="solid-code">
-          <span class="cmt">// Code dùng Bird phải hoạt động</span><br>
-          <span class="cmt">// với mọi subclass của Bird</span><br>
+          <span class="cmt">// Code d&#249;ng Bird ph&#7843;i ho&#7841;t &#273;&#7897;ng</span><br>
+          <span class="cmt">// v&#7899;i m&#7885;i subclass c&#7911;a Bird</span><br>
           function makeFly(bird: Bird) {<br>
-          &nbsp;&nbsp;bird.fly() ← phải work<br>
+          &nbsp;&nbsp;bird.fly() &#8592; ph&#7843;i work<br>
           }<br>
-          <span class="cmt">// Penguin extends Bird ← sai!</span><br>
-          <span class="cmt">// Penguin không bay được</span>
+          <span class="cmt">// Penguin extends Bird &#8592; sai!</span>
         </div>
       </div>
     </div>
     <div class="solid-card" onclick="toggleSolid(this)">
       <div class="solid-letter">I</div>
       <div class="solid-name">Interface Segregation</div>
-      <div class="solid-short">Nhiều interface nhỏ hơn 1 interface lớn</div>
+      <div class="solid-short">Nhi&#7873;u interface nh&#7887; h&#417;n 1 interface l&#7899;n</div>
       <div class="solid-detail">
         <div class="solid-code">
-          <span class="cmt">// ❌ 1 interface quá rộng</span><br>
+          <span class="cmt">// &#10060; 1 interface qu&#225; r&#7897;ng</span><br>
           interface Worker { work(); eat(); sleep() }<br><br>
-          <span class="cmt">// ✅ Tách nhỏ</span><br>
+          <span class="cmt">// &#9989; T&#225;ch nh&#7887;</span><br>
           interface Workable { work() }<br>
           interface Feedable { eat() }
         </div>
@@ -406,16 +478,16 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
     <div class="solid-card" onclick="toggleSolid(this)" style="grid-column:1/-1;">
       <div class="solid-letter">D</div>
       <div class="solid-name">Dependency Inversion</div>
-      <div class="solid-short">Depend on abstractions, not concretions. High-level không phụ thuộc low-level.</div>
+      <div class="solid-short">Depend on abstractions, not concretions. High-level kh&#244;ng ph&#7909; thu&#7897;c low-level.</div>
       <div class="solid-detail">
         <div class="solid-code">
-          <span class="cmt">// ❌ Tight coupling</span><br>
+          <span class="cmt">// &#10060; Tight coupling</span><br>
           class OrderService {<br>
-          &nbsp;&nbsp;private db = new MySQLDatabase() ← bad<br>
+          &nbsp;&nbsp;private db = new MySQLDatabase() &#8592; bad<br>
           }<br><br>
-          <span class="cmt">// ✅ Inject dependency</span><br>
+          <span class="cmt">// &#9989; Inject dependency</span><br>
           class OrderService {<br>
-          &nbsp;&nbsp;constructor(private db: IDatabase) {} ← good<br>
+          &nbsp;&nbsp;constructor(private db: IDatabase) {} &#8592; good<br>
           }
         </div>
       </div>
@@ -423,11 +495,11 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   </div>
 
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
-      <li>SOLID không phải rules phải follow mọi lúc — đây là guidelines</li>
-      <li>Áp dụng khi thấy code khó test, khó thay đổi, hay break</li>
-      <li>Bắt đầu với S và D — 80% benefit từ 2 nguyên tắc này</li>
+      <li>SOLID kh&#244;ng ph&#7843;i rules ph&#7843;i follow m&#7885;i l&#250;c &#8212; &#273;&#226;y l&#224; guidelines</li>
+      <li>&#193;p d&#7909;ng khi th&#7845;y code kh&#243; test, kh&#243; thay &#273;&#7893;i, hay break</li>
+      <li>B&#7855;t &#273;&#7847;u v&#7899;i S v&#224; D &#8212; 80% benefit t&#7915; 2 nguy&#234;n t&#7855;c n&#224;y</li>
     </ul>
   </div>
 </div>
@@ -435,14 +507,14 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 <!-- SEC 4: Code Smells -->
 <div class="section" id="sec-4">
   <div class="section-header">
-    <div class="section-num">Khái niệm 05</div>
+    <div class="section-num">Kh&#225;i ni&#7879;m 05</div>
     <div class="section-title">Code Smells</div>
-    <div class="section-desc">Code smells là dấu hiệu cảnh báo — code có thể chạy đúng nhưng có vấn đề về thiết kế. Click vào từng smell để nhận diện.</div>
+    <div class="section-desc">Code smells l&#224; d&#7845;u hi&#7879;u c&#7843;nh b&#225;o &#8212; code c&#243; th&#7875; ch&#7841;y &#273;&#250;ng nh&#432;ng c&#243; v&#7845;n &#273;&#7873; v&#7873; thi&#7871;t k&#7871;. Click v&#224;o t&#7915;ng smell &#273;&#7875; nh&#7853;n di&#7879;n.</div>
   </div>
 
   <div class="smell-game">
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
-      <div style="color:var(--yellow);font-size:.78rem;font-weight:700;margin-bottom:12px;">🔍 Tìm code smells trong đoạn code sau:</div>
+      <div style="color:var(--yellow);font-size:.78rem;font-weight:700;margin-bottom:12px;">&#128269; T&#236;m code smells trong &#273;o&#7841;n code sau:</div>
       <div class="smell-code">
 <span class="kw">function</span> <span class="fn">doThings</span>(<span class="smell-highlight" id="sh1" title="Long Parameter List">a, b, c, d, e, f</span>) {<br>
 &nbsp;&nbsp;<span class="kw">if</span> (a === <span class="num">1</span>) {<br>
@@ -459,32 +531,32 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 }
       </div>
       <div class="smell-answers" id="smellAnswers">
-        <div class="smell-ans" onclick="checkSmell(this,'correct')">📦 Long Parameter List (6 params)</div>
-        <div class="smell-ans" onclick="checkSmell(this,'correct')">🏹 Arrow Code / Deeply Nested</div>
-        <div class="smell-ans" onclick="checkSmell(this,'correct')">🔮 Magic Number (0.1728)</div>
-        <div class="smell-ans" onclick="checkSmell(this,'wrong')">🔁 Duplicate Code</div>
-        <div class="smell-ans" onclick="checkSmell(this,'wrong')">💀 Dead Code</div>
+        <div class="smell-ans" onclick="checkSmell(this,'correct')">&#128230; Long Parameter List (6 params)</div>
+        <div class="smell-ans" onclick="checkSmell(this,'correct')">&#127993; Arrow Code / Deeply Nested</div>
+        <div class="smell-ans" onclick="checkSmell(this,'correct')">&#128302; Magic Number (0.1728)</div>
+        <div class="smell-ans" onclick="checkSmell(this,'wrong')">&#128257; Duplicate Code</div>
+        <div class="smell-ans" onclick="checkSmell(this,'wrong')">&#128128; Dead Code</div>
       </div>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-title">🗒️ Danh sách Code Smells phổ biến</div>
+    <div class="card-title">&#128221; Danh s&#225;ch Code Smells ph&#7893; bi&#7871;n</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.82rem;"><span style="color:var(--orange)">Long Method</span> — hàm > 30 dòng</div>
-      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.82rem;"><span style="color:var(--orange)">God Class</span> — class biết quá nhiều</div>
-      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.82rem;"><span style="color:var(--orange)">Shotgun Surgery</span> — 1 change → sửa nhiều nơi</div>
-      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.82rem;"><span style="color:var(--orange)">Feature Envy</span> — method dùng data class khác nhiều</div>
-      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.82rem;"><span style="color:var(--orange)">Data Clumps</span> — nhóm biến luôn đi cùng nhau</div>
-      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.82rem;"><span style="color:var(--orange)">Comments</span> — comment giải thích code xấu</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.82rem;"><span style="color:var(--orange)">Long Method</span> &#8212; h&#224;m &gt; 30 d&#242;ng</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.82rem;"><span style="color:var(--orange)">God Class</span> &#8212; class bi&#7871;t qu&#225; nhi&#7873;u</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.82rem;"><span style="color:var(--orange)">Shotgun Surgery</span> &#8212; 1 change &#8594; s&#7917;a nhi&#7873;u n&#417;i</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.82rem;"><span style="color:var(--orange)">Feature Envy</span> &#8212; method d&#249;ng data class kh&#225;c nhi&#7873;u</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.82rem;"><span style="color:var(--orange)">Data Clumps</span> &#8212; nh&#243;m bi&#7871;n lu&#244;n &#273;i c&#249;ng nhau</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.82rem;"><span style="color:var(--orange)">Comments</span> &#8212; comment gi&#7843;i th&#237;ch code x&#7845;u</div>
     </div>
   </div>
 
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
-      <li>Code smell ≠ bug, nhưng là tiền thân của bug</li>
-      <li>Khi thấy smell → không phải lúc nào cũng refactor ngay, nhưng ghi chú lại</li>
+      <li>Code smell &#8800; bug, nh&#432;ng l&#224; ti&#7873;n th&#226;n c&#7911;a bug</li>
+      <li>Khi th&#7845;y smell &#8594; kh&#244;ng ph&#7843;i l&#250;c n&#224;o c&#361;ng refactor ngay, nh&#432;ng ghi ch&#250; l&#7841;i</li>
       <li>Boy Scout Rule: "Leave the code cleaner than you found it"</li>
     </ul>
   </div>
@@ -493,22 +565,22 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 <!-- SEC 5: Refactoring -->
 <div class="section" id="sec-5">
   <div class="section-header">
-    <div class="section-num">Khái niệm 06</div>
-    <div class="section-title">Refactoring từng bước</div>
-    <div class="section-desc">Refactoring = thay đổi cấu trúc code mà không thay đổi behavior. Click để xem từng bước.</div>
+    <div class="section-num">Kh&#225;i ni&#7879;m 06</div>
+    <div class="section-title">Refactoring t&#7915;ng b&#432;&#7899;c</div>
+    <div class="section-desc">Refactoring = thay &#273;&#7893;i c&#7845;u tr&#250;c code m&#224; kh&#244;ng thay &#273;&#7893;i behavior. Click &#273;&#7875; xem t&#7915;ng b&#432;&#7899;c.</div>
   </div>
 
   <div class="refactor-steps">
     <div class="refactor-nav" id="refNav">
-      <button class="ref-btn active" onclick="showRef(0)">Bước 0: Original</button>
-      <button class="ref-btn" onclick="showRef(1)">Bước 1: Extract</button>
-      <button class="ref-btn" onclick="showRef(2)">Bước 2: Rename</button>
-      <button class="ref-btn" onclick="showRef(3)">Bước 3: Final</button>
+      <button class="ref-btn active" onclick="showRef(0)">B&#432;&#7899;c 0: Original</button>
+      <button class="ref-btn" onclick="showRef(1)">B&#432;&#7899;c 1: Extract</button>
+      <button class="ref-btn" onclick="showRef(2)">B&#432;&#7899;c 2: Rename</button>
+      <button class="ref-btn" onclick="showRef(3)">B&#432;&#7899;c 3: Final</button>
     </div>
 
     <div class="refactor-step show" id="ref-0">
       <div style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.25);border-radius:12px;padding:20px">
-        <div style="color:var(--red);font-size:.78rem;font-weight:700;margin-bottom:12px;">❌ Code gốc — messy</div>
+        <div style="color:var(--red);font-size:.78rem;font-weight:700;margin-bottom:12px;">&#10060; Code g&#7889;c &#8212; messy</div>
         <div class="compare-code" style="font-size:.82rem;line-height:1.85">
           <span class="kw">function</span> <span class="fn">a</span>(u) {<br>
           &nbsp;&nbsp;<span class="kw">if</span> (!u.email || !u.email.includes(<span class="str">'@'</span>)) <span class="kw">return</span> <span class="kw">false</span><br>
@@ -523,13 +595,13 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 
     <div class="refactor-step" id="ref-1">
       <div style="background:rgba(255,183,71,0.06);border:1px solid rgba(255,183,71,0.25);border-radius:12px;padding:20px">
-        <div style="color:var(--orange);font-size:.78rem;font-weight:700;margin-bottom:12px;">🔧 Bước 1: Extract method</div>
+        <div style="color:var(--orange);font-size:.78rem;font-weight:700;margin-bottom:12px;">&#128296; B&#432;&#7899;c 1: Extract method</div>
         <div class="compare-code" style="font-size:.82rem;line-height:1.85">
           <span class="kw">function</span> <span class="fn">isValidEmail</span>(email) {<br>
-          &nbsp;&nbsp;<span class="kw">return</span> !!email && email.includes(<span class="str">'@'</span>)<br>
+          &nbsp;&nbsp;<span class="kw">return</span> !!email &amp;&amp; email.includes(<span class="str">'@'</span>)<br>
           }<br>
           <span class="kw">function</span> <span class="fn">isValidPassword</span>(pw) {<br>
-          &nbsp;&nbsp;<span class="kw">return</span> !!pw && pw.length >= <span class="num">8</span><br>
+          &nbsp;&nbsp;<span class="kw">return</span> !!pw &amp;&amp; pw.length &gt;= <span class="num">8</span><br>
           }<br>
           <span class="kw">function</span> <span class="fn">a</span>(u) {<br>
           &nbsp;&nbsp;<span class="kw">if</span> (!<span class="fn">isValidEmail</span>(u.email)) <span class="kw">return</span> <span class="kw">false</span><br>
@@ -542,7 +614,7 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 
     <div class="refactor-step" id="ref-2">
       <div style="background:rgba(91,141,239,0.06);border:1px solid rgba(91,141,239,0.25);border-radius:12px;padding:20px">
-        <div style="color:var(--blue);font-size:.78rem;font-weight:700;margin-bottom:12px;">🏷️ Bước 2: Rename + Separate concerns</div>
+        <div style="color:var(--blue);font-size:.78rem;font-weight:700;margin-bottom:12px;">&#127991;&#65039; B&#432;&#7899;c 2: Rename + Separate concerns</div>
         <div class="compare-code" style="font-size:.82rem;line-height:1.85">
           <span class="kw">function</span> <span class="fn">registerUser</span>(userData) {<br>
           &nbsp;&nbsp;<span class="kw">if</span> (!<span class="fn">isValidEmail</span>(userData.email)) <span class="kw">return false</span><br>
@@ -558,9 +630,9 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 
     <div class="refactor-step" id="ref-3">
       <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.25);border-radius:12px;padding:20px">
-        <div style="color:var(--green);font-size:.78rem;font-weight:700;margin-bottom:12px;">✅ Final: Clean, readable, testable</div>
+        <div style="color:var(--green);font-size:.78rem;font-weight:700;margin-bottom:12px;">&#9989; Final: Clean, readable, testable</div>
         <div class="compare-code" style="font-size:.82rem;line-height:1.85">
-          <span class="cmt">// Mỗi hàm 1 việc, tên rõ ràng</span><br>
+          <span class="cmt">// M&#7895;i h&#224;m 1 vi&#7879;c, t&#234;n r&#245; r&#224;ng</span><br>
           <span class="kw">async function</span> <span class="fn">registerUser</span>(userData: <span class="fn">CreateUserDto</span>) {<br>
           &nbsp;&nbsp;<span class="fn">validateRegistrationData</span>(userData)<br>
           &nbsp;&nbsp;<span class="kw">const</span> user = <span class="kw">await</span> userService.<span class="fn">create</span>(userData)<br>
@@ -573,11 +645,11 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
   </div>
 
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
-      <li>Refactor thành từng bước nhỏ, test sau mỗi bước</li>
-      <li>Không refactor và thêm feature cùng lúc — nguy hiểm</li>
-      <li>Có test coverage trước khi refactor — safety net</li>
+      <li>Refactor th&#224;nh t&#7915;ng b&#432;&#7899;c nh&#7887;, test sau m&#7895;i b&#432;&#7899;c</li>
+      <li>Kh&#244;ng refactor v&#224; th&#234;m feature c&#249;ng l&#250;c &#8212; nguy hi&#7875;m</li>
+      <li>C&#243; test coverage tr&#432;&#7899;c khi refactor &#8212; safety net</li>
     </ul>
   </div>
 </div>
@@ -585,28 +657,24 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 <!-- SEC 6: Technical Debt -->
 <div class="section" id="sec-6">
   <div class="section-header">
-    <div class="section-num">Khái niệm 07</div>
+    <div class="section-num">Kh&#225;i ni&#7879;m 07</div>
     <div class="section-title">Technical Debt</div>
-    <div class="section-desc">Nợ kỹ thuật tích lũy theo thời gian. Giống như lãi suất ngân hàng — càng để lâu, càng tốn kém.</div>
+    <div class="section-desc">N&#7907; k&#7929; thu&#7853;t t&#237;ch l&#361;y theo th&#7901;i gian. Gi&#7889;ng nh&#432; l&#227;i su&#7845;t ng&#226;n h&#224;ng &#8212; c&#224;ng &#273;&#7875; l&#226;u, c&#224;ng t&#7889;n k&#233;m.</div>
   </div>
 
   <div class="card">
-    <div class="card-title">📉 Velocity giảm theo thời gian khi không refactor</div>
+    <div class="card-title">&#128201; Velocity gi&#7843;m theo th&#7901;i gian khi kh&#244;ng refactor</div>
     <svg class="td-graph" style="width:100%;height:160px" viewBox="0 0 800 160" preserveAspectRatio="none">
-      <!-- Grid lines -->
       <line x1="0" y1="40" x2="800" y2="40" stroke="#2a3a5c" stroke-width="1"/>
       <line x1="0" y1="80" x2="800" y2="80" stroke="#2a3a5c" stroke-width="1"/>
       <line x1="0" y1="120" x2="800" y2="120" stroke="#2a3a5c" stroke-width="1"/>
-      <!-- With refactoring (good) -->
       <path d="M 0,20 C 200,18 400,22 800,25" stroke="#2ecc71" class="td-path" stroke-dasharray="8,4"/>
-      <!-- Without refactoring (bad) -->
       <path d="M 0,20 C 100,30 300,70 500,110 C 600,130 700,145 800,152" stroke="#e74c3c" class="td-path"/>
-      <!-- Labels -->
-      <text x="660" y="18" class="td-label" fill="#2ecc71" font-size="11">với refactoring</text>
-      <text x="560" y="138" class="td-label" fill="#e74c3c" font-size="11">không refactor</text>
-      <text x="10" y="155" class="td-label" fill="#8899bb" font-size="11">Tháng 1</text>
-      <text x="370" y="155" class="td-label" fill="#8899bb" font-size="11">Tháng 6</text>
-      <text x="730" y="155" class="td-label" fill="#8899bb" font-size="11">Tháng 12</text>
+      <text x="660" y="18" class="td-label" fill="#2ecc71" font-size="11">v&#7899;i refactoring</text>
+      <text x="560" y="138" class="td-label" fill="#e74c3c" font-size="11">kh&#244;ng refactor</text>
+      <text x="10" y="155" class="td-label" fill="#8899bb" font-size="11">Th&#225;ng 1</text>
+      <text x="370" y="155" class="td-label" fill="#8899bb" font-size="11">Th&#225;ng 6</text>
+      <text x="730" y="155" class="td-label" fill="#8899bb" font-size="11">Th&#225;ng 12</text>
       <text x="4" y="42" class="td-label" fill="#8899bb" font-size="10">High</text>
       <text x="4" y="122" class="td-label" fill="#8899bb" font-size="10">Low</text>
       <text x="370" y="90" class="td-label" fill="#ffd43b" font-size="10">VELOCITY</text>
@@ -615,32 +683,252 @@ main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: rela
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0;">
     <div class="card" style="margin-bottom:0">
-      <div style="color:var(--orange);font-weight:700;font-size:.85rem;margin-bottom:10px;">💸 Deliberate Debt</div>
-      <div style="color:var(--muted);font-size:.88rem;line-height:1.6">Cố tình "nợ" để ship nhanh. Chấp nhận được nếu có kế hoạch trả nợ rõ ràng. "Cần ship trong 2 ngày, sau đó refactor sprint sau."</div>
+      <div style="color:var(--orange);font-weight:700;font-size:.85rem;margin-bottom:10px;">&#128184; Deliberate Debt</div>
+      <div style="color:var(--muted);font-size:.88rem;line-height:1.6">C&#7889; t&#236;nh "n&#7907;" &#273;&#7875; ship nhanh. Ch&#7845;p nh&#7853;n &#273;&#432;&#7907;c n&#7871;u c&#243; k&#7871; ho&#7841;ch tr&#7843; n&#7907; r&#245; r&#224;ng. "C&#7847;n ship trong 2 ng&#224;y, sau &#273;&#243; refactor sprint sau."</div>
     </div>
     <div class="card" style="margin-bottom:0">
-      <div style="color:var(--red);font-weight:700;font-size:.85rem;margin-bottom:10px;">☠️ Reckless Debt</div>
-      <div style="color:var(--muted);font-size:.88rem;line-height:1.6">Không biết mình đang nợ. Không có kế hoạch. Accumulate mãi đến khi team không dám đụng vào code nữa.</div>
+      <div style="color:var(--red);font-weight:700;font-size:.85rem;margin-bottom:10px;">&#9760;&#65039; Reckless Debt</div>
+      <div style="color:var(--muted);font-size:.88rem;line-height:1.6">Kh&#244;ng bi&#7871;t m&#236;nh &#273;ang n&#7907;. Kh&#244;ng c&#243; k&#7871; ho&#7841;ch. Accumulate m&#227;i &#273;&#7871;n khi team kh&#244;ng d&#225;m &#273;&#7909;ng v&#224;o code n&#7919;a.</div>
     </div>
   </div>
 
   <div class="takeaway">
-    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <div class="takeaway-title">&#127919; Key Takeaway</div>
     <ul class="takeaway-list">
-      <li>Tech debt không phải xấu — là công cụ nếu quản lý có ý thức</li>
-      <li>Track tech debt: ghi vào backlog, schedule refactoring sprints</li>
-      <li>20% thời gian sprint cho tech debt — đây là investment, không phải waste</li>
+      <li>Tech debt kh&#244;ng ph&#7843;i x&#7845;u &#8212; l&#224; c&#244;ng c&#7909; n&#7871;u qu&#7843;n l&#253; c&#243; &#253; th&#7913;c</li>
+      <li>Track tech debt: ghi v&#224;o backlog, schedule refactoring sprints</li>
+      <li>20% th&#7901;i gian sprint cho tech debt &#8212; &#273;&#226;y l&#224; investment, kh&#244;ng ph&#7843;i waste</li>
     </ul>
   </div>
-</div>
+
+  <!-- EXERCISES SECTION -->
+  <div class="exercises-section">
+    <div class="exercises-title">&#127919; B&#224;i T&#7853;p Th&#7921;c H&#224;nh</div>
+    <div class="exercises-sub">&#193;p d&#7909;ng nh&#7919;ng g&#236; v&#7915;a h&#7885;c v&#224;o code th&#7921;c t&#7871;. Ho&#224;n th&#224;nh &#237;t nh&#7845;t 3/5 b&#224;i tr&#432;&#7899;c khi sang b&#224;i ti&#7871;p theo.</div>
+
+    <!-- Ex 1 -->
+    <div class="exercise">
+      <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="ex-num">1</div>
+        <div class="ex-title">&#272;&#7863;t l&#7841;i t&#234;n 10 bi&#7871;n/h&#224;m x&#7845;u</div>
+        <span class="ex-diff easy">&#127802; D&#7877;</span>
+        <span class="ex-toggle">&#9660;</span>
+      </div>
+      <div class="ex-body">
+        <p>Nh&#236;n v&#224;o &#273;o&#7841;n code d&#432;&#7899;i &#273;&#226;y. &#272;&#7863;t l&#7841;i t&#234;n cho t&#7845;t c&#7843; c&#225;c bi&#7871;n v&#224; h&#224;m theo naming conventions &#273;&#227; h&#7885;c:</p>
+        <div class="ex-code">
+<span class="kw">let</span> x = <span class="num">0</span><br>
+<span class="kw">let</span> tmp = []<br>
+<span class="kw">let</span> flag = <span class="kw">false</span><br>
+<span class="kw">function</span> <span class="fn">calc</span>(n) { ... }<br>
+<span class="kw">function</span> <span class="fn">proc</span>(d) { ... }<br>
+<span class="kw">function</span> <span class="fn">chk</span>(e) { ... }<br>
+<span class="kw">const</span> mgr = <span class="kw">new</span> <span class="fn">UserManager</span>()<br>
+<span class="kw">let</span> dt = <span class="kw">new</span> <span class="fn">Date</span>()<br>
+<span class="kw">const</span> info = user.getData()<br>
+<span class="kw">function</span> <span class="fn">handleClick</span>(e) { <span class="kw">return</span> e.target.value }
+        </div>
+        <p>G&#7907;i &#253;: s&#7917; d&#7909;ng noun phrases cho bi&#7871;n, verb phrases cho h&#224;m, prefix is/has/can cho boolean.</p>
+        <button class="ex-reveal-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">&#128273; Xem g&#7907;i &#253;</button>
+        <div class="ex-solution" style="display:none">
+          <strong>G&#7907;i &#253; &#273;&#7863;t t&#234;n:</strong><br><br>
+          <code>x</code> &#8594; <code>itemCount</code> ho&#7863;c <code>totalPrice</code> (ph&#7909; thu&#7897;c context)<br>
+          <code>tmp</code> &#8594; <code>activeUsers</code> ho&#7863;c <code>filteredResults</code><br>
+          <code>flag</code> &#8594; <code>isProcessing</code> ho&#7863;c <code>hasError</code><br>
+          <code>calc(n)</code> &#8594; <code>calculateMonthlyFee(months)</code><br>
+          <code>proc(d)</code> &#8594; <code>processOrderData(orderData)</code><br>
+          <code>chk(e)</code> &#8594; <code>validateEmail(email)</code><br>
+          <code>mgr</code> &#8594; <code>userService</code> (Manager l&#224; anti-pattern name)<br>
+          <code>dt</code> &#8594; <code>createdAt</code> ho&#7863;c <code>currentDate</code><br>
+          <code>info</code> &#8594; <code>userProfile</code> ho&#7863;c <code>userData</code><br>
+          <code>handleClick(e)</code> &#8594; <code>getInputValue(event)</code> (t&#234;n n&#243;i r&#245; output)
+        </div>
+      </div>
+    </div>
+
+    <!-- Ex 2 -->
+    <div class="exercise">
+      <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="ex-num">2</div>
+        <div class="ex-title">Nh&#7853;n di&#7879;n 5 code smells</div>
+        <span class="ex-diff easy">&#127802; D&#7877;</span>
+        <span class="ex-toggle">&#9660;</span>
+      </div>
+      <div class="ex-body">
+        <p>&#272;&#7885;c &#273;o&#7841;n code d&#432;&#7899;i. X&#225;c &#273;&#7883;nh c&#225;c code smells hi&#7879;n di&#7879;n v&#224; &#273;&#7863;t t&#234;n ch&#250;ng:</p>
+        <div class="ex-code">
+<span class="kw">class</span> <span class="fn">UserService</span> {<br>
+&nbsp;&nbsp;<span class="fn">processUser</span>(name, email, age, phone, address, zip, country, role, dept, mgr) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (role === <span class="str">'admin'</span>) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (dept === <span class="str">'IT'</span>) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (age &gt; <span class="num">25</span>) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// valid user</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;db.save(...); db.save(...); db.save(...);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;sendEmail(email, <span class="str">'Welcome'</span>, <span class="str">'...'</span>) <span class="cmt">// Feature Envy?</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;analytics.track(email) <span class="cmt">// ...</span><br>
+&nbsp;&nbsp;}<br>
+}
+        </div>
+        <button class="ex-reveal-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">&#128273; Xem &#273;&#225;p &#225;n</button>
+        <div class="ex-solution" style="display:none">
+          <strong>5 Code Smells trong &#273;o&#7841;n tr&#234;n:</strong><br><br>
+          1. <strong>Long Parameter List</strong> &#8212; 10 params (name, email, age...). Fix: &#273;&#243;ng g&#243;i th&#224;nh <code>CreateUserDto</code>.<br>
+          2. <strong>Arrow Code / Deeply Nested</strong> &#8212; if l&#7891;ng 3 t&#7847;ng. Fix: early return + extract conditions.<br>
+          3. <strong>Duplicate Code</strong> &#8212; <code>db.save()</code> g&#7885;i 3 l&#7847;n. Fix: t&#7893;ng h&#7907;p l&#7841;i.<br>
+          4. <strong>God Method</strong> &#8212; 1 method l&#224;m qu&#225; nhi&#7873;u (validate + save + email + analytics). Fix: t&#225;ch methods.<br>
+          5. <strong>Feature Envy</strong> &#8212; <code>sendEmail</code> v&#224; <code>analytics.track</code> thu&#7897;c service kh&#225;c. Fix: di chuy&#7875;n l&#7885;i logic.
+        </div>
+      </div>
+    </div>
+
+    <!-- Ex 3 -->
+    <div class="exercise">
+      <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="ex-num">3</div>
+        <div class="ex-title">&#193;p d&#7909;ng SRP cho UserService vi ph&#7841;m</div>
+        <span class="ex-diff medium">&#127825; Trung b&#236;nh</span>
+        <span class="ex-toggle">&#9660;</span>
+      </div>
+      <div class="ex-body">
+        <p><code>UserService</code> d&#432;&#7899;i &#273;&#226;y vi ph&#7841;m SRP (Single Responsibility Principle). H&#227;y ph&#226;n t&#237;ch v&#224; t&#225;ch th&#224;nh c&#225;c service ri&#234;ng:</p>
+        <div class="ex-code">
+<span class="kw">class</span> <span class="fn">UserService</span> {<br>
+&nbsp;&nbsp;<span class="fn">createUser</span>(data) { ... } <span class="cmt">// DB operation</span><br>
+&nbsp;&nbsp;<span class="fn">deleteUser</span>(id) { ... } <span class="cmt">// DB operation</span><br>
+&nbsp;&nbsp;<span class="fn">sendWelcomeEmail</span>(user) { ... } <span class="cmt">// Email</span><br>
+&nbsp;&nbsp;<span class="fn">sendResetEmail</span>(email) { ... } <span class="cmt">// Email</span><br>
+&nbsp;&nbsp;<span class="fn">hashPassword</span>(pw) { ... } <span class="cmt">// Security</span><br>
+&nbsp;&nbsp;<span class="fn">verifyPassword</span>(pw, hash) { ... } <span class="cmt">// Security</span><br>
+&nbsp;&nbsp;<span class="fn">generateToken</span>(user) { ... } <span class="cmt">// Auth</span><br>
+&nbsp;&nbsp;<span class="fn">validateToken</span>(token) { ... } <span class="cmt">// Auth</span><br>
+&nbsp;&nbsp;<span class="fn">exportToPDF</span>(users) { ... } <span class="cmt">// Report</span><br>
+&nbsp;&nbsp;<span class="fn">sendSlackNotif</span>(msg) { ... } <span class="cmt">// Notif</span><br>
+}
+        </div>
+        <p>Y&#234;u c&#7847;u: (1) Ph&#226;n nh&#243;m theo responsibility, (2) &#272;&#7863;t t&#234;n c&#225;c service m&#7899;i, (3) Vi&#7871;t interface cho m&#7895;i service.</p>
+        <button class="ex-reveal-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">&#128273; Xem g&#7907;i &#253;</button>
+        <div class="ex-solution" style="display:none">
+          <strong>Ph&#226;n chia th&#224;nh 5 services:</strong><br><br>
+          <code>UserRepository</code>: createUser, deleteUser (DB concerns)<br>
+          <code>MailService</code>: sendWelcomeEmail, sendResetEmail (Email concerns)<br>
+          <code>PasswordService</code>: hashPassword, verifyPassword (Security concerns)<br>
+          <code>AuthService</code>: generateToken, validateToken (Auth concerns)<br>
+          <code>NotificationService</code>: sendSlackNotif (Notif concerns)<br>
+          <code>ReportService</code>: exportToPDF (Report concerns)<br><br>
+          M&#7895;i service c&#243; 1 l&#253; do duy nh&#7845;t &#273;&#7875; thay &#273;&#7893;i. N&#7871;u thay email provider, ch&#7881; s&#7917;a <code>MailService</code>.
+        </div>
+      </div>
+    </div>
+
+    <!-- Ex 4 -->
+    <div class="exercise">
+      <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="ex-num">4</div>
+        <div class="ex-title">Refactor t&#7915;ng b&#432;&#7899;c: h&#224;m 80-d&#242;ng messy</div>
+        <span class="ex-diff medium">&#127825; Trung b&#236;nh</span>
+        <span class="ex-toggle">&#9660;</span>
+      </div>
+      <div class="ex-body">
+        <p>H&#224;m <code>processOrder()</code> d&#432;&#7899;i &#273;&#226;y d&#224;i 80 d&#242;ng v&#224; vi ph&#7841;m nhi&#7873;u nguy&#234;n t&#7855;c. H&#227;y li&#7879;t k&#234; c&#225;c b&#432;&#7899;c refactor:</p>
+        <div class="ex-code">
+<span class="kw">async function</span> <span class="fn">processOrder</span>(uid, items, cc, addr, promo) {<br>
+&nbsp;&nbsp;<span class="cmt">// Step 1: validate user</span><br>
+&nbsp;&nbsp;<span class="kw">const</span> u = <span class="kw">await</span> db.query(<span class="str">'SELECT * FROM users WHERE id=?'</span>, [uid])<br>
+&nbsp;&nbsp;<span class="kw">if</span> (!u || !u.email || !u.isActive) <span class="kw">return</span> { err: <span class="str">'invalid user'</span> }<br>
+&nbsp;&nbsp;<span class="cmt">// Step 2: validate items (50 lines of validation...)</span><br>
+&nbsp;&nbsp;<span class="cmt">// Step 3: apply promo</span><br>
+&nbsp;&nbsp;<span class="kw">let</span> total = items.reduce((s,i) =&gt; s + i.price, <span class="num">0</span>)<br>
+&nbsp;&nbsp;<span class="kw">if</span> (promo === <span class="str">'SAVE10'</span>) total *= <span class="num">0.9</span><br>
+&nbsp;&nbsp;<span class="kw">if</span> (promo === <span class="str">'HALF'</span>) total *= <span class="num">0.5</span><br>
+&nbsp;&nbsp;<span class="cmt">// Step 4: charge card (20 lines...)</span><br>
+&nbsp;&nbsp;<span class="cmt">// Step 5: save order, send email, log...</span><br>
+}
+        </div>
+        <p>Ph&#226;n t&#237;ch: (1) Li&#7879;t k&#234; t&#7845;t c&#7843; "responsibilities" trong h&#224;m, (2) Th&#7913; t&#7921; &#225;p d&#7909;ng refactoring, (3) Vi&#7871;t pseudo-code cho version cu&#7889;i.</p>
+        <button class="ex-reveal-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">&#128273; Xem &#273;&#225;p &#225;n</button>
+        <div class="ex-solution" style="display:none">
+          <strong>Refactoring plan:</strong><br><br>
+          <strong>B&#432;&#7899;c 1 &#8212; Extract methods:</strong><br>
+          <code>validateUser(uid)</code>, <code>validateOrderItems(items)</code>, <code>applyPromoCode(total, promo)</code>, <code>chargeCard(cc, amount)</code>, <code>saveOrderAndNotify(order, user)</code><br><br>
+          <strong>B&#432;&#7899;c 2 &#8212; Magic number fix:</strong><br>
+          <code>0.9</code> &#8594; <code>PROMO_SAVE10_RATE = 0.9</code>, <code>0.5</code> &#8594; <code>PROMO_HALF_RATE = 0.5</code><br><br>
+          <strong>B&#432;&#7899;c 3 &#8212; Final version:</strong><br>
+          <code>processOrder</code> ch&#7881; c&#242;n ~10 d&#242;ng, g&#7885;i 5 h&#224;m con &#8212; m&#7895;i c&#225;i d&#7877; test ri&#234;ng.
+        </div>
+      </div>
+    </div>
+
+    <!-- Ex 5 -->
+    <div class="exercise">
+      <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="ex-num">5</div>
+        <div class="ex-title">Ph&#226;n t&#237;ch v&#224; l&#7853;p k&#7871; ho&#7841;ch x&#7917; l&#253; Tech Debt</div>
+        <span class="ex-diff hard">&#128308; Kh&#243;</span>
+        <span class="ex-toggle">&#9660;</span>
+      </div>
+      <div class="ex-body">
+        <p>B&#7841;n v&#7915;a join m&#7897;t project v&#224; ph&#225;t hi&#7879;n danh s&#225;ch v&#7845;n &#273;&#7873; sau. Ph&#226;n lo&#7841;i v&#224; l&#7853;p k&#7871; ho&#7841;ch x&#7917; l&#253;:</p>
+        <div class="ex-code">
+1. <span class="cmt">AuthService.ts</span>: 800-line file, m&#7885;i th&#7913; trong 1 h&#224;m<br>
+2. Kh&#244;ng c&#243; tests n&#224;o cho payment flow<br>
+3. Magic strings r&#7843;i r&#225;c: <span class="str">'admin'</span>, <span class="str">'user'</span>, <span class="str">'moderator'</span> &#7903; 12 files<br>
+4. <span class="cmt">getUsers()</span> g&#7885;i API 3 l&#7847;n trong 1 request (duplicate call)<br>
+5. TODO comment t&#7915; 2 n&#259;m tr&#432;&#7899;c: "// Fix this later"<br>
+6. Database connection &#273;&#432;&#7907;c hardcode trong 5 files<br>
+7. <span class="cmt">OrderService</span> import tr&#7921;c ti&#7871;p <span class="cmt">MySQLAdapter</span> (vi ph&#7841;m DIP)
+        </div>
+        <p>Y&#234;u c&#7847;u: (1) Ph&#226;n lo&#7841;i: P0 (critical), P1 (high), P2 (medium), (2) &#432;&#7899;c l&#432;&#7907;ng effort, (3) &#272;&#7873; xu&#7845;t th&#7913; t&#7921; x&#7917; l&#253;.</p>
+        <button class="ex-reveal-btn" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">&#128273; Xem g&#7907;i &#253;</button>
+        <div class="ex-solution" style="display:none">
+          <strong>Ph&#226;n lo&#7841;i v&#224; k&#7871; ho&#7841;ch:</strong><br><br>
+          <strong>P0 &#8212; Critical (fix ngay):</strong><br>
+          &#8226; Item 6: Hardcode DB connection &#8594; security risk. Fix: env vars. 2h effort.<br>
+          &#8226; Item 2: No payment tests &#8594; revenue risk. Fix: write unit + integration tests. 1-2 days.<br><br>
+          <strong>P1 &#8212; High (sprint n&#224;y):</strong><br>
+          &#8226; Item 4: Duplicate API call &#8594; performance. Fix: cache/memoize. 4h.<br>
+          &#8226; Item 7: DIP violation &#8594; hard to swap DB. Fix: inject IDatabase interface. 4-8h.<br><br>
+          <strong>P2 &#8212; Medium (backlog):</strong><br>
+          &#8226; Item 3: Magic strings &#8594; extract to enum UserRole. 2h.<br>
+          &#8226; Item 1: God file &#8594; extract services. 1-2 days.<br>
+          &#8226; Item 5: Old TODOs &#8594; investigate v&#224; close ho&#7863;c create proper issue.
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /exercises-section -->
+
+  <!-- LESSON SUMMARY -->
+  <div class="lesson-summary">
+    <div class="summary-title">&#9989; T&#7893;ng k&#7871;t B&#224;i 3: Clean Code</div>
+    <div class="summary-grid">
+      <div class="summary-item"><strong>&#272;&#7863;t t&#234;n</strong>Noun cho bi&#7871;n, verb cho h&#224;m, is/has cho boolean. T&#234;n t&#7921; gi&#7843;i th&#237;ch.</div>
+      <div class="summary-item"><strong>H&#224;m nh&#7887;</strong>M&#7895;i h&#224;m 1 vi&#7879;c, 1 level abstraction. Extract khi th&#7845;y comment // Step.</div>
+      <div class="summary-item"><strong>DRY/KISS/YAGNI</strong>Kh&#244;ng l&#7863;p code, gi&#7919; &#273;&#417;n gi&#7843;n, kh&#244;ng build t&#237;nh n&#259;ng ch&#432;a c&#7847;n.</div>
+      <div class="summary-item"><strong>SOLID</strong>5 nguy&#234;n t&#7855;c, b&#7855;t &#273;&#7847;u v&#7899;i S v&#224; D &#8212; 80% gi&#225; tr&#7883;.</div>
+      <div class="summary-item"><strong>Code Smells</strong>Ti&#234;n th&#226;n c&#7911;a bug. Nh&#7853;n di&#7879;n &#8594; ghi ch&#250; &#8594; l&#7871;n kh&#244;ng refactor.</div>
+      <div class="summary-item"><strong>Tech Debt</strong>Deliberate OK n&#7871;u c&#243; plan. Reckless = t&#7915; di&#7879;t. Track + schedule.</div>
+    </div>
+    <a href="04-design-pattern.html" class="next-preview">
+      <div>
+        <div class="next-preview-label">B&#224;i ti&#7871;p theo</div>
+        <div class="next-preview-title">&#127959;&#65039; B&#224;i 4: Design Patterns &#8212; Creational, Structural, Behavioral</div>
+      </div>
+      <span class="next-preview-arrow">&#8594;</span>
+    </a>
+  </div>
+
+</div><!-- /sec-6 -->
 
 </main>
 
 <div class="nav-bar">
   <div class="nav-inner">
-    <button class="btn btn-prev" id="btnPrev" onclick="navigate(-1)" disabled>← Trước</button>
+    <button class="btn btn-prev" id="btnPrev" onclick="navigate(-1)" disabled>&#8592; Tr&#432;&#7899;c</button>
     <div class="section-dots" id="dots"></div>
-    <button class="btn btn-next" id="btnNext" onclick="navigate(1)">Tiếp theo →</button>
+    <button class="btn btn-next" id="btnNext" onclick="navigate(1)">Ti&#7871;p theo &#8594;</button>
   </div>
 </div>
 
@@ -661,7 +949,7 @@ function goTo(n) {
   current = n;
   document.getElementById(SECTIONS[current]).classList.add('active');
   document.getElementById('btnPrev').disabled = current === 0;
-  document.getElementById('btnNext').textContent = current === SECTIONS.length-1 ? '🏁 Hoàn thành' : 'Tiếp theo →';
+  document.getElementById('btnNext').textContent = current === SECTIONS.length-1 ? '\uD83C\uDFC1 Ho\u00E0n th\u00E0nh' : 'Ti\u1EBFp theo \u2192';
   document.querySelectorAll('.dot').forEach((d,i) => {
     d.className = 'dot' + (i===current?' active':(i<current?' done':''));
   });
@@ -670,7 +958,6 @@ function goTo(n) {
 }
 function navigate(dir) { if(current+dir>=0 && current+dir<SECTIONS.length) goTo(current+dir); }
 
-// Big function lines
 const bl = document.getElementById('bigLines');
 for(let i=0;i<100;i++) { const d=document.createElement('div'); d.className='fn-line'; bl.appendChild(d); }
 

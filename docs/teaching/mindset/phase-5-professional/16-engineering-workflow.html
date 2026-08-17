@@ -100,6 +100,44 @@
   .comm-label.senior{color:#3fb950}
   .comm-text{font-size:.85rem;color:#c9d1d9;font-style:italic;line-height:1.6}
 
+
+  /* Sticky Nav */
+  .nav-bar{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #30363d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .nav-links{display:flex;gap:8px;flex-wrap:wrap}
+  .nav-link{color:#8b949e;text-decoration:none;font-size:.8rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s;white-space:nowrap}
+  .nav-link:hover{color:#58a6ff;border-color:#58a6ff}
+  .nav-link.current{color:#58a6ff;border-color:#58a6ff;background:#0d1a2d}
+  .nav-center{font-size:.8rem;color:#484f58}
+  /* Prerequisites */
+  .prereq{background:#1a0d2d;border:1px solid #6e40c9;border-radius:8px;padding:14px 16px;margin:0 0 32px;display:flex;align-items:flex-start;gap:10px}
+  .prereq-icon{font-size:1.1rem;flex-shrink:0;margin-top:2px}
+  .prereq-label{font-size:.78rem;font-weight:700;color:#bc8cff;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .prereq-links{display:flex;flex-wrap:wrap;gap:6px}
+  .prereq-link{font-size:.78rem;padding:2px 8px;border-radius:8px;background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e;text-decoration:none;transition:background .2s}
+  .prereq-link:hover{background:#1f4a9e}
+  /* Cross-references */
+  .xref{display:inline;font-size:.8rem;padding:1px 7px;border-radius:6px;background:#0d2d1a;color:#3fb950;border:1px solid #238636;text-decoration:none;white-space:nowrap;transition:background .2s}
+  .xref:hover{background:#238636;color:#fff}
+  /* Exercises */
+  .exercises{margin:48px 0}
+  .exercises-title{font-size:1.2rem;color:#79c0ff;margin-bottom:24px;padding-left:12px;border-left:3px solid #58a6ff}
+  .ex-card{border-radius:12px;padding:20px 24px;margin:16px 0}
+  .ex-green{background:#0a1f0a;border:1px solid #238636}
+  .ex-yellow{background:#1f1a0a;border:1px solid #9e6c1e}
+  .ex-red{background:#1f0a0a;border:1px solid #9e1e1e}
+  .ex-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .ex-diff{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
+  .diff-green{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .diff-yellow{background:#3b2a0d;color:#d4a843;border:1px solid #9e6c1e}
+  .diff-red{background:#3b0d0d;color:#ff7b72;border:1px solid #9e1e1e}
+  .ex-num{font-size:.8rem;font-weight:700;color:#8b949e}
+  .ex-title{font-size:.95rem;font-weight:700;color:#c9d1d9}
+  .ex-desc{font-size:.88rem;color:#8b949e;margin-top:4px}
+  .ex-solution{margin-top:12px}
+  .ex-sol-toggle{background:none;border:1px solid #30363d;color:#8b949e;border-radius:6px;padding:4px 12px;font-size:.75rem;cursor:pointer;transition:all .2s}
+  .ex-sol-toggle:hover{border-color:#58a6ff;color:#58a6ff}
+  .ex-sol-body{display:none;margin-top:10px;padding:12px;background:#0d1117;border-radius:8px;font-size:.83rem;color:#c9d1d9;line-height:1.6}
+  .ex-sol-body.open{display:block}
   @media(max-width:600px){
     .small-tasks{grid-template-columns:1fr 1fr}
     .tshirt-grid{grid-template-columns:repeat(3,1fr)}
@@ -109,12 +147,34 @@
 </style>
 </head>
 <body>
+<nav class="nav-bar">
+  <div class="nav-links">
+    <a class="nav-link" href="../phase-4-production/15-ai-programming.html">← Bài 15: AI Programming</a>
+    <span class="nav-link current">Bài 16: Engineering Workflow</span>
+    <a class="nav-link" href="17-product-thinking.html">Bài 17: Product Thinking →</a>
+  </div>
+  <div class="nav-center">Phase 5 — Professional</div>
+</nav>
 <div class="container">
   <div style="margin-bottom:20px">
     <span class="badge badge-purple">Phase 5</span>
     <span class="badge badge-blue">Bài 16</span>
     <span class="badge badge-green">Professional</span>
   </div>
+
+  <!-- PREREQUISITES -->
+  <div class="prereq">
+    <div class="prereq-icon">📚</div>
+    <div>
+      <div class="prereq-label">Kiến thức cần có trước</div>
+      <div class="prereq-links">
+        <a class="prereq-link" href="#">Phase 1–4 hoàn thành</a>
+        <a class="prereq-link" href="../phase-2-build/11-git.html">Bài 11: Git</a>
+        <a class="prereq-link" href="../phase-2-build/09-testing.html">Bài 9: Testing</a>
+      </div>
+    </div>
+  </div>
+
   <h1>Engineering Workflow</h1>
   <p class="subtitle">Từ Requirement đến Deploy — quy trình làm việc của một Professional Engineer trong môi trường team thực tế.</p>
 
@@ -197,7 +257,7 @@
   </div>
 
   <div class="warning">
-    <strong>Rule của Senior Engineer:</strong> Không bao giờ bắt đầu code khi còn câu hỏi chưa được trả lời. "Hỏi trước mất 5 phút. Implement sai mất 2 ngày."
+    <strong>Rule của Senior Engineer:</strong> Không bao giờ bắt đầu code khi còn câu hỏi chưa được trả lời. "Hỏi trước mất 5 phút. Implement sai mất 2 ngày." — pattern của <a class="xref" href="../phase-2-build/11-git.html">Bài 11 Git</a> giúp track history của decisions này.
   </div>
 
   <hr class="section-divider">
@@ -428,6 +488,73 @@
     </ul>
   </div>
 
+
+  <!-- EXERCISES -->
+  <hr class="section-divider">
+  <div class="exercises">
+    <div class="exercises-title">🎯 Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 1</span></div>
+      <div class="ex-title">Task breakdown: feature "User can reset password" → 5 subtasks</div>
+      <div class="ex-desc">Nhận feature request này và chia thành ít nhất 5 subtasks có thể làm độc lập. Mỗi subtask phải có T-shirt size và description rõ ràng trong 1 câu.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Subtasks gợi ý:</strong><br>1. POST /auth/forgot-password — nhận email, generate OTP (S — 2h)<br>2. POST /auth/verify-otp — verify OTP từ Redis (S — 1h)<br>3. POST /auth/reset-password — update password với bcrypt (S — 2h)<br>4. Email template + Nodemailer integration (M — 3h)<br>5. Rate limiting: max 3 OTP requests/hour (M — 2h)<br>6. Unit tests cho cả flow (S — 2h)<br><br>Key: mỗi task deploy được độc lập, description fit 1 câu</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 2</span></div>
+      <div class="ex-title">Estimation: T-shirt size 8 tasks (XS/S/M/L/XL)</div>
+      <div class="ex-desc">Nhận list 8 tasks sau và estimate T-shirt size cho mỗi task: (1) Fix typo in README, (2) Add email field to User model, (3) Implement OAuth Google login, (4) Build notification system, (5) Add dark mode toggle, (6) Fix 404 on /profile, (7) Migrate from REST to GraphQL, (8) Add CSV export.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">1. Fix typo → XS (&lt;30min)<br>2. Add email field → S (2h — schema + validation + migration)<br>3. OAuth Google → L (3-5 days — passport, callback, session)<br>4. Notification system → XL (&gt;1 week — multiple types, channels, templates)<br>5. Dark mode toggle → S/M (2-4h FE only, nếu CSS vars đã có)<br>6. Fix 404 → XS/S (cần debug trước khi estimate chính xác)<br>7. REST → GraphQL → XL (không bao giờ underestimate migration)<br>8. CSV export → M (1-2 days — streaming, large dataset handling)</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 3</span></div>
+      <div class="ex-title">Viết RFC: đề xuất chuyển từ REST → GraphQL</div>
+      <div class="ex-desc">Viết một RFC hoàn chỉnh đề xuất migrate public API sang GraphQL. Phải có: Context, Proposal, Trade-offs (Pros/Cons), Alternatives Considered, và Decision deadline.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>RFC Structure:</strong><br><strong>Context:</strong> Mobile client over-fetching, 5 endpoints cho cùng user data, team feedback về DX<br><strong>Proposal:</strong> Apollo Server code-first, giữ REST cho internal services<br><strong>Pros:</strong> flexible queries, type safety, single endpoint, introspection<br><strong>Cons:</strong> N+1 problem (cần DataLoader), caching phức tạp hơn, learning curve 2 weeks<br><strong>Alternatives:</strong> (1) BFF pattern với REST, (2) sparse fieldsets với OpenAPI<br><strong>Decision needed by:</strong> [date] — request feedback về caching strategy<br><br>RFC tốt = team có thể vote mà không cần meeting</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 4</span></div>
+      <div class="ex-title">Sprint planning: pick tasks cho sprint 2 tuần, justify priority</div>
+      <div class="ex-desc">Backlog có 12 tasks với size và priority khác nhau. Team capacity = 40 story points/sprint (4 devs x 10 points). Chọn tasks nào vào sprint, giải thích tại sao skip những tasks còn lại.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Framework chọn task:</strong><br>1. P0 bugs first (blocking revenue/users)<br>2. P1 features với high value/effort ratio<br>3. Technical debt nếu nó block P1 tasks<br>4. Không pick task nếu có unresolved dependencies<br>5. Buffer 20% cho unexpected (40 points → plan 32 points max)<br><br><strong>Khi giải thích skip:</strong> "Task X bị skip vì: (a) blocked by Y, (b) unclear spec — cần clarify tuần này, (c) lower ROI so với Z trong sprint này"</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header"><span class="ex-diff diff-red">🔴 Khó</span><span class="ex-num">Bài 5</span></div>
+      <div class="ex-title">Code review simulation: review PR và viết constructive feedback</div>
+      <div class="ex-desc">Mở một PR thực trên GitHub (tìm PR public trên NestJS/TypeORM repo, hoặc dùng project của bạn). Viết ít nhất 5 comments: mix giữa correctness, security, readability, performance, tests. Mỗi comment phải constructive, không chỉ "bad code".</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Format comment tốt:</strong><br>"[Correctness] What happens when userId is null here? I'd suggest adding a guard clause at L12 to throw NotFoundException early."<br><br>"[Performance] This calls DB inside a loop (L45-52). Consider using findMany with an array of IDs instead to batch the query."<br><br>"[nit] Variable name 'x' on L30 could be more descriptive — perhaps 'userCount'?"<br><br><strong>Template:</strong> [Category] Observation → Why it matters → Suggestion (không phải demand)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <hr class="section-divider">
+  <div class="card">
+    <h3>📌 Tóm Tắt Bài 16</h3>
+    <ul style="color:#c9d1d9;padding-left:20px;margin-top:8px">
+      <li style="margin:6px 0"><strong>Full cycle</strong>: Requirement → Understand → Ask → Design → Estimate → Implement → Test → Review → Deploy → Monitor</li>
+      <li style="margin:6px 0"><strong>Task breakdown</strong>: task tốt nhất = hoàn thành 2-4h, describe trong 1 câu</li>
+      <li style="margin:6px 0"><strong>T-shirt sizing</strong>: Estimate = base + buffer 50% + risk 20%. Không random</li>
+      <li style="margin:6px 0"><strong>Agile</strong>: Sprint Planning → Daily Standup → Review → Retrospective. Cycle 2 tuần</li>
+      <li style="margin:6px 0"><strong>Code review</strong>: collaborative quality check, không phải "tìm lỗi"</li>
+      <li style="margin:6px 0"><strong>RFC</strong>: document lý do trước khi implement. Tránh "tại sao chúng ta làm thế này?" sau 6 tháng</li>
+      <li style="margin:6px 0"><strong>Communication</strong>: calibrate technical depth theo audience. Luôn kết thúc với action item</li>
+    </ul>
+  </div>
+
   <div class="tip">
     <strong>Key Takeaway:</strong> Engineer giỏi dành 40% thời gian <em>trước</em> khi code: đọc, hỏi, design, estimate. Code nhanh không phải là engineer giỏi — <em>deliver đúng</em> mới là engineer giỏi.
   </div>
@@ -437,5 +564,9 @@
     <p style="margin-top:8px"><a href="17-product-thinking.html" style="color:#58a6ff;text-decoration:none">Tiếp theo: Bài 17 — Product Thinking →</a></p>
   </div>
 </div>
+
+<script>
+function toggleSol(btn){const b=btn.nextElementSibling;const o=b.classList.toggle('open');btn.textContent=o?'Ẩn gợi ý':'Xem gợi ý';}
+</script>
 </body>
 </html>

@@ -13,7 +13,7 @@
     --blue: #58a6ff; --purple: #bc8cff; --orange: #ffa657; --cyan: #39d353;
   }
   body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; }
-  .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; padding-top: 5rem; }
   h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; }
   h2 { font-size: 1.5rem; font-weight: 600; margin: 2.5rem 0 1rem; color: var(--blue); }
   h3 { font-size: 1.05rem; font-weight: 600; margin: 1.2rem 0 0.4rem; color: var(--purple); }
@@ -26,11 +26,52 @@
   .reveal { opacity: 0; transform: translateY(20px); transition: all 0.5s ease; }
   .reveal.visible { opacity: 1; transform: translateY(0); }
   .divider { height: 1px; background: var(--border); margin: 3rem 0; }
-  .progress-bar { height: 6px; background: var(--bg3); border-radius: 3px; margin: 2rem 0; }
+  .progress-bar { height: 3px; background: var(--bg3); position: fixed; top: 56px; left: 0; right: 0; z-index: 99; }
   .progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--red), var(--orange)); width: 0; transition: width 0.3s; }
   .header-meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
-  .exercise { background: linear-gradient(135deg, rgba(88,166,255,0.08), rgba(188,140,255,0.08)); border: 1px solid rgba(88,166,255,0.3); border-radius: 12px; padding: 1.5rem; margin: 2rem 0; }
   .takeaway { background: linear-gradient(135deg, rgba(57,211,83,0.08), rgba(13,17,23,0)); border: 1px solid rgba(57,211,83,0.3); border-radius: 12px; padding: 1.5rem; margin: 2rem 0; }
+
+  /* Sticky nav */
+  .nav-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(13,17,23,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); padding: 0 1.5rem; height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .nav-phase { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+  .nav-links { display: flex; gap: 0.5rem; align-items: center; }
+  .nav-btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.8rem; border-radius: 6px; background: var(--bg3); border: 1px solid var(--border); color: var(--text); text-decoration: none; font-size: 0.82rem; transition: all 0.2s; }
+  .nav-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .nav-title { font-weight: 600; font-size: 0.88rem; color: var(--text); }
+
+  /* Prereq box */
+  .prereq { background: rgba(88,166,255,0.06); border: 1px solid rgba(88,166,255,0.25); border-radius: 10px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
+  .prereq-label { font-size: 0.75rem; color: var(--blue); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+  .prereq ul { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .prereq a { color: var(--blue); text-decoration: none; font-size: 0.85rem; padding: 0.2rem 0.6rem; border-radius: 4px; background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.2); transition: all 0.2s; }
+  .prereq a:hover { background: rgba(88,166,255,0.2); }
+
+  /* Cross-reference links */
+  .xref { color: var(--purple); text-decoration: none; border-bottom: 1px dashed rgba(188,140,255,0.4); font-size: 0.88em; transition: all 0.2s; }
+  .xref:hover { color: #d4b8ff; border-bottom-color: var(--purple); }
+
+  /* Exercises */
+  .ex-easy { background: rgba(63,185,80,0.05); border: 1px solid rgba(63,185,80,0.35); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+  .ex-medium { background: rgba(210,153,34,0.05); border: 1px solid rgba(210,153,34,0.35); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+  .ex-hard { background: rgba(248,81,73,0.05); border: 1px solid rgba(248,81,73,0.35); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+  .ex-badge { display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 4px; margin-bottom: 0.8rem; }
+  .badge-easy { background: rgba(63,185,80,0.15); color: var(--green); }
+  .badge-medium { background: rgba(210,153,34,0.15); color: var(--yellow); }
+  .badge-hard { background: rgba(248,81,73,0.15); color: var(--red); }
+  .ex-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.6rem; }
+  details { margin-top: 1rem; }
+  details summary { cursor: pointer; color: var(--blue); font-size: 0.88rem; padding: 0.4rem 0; user-select: none; }
+  details summary:hover { color: var(--purple); }
+  details[open] summary { color: var(--purple); }
+  details .solution { background: var(--bg3); border-radius: 8px; padding: 1rem; margin-top: 0.5rem; border: 1px solid var(--border); }
+
+  /* Bottom nav */
+  .bottom-nav { display: flex; justify-content: space-between; align-items: center; padding: 2rem 0 1rem; margin-top: 3rem; border-top: 1px solid var(--border); }
+  .bottom-nav a { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border-radius: 8px; background: var(--bg2); border: 1px solid var(--border); color: var(--text); text-decoration: none; font-size: 0.9rem; transition: all 0.2s; }
+  .bottom-nav a:hover { border-color: var(--blue); color: var(--blue); }
+
+  /* Summary card */
+  .summary-card { background: linear-gradient(135deg, rgba(188,140,255,0.06), rgba(88,166,255,0.06)); border: 1px solid rgba(188,140,255,0.25); border-radius: 12px; padding: 1.5rem; margin: 2rem 0; }
 
   /* Bake in animation */
   .bake { display: flex; align-items: center; gap: 2rem; margin: 1.5rem 0; flex-wrap: wrap; }
@@ -104,13 +145,32 @@
 </style>
 </head>
 <body>
+
+<!-- Sticky Nav -->
+<nav class="nav-bar">
+  <div class="nav-phase">Phase 3: Engineer → Bài 5/5</div>
+  <span class="nav-title">🔒 Security Mindset</span>
+  <div class="nav-links">
+    <a href="11-git-workflow.html" class="nav-btn">← Bài 11</a>
+    <a href="13-system-design.html" class="nav-btn">Bài 13 →</a>
+  </div>
+</nav>
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
 <div class="container">
 
-  <div class="header-meta">Phase 3: Engineer · Bài 12</div>
+  <div class="header-meta">Phase 3: Engineer · Bài 12/13</div>
   <h1>🔒 Security Mindset</h1>
   <p style="font-size:1.1rem; color: var(--text);">Security không phải add-on — là mindset từ dòng code đầu tiên. "Bake in, don't bolt on."</p>
 
-  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+  <!-- Prerequisites -->
+  <div class="prereq">
+    <div class="prereq-label">📚 Prerequisites</div>
+    <ul>
+      <li><a href="../phase-2-build/08-api-fundamentals.html">Bài 8: API Fundamentals — input validation, request lifecycle</a></li>
+      <li><a href="09-testing.html">Bài 9: Testing — viết security tests, negative cases</a></li>
+    </ul>
+  </div>
 
   <!-- Bake in -->
   <h2>🏗️ "Bake In, Don't Bolt On"</h2>
@@ -131,7 +191,7 @@
     <div class="bake-stage" style="opacity:0.4;" id="bake-test">
       <div class="bake-icon">🧪</div>
       <div class="bake-label">Test Phase</div>
-      <div class="bake-sub">Security tests</div>
+      <div class="bake-sub">Security tests — <a href="09-testing.html" class="xref">xem Bài 9</a></div>
     </div>
     <div class="bake-arrow">→</div>
     <div class="bake-stage" style="opacity:0.4;" id="bake-deploy">
@@ -235,6 +295,7 @@
 
   <!-- Auth vs Authz -->
   <h2>🪪 Authentication vs Authorization</h2>
+  <p>Hai khái niệm hay bị nhầm. Pattern Proxy Guard trong <a href="../phase-1-think/04-oop-patterns.html" class="xref">Bài 4 OOP Patterns</a> là cách NestJS implement authorization layer.</p>
 
   <div class="auth-compare reveal">
     <div class="auth-box auth-n" onclick="showAuth('n')">
@@ -296,7 +357,7 @@
 
   <!-- JWT -->
   <h2>🎫 JWT Anatomy</h2>
-  <p>JWT = header.payload.signature. Click từng phần để decode.</p>
+  <p>JWT = header.payload.signature. Click từng phần để decode. Nhớ lại cách dùng JWT trong <a href="../phase-2-build/08-api-fundamentals.html" class="xref">Bài 8 API</a>.</p>
 
   <div class="jwt reveal">
     <span class="jwt-h" onclick="showJWT('header')">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9</span>.<span class="jwt-p" onclick="showJWT('payload')">eyJ1c2VySWQiOiIxMjMiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3MjM2NDI4MDB9</span>.<span class="jwt-s" onclick="showJWT('signature')">SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c</span>
@@ -315,7 +376,7 @@
 
   <!-- Injection -->
   <h2>💉 Injection Attack — Live Demo</h2>
-  <p>Gõ vào ô tìm kiếm để thấy query bị inject như thế nào.</p>
+  <p>Gõ vào ô tìm kiếm để thấy query bị inject như thế nào. Đây chính là lý do <a href="../phase-2-build/08-api-fundamentals.html" class="xref">Bài 8</a> nhấn mạnh input validation ở tất cả API endpoints.</p>
 
   <div class="inject-demo reveal">
     <input class="inject-input" id="inject-input" type="text" placeholder="Tên sản phẩm cần tìm..." oninput="updateInjection(this.value)" value="iPhone">
@@ -384,7 +445,7 @@
 
   <!-- CTF Mindset -->
   <h2>🎯 CTF Mindset: Build → Attack → Fix</h2>
-  <p>Tự tấn công code của mình trước khi attacker làm.</p>
+  <p>Tự tấn công code của mình trước khi attacker làm. Kết hợp với <a href="09-testing.html" class="xref">Bài 9 Testing</a>: viết security test cho mỗi negative case tìm được.</p>
 
   <div class="ctf reveal">
     <div class="ctf-step" style="background:rgba(63,185,80,0.1); border-color:rgba(63,185,80,0.3);" onclick="showCTF('build')">
@@ -446,6 +507,230 @@
 
   <div class="divider"></div>
 
+  <!-- Exercises -->
+  <h2>🏋️ Bài Tập Thực Hành</h2>
+
+  <div class="ex-easy">
+    <div class="ex-badge badge-easy">🟢 EASY</div>
+    <div class="ex-title">Tìm 3 lỗ hổng trong login endpoint sau</div>
+    <p>Code dưới đây có ít nhất 3 security issues. Liệt kê và giải thích từng lỗi.</p>
+    <pre><code><span class="cm">// auth.controller.ts — CÓ BUG, tìm và fix</span>
+<span class="kw">@Post</span>(<span class="str">'/login'</span>)
+<span class="kw">async</span> <span class="fn">login</span>(@Body() body: <span class="kw">any</span>) {
+  <span class="kw">const</span> user = <span class="kw">await</span> <span class="kw">this</span>.db.<span class="fn">query</span>(
+    <span class="str">`SELECT * FROM users WHERE email='${body.email}' AND password='${body.password}'`</span>
+  );
+  <span class="kw">if</span> (!user) <span class="kw">throw new</span> <span class="fn">UnauthorizedException</span>(<span class="str">'Wrong email or password — email not found'</span>);
+  <span class="kw">const</span> token = jwt.<span class="fn">sign</span>({ userId: user.id, role: user.role }, <span class="str">'secret'</span>);
+  <span class="kw">return</span> { token, user }; <span class="cm">// trả về toàn bộ user object</span>
+}</code></pre>
+    <details>
+      <summary>💡 Xem lời giải</summary>
+      <div class="solution">
+        <p><strong style="color:var(--red);">Lỗi 1 — SQL Injection:</strong> String interpolation trực tiếp vào query. Hacker nhập <code>email = ' OR '1'='1</code> → bypass login.</p>
+        <p><strong style="color:var(--red);">Lỗi 2 — Password Plaintext:</strong> So sánh password trực tiếp, không hash. Phải dùng <code>bcrypt.compare(body.password, user.passwordHash)</code>.</p>
+        <p><strong style="color:var(--red);">Lỗi 3 — Hardcoded JWT Secret:</strong> <code>'secret'</code> là string literal. Phải lấy từ <code>process.env.JWT_SECRET</code>.</p>
+        <p><strong style="color:var(--orange);">Bonus — Error Enumeration:</strong> Message "email not found" tiết lộ thông tin. Hacker biết email tồn tại. Fix: luôn trả về generic "Invalid credentials".</p>
+        <p><strong style="color:var(--orange);">Bonus — Data Exposure:</strong> <code>return { token, user }</code> trả về toàn bộ user (kể cả passwordHash). Chỉ trả về token + public fields.</p>
+      </div>
+    </details>
+  </div>
+
+  <div class="ex-easy">
+    <div class="ex-badge badge-easy">🟢 EASY</div>
+    <div class="ex-title">Viết DTO validation cho CreateUserDto</div>
+    <p>Dùng class-validator để validate: email (valid format), password (min 8 chars, có uppercase + number), age (18-120), role (enum: user/admin, default user).</p>
+    <details>
+      <summary>💡 Xem lời giải</summary>
+      <div class="solution">
+        <pre><code><span class="kw">import</span> { IsEmail, IsString, MinLength, Matches, IsInt, Min, Max, IsEnum, IsOptional } <span class="kw">from</span> <span class="str">'class-validator'</span>;
+
+<span class="kw">enum</span> UserRole { USER = <span class="str">'user'</span>, ADMIN = <span class="str">'admin'</span> }
+
+<span class="kw">export class</span> <span class="fn">CreateUserDto</span> {
+  <span class="kw">@IsEmail</span>({}, { message: <span class="str">'Email không hợp lệ'</span> })
+  email: <span class="kw">string</span>;
+
+  <span class="kw">@IsString</span>()
+  <span class="kw">@MinLength</span>(<span class="num">8</span>, { message: <span class="str">'Password phải ít nhất 8 ký tự'</span> })
+  <span class="kw">@Matches</span>(/(?=.*[A-Z])(?=.*[0-9])/, {
+    message: <span class="str">'Password phải có ít nhất 1 chữ hoa và 1 số'</span>
+  })
+  password: <span class="kw">string</span>;
+
+  <span class="kw">@IsInt</span>()
+  <span class="kw">@Min</span>(<span class="num">18</span>) <span class="kw">@Max</span>(<span class="num">120</span>)
+  age: <span class="kw">number</span>;
+
+  <span class="kw">@IsOptional</span>()
+  <span class="kw">@IsEnum</span>(UserRole)
+  role: UserRole = UserRole.USER;
+}
+
+<span class="cm">// main.ts — enable globally:</span>
+app.<span class="fn">useGlobalPipes</span>(<span class="kw">new</span> <span class="fn">ValidationPipe</span>({
+  whitelist: <span class="kw">true</span>,        <span class="cm">// strip unknown fields</span>
+  forbidNonWhitelisted: <span class="kw">true</span>,
+  transform: <span class="kw">true</span>,
+}));</code></pre>
+      </div>
+    </details>
+  </div>
+
+  <div class="ex-medium">
+    <div class="ex-badge badge-medium">🟡 MEDIUM</div>
+    <div class="ex-title">JWT expiry — tại sao cần và implement như thế nào?</div>
+    <p>Giải thích: (1) Tại sao JWT cần expiry? (2) Access token vs Refresh token nên có TTL bao lâu? (3) Implement refresh token flow trong NestJS.</p>
+    <details>
+      <summary>💡 Xem lời giải</summary>
+      <div class="solution">
+        <p><strong style="color:var(--blue);">1. Tại sao cần expiry:</strong> JWT không thể revoke sau khi issue (stateless). Nếu token bị đánh cắp mà không có expiry → attacker dùng mãi mãi. Expiry giới hạn window of opportunity.</p>
+        <p><strong style="color:var(--blue);">2. Recommended TTL:</strong></p>
+        <ul style="margin-left:1.2rem; color:var(--muted);">
+          <li>Access token: <strong>15 phút</strong> (short-lived, stateless check)</li>
+          <li>Refresh token: <strong>7-30 ngày</strong> (long-lived, stored in DB để có thể revoke)</li>
+        </ul>
+        <pre><code><span class="cm">// auth.service.ts — issue tokens</span>
+<span class="kw">async</span> <span class="fn">issueTokens</span>(userId: <span class="kw">string</span>) {
+  <span class="kw">const</span> accessToken = <span class="kw">this</span>.jwtService.<span class="fn">sign</span>(
+    { sub: userId },
+    { expiresIn: <span class="str">'15m'</span>, secret: process.env.JWT_ACCESS_SECRET }
+  );
+  <span class="kw">const</span> refreshToken = <span class="kw">this</span>.jwtService.<span class="fn">sign</span>(
+    { sub: userId },
+    { expiresIn: <span class="str">'7d'</span>, secret: process.env.JWT_REFRESH_SECRET }
+  );
+  <span class="cm">// Store hashed refreshToken in DB để có thể revoke</span>
+  <span class="kw">await</span> <span class="kw">this</span>.tokenRepo.<span class="fn">save</span>({
+    userId,
+    tokenHash: <span class="kw">await</span> bcrypt.<span class="fn">hash</span>(refreshToken, <span class="num">10</span>),
+    expiresAt: <span class="kw">new</span> <span class="fn">Date</span>(Date.now() + <span class="num">7</span> * <span class="num">24</span> * <span class="num">3600</span> * <span class="num">1000</span>)
+  });
+  <span class="kw">return</span> { accessToken, refreshToken };
+}
+
+<span class="cm">// POST /auth/refresh — dùng refresh token đổi access token mới</span>
+<span class="kw">async</span> <span class="fn">refresh</span>(refreshToken: <span class="kw">string</span>) {
+  <span class="kw">const</span> payload = <span class="kw">this</span>.jwtService.<span class="fn">verify</span>(refreshToken, {
+    secret: process.env.JWT_REFRESH_SECRET
+  });
+  <span class="cm">// Verify token còn trong DB (chưa bị revoke)</span>
+  <span class="kw">const</span> stored = <span class="kw">await</span> <span class="kw">this</span>.tokenRepo.<span class="fn">findByUserId</span>(payload.sub);
+  <span class="kw">const</span> valid = <span class="kw">await</span> bcrypt.<span class="fn">compare</span>(refreshToken, stored.tokenHash);
+  <span class="kw">if</span> (!valid) <span class="kw">throw new</span> <span class="fn">UnauthorizedException</span>();
+  <span class="kw">return</span> <span class="kw">this</span>.<span class="fn">issueTokens</span>(payload.sub); <span class="cm">// Rotate both tokens</span>
+}</code></pre>
+      </div>
+    </details>
+  </div>
+
+  <div class="ex-medium">
+    <div class="ex-badge badge-medium">🟡 MEDIUM</div>
+    <div class="ex-title">Fix IDOR vulnerability trong orders API</div>
+    <p>Code dưới đây có Insecure Direct Object Reference (IDOR). User A có thể xem/xóa order của User B. Fix nó.</p>
+    <pre><code><span class="cm">// orders.controller.ts — IDOR vulnerable</span>
+<span class="kw">@Get</span>(<span class="str">':id'</span>)
+<span class="kw">async</span> <span class="fn">getOrder</span>(@Param(<span class="str">'id'</span>) id: <span class="kw">string</span>) {
+  <span class="kw">return</span> <span class="kw">this</span>.ordersService.<span class="fn">findById</span>(id); <span class="cm">// Không check ownership!</span>
+}
+
+<span class="kw">@Delete</span>(<span class="str">':id'</span>)
+<span class="kw">async</span> <span class="fn">deleteOrder</span>(@Param(<span class="str">'id'</span>) id: <span class="kw">string</span>) {
+  <span class="kw">return</span> <span class="kw">this</span>.ordersService.<span class="fn">delete</span>(id); <span class="cm">// Ai cũng xóa được!</span>
+}</code></pre>
+    <details>
+      <summary>💡 Xem lời giải</summary>
+      <div class="solution">
+        <pre><code><span class="cm">// orders.controller.ts — FIXED</span>
+<span class="kw">@Get</span>(<span class="str">':id'</span>)
+<span class="kw">@UseGuards</span>(JwtAuthGuard) <span class="cm">// Bước 1: require auth</span>
+<span class="kw">async</span> <span class="fn">getOrder</span>(
+  @Param(<span class="str">'id'</span>) id: <span class="kw">string</span>,
+  @CurrentUser() user: User  <span class="cm">// Bước 2: lấy user từ JWT</span>
+) {
+  <span class="kw">const</span> order = <span class="kw">await</span> <span class="kw">this</span>.ordersService.<span class="fn">findById</span>(id);
+  <span class="kw">if</span> (!order) <span class="kw">throw new</span> <span class="fn">NotFoundException</span>();
+  <span class="cm">// Bước 3: check ownership — QUAN TRỌNG NHẤT</span>
+  <span class="kw">if</span> (order.userId !== user.id &amp;&amp; user.role !== <span class="str">'admin'</span>) {
+    <span class="kw">throw new</span> <span class="fn">ForbiddenException</span>(<span class="str">'Access denied'</span>);
+  }
+  <span class="kw">return</span> order;
+}
+
+<span class="kw">@Delete</span>(<span class="str">':id'</span>)
+<span class="kw">@UseGuards</span>(JwtAuthGuard)
+<span class="kw">async</span> <span class="fn">deleteOrder</span>(@Param(<span class="str">'id'</span>) id: <span class="kw">string</span>, @CurrentUser() user: User) {
+  <span class="kw">const</span> order = <span class="kw">await</span> <span class="kw">this</span>.ordersService.<span class="fn">findById</span>(id);
+  <span class="kw">if</span> (!order) <span class="kw">throw new</span> <span class="fn">NotFoundException</span>();
+  <span class="kw">if</span> (order.userId !== user.id) <span class="kw">throw new</span> <span class="fn">ForbiddenException</span>();
+  <span class="kw">return</span> <span class="kw">this</span>.ordersService.<span class="fn">delete</span>(id);
+}
+
+<span class="cm">// Security test (xem Bài 9 cho pattern):</span>
+it(<span class="str">'should not allow user A to see user B order'</span>, <span class="kw">async</span> () => {
+  <span class="kw">const</span> res = <span class="kw">await</span> request(app)
+    .<span class="fn">get</span>(<span class="str">`/orders/${userBOrderId}`</span>)
+    .<span class="fn">set</span>(<span class="str">'Authorization'</span>, <span class="str">`Bearer ${userAToken}`</span>);
+  expect(res.status).<span class="fn">toBe</span>(<span class="num">403</span>); <span class="cm">// MUST block, not 200</span>
+});</code></pre>
+      </div>
+    </details>
+  </div>
+
+  <div class="ex-hard">
+    <div class="ex-badge badge-hard">🔴 HARD</div>
+    <div class="ex-title">OWASP Security Audit Checklist — audit 1 feature end-to-end</div>
+    <p>Chọn 1 feature bất kỳ (ví dụ: upload avatar, payment, comment system). Tạo checklist 10 items tương ứng với OWASP Top 10, điền trạng thái ✅/❌/⚠️ và action nếu cần.</p>
+    <details>
+      <summary>💡 Xem ví dụ: Upload Avatar Feature Audit</summary>
+      <div class="solution">
+        <pre><code><span class="cm">## Security Audit: POST /users/avatar (Upload Avatar)</span>
+
+<span class="cm">| # | OWASP | Check | Status | Action |</span>
+<span class="cm">|---|-------|-------|--------|--------|</span>
+<span class="cm">| A01 | Broken Access Control | Chỉ user upload avatar của chính mình | ✅ | JWT check userId |</span>
+<span class="cm">| A02 | Cryptographic | File không chứa encrypted data nhạy cảm | ✅ | N/A |</span>
+<span class="cm">| A03 | Injection | Filename được sanitize (no path traversal) | ❌ | Add: path.basename(filename) |</span>
+<span class="cm">| A04 | Insecure Design | Rate limit upload (prevent abuse) | ⚠️ | Add: 10 uploads/hour/user |</span>
+<span class="cm">| A05 | Misconfiguration | CORS chỉ cho phép trusted origins | ✅ | Whitelist in config |</span>
+<span class="cm">| A06 | Vulnerable Components | Multer version có CVE? | ⚠️ | npm audit → update |</span>
+<span class="cm">| A07 | Auth Failures | JWT verify trước khi xử lý file | ✅ | JwtAuthGuard |</span>
+<span class="cm">| A08 | Integrity | Verify file magic bytes (not just extension) | ❌ | Add: file-type library |</span>
+<span class="cm">| A09 | Logging | Log upload events (user, size, type) | ⚠️ | Add audit log, redact path |</span>
+<span class="cm">| A10 | SSRF | Không fetch external URL từ uploaded content | ✅ | No external fetch |</span>
+
+<span class="cm">// Code fix cho A03 — filename sanitization:</span>
+<span class="kw">const</span> safeFilename = path.<span class="fn">basename</span>(file.originalname)
+  .<span class="fn">replace</span>(/[^a-zA-Z0-9._-]/g, <span class="str">'_'</span>)
+  .<span class="fn">toLowerCase</span>();
+
+<span class="cm">// Code fix cho A08 — verify file magic bytes:</span>
+<span class="kw">import</span> { fileTypeFromBuffer } <span class="kw">from</span> <span class="str">'file-type'</span>;
+<span class="kw">const</span> type = <span class="kw">await</span> <span class="fn">fileTypeFromBuffer</span>(file.buffer);
+<span class="kw">if</span> (!type || ![<span class="str">'image/jpeg'</span>, <span class="str">'image/png'</span>, <span class="str">'image/webp'</span>].<span class="fn">includes</span>(type.mime)) {
+  <span class="kw">throw new</span> <span class="fn">BadRequestException</span>(<span class="str">'Invalid file type'</span>);
+} <span class="cm">// Extension spoofing: rename .exe → .jpg không qua được check này</span></code></pre>
+      </div>
+    </details>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Summary -->
+  <div class="summary-card reveal">
+    <h3 style="color:var(--purple); margin-top:0;">📋 Tóm Tắt Bài 12</h3>
+    <ul style="list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+      <li>🔒 Security = mindset, không phải feature</li>
+      <li>🛡️ OWASP Top 10: 10 risk categories cần check mỗi feature</li>
+      <li>🪪 Authentication ≠ Authorization (authn + authz = 2 layers)</li>
+      <li>🔑 Password: chỉ bcrypt/Argon2. NEVER MD5/SHA1</li>
+      <li>🎫 JWT: không encrypt, đừng để sensitive data trong payload</li>
+      <li>💉 Injection: validate mọi input — class-validator DTO</li>
+      <li>⚔️ CTF Mindset: build → attack → fix → test (security test)</li>
+      <li>🔗 Liên quan: <a href="09-testing.html" class="xref">Bài 9 Testing</a> — viết security negative tests</li>
+    </ul>
+  </div>
+
   <div class="takeaway reveal">
     <h3 style="color:var(--green); margin-top:0;">🎯 Key Takeaways</h3>
     <ul style="list-style:none;">
@@ -457,6 +742,12 @@
       <li style="padding:0.3rem 0;">✅ Validate mọi input — class-validator DTO trong NestJS là standard</li>
       <li style="padding:0.3rem 0;">✅ Test negative cases trước: no key, fake key, wrong permission → MUST BLOCK</li>
     </ul>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav">
+    <a href="11-git-workflow.html">← Bài 11: Git Workflow</a>
+    <a href="13-system-design.html">Bài 13: System Design →</a>
   </div>
 
 </div>
@@ -537,7 +828,6 @@ function updateInjection(val) {
     queryEl.style.color = 'var(--text)';
     warnEl.textContent = '';
   }
-  // Try tips
   if (!val) warnEl.textContent = '💡 Thử nhập: {"$gt": ""} hoặc "}); db.dropDatabase(); //';
 }
 updateInjection('iPhone');

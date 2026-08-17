@@ -13,7 +13,7 @@
     --blue: #58a6ff; --purple: #bc8cff; --orange: #ffa657; --cyan: #39d353;
   }
   body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; }
-  .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; padding-top: 5rem; }
   h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; }
   h2 { font-size: 1.5rem; font-weight: 600; margin: 2.5rem 0 1rem; color: var(--blue); }
   h3 { font-size: 1.05rem; font-weight: 600; margin: 1.2rem 0 0.4rem; color: var(--purple); }
@@ -21,14 +21,72 @@
   pre { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; font-size: 0.82rem; line-height: 1.7; margin: 0.8rem 0; }
   code { font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace; font-size: 0.85em; background: var(--bg3); padding: 0.1em 0.3em; border-radius: 3px; }
   .cm { color: var(--muted); }
+  .kw { color: var(--purple); } .fn { color: var(--blue); } .str { color: var(--green); }
+  .num { color: var(--orange); }
   .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin: 1rem 0; }
   .reveal { opacity: 0; transform: translateY(20px); transition: all 0.5s ease; }
   .reveal.visible { opacity: 1; transform: translateY(0); }
   .divider { height: 1px; background: var(--border); margin: 3rem 0; }
-  .progress-bar { height: 6px; background: var(--bg3); border-radius: 3px; margin: 2rem 0; }
+  .progress-bar { height: 3px; background: var(--bg3); position: fixed; top: 56px; left: 0; right: 0; z-index: 99; }
   .progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--purple), var(--blue)); width: 0; transition: width 0.3s; }
   .header-meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
   .takeaway { background: linear-gradient(135deg, rgba(57,211,83,0.08), rgba(13,17,23,0)); border: 1px solid rgba(57,211,83,0.3); border-radius: 12px; padding: 1.5rem; margin: 2rem 0; }
+
+  /* Sticky nav */
+  .nav-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(13,17,23,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); padding: 0 1.5rem; height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .nav-phase { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+  .nav-links { display: flex; gap: 0.5rem; align-items: center; }
+  .nav-btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.8rem; border-radius: 6px; background: var(--bg3); border: 1px solid var(--border); color: var(--text); text-decoration: none; font-size: 0.82rem; transition: all 0.2s; }
+  .nav-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .nav-title { font-weight: 600; font-size: 0.88rem; color: var(--text); }
+
+  /* Prereq box */
+  .prereq { background: rgba(88,166,255,0.06); border: 1px solid rgba(88,166,255,0.25); border-radius: 10px; padding: 1rem 1.2rem; margin: 1.5rem 0; }
+  .prereq-label { font-size: 0.75rem; color: var(--blue); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+  .prereq ul { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .prereq a { color: var(--blue); text-decoration: none; font-size: 0.85rem; padding: 0.2rem 0.6rem; border-radius: 4px; background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.2); transition: all 0.2s; }
+  .prereq a:hover { background: rgba(88,166,255,0.2); }
+
+  /* Cross-reference links */
+  .xref { color: var(--purple); text-decoration: none; border-bottom: 1px dashed rgba(188,140,255,0.4); font-size: 0.88em; transition: all 0.2s; }
+  .xref:hover { color: #d4b8ff; border-bottom-color: var(--purple); }
+
+  /* Exercises */
+  .ex-easy { background: rgba(63,185,80,0.05); border: 1px solid rgba(63,185,80,0.35); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+  .ex-medium { background: rgba(210,153,34,0.05); border: 1px solid rgba(210,153,34,0.35); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+  .ex-hard { background: rgba(248,81,73,0.05); border: 1px solid rgba(248,81,73,0.35); border-radius: 12px; padding: 1.5rem; margin: 1.5rem 0; }
+  .ex-badge { display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 4px; margin-bottom: 0.8rem; }
+  .badge-easy { background: rgba(63,185,80,0.15); color: var(--green); }
+  .badge-medium { background: rgba(210,153,34,0.15); color: var(--yellow); }
+  .badge-hard { background: rgba(248,81,73,0.15); color: var(--red); }
+  .ex-title { font-weight: 700; font-size: 1rem; margin-bottom: 0.6rem; }
+  details { margin-top: 1rem; }
+  details summary { cursor: pointer; color: var(--blue); font-size: 0.88rem; padding: 0.4rem 0; user-select: none; }
+  details summary:hover { color: var(--purple); }
+  details[open] summary { color: var(--purple); }
+  details .solution { background: var(--bg3); border-radius: 8px; padding: 1rem; margin-top: 0.5rem; border: 1px solid var(--border); }
+
+  /* Bottom nav */
+  .bottom-nav { display: flex; justify-content: space-between; align-items: center; padding: 2rem 0 1rem; margin-top: 3rem; border-top: 1px solid var(--border); }
+  .bottom-nav a { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border-radius: 8px; background: var(--bg2); border: 1px solid var(--border); color: var(--text); text-decoration: none; font-size: 0.9rem; transition: all 0.2s; }
+  .bottom-nav a:hover { border-color: var(--blue); color: var(--blue); }
+
+  /* Summary card */
+  .summary-card { background: linear-gradient(135deg, rgba(188,140,255,0.06), rgba(88,166,255,0.06)); border: 1px solid rgba(188,140,255,0.25); border-radius: 12px; padding: 1.5rem; margin: 2rem 0; }
+
+  /* Phase 3 completion banner */
+  .phase-complete { background: linear-gradient(135deg, rgba(57,211,83,0.12), rgba(88,166,255,0.12), rgba(188,140,255,0.12)); border: 2px solid rgba(57,211,83,0.4); border-radius: 16px; padding: 2.5rem 2rem; margin: 3rem 0; text-align: center; position: relative; overflow: hidden; }
+  .phase-complete::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle, rgba(57,211,83,0.05) 0%, transparent 60%); animation: glow 3s ease-in-out infinite alternate; pointer-events: none; }
+  @keyframes glow { from { opacity: 0.5; } to { opacity: 1; } }
+  .phase-complete-badge { display: inline-block; font-size: 4rem; margin-bottom: 1rem; }
+  .phase-complete-title { font-size: 2rem; font-weight: 800; background: linear-gradient(90deg, var(--green), var(--blue), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem; }
+  .phase-complete-sub { color: var(--muted); font-size: 1rem; margin-bottom: 1.5rem; }
+  .phase-skills { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin: 1.5rem 0; }
+  .phase-skill { padding: 0.35rem 0.8rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600; }
+  .phase-preview { background: rgba(88,166,255,0.06); border: 1px solid rgba(88,166,255,0.2); border-radius: 12px; padding: 1.5rem; margin-top: 2rem; text-align: left; }
+  .phase-preview-title { color: var(--blue); font-weight: 700; margin-bottom: 1rem; }
+  .phase-preview-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.7rem; }
+  .phase-preview-item { display: flex; align-items: flex-start; gap: 0.5rem; color: var(--muted); font-size: 0.88rem; }
 
   /* Scale compare */
   .scale-visual { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1.5rem 0; }
@@ -37,7 +95,7 @@
 
   /* Design process stepper */
   .design-steps { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.5rem 0; }
-  .ds { padding: 0.5rem 0.9rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.3s; border: 1px solid var(--border); color: var(--muted); }
+  .ds { padding: 0.5rem 0.9rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.3s; border: 1px solid var(--border); color: var(--muted); background: transparent; }
   .ds:hover { border-color: var(--blue); color: var(--blue); }
   .ds.active { background: rgba(88,166,255,0.15); border-color: var(--blue); color: var(--blue); }
   .ds-content { min-height: 80px; padding: 1rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin-top: 0.5rem; transition: all 0.3s; }
@@ -58,29 +116,24 @@
   .lb-box { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
   .lb-servers { position: absolute; right: 0; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-around; }
   .lb-node { padding: 0.5rem 0.8rem; border-radius: 8px; text-align: center; font-size: 0.8rem; font-weight: 600; min-width: 90px; transition: all 0.3s; }
-  .req-dot { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: var(--blue); top: 50%; transform: translateY(-50%); pointer-events: none; transition: all 0.6s cubic-bezier(0.4,0,0.2,1); }
 
   /* Cache layers */
   .cache-layers { display: flex; flex-direction: column; gap: 0.5rem; margin: 1.5rem 0; }
-  .cache-layer { display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1.2rem; border-radius: 10px; cursor: pointer; transition: all 0.3s; }
+  .cache-layer { display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1.2rem; border-radius: 10px; cursor: pointer; transition: all 0.3s; flex-wrap: wrap; }
   .cache-layer:hover { filter: brightness(1.15); }
   .cache-speed { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
-  .cache-bar { height: 6px; border-radius: 3px; flex: 1; }
+  .cache-bar { height: 6px; border-radius: 3px; flex: 1; min-width: 60px; }
   .cache-label { font-weight: 600; min-width: 120px; }
-  .cache-detail { display: none; margin-top: 0.5rem; padding: 0.8rem; background: var(--bg3); border-radius: 8px; font-size: 0.82rem; }
+  .cache-detail { display: none; width: 100%; margin-top: 0.5rem; padding: 0.8rem; background: var(--bg3); border-radius: 8px; font-size: 0.82rem; }
   .cache-layer.open .cache-detail { display: block; }
 
   /* Queue */
-  .queue-vis { display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0; flex-wrap: wrap; }
+  .queue-vis { display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0; flex-wrap: wrap; position: relative; }
   .q-producer { padding: 1rem; background: rgba(63,185,80,0.1); border: 2px solid rgba(63,185,80,0.4); border-radius: 10px; text-align: center; }
-  .q-box { display: flex; gap: 0.3rem; align-items: center; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 0.8rem; }
+  .q-box { display: flex; gap: 0.3rem; align-items: center; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 0.8rem; position: relative; }
   .q-msg { padding: 0.4rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
   .q-consumer { padding: 1rem; background: rgba(88,166,255,0.1); border: 2px solid rgba(88,166,255,0.4); border-radius: 10px; text-align: center; }
   .q-arrow { color: var(--muted); font-size: 1.5rem; }
-
-  /* DB Scaling */
-  .db-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
-  .db-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 1.2rem; }
 
   /* Circuit breaker */
   .cb-states { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin: 1.5rem 0; }
@@ -101,25 +154,43 @@
   .cap-v-br { bottom: 0; right: 0; }
   .cap-label { display: inline-block; padding: 0.5rem 0.8rem; border-radius: 8px; font-weight: 700; font-size: 0.9rem; }
   .cap-center { position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%); text-align: center; font-size: 0.75rem; color: var(--muted); }
-  .cap-pick { margin-top: 0.3rem; font-size: 0.75rem; }
-  .cap-line { position: absolute; pointer-events: none; }
 
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  @keyframes moveReq { 0% { left: 5%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { opacity: 0; } }
-  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+  @keyframes confetti { 0% { transform: translateY(-20px) rotate(0deg); opacity: 1; } 100% { transform: translateY(60px) rotate(360deg); opacity: 0; } }
 </style>
 </head>
 <body>
+
+<!-- Sticky Nav -->
+<nav class="nav-bar">
+  <div class="nav-phase">Phase 3: Engineer → Bài 5/5</div>
+  <span class="nav-title">🏗️ System Design</span>
+  <div class="nav-links">
+    <a href="12-security.html" class="nav-btn">← Bài 12</a>
+    <a href="../phase-4-production/14-devops.html" class="nav-btn">Phase 4 →</a>
+  </div>
+</nav>
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
 <div class="container">
 
-  <div class="header-meta">Phase 3: Engineer · Bài 13</div>
+  <div class="header-meta">Phase 3: Engineer · Bài 13/13</div>
   <h1>🏗️ System Design</h1>
   <p style="font-size:1.1rem; color: var(--text);">Thiết kế cho 1 user khác với 1 triệu user. Hiểu trade-offs để đưa ra quyết định đúng.</p>
 
-  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+  <!-- Prerequisites -->
+  <div class="prereq">
+    <div class="prereq-label">📚 Prerequisites</div>
+    <ul>
+      <li><a href="../phase-2-build/06-architecture.html">Bài 6: Architecture — layered design, separation of concerns</a></li>
+      <li><a href="../phase-2-build/07-database.html">Bài 7: Database — indexing, query optimization, DB scaling</a></li>
+      <li><a href="../phase-2-build/08-api-fundamentals.html">Bài 8: API — REST design, request lifecycle</a></li>
+    </ul>
+  </div>
 
   <!-- Why -->
   <h2>🤔 Tại sao System Design quan trọng?</h2>
+  <p>Architecture patterns từ <a href="../phase-2-build/06-architecture.html" class="xref">Bài 6</a> áp dụng ở component level; System Design áp dụng ở infrastructure level — cùng nguyên tắc, khác scale.</p>
 
   <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin:1.5rem 0;" class="reveal">
     <div class="card" style="border-left:3px solid var(--green); cursor:pointer;" onclick="animateScale(this, 1)">
@@ -149,7 +220,7 @@
 
   <!-- Design Process -->
   <h2>📐 Design Process — 10 bước</h2>
-  <p>Trong interview và thực tế, follow process này để không bỏ sót.</p>
+  <p>Trong interview và thực tế, follow process này để không bỏ sót. Combine với <a href="../phase-2-build/06-architecture.html" class="xref">Architecture patterns Bài 6</a> khi chọn component style.</p>
 
   <div class="reveal">
     <div class="design-steps" id="design-steps"></div>
@@ -217,7 +288,7 @@
           Client → CDN → Load Balancer → App Servers (x N) → Cache (Redis) → DB (PostgreSQL)<br><br>
           Read path: App → Redis → PostgreSQL (cache miss only)<br>
           Write path: App → PostgreSQL → invalidate cache<br>
-          DB: Primary-Replica (write → primary, read → replicas)
+          DB: Primary-Replica (write → primary, read → replicas) — xem thêm <a href="../phase-2-build/07-database.html" style="color:var(--blue);">Bài 7 DB Scaling</a>
         </div>
       </div>
     </div>
@@ -283,7 +354,7 @@
 
   <!-- Caching -->
   <h2>⚡ Caching Layers</h2>
-  <p>Cache gần user nhất = nhanh nhất. Click từng layer để xem chi tiết.</p>
+  <p>Cache gần user nhất = nhanh nhất. Click từng layer để xem chi tiết. DB optimization ở <a href="../phase-2-build/07-database.html" class="xref">Bài 7</a> là tiền đề cho DB cache layer hiệu quả.</p>
 
   <div class="cache-layers reveal">
     <div class="cache-layer" style="background:rgba(57,211,83,0.08); border:1px solid rgba(57,211,83,0.3);" onclick="this.classList.toggle('open')">
@@ -360,7 +431,7 @@
 
   <!-- Circuit Breaker -->
   <h2>🔌 Circuit Breaker — Failure Handling</h2>
-  <p>Khi service downstream bị quá tải → circuit breaker "ngắt mạch" để tránh cascade failure.</p>
+  <p>Khi service downstream bị quá tải → circuit breaker "ngắt mạch" để tránh cascade failure. Security layer từ <a href="12-security.html" class="xref">Bài 12</a> thường được đặt trước circuit breaker trong request pipeline.</p>
 
   <div class="cb-states reveal">
     <div class="cb-state cb-closed active" id="cb-closed" onclick="showCB('closed')">
@@ -385,7 +456,7 @@
 
   <!-- CAP Theorem -->
   <h2>🔺 CAP Theorem</h2>
-  <p>Trong distributed system, bạn chỉ có thể đảm bảo <strong>2 trong 3</strong>. Click từng góc để xem ví dụ.</p>
+  <p>Trong distributed system, bạn chỉ có thể đảm bảo <strong>2 trong 3</strong>. Click từng góc để xem ví dụ. Liên quan đến DB selection ở <a href="../phase-2-build/07-database.html" class="xref">Bài 7</a>.</p>
 
   <div class="cap reveal">
     <div class="cap-tri">
@@ -394,15 +465,15 @@
       </svg>
       <div class="cap-vertex cap-v-top" onclick="showCAP('cp')">
         <div class="cap-label" style="background:rgba(88,166,255,0.15); border:2px solid rgba(88,166,255,0.4); color:var(--blue);">C — Consistency</div>
-        <div class="cap-pick" style="color:var(--blue);">Mọi node thấy data giống nhau</div>
+        <div style="font-size:0.75rem; color:var(--blue);">Mọi node thấy data giống nhau</div>
       </div>
       <div class="cap-vertex cap-v-bl" onclick="showCAP('ca')">
         <div class="cap-label" style="background:rgba(63,185,80,0.15); border:2px solid rgba(63,185,80,0.4); color:var(--green);">A — Availability</div>
-        <div class="cap-pick" style="color:var(--green);">Mọi request đều nhận response</div>
+        <div style="font-size:0.75rem; color:var(--green);">Mọi request đều nhận response</div>
       </div>
       <div class="cap-vertex cap-v-br" onclick="showCAP('ap')">
         <div class="cap-label" style="background:rgba(248,81,73,0.15); border:2px solid rgba(248,81,73,0.4); color:var(--red);">P — Partition Tolerance</div>
-        <div class="cap-pick" style="color:var(--red);">System hoạt động dù mạng bị đứt</div>
+        <div style="font-size:0.75rem; color:var(--red);">System hoạt động dù mạng bị đứt</div>
       </div>
       <div class="cap-center">
         <div>Pick 2</div>
@@ -413,6 +484,294 @@
   <div id="cap-info" class="card" style="min-height:40px;"></div>
 
   <div class="divider"></div>
+
+  <!-- Exercises -->
+  <h2>🏋️ Bài Tập Thực Hành</h2>
+
+  <div class="ex-easy">
+    <div class="ex-badge badge-easy">🟢 EASY</div>
+    <div class="ex-title">Estimation: URL Shortener cần bao nhiêu storage?</div>
+    <p>Tính toán: 50 triệu URLs mới mỗi ngày. Mỗi record: shortCode (7 bytes) + longUrl (100 bytes avg) + metadata (50 bytes). Giữ data 10 năm. Tính tổng storage cần.</p>
+    <details>
+      <summary>💡 Xem lời giải</summary>
+      <div class="solution">
+        <pre><code><span class="cm">## Back-of-envelope estimation</span>
+
+Record size = 7 + 100 + 50 = 157 bytes ≈ 200 bytes (với overhead)
+
+Daily: 50M × 200 bytes = 10 GB/day
+Yearly: 10 GB × 365 = 3.65 TB/year
+10 năm: 3.65 × 10 = 36.5 TB
+
+<span class="cm">## Traffic estimation</span>
+
+Writes: 50M/day = 50,000,000 / 86,400 ≈ 578 writes/sec
+Read:Write = 10:1 → 5,780 reads/sec
+
+<span class="cm">## Cache requirement</span>
+
+Daily reads: 578 × 10 = 5,780/sec = ~500M reads/day
+20% URLs cover 80% traffic → cache top 100M URLs
+100M × 200 bytes = 20 GB RAM cho cache layer
+
+<span class="cm">## Kết luận hardware</span>
+
+- Storage: 40TB (dư 10% buffer)
+- Redis: 2 servers × 16GB RAM
+- DB: 1 primary + 2 replicas (read load)
+- App servers: 4 servers (each handles ~1500 reads/sec)</code></pre>
+      </div>
+    </details>
+  </div>
+
+  <div class="ex-easy">
+    <div class="ex-badge badge-easy">🟢 EASY</div>
+    <div class="ex-title">Design API cho Notification System</div>
+    <p>Một app cần gửi notification qua 3 channels: Email, Push (mobile), In-app. Design REST API endpoints và data model. Identify đâu nên dùng Queue.</p>
+    <details>
+      <summary>💡 Xem lời giải</summary>
+      <div class="solution">
+        <pre><code><span class="cm">## API Endpoints</span>
+
+POST /notifications
+  body: { userId, type: "email|push|in_app", template, data }
+  response: { notificationId, status: "queued" }
+  → Trả ngay, không đợi gửi xong
+
+GET /notifications?userId=123&status=unread
+  → In-app notifications list
+
+PATCH /notifications/:id/read
+  → Mark as read
+
+DELETE /notifications/:id
+  → Cancel if pending
+
+<span class="cm">## Data Model</span>
+
+notifications {
+  id: UUID (PK),
+  userId: string,
+  channel: enum(email, push, in_app),
+  templateId: string,
+  data: JSON,  -- dynamic content
+  status: enum(pending, sent, failed, read),
+  scheduledAt: timestamp?,
+  sentAt: timestamp?,
+  createdAt: timestamp
+}
+
+<span class="cm">## Queue Design</span>
+
+POST /notifications → DB insert (status=pending)
+                     → Enqueue to channel-specific queue
+
+email-queue    → EmailWorker → SendGrid API
+push-queue     → PushWorker  → FCM/APNS
+in_app-queue   → (save to DB, status=delivered, real-time via WebSocket)
+
+<span class="cm">## Tại sao Queue?</span>
+
+1. Email SendGrid: rate limited, retry on failure
+2. Push FCM: batch có thể fail, cần retry logic
+3. In-app: user có thể offline, deliver khi reconnect
+4. Decouple API response (fast) từ delivery (slow)</code></pre>
+      </div>
+    </details>
+  </div>
+
+  <div class="ex-medium">
+    <div class="ex-badge badge-medium">🟡 MEDIUM</div>
+    <div class="ex-title">Caching strategy cho Product Listing page</div>
+    <p>E-commerce site: /products?category=electronics&sort=price&page=1. Products update mỗi giờ. Flash sale có thể xảy ra bất cứ lúc nào. Design caching strategy với cache invalidation.</p>
+    <details>
+      <summary>💡 Xem lời giải</summary>
+      <div class="solution">
+        <pre><code><span class="cm">## Cache Key Strategy</span>
+
+key = `products:${category}:${sort}:${page}:${version}`
+version = daily timestamp → auto-invalidate mỗi ngày
+
+<span class="cm">## TTL Policy</span>
+
+Bình thường: TTL = 1 giờ (products update mỗi giờ)
+Flash sale: TTL = 30 giây (cần reflect stock changes nhanh)
+
+<span class="cm">## Implementation (NestJS + Redis)</span>
+
+<span class="kw">async</span> <span class="fn">getProducts</span>(params) {
+  <span class="kw">const</span> cacheKey = <span class="fn">buildKey</span>(params);
+  <span class="kw">const</span> cached = <span class="kw">await</span> redis.<span class="fn">get</span>(cacheKey);
+  <span class="kw">if</span> (cached) <span class="kw">return</span> JSON.<span class="fn">parse</span>(cached);
+
+  <span class="kw">const</span> data = <span class="kw">await</span> db.<span class="fn">query</span>(...)
+  <span class="kw">const</span> ttl = <span class="kw">await</span> <span class="fn">isFlashSaleActive</span>() ? <span class="num">30</span> : <span class="num">3600</span>;
+  <span class="kw">await</span> redis.<span class="fn">setex</span>(cacheKey, ttl, JSON.<span class="fn">stringify</span>(data));
+  <span class="kw">return</span> data;
+}
+
+<span class="cm">## Flash Sale Invalidation</span>
+
+<span class="cm">// Khi flash sale bắt đầu:</span>
+<span class="kw">async</span> <span class="fn">startFlashSale</span>(categoryId) {
+  <span class="kw">const</span> keys = <span class="kw">await</span> redis.<span class="fn">keys</span>(<span class="str">`products:${categoryId}:*`</span>);
+  <span class="kw">await</span> redis.<span class="fn">del</span>(...keys); <span class="cm">// Purge toàn bộ category</span>
+  <span class="kw">await</span> redis.<span class="fn">set</span>(<span class="str">'flash_sale_active'</span>, <span class="str">'1'</span>, <span class="str">'EX'</span>, <span class="num">3600</span>);
+}
+
+<span class="cm">## Cache Stampede Prevention</span>
+
+<span class="cm">// Dùng "lock" để tránh nhiều requests hit DB cùng lúc</span>
+<span class="kw">const</span> lock = <span class="kw">await</span> redis.<span class="fn">set</span>(<span class="str">`lock:${cacheKey}`</span>, <span class="str">'1'</span>, <span class="str">'NX'</span>, <span class="str">'EX'</span>, <span class="num">5</span>);
+<span class="kw">if</span> (!lock) {
+  <span class="kw">await</span> <span class="fn">sleep</span>(<span class="num">100</span>); <span class="cm">// Wait for first request to populate</span>
+  <span class="kw">return</span> redis.<span class="fn">get</span>(cacheKey); <span class="cm">// Retry from cache</span>
+}</code></pre>
+      </div>
+    </details>
+  </div>
+
+  <div class="ex-medium">
+    <div class="ex-badge badge-medium">🟡 MEDIUM</div>
+    <div class="ex-title">Message Queue cho Order Processing flow</div>
+    <p>Khi user đặt hàng, system cần: (1) reserve inventory, (2) charge payment, (3) send confirmation email, (4) notify warehouse. Design queue-based flow đảm bảo idempotency và retry.</p>
+    <details>
+      <summary>💡 Xem lời giải</summary>
+      <div class="solution">
+        <pre><code><span class="cm">## Flow Design (BullMQ / NestJS)</span>
+
+POST /orders
+  → Save order (status: PENDING)
+  → Enqueue "order.created" event
+  → Return 202 Accepted + orderId
+
+<span class="cm">## Queue Topology</span>
+
+order.created
+  ├─ InventoryWorker   → reserve stock → emit "inventory.reserved"
+  └─ (wait for reserved before charging)
+
+inventory.reserved
+  └─ PaymentWorker     → charge card → emit "payment.completed"
+
+payment.completed
+  ├─ EmailWorker       → send confirmation (idempotent: check sent flag)
+  └─ WarehouseWorker   → notify warehouse (webhook)
+
+<span class="cm">## Idempotency Pattern</span>
+
+<span class="cm">// Mỗi job có unique ID → nếu processed rồi → skip</span>
+<span class="kw">async</span> <span class="fn">processPayment</span>(job) {
+  <span class="kw">const</span> { orderId } = job.data;
+  <span class="kw">const</span> alreadyCharged = <span class="kw">await</span> db.<span class="fn">findPayment</span>({ orderId });
+  <span class="kw">if</span> (alreadyCharged) <span class="kw">return</span> { skipped: <span class="kw">true</span> }; <span class="cm">// Idempotent</span>
+
+  <span class="kw">const</span> result = <span class="kw">await</span> stripe.<span class="fn">charge</span>(...);
+  <span class="kw">await</span> db.<span class="fn">savePayment</span>({ orderId, chargeId: result.id });
+}
+
+<span class="cm">## Retry Config</span>
+
+{ attempts: 3, backoff: { type: 'exponential', delay: 1000 } }
+<span class="cm">// Retry: 1s → 2s → 4s → Dead Letter Queue</span>
+
+<span class="cm">## Dead Letter Queue</span>
+
+<span class="cm">// Failed jobs → DLQ → Alert team → manual review</span>
+<span class="cm">// Không bao giờ silently drop failed jobs</span></code></pre>
+      </div>
+    </details>
+  </div>
+
+  <div class="ex-hard">
+    <div class="ex-badge badge-hard">🔴 HARD</div>
+    <div class="ex-title">Full System Design: Chat Application</div>
+    <p>Design một real-time chat app: 10M daily active users, 1B messages/day, message history 2 năm, support group chat (max 500 members), read receipts. Estimate storage, design architecture, identify bottlenecks.</p>
+    <details>
+      <summary>💡 Xem lời giải (High-level)</summary>
+      <div class="solution">
+        <pre><code><span class="cm">## Estimation</span>
+
+Messages: 1B/day = 11,574/sec = ~12K msg/sec
+Avg message size: 100 bytes
+Storage/day: 1B × 100 = 100 GB/day
+2 năm: 100 × 730 = 73 TB
++ Media (50% messages): 73 TB × 5x avg = 365 TB total
+
+<span class="cm">## Architecture Components</span>
+
+Client → WebSocket Gateway → Message Service → Kafka
+                           ↓
+                    Presence Service (online status)
+                           ↓
+                    Fan-out Service → WebSocket push to recipients
+
+<span class="cm">## Data Stores</span>
+
+Messages: Cassandra (time-series, wide column, write-heavy)
+  key: (conversationId, timestamp) → partition by conv
+  → Đọc recent messages fast, old messages warm tier
+
+Users/Conversations: PostgreSQL
+Media: S3 + CDN (Cloudflare)
+Presence/online status: Redis (SET user:123:online EX 30)
+Push when offline: APNs / FCM via BullMQ
+
+<span class="cm">## Why Cassandra for messages?</span>
+
+- Write throughput: 12K msg/sec → needs distributed writes
+- Time-series access pattern: recent > old (fits Cassandra)
+- Horizontal scale: add nodes = more write capacity
+- Vs PostgreSQL: single-node write bottleneck at this scale
+
+<span class="cm">## Real-time Delivery (WebSocket)</span>
+
+User connects → WS Gateway (stateful, sticky session)
+Message sent → Kafka topic: messages
+Fan-out consumer:
+  - Find all group members
+  - For each online member: push via WS Gateway
+  - For each offline: queue push notification
+
+<span class="cm">## Read Receipt (Bài toán at-scale)</span>
+
+Naive: UPDATE messages SET readBy = [...] → N+1 problem in group chat
+
+Solution: Separate read_receipts table
+  (messageId, userId, readAt) → index on messageId
+  Batch update every 5 seconds (không update mỗi message)
+
+<span class="cm">## CAP Choice: AP (Availability + Partition)</span>
+
+Message delivery: user thấy message sau 1-2s delay = OK
+vs: user thấy error khi network partition = BAD
+→ Choose eventual consistency (AP) for message delivery
+
+<span class="cm">## Security layer (Bài 12)</span>
+
+- E2E encryption: client-side, server stores ciphertext only
+- Rate limit: 100 messages/min per user (anti-spam)
+- Auth: JWT + refresh token per connection</code></pre>
+      </div>
+    </details>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Summary -->
+  <div class="summary-card reveal">
+    <h3 style="color:var(--purple); margin-top:0;">📋 Tóm Tắt Bài 13</h3>
+    <ul style="list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+      <li>📐 10-step process: requirements → monitoring</li>
+      <li>📈 Vertical có ceiling; Horizontal là default choice</li>
+      <li>⚡ Cache: Browser → CDN → Redis → DB (gần → xa)</li>
+      <li>📨 Queue: decoupling + async heavy work</li>
+      <li>🔌 Circuit breaker: fail fast, protect downstream</li>
+      <li>🔺 CAP: network partition = pick CP hoặc AP</li>
+      <li>🔗 Liên quan: <a href="../phase-2-build/07-database.html" class="xref">Bài 7 DB</a> · <a href="12-security.html" class="xref">Bài 12 Security</a></li>
+      <li>🏗️ Design thực chiến: URL Shortener → Chat App</li>
+    </ul>
+  </div>
 
   <div class="takeaway reveal">
     <h3 style="color:var(--green); margin-top:0;">🎯 Key Takeaways</h3>
@@ -425,6 +784,62 @@
       <li style="padding:0.3rem 0;">✅ CAP: network partition luôn xảy ra → chọn CP hoặc AP. Hiểu DB của bạn đang chọn gì</li>
       <li style="padding:0.3rem 0;">✅ Đừng over-engineer sớm — profile first, scale where bottleneck is</li>
     </ul>
+  </div>
+
+  <!-- Phase 3 Completion Banner -->
+  <div class="phase-complete reveal">
+    <div class="phase-complete-badge">🎓</div>
+    <div class="phase-complete-title">Phase 3: Engineer — HOÀN THÀNH!</div>
+    <div class="phase-complete-sub">Bạn đã hoàn thành 5 bài học của kỹ sư phần mềm chuyên nghiệp.</div>
+
+    <div class="phase-skills">
+      <span class="phase-skill" style="background:rgba(63,185,80,0.15); color:var(--green);">🧪 Testing Mindset</span>
+      <span class="phase-skill" style="background:rgba(88,166,255,0.15); color:var(--blue);">🐛 Debugging Systematic</span>
+      <span class="phase-skill" style="background:rgba(188,140,255,0.15); color:var(--purple);">🌿 Git Workflow</span>
+      <span class="phase-skill" style="background:rgba(248,81,73,0.15); color:var(--red);">🔒 Security Mindset</span>
+      <span class="phase-skill" style="background:rgba(210,153,34,0.15); color:var(--yellow);">🏗️ System Design</span>
+    </div>
+
+    <div class="phase-preview">
+      <div class="phase-preview-title">🚀 Phase 4: Production — những gì chờ đợi bạn</div>
+      <div class="phase-preview-items">
+        <div class="phase-preview-item">
+          <span>⚙️</span>
+          <span><strong style="color:var(--text);">DevOps & CI/CD</strong><br>Deploy tự động, zero-downtime</span>
+        </div>
+        <div class="phase-preview-item">
+          <span>📊</span>
+          <span><strong style="color:var(--text);">Observability</strong><br>Logs, metrics, tracing, alerts</span>
+        </div>
+        <div class="phase-preview-item">
+          <span>🐳</span>
+          <span><strong style="color:var(--text);">Docker & K8s</strong><br>Container orchestration</span>
+        </div>
+        <div class="phase-preview-item">
+          <span>🔥</span>
+          <span><strong style="color:var(--text);">Incident Response</strong><br>On-call, post-mortem, SLO</span>
+        </div>
+        <div class="phase-preview-item">
+          <span>💰</span>
+          <span><strong style="color:var(--text);">Cost Engineering</strong><br>Cloud costs, optimization</span>
+        </div>
+        <div class="phase-preview-item">
+          <span>🌍</span>
+          <span><strong style="color:var(--text);">Global Scale</strong><br>CDN, multi-region, edge</span>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:1.5rem;">
+        <a href="../phase-4-production/14-devops.html" style="display:inline-flex; align-items:center; gap:0.6rem; padding:0.8rem 2rem; background:linear-gradient(90deg, rgba(88,166,255,0.2), rgba(188,140,255,0.2)); border:1px solid rgba(88,166,255,0.4); border-radius:10px; color:var(--blue); text-decoration:none; font-weight:700; font-size:1rem; transition:all 0.3s;">
+          Bắt đầu Phase 4 →
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav">
+    <a href="12-security.html">← Bài 12: Security</a>
+    <a href="../phase-4-production/14-devops.html">Phase 4: Production →</a>
   </div>
 
 </div>
@@ -441,11 +856,10 @@ const dsData = [
   { label: '7. Caching', info: 'Cache gì? Invalidation strategy? TTL? Cache stampede prevention. CDN cho static, Redis cho dynamic.' },
   { label: '8. Queue', info: 'Async processing cho heavy tasks. Retry logic, dead letter queue, idempotency. BullMQ/Kafka/RabbitMQ.' },
   { label: '9. Failures', info: 'Timeout, retry, circuit breaker. Graceful degradation. Single point of failure analysis.' },
-  { label: '10. Monitoring', info: 'Metrics, alerts, tracing, logging. "If you can\'t measure it, you can\'t improve it." Prometheus + Grafana.' },
+  { label: '10. Monitoring', info: "Metrics, alerts, tracing, logging. \"If you can't measure it, you can't improve it.\" Prometheus + Grafana." },
 ];
 const dsContainer = document.getElementById('design-steps');
-let activeDS = null;
-dsData.forEach((d, i) => {
+dsData.forEach((d) => {
   const btn = document.createElement('button');
   btn.className = 'ds';
   btn.textContent = d.label;
@@ -481,9 +895,6 @@ function showScaling(type) {
 
 // Load Balancer
 let srv2Down = false;
-let reqCount = 0;
-const srvIds = ['srv1', 'srv2', 'srv3'];
-
 function sendRequests() {
   const available = srv2Down ? ['srv1', 'srv3'] : ['srv1', 'srv2', 'srv3'];
   let i = 0;
@@ -493,9 +904,8 @@ function sendRequests() {
     highlightServer(srvId);
     i++;
   }, 400);
-  document.getElementById('lb-status').textContent = `Distributing ${6} requests across ${available.length} active servers...`;
+  document.getElementById('lb-status').textContent = `Distributing 6 requests across ${available.length} active servers...`;
 }
-
 function highlightServer(srvId) {
   const srv = document.getElementById(srvId);
   srv.style.background = 'rgba(88,166,255,0.3)';
@@ -505,7 +915,6 @@ function highlightServer(srvId) {
     srv.style.borderColor = srv2Down && srvId === 'srv2' ? 'rgba(248,81,73,0.4)' : 'rgba(63,185,80,0.4)';
   }, 350);
 }
-
 function toggleServer() {
   srv2Down = !srv2Down;
   const srv2 = document.getElementById('srv2');

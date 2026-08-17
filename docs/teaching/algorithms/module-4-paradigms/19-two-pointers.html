@@ -6,96 +6,144 @@
 <title>19 - Hai Con Trỏ (Two Pointers)</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0f0f1a; color: #e0e0f0; font-family: 'Segoe UI', monospace; min-height: 100vh; }
-  h1 { text-align: center; padding: 18px; background: linear-gradient(135deg, #1a1a2e, #16213e); font-size: 1.5rem; color: #38bdf8; border-bottom: 2px solid #0284c7; letter-spacing: 2px; }
-  .subtitle { text-align: center; font-size: 0.85rem; color: #94a3b8; padding: 6px; background: #16213e; }
+  body { background: #0a0a1a; color: #e0e0f0; font-family: 'Segoe UI', monospace; min-height: 100vh;
+    background-image: radial-gradient(ellipse at 30% 30%, rgba(59,130,246,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 70% 70%, rgba(239,68,68,0.06) 0%, transparent 60%); }
+  h1 { text-align: center; padding: 18px; background: linear-gradient(135deg, #0d1a2e, #0f2035);
+    font-size: 1.5rem; color: #38bdf8; border-bottom: 2px solid #0284c7; letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(56,189,248,0.5); }
+  .subtitle { text-align: center; font-size: 0.85rem; color: #94a3b8; padding: 6px; background: #0d1a2e; }
 
-  .tabs { display: flex; gap: 4px; padding: 10px 16px; background: #12122a; border-bottom: 1px solid #2d2d4e; }
-  .tab { padding: 8px 18px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem; border: 1px solid #2d2d4e; border-bottom: none; transition: all 0.2s; color: #94a3b8; background: #1a1a2e; }
-  .tab.active { background: #0284c7; color: #fff; border-color: #0284c7; }
+  @keyframes fadeScale { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 40% { transform: translateY(-12px); } 70% { transform: translateY(-6px); } }
+  @keyframes sparkle { 0% { box-shadow: 0 0 0 rgba(34,197,94,0); }
+    50% { box-shadow: 0 0 0 8px rgba(34,197,94,0.3), 0 0 0 16px rgba(34,197,94,0.1); }
+    100% { box-shadow: 0 0 0 20px rgba(34,197,94,0); } }
+  @keyframes slidePtr { 0% { transform: translateX(0); } 100% { transform: translateX(var(--target-x)); } }
+  @keyframes ptrPulse { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-4px) scale(1.15); } }
+  @keyframes ripple { 0% { box-shadow: 0 0 0 0 rgba(56,189,248,0.5); }
+    100% { box-shadow: 0 0 0 14px rgba(56,189,248,0); } }
+  @keyframes slideInLeft { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes countTick { 0% { transform: translateY(6px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+
+  .tabs { display: flex; gap: 4px; padding: 10px 16px; background: #0d1a2e; border-bottom: 1px solid #1a3050; }
+  .tab { padding: 8px 18px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem;
+    border: 1px solid #1a3050; border-bottom: none; transition: all 0.25s; color: #64748b; background: #0f2035; }
+  .tab.active { background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; border-color: #0284c7;
+    box-shadow: 0 -4px 15px rgba(2,132,199,0.4); }
 
   .main { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 110px); }
-  .viz-panel { padding: 16px; overflow-y: auto; background: #0f0f1a; }
-  .code-panel { background: #111128; border-left: 2px solid #2d2d4e; display: flex; flex-direction: column; }
+  .viz-panel { padding: 16px; overflow-y: auto; background: #0a0a1a; }
+  .code-panel { background: #0d1020; border-left: 2px solid #1a3050; display: flex; flex-direction: column; }
 
-  .controls { display: flex; gap: 8px; align-items: center; padding: 10px 16px; background: #12122a; border-top: 1px solid #2d2d4e; flex-wrap: wrap; }
-  .btn { padding: 7px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.15s; }
-  .btn-play { background: #0284c7; color: #fff; }
-  .btn-play:hover { background: #0369a1; }
+  /* Array visualization with smooth pointer movement */
+  .array-wrapper { position: relative; padding: 0 0 60px; margin: 8px 0; }
+  .array-track { display: flex; gap: 6px; padding: 8px 12px; justify-content: center; align-items: flex-end; }
+
+  .array-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; }
+  .cell-box { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; font-size: 1.1rem; font-weight: bold; border: 2px solid #1e3a5f;
+    background: linear-gradient(135deg, #1e293b, #162030); color: #e0e0f0;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .cell-box.ptr-left { border-color: #3b82f6; background: linear-gradient(135deg, #1e3a5f, #1a3060);
+    box-shadow: 0 0 20px rgba(59,130,246,0.5), 0 0 40px rgba(59,130,246,0.2); transform: translateY(-6px); }
+  .cell-box.ptr-right { border-color: #ef4444; background: linear-gradient(135deg, #3b1a1a, #3b0f0f);
+    box-shadow: 0 0 20px rgba(239,68,68,0.5), 0 0 40px rgba(239,68,68,0.2); transform: translateY(-6px); }
+  .cell-box.ptr-both { border-color: #a855f7; background: linear-gradient(135deg, #3b1a4e, #2d1060);
+    box-shadow: 0 0 20px rgba(168,85,247,0.5); transform: translateY(-6px); }
+  .cell-box.selected { border-color: #22c55e; background: linear-gradient(135deg, #052e16, #064e20);
+    box-shadow: 0 0 20px rgba(34,197,94,0.4); animation: bounce 0.6s ease, sparkle 0.8s ease; }
+  .cell-box.removed { background: #1a1a1a; border-color: #374151; opacity: 0.35; }
+  .cell-box.in-window { border-color: #f59e0b; background: linear-gradient(135deg, #1c1209, #2a1a05);
+    box-shadow: 0 0 10px rgba(245,158,11,0.3); }
+  .cell-box.wrote-to { animation: fadeScale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); border-color: #22c55e; }
+  .cell-idx { font-size: 0.65rem; color: #4b5563; }
+
+  /* Pointer arrows that slide */
+  .ptrs-row { position: absolute; bottom: 8px; left: 0; right: 0; display: flex;
+    gap: 6px; padding: 0 12px; justify-content: center; pointer-events: none; }
+  .ptr-slot { width: 50px; display: flex; justify-content: center; }
+  .ptr-label { font-size: 0.72rem; font-weight: bold; padding: 2px 8px; border-radius: 10px;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .ptr-label.left-ptr { color: #60a5fa; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3);
+    animation: ptrPulse 1.2s ease-in-out infinite; }
+  .ptr-label.right-ptr { color: #f87171; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3);
+    animation: ptrPulse 1.2s ease-in-out 0.3s infinite; }
+  .ptr-label.slow-ptr { color: #60a5fa; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3); }
+  .ptr-label.fast-ptr { color: #f87171; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); }
+
+  /* Status */
+  .status-row { display: flex; gap: 10px; margin: 10px 0; }
+  .status-card { flex: 1; padding: 10px 14px; border-radius: 10px;
+    background: linear-gradient(135deg, #0f1a2e, #0d1525); border: 1px solid #1a3050; font-size: 0.82rem; }
+  .status-card .label { font-size: 0.7rem; color: #4b6080; margin-bottom: 4px; }
+  .status-card .val { font-size: 1.15rem; font-weight: bold; color: #38bdf8;
+    transition: all 0.3s; animation: countTick 0.3s ease; }
+
+  /* Water viz */
+  .water-viz { display: flex; align-items: flex-end; gap: 4px; padding: 10px 12px 36px;
+    background: linear-gradient(180deg, #0a0a1a, #0d1020); border-radius: 12px;
+    border: 1px solid #1a3050; position: relative; min-height: 180px; overflow: visible; }
+  .water-bar { display: flex; flex-direction: column; align-items: center; gap: 2px; position: relative; }
+  .bar-fill { width: 36px; border-radius: 4px 4px 0 0; transition: all 0.4s ease; min-height: 4px; }
+  .bar-fill.ptr-l { box-shadow: 0 0 15px rgba(59,130,246,0.6); border: 2px solid #3b82f6; }
+  .bar-fill.ptr-r { box-shadow: 0 0 15px rgba(239,68,68,0.6); border: 2px solid #ef4444; }
+  .bar-idx-w { font-size: 0.6rem; color: #4b5563; }
+  .water-level { position: absolute; border: 2px dashed; border-radius: 3px; transition: all 0.5s ease;
+    pointer-events: none; display: flex; align-items: center; justify-content: center; }
+  .water-label { font-size: 0.7rem; font-weight: bold; }
+
+  /* Concept cards */
+  .concept-row { display: flex; gap: 10px; margin: 10px 0; }
+  .concept-card { flex: 1; padding: 12px; border-radius: 10px; font-size: 0.8rem; transition: all 0.3s; }
+  .concept-card:hover { transform: translateY(-2px); }
+  .concept-blue { background: linear-gradient(135deg, #1e3a5f22, #1a306022); border: 1px solid #3b82f6; }
+  .concept-red { background: linear-gradient(135deg, #3b1a1a22, #3b0f0f22); border: 1px solid #ef4444; }
+  .concept-title { font-weight: bold; margin-bottom: 4px; }
+  .concept-blue .concept-title { color: #60a5fa; }
+  .concept-red .concept-title { color: #f87171; }
+
+  .complexity-box { display: flex; gap: 10px; margin: 10px 0; }
+  .complexity-item { flex: 1; padding: 10px; border-radius: 8px; font-size: 0.8rem; text-align: center; transition: all 0.3s; }
+  .complexity-good { background: linear-gradient(135deg, #052e1622, #064e2022); border: 1px solid #22c55e; }
+  .complexity-bad { background: linear-gradient(135deg, #7f1d1d22, #6b0000); border: 1px solid #ef4444; }
+  .complexity-title { font-weight: bold; margin-bottom: 4px; }
+  .complexity-good .complexity-title { color: #22c55e; }
+  .complexity-bad .complexity-title { color: #ef4444; }
+
+  .result-box { padding: 12px 16px; border-radius: 10px; background: linear-gradient(135deg, #052e16, #064e20);
+    border: 2px solid #22c55e; font-size: 0.85rem; color: #86efac; margin: 8px 0;
+    animation: fadeScale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .result-box strong { color: #22c55e; font-size: 1rem; text-shadow: 0 0 10px rgba(34,197,94,0.6); }
+
+  .step-desc { padding: 10px 14px; border-radius: 8px; background: linear-gradient(90deg, #0f1a2e, #0d1525);
+    border-left: 3px solid #38bdf8; font-size: 0.82rem; color: #94a3b8; margin: 8px 0; min-height: 42px; }
+  .step-desc strong { color: #38bdf8; }
+
+  .code-header { padding: 10px 14px; background: #0f1a2e; border-bottom: 1px solid #1a3050;
+    font-size: 0.78rem; color: #0284c7; font-weight: bold; }
+  .code-body { flex: 1; overflow-y: auto; padding: 12px; font-size: 0.75rem;
+    font-family: 'Courier New', monospace; line-height: 1.7; }
+  .code-line { padding: 2px 8px; border-radius: 4px; transition: all 0.25s; white-space: pre; color: #4a6080; }
+  .code-line.hl { background: linear-gradient(90deg, #0284c733, transparent);
+    border-left: 3px solid #38bdf8; color: #e0f0ff; }
+  .kw { color: #c084fc; } .fn { color: #60a5fa; } .num { color: #fbbf24; }
+  .cmt { color: #3a5060; font-style: italic; } .str { color: #34d399; }
+
+  .controls { display: flex; gap: 8px; align-items: center; padding: 10px 16px;
+    background: #0d1a2e; border-top: 1px solid #1a3050; flex-wrap: wrap; }
+  .btn { padding: 7px 16px; border-radius: 8px; border: none; cursor: pointer;
+    font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
+  .btn-play { background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; }
+  .btn-play:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(2,132,199,0.4); }
   .btn-step { background: #0e7490; color: #fff; }
   .btn-reset { background: #374151; color: #d1d5db; }
   .speed-label { font-size: 0.78rem; color: #94a3b8; }
   input[type=range] { width: 90px; accent-color: #0284c7; }
 
-  /* Array visualization */
-  .array-container { display: flex; align-items: flex-end; gap: 4px; padding: 20px 12px 40px; position: relative; overflow-x: auto; justify-content: center; min-height: 130px; }
-  .array-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.3s ease; position: relative; }
-  .cell-box { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 1rem; font-weight: bold; border: 2px solid #374151; background: #1e293b; color: #e0e0f0; transition: all 0.3s ease; }
-  .cell-box.ptr-left { border-color: #3b82f6; background: #1e3a5f; box-shadow: 0 0 14px #3b82f699; transform: translateY(-4px); }
-  .cell-box.ptr-right { border-color: #ef4444; background: #3b0f0f; box-shadow: 0 0 14px #ef444499; transform: translateY(-4px); }
-  .cell-box.ptr-both { border-color: #a855f7; background: #3b1a4e; box-shadow: 0 0 14px #a855f799; }
-  .cell-box.selected { border-color: #22c55e; background: #052e16; }
-  .cell-box.removed { background: #7f1d1d33; border-color: #7f1d1d; opacity: 0.4; }
-  .cell-box.in-window { border-color: #f59e0b; background: #1c1209; }
-  .cell-idx { font-size: 0.65rem; color: #4b5563; }
-  .ptr-label { font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
-  .ptr-label.left { color: #3b82f6; }
-  .ptr-label.right { color: #ef4444; }
-
-  /* Pointer arrow below */
-  .ptr-arrow { position: absolute; bottom: 6px; font-size: 0.7rem; font-weight: bold; }
-  .ptr-arrow.l { color: #3b82f6; }
-  .ptr-arrow.r { color: #ef4444; }
-
-  /* Status cards */
-  .status-row { display: flex; gap: 10px; margin: 10px 0; }
-  .status-card { flex: 1; padding: 10px 14px; border-radius: 8px; background: #1a1a2e; border: 1px solid #2d2d4e; font-size: 0.82rem; }
-  .status-card .label { font-size: 0.7rem; color: #64748b; margin-bottom: 4px; }
-  .status-card .val { font-size: 1.1rem; font-weight: bold; color: #38bdf8; }
-
-  /* Complexity comparison */
-  .complexity-box { display: flex; gap: 10px; margin: 10px 0; }
-  .complexity-item { flex: 1; padding: 10px; border-radius: 8px; font-size: 0.8rem; text-align: center; }
-  .complexity-good { background: #052e16; border: 1px solid #22c55e; }
-  .complexity-bad { background: #7f1d1d22; border: 1px solid #ef4444; }
-  .complexity-title { font-weight: bold; margin-bottom: 4px; }
-  .complexity-good .complexity-title { color: #22c55e; }
-  .complexity-bad .complexity-title { color: #ef4444; }
-
-  /* Container water */
-  .water-viz { display: flex; align-items: flex-end; gap: 3px; padding: 10px 12px 30px; background: #0d0d1f; border-radius: 10px; border: 1px solid #2d2d4e; position: relative; min-height: 150px; overflow-x: auto; }
-  .water-bar { display: flex; flex-direction: column; align-items: center; gap: 2px; position: relative; }
-  .bar-fill { width: 34px; border-radius: 4px 4px 0 0; transition: all 0.3s; }
-  .bar-water { width: 34px; position: absolute; bottom: 0; border-radius: 0; transition: all 0.4s; opacity: 0.5; }
-  .bar-idx-w { font-size: 0.6rem; color: #4b5563; margin-top: 2px; }
-  .water-area { position: absolute; bottom: 30px; background: #1e40af44; border: 1px dashed #3b82f6; border-radius: 4px; transition: all 0.4s; }
-  .area-label { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 0.7rem; color: #60a5fa; white-space: nowrap; }
-
-  /* Concept */
-  .concept-row { display: flex; gap: 10px; margin: 10px 0; }
-  .concept-card { flex: 1; padding: 12px; border-radius: 8px; font-size: 0.8rem; }
-  .concept-blue { background: #1e3a5f; border: 1px solid #3b82f6; }
-  .concept-red { background: #3b0f0f; border: 1px solid #ef4444; }
-  .concept-title { font-weight: bold; margin-bottom: 4px; }
-  .concept-blue .concept-title { color: #60a5fa; }
-  .concept-red .concept-title { color: #f87171; }
-
-  /* Result */
-  .result-box { padding: 10px 14px; border-radius: 8px; background: #052e16; border: 1px solid #22c55e; font-size: 0.85rem; color: #86efac; margin: 8px 0; }
-  .result-box strong { color: #22c55e; font-size: 1rem; }
-
-  /* Step description */
-  .step-desc { padding: 10px 14px; border-radius: 8px; background: #1a1a2e; border-left: 3px solid #38bdf8; font-size: 0.82rem; color: #94a3b8; margin: 8px 0; min-height: 40px; }
-  .step-desc strong { color: #38bdf8; }
-
-  /* Code panel */
-  .code-header { padding: 10px 14px; background: #1a1a2e; border-bottom: 1px solid #2d2d4e; font-size: 0.78rem; color: #0284c7; font-weight: bold; }
-  .code-body { flex: 1; overflow-y: auto; padding: 12px; font-size: 0.75rem; font-family: 'Courier New', monospace; line-height: 1.7; }
-  .code-line { padding: 1px 8px; border-radius: 3px; transition: background 0.2s; white-space: pre; }
-  .code-line.hl { background: #0284c733; border-left: 3px solid #38bdf8; }
-  .kw { color: #c084fc; } .fn { color: #60a5fa; } .num { color: #fbbf24; } .cmt { color: #4b5563; font-style: italic; } .str { color: #34d399; }
-
-  .info-bar { padding: 8px 16px; background: #12122a; font-size: 0.78rem; color: #94a3b8; display: flex; gap: 16px; flex-wrap: wrap; }
+  .info-bar { padding: 8px 16px; background: #0d1a2e; font-size: 0.78rem; color: #94a3b8;
+    display: flex; gap: 16px; flex-wrap: wrap; }
   .info-item strong { color: #38bdf8; }
 
   section.prob { display: none; }
@@ -116,7 +164,6 @@
 <div class="main">
   <div class="viz-panel">
 
-    <!-- TWO SUM -->
     <section class="prob active" id="prob-twosum">
       <div class="concept-row">
         <div class="concept-card concept-blue">
@@ -128,41 +175,28 @@
           <div>Bắt đầu từ phải, giảm khi sum &gt; target</div>
         </div>
       </div>
-      <p style="font-size:0.8rem;color:#64748b;margin:6px 0;">
+      <p style="font-size:0.8rem;color:#4b6080;margin:6px 0;">
         Mảng đã sắp xếp: [2, 7, 11, 15, 18, 21] | Target = 22
       </p>
-      <div class="array-container" id="twosum-array"></div>
+      <div class="array-wrapper">
+        <div class="array-track" id="twosum-array"></div>
+        <div class="ptrs-row" id="twosum-ptrs"></div>
+      </div>
       <div class="step-desc" id="twosum-desc">Nhấn Play để bắt đầu</div>
       <div class="status-row">
-        <div class="status-card">
-          <div class="label">👉 Left index</div>
-          <div class="val" id="ts-left">—</div>
-        </div>
-        <div class="status-card">
-          <div class="label">👈 Right index</div>
-          <div class="val" id="ts-right">—</div>
-        </div>
-        <div class="status-card">
-          <div class="label">Sum hiện tại</div>
-          <div class="val" id="ts-sum">—</div>
-        </div>
+        <div class="status-card"><div class="label">👉 Left index</div><div class="val" id="ts-left">—</div></div>
+        <div class="status-card"><div class="label">👈 Right index</div><div class="val" id="ts-right">—</div></div>
+        <div class="status-card"><div class="label">Sum hiện tại</div><div class="val" id="ts-sum">—</div></div>
       </div>
       <div class="result-box" id="twosum-result" style="display:none">
         ✅ Tìm thấy! <strong id="twosum-ans">—</strong>
       </div>
       <div class="complexity-box">
-        <div class="complexity-item complexity-good">
-          <div class="complexity-title">Two Pointers</div>
-          <div>O(n) time · O(1) space</div>
-        </div>
-        <div class="complexity-item complexity-bad">
-          <div class="complexity-title">Brute Force</div>
-          <div>O(n²) time · O(1) space</div>
-        </div>
+        <div class="complexity-item complexity-good"><div class="complexity-title">Two Pointers</div><div>O(n) time · O(1) space</div></div>
+        <div class="complexity-item complexity-bad"><div class="complexity-title">Brute Force</div><div>O(n²) time · O(1) space</div></div>
       </div>
     </section>
 
-    <!-- REMOVE DUPLICATES -->
     <section class="prob" id="prob-dedup">
       <div class="concept-row">
         <div class="concept-card concept-blue">
@@ -174,31 +208,24 @@
           <div>Quét tìm phần tử khác với slow</div>
         </div>
       </div>
-      <p style="font-size:0.8rem;color:#64748b;margin:6px 0;">
+      <p style="font-size:0.8rem;color:#4b6080;margin:6px 0;">
         Mảng: [1, 1, 2, 2, 3, 4, 4, 5] — Xóa trùng in-place
       </p>
-      <div class="array-container" id="dedup-array"></div>
+      <div class="array-wrapper">
+        <div class="array-track" id="dedup-array"></div>
+        <div class="ptrs-row" id="dedup-ptrs"></div>
+      </div>
       <div class="step-desc" id="dedup-desc">Nhấn Play để bắt đầu</div>
       <div class="status-row">
-        <div class="status-card">
-          <div class="label">🐢 Slow (ghi vào)</div>
-          <div class="val" id="dd-slow">—</div>
-        </div>
-        <div class="status-card">
-          <div class="label">🐇 Fast (quét)</div>
-          <div class="val" id="dd-fast">—</div>
-        </div>
-        <div class="status-card">
-          <div class="label">Unique count</div>
-          <div class="val" id="dd-count">—</div>
-        </div>
+        <div class="status-card"><div class="label">🐢 Slow (ghi vào)</div><div class="val" id="dd-slow">—</div></div>
+        <div class="status-card"><div class="label">🐇 Fast (quét)</div><div class="val" id="dd-fast">—</div></div>
+        <div class="status-card"><div class="label">Unique count</div><div class="val" id="dd-count">—</div></div>
       </div>
       <div class="result-box" id="dedup-result" style="display:none">
         ✅ Hoàn thành! <strong id="dedup-ans">—</strong>
       </div>
     </section>
 
-    <!-- CONTAINER WATER -->
     <section class="prob" id="prob-water">
       <div class="concept-row">
         <div class="concept-card concept-blue">
@@ -210,7 +237,7 @@
           <div>Giữ nguyên cạnh ngắn → width giảm → không thể tốt hơn</div>
         </div>
       </div>
-      <p style="font-size:0.8rem;color:#64748b;margin:6px 0;">
+      <p style="font-size:0.8rem;color:#4b6080;margin:6px 0;">
         Heights: [1, 8, 6, 2, 5, 4, 8, 3, 7] — Tìm max water
       </p>
       <div class="water-viz" id="water-viz"></div>
@@ -231,7 +258,7 @@
   <div class="code-panel">
     <div class="code-header">📄 Pseudocode</div>
     <div class="code-body" id="code-body"></div>
-    <div class="info-bar" id="info-bar">
+    <div class="info-bar">
       <div class="info-item"><strong>L:</strong> <span id="info-left">—</span></div>
       <div class="info-item"><strong>R:</strong> <span id="info-right">—</span></div>
       <div class="info-item"><strong>Step:</strong> <span id="info-step">0</span></div>
@@ -312,9 +339,6 @@ const codes = {
   ]
 };
 
-// ============================================================
-// STEP GENERATORS
-// ============================================================
 function genTwoSumSteps() {
   const arr = [2, 7, 11, 15, 18, 21];
   const target = 22;
@@ -339,8 +363,7 @@ function genTwoSumSteps() {
 
 function genDedupSteps() {
   const arr = [1, 1, 2, 2, 3, 4, 4, 5];
-  let work = [...arr];
-  let slow = 0, fast = 1;
+  let work = [...arr], slow = 0, fast = 1;
   const steps = [];
   steps.push({ arr: [...work], slow, fast, desc: 'Bắt đầu: slow=0, fast=1', codeLine: 2 });
   while (fast < work.length) {
@@ -367,97 +390,122 @@ function genWaterSteps() {
     const prev = maxA;
     if (area > maxA) { maxA = area; maxL = L; maxR = R; }
     const move = h[L] < h[R] ? 'L' : 'R';
-    steps.push({ L, R, h, area, maxA, maxL, maxR, desc: `Area = min(${h[L]},${h[R]}) × ${R - L} = ${area}${area > prev ? ' ← NEW MAX!' : ''} → di ${move}++`, codeLine: area > prev ? 9 : 12 });
+    steps.push({ L, R, h, area, maxA, maxL, maxR,
+      desc: `Area = min(${h[L]},${h[R]}) × ${R-L} = ${area}${area > prev ? ' ← NEW MAX!' : ''} → di ${move}++`,
+      codeLine: area > prev ? 9 : 12, isNewMax: area > prev });
     if (h[L] < h[R]) L++; else R--;
   }
   steps.push({ L, R, h, area: 0, maxA, maxL, maxR, desc: `L≥R — hoàn thành! Max = ${maxA}`, codeLine: 17, done: true, ans: maxA });
   return steps;
 }
 
-// ============================================================
 // RENDER
-// ============================================================
-function renderTwoSumArray(s) {
-  const el = document.getElementById('twosum-array');
-  el.innerHTML = s.arr.map((v, i) => {
-    let cls = '';
-    if (i === s.L && i === s.R) cls = 'ptr-both';
-    else if (i === s.L) cls = 'ptr-left';
-    else if (i === s.R) cls = 'ptr-right';
-    if (s.done && (i === s.L || i === s.R)) cls = 'selected';
+function renderArray(containerId, ptrsId, arr, L, R, extraCls = {}, ptrLabels = {}) {
+  const el = document.getElementById(containerId);
+  const ptrsEl = document.getElementById(ptrsId);
+
+  el.innerHTML = arr.map((v, i) => {
+    let cls = extraCls[i] || '';
+    if (!cls) {
+      if (i === L && i === R) cls = 'ptr-both';
+      else if (i === L) cls = 'ptr-left';
+      else if (i === R) cls = 'ptr-right';
+    }
     return `<div class="array-cell">
       <div class="cell-box ${cls}">${v}</div>
       <div class="cell-idx">[${i}]</div>
-      ${i === s.L ? '<div class="ptr-label left">L</div>' : ''}
-      ${i === s.R && i !== s.L ? '<div class="ptr-label right">R</div>' : ''}
-      ${i === s.R && i === s.L ? '<div class="ptr-label left">L=R</div>' : ''}
     </div>`;
   }).join('');
+
+  if (ptrsEl) {
+    ptrsEl.innerHTML = arr.map((_, i) => {
+      const labels = [];
+      if (ptrLabels[i]) labels.push(...ptrLabels[i]);
+      return `<div class="ptr-slot">${labels.map(l => `<span class="ptr-label ${l.cls}">${l.text}</span>`).join('')}</div>`;
+    }).join('');
+  }
+}
+
+function renderTwoSumArray(s) {
+  const extraCls = {};
+  if (s.done) { extraCls[s.L] = 'selected'; extraCls[s.R] = 'selected'; }
+
+  const ptrLabels = {};
+  if (s.L === s.R) ptrLabels[s.L] = [{ text: 'L=R', cls: 'left-ptr' }];
+  else {
+    if (s.L !== undefined) ptrLabels[s.L] = [{ text: 'L', cls: 'left-ptr' }];
+    if (s.R !== undefined) ptrLabels[s.R] = [{ text: 'R', cls: 'right-ptr' }];
+  }
+
+  renderArray('twosum-array', 'twosum-ptrs', s.arr, s.L, s.R, extraCls, ptrLabels);
   document.getElementById('ts-left').textContent = `${s.L} (${s.arr[s.L]})`;
   document.getElementById('ts-right').textContent = `${s.R} (${s.arr[s.R]})`;
   document.getElementById('ts-sum').textContent = s.sum !== undefined ? s.sum : '—';
   document.getElementById('twosum-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
-  if (s.ans) {
-    document.getElementById('twosum-result').style.display = 'block';
-    document.getElementById('twosum-ans').textContent = s.ans;
-  }
+  if (s.ans) { document.getElementById('twosum-result').style.display = 'block'; document.getElementById('twosum-ans').textContent = s.ans; }
 }
 
 function renderDedupArray(s) {
-  const el = document.getElementById('dedup-array');
-  el.innerHTML = s.arr.map((v, i) => {
-    let cls = '';
-    if (i === s.slow) cls = 'ptr-left';
-    if (i === s.fast) cls = i === s.slow ? 'ptr-both' : 'ptr-right';
-    if (i > s.slow && s.done) cls = 'removed';
-    if (s.wrote === i) cls += ' selected';
-    return `<div class="array-cell">
-      <div class="cell-box ${cls}">${v}</div>
-      <div class="cell-idx">[${i}]</div>
-      ${i === s.slow ? '<div class="ptr-label left">slow</div>' : ''}
-      ${i === s.fast && i !== s.slow ? '<div class="ptr-label right">fast</div>' : ''}
-    </div>`;
-  }).join('');
+  const extraCls = {};
+  s.arr.forEach((_, i) => {
+    if (i === s.slow && i === s.fast) extraCls[i] = 'ptr-both';
+    else if (i === s.slow) extraCls[i] = 'ptr-left';
+    else if (i === s.fast) extraCls[i] = 'ptr-right';
+    else if (i > s.slow && s.done) extraCls[i] = 'removed';
+    if (s.wrote === i) extraCls[i] = (extraCls[i] || '') + ' wrote-to';
+  });
+
+  const ptrLabels = {};
+  if (s.slow !== undefined) ptrLabels[s.slow] = [{ text: 'slow', cls: 'slow-ptr' }];
+  if (s.fast < s.arr.length && s.fast !== s.slow) ptrLabels[s.fast] = [{ text: 'fast', cls: 'fast-ptr' }];
+
+  renderArray('dedup-array', 'dedup-ptrs', s.arr, s.slow, s.fast, extraCls, ptrLabels);
   document.getElementById('dd-slow').textContent = s.slow;
   document.getElementById('dd-fast').textContent = s.fast < s.arr.length ? s.fast : 'end';
   document.getElementById('dd-count').textContent = s.slow + 1;
   document.getElementById('dedup-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
-  if (s.ans) {
-    document.getElementById('dedup-result').style.display = 'block';
-    document.getElementById('dedup-ans').textContent = s.ans;
-  }
+  if (s.ans) { document.getElementById('dedup-result').style.display = 'block'; document.getElementById('dedup-ans').textContent = s.ans; }
 }
 
 function renderWater(s) {
   const el = document.getElementById('water-viz');
   const maxH = Math.max(...s.h);
   el.innerHTML = s.h.map((v, i) => {
-    let border = '1px solid #374151';
-    let extraStyle = '';
-    if (i === s.L) border = '2px solid #3b82f6', extraStyle = 'box-shadow:0 0 10px #3b82f699';
-    if (i === s.R) border = '2px solid #ef4444', extraStyle = 'box-shadow:0 0 10px #ef444499';
-    const heightPx = Math.round((v / maxH) * 110);
+    const isL = i === s.L, isR = i === s.R;
+    const heightPx = Math.round((v / maxH) * 120);
+    const bg = isL ? 'linear-gradient(180deg,#3b82f6,#1e3a5f)' : isR ? 'linear-gradient(180deg,#ef4444,#3b0f0f)' : 'linear-gradient(180deg,#374151,#1e293b)';
+    const cls = isL ? 'ptr-l' : isR ? 'ptr-r' : '';
     return `<div class="water-bar">
-      <div class="bar-fill" style="height:${heightPx}px;background:#334155;border:${border};${extraStyle}">
-        <div style="font-size:0.65rem;color:#94a3b8;text-align:center;margin-top:2px;">${v}</div>
+      <div class="bar-fill ${cls}" style="height:${heightPx}px;background:${bg};">
+        <div style="font-size:0.65rem;color:#e0e0f0;text-align:center;padding-top:2px;">${v}</div>
       </div>
-      <div class="bar-idx-w">${i}${i === s.L ? '←L' : ''}${i === s.R ? '←R' : ''}</div>
+      <div class="bar-idx-w" style="color:${isL?'#60a5fa':isR?'#f87171':'#4b5563'}">${i}${isL?'(L)':isR?'(R)':''}</div>
     </div>`;
   }).join('');
+
+  // Draw water level line between L and R
+  if (s.L !== undefined && s.R !== undefined && s.L < s.R) {
+    const waterH = Math.min(s.h[s.L], s.h[s.R]);
+    const pct = (waterH / maxH) * 120;
+    const waterDiv = document.createElement('div');
+    waterDiv.className = 'water-level';
+    waterDiv.style.cssText = `left:${s.L * 44}px;right:${(s.h.length - 1 - s.R) * 44}px;
+      bottom:${pct + 20}px;height:${pct}px;
+      border-color:rgba(59,130,246,0.4);background:rgba(59,130,246,0.08);`;
+    waterDiv.innerHTML = `<span class="water-label" style="color:#60a5fa;">${s.area}</span>`;
+    el.style.position = 'relative';
+    el.appendChild(waterDiv);
+  }
+
   document.getElementById('wt-left').textContent = `${s.L} (h=${s.h[s.L]})`;
   document.getElementById('wt-right').textContent = `${s.R} (h=${s.h[s.R]})`;
   document.getElementById('wt-cur').textContent = s.area;
   document.getElementById('wt-max').textContent = s.maxA;
   document.getElementById('water-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
-  if (s.done) {
-    document.getElementById('water-result').style.display = 'block';
-    document.getElementById('water-ans').textContent = s.ans;
-  }
+  if (s.done) { document.getElementById('water-result').style.display = 'block'; document.getElementById('water-ans').textContent = s.ans; }
 }
 
-// ============================================================
 // PLAYBACK
-// ============================================================
 function highlightCode(line) {
   document.querySelectorAll('.code-line').forEach((el, i) => el.classList.toggle('hl', i === line));
 }
@@ -472,7 +520,7 @@ function applyStep(s) {
   document.getElementById('info-right').textContent = s.R !== undefined ? s.R : (s.fast !== undefined ? s.fast : '—');
 }
 
-function getDelay() { return [900,650,450,280,150][parseInt(document.getElementById('speed-slider').value) - 1]; }
+function getDelay() { return [900,650,450,280,150][parseInt(document.getElementById('speed-slider').value)-1]; }
 
 function stepOnce() {
   if (stepIndex >= steps.length) return;
@@ -487,52 +535,38 @@ function togglePlay() {
   document.getElementById('btn-play').textContent = '⏸ Pause';
   function tick() {
     if (stepIndex >= steps.length) { stopPlay(); return; }
-    stepOnce();
-    timer = setTimeout(tick, getDelay());
+    stepOnce(); timer = setTimeout(tick, getDelay());
   }
   tick();
 }
 
-function stopPlay() {
-  playing = false; clearTimeout(timer);
-  document.getElementById('btn-play').textContent = '▶ Play';
-}
+function stopPlay() { playing = false; clearTimeout(timer); document.getElementById('btn-play').textContent = '▶ Play'; }
 
 function resetAll() {
   stopPlay(); stepIndex = 0;
   document.getElementById('info-step').textContent = '0';
+  ['twosum-result','dedup-result','water-result'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
   initProblem(currentProblem);
 }
 
 function renderCode(prob) {
-  const lines = codes[prob];
-  document.getElementById('code-body').innerHTML = lines.map((l, i) =>
-    `<div class="code-line" data-line="${i}">${l || '&nbsp;'}</div>`
-  ).join('');
+  document.getElementById('code-body').innerHTML = codes[prob].map((l, i) =>
+    `<div class="code-line" data-line="${i}">${l || '&nbsp;'}</div>`).join('');
 }
 
 function initProblem(prob) {
   renderCode(prob);
-  if (prob === 'twosum') {
-    steps = genTwoSumSteps();
-    document.getElementById('twosum-result').style.display = 'none';
-    renderTwoSumArray(steps[0]);
-  } else if (prob === 'dedup') {
-    steps = genDedupSteps();
-    document.getElementById('dedup-result').style.display = 'none';
-    renderDedupArray(steps[0]);
-  } else if (prob === 'water') {
-    steps = genWaterSteps();
-    document.getElementById('water-result').style.display = 'none';
-    renderWater(steps[0]);
-  }
+  if (prob === 'twosum') { steps = genTwoSumSteps(); renderTwoSumArray(steps[0]); }
+  else if (prob === 'dedup') { steps = genDedupSteps(); renderDedupArray(steps[0]); }
+  else if (prob === 'water') { steps = genWaterSteps(); renderWater(steps[0]); }
 }
 
 function switchProblem(prob) {
   stopPlay(); currentProblem = prob; stepIndex = 0;
-  document.querySelectorAll('.tab').forEach((t, i) => {
-    t.classList.toggle('active', ['twosum', 'dedup', 'water'][i] === prob);
-  });
+  document.querySelectorAll('.tab').forEach((t, i) =>
+    t.classList.toggle('active', ['twosum','dedup','water'][i] === prob));
   document.querySelectorAll('.prob').forEach(s => s.classList.remove('active'));
   document.getElementById(`prob-${prob}`).classList.add('active');
   initProblem(prob);

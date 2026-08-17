@@ -6,23 +6,136 @@
 <title>18 - Đệ Quy (Recursion)</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0f0f1a; color: #e0e0f0; font-family: 'Segoe UI', monospace; min-height: 100vh; }
-  h1 { text-align: center; padding: 18px; background: linear-gradient(135deg, #1a1a2e, #16213e); font-size: 1.5rem; color: #a78bfa; border-bottom: 2px solid #7c3aed; letter-spacing: 2px; }
+  body { background: #0a0a1a; color: #e0e0f0; font-family: 'Segoe UI', monospace; min-height: 100vh;
+    background-image: radial-gradient(ellipse at 20% 20%, rgba(99,102,241,0.05) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, rgba(139,92,246,0.05) 0%, transparent 60%); }
+  h1 { text-align: center; padding: 18px; background: linear-gradient(135deg, #12122a, #1a1a3e);
+    font-size: 1.5rem; color: #a78bfa; border-bottom: 2px solid #7c3aed; letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(167,139,250,0.5); }
   .subtitle { text-align: center; font-size: 0.85rem; color: #94a3b8; padding: 6px; background: #16213e; }
 
+  /* Global keyframes */
+  @keyframes fadeScale { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  @keyframes pulse { 0%,100% { transform: scale(1); box-shadow: 0 0 0 rgba(99,102,241,0); }
+    50% { transform: scale(1.08); box-shadow: 0 0 20px rgba(167,139,250,0.6); } }
+  @keyframes glow { 0%,100% { box-shadow: 0 0 5px currentColor; } 50% { box-shadow: 0 0 25px currentColor, 0 0 40px currentColor; } }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+  @keyframes ripple { 0% { box-shadow: 0 0 0 0 rgba(99,102,241,0.5); }
+    100% { box-shadow: 0 0 0 18px rgba(99,102,241,0); } }
+  @keyframes slideDown { 0% { transform: translateY(-40px) scaleX(0.8); opacity: 0; }
+    60% { transform: translateY(4px) scaleX(1.02); opacity: 1; }
+    100% { transform: translateY(0) scaleX(1); opacity: 1; } }
+  @keyframes slideUp { 0% { transform: translateY(0) scaleX(1); opacity: 1; }
+    100% { transform: translateY(-40px) scaleX(0.8); opacity: 0; } }
+  @keyframes bounceIn { 0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+    60% { transform: scale(1.15) rotate(2deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); opacity: 1; } }
+  @keyframes pulseRed { 0%,100% { box-shadow: 0 0 0 rgba(239,68,68,0); }
+    50% { box-shadow: 0 0 20px rgba(239,68,68,0.8), 0 0 40px rgba(239,68,68,0.4); } }
+  @keyframes nodeBloom { 0% { r: 0; opacity: 0; } 70% { r: 26; opacity: 1; } 100% { r: 22; opacity: 1; } }
+  @keyframes diskFly { 0% { transform: translateY(0); } 40% { transform: translateY(-80px); }
+    100% { transform: translateY(0); } }
+  @keyframes countUp { 0% { transform: translateY(8px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+
   .tabs { display: flex; gap: 4px; padding: 10px 16px; background: #12122a; border-bottom: 1px solid #2d2d4e; }
-  .tab { padding: 8px 18px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem; border: 1px solid #2d2d4e; border-bottom: none; transition: all 0.2s; color: #94a3b8; background: #1a1a2e; }
-  .tab.active { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+  .tab { padding: 8px 18px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem;
+    border: 1px solid #2d2d4e; border-bottom: none; transition: all 0.25s; color: #94a3b8; background: #1a1a2e; }
+  .tab.active { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; border-color: #7c3aed;
+    box-shadow: 0 -4px 15px rgba(124,58,237,0.4); }
+  .tab:hover:not(.active) { background: #252545; color: #c4b5fd; }
 
   .main { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 110px); }
-  .viz-panel { padding: 16px; overflow-y: auto; background: #0f0f1a; }
+  .viz-panel { padding: 16px; overflow-y: auto; background: #0a0a1a; }
   .code-panel { background: #111128; border-left: 2px solid #2d2d4e; display: flex; flex-direction: column; }
 
-  /* Controls */
-  .controls { display: flex; gap: 8px; align-items: center; padding: 10px 16px; background: #12122a; border-top: 1px solid #2d2d4e; flex-wrap: wrap; }
-  .btn { padding: 7px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.15s; }
-  .btn-play { background: #7c3aed; color: #fff; }
-  .btn-play:hover { background: #6d28d9; }
+  /* Call Stack */
+  .stack-area { display: flex; flex-direction: column-reverse; align-items: center; min-height: 280px;
+    gap: 4px; padding: 14px; border: 1px solid #2d2d4e; border-radius: 12px;
+    background: linear-gradient(180deg, #0a0a1a, #0d0d1f); position: relative; overflow: hidden; }
+  .stack-area::before { content: 'CALL STACK'; position: absolute; top: 10px; left: 14px;
+    font-size: 0.65rem; color: #4b5563; letter-spacing: 3px; }
+  .stack-area::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, transparent, #7c3aed, transparent); opacity: 0.6; }
+
+  .stack-frame { width: 88%; max-width: 340px; padding: 10px 16px; border-radius: 8px; border: 2px solid;
+    font-size: 0.82rem; font-family: monospace; position: relative; }
+  .stack-frame.entering { animation: slideDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  .stack-frame.exiting { animation: slideUp 0.35s ease-in forwards; }
+  .stack-frame.active { border-color: #a78bfa; background: linear-gradient(135deg, #1e1b4b, #2d1b69);
+    box-shadow: 0 0 20px rgba(124,58,237,0.4), inset 0 1px 0 rgba(167,139,250,0.2);
+    animation: pulse 1.5s ease-in-out infinite; }
+  .stack-frame.active.entering { animation: slideDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+    pulse 1.5s ease-in-out 0.4s infinite; }
+  .stack-frame.waiting { border-color: #374151; background: #1a1a2e; opacity: 0.75; }
+  .stack-frame.base { border-color: #10b981; background: linear-gradient(135deg, #064e3b22, #065f46);
+    box-shadow: 0 0 15px rgba(16,185,129,0.3); animation: glow 2s ease-in-out infinite; }
+  .frame-name { color: #a78bfa; font-weight: bold; }
+  .frame-param { color: #fbbf24; }
+  .frame-return { color: #34d399; font-size: 0.75rem; margin-top: 4px; animation: countUp 0.3s ease; }
+  .frame-depth { position: absolute; right: 10px; top: 8px; font-size: 0.65rem; color: #4b5563; }
+
+  .result-box { margin: 12px 0; padding: 14px 18px; border-radius: 10px; background: #0d2818;
+    border: 2px solid #10b981; font-size: 0.9rem; animation: bounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .result-box span { color: #34d399; font-weight: bold; font-size: 1.2rem;
+    text-shadow: 0 0 10px rgba(52,211,153,0.6); }
+
+  /* Fibonacci tree */
+  .fib-tree { overflow-x: auto; padding: 8px; }
+  .tree-svg { display: block; margin: 0 auto; }
+
+  /* Hanoi */
+  .hanoi-area { display: flex; gap: 16px; align-items: flex-end; justify-content: center;
+    padding: 16px; background: linear-gradient(180deg, #0a0a1a, #0d0d1f);
+    border-radius: 12px; border: 1px solid #2d2d4e; min-height: 200px; position: relative; }
+  .peg-container { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
+  .peg-name { font-size: 0.72rem; color: #94a3b8; margin-bottom: 4px; }
+  .peg-pole { width: 6px; background: linear-gradient(180deg, #6b7280, #374151);
+    border-radius: 3px; min-height: 120px; box-shadow: 0 0 8px rgba(107,114,128,0.3); }
+  .peg-base { height: 10px; border-radius: 4px;
+    background: linear-gradient(90deg, #374151, #4b5563, #374151); width: 100%; }
+  .disks { display: flex; flex-direction: column-reverse; align-items: center; gap: 3px; min-height: 120px; }
+  .disk { height: 24px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: bold; color: #fff; border: 2px solid rgba(255,255,255,0.2);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .disk.flying { animation: diskFly 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+  .move-log { max-height: 120px; overflow-y: auto; font-size: 0.75rem; color: #94a3b8; padding: 8px;
+    background: #0d0d1f; border-radius: 8px; border: 1px solid #1e293b; }
+  .move-item { padding: 3px 0; border-bottom: 1px solid #1e293b22; transition: all 0.3s; }
+  .move-item.current { color: #a78bfa; font-weight: bold; text-shadow: 0 0 8px rgba(167,139,250,0.5); }
+
+  .warning-box { padding: 10px 14px; border-radius: 8px; background: #7f1d1d22;
+    border: 1px solid #ef4444; font-size: 0.8rem; color: #fca5a5;
+    animation: shake 0.5s ease; display: flex; align-items: center; gap: 8px; }
+
+  .concept-row { display: flex; gap: 10px; margin: 10px 0; }
+  .concept-card { flex: 1; padding: 12px; border-radius: 10px; font-size: 0.8rem; transition: all 0.3s; }
+  .concept-card:hover { transform: translateY(-2px); }
+  .concept-base { background: linear-gradient(135deg, #064e3b22, #065f4622); border: 1px solid #10b981; }
+  .concept-rec { background: linear-gradient(135deg, #1e1b4b, #2d1b6922); border: 1px solid #7c3aed; }
+  .concept-title { font-weight: bold; margin-bottom: 4px; }
+  .concept-base .concept-title { color: #34d399; }
+  .concept-rec .concept-title { color: #a78bfa; }
+
+  /* Code panel */
+  .code-header { padding: 10px 14px; background: #1a1a2e; border-bottom: 1px solid #2d2d4e;
+    font-size: 0.78rem; color: #7c3aed; font-weight: bold; }
+  .code-body { flex: 1; overflow-y: auto; padding: 12px; font-size: 0.75rem;
+    font-family: 'Courier New', monospace; line-height: 1.7; }
+  .code-line { padding: 2px 8px; border-radius: 4px; transition: all 0.25s; white-space: pre; }
+  .code-line.hl { background: linear-gradient(90deg, #7c3aed33, transparent);
+    border-left: 3px solid #a78bfa; color: #e0e0f0; }
+  .kw { color: #c084fc; } .fn { color: #60a5fa; } .num { color: #fbbf24; }
+  .cmt { color: #4b5563; font-style: italic; } .str { color: #34d399; }
+
+  .controls { display: flex; gap: 8px; align-items: center; padding: 10px 16px;
+    background: #12122a; border-top: 1px solid #2d2d4e; flex-wrap: wrap; }
+  .btn { padding: 7px 16px; border-radius: 8px; border: none; cursor: pointer;
+    font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
+  .btn-play { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; }
+  .btn-play:hover { background: linear-gradient(135deg, #8b5cf6, #7c3aed); transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(124,58,237,0.4); }
   .btn-step { background: #0e7490; color: #fff; }
   .btn-step:hover { background: #0891b2; }
   .btn-reset { background: #374151; color: #d1d5db; }
@@ -30,73 +143,16 @@
   .speed-label { font-size: 0.78rem; color: #94a3b8; }
   input[type=range] { width: 90px; accent-color: #7c3aed; }
 
-  /* Call Stack Tower */
-  .stack-area { display: flex; flex-direction: column-reverse; align-items: center; min-height: 260px; gap: 3px; padding: 12px; border: 1px solid #2d2d4e; border-radius: 10px; background: #0d0d1f; position: relative; }
-  .stack-area::before { content: '📚 Call Stack'; position: absolute; top: 8px; left: 12px; font-size: 0.75rem; color: #64748b; }
-  .stack-frame { width: 85%; max-width: 320px; padding: 10px 14px; border-radius: 6px; border: 2px solid; font-size: 0.82rem; font-family: monospace; position: relative; transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .stack-frame.active { border-color: #a78bfa; background: #1e1b4b; box-shadow: 0 0 16px #7c3aed55; }
-  .stack-frame.waiting { border-color: #374151; background: #1a1a2e; opacity: 0.7; }
-  .stack-frame.base { border-color: #10b981; background: #064e3b22; }
-  .frame-name { color: #a78bfa; font-weight: bold; }
-  .frame-param { color: #fbbf24; }
-  .frame-return { color: #34d399; font-size: 0.75rem; margin-top: 4px; }
-  .frame-depth { position: absolute; right: 10px; top: 8px; font-size: 0.68rem; color: #4b5563; }
-  .frame-enter { animation: slideUp 0.3s ease; }
-  .frame-exit { animation: slideDown 0.3s ease forwards; }
-  @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scaleX(0.85); } to { opacity: 1; transform: translateY(0) scaleX(1); } }
-  @keyframes slideDown { to { opacity: 0; transform: translateY(-20px) scaleX(0.85); } }
-
-  /* Result display */
-  .result-box { margin: 10px 0; padding: 12px 16px; border-radius: 8px; background: #0d2818; border: 1px solid #10b981; font-size: 0.9rem; }
-  .result-box span { color: #34d399; font-weight: bold; font-size: 1.1rem; }
-
-  /* Fibonacci tree */
-  .fib-tree { overflow-x: auto; padding: 8px; }
-  .tree-svg { display: block; margin: 0 auto; }
-
-  /* Hanoi */
-  .hanoi-area { display: flex; gap: 16px; align-items: flex-end; justify-content: center; padding: 16px; background: #0d0d1f; border-radius: 10px; border: 1px solid #2d2d4e; min-height: 180px; }
-  .peg-container { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
-  .peg-name { font-size: 0.72rem; color: #94a3b8; margin-bottom: 4px; }
-  .peg-pole { width: 6px; background: #4b5563; border-radius: 3px; min-height: 100px; position: relative; }
-  .peg-base { height: 10px; border-radius: 4px; background: #374151; width: 100%; }
-  .disks { display: flex; flex-direction: column-reverse; align-items: center; gap: 3px; min-height: 100px; }
-  .disk { height: 22px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; color: #fff; transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
-
-  /* Move log */
-  .move-log { max-height: 110px; overflow-y: auto; font-size: 0.75rem; color: #94a3b8; padding: 8px; background: #0d0d1f; border-radius: 6px; border: 1px solid #1e293b; }
-  .move-log .move-item { padding: 2px 0; border-bottom: 1px solid #1e293b22; }
-  .move-item.current { color: #a78bfa; font-weight: bold; }
-
-  /* Warning */
-  .warning-box { padding: 10px 14px; border-radius: 6px; background: #7f1d1d22; border: 1px solid #ef4444; font-size: 0.8rem; color: #fca5a5; display: flex; align-items: center; gap: 8px; }
-
-  /* Concept cards */
-  .concept-row { display: flex; gap: 10px; margin: 10px 0; }
-  .concept-card { flex: 1; padding: 12px; border-radius: 8px; font-size: 0.8rem; }
-  .concept-base { background: #064e3b22; border: 1px solid #10b981; }
-  .concept-rec { background: #1e1b4b; border: 1px solid #7c3aed; }
-  .concept-title { font-weight: bold; margin-bottom: 4px; }
-  .concept-base .concept-title { color: #34d399; }
-  .concept-rec .concept-title { color: #a78bfa; }
-
-  /* Code panel */
-  .code-header { padding: 10px 14px; background: #1a1a2e; border-bottom: 1px solid #2d2d4e; font-size: 0.78rem; color: #7c3aed; font-weight: bold; }
-  .code-body { flex: 1; overflow-y: auto; padding: 12px; font-size: 0.75rem; font-family: 'Courier New', monospace; line-height: 1.7; }
-  .code-line { padding: 1px 8px; border-radius: 3px; transition: background 0.2s; white-space: pre; }
-  .code-line.hl { background: #7c3aed33; border-left: 3px solid #a78bfa; }
-  .kw { color: #c084fc; }
-  .fn { color: #60a5fa; }
-  .num { color: #fbbf24; }
-  .cmt { color: #4b5563; font-style: italic; }
-  .str { color: #34d399; }
-
-  /* Info bar */
-  .info-bar { padding: 8px 16px; background: #12122a; font-size: 0.78rem; color: #94a3b8; display: flex; gap: 16px; flex-wrap: wrap; }
+  .info-bar { padding: 8px 16px; background: #12122a; font-size: 0.78rem; color: #94a3b8;
+    display: flex; gap: 16px; flex-wrap: wrap; }
   .info-item strong { color: #a78bfa; }
 
   section.prob { display: none; }
   section.prob.active { display: block; }
+
+  /* SVG node animations */
+  .fib-node-enter { animation: fadeScale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+  .fib-node-dup { animation: pulseRed 1s ease-in-out infinite; }
 </style>
 </head>
 <body>
@@ -113,7 +169,6 @@
 <div class="main">
   <div class="viz-panel">
 
-    <!-- FACTORIAL -->
     <section class="prob active" id="prob-factorial">
       <div class="concept-row">
         <div class="concept-card concept-base">
@@ -128,21 +183,17 @@
       <p style="font-size:0.8rem;color:#64748b;margin:6px 0 10px;">
         Tính factorial(5) — quan sát stack lớn dần rồi thu nhỏ khi trả kết quả
       </p>
-
       <div class="stack-area" id="factorial-stack">
-        <div style="color:#2d2d4e;font-size:0.8rem;padding:40px;">Stack trống — nhấn Play</div>
+        <div style="color:#2d2d4e;font-size:0.8rem;padding:40px;text-align:center;">Stack trống — nhấn Play</div>
       </div>
-
       <div class="result-box" id="factorial-result" style="display:none">
         Kết quả: factorial(5) = <span id="factorial-val">—</span>
       </div>
-
       <div class="warning-box" id="factorial-warn" style="display:none;margin-top:8px;">
         ⚠️ Stack Overflow: Đệ quy quá sâu không có base case → tràn stack!
       </div>
     </section>
 
-    <!-- FIBONACCI -->
     <section class="prob" id="prob-fibonacci">
       <div class="concept-row">
         <div class="concept-card concept-base">
@@ -171,7 +222,6 @@
       </div>
     </section>
 
-    <!-- HANOI -->
     <section class="prob" id="prob-hanoi">
       <div class="concept-row">
         <div class="concept-card concept-base">
@@ -209,13 +259,11 @@
       </div>
     </section>
 
-  </div><!-- end viz-panel -->
+  </div>
 
   <div class="code-panel">
     <div class="code-header">📄 Pseudocode (Vietnamese comments)</div>
-    <div class="code-body" id="code-body">
-      <!-- filled by JS -->
-    </div>
+    <div class="code-body" id="code-body"></div>
     <div class="info-bar" id="info-bar">
       <div class="info-item"><strong>Depth:</strong> <span id="info-depth">0</span></div>
       <div class="info-item"><strong>Calls:</strong> <span id="info-calls">0</span></div>
@@ -232,9 +280,6 @@
 </div>
 
 <script>
-// ============================================================
-// STATE
-// ============================================================
 let currentProblem = 'factorial';
 let playing = false;
 let timer = null;
@@ -290,9 +335,7 @@ const codes = {
   ]
 };
 
-// ============================================================
-// FACTORIAL STEPS GENERATOR
-// ============================================================
+// FACTORIAL STEPS
 function genFactorialSteps(n) {
   const steps = [];
   const stack = [];
@@ -308,23 +351,17 @@ function genFactorialSteps(n) {
       const retVal = stack[stack.length - 1].ret;
       stack.pop();
       const myRet = val * retVal;
-      if (stack.length) {
-        stack[stack.length - 1].ret = myRet;
-        stack[stack.length - 1].state = 'active';
-      }
-      steps.push({ type: 'return', stack: JSON.parse(JSON.stringify(stack)), codeLine: 10, desc: `factorial(${val}) = ${val} × ${retVal} = ${myRet}`, result: stack.length === 0 ? myRet : null });
+      if (stack.length) { stack[stack.length - 1].ret = myRet; stack[stack.length - 1].state = 'active'; }
+      steps.push({ type: 'return', stack: JSON.parse(JSON.stringify(stack)), codeLine: 10,
+        desc: `factorial(${val}) = ${val} × ${retVal} = ${myRet}`, result: stack.length === 0 ? myRet : null });
     }
   }
   rec(n);
   return steps;
 }
 
-// ============================================================
 // FIBONACCI TREE
-// ============================================================
-const fibNodes = [];
-const fibEdges = [];
-let fibCallCount = 0;
+const fibNodes = [], fibEdges = [];
 const fibComputed = {};
 
 function buildFibTree(n, x, y, spread, parentId) {
@@ -341,12 +378,11 @@ function buildFibTree(n, x, y, spread, parentId) {
 }
 
 function genFibSteps() {
-  fibNodes.length = 0; fibEdges.length = 0; fibCallCount = 0;
+  fibNodes.length = 0; fibEdges.length = 0;
   Object.keys(fibComputed).forEach(k => delete fibComputed[k]);
   buildFibTree(5, 320, 30, 120, null);
   const steps = [];
   let order = 0;
-  // BFS order animation
   const queue = [0];
   const visited = new Set();
   while (queue.length) {
@@ -355,55 +391,51 @@ function genFibSteps() {
     visited.add(id);
     order++;
     steps.push({ type: 'fib-activate', nodeId: id, order });
-    const children = fibEdges.filter(e => e.from === id).map(e => e.to);
-    children.forEach(c => queue.push(c));
+    fibEdges.filter(e => e.from === id).forEach(e => queue.push(e.to));
   }
   return steps;
 }
 
-// ============================================================
-// HANOI STEPS GENERATOR
-// ============================================================
+// HANOI STEPS
 function genHanoiSteps(n) {
   const steps = [];
-  const pegs = {
-    A: Array.from({ length: n }, (_, i) => n - i),
-    B: [],
-    C: []
-  };
+  const pegs = { A: Array.from({ length: n }, (_, i) => n - i), B: [], C: [] };
   function rec(k, from, to, via) {
     if (k === 1) {
-      const disk = pegs[from].pop();
-      pegs[to].push(disk);
-      steps.push({ pegs: { A: [...pegs.A], B: [...pegs.B], C: [...pegs.C] }, msg: `Đĩa ${disk}: ${from} → ${to}`, codeLine: 3 });
+      const disk = pegs[from].pop(); pegs[to].push(disk);
+      steps.push({ pegs: { A: [...pegs.A], B: [...pegs.B], C: [...pegs.C] }, msg: `Đĩa ${disk}: ${from} → ${to}`, codeLine: 3, movedDisk: disk });
       return;
     }
     rec(k - 1, from, via, to);
-    const disk = pegs[from].pop();
-    pegs[to].push(disk);
-    steps.push({ pegs: { A: [...pegs.A], B: [...pegs.B], C: [...pegs.C] }, msg: `Đĩa ${disk}: ${from} → ${to}`, codeLine: 11 });
+    const disk = pegs[from].pop(); pegs[to].push(disk);
+    steps.push({ pegs: { A: [...pegs.A], B: [...pegs.B], C: [...pegs.C] }, msg: `Đĩa ${disk}: ${from} → ${to}`, codeLine: 11, movedDisk: disk });
     rec(k - 1, via, to, from);
   }
-  // initial state
   steps.push({ pegs: { A: [...pegs.A], B: [...pegs.B], C: [...pegs.C] }, msg: 'Trạng thái ban đầu', codeLine: 0, initial: true });
   rec(n, 'A', 'C', 'B');
   return steps;
 }
 
-// ============================================================
-// RENDER FUNCTIONS
-// ============================================================
-const diskColors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#a855f7'];
+// RENDER
+const diskColors = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#a855f7'];
 
+let prevFrameCount = 0;
 function renderStack(frames) {
   const el = document.getElementById('factorial-stack');
   if (!frames || frames.length === 0) {
-    el.innerHTML = '<div style="color:#2d2d4e;font-size:0.8rem;padding:40px;">Stack trống</div>';
+    el.innerHTML = '<div style="color:#2d2d4e;font-size:0.8rem;padding:40px;text-align:center;">Stack trống</div>';
+    prevFrameCount = 0;
     return;
   }
+  const isPush = frames.length > prevFrameCount;
+  const isPop = frames.length < prevFrameCount;
+  prevFrameCount = frames.length;
+
   el.innerHTML = frames.map((f, i) => {
-    const cls = f.state === 'base' ? 'base' : (i === frames.length - 1 ? 'active' : 'waiting');
-    return `<div class="stack-frame ${cls} frame-enter">
+    const isTop = i === frames.length - 1;
+    const cls = f.state === 'base' ? 'base' : (isTop ? 'active' : 'waiting');
+    const animClass = isTop && isPush ? 'entering' : (isPop && isTop ? 'exiting' : '');
+    return `<div class="stack-frame ${cls} ${animClass}">
       <div class="frame-name">factorial(<span class="frame-param">${f.param}</span>)</div>
       ${f.ret !== undefined ? `<div class="frame-return">↩ returns ${f.ret}</div>` : ''}
       <div class="frame-depth">depth ${i + 1}</div>
@@ -411,69 +443,97 @@ function renderStack(frames) {
   }).join('');
 }
 
-function renderFibTree(activeId) {
+function renderFibTree(activeId, isNew) {
   const svg = document.getElementById('fib-svg');
   const nodeRadius = 22;
   svg.innerHTML = '';
-  // edges first
+
+  // SVG defs for glow filter
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  defs.innerHTML = `<filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  svg.appendChild(defs);
+
+  // edges
   fibEdges.forEach(e => {
     const from = fibNodes[e.from], to = fibNodes[e.to];
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     line.setAttribute('x1', from.x); line.setAttribute('y1', from.y);
     line.setAttribute('x2', to.x); line.setAttribute('y2', to.y);
-    line.setAttribute('stroke', '#2d2d4e'); line.setAttribute('stroke-width', '1.5');
+    const isActive = from.state === 'visited' || to.state === 'visited';
+    line.setAttribute('stroke', isActive ? '#4b5563' : '#1e293b');
+    line.setAttribute('stroke-width', '1.5');
     svg.appendChild(line);
   });
+
   // nodes
   fibNodes.forEach(node => {
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     circle.setAttribute('cx', node.x); circle.setAttribute('cy', node.y);
     circle.setAttribute('r', nodeRadius);
-    let fill = '#1e293b';
-    if (node.id === activeId) fill = '#7c3aed';
-    else if (node.isBase) fill = '#064e3b';
-    else if (node.isDup) fill = '#7f1d1d';
-    else if (node.state === 'visited') fill = '#1e3a5f';
+
+    let fill = '#1e293b', stroke = '#374151';
+    if (node.id === activeId) { fill = '#7c3aed'; stroke = '#a78bfa'; }
+    else if (node.state === 'visited' && node.isBase) { fill = '#064e3b'; stroke = '#10b981'; }
+    else if (node.state === 'visited' && node.isDup) { fill = '#7f1d1d'; stroke = '#ef4444'; }
+    else if (node.state === 'visited') { fill = '#1e3a5f'; stroke = '#3b82f6'; }
+
     circle.setAttribute('fill', fill);
-    circle.setAttribute('stroke', node.id === activeId ? '#a78bfa' : '#374151');
-    circle.setAttribute('stroke-width', '2');
+    circle.setAttribute('stroke', stroke);
+    circle.setAttribute('stroke-width', node.id === activeId ? '3' : '2');
+    if (node.id === activeId) circle.setAttribute('filter', 'url(#glow)');
+
+    // Animate new node
+    if (node.id === activeId && isNew) {
+      const anim = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+      anim.setAttribute('attributeName', 'r');
+      anim.setAttribute('from', '0'); anim.setAttribute('to', String(nodeRadius));
+      anim.setAttribute('dur', '0.35s'); anim.setAttribute('fill', 'freeze');
+      circle.appendChild(anim);
+    }
+
     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     text.setAttribute('x', node.x); text.setAttribute('y', node.y + 1);
     text.setAttribute('text-anchor', 'middle'); text.setAttribute('dominant-baseline', 'middle');
-    text.setAttribute('fill', '#e0e0f0'); text.setAttribute('font-size', '12');
+    text.setAttribute('fill', '#e0e0f0'); text.setAttribute('font-size', '11');
     text.setAttribute('font-family', 'monospace');
     text.textContent = `f(${node.n})`;
+
+    // Duplicate pulsing
+    if (node.state === 'visited' && node.isDup) {
+      const animOp = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+      animOp.setAttribute('attributeName', 'opacity');
+      animOp.setAttribute('values', '1;0.4;1'); animOp.setAttribute('dur', '1s');
+      animOp.setAttribute('repeatCount', 'indefinite');
+      circle.appendChild(animOp);
+    }
+
     g.appendChild(circle); g.appendChild(text);
     svg.appendChild(g);
   });
 }
 
-function renderHanoi(pegs, msg, currentMoveIdx) {
+function renderHanoi(pegs, msg, moveIdx) {
   ['A', 'B', 'C'].forEach(p => {
     const el = document.getElementById(`disks-${p}`);
     el.innerHTML = pegs[p].map(d => {
-      const w = 30 + d * 22;
-      return `<div class="disk" style="width:${w}px;background:${diskColors[d - 1]};min-width:30px;">${d}</div>`;
+      const w = 32 + d * 22;
+      return `<div class="disk" style="width:${w}px;background:linear-gradient(135deg,${diskColors[d-1]},${diskColors[d-1]}99);min-width:30px;">${d}</div>`;
     }).join('');
   });
   const log = document.getElementById('move-log');
-  if (steps[stepIndex] && !steps[stepIndex].initial) {
+  if (msg && msg !== 'Trạng thái ban đầu') {
     const item = document.createElement('div');
     item.className = 'move-item current';
-    item.textContent = `[${currentMoveIdx}] ${msg}`;
+    item.textContent = `[${moveIdx}] ${msg}`;
     log.appendChild(item);
     log.scrollTop = log.scrollHeight;
-    // de-highlight previous
-    const prev = log.querySelector('.current.old');
-    if (prev) prev.classList.remove('old', 'current');
-    setTimeout(() => item.classList.add('old'), 500);
+    setTimeout(() => item.classList.remove('current'), 800);
   }
 }
 
-// ============================================================
-// PLAYBACK LOGIC
-// ============================================================
+// PLAYBACK
 function applyStep(s) {
   callCount++;
   document.getElementById('info-calls').textContent = callCount;
@@ -488,8 +548,9 @@ function applyStep(s) {
       document.getElementById('factorial-val').textContent = s.result;
     }
   } else if (currentProblem === 'fibonacci') {
+    const isNew = fibNodes[s.nodeId].state !== 'visited';
     fibNodes[s.nodeId].state = 'visited';
-    renderFibTree(s.nodeId);
+    renderFibTree(s.nodeId, isNew);
     document.getElementById('info-step').textContent = `Tính fib(${fibNodes[s.nodeId].n})`;
     document.getElementById('info-depth').textContent = s.order;
     if (stepIndex === steps.length - 1) {
@@ -505,14 +566,11 @@ function applyStep(s) {
 }
 
 function highlightCode(lineIdx) {
-  document.querySelectorAll('.code-line').forEach((el, i) => {
-    el.classList.toggle('hl', i === lineIdx);
-  });
+  document.querySelectorAll('.code-line').forEach((el, i) => el.classList.toggle('hl', i === lineIdx));
 }
 
 function getDelay() {
-  const spd = parseInt(document.getElementById('speed-slider').value);
-  return [900, 650, 450, 280, 150][spd - 1];
+  return [900, 650, 450, 280, 150][parseInt(document.getElementById('speed-slider').value) - 1];
 }
 
 function stepOnce() {
@@ -535,27 +593,21 @@ function togglePlay() {
 }
 
 function stopPlay() {
-  playing = false;
-  clearTimeout(timer);
+  playing = false; clearTimeout(timer);
   document.getElementById('btn-play').textContent = '▶ Play';
 }
 
 function resetAll() {
-  stopPlay();
-  stepIndex = 0; callCount = 0;
+  stopPlay(); stepIndex = 0; callCount = 0; prevFrameCount = 0;
   document.getElementById('info-calls').textContent = 0;
   document.getElementById('info-depth').textContent = 0;
   document.getElementById('info-step').textContent = '—';
   initProblem(currentProblem);
 }
 
-// ============================================================
-// INIT
-// ============================================================
 function renderCode(prob) {
   const lines = codes[prob];
-  const body = document.getElementById('code-body');
-  body.innerHTML = lines.map((l, i) =>
+  document.getElementById('code-body').innerHTML = lines.map((l, i) =>
     `<div class="code-line ${l.cls}" data-line="${i}">${l.text || '&nbsp;'}</div>`
   ).join('');
 }
@@ -564,35 +616,30 @@ function initProblem(prob) {
   renderCode(prob);
   if (prob === 'factorial') {
     steps = genFactorialSteps(5);
-    document.getElementById('factorial-stack').innerHTML = '<div style="color:#2d2d4e;font-size:0.8rem;padding:40px;">Stack trống — nhấn Play</div>';
+    document.getElementById('factorial-stack').innerHTML = '<div style="color:#2d2d4e;font-size:0.8rem;padding:40px;text-align:center;">Stack trống — nhấn Play</div>';
     document.getElementById('factorial-result').style.display = 'none';
     document.getElementById('factorial-warn').style.display = 'none';
   } else if (prob === 'fibonacci') {
     steps = genFibSteps();
-    renderFibTree(null);
+    renderFibTree(null, false);
     document.getElementById('fib-result').style.display = 'none';
   } else if (prob === 'hanoi') {
     steps = genHanoiSteps(3);
     document.getElementById('move-log').innerHTML = '<div style="color:#4b5563;">Nhấn Play để bắt đầu...</div>';
     renderHanoi(steps[0].pegs, '', 0);
-    stepIndex = 1; // skip initial render step
-    callCount = 0;
+    stepIndex = 1; callCount = 0;
   }
 }
 
 function switchProblem(prob) {
-  stopPlay();
-  currentProblem = prob;
-  stepIndex = 0; callCount = 0;
-  document.querySelectorAll('.tab').forEach((t, i) => {
-    t.classList.toggle('active', ['factorial', 'fibonacci', 'hanoi'][i] === prob);
-  });
+  stopPlay(); currentProblem = prob; stepIndex = 0; callCount = 0;
+  document.querySelectorAll('.tab').forEach((t, i) =>
+    t.classList.toggle('active', ['factorial', 'fibonacci', 'hanoi'][i] === prob));
   document.querySelectorAll('.prob').forEach(s => s.classList.remove('active'));
   document.getElementById(`prob-${prob}`).classList.add('active');
   initProblem(prob);
 }
 
-// Boot
 initProblem('factorial');
 </script>
 </body>

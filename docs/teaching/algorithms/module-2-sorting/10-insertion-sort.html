@@ -6,48 +6,71 @@
 <title>Insertion Sort — Sắp xếp chèn</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',sans-serif;background:#0f1117;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-header{background:#1a1d2e;padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #2d3148}
-header h1{font-size:1.1rem;color:#fb923c}
+body{font-family:'Segoe UI',sans-serif;background:#080c14;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(251,146,60,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(251,146,60,.04) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;z-index:0}
+
+header{background:linear-gradient(135deg,#0f0a04,#1a120a);padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #3a2010;position:relative;z-index:1}
+header h1{font-size:1.1rem;color:#fb923c;text-shadow:0 0 20px rgba(251,146,60,.4)}
 .badge{background:#431407;color:#fdba74;padding:2px 8px;border-radius:4px;font-size:.75rem}
 .complexity{display:flex;gap:8px;margin-left:auto}
 .cx{background:#1e293b;border:1px solid #334155;border-radius:4px;padding:2px 8px;font-size:.75rem;color:#94a3b8}
 .cx span{color:#fbbf24}
-main{flex:1;display:flex;overflow:hidden}
-#viz{width:60%;background:#0d1117;display:flex;flex-direction:column}
-#bar-area{flex:1;position:relative;padding:10px 20px 0}
-#bars-container{position:absolute;bottom:0;left:20px;right:20px;top:10px;display:flex;align-items:flex-end;gap:2px}
-.bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1;transition:transform .3s ease}
-.bar{width:100%;border-radius:3px 3px 0 0;background:#4a90d9;transition:background .25s,transform .3s}
-.bar-val{font-size:10px;color:#94a3b8;margin-top:2px}
-.bar.sorted{background:#22c55e}
-.bar.key{background:#f97316;transform:scaleY(1.08);transform-origin:bottom}
-.bar.comparing{background:#ef4444}
-.bar.shifting{background:#8b5cf6}
-#boundary{position:absolute;bottom:0;top:10px;width:2px;background:#fb923c;opacity:.7;pointer-events:none;transition:left .3s}
-#boundary-label{position:absolute;top:0;font-size:.65rem;color:#fb923c;transform:translateX(-50%);white-space:nowrap}
-#legend{display:flex;gap:12px;padding:6px 20px;background:#111827;font-size:.72rem}
+
+main{flex:1;display:flex;overflow:hidden;position:relative;z-index:1}
+#viz{width:60%;background:transparent;display:flex;flex-direction:column}
+#bar-area{flex:1;position:relative;padding:10px 20px 0;overflow:hidden}
+#bars-container{position:absolute;bottom:0;left:20px;right:20px;top:10px;display:flex;align-items:flex-end;gap:3px}
+
+/* Boundary line */
+#boundary{position:absolute;bottom:0;top:10px;width:2px;background:linear-gradient(to bottom,transparent,#fb923c,#fb923c,transparent);box-shadow:0 0 10px rgba(251,146,60,.6);pointer-events:none;transition:left .3s ease;z-index:5}
+#boundary-label{position:absolute;top:2px;font-size:.65rem;color:#fb923c;transform:translateX(-50%);white-space:nowrap;text-shadow:0 0 8px rgba(251,146,60,.8)}
+
+.bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1;position:relative}
+.bar{width:100%;border-radius:4px 4px 0 0;background:linear-gradient(to top,#1d4ed8,#60a5fa);transition:background .2s,box-shadow .2s;position:relative;overflow:hidden}
+.bar::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.15) 50%,transparent 60%);background-size:200% 100%;opacity:0}
+.bar-val{font-size:10px;color:#94a3b8;margin-top:3px;line-height:1;font-weight:600;transition:color .2s}
+
+.bar.sorted{background:linear-gradient(to top,#065f46,#34d399);box-shadow:0 0 8px rgba(52,211,153,.2)}
+.bar.sorted::after{animation:shimmer 2.5s linear infinite;opacity:1}
+/* Key: lifts up visually via translateY on the bar-wrap */
+.bar-wrap.key-wrap{transform:translateY(-20px);transition:transform .3s cubic-bezier(0.34,1.56,0.64,1);z-index:10}
+.bar.key{background:linear-gradient(to top,#9a3412,#f97316);box-shadow:0 0 20px rgba(249,115,22,.7),0 0 6px rgba(249,115,22,1)}
+.bar.comparing{background:linear-gradient(to top,#991b1b,#ef4444);box-shadow:0 0 12px rgba(239,68,68,.5)}
+.bar.shifting{background:linear-gradient(to top,#4c1d95,#8b5cf6);box-shadow:0 0 10px rgba(139,92,246,.4);animation:shiftRight .2s ease}
+.bar.insert-flash{animation:insertFlash .4s ease}
+
+#legend{display:flex;gap:12px;padding:6px 20px;background:rgba(17,24,39,.8);font-size:.72rem}
 .leg{display:flex;align-items:center;gap:5px}
 .leg-dot{width:10px;height:10px;border-radius:2px}
-#code-panel{width:40%;background:#1a1d2e;border-left:1px solid #2d3148;display:flex;flex-direction:column}
-.panel-title{padding:8px 14px;background:#12152a;font-size:.8rem;color:#8b92c4;border-bottom:1px solid #2d3148}
+
+#code-panel{width:40%;background:#0f0a04;border-left:1px solid #3a2010;display:flex;flex-direction:column}
+.panel-title{padding:8px 14px;background:#080602;font-size:.8rem;color:#8b92c4;border-bottom:1px solid #3a2010}
 #code{flex:1;overflow-y:auto;padding:10px 0;font-family:'Courier New',monospace;font-size:.82rem;line-height:1.8}
-.code-line{padding:1px 14px;color:#8b92c4;white-space:pre}
-.code-line.active{background:#2d2a12;color:#fde68a;border-left:3px solid #fbbf24}
-#explain{padding:10px 14px;background:#0f1117;border-top:1px solid #2d3148;font-size:.8rem;color:#94a3b8;min-height:56px;line-height:1.5}
-#controls{background:#111827;padding:8px 16px;display:flex;align-items:center;gap:10px;border-top:1px solid #1e293b;flex-wrap:wrap}
-button{background:#1d4ed8;color:#e2e8f0;border:none;border-radius:5px;padding:6px 14px;cursor:pointer;font-size:.82rem;transition:background .2s}
-button:hover{background:#2563eb}
-#btn-play{background:#b45309}#btn-play:hover{background:#d97706}
+.code-line{padding:2px 14px;color:#8b92c4;white-space:pre;border-left:3px solid transparent;transition:all .2s}
+.code-line.active{background:linear-gradient(90deg,rgba(251,191,36,.12),transparent);color:#fde68a;border-left-color:#fbbf24}
+#explain{padding:10px 14px;background:#080c14;border-top:1px solid #3a2010;font-size:.8rem;color:#94a3b8;min-height:56px;line-height:1.5}
+
+#controls{background:linear-gradient(135deg,#0f0a04,#111827);padding:8px 16px;display:flex;align-items:center;gap:10px;border-top:1px solid #1e293b;flex-wrap:wrap;position:relative;z-index:1}
+button{background:#1d4ed8;color:#e2e8f0;border:1px solid #2563eb;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:.82rem;transition:all .2s}
+button:hover{background:#2563eb;box-shadow:0 0 12px rgba(37,99,235,.3)}
+#btn-play{background:#92400e;border-color:#b45309}
+#btn-play:hover{background:#d97706;box-shadow:0 0 12px rgba(217,119,6,.4)}
 #stats{display:flex;gap:12px;margin-left:auto;font-size:.8rem}
-.stat{background:#1e293b;padding:4px 10px;border-radius:4px}
-.stat span{color:#f59e0b}
+.stat{background:#1e293b;padding:4px 10px;border-radius:6px;border:1px solid #2d3748}
+.stat span{color:#f59e0b;font-weight:700}
 label{font-size:.78rem;color:#64748b}
 input[type=range]{accent-color:#fb923c;width:90px}
 select{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:4px 6px;font-size:.78rem}
-#round-info{background:#1e293b;padding:4px 10px;border-radius:4px;font-size:.8rem;color:#fb923c}
-.mode-btn{background:#1e3a5f!important;font-size:.72rem!important;padding:4px 10px!important}
-.mode-btn.active-mode{background:#1d4ed8!important}
+#round-info{background:#1e293b;padding:4px 10px;border-radius:6px;font-size:.8rem;color:#fb923c;border:1px solid #92400e}
+.mode-btn{background:#1e293b!important;border:1px solid #334155!important;font-size:.72rem!important;padding:4px 10px!important}
+.mode-btn.active-mode{background:#7c2d12!important;border-color:#9a3412!important;color:#fdba74!important}
+
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes shiftRight{0%{transform:translateX(-8px)}100%{transform:translateX(0)}}
+@keyframes insertFlash{0%{box-shadow:0 0 30px rgba(249,115,22,1)}50%{box-shadow:0 0 20px rgba(52,211,153,.8)}100%{box-shadow:none}}
+@keyframes dropIn{0%{transform:translateY(-30px);opacity:0}100%{transform:translateY(0);opacity:1}}
+@keyframes liftUp{0%{transform:translateY(0)}100%{transform:translateY(-20px)}}
+@keyframes dropDown{0%{transform:translateY(-20px)}100%{transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -69,10 +92,10 @@ select{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:4
       <div id="bars-container"></div>
     </div>
     <div id="legend">
-      <div class="leg"><div class="leg-dot" style="background:#22c55e"></div>Đã sắp xếp</div>
-      <div class="leg"><div class="leg-dot" style="background:#f97316"></div>Phần tử key (đang chèn)</div>
+      <div class="leg"><div class="leg-dot" style="background:#34d399"></div>Đã sắp xếp</div>
+      <div class="leg"><div class="leg-dot" style="background:#f97316"></div>Key (↑ nhấc lên)</div>
       <div class="leg"><div class="leg-dot" style="background:#ef4444"></div>Đang so sánh</div>
-      <div class="leg"><div class="leg-dot" style="background:#8b5cf6"></div>Đang dịch chuyển sang phải</div>
+      <div class="leg"><div class="leg-dot" style="background:#8b5cf6"></div>Dịch sang phải (→)</div>
     </div>
   </div>
   <div id="code-panel">
@@ -122,6 +145,7 @@ const CODE=[
 ];
 
 let arr=[],steps=[],stepIdx=0,playing=false,timer=null,cmp=0,shift=0,acc=0,mode='random';
+let awaitingAnim=false,currentKeyIdx=-1;
 
 function buildCode(){
   document.getElementById('code').innerHTML=CODE.map((c,i)=>`<div class="code-line" data-i="${i}">${c.t}</div>`).join('');
@@ -131,7 +155,7 @@ function hl(i){document.querySelectorAll('.code-line').forEach(e=>e.classList.re
 function genArray(){
   const n=+document.getElementById('size-sel').value;
   if(mode==='random') arr=Array.from({length:n},()=>Math.floor(Math.random()*90)+10);
-  else if(mode==='nearly'){arr=Array.from({length:n},(_,i)=>i*3+10);for(let k=0;k<Math.ceil(n/5);k++){const a=Math.floor(Math.random()*n),b=Math.floor(Math.random()*n);[arr[a],arr[b]]=[arr[b],arr[a]];}}
+  else if(mode==='nearly'){arr=Array.from({length:n},(_,i)=>i*4+10);for(let k=0;k<Math.ceil(n/5);k++){const a=Math.floor(Math.random()*n),b=Math.floor(Math.random()*n);[arr[a],arr[b]]=[arr[b],arr[a]];}}
   else arr=Array.from({length:n},(_,i)=>Math.floor((n-i)*90/n)+10);
 }
 
@@ -164,55 +188,123 @@ function buildSteps(){
 function setBoundary(i,total){
   const con=document.getElementById('bars-container');
   const barW=con.clientWidth/total;
-  const bnd=document.getElementById('boundary');
-  bnd.style.left=(i*barW+20)+'px';
+  document.getElementById('boundary').style.left=(i*barW+20)+'px';
 }
 
-function renderBars(state){
+function buildBarsDOM(a,sortedBefore){
   const con=document.getElementById('bars-container');
-  const a=state.arr||arr;const max=Math.max(...a);
   con.innerHTML='';
-  const n=a.length;
-  a.forEach((v,idx)=>{
-    const wrap=document.createElement('div');wrap.className='bar-wrap';
+  currentKeyIdx=-1;
+  const max=Math.max(...a);
+  a.forEach((v,i)=>{
+    const wrap=document.createElement('div');wrap.className='bar-wrap';wrap.dataset.idx=i;
     const bar=document.createElement('div');bar.className='bar';
-    bar.style.height=Math.round(v/max*100)+'%';
-    const si=state.sortedUpto!==undefined?state.sortedUpto:-1;
-    if(state.type==='done'||si>=n-1) bar.classList.add('sorted');
-    else if(idx===state.keyIdx) bar.classList.add('key');
-    else if(idx===state.comparing) bar.classList.add('comparing');
-    else if(state.shifting&&state.shifting.includes(idx)) bar.classList.add('shifting');
-    else if(idx<(state.sortedBefore||0)) bar.classList.add('sorted');
+    if(sortedBefore!==undefined&&i<sortedBefore) bar.classList.add('sorted');
+    bar.style.height=Math.round((v/max)*100)+'%';
+    bar.style.animation='dropIn .4s ease both';
+    bar.style.animationDelay=(i*0.02)+'s';
     const val=document.createElement('div');val.className='bar-val';val.textContent=v;
     wrap.appendChild(bar);wrap.appendChild(val);con.appendChild(wrap);
   });
 }
 
-let lastI=0;
+function updateBars(state){
+  const wraps=document.querySelectorAll('.bar-wrap');
+  const a=state.arr||arr;
+  const max=Math.max(...a);
+  wraps.forEach((wrap,idx)=>{
+    const bar=wrap.querySelector('.bar');
+    const val=wrap.querySelector('.bar-val');
+    bar.className='bar';
+    wrap.classList.remove('key-wrap');
+    // update height from arr state
+    bar.style.height=Math.round((a[idx]/max)*100)+'%';
+    val.textContent=a[idx];
+
+    const si=state.sortedBefore!==undefined?state.sortedBefore:0;
+    if(state.type==='done') bar.classList.add('sorted');
+    else if(idx===state.keyIdx){bar.classList.add('key');wrap.classList.add('key-wrap');}
+    else if(idx===state.comparing) bar.classList.add('comparing');
+    else if(state.shifting&&state.shifting.includes(idx)) bar.classList.add('shifting');
+    else if(idx<si) bar.classList.add('sorted');
+  });
+}
+
 function applyStep(s){
   if(!s)return;
   hl(s.line>=0?s.line:-1);
-  if(s.i!==undefined){document.getElementById('round-info').textContent=`i: ${s.i} / ${(s.arr||arr).length-1}`;lastI=s.i;}
-  if(s.type==='init'){lastI=0;renderBars({arr:s.arr,sortedBefore:1});setBoundary(1,(s.arr||arr).length);document.getElementById('explain').innerHTML='Bắt đầu! Phần bên trái (i=0) đã sắp xếp. Thêm từng phần tử vào phần đã sắp xếp.';}
-  else if(s.type==='pickKey'){document.getElementById('explain').innerHTML=`🃏 Lấy <b>key = arr[${s.i}] = ${s.key}</b>. Cần chèn vào đúng vị trí trong phần đã sắp xếp.`;renderBars({...s,keyIdx:s.i,sortedBefore:s.i});setBoundary(s.i,(s.arr||arr).length);}
-  else if(s.type==='setJ'){document.getElementById('explain').innerHTML=`🔙 Bắt đầu từ j = i-1 = ${s.j}. Sẽ dịch sang trái để tìm chỗ chèn.`;renderBars({...s,keyIdx:s.i,sortedBefore:s.i});}
-  else if(s.type==='compare'){cmp++;document.getElementById('s-cmp').textContent=cmp;acc+=2;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`🔴 So sánh: arr[${s.j}]=${s.arr[s.j]} > key=${s.key}? → <b>Đúng</b>, dịch arr[${s.j}] sang phải.`;renderBars({...s,keyIdx:s.i,comparing:s.j,sortedBefore:s.i});}
-  else if(s.type==='compareStop'){cmp++;document.getElementById('s-cmp').textContent=cmp;acc++;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`✅ arr[${s.j}]=${s.arr[s.j]} ≤ key=${s.key}? → <b>Dừng</b>. Chèn key vào vị trí j+1=${s.j+1}.`;renderBars({...s,keyIdx:s.i,comparing:s.j,sortedBefore:s.i});}
-  else if(s.type==='shift'){shift++;document.getElementById('s-shift').textContent=shift;acc++;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`↔ Dịch arr[${s.j}] sang arr[${s.j+1}]. Tiếp tục dịch...`;renderBars({...s,keyIdx:s.i,shifting:[s.j+1],sortedBefore:s.i});}
-  else if(s.type==='insert'){acc++;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`📌 Chèn key=${s.key} vào vị trí ${s.insertAt}. <b>Phần đã sắp xếp mở rộng!</b>`;renderBars({...s,keyIdx:s.insertAt,sortedBefore:s.i+1});setBoundary(s.i+1,(s.arr||arr).length);}
-  else if(s.type==='done'){renderBars({arr:s.arr,sortedUpto:s.arr.length});document.getElementById('explain').textContent='🎉 Hoàn tất! Insertion Sort đặc biệt nhanh với mảng gần sắp xếp.';stopPlay();}
+  if(s.i!==undefined) document.getElementById('round-info').textContent=`i: ${s.i} / ${(s.arr||arr).length-1}`;
+
+  if(s.type==='init'){
+    buildBarsDOM(s.arr,1);setBoundary(1,s.arr.length);
+    document.getElementById('explain').innerHTML='Bắt đầu! Phần bên trái đã sắp xếp. Thêm từng phần tử vào đúng vị trí.';
+  }
+  else if(s.type==='pickKey'){
+    document.getElementById('explain').innerHTML=`🃏 Lấy <b>key = arr[${s.i}] = ${s.key}</b>. Nhấc lên để chèn vào đúng vị trí.`;
+    updateBars({...s,keyIdx:s.i,sortedBefore:s.i});
+    setBoundary(s.i,s.arr.length);
+  }
+  else if(s.type==='setJ'){
+    document.getElementById('explain').innerHTML=`🔙 j = i-1 = ${s.j}. Dịch trái để tìm vị trí chèn.`;
+    updateBars({...s,keyIdx:s.i,sortedBefore:s.i});
+  }
+  else if(s.type==='compare'){
+    cmp++;document.getElementById('s-cmp').textContent=cmp;
+    acc+=2;document.getElementById('s-acc').textContent=acc;
+    document.getElementById('explain').innerHTML=`🔴 arr[${s.j}]=${s.arr[s.j]} > key=${s.key}? → <b>Đúng</b>, dịch sang phải.`;
+    updateBars({...s,keyIdx:s.i,comparing:s.j,sortedBefore:s.i});
+  }
+  else if(s.type==='compareStop'){
+    cmp++;document.getElementById('s-cmp').textContent=cmp;
+    acc++;document.getElementById('s-acc').textContent=acc;
+    document.getElementById('explain').innerHTML=`✅ arr[${s.j}]=${s.arr[s.j]} ≤ key=${s.key} → Dừng. Chèn vào j+1=${s.j+1}.`;
+    updateBars({...s,keyIdx:s.i,comparing:s.j,sortedBefore:s.i});
+  }
+  else if(s.type==='shift'){
+    shift++;document.getElementById('s-shift').textContent=shift;
+    acc++;document.getElementById('s-acc').textContent=acc;
+    document.getElementById('explain').innerHTML=`→ Dịch arr[${s.j}] sang arr[${s.j+1}]. Tiếp tục...`;
+    updateBars({...s,keyIdx:s.i,shifting:[s.j+1],sortedBefore:s.i});
+  }
+  else if(s.type==='insert'){
+    acc++;document.getElementById('s-acc').textContent=acc;
+    document.getElementById('explain').innerHTML=`📌 Thả key=${s.key} vào vị trí ${s.insertAt}. <b>Phần sắp xếp mở rộng!</b>`;
+    updateBars({...s,keyIdx:s.insertAt,sortedBefore:s.i+1});
+    setBoundary(s.i+1,s.arr.length);
+    // Flash the inserted bar
+    const wraps=document.querySelectorAll('.bar-wrap');
+    const bar=wraps[s.insertAt]?.querySelector('.bar');
+    if(bar){bar.style.animation='none';bar.offsetHeight;bar.style.animation='insertFlash .4s ease';}
+  }
+  else if(s.type==='done'){
+    updateBars({arr:s.arr,type:'done'});
+    document.getElementById('explain').textContent='🎉 Hoàn tất! Insertion Sort đặc biệt nhanh với mảng gần sắp xếp.';
+    stopPlay();
+  }
 }
 
 function getDelay(){return Math.round(1100-document.getElementById('speed').value*100);}
-function tick(){if(stepIdx>=steps.length){stopPlay();return;}applyStep(steps[stepIdx++]);if(playing)timer=setTimeout(tick,getDelay());}
+function continuePlay(){playing=true;document.getElementById('btn-play').textContent='⏸ Pause';tick();}
+function tick(){if(awaitingAnim)return;if(stepIdx>=steps.length){stopPlay();return;}applyStep(steps[stepIdx++]);if(playing&&!awaitingAnim)timer=setTimeout(tick,getDelay());}
 function startPlay(){if(stepIdx>=steps.length)reset();playing=true;document.getElementById('btn-play').textContent='⏸ Pause';tick();}
 function stopPlay(){playing=false;clearTimeout(timer);document.getElementById('btn-play').textContent='▶ Play';}
-function reset(){stopPlay();stepIdx=0;cmp=0;shift=0;acc=0;buildSteps();['s-cmp','s-shift','s-acc'].forEach(id=>document.getElementById(id).textContent=0);document.getElementById('round-info').textContent='i: 0 / 0';hl(-1);renderBars({arr,sortedBefore:1});setBoundary(1,arr.length);document.getElementById('explain').textContent='👋 Nhấn Play để bắt đầu!';}
+function reset(){
+  stopPlay();awaitingAnim=false;stepIdx=0;cmp=0;shift=0;acc=0;buildSteps();
+  ['s-cmp','s-shift','s-acc'].forEach(id=>document.getElementById(id).textContent=0);
+  document.getElementById('round-info').textContent='i: 0 / 0';
+  hl(-1);buildBarsDOM(arr,1);setBoundary(1,arr.length);
+  document.getElementById('explain').textContent='👋 Nhấn Play để bắt đầu!';
+}
 
-function setMode(m){mode=m;document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active-mode'));document.getElementById('btn-'+m).classList.add('active-mode');genArray();reset();}
+function setMode(m){
+  mode=m;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active-mode'));
+  document.getElementById('btn-'+m).classList.add('active-mode');
+  genArray();reset();
+}
 
 document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
-document.getElementById('btn-step').onclick=()=>{stopPlay();if(stepIdx<steps.length)applyStep(steps[stepIdx++]);};
+document.getElementById('btn-step').onclick=()=>{stopPlay();if(!awaitingAnim&&stepIdx<steps.length)applyStep(steps[stepIdx++]);};
 document.getElementById('btn-reset').onclick=reset;
 document.getElementById('btn-new').onclick=()=>{genArray();reset();};
 document.getElementById('btn-random').onclick=()=>setMode('random');

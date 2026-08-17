@@ -6,93 +6,170 @@
 <title>DP #26 — Dãy con chung dài nhất (LCS)</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; min-height: 100vh; }
-header { background: linear-gradient(135deg, #1a1f35, #1f1a35); padding: 16px 24px; border-bottom: 2px solid #c678dd; display: flex; align-items: center; gap: 16px; }
-header h1 { font-size: 1.3rem; color: #e0a0ff; }
-header .badge { background: #3d1a5c; color: #e0a0ff; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #0a0a1a;
+  color: #e0e0e0;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(168,85,247,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(99,102,241,0.05) 0%, transparent 60%),
+    linear-gradient(rgba(168,85,247,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(168,85,247,0.025) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+}
+header {
+  background: linear-gradient(135deg, #0f0a1a, #180f2a);
+  padding: 16px 24px;
+  border-bottom: 2px solid #a855f7;
+  display: flex; align-items: center; gap: 16px;
+  box-shadow: 0 2px 20px rgba(168,85,247,0.15);
+}
+header h1 { font-size: 1.3rem; color: #c084fc; }
+header .badge { background: #3b0764; color: #c084fc; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
 .main { display: grid; grid-template-columns: 1fr 320px; height: calc(100vh - 60px); }
 .left-panel { padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-.right-panel { background: #161b2e; border-left: 2px solid #2d1a40; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.right-panel { background: #070510; border-left: 2px solid #1a0f28; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+
+/* ── Keyframes ──────────────────────────────────────────────────────── */
+@keyframes charPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.3) rotate(-5deg); box-shadow: 0 0 20px rgba(168,85,247,0.8); }
+  70%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+@keyframes lcsPop {
+  0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+  60%  { transform: scale(1.2) rotate(3deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes fillCell {
+  0%   { transform: scale(0.6); opacity: 0; }
+  60%  { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes matchPulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(168,85,247,0.4); }
+  50%       { box-shadow: 0 0 22px rgba(168,85,247,0.9); }
+}
+@keyframes backtrackGlow {
+  0%, 100% { box-shadow: 0 0 6px rgba(245,158,11,0.4); }
+  50%       { box-shadow: 0 0 20px rgba(245,158,11,0.85); }
+}
+@keyframes waveIn {
+  0%   { transform: translateX(-6px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+@keyframes lineConnect {
+  0%   { stroke-dashoffset: 60; opacity: 0; }
+  100% { stroke-dashoffset: 0; opacity: 1; }
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(245,158,11,0.4); }
+  50%       { box-shadow: 0 0 22px rgba(245,158,11,0.9); }
+}
 
 /* String display */
 .string-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.string-label { font-size: 0.78rem; color: #8070a0; min-width: 24px; font-weight: bold; }
-.str-char { width: 36px; height: 36px; border-radius: 7px; border: 2px solid #2a2050; background: #1a1530; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: bold; transition: all 0.25s; color: #a090c0; position: relative; }
-.str-char .char-idx { position: absolute; top: 1px; right: 3px; font-size: 0.55rem; color: #6050a0; }
-.str-char.matched { background: #2a1050; border-color: #c678dd; color: #e0a0ff; box-shadow: 0 0 10px #c678dd66; }
-.str-char.lcs-char { background: #2a0d50; border-color: #ffd600; color: #ffd600; box-shadow: 0 0 14px #ffd60088; animation: char-pop 0.4s ease; }
-.str-char.current { border-color: #ffd600; background: #2d2800; }
-@keyframes char-pop { 0%{transform:scale(1)} 50%{transform:scale(1.25)} 100%{transform:scale(1)} }
+.string-label { font-size: 0.78rem; color: #6050a0; min-width: 24px; font-weight: bold; }
+.str-char {
+  width: 36px; height: 36px; border-radius: 7px; border: 2px solid #1a1030;
+  background: #0f0a1a; display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; font-weight: bold; transition: all 0.3s; color: #7060a0; position: relative;
+}
+.str-char .char-idx { position: absolute; top: 1px; right: 3px; font-size: 0.55rem; color: #4030a0; }
+.str-char.matched {
+  background: #1a0a30; border-color: #a855f7; color: #c084fc;
+  box-shadow: 0 0 12px rgba(168,85,247,0.5);
+  animation: charPop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+.str-char.lcs-char {
+  background: #1a1000; border-color: #f59e0b; color: #fcd34d;
+  box-shadow: 0 0 16px rgba(245,158,11,0.6);
+  animation: charPop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+.str-char.current { border-color: #f59e0b; background: #1a1000; }
 
 /* Input row */
-.input-group { display: flex; gap: 10px; align-items: center; background: #1a1530; padding: 10px 14px; border-radius: 10px; }
-.input-group label { font-size: 0.82rem; color: #8070a0; min-width: 24px; }
-.input-group input[type=text] { flex: 1; background: #0d1020; border: 1px solid #3a2060; border-radius: 6px; color: #e0a0ff; padding: 6px 10px; font-size: 0.9rem; font-family: 'Courier New', monospace; letter-spacing: 2px; }
-.input-group input[type=text]:focus { outline: none; border-color: #c678dd; }
+.input-group { display: flex; gap: 10px; align-items: center; background: #0f0a1a; padding: 10px 14px; border-radius: 10px; border: 1px solid #1a1030; }
+.input-group label { font-size: 0.82rem; color: #6050a0; min-width: 24px; }
+.input-group input[type=text] { flex: 1; background: #07050f; border: 1px solid #2a1a40; border-radius: 6px; color: #c084fc; padding: 6px 10px; font-size: 0.9rem; font-family: 'Courier New', monospace; letter-spacing: 2px; }
+.input-group input[type=text]:focus { outline: none; border-color: #a855f7; }
 
 /* DP Table */
 .table-section { overflow: auto; }
 .dp-grid { display: grid; gap: 2px; width: fit-content; }
-.dp-cell { width: 40px; height: 40px; border-radius: 6px; border: 1.5px solid #2a2050; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.82rem; font-weight: bold; transition: all 0.25s; position: relative; }
-.dp-cell.header { background: #1a1540; color: #6050a0; font-size: 0.75rem; border: none; }
-.dp-cell.empty { background: #161b2e; color: #3a3060; }
-.dp-cell.computing { background: #3d3000; border-color: #ffd600; color: #ffd600; box-shadow: 0 0 10px #ffd60066; }
-.dp-cell.computed { background: #1a1840; border-color: #3a2060; color: #9080c0; }
-.dp-cell.match { background: #2a1050; border-color: #c678dd; color: #e0a0ff; }
-.dp-cell.backtrack { background: #2a2000; border-color: #ffd600; color: #ffd600; box-shadow: 0 0 12px #ffd60088; }
-.dp-cell.dep-diag { background: #1a3050; border-color: #4eff91 !important; color: #4eff91 !important; }
-.dp-cell.dep-top { background: #1a2050; border-color: #61afef !important; color: #61afef !important; }
-.dp-cell.dep-left { background: #1a2050; border-color: #e06060 !important; color: #e06060 !important; }
-.dp-cell .arrow-indicator { position: absolute; bottom: 1px; right: 2px; font-size: 0.55rem; color: #6050a0; }
+.dp-cell {
+  width: 40px; height: 40px; border-radius: 6px; border: 1.5px solid #1a1030;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 0.82rem; font-weight: bold; transition: border-color 0.3s, box-shadow 0.3s;
+  position: relative;
+}
+.dp-cell.header { background: #0f0a1a; color: #4030a0; font-size: 0.75rem; border: none; }
+.dp-cell.empty    { background: #07050f; color: #1a1030; }
+.dp-cell.computing { background: #1a1000; border-color: #f59e0b; color: #f59e0b; animation: pulse 1s ease-in-out infinite; }
+.dp-cell.computed  { background: #0a0815; border-color: #2a1a40; color: #6050a0; animation: fillCell 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+.dp-cell.match     { background: #1a0a30; border-color: #a855f7; color: #c084fc; animation: matchPulse 1.8s ease-in-out infinite; }
+.dp-cell.backtrack { background: #1a1000; border-color: #f59e0b !important; color: #fcd34d !important; animation: backtrackGlow 1.5s ease-in-out infinite; }
+.dp-cell.dep-diag  { background: #071a0f; border-color: #22c55e !important; color: #22c55e !important; }
+.dp-cell.dep-top   { background: #080a12; border-color: #6366f1 !important; color: #818cf8 !important; }
+.dp-cell.dep-left  { background: #120808; border-color: #ef4444 !important; color: #f87171 !important; }
+.dp-cell .arrow-indicator { position: absolute; bottom: 1px; right: 2px; font-size: 0.55rem; color: #4030a0; }
 
 /* LCS result */
-.lcs-result { background: #1a1040; border: 2px solid #c678dd; border-radius: 12px; padding: 14px; }
-.lcs-title { font-size: 0.8rem; color: #9070c0; margin-bottom: 8px; }
+.lcs-result { background: #0f0a1a; border: 2px solid #a855f7; border-radius: 12px; padding: 14px; box-shadow: 0 0 16px rgba(168,85,247,0.12); }
+.lcs-title { font-size: 0.8rem; color: #7060a0; margin-bottom: 8px; }
 .lcs-chars { display: flex; gap: 6px; flex-wrap: wrap; }
-.lcs-char { width: 40px; height: 40px; border-radius: 8px; background: #2a1050; border: 2px solid #ffd600; color: #ffd600; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; animation: char-pop 0.4s ease; }
-.lcs-empty { color: #5050a0; font-size: 0.82rem; padding: 8px; }
+.lcs-char {
+  width: 40px; height: 40px; border-radius: 8px; background: #1a1000;
+  border: 2px solid #f59e0b; color: #fcd34d;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; font-weight: bold;
+  animation: lcsPop 0.45s cubic-bezier(0.34,1.56,0.64,1);
+}
+.lcs-empty { color: #3a2060; font-size: 0.82rem; padding: 8px; }
 
 /* Controls */
 .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
-.btn-primary { background: #c678dd; color: #1a0828; }
-.btn-primary:hover { background: #d890f0; }
-.btn-secondary { background: #2a2050; color: #9090c0; }
-.btn-secondary:hover { background: #362a60; }
-.btn-danger { background: #3a1030; color: #ff9090; }
-.btn-danger:hover { background: #5a1040; }
-select { background: #1a1540; color: #9090c0; border: 1px solid #3a2060; border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; }
+.btn-primary { background: linear-gradient(135deg, #7e22ce, #a855f7); color: white; box-shadow: 0 2px 10px rgba(168,85,247,0.3); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(168,85,247,0.4); }
+.btn-secondary { background: #0f0a1a; color: #4030a0; border: 1px solid #1a1030; }
+.btn-secondary:hover { background: #150f20; }
+.btn-danger { background: #1a0808; color: #ef4444; border: 1px solid #3a1010; }
+.btn-danger:hover { background: #250a0a; }
+select { background: #07050f; color: #4030a0; border: 1px solid #1a1030; border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; }
 
 /* Code */
-.code-panel { background: #0d1117; border-radius: 10px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.76rem; line-height: 1.7; border: 1px solid #2d1a40; }
-.code-line { padding: 1px 6px; border-radius: 4px; transition: background 0.2s; white-space: pre; color: #7060a0; }
-.code-line.highlight { background: #ffd60022; color: #ffd680; border-left: 3px solid #ffd600; }
-.code-line.active { background: #c678dd22; color: #e0a0ff; border-left: 3px solid #c678dd; }
-.kw { color: #c678dd; } .fn { color: #61afef; } .num { color: #d19a66; } .cm { color: #5c6370; font-style: italic; }
+.code-panel { background: #040308; border-radius: 10px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.76rem; line-height: 1.7; border: 1px solid #1a1030; }
+.code-line { padding: 1px 6px; border-radius: 4px; transition: background 0.2s; white-space: pre; color: #3a2060; }
+.code-line.highlight { background: rgba(245,158,11,0.12); color: #fcd34d; border-left: 3px solid #f59e0b; }
+.code-line.active { background: rgba(168,85,247,0.12); color: #e0a0ff; border-left: 3px solid #a855f7; }
+.kw { color: #c678dd; } .fn { color: #61afef; } .num { color: #d19a66; } .cm { color: #2a1840; font-style: italic; }
 
 /* Stats */
 .stats-row { display: flex; gap: 8px; }
-.stat-box { background: #1a1540; border-radius: 8px; padding: 8px 12px; flex: 1; }
-.stat-box .label { font-size: 0.68rem; color: #6050a0; text-transform: uppercase; }
-.stat-box .value { font-size: 1.2rem; font-weight: bold; color: #c678dd; }
+.stat-box { background: #0f0a1a; border-radius: 8px; padding: 8px 12px; flex: 1; border: 1px solid #1a1030; }
+.stat-box .label { font-size: 0.68rem; color: #3a2060; text-transform: uppercase; }
+.stat-box .value { font-size: 1.2rem; font-weight: bold; color: #a855f7; }
 
 /* Explanation */
-.explanation { background: #1e1a30; border-radius: 8px; padding: 8px 14px; font-size: 0.82rem; color: #c0a0d8; min-height: 36px; border-left: 3px solid #c678dd; }
+.explanation { background: #0f0a1a; border-radius: 8px; padding: 8px 14px; font-size: 0.82rem; color: #8060a0; min-height: 36px; border-left: 3px solid #a855f7; animation: waveIn 0.3s ease; }
 
 /* Info */
-.info-box { background: #1a1540; border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.5; color: #9080c0; border-left: 3px solid #c678dd; }
-.info-box strong { color: #e0a0ff; }
+.info-box { background: #0f0a1a; border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.5; color: #5040a0; border-left: 3px solid #a855f7; }
+.info-box strong { color: #c084fc; }
 
-.section-title { font-size: 0.78rem; font-weight: 700; color: #7050a0; text-transform: uppercase; letter-spacing: 0.06em; }
+.section-title { font-size: 0.78rem; font-weight: 700; color: #4030a0; text-transform: uppercase; letter-spacing: 0.06em; }
 
 /* Toggle */
 .toggle-row { display: flex; gap: 6px; }
-.toggle-btn { padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 0.82rem; font-weight: 600; border: 2px solid #2a2050; background: #1a1535; color: #7060a0; transition: all 0.2s; }
-.toggle-btn.active { background: #2a1050; border-color: #c678dd; color: #e0a0ff; }
+.toggle-btn { padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 0.82rem; font-weight: 600; border: 2px solid #1a1030; background: #0f0a1a; color: #4030a0; transition: all 0.2s; }
+.toggle-btn.active { background: #1a0a30; border-color: #a855f7; color: #c084fc; }
 
 /* Legend */
 .legend { display: flex; gap: 10px; flex-wrap: wrap; }
-.legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: #7060a0; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: #4030a0; }
 .legend-dot { width: 14px; height: 14px; border-radius: 3px; }
 </style>
 </head>
@@ -137,12 +214,12 @@ select { background: #1a1540; color: #9090c0; border: 1px solid #3a2060; border-
 
     <!-- Legend -->
     <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#3d3000;border:1px solid #ffd600"></div>Đang tính</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#1a3050;border:1px solid #4eff91"></div>Chéo ↖ (char match)</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#1a2050;border:1px solid #61afef"></div>Trên ↑</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#1a2050;border:1px solid #e06060"></div>Trái ←</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#2a1050;border:1px solid #c678dd"></div>Khớp ký tự</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#2a2000;border:1px solid #ffd600"></div>Đường backtrack</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1a1000;border:1px solid #f59e0b"></div>Đang tính</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#071a0f;border:1px solid #22c55e"></div>Chéo ↖ (match)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#080a12;border:1px solid #6366f1"></div>Trên ↑</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#120808;border:1px solid #ef4444"></div>Trái ←</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1a0a30;border:1px solid #a855f7"></div>Ký tự khớp</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1a1000;border:1px solid #f59e0b"></div>Backtrack path</div>
     </div>
 
     <!-- LCS Result -->
@@ -216,7 +293,7 @@ select { background: #1a1540; color: #9090c0; border: 1px solid #3a2060; border-
     </div>
 
     <div class="section-title">📍 Cell hiện tại</div>
-    <div id="cellInfo" style="background:#1a1540;border-radius:8px;padding:10px;font-size:0.78rem;color:#9080c0;line-height:1.7">
+    <div id="cellInfo" style="background:#0f0a1a;border-radius:8px;padding:10px;font-size:0.78rem;color:#5040a0;line-height:1.7;border:1px solid #1a1030">
       Chưa có.
     </div>
   </div>
@@ -230,7 +307,7 @@ let playing = false, playTimer = null;
 let dpFull = [];
 let lcsResult = '';
 
-const CHAR_COLORS = ['#c678dd','#4eff91','#61afef','#ffd600','#ff9966','#ff6b6b','#98c379','#e5c07b'];
+const CHAR_COLORS = ['#a855f7','#22c55e','#06b6d4','#f59e0b','#ef4444','#fb923c','#4ade80','#e5c07b'];
 const charColorMap = {};
 function getCharColor(c) {
   if (!charColorMap[c]) {
@@ -267,26 +344,24 @@ function renderStringRows(xHighlight, yHighlight, lcsChars) {
     const el = document.createElement('div');
     el.className = 'str-char';
     el.innerHTML = `${c}<div class="char-idx">${i}</div>`;
-    if (lcsChars && lcsChars.includes(i + '_x')) {
-      el.classList.add('lcs-char');
-    } else if (xHighlight === i) {
-      el.classList.add('matched');
-    }
-    el.style.borderColor = getCharColor(c) + '66';
-    el.style.color = getCharColor(c);
+    const isLcs = lcsChars && lcsChars.includes(i + '_x');
+    const isMatch = xHighlight === i;
+    if (isLcs) el.classList.add('lcs-char');
+    else if (isMatch) el.classList.add('matched');
+    el.style.borderColor = isLcs || isMatch ? '' : (getCharColor(c) + '44');
+    el.style.color = isLcs || isMatch ? '' : getCharColor(c);
     xRow.appendChild(el);
   });
   Y.split('').forEach((c, j) => {
     const el = document.createElement('div');
     el.className = 'str-char';
     el.innerHTML = `${c}<div class="char-idx">${j}</div>`;
-    if (lcsChars && lcsChars.includes(j + '_y')) {
-      el.classList.add('lcs-char');
-    } else if (yHighlight === j) {
-      el.classList.add('matched');
-    }
-    el.style.borderColor = getCharColor(c) + '66';
-    el.style.color = getCharColor(c);
+    const isLcs = lcsChars && lcsChars.includes(j + '_y');
+    const isMatch = yHighlight === j;
+    if (isLcs) el.classList.add('lcs-char');
+    else if (isMatch) el.classList.add('matched');
+    el.style.borderColor = isLcs || isMatch ? '' : (getCharColor(c) + '44');
+    el.style.color = isLcs || isMatch ? '' : getCharColor(c);
     yRow.appendChild(el);
   });
 }
@@ -332,12 +407,11 @@ function buildFillSteps() {
   steps.push({ type: 'done', dp: dpFull, arrows: JSON.parse(JSON.stringify(arrows)),
     hl: {r:m, c:n}, dep: null, xi: -1, yj: -1,
     result: dp[m][n], codeLine: 10,
-    explanation: `✅ LCS length = dp[${m}][${n}] = ${dp[m][n]}. Nhấn "Backtrack" để tìm chuỗi LCS!` });
+    explanation: `✅ LCS length = dp[${m}][${n}] = ${dp[m][n]}. Chuyển sang "Backtrack" để tìm chuỗi LCS!` });
 }
 
 function buildBacktrackSteps() {
   const m = X.length, n = Y.length;
-  // Fill first
   const dp = Array.from({length: m+1}, () => new Array(n+1).fill(0));
   const arrows = Array.from({length: m+1}, () => new Array(n+1).fill(''));
   for (let i = 1; i <= m; i++) {
@@ -367,7 +441,7 @@ function buildBacktrackSteps() {
         hl: {r:i, c:j}, btPath: [...btPath], lcsStr: lcs,
         lcsXIdx: new Set(lcsXIdx), lcsYIdx: new Set(lcsYIdx),
         xi: i-1, yj: j-1,
-        explanation: `X[${i-1}]='${X[i-1]}' == Y[${j-1}]='${Y[j-1]}' → KHỚP! Thêm '${X[i-1]}' vào LCS → "${lcs}"` });
+        explanation: `X[${i-1}]='${X[i-1]}' == Y[${j-1}]='${Y[j-1]}' → KHỚP! Thêm '${X[i-1]}' → LCS = "${lcs}"` });
       i--; j--;
     } else if (dp[i-1][j] >= dp[i][j-1]) {
       steps.push({ type: 'bt-up', dp: dpFull, arrows: JSON.parse(JSON.stringify(arrows)),
@@ -392,6 +466,8 @@ function buildBacktrackSteps() {
 }
 
 // ── Render DP grid ─────────────────────────────────────────────────────
+const prevCellClasses = {};
+
 function renderGrid(dp, arrows, hl, dep, btPath) {
   const grid = document.getElementById('dpGrid');
   const m = X.length, n = Y.length;
@@ -399,11 +475,9 @@ function renderGrid(dp, arrows, hl, dep, btPath) {
   grid.style.gridTemplateColumns = `repeat(${cols}, 40px)`;
   grid.innerHTML = '';
 
-  // Corner header
   const corner = document.createElement('div'); corner.className = 'dp-cell header'; corner.textContent = ''; grid.appendChild(corner);
-  // Column headers (Y chars)
   const emptyH = document.createElement('div'); emptyH.className = 'dp-cell header'; emptyH.textContent = 'ε'; grid.appendChild(emptyH);
-  Y.split('').forEach((c, j) => {
+  Y.split('').forEach((c) => {
     const h = document.createElement('div'); h.className = 'dp-cell header';
     h.textContent = c; h.style.color = getCharColor(c); grid.appendChild(h);
   });
@@ -411,7 +485,6 @@ function renderGrid(dp, arrows, hl, dep, btPath) {
   const btSet = new Set((btPath || []).map(p => `${p.r},${p.c}`));
 
   for (let i = 0; i <= m; i++) {
-    // Row header (X chars)
     const rh = document.createElement('div'); rh.className = 'dp-cell header';
     rh.textContent = i === 0 ? 'ε' : X[i-1];
     if (i > 0) rh.style.color = getCharColor(X[i-1]);
@@ -423,16 +496,29 @@ function renderGrid(dp, arrows, hl, dep, btPath) {
       const val = dp[i][j];
       const key = `${i},${j}`;
 
-      if (hl && hl.r === i && hl.c === j) cell.classList.add('computing');
-      else if (btSet.has(key)) cell.classList.add('backtrack');
-      else if (dep) {
-        if (dep.diag && dep.diag.r === i && dep.diag.c === j) cell.classList.add('dep-diag');
-        else if (dep.top && dep.top.r === i && dep.top.c === j) cell.classList.add('dep-top');
-        else if (dep.left && dep.left.r === i && dep.left.c === j) cell.classList.add('dep-left');
-        else cell.classList.add(val > 0 ? (arrows && arrows[i][j] === '↖' ? 'match' : 'computed') : 'empty');
+      let cls = '';
+      if (hl && hl.r === i && hl.c === j) {
+        cls = 'computing';
+      } else if (btSet.has(key)) {
+        cls = 'backtrack';
+      } else if (dep) {
+        if (dep.diag && dep.diag.r === i && dep.diag.c === j) cls = 'dep-diag';
+        else if (dep.top && dep.top.r === i && dep.top.c === j) cls = 'dep-top';
+        else if (dep.left && dep.left.r === i && dep.left.c === j) cls = 'dep-left';
+        else cls = val > 0 ? (arrows && arrows[i][j] === '↖' ? 'match' : 'computed') : 'empty';
       } else {
-        cell.classList.add(val > 0 ? (arrows && arrows[i][j] === '↖' ? 'match' : 'computed') : 'empty');
+        cls = val > 0 ? (arrows && arrows[i][j] === '↖' ? 'match' : 'computed') : 'empty';
       }
+
+      cell.classList.add(cls);
+
+      // Trigger fill animation only when newly computed
+      if (cls === 'computed' && prevCellClasses[key] !== 'computed') {
+        cell.style.animation = 'none';
+        cell.offsetHeight;
+        cell.style.animation = 'fillCell 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+      }
+      prevCellClasses[key] = cls;
 
       cell.textContent = val;
       if (arrows && arrows[i][j]) {
@@ -451,9 +537,20 @@ function renderGrid(dp, arrows, hl, dep, btPath) {
 function applyStep(idx) {
   if (idx >= steps.length) { stopPlay(); return; }
   const s = steps[idx];
-  document.getElementById('explanation').textContent = s.explanation || '';
+
+  const expEl = document.getElementById('explanation');
+  expEl.style.animation = 'none';
+  expEl.offsetHeight;
+  expEl.style.animation = 'waveIn 0.3s ease';
+  expEl.textContent = s.explanation || '';
+
   document.getElementById('statStep').textContent = idx + 1;
-  if (s.result !== undefined) document.getElementById('statLen').textContent = s.result;
+  if (s.result !== undefined) {
+    const el = document.getElementById('statLen');
+    el.style.animation = 'none'; el.offsetHeight;
+    el.style.animation = 'lcsPop 0.4s cubic-bezier(0.34,1.56,0.64,1)';
+    el.textContent = s.result;
+  }
 
   const lcsXArr = s.lcsXIdx ? Array.from(s.lcsXIdx).map(i => i + '_x') : [];
   const lcsYArr = s.lcsYIdx ? Array.from(s.lcsYIdx).map(j => j + '_y') : [];
@@ -462,26 +559,25 @@ function applyStep(idx) {
   renderGrid(s.dp, s.arrows, s.hl, s.dep, s.btPath);
   highlightCode(s.codeLine);
 
-  // LCS display
+  // LCS display — animate each new char
   if (s.lcsStr !== undefined) {
     document.getElementById('statLcs').textContent = s.lcsStr || '(trống)';
     const lcsCharsEl = document.getElementById('lcsChars');
     if (s.lcsStr) {
-      lcsCharsEl.innerHTML = s.lcsStr.split('').map(c =>
-        `<div class="lcs-char" style="color:${getCharColor(c)};border-color:${getCharColor(c)}">${c}</div>`
+      lcsCharsEl.innerHTML = s.lcsStr.split('').map((c, ci) =>
+        `<div class="lcs-char" style="color:${getCharColor(c)};border-color:${getCharColor(c)};animation-delay:${ci * 0.06}s">${c}</div>`
       ).join('');
     } else {
       lcsCharsEl.innerHTML = '<div class="lcs-empty">Đang tính...</div>';
     }
   }
 
-  // Cell info
   if (s.hl) {
     const i = s.hl.r, j = s.hl.c;
     document.getElementById('cellInfo').innerHTML =
-      `<b style="color:#e0a0ff">dp[${i}][${j}]</b> = ${s.dp[i]?.[j] ?? '?'}<br>` +
-      (i > 0 ? `X[${i-1}] = '${X[i-1]}'<br>` : '') +
-      (j > 0 ? `Y[${j-1}] = '${Y[j-1]}'<br>` : '') +
+      `<b style="color:#c084fc">dp[${i}][${j}]</b> = ${s.dp[i]?.[j] ?? '?'}<br>` +
+      (i > 0 ? `X[${i-1}] = '<span style="color:${getCharColor(X[i-1])}">${X[i-1]}</span>'<br>` : '') +
+      (j > 0 ? `Y[${j-1}] = '<span style="color:${getCharColor(Y[j-1])}">${Y[j-1]}</span>'<br>` : '') +
       (s.match !== undefined ? `Khớp: ${s.match ? '✅ Có' : '❌ Không'}` : '');
   }
 }
@@ -493,31 +589,19 @@ function highlightCode(line) {
   });
 }
 
-function togglePlay() {
-  if (playing) stopPlay(); else startPlay();
-}
-function startPlay() {
-  playing = true;
-  document.getElementById('btnPlay').textContent = '⏸ Pause';
-  tick();
-}
-function stopPlay() {
-  playing = false;
-  document.getElementById('btnPlay').textContent = '▶ Play';
-  clearTimeout(playTimer);
-}
+function togglePlay() { if (playing) stopPlay(); else startPlay(); }
+function startPlay() { playing = true; document.getElementById('btnPlay').textContent = '⏸ Pause'; tick(); }
+function stopPlay() { playing = false; document.getElementById('btnPlay').textContent = '▶ Play'; clearTimeout(playTimer); }
 function tick() {
   if (!playing) return;
   if (stepIdx >= steps.length) { stopPlay(); return; }
   applyStep(stepIdx++);
   playTimer = setTimeout(tick, parseInt(document.getElementById('speedSel').value));
 }
-function stepForward() {
-  stopPlay();
-  if (stepIdx < steps.length) applyStep(stepIdx++);
-}
+function stepForward() { stopPlay(); if (stepIdx < steps.length) applyStep(stepIdx++); }
 function resetAnim() {
   stopPlay(); stepIdx = 0;
+  Object.keys(prevCellClasses).forEach(k => delete prevCellClasses[k]);
   document.getElementById('statStep').textContent = '0';
   document.getElementById('statLen').textContent = '—';
   document.getElementById('statLcs').textContent = '—';

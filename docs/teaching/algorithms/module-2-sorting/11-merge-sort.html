@@ -6,48 +6,71 @@
 <title>Merge Sort — Sắp xếp trộn</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',sans-serif;background:#0f1117;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-header{background:#1a1d2e;padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #2d3148}
-header h1{font-size:1.1rem;color:#38bdf8}
+body{font-family:'Segoe UI',sans-serif;background:#080c14;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(56,189,248,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.04) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;z-index:0}
+
+header{background:linear-gradient(135deg,#020d1a,#051524);padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #0c3352;position:relative;z-index:1}
+header h1{font-size:1.1rem;color:#38bdf8;text-shadow:0 0 20px rgba(56,189,248,.4)}
 .badge{background:#0c4a6e;color:#7dd3fc;padding:2px 8px;border-radius:4px;font-size:.75rem}
 .complexity{display:flex;gap:8px;margin-left:auto}
 .cx{background:#1e293b;border:1px solid #334155;border-radius:4px;padding:2px 8px;font-size:.75rem;color:#94a3b8}
 .cx span{color:#fbbf24}
-main{flex:1;display:flex;overflow:hidden;min-height:0}
-#viz{width:60%;background:#0d1117;display:flex;flex-direction:column;overflow:hidden}
+
+main{flex:1;display:flex;overflow:hidden;min-height:0;position:relative;z-index:1}
+#viz{width:60%;background:transparent;display:flex;flex-direction:column;overflow:hidden}
 #bar-area{flex:1;position:relative;padding:8px 16px 0;min-height:0}
-#bars-container{position:absolute;bottom:0;left:16px;right:16px;top:8px;display:flex;align-items:flex-end;gap:2px}
-.bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1;position:relative}
-.bar{width:100%;border-radius:3px 3px 0 0;background:#4a90d9;transition:background .3s}
-.bar-val{font-size:9px;color:#94a3b8;margin-top:1px}
-.bar.left-half{background:#38bdf8}
-.bar.right-half{background:#818cf8}
-.bar.comparing-l{background:#f43f5e}
-.bar.comparing-r{background:#f97316}
-.bar.merged{background:#22c55e}
-.bar.sorted{background:#22c55e}
-#tree-area{height:130px;background:#0a0f1a;border-top:1px solid #1e293b;position:relative;overflow:hidden}
+#bars-container{position:absolute;bottom:0;left:16px;right:16px;top:8px;display:flex;align-items:flex-end;gap:3px}
+
+.bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;transition:margin .3s ease}
+.bar{width:100%;border-radius:4px 4px 0 0;background:linear-gradient(to top,#1d4ed8,#60a5fa);position:relative;overflow:hidden;transition:background .3s,box-shadow .2s}
+.bar::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.15) 50%,transparent 60%);background-size:200% 100%;opacity:0}
+.bar-val{font-size:9px;color:#94a3b8;margin-top:2px;font-weight:600}
+
+.bar.left-half{background:linear-gradient(to top,#0c4a6e,#38bdf8);box-shadow:0 0 6px rgba(56,189,248,.3)}
+.bar.right-half{background:linear-gradient(to top,#3730a3,#818cf8);box-shadow:0 0 6px rgba(129,140,248,.3)}
+.bar.comparing-l{background:linear-gradient(to top,#881337,#f43f5e);box-shadow:0 0 14px rgba(244,63,94,.6);animation:pulseBar .4s ease-in-out infinite}
+.bar.comparing-r{background:linear-gradient(to top,#9a3412,#f97316);box-shadow:0 0 14px rgba(249,115,22,.6);animation:pulseBar .4s ease-in-out infinite}
+.bar.merged{background:linear-gradient(to top,#065f46,#34d399);box-shadow:0 0 10px rgba(52,211,153,.4)}
+.bar.sorted{background:linear-gradient(to top,#065f46,#34d399);box-shadow:0 0 8px rgba(52,211,153,.2)}
+.bar.sorted::after{animation:shimmer 2s linear infinite;opacity:1}
+
+/* Sub-array separators: gap between groups */
+.bar-wrap.left-group{margin-right:0px}
+.bar-wrap.right-group{margin-left:0px}
+.bar-wrap.gap-right{margin-right:6px!important;border-right:1px solid rgba(56,189,248,.4)}
+
+#tree-area{height:120px;background:#020a14;border-top:1px solid #0c3352;position:relative;overflow:hidden}
 #tree-canvas{width:100%;height:100%}
-#legend{display:flex;gap:10px;padding:5px 16px;background:#111827;font-size:.7rem;flex-wrap:wrap}
+
+#legend{display:flex;gap:10px;padding:5px 16px;background:rgba(2,13,26,.9);font-size:.7rem;flex-wrap:wrap}
 .leg{display:flex;align-items:center;gap:4px}
 .leg-dot{width:9px;height:9px;border-radius:2px}
-#code-panel{width:40%;background:#1a1d2e;border-left:1px solid #2d3148;display:flex;flex-direction:column}
-.panel-title{padding:8px 14px;background:#12152a;font-size:.8rem;color:#8b92c4;border-bottom:1px solid #2d3148}
+
+#code-panel{width:40%;background:#020d1a;border-left:1px solid #0c3352;display:flex;flex-direction:column}
+.panel-title{padding:8px 14px;background:#010810;font-size:.8rem;color:#8b92c4;border-bottom:1px solid #0c3352}
 #code{flex:1;overflow-y:auto;padding:8px 0;font-family:'Courier New',monospace;font-size:.78rem;line-height:1.7}
-.code-line{padding:1px 14px;color:#8b92c4;white-space:pre}
-.code-line.active{background:#2d2a12;color:#fde68a;border-left:3px solid #fbbf24}
-#explain{padding:8px 14px;background:#0f1117;border-top:1px solid #2d3148;font-size:.78rem;color:#94a3b8;min-height:52px;line-height:1.4}
-#controls{background:#111827;padding:7px 14px;display:flex;align-items:center;gap:8px;border-top:1px solid #1e293b;flex-wrap:wrap}
-button{background:#1d4ed8;color:#e2e8f0;border:none;border-radius:5px;padding:5px 12px;cursor:pointer;font-size:.8rem;transition:background .2s}
-button:hover{background:#2563eb}
-#btn-play{background:#0369a1}#btn-play:hover{background:#0284c7}
+.code-line{padding:2px 14px;color:#8b92c4;white-space:pre;border-left:3px solid transparent;transition:all .2s}
+.code-line.active{background:linear-gradient(90deg,rgba(251,191,36,.12),transparent);color:#fde68a;border-left-color:#fbbf24}
+#explain{padding:8px 14px;background:#080c14;border-top:1px solid #0c3352;font-size:.78rem;color:#94a3b8;min-height:52px;line-height:1.4}
+
+#controls{background:linear-gradient(135deg,#020d1a,#111827);padding:7px 14px;display:flex;align-items:center;gap:8px;border-top:1px solid #1e293b;flex-wrap:wrap;position:relative;z-index:1}
+button{background:#1d4ed8;color:#e2e8f0;border:1px solid #2563eb;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:.8rem;transition:all .2s}
+button:hover{background:#2563eb;box-shadow:0 0 12px rgba(37,99,235,.3)}
+#btn-play{background:#0369a1;border-color:#0284c7}
+#btn-play:hover{background:#0284c7;box-shadow:0 0 12px rgba(2,132,199,.4)}
 #stats{display:flex;gap:10px;margin-left:auto;font-size:.78rem}
-.stat{background:#1e293b;padding:3px 8px;border-radius:4px}
-.stat span{color:#f59e0b}
+.stat{background:#1e293b;padding:3px 8px;border-radius:6px;border:1px solid #2d3748}
+.stat span{color:#f59e0b;font-weight:700}
 label{font-size:.75rem;color:#64748b}
 input[type=range]{accent-color:#38bdf8;width:80px}
 select{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:3px 5px;font-size:.75rem}
-#phase-info{background:#1e293b;padding:3px 8px;border-radius:4px;font-size:.78rem;color:#38bdf8}
+#phase-info{background:#1e293b;padding:3px 8px;border-radius:6px;font-size:.78rem;color:#38bdf8;border:1px solid #0c3352}
+
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes pulseBar{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.07);transform-origin:bottom}}
+@keyframes dropIn{0%{transform:translateY(-30px);opacity:0}100%{transform:translateY(0);opacity:1}}
+@keyframes mergeIn{0%{transform:translateY(-8px);opacity:.5}100%{transform:translateY(0);opacity:1}}
+@keyframes nodePop{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
 </style>
 </head>
 <body>
@@ -71,7 +94,7 @@ select{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:4
       <div class="leg"><div class="leg-dot" style="background:#818cf8"></div>Nửa phải</div>
       <div class="leg"><div class="leg-dot" style="background:#f43f5e"></div>So sánh trái</div>
       <div class="leg"><div class="leg-dot" style="background:#f97316"></div>So sánh phải</div>
-      <div class="leg"><div class="leg-dot" style="background:#22c55e"></div>Đã trộn/sắp xếp</div>
+      <div class="leg"><div class="leg-dot" style="background:#34d399"></div>Đã trộn</div>
     </div>
   </div>
   <div id="code-panel">
@@ -150,7 +173,6 @@ function buildSteps(){
     treeNodes.push({l,r,mid,depth,status:'pending'});
     mergeSortSteps(arr2,l,mid,depth+1);
     mergeSortSteps(arr2,mid+1,r,depth+1);
-    // merge
     steps.push({type:'mergeStart',l,r,mid,depth,arr:[...arr2],line:8});
     const left=arr2.slice(l,mid+1);
     const right=arr2.slice(mid+1,r+1);
@@ -171,16 +193,34 @@ function buildSteps(){
   cmp=0;write=0;acc=0;
 }
 
-let currentState={arr:[],l:-1,r:-1,mid:-1,left:[],right:[],li:-1,ri:-1};
-function renderBars(state){
+function buildBarsDOM(a){
   const con=document.getElementById('bars-container');
-  const a=state.arr||arr;const max=Math.max(...a);
   con.innerHTML='';
-  a.forEach((v,idx)=>{
-    const wrap=document.createElement('div');wrap.className='bar-wrap';
+  const max=Math.max(...a);
+  a.forEach((v,i)=>{
+    const wrap=document.createElement('div');wrap.className='bar-wrap';wrap.dataset.idx=i;
     const bar=document.createElement('div');bar.className='bar';
-    bar.style.height=Math.round(v/max*100)+'%';
-    const {l,r,mid,li,ri}=state;
+    bar.style.height=Math.round((v/max)*100)+'%';
+    bar.style.animation='dropIn .4s ease both';
+    bar.style.animationDelay=(i*0.03)+'s';
+    const val=document.createElement('div');val.className='bar-val';val.textContent=v;
+    wrap.appendChild(bar);wrap.appendChild(val);con.appendChild(wrap);
+  });
+}
+
+function renderBars(state){
+  const wraps=document.querySelectorAll('.bar-wrap');
+  const a=state.arr||arr;
+  const max=Math.max(...a);
+  const {l,r,mid,li,ri}=state;
+
+  wraps.forEach((wrap,idx)=>{
+    const bar=wrap.querySelector('.bar');
+    const val=wrap.querySelector('.bar-val');
+    bar.className='bar';
+    bar.style.height=Math.round((a[idx]/max)*100)+'%';
+    val.textContent=a[idx];
+
     if(state.type==='done') bar.classList.add('sorted');
     else if(state.mergedRange&&idx>=state.mergedRange[0]&&idx<=state.mergedRange[1]) bar.classList.add('merged');
     else if(idx===li) bar.classList.add('comparing-l');
@@ -189,61 +229,130 @@ function renderBars(state){
       if(idx>=l&&idx<=mid) bar.classList.add('left-half');
       else if(idx>mid&&idx<=r) bar.classList.add('right-half');
     }
-    const val=document.createElement('div');val.className='bar-val';val.textContent=v;
-    wrap.appendChild(bar);wrap.appendChild(val);con.appendChild(wrap);
   });
 }
 
-function drawTree(){
+function drawTree(activeL,activeR,status){
   const canvas=document.getElementById('tree-canvas');
   const ctx=canvas.getContext('2d');
   canvas.width=canvas.clientWidth;canvas.height=canvas.clientHeight;
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(treeNodes.length===0)return;
+  if(treeNodes.length===0) return;
   const W=canvas.width,H=canvas.height;
   const maxDepth=Math.max(...treeNodes.map(n=>n.depth));
   const nodeH=Math.min(18,H/(maxDepth+2));
+
   treeNodes.forEach(n=>{
     const totalW=arr.length;
     const x1=W*(n.l/totalW)+4;const x2=W*((n.r+1)/totalW)-4;
-    const cx=(x1+x2)/2;const y=10+n.depth*(H-20)/(maxDepth+1);
-    const col=n.status==='done'?'#22c55e':n.status==='active'?'#38bdf8':'#334155';
-    ctx.fillStyle=col;ctx.globalAlpha=0.85;
-    ctx.fillRect(x1,y,x2-x1,nodeH-2);
-    ctx.globalAlpha=1;ctx.fillStyle='#e2e8f0';ctx.font=`${Math.max(9,nodeH*0.55)}px monospace`;
-    ctx.textAlign='center';ctx.fillText(`[${n.l}..${n.r}]`,cx,y+nodeH*0.7);
+    const cx=(x1+x2)/2;const y=8+n.depth*(H-16)/(maxDepth+1);
+    const isActive=n.l===activeL&&n.r===activeR;
+    let col='#1e3a5f';
+    if(n.status==='done') col='#065f46';
+    else if(isActive) col='#0c4a6e';
+
+    // Animated border for active node
+    ctx.save();
+    ctx.shadowColor=isActive?'#38bdf8':n.status==='done'?'#34d399':'transparent';
+    ctx.shadowBlur=isActive?12:0;
+    ctx.fillStyle=col;ctx.globalAlpha=0.9;
+    const rr=4;const w=x2-x1;const h2=nodeH-2;
+    ctx.beginPath();ctx.roundRect(x1,y,w,h2,rr);ctx.fill();
+    ctx.globalAlpha=1;
+    if(isActive){ctx.strokeStyle='#38bdf8';ctx.lineWidth=1.5;ctx.stroke();}
+    ctx.restore();
+
+    ctx.fillStyle=isActive?'#ffffff':n.status==='done'?'#6ee7b7':'#94a3b8';
+    ctx.font=`${Math.max(8,nodeH*0.55)}px monospace`;
+    ctx.textAlign='center';ctx.fillText(`[${n.l}..${n.r}]`,cx,y+nodeH*0.72);
   });
 }
 
 function applyStep(s){
   if(!s)return;
   hl(s.line>=0?s.line:-1);
-  Object.assign(currentState,s);
   const phaseEl=document.getElementById('phase-info');
-  if(s.type==='init'){renderBars({arr:s.arr});drawTree();document.getElementById('explain').textContent='Merge Sort chia mảng thành hai nửa liên tục cho đến khi mỗi nửa chỉ còn 1 phần tử, rồi trộn lại.';}
-  else if(s.type==='divide'){phaseEl.textContent='Phase: DIVIDE';treeNodes.find(n=>n.l===s.l&&n.r===s.r)&&(treeNodes.find(n=>n.l===s.l&&n.r===s.r).status='active');renderBars(s);drawTree();document.getElementById('explain').innerHTML=`✂️ <b>DIVIDE</b>: Chia [${s.l}..${s.r}] thành [${s.l}..${s.mid}] và [${s.mid+1}..${s.r}]`;}
-  else if(s.type==='base'){document.getElementById('explain').innerHTML=`📌 Base case: [${s.l}..${s.r}] — chỉ 1 phần tử → đã sắp xếp!`;renderBars({...s,l:-1,r:-1});}
-  else if(s.type==='mergeStart'){phaseEl.textContent='Phase: MERGE';document.getElementById('explain').innerHTML=`🔀 <b>MERGE</b>: Trộn [${s.l}..${s.mid}] và [${s.mid+1}..${s.r}]`;renderBars(s);}
-  else if(s.type==='mergeCopy'){document.getElementById('explain').innerHTML=`📋 Copy sang mảng tạm: left=[${s.left}], right=[${s.right}]`;renderBars(s);}
-  else if(s.type==='mergeCompare'){cmp++;document.getElementById('s-cmp').textContent=cmp;acc+=2;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`🔴 So sánh left[${s.i}]=${s.left[s.i]} vs right[${s.j}]=${s.right[s.j]}`;renderBars({...s});}
-  else if(s.type==='mergePick'){write++;document.getElementById('s-write').textContent=write;acc++;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`✅ Lấy từ <b>${s.from==='left'?'trái':'phải'}</b> → đặt vào vị trí ${s.k}`;renderBars({...s,mergedRange:[s.l,s.k]});}
-  else if(s.type==='mergeTail'){write++;document.getElementById('s-write').textContent=write;acc++;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`📋 Copy phần còn lại vào vị trí ${s.k}`;renderBars({...s,mergedRange:[s.l,s.k]});}
-  else if(s.type==='mergeDone'){const nd=treeNodes.find(n=>n.l===s.l&&n.r===s.r);if(nd)nd.status='done';renderBars({...s,mergedRange:[s.l,s.r]});drawTree();document.getElementById('explain').innerHTML=`✅ Trộn xong! [${s.l}..${s.r}] đã sắp xếp.`;}
-  else if(s.type==='done'){renderBars({type:'done',arr:s.arr});document.getElementById('explain').textContent='🎉 Merge Sort hoàn tất! O(n log n) — luôn ổn định.';stopPlay();}
+
+  if(s.type==='init'){
+    buildBarsDOM(s.arr);drawTree(-1,-1);
+    document.getElementById('explain').textContent='Merge Sort: chia đôi liên tục đến 1 phần tử, rồi trộn lại theo thứ tự.';
+  }
+  else if(s.type==='divide'){
+    phaseEl.textContent='Phase: DIVIDE';
+    const nd=treeNodes.find(n=>n.l===s.l&&n.r===s.r);
+    if(nd) nd.status='active';
+    renderBars(s);drawTree(s.l,s.r);
+    document.getElementById('explain').innerHTML=`✂️ <b>DIVIDE</b>: [${s.l}..${s.r}] → [${s.l}..${s.mid}] + [${s.mid+1}..${s.r}]`;
+  }
+  else if(s.type==='base'){
+    document.getElementById('explain').innerHTML=`📌 Base case [${s.l}..${s.r}] — 1 phần tử → đã sắp xếp!`;
+    renderBars({...s,l:-1,r:-1});
+  }
+  else if(s.type==='mergeStart'){
+    phaseEl.textContent='Phase: MERGE';
+    document.getElementById('explain').innerHTML=`🔀 <b>MERGE</b>: Trộn [${s.l}..${s.mid}] và [${s.mid+1}..${s.r}]`;
+    renderBars(s);drawTree(s.l,s.r);
+  }
+  else if(s.type==='mergeCopy'){
+    document.getElementById('explain').innerHTML=`📋 left=[${s.left}], right=[${s.right}]. Bắt đầu trộn...`;
+    renderBars(s);
+  }
+  else if(s.type==='mergeCompare'){
+    cmp++;document.getElementById('s-cmp').textContent=cmp;
+    acc+=2;document.getElementById('s-acc').textContent=acc;
+    document.getElementById('explain').innerHTML=`🔴 So sánh left[${s.i}]=${s.left[s.i]} vs right[${s.j}]=${s.right[s.j]}`;
+    renderBars({...s});
+  }
+  else if(s.type==='mergePick'){
+    write++;document.getElementById('s-write').textContent=write;
+    acc++;document.getElementById('s-acc').textContent=acc;
+    document.getElementById('explain').innerHTML=`✅ Lấy từ <b>${s.from==='left'?'trái 🔵':'phải 🟣'}</b> → vị trí ${s.k}`;
+    renderBars({...s,mergedRange:[s.l,s.k]});
+    // flash the merged bar
+    const wraps=document.querySelectorAll('.bar-wrap');
+    const bar=wraps[s.k]?.querySelector('.bar');
+    if(bar){bar.style.animation='none';bar.offsetHeight;bar.style.animation='mergeIn .25s ease';}
+  }
+  else if(s.type==='mergeTail'){
+    write++;document.getElementById('s-write').textContent=write;
+    acc++;document.getElementById('s-acc').textContent=acc;
+    document.getElementById('explain').innerHTML=`📋 Copy còn lại → vị trí ${s.k}`;
+    renderBars({...s,mergedRange:[s.l,s.k]});
+  }
+  else if(s.type==='mergeDone'){
+    const nd=treeNodes.find(n=>n.l===s.l&&n.r===s.r);
+    if(nd) nd.status='done';
+    renderBars({...s,mergedRange:[s.l,s.r]});
+    drawTree(-1,-1);
+    document.getElementById('explain').innerHTML=`✅ Trộn xong [${s.l}..${s.r}]. Đã sắp xếp!`;
+  }
+  else if(s.type==='done'){
+    buildBarsDOM(s.arr);
+    setTimeout(()=>document.querySelectorAll('.bar').forEach(b=>b.classList.add('sorted')),50);
+    document.getElementById('explain').textContent='🎉 Merge Sort hoàn tất! O(n log n) — luôn ổn định.';
+    phaseEl.textContent='Phase: DONE ✓';
+    stopPlay();
+  }
 }
 
 function getDelay(){return Math.round(1100-document.getElementById('speed').value*100);}
 function tick(){if(stepIdx>=steps.length){stopPlay();return;}applyStep(steps[stepIdx++]);if(playing)timer=setTimeout(tick,getDelay());}
 function startPlay(){if(stepIdx>=steps.length)reset();playing=true;document.getElementById('btn-play').textContent='⏸ Pause';tick();}
 function stopPlay(){playing=false;clearTimeout(timer);document.getElementById('btn-play').textContent='▶ Play';}
-function reset(){stopPlay();stepIdx=0;cmp=0;write=0;acc=0;buildSteps();['s-cmp','s-write','s-acc'].forEach(id=>document.getElementById(id).textContent=0);document.getElementById('phase-info').textContent='Phase: —';hl(-1);renderBars({arr});drawTree();document.getElementById('explain').textContent='👋 Nhấn Play để bắt đầu!';}
+function reset(){
+  stopPlay();stepIdx=0;cmp=0;write=0;acc=0;buildSteps();
+  ['s-cmp','s-write','s-acc'].forEach(id=>document.getElementById(id).textContent=0);
+  document.getElementById('phase-info').textContent='Phase: —';
+  hl(-1);buildBarsDOM(arr);drawTree(-1,-1);
+  document.getElementById('explain').textContent='👋 Nhấn Play để bắt đầu!';
+}
 
 document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
 document.getElementById('btn-step').onclick=()=>{stopPlay();if(stepIdx<steps.length)applyStep(steps[stepIdx++]);};
 document.getElementById('btn-reset').onclick=reset;
 document.getElementById('btn-new').onclick=()=>{genArray();reset();};
 document.getElementById('size-sel').onchange=()=>{genArray();reset();};
-window.addEventListener('resize',drawTree);
+window.addEventListener('resize',()=>drawTree(-1,-1));
 
 buildCode();genArray();reset();
 </script>

@@ -6,36 +6,101 @@
 <title>DP #24 — Fibonacci & Giới thiệu Dynamic Programming</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; min-height: 100vh; }
-header { background: linear-gradient(135deg, #1a1f35, #252b45); padding: 16px 24px; border-bottom: 2px solid #3b4fd8; display: flex; align-items: center; gap: 16px; }
-header h1 { font-size: 1.3rem; color: #7b8fff; }
-header .badge { background: #3b4fd8; color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #0a0a1a;
+  color: #e0e0e0;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(99,102,241,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(6,182,212,0.06) 0%, transparent 60%),
+    linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+}
+header {
+  background: linear-gradient(135deg, #12122a, #1a1a35);
+  padding: 16px 24px;
+  border-bottom: 2px solid #6366f1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 20px rgba(99,102,241,0.2);
+}
+header h1 { font-size: 1.3rem; color: #818cf8; }
+header .badge { background: #6366f1; color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
 .main { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 60px); }
 .left-panel { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
-.right-panel { background: #161b2e; border-left: 2px solid #2a3050; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.right-panel { background: #0d0d20; border-left: 2px solid #1e1e40; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+
+/* ── Keyframes ─────────────────────────────────────────────────────── */
+@keyframes nodeBloom {
+  0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+  60%  { transform: scale(1.25) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes cacheFlash {
+  0%   { background: #0a2a1a; box-shadow: 0 0 0px rgba(34,197,94,0); }
+  30%  { background: #0a4a2a; box-shadow: 0 0 24px rgba(34,197,94,0.8); }
+  70%  { background: #062018; box-shadow: 0 0 12px rgba(34,197,94,0.4); }
+  100% { background: #0a2a1a; box-shadow: 0 0 4px rgba(34,197,94,0.2); }
+}
+@keyframes fillCell {
+  0%   { transform: scaleX(0); opacity: 0; }
+  60%  { transform: scaleX(1.05); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 1; }
+}
+@keyframes countTick {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.4); color: #ef4444; }
+  100% { transform: scale(1); }
+}
+@keyframes countTickSlow {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.3); color: #22c55e; }
+  100% { transform: scale(1); }
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(99,102,241,0.3); }
+  50%       { box-shadow: 0 0 20px rgba(99,102,241,0.7); }
+}
+@keyframes bounceIn {
+  0%   { transform: scale(0.5) translateY(20px); opacity: 0; }
+  60%  { transform: scale(1.1) translateY(-4px); opacity: 1; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+@keyframes waveIn {
+  0%   { transform: translateY(-10px) scaleY(0.8); opacity: 0; }
+  60%  { transform: translateY(2px) scaleY(1.05); opacity: 1; }
+  100% { transform: translateY(0) scaleY(1); opacity: 1; }
+}
+@keyframes glowGreen {
+  0%, 100% { box-shadow: 0 0 6px rgba(34,197,94,0.4); }
+  50%       { box-shadow: 0 0 20px rgba(34,197,94,0.9); }
+}
 
 /* Approach tabs */
 .tabs { display: flex; gap: 6px; }
 .tab { padding: 8px 16px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.82rem; font-weight: 600; border: 2px solid transparent; transition: all 0.2s; }
-.tab.active { background: #2a3368; border-color: #3b4fd8; color: #7b8fff; }
-.tab:not(.active) { background: #1a1f35; color: #7090c0; }
-.tab:hover:not(.active) { background: #1e2540; }
+.tab.active { background: #1e1e40; border-color: #6366f1; color: #818cf8; }
+.tab:not(.active) { background: #12122a; color: #5060a0; }
+.tab:hover:not(.active) { background: #181830; }
 
 /* Input section */
-.input-row { display: flex; align-items: center; gap: 12px; background: #1a1f35; padding: 10px 14px; border-radius: 10px; }
-.input-row label { font-size: 0.85rem; color: #8090c0; }
-input[type=range] { flex: 1; accent-color: #3b4fd8; }
-.n-display { background: #3b4fd8; color: white; font-weight: bold; padding: 4px 12px; border-radius: 8px; min-width: 40px; text-align: center; }
+.input-row { display: flex; align-items: center; gap: 12px; background: #12122a; padding: 10px 14px; border-radius: 10px; border: 1px solid #1e1e40; }
+.input-row label { font-size: 0.85rem; color: #6070a0; }
+input[type=range] { flex: 1; accent-color: #6366f1; }
+.n-display { background: linear-gradient(135deg, #6366f1, #818cf8); color: white; font-weight: bold; padding: 4px 12px; border-radius: 8px; min-width: 40px; text-align: center; }
 
 /* Complexity badge */
 .complexity-row { display: flex; gap: 10px; }
 .cmx { padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; }
-.cmx.bad { background: #3d1515; color: #ff6b6b; border: 1px solid #6b2020; }
-.cmx.good { background: #153d20; color: #4eff91; border: 1px solid #206b30; }
+.cmx.bad { background: #1a0a0a; color: #ef4444; border: 1px solid #3a1010; }
+.cmx.good { background: #0a1a0a; color: #22c55e; border: 1px solid #103010; }
 
 /* Visualization areas */
-.viz-box { background: #161b2e; border: 2px solid #2a3050; border-radius: 12px; padding: 16px; min-height: 280px; position: relative; }
-.viz-box h3 { font-size: 0.85rem; color: #8090c0; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+.viz-box { background: #0d0d20; border: 2px solid #1e1e40; border-radius: 12px; padding: 16px; min-height: 280px; position: relative; }
+.viz-box h3 { font-size: 0.85rem; color: #5060a0; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
 
 /* Tree visualization */
 #treeCanvas { width: 100%; display: block; }
@@ -43,80 +108,87 @@ input[type=range] { flex: 1; accent-color: #3b4fd8; }
 /* DP Table */
 .dp-table-wrap { overflow-x: auto; }
 .dp-table { display: flex; gap: 4px; flex-wrap: nowrap; padding: 8px; }
-.dp-cell { width: 52px; height: 64px; border-radius: 8px; border: 2px solid #2a3050; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.8rem; transition: all 0.3s; flex-shrink: 0; }
-.dp-cell .idx { font-size: 0.65rem; color: #6080a0; margin-bottom: 2px; }
+.dp-cell {
+  width: 52px; height: 64px; border-radius: 8px; border: 2px solid #1e1e40;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 0.8rem; flex-shrink: 0; transition: border-color 0.3s, box-shadow 0.3s;
+  transform-origin: left center;
+}
+.dp-cell .idx { font-size: 0.65rem; color: #4060a0; margin-bottom: 2px; }
 .dp-cell .val { font-size: 1.1rem; font-weight: bold; }
-.dp-cell.empty { background: #1a2030; color: #3a4060; }
-.dp-cell.computing { background: #3d3000; border-color: #ffd600; color: #ffd600; }
-.dp-cell.computed { background: #1a3050; border-color: #3b7fd8; color: #7bb8ff; }
-.dp-cell.highlight { background: #2d1060; border-color: #9d60ff; color: #cf9fff; box-shadow: 0 0 12px #9d60ff88; }
-.dp-cell.backtrack { background: #0d3020; border-color: #00e090; color: #00e090; }
-.dp-cell.current-arrow { border-color: #ffd600 !important; box-shadow: 0 0 8px #ffd60088; }
+.dp-cell.empty  { background: #0d0d20; color: #2a3050; }
+.dp-cell.computing { background: #1a1000; border-color: #f59e0b; color: #f59e0b; animation: pulse 1s ease-in-out infinite; }
+.dp-cell.computed  { background: #0a0a20; border-color: #6366f1; color: #818cf8; animation: fillCell 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+.dp-cell.highlight { background: #0a1a30; border-color: #06b6d4; color: #67e8f9; box-shadow: 0 0 12px rgba(6,182,212,0.5); }
+.dp-cell.backtrack { background: #0a1a0a; border-color: #22c55e; color: #22c55e; animation: glowGreen 1.5s ease-in-out infinite; }
 
 /* Arrows */
 .arrows-row { display: flex; gap: 4px; align-items: center; height: 20px; padding: 0 4px; margin-top: 2px; }
 .arr-spacer { width: 52px; flex-shrink: 0; }
-.arr-icon { width: 52px; flex-shrink: 0; text-align: center; font-size: 1rem; color: #3b7fd8; transition: all 0.3s; }
-.arr-icon.active { color: #ffd600; transform: scale(1.3); }
+.arr-icon { width: 52px; flex-shrink: 0; text-align: center; font-size: 1rem; color: #4060a0; transition: all 0.3s; }
+.arr-icon.active { color: #f59e0b; transform: scale(1.3); }
 
 /* Stats */
 .stats-row { display: flex; gap: 10px; flex-wrap: wrap; }
-.stat-box { background: #1a1f35; border-radius: 8px; padding: 8px 14px; flex: 1; min-width: 100px; }
-.stat-box .label { font-size: 0.68rem; color: #6080a0; text-transform: uppercase; }
-.stat-box .value { font-size: 1.4rem; font-weight: bold; color: #7b8fff; }
-.stat-box.calls .value { color: #ff6b6b; }
-.stat-box.saved .value { color: #4eff91; }
+.stat-box { background: #0d0d20; border-radius: 8px; padding: 8px 14px; flex: 1; min-width: 100px; border: 1px solid #1e1e40; }
+.stat-box .label { font-size: 0.68rem; color: #4060a0; text-transform: uppercase; }
+.stat-box .value { font-size: 1.4rem; font-weight: bold; color: #818cf8; transition: color 0.3s; }
+.stat-box.calls .value { color: #ef4444; }
+.stat-box.saved .value { color: #22c55e; }
 
 /* Code panel */
-.code-panel { background: #0d1117; border-radius: 10px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.78rem; line-height: 1.7; border: 1px solid #2a3050; }
-.code-line { padding: 1px 6px; border-radius: 4px; transition: background 0.2s; white-space: pre; color: #8090a0; }
-.code-line.active { background: #3b4fd855; color: #cce0ff; border-left: 3px solid #7b8fff; }
-.code-line.highlight { background: #ffd60022; color: #ffd680; border-left: 3px solid #ffd600; }
+.code-panel { background: #060610; border-radius: 10px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.78rem; line-height: 1.7; border: 1px solid #1e1e40; }
+.code-line { padding: 1px 6px; border-radius: 4px; transition: background 0.2s; white-space: pre; color: #5070a0; }
+.code-line.active { background: rgba(99,102,241,0.2); color: #c0d0ff; border-left: 3px solid #818cf8; }
+.code-line.highlight { background: rgba(245,158,11,0.15); color: #fcd34d; border-left: 3px solid #f59e0b; }
 .kw { color: #c678dd; }
 .fn { color: #61afef; }
 .num { color: #d19a66; }
-.cm { color: #5c6370; font-style: italic; }
+.cm { color: #4a5568; font-style: italic; }
 .str { color: #98c379; }
 
 /* Controls */
 .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
-.btn-primary { background: #3b4fd8; color: white; }
-.btn-primary:hover { background: #5060e8; }
-.btn-secondary { background: #2a3050; color: #9090c0; }
-.btn-secondary:hover { background: #363c60; }
-.btn-danger { background: #6b2020; color: #ff9090; }
-.btn-danger:hover { background: #8b2020; }
+.btn-primary { background: linear-gradient(135deg, #6366f1, #818cf8); color: white; box-shadow: 0 2px 10px rgba(99,102,241,0.3); }
+.btn-primary:hover { background: linear-gradient(135deg, #4f52d8, #6366f1); transform: translateY(-1px); }
+.btn-secondary { background: #12122a; color: #6070a0; border: 1px solid #1e1e40; }
+.btn-secondary:hover { background: #1a1a35; }
+.btn-danger { background: #1a0808; color: #ef4444; border: 1px solid #3a1010; }
+.btn-danger:hover { background: #250a0a; }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.speed-label { font-size: 0.75rem; color: #6080a0; margin-left: 4px; }
-select { background: #1a2040; color: #9090c0; border: 1px solid #3a4060; border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; }
+.speed-label { font-size: 0.75rem; color: #4060a0; margin-left: 4px; }
+select { background: #0d0d20; color: #6070a0; border: 1px solid #1e1e40; border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; }
 
 /* Memo array */
 .memo-wrap { margin-top: 8px; }
-.memo-label { font-size: 0.72rem; color: #6080a0; margin-bottom: 4px; }
+.memo-label { font-size: 0.72rem; color: #4060a0; margin-bottom: 4px; }
 .memo-row { display: flex; gap: 3px; flex-wrap: wrap; }
-.memo-cell { width: 44px; height: 44px; border-radius: 6px; border: 1px solid #2a3050; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; }
-.memo-cell .midx { font-size: 0.58rem; color: #5070a0; }
-.memo-cell .mval { font-weight: bold; color: #7b8fff; }
-.memo-cell.hit { background: #0d3020; border-color: #00e090; animation: pulse-green 0.4s ease; }
-.memo-cell.empty { background: #161b2e; color: #3a4060; }
-@keyframes pulse-green { 0% { transform: scale(1); } 50% { transform: scale(1.2); box-shadow: 0 0 12px #00e09088; } 100% { transform: scale(1); } }
+.memo-cell {
+  width: 44px; height: 44px; border-radius: 6px; border: 1px solid #1e1e40;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 0.7rem; transition: all 0.3s;
+}
+.memo-cell .midx { font-size: 0.58rem; color: #3a5070; }
+.memo-cell .mval { font-weight: bold; color: #818cf8; }
+.memo-cell.hit { background: #071a0f; border-color: #22c55e; animation: cacheFlash 0.5s ease; }
+.memo-cell.empty { background: #0d0d1a; color: #2a3050; }
 
 /* Info box */
-.info-box { background: #1a1f35; border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; line-height: 1.5; color: #9090c0; border-left: 3px solid #3b4fd8; }
-.info-box strong { color: #7b8fff; }
+.info-box { background: #0d0d20; border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; line-height: 1.5; color: #6070a0; border-left: 3px solid #6366f1; }
+.info-box strong { color: #818cf8; }
 
 /* Explanation strip */
-.explanation { background: #1e2540; border-radius: 8px; padding: 8px 14px; font-size: 0.82rem; color: #b0c0e0; min-height: 36px; border-left: 3px solid #ffd600; }
+.explanation { background: #0f0f20; border-radius: 8px; padding: 8px 14px; font-size: 0.82rem; color: #8090b0; min-height: 36px; border-left: 3px solid #f59e0b; animation: waveIn 0.3s ease; }
 
-.section-title { font-size: 0.8rem; font-weight: 700; color: #7090c0; text-transform: uppercase; letter-spacing: 0.06em; }
+.section-title { font-size: 0.8rem; font-weight: 700; color: #4060a0; text-transform: uppercase; letter-spacing: 0.06em; }
 </style>
 </head>
 <body>
 <header>
   <div class="badge">Module 5</div>
   <h1>🎯 Fibonacci & Giới thiệu Dynamic Programming</h1>
-  <div class="badge" style="background:#153d20;color:#4eff91">#24</div>
+  <div class="badge" style="background:linear-gradient(135deg,#6366f1,#818cf8)">#24</div>
 </header>
 
 <div class="main">
@@ -135,7 +207,7 @@ select { background: #1a2040; color: #9090c0; border: 1px solid #3a4060; border-
       <label>N = </label>
       <input type="range" id="nSlider" min="2" max="12" value="7" oninput="onNChange(this.value)">
       <div class="n-display" id="nDisplay">7</div>
-      <div style="font-size:0.82rem;color:#6080a0">F(N) = <span id="fnResult" style="color:#7b8fff;font-weight:bold"></span></div>
+      <div style="font-size:0.82rem;color:#4060a0">F(N) = <span id="fnResult" style="color:#818cf8;font-weight:bold"></span></div>
     </div>
 
     <!-- Complexity -->
@@ -211,6 +283,9 @@ let stepIdx = 0;
 let playing = false;
 let playTimer = null;
 
+// Track animated node elements for bloom effect
+const bloomedNodes = new Set();
+
 // ── Fibonacci ──────────────────────────────────────────────────────────
 function fib(n) {
   if (n <= 1) return n;
@@ -265,10 +340,10 @@ let callCount = 0;
 let hitCount = 0;
 
 function buildNaiveSteps(n) {
-  // BFS-order to build the recursion tree step by step
   steps = [];
   treeNodes = [];
   treeEdges = [];
+  bloomedNodes.clear();
   callCount = 0;
 
   function dfs(n, parentIdx, depth, x) {
@@ -307,6 +382,7 @@ function buildMemoSteps(n) {
   treeNodes = [];
   treeEdges = [];
   memoMap = {};
+  bloomedNodes.clear();
   callCount = 0;
   hitCount = 0;
 
@@ -378,16 +454,11 @@ function buildBottomUpSteps(n) {
 
 // ── Tree Layout ─────────────────────────────────────────────────────────
 function layoutTree(nodes) {
-  // Compute x positions by level (BFS-based)
   const byDepth = {};
   nodes.forEach((nd, i) => {
     if (!byDepth[nd.depth]) byDepth[nd.depth] = [];
     byDepth[nd.depth].push(i);
   });
-  const maxDepth = Math.max(...nodes.map(n => n.depth));
-  const levelCounts = {};
-  nodes.forEach(nd => levelCounts[nd.depth] = (levelCounts[nd.depth]||0)+1);
-  const positions = [];
   const assigned = {};
   Object.keys(byDepth).sort((a,b)=>a-b).forEach(d => {
     const lvl = byDepth[d];
@@ -398,7 +469,8 @@ function layoutTree(nodes) {
   return assigned;
 }
 
-function drawTree(canvas, highlightIdx, visibleUpTo) {
+// ── Canvas Tree Draw ─────────────────────────────────────────────────────
+function drawTree(canvas, highlightIdx, visibleUpTo, flashIdx) {
   const W = canvas.offsetWidth || 700;
   const H = 260;
   canvas.width = W;
@@ -412,13 +484,13 @@ function drawTree(canvas, highlightIdx, visibleUpTo) {
   const levelY = d => 24 + d * (H - 40) / Math.max(maxDepth, 1);
   const xPos = layoutTree(treeNodes);
 
-  // Group nodes by depth for coloring duplicates
+  // Group nodes by n-value for coloring duplicates
   const dupMap = {};
   treeNodes.forEach((nd, i) => {
     if (!dupMap[nd.n]) dupMap[nd.n] = [];
     dupMap[nd.n].push(i);
   });
-  const dupColors = ['#ff6b6b','#ffd600','#00e090','#61afef','#c678dd','#e5c07b'];
+  const dupColors = ['#ef4444','#f59e0b','#22c55e','#06b6d4','#c678dd','#e5c07b'];
   const colorFor = {};
   let ci = 0;
   Object.entries(dupMap).forEach(([n, idxs]) => {
@@ -432,9 +504,9 @@ function drawTree(canvas, highlightIdx, visibleUpTo) {
     const fx = xPos[e.from]*W, fy = levelY(from.depth);
     const tx = xPos[e.to]*W, ty = levelY(to.depth);
     ctx.beginPath();
-    ctx.moveTo(fx, fy+12);
-    ctx.lineTo(tx, ty-12);
-    ctx.strokeStyle = '#2a3868';
+    ctx.moveTo(fx, fy+14);
+    ctx.lineTo(tx, ty-14);
+    ctx.strokeStyle = '#1e1e40';
     ctx.lineWidth = 1.5;
     ctx.stroke();
   });
@@ -443,19 +515,34 @@ function drawTree(canvas, highlightIdx, visibleUpTo) {
   treeNodes.forEach((nd, i) => {
     if (i > visibleUpTo) return;
     const x = xPos[i]*W, y = levelY(nd.depth);
-    const r = 16;
+    const r = 14;
+    const isNew = !bloomedNodes.has(i);
 
-    let fill = '#1a2040';
-    let stroke = '#3a4868';
-    let textColor = '#8090b0';
+    let fill = '#0d0d20';
+    let stroke = '#2a3060';
+    let textColor = '#5070a0';
 
-    if (nd.state === 'cached') { fill = '#0d3020'; stroke = '#00e090'; textColor = '#00e090'; }
-    else if (nd.state === 'done') {
+    if (nd.state === 'cached') {
+      fill = '#071a0f'; stroke = '#22c55e'; textColor = '#22c55e';
+    } else if (nd.state === 'done') {
       const c = colorFor[nd.n];
-      if (c) { fill = '#1e1020'; stroke = c; textColor = c; }
-      else { fill = '#1a3050'; stroke = '#3b7fd8'; textColor = '#7bb8ff'; }
+      if (c) { fill = '#150a0a'; stroke = c; textColor = c; }
+      else { fill = '#090920'; stroke = '#6366f1'; textColor = '#818cf8'; }
     }
-    if (i === highlightIdx) { fill = '#3d3000'; stroke = '#ffd600'; textColor = '#ffd600'; }
+    if (i === highlightIdx) { fill = '#1a1000'; stroke = '#f59e0b'; textColor = '#fcd34d'; }
+
+    // Glow for active / cached
+    if (nd.state === 'cached' || i === flashIdx) {
+      ctx.save();
+      ctx.shadowColor = nd.state === 'cached' ? '#22c55e' : '#f59e0b';
+      ctx.shadowBlur = 18;
+      ctx.beginPath();
+      ctx.arc(x, y, r+2, 0, Math.PI*2);
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    }
 
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI*2);
@@ -466,16 +553,16 @@ function drawTree(canvas, highlightIdx, visibleUpTo) {
     ctx.stroke();
 
     ctx.fillStyle = textColor;
-    ctx.font = `bold 11px Segoe UI`;
+    ctx.font = `bold 10px Segoe UI`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    const label = nd.result !== null ? `${nd.result}` : `F${nd.n}`;
-    ctx.fillText(nd.n <= 1 ? `${nd.n}` : (nd.result !== null ? `${nd.result}` : `F${nd.n}`), x, y);
+    ctx.fillText(nd.result !== null ? `${nd.result}` : `F${nd.n}`, x, y);
 
-    // Index label below
-    ctx.font = `9px Segoe UI`;
-    ctx.fillStyle = '#5070a0';
-    ctx.fillText(`F(${nd.n})`, x, y + r + 9);
+    ctx.font = `8px Segoe UI`;
+    ctx.fillStyle = '#3a5070';
+    ctx.fillText(`F(${nd.n})`, x, y + r + 8);
+
+    bloomedNodes.add(i);
   });
 }
 
@@ -489,10 +576,15 @@ function renderTable(dp, current, deps, backtrack) {
   dp.forEach((val, i) => {
     const cell = document.createElement('div');
     cell.className = 'dp-cell';
-    if (val === -1) cell.classList.add('empty');
-    else if (i === current && !backtrack) cell.classList.add('computing');
-    else if (deps && deps.includes(i)) cell.classList.add('highlight');
-    else cell.classList.add('computed');
+    if (val === -1) {
+      cell.classList.add('empty');
+    } else if (Array.isArray(current) ? current.includes(i) : i === current && !backtrack) {
+      cell.classList.add('computing');
+    } else if (deps && deps.includes(i)) {
+      cell.classList.add('highlight');
+    } else {
+      cell.classList.add('computed');
+    }
 
     cell.innerHTML = `<div class="idx">dp[${i}]</div><div class="val">${val === -1 ? '—' : val}</div>`;
     tableEl.appendChild(cell);
@@ -530,9 +622,23 @@ function renderMemo(memoState, hitIdx) {
     cell.innerHTML = `<div class="midx">[${i}]</div><div class="mval">${val}</div>`;
     if (memoState[i] !== undefined) cell.classList.add('hit');
     else cell.classList.add('empty');
-    if (i === hitIdx) cell.style.animation = 'pulse-green 0.4s ease';
+    // Trigger flash animation for newly hit index
+    if (i === hitIdx) {
+      cell.style.animation = 'none';
+      cell.offsetHeight; // force reflow
+      cell.style.animation = 'cacheFlash 0.5s ease';
+    }
     row.appendChild(cell);
   }
+}
+
+// ── Counter animation ───────────────────────────────────────────────────
+function animateCounter(elId, value, fast) {
+  const el = document.getElementById(elId);
+  el.textContent = value;
+  el.style.animation = 'none';
+  el.offsetHeight;
+  el.style.animation = fast ? 'countTick 0.25s ease' : 'countTickSlow 0.35s ease';
 }
 
 // ── Approach switch ────────────────────────────────────────────────────
@@ -549,7 +655,6 @@ function onNChange(val) {
   N = parseInt(val);
   document.getElementById('nDisplay').textContent = N;
   document.getElementById('fnResult').textContent = fib(N);
-  // Update code N reference
   CODES.naive[4].c = `<span class="fn">fib</span>(<span class="num">${N}</span>)`;
   resetAnim();
 }
@@ -557,16 +662,38 @@ function onNChange(val) {
 // ── Animation state ────────────────────────────────────────────────────
 let currentMemo = {};
 let visibleNodeCount = 0;
+let prevCalls = 0;
+let prevHits = 0;
 
 function applyStep(idx) {
   if (idx >= steps.length) { stopPlay(); return; }
   const s = steps[idx];
-  document.getElementById('explanation').textContent = s.explanation || '';
-  document.getElementById('statCalls').textContent = s.calls || 0;
-  document.getElementById('statHits').textContent = s.hits || 0;
-  document.getElementById('callCountBadge').textContent = `Gọi hàm: ${s.calls || 0}`;
+
+  // Animate explanation change
+  const expEl = document.getElementById('explanation');
+  expEl.style.animation = 'none';
+  expEl.offsetHeight;
+  expEl.style.animation = 'waveIn 0.3s ease';
+  expEl.textContent = s.explanation || '';
+
+  // Animate counters
+  const calls = s.calls || 0;
+  const hits = s.hits || 0;
+  if (calls !== prevCalls) {
+    animateCounter('statCalls', calls, approach === 'naive');
+    document.getElementById('callCountBadge').textContent = `Gọi hàm: ${calls}`;
+    prevCalls = calls;
+  }
+  if (hits !== prevHits) {
+    animateCounter('statHits', hits, false);
+    prevHits = hits;
+  }
   if (s.result !== undefined && s.result !== null) {
-    document.getElementById('statResult').textContent = s.result;
+    const el = document.getElementById('statResult');
+    el.style.animation = 'none';
+    el.offsetHeight;
+    el.style.animation = 'bounceIn 0.4s cubic-bezier(0.34,1.56,0.64,1)';
+    el.textContent = s.result;
   }
 
   if (approach === 'bottom') {
@@ -574,15 +701,17 @@ function applyStep(idx) {
     renderCode('bottom', s.codeLine);
   } else {
     // Tree approaches
-    visibleNodeCount = s.nodeIdx !== undefined ? s.nodeIdx : visibleNodeCount;
+    if (s.nodeIdx !== undefined) visibleNodeCount = s.nodeIdx;
     const canvas = document.getElementById('treeCanvas');
-    // Sync node states up to step
-    if (s.type === 'done') treeNodes[s.nodeIdx].state = (approach === 'memo' && s.type === 'hit') ? 'cached' : 'done';
+    if (s.type === 'done') treeNodes[s.nodeIdx].state = 'done';
     if (s.type === 'hit') treeNodes[s.nodeIdx].state = 'cached';
-    drawTree(canvas, s.nodeIdx, visibleNodeCount);
+    const flashIdx = s.type === 'hit' ? s.nodeIdx : -1;
+    drawTree(canvas, s.nodeIdx, visibleNodeCount, flashIdx);
     renderCode(approach, s.codeLine);
     if (approach === 'memo') {
-      if (s.memoIdx !== undefined && s.type === 'done') currentMemo[s.memoIdx] = s.result;
+      if (s.memoIdx !== undefined && (s.type === 'done' || s.type === 'hit')) {
+        currentMemo[s.memoIdx] = s.result;
+      }
       renderMemo(currentMemo, s.type === 'hit' ? s.memoIdx : -1);
     }
   }
@@ -622,14 +751,16 @@ function resetAnim() {
   stepIdx = 0;
   currentMemo = {};
   visibleNodeCount = 0;
+  prevCalls = 0;
+  prevHits = 0;
   callCount = 0; hitCount = 0;
+  bloomedNodes.clear();
   document.getElementById('statCalls').textContent = '0';
   document.getElementById('statHits').textContent = '0';
   document.getElementById('statResult').textContent = '—';
   document.getElementById('explanation').textContent = 'Nhấn ▶ Play hoặc ⏭ Step để bắt đầu.';
   document.getElementById('callCountBadge').textContent = 'Gọi hàm: 0';
 
-  // Show/hide canvas vs table
   const canvas = document.getElementById('treeCanvas');
   const tableViz = document.getElementById('tableViz');
   if (approach === 'bottom') {
@@ -656,6 +787,27 @@ function resetAnim() {
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────
+// Add counter keyframes dynamically
+const styleEl = document.createElement('style');
+styleEl.textContent = `
+  @keyframes countTick {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.5); color: #ef4444; }
+    100% { transform: scale(1); }
+  }
+  @keyframes countTickSlow {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.3); color: #22c55e; }
+    100% { transform: scale(1); }
+  }
+  @keyframes bounceIn {
+    0%   { transform: scale(0.5); opacity: 0; }
+    60%  { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+`;
+document.head.appendChild(styleEl);
+
 onNChange(7);
 document.getElementById('fnResult').textContent = fib(7);
 resetAnim();

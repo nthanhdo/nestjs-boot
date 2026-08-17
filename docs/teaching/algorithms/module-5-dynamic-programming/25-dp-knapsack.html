@@ -6,107 +6,185 @@
 <title>DP #25 — Bài toán Ba lô (0/1 Knapsack)</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; min-height: 100vh; }
-header { background: linear-gradient(135deg, #1a1f35, #1f2a20); padding: 16px 24px; border-bottom: 2px solid #2ecc71; display: flex; align-items: center; gap: 16px; }
-header h1 { font-size: 1.3rem; color: #4eff91; }
-header .badge { background: #1a5c30; color: #4eff91; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #0a0a1a;
+  color: #e0e0e0;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse at 15% 25%, rgba(34,197,94,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse at 85% 75%, rgba(99,102,241,0.05) 0%, transparent 60%),
+    linear-gradient(rgba(34,197,94,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,197,94,0.025) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+}
+header {
+  background: linear-gradient(135deg, #0a1a0f, #0f2018);
+  padding: 16px 24px;
+  border-bottom: 2px solid #22c55e;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 20px rgba(34,197,94,0.15);
+}
+header h1 { font-size: 1.3rem; color: #4ade80; }
+header .badge { background: #14532d; color: #4ade80; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
 .main { display: grid; grid-template-columns: 1fr 320px; height: calc(100vh - 60px); }
 .left-panel { padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-.right-panel { background: #161b2e; border-left: 2px solid #1a3020; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.right-panel { background: #070f0a; border-left: 2px solid #0f2018; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+
+/* ── Keyframes ──────────────────────────────────────────────────────── */
+@keyframes fillCell {
+  0%   { transform: scaleX(0) scaleY(0.8); opacity: 0; }
+  60%  { transform: scaleX(1.04) scaleY(1.02); opacity: 1; }
+  100% { transform: scaleX(1) scaleY(1); opacity: 1; }
+}
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(34,197,94,0.3); }
+  50%       { box-shadow: 0 0 20px rgba(34,197,94,0.8); }
+}
+@keyframes itemFloat {
+  0%   { transform: translateY(0) scale(1); }
+  40%  { transform: translateY(-12px) scale(1.12); }
+  70%  { transform: translateY(-8px) scale(1.08); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes itemDrop {
+  0%   { transform: translateY(-30px) scale(0.6); opacity: 0; }
+  60%  { transform: translateY(4px) scale(1.08); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(245,158,11,0.4); }
+  50%       { box-shadow: 0 0 22px rgba(245,158,11,0.9); }
+}
+@keyframes arrowDraw {
+  0%   { stroke-dashoffset: 40; opacity: 0; }
+  100% { stroke-dashoffset: 0; opacity: 1; }
+}
+@keyframes backtrackGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(34,197,94,0.4); }
+  50%       { box-shadow: 0 0 24px rgba(34,197,94,0.9); }
+}
+@keyframes waveIn {
+  0%   { transform: translateX(-6px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+@keyframes bounceIn {
+  0%   { transform: scale(0.5); opacity: 0; }
+  60%  { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
 
 /* Approach toggle */
 .toggle-row { display: flex; gap: 6px; }
-.toggle-btn { padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 0.82rem; font-weight: 600; border: 2px solid #2a3040; background: #1a1f35; color: #7090c0; transition: all 0.2s; }
-.toggle-btn.active { background: #1a3a20; border-color: #2ecc71; color: #4eff91; }
+.toggle-btn { padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 0.82rem; font-weight: 600; border: 2px solid #0f2018; background: #070f0a; color: #3a6050; transition: all 0.2s; }
+.toggle-btn.active { background: #0a2018; border-color: #22c55e; color: #4ade80; }
 
 /* Items row */
 .items-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
-.item-card { background: #1a2030; border-radius: 10px; padding: 10px 12px; border: 2px solid #2a3050; min-width: 80px; text-align: center; cursor: pointer; transition: all 0.3s; position: relative; }
+.item-card {
+  background: #0a1a0f; border-radius: 10px; padding: 10px 12px;
+  border: 2px solid #0f2018; min-width: 80px; text-align: center;
+  cursor: pointer; transition: all 0.3s; position: relative;
+}
 .item-card .item-icon { font-size: 1.8rem; }
-.item-card .item-name { font-size: 0.72rem; color: #8090b0; margin-top: 2px; }
+.item-card .item-name { font-size: 0.72rem; color: #4a7060; margin-top: 2px; }
 .item-card .item-stats { font-size: 0.7rem; margin-top: 4px; }
-.item-card .wt { color: #ff9966; }
-.item-card .vl { color: #4eff91; }
-.item-card.selected { border-color: #4eff91; background: #0d2a18; box-shadow: 0 0 12px #4eff9144; }
-.item-card.in-knapsack { border-color: #ffd600; background: #2a2000; animation: item-pop 0.4s ease; }
-@keyframes item-pop { 0%{transform:scale(1)} 50%{transform:scale(1.15)} 100%{transform:scale(1)} }
-.item-card.active-compute { border-color: #ffd600; background: #2d2800; box-shadow: 0 0 16px #ffd60066; }
+.item-card .wt { color: #fb923c; }
+.item-card .vl { color: #22c55e; }
+.item-card.selected { border-color: #22c55e; background: #071a0f; box-shadow: 0 0 12px rgba(34,197,94,0.3); }
+.item-card.in-knapsack { border-color: #f59e0b; background: #1a1000; animation: itemFloat 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+.item-card.active-compute { border-color: #f59e0b; background: #1a1000; box-shadow: 0 0 16px rgba(245,158,11,0.5); }
 
 /* Knapsack visual */
 .knapsack-row { display: flex; gap: 16px; align-items: flex-start; }
-.knapsack-visual { background: #1a1a10; border: 3px solid #8060a0; border-radius: 12px; padding: 12px; min-width: 160px; min-height: 120px; position: relative; }
-.knapsack-visual .ks-title { font-size: 0.72rem; color: #9070c0; margin-bottom: 6px; }
-.ks-capacity-bar { height: 8px; background: #2a2030; border-radius: 4px; margin-bottom: 8px; }
-.ks-capacity-fill { height: 100%; background: linear-gradient(90deg, #4eff91, #2ecc71); border-radius: 4px; transition: width 0.5s; }
+.knapsack-visual {
+  background: #0a100f; border: 3px solid #22c55e; border-radius: 12px;
+  padding: 12px; min-width: 160px; min-height: 120px; position: relative;
+  box-shadow: 0 0 16px rgba(34,197,94,0.15);
+}
+.knapsack-visual .ks-title { font-size: 0.72rem; color: #4a7060; margin-bottom: 6px; }
+.ks-capacity-bar { height: 8px; background: #0f2018; border-radius: 4px; margin-bottom: 8px; overflow: hidden; }
+.ks-capacity-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #4ade80); border-radius: 4px; transition: width 0.5s cubic-bezier(0.34,1.56,0.64,1); }
 .ks-items { display: flex; flex-wrap: wrap; gap: 4px; }
-.ks-item { padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; animation: slide-in 0.3s ease; }
-@keyframes slide-in { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+.ks-item {
+  padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold;
+  animation: itemDrop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
 .ks-stats { margin-top: 8px; font-size: 0.78rem; }
-.ks-stats .total-val { color: #ffd600; font-weight: bold; }
+.ks-stats .total-val { color: #f59e0b; font-weight: bold; }
 
 /* DP Table */
 .table-section { overflow: auto; }
 .dp-grid { display: grid; gap: 2px; width: fit-content; }
-.dp-cell { width: 44px; height: 44px; border-radius: 6px; border: 1.5px solid #2a3050; display: flex; align-items: center; justify-content: center; font-size: 0.82rem; font-weight: bold; transition: all 0.25s; position: relative; cursor: default; }
-.dp-cell.header { background: #1a2040; color: #6080a0; font-size: 0.68rem; border: none; font-weight: 600; }
-.dp-cell.empty { background: #161b2e; color: #3a4060; }
-.dp-cell.computing { background: #3d3000; border-color: #ffd600; color: #ffd600; box-shadow: 0 0 10px #ffd60066; }
-.dp-cell.computed { background: #1a2540; border-color: #2a4070; color: #8090c0; }
-.dp-cell.source-include { background: #1a3520; border-color: #4eff91 !important; color: #4eff91 !important; box-shadow: 0 0 8px #4eff9144; }
-.dp-cell.source-exclude { background: #1a2040; border-color: #61afef !important; color: #61afef !important; }
-.dp-cell.backtrack { background: #2a2000; border-color: #ffd600 !important; color: #ffd600 !important; box-shadow: 0 0 12px #ffd60088; }
-.dp-cell.optimal { background: #0d3020; border-color: #4eff91 !important; color: #4eff91 !important; }
+.dp-cell {
+  width: 44px; height: 44px; border-radius: 6px; border: 1.5px solid #0f2018;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.82rem; font-weight: bold; transition: border-color 0.3s, box-shadow 0.3s;
+  position: relative; cursor: default;
+}
+.dp-cell.header { background: #0a1510; color: #3a5040; font-size: 0.68rem; border: none; font-weight: 600; }
+.dp-cell.empty    { background: #070f0a; color: #1a3020; }
+.dp-cell.computing { background: #1a1000; border-color: #f59e0b; color: #f59e0b; animation: pulse 1s ease-in-out infinite; }
+.dp-cell.computed  { background: #080f0a; border-color: #1a4028; color: #4a8060; animation: fillCell 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+.dp-cell.source-include { background: #071a0f; border-color: #22c55e !important; color: #22c55e !important; box-shadow: 0 0 10px rgba(34,197,94,0.5); }
+.dp-cell.source-exclude { background: #080a12; border-color: #6366f1 !important; color: #818cf8 !important; }
+.dp-cell.backtrack { background: #0a1a0f; border-color: #22c55e !important; color: #22c55e !important; animation: backtrackGlow 1.5s ease-in-out infinite; }
+.dp-cell.optimal  { background: #071a0f; border-color: #22c55e !important; color: #4ade80 !important; }
 .dp-cell:hover { z-index: 10; transform: scale(1.1); }
 
-/* Arrows overlay */
+/* Arrow SVG overlay */
 .table-wrap { position: relative; }
 .arrow-svg { position: absolute; top: 0; left: 0; pointer-events: none; }
 
 /* Controls */
 .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
-.btn-primary { background: #2ecc71; color: #0f2010; }
-.btn-primary:hover { background: #4eff91; }
-.btn-secondary { background: #2a3050; color: #9090c0; }
-.btn-secondary:hover { background: #363c60; }
-.btn-danger { background: #4a1020; color: #ff9090; }
-.btn-danger:hover { background: #6a1030; }
-select { background: #1a2040; color: #9090c0; border: 1px solid #3a4060; border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; }
+.btn-primary { background: linear-gradient(135deg, #15803d, #22c55e); color: #0a1a0f; box-shadow: 0 2px 10px rgba(34,197,94,0.3); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(34,197,94,0.4); }
+.btn-secondary { background: #0a1510; color: #3a6050; border: 1px solid #0f2018; }
+.btn-secondary:hover { background: #0f1a14; }
+.btn-danger { background: #1a0808; color: #ef4444; border: 1px solid #3a1010; }
+.btn-danger:hover { background: #250a0a; }
+select { background: #070f0a; color: #3a6050; border: 1px solid #0f2018; border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; }
 
 /* Code */
-.code-panel { background: #0d1117; border-radius: 10px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.76rem; line-height: 1.7; border: 1px solid #1a3020; }
-.code-line { padding: 1px 6px; border-radius: 4px; transition: background 0.2s; white-space: pre; color: #6090a0; }
-.code-line.active { background: #2ecc7122; color: #ccffdd; border-left: 3px solid #4eff91; }
-.code-line.highlight { background: #ffd60022; color: #ffd680; border-left: 3px solid #ffd600; }
-.kw { color: #c678dd; } .fn { color: #61afef; } .num { color: #d19a66; } .cm { color: #5c6370; font-style: italic; }
+.code-panel { background: #040808; border-radius: 10px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.76rem; line-height: 1.7; border: 1px solid #0f2018; }
+.code-line { padding: 1px 6px; border-radius: 4px; transition: background 0.2s; white-space: pre; color: #2a5040; }
+.code-line.active   { background: rgba(34,197,94,0.12); color: #a7f3d0; border-left: 3px solid #22c55e; }
+.code-line.highlight { background: rgba(245,158,11,0.12); color: #fcd34d; border-left: 3px solid #f59e0b; }
+.kw { color: #c678dd; } .fn { color: #61afef; } .num { color: #d19a66; } .cm { color: #1a3028; font-style: italic; }
 
 /* Stats */
 .stats-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.stat-box { background: #1a1f35; border-radius: 8px; padding: 8px 12px; flex: 1; min-width: 80px; }
-.stat-box .label { font-size: 0.68rem; color: #6080a0; text-transform: uppercase; }
-.stat-box .value { font-size: 1.2rem; font-weight: bold; color: #4eff91; }
+.stat-box { background: #070f0a; border-radius: 8px; padding: 8px 12px; flex: 1; min-width: 80px; border: 1px solid #0f2018; }
+.stat-box .label { font-size: 0.68rem; color: #2a5040; text-transform: uppercase; }
+.stat-box .value { font-size: 1.2rem; font-weight: bold; color: #22c55e; }
 
 /* Explanation */
-.explanation { background: #1e2a20; border-radius: 8px; padding: 8px 14px; font-size: 0.82rem; color: #b0d0b8; min-height: 36px; border-left: 3px solid #2ecc71; }
+.explanation {
+  background: #070f0a; border-radius: 8px; padding: 8px 14px;
+  font-size: 0.82rem; color: #6a9080; min-height: 36px;
+  border-left: 3px solid #22c55e; animation: waveIn 0.3s ease;
+}
 
 /* Info */
-.info-box { background: #1a1f35; border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.5; color: #9090c0; border-left: 3px solid #2ecc71; }
-.info-box strong { color: #4eff91; }
+.info-box { background: #070f0a; border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.5; color: #3a6050; border-left: 3px solid #22c55e; }
+.info-box strong { color: #4ade80; }
 
-.section-title { font-size: 0.78rem; font-weight: 700; color: #507060; text-transform: uppercase; letter-spacing: 0.06em; }
+.section-title { font-size: 0.78rem; font-weight: 700; color: #2a5040; text-transform: uppercase; letter-spacing: 0.06em; }
 
 /* Capacity control */
-.cap-row { display: flex; gap: 10px; align-items: center; background: #1a2030; border-radius: 8px; padding: 8px 14px; }
-.cap-row label { font-size: 0.82rem; color: #6090a0; }
-input[type=range] { accent-color: #2ecc71; flex: 1; }
-.cap-display { background: #1a3020; color: #4eff91; font-weight: bold; padding: 4px 10px; border-radius: 6px; }
+.cap-row { display: flex; gap: 10px; align-items: center; background: #070f0a; border-radius: 8px; padding: 8px 14px; border: 1px solid #0f2018; }
+.cap-row label { font-size: 0.82rem; color: #3a6050; }
+input[type=range] { accent-color: #22c55e; flex: 1; }
+.cap-display { background: #0a1a0f; color: #22c55e; font-weight: bold; padding: 4px 10px; border-radius: 6px; border: 1px solid #22c55e; }
 
 /* Legend */
 .legend { display: flex; gap: 10px; flex-wrap: wrap; }
-.legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: #8090a0; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: #3a5040; }
 .legend-dot { width: 14px; height: 14px; border-radius: 3px; }
-
-.phase-badge { background: #1a3020; color: #4eff91; font-size: 0.72rem; font-weight: bold; padding: 2px 8px; border-radius: 4px; border: 1px solid #2ecc71; }
 </style>
 </head>
 <body>
@@ -129,7 +207,7 @@ input[type=range] { accent-color: #2ecc71; flex: 1; }
       <label>Sức chứa W =</label>
       <input type="range" id="capSlider" min="4" max="12" value="7" oninput="onCapChange(this.value)">
       <div class="cap-display" id="capDisplay">7</div>
-      <label style="font-size:0.78rem;color:#506050">kg</label>
+      <label style="font-size:0.78rem;color:#2a5040">kg</label>
     </div>
 
     <!-- Items -->
@@ -156,10 +234,10 @@ input[type=range] { accent-color: #2ecc71; flex: 1; }
 
     <!-- Legend -->
     <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#3d3000;border:1px solid #ffd600"></div>Đang tính</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#1a3520;border:1px solid #4eff91"></div>Chọn item (include)</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#1a2040;border:1px solid #61afef"></div>Bỏ qua (exclude)</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#0d3020;border:1px solid #4eff91"></div>Đường backtrack</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1a1000;border:1px solid #f59e0b"></div>Đang tính</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#071a0f;border:1px solid #22c55e"></div>Chọn item</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#080a12;border:1px solid #6366f1"></div>Bỏ qua</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#0a1a0f;border:1px solid #22c55e"></div>Backtrack path</div>
     </div>
 
     <!-- Explanation -->
@@ -169,7 +247,7 @@ input[type=range] { accent-color: #2ecc71; flex: 1; }
     <div class="stats-row">
       <div class="stat-box"><div class="label">Bước hiện tại</div><div class="value" id="statStep">0</div></div>
       <div class="stat-box"><div class="label">Giá trị tối ưu</div><div class="value" id="statOpt">—</div></div>
-      <div class="stat-box" style="--c:#4eff91"><div class="label">Items chọn</div><div class="value" id="statItems">—</div></div>
+      <div class="stat-box"><div class="label">Items chọn</div><div class="value" id="statItems">—</div></div>
     </div>
 
     <!-- Controls -->
@@ -223,7 +301,7 @@ input[type=range] { accent-color: #2ecc71; flex: 1; }
     </div>
 
     <div class="section-title">📈 Trạng thái</div>
-    <div id="currentCellInfo" style="background:#1a2030;border-radius:8px;padding:10px;font-size:0.78rem;color:#9090c0;line-height:1.6">
+    <div id="currentCellInfo" style="background:#070f0a;border-radius:8px;padding:10px;font-size:0.78rem;color:#3a6050;line-height:1.6;border:1px solid #0f2018">
       Chưa có cell nào đang được tính.
     </div>
   </div>
@@ -232,12 +310,12 @@ input[type=range] { accent-color: #2ecc71; flex: 1; }
 <script>
 // ── Items data ─────────────────────────────────────────────────────────
 const ITEM_POOL = [
-  { name: 'Laptop', icon: '💻', w: 3, v: 4, color: '#61afef' },
-  { name: 'Điện thoại', icon: '📱', w: 1, v: 3, color: '#4eff91' },
-  { name: 'Sách', icon: '📚', w: 2, v: 1, color: '#ffd600' },
-  { name: 'Máy ảnh', icon: '📷', w: 2, v: 6, color: '#c678dd' },
-  { name: 'Bình nước', icon: '🧴', w: 1, v: 2, color: '#ff9966' },
-  { name: 'Đồng hồ', icon: '⌚', w: 1, v: 5, color: '#ff6b6b' },
+  { name: 'Laptop',     icon: '💻', w: 3, v: 4, color: '#6366f1' },
+  { name: 'Điện thoại', icon: '📱', w: 1, v: 3, color: '#22c55e' },
+  { name: 'Sách',       icon: '📚', w: 2, v: 1, color: '#f59e0b' },
+  { name: 'Máy ảnh',    icon: '📷', w: 2, v: 6, color: '#c678dd' },
+  { name: 'Bình nước',  icon: '🧴', w: 1, v: 2, color: '#fb923c' },
+  { name: 'Đồng hồ',   icon: '⌚', w: 1, v: 5, color: '#ef4444' },
 ];
 
 let items = ITEM_POOL.slice(0, 4);
@@ -249,7 +327,6 @@ let playing = false;
 let playTimer = null;
 let dpTable = [];
 let selectedItems = [];
-let currentHighlight = { row: -1, col: -1, srcInclude: null, srcExclude: null };
 
 // ── Setup ──────────────────────────────────────────────────────────────
 function setMode(m) {
@@ -294,7 +371,6 @@ function buildFillSteps() {
   for (let i = 1; i <= n; i++) {
     const item = items[i-1];
     for (let w = 0; w <= W; w++) {
-      // Exclude
       const excVal = dp[i-1][w];
       steps.push({ type: 'computing', dp: JSON.parse(JSON.stringify(dp)), hl: {r:i,c:w},
         srcExclude: {r:i-1, c:w}, srcInclude: null,
@@ -303,11 +379,8 @@ function buildFillSteps() {
 
       dp[i][w] = excVal;
 
-      let includeVal = -1;
-      let codeLine = 6;
       if (item.w <= w) {
-        includeVal = dp[i-1][w - item.w] + item.v;
-        codeLine = 10;
+        const includeVal = dp[i-1][w - item.w] + item.v;
         if (includeVal > excVal) {
           dp[i][w] = includeVal;
           steps.push({ type: 'fill', dp: JSON.parse(JSON.stringify(dp)), hl: {r:i,c:w},
@@ -335,7 +408,6 @@ function buildFillSteps() {
 }
 
 function buildBacktrackSteps() {
-  // First fully fill table
   const n = items.length;
   const dp = Array.from({length: n+1}, () => new Array(W+1).fill(0));
   for (let i = 1; i <= n; i++) {
@@ -374,10 +446,13 @@ function buildBacktrackSteps() {
 }
 
 // ── Render DP grid ─────────────────────────────────────────────────────
+// Track previous cell classes to trigger animation only on new cells
+const prevCellClasses = {};
+
 function renderGrid(dp, hl, srcExclude, srcInclude, btSel) {
   const grid = document.getElementById('dpGrid');
   const n = items.length;
-  const cols = W + 2; // header col + 0..W
+  const cols = W + 2;
   grid.style.gridTemplateColumns = `repeat(${cols}, 44px)`;
   grid.innerHTML = '';
 
@@ -406,14 +481,30 @@ function renderGrid(dp, hl, srcExclude, srcInclude, btSel) {
       cell.className = 'dp-cell';
 
       const val = dp && dp[i] !== undefined ? dp[i][w] : 0;
+      const key = `${i}-${w}`;
+      let cls = '';
 
-      if (hl && hl.r === i && hl.c === w) cell.classList.add('computing');
-      else if (srcInclude && srcInclude.r === i && srcInclude.c === w) cell.classList.add('source-include');
-      else if (srcExclude && srcExclude.r === i && srcExclude.c === w) cell.classList.add('source-exclude');
-      else if (btSel && i > 0) {
-        // Highlight backtrack path
-        cell.classList.add('computed');
-      } else cell.classList.add(val > 0 ? 'computed' : 'empty');
+      if (hl && hl.r === i && hl.c === w) {
+        cls = 'computing';
+      } else if (srcInclude && srcInclude.r === i && srcInclude.c === w) {
+        cls = 'source-include';
+      } else if (srcExclude && srcExclude.r === i && srcExclude.c === w) {
+        cls = 'source-exclude';
+      } else if (btSel && btSel.length > 0 && val > 0) {
+        cls = 'backtrack';
+      } else {
+        cls = val > 0 ? 'computed' : 'empty';
+      }
+
+      cell.classList.add(cls);
+
+      // Only trigger fillCell animation if cell just became computed
+      if (cls === 'computed' && prevCellClasses[key] !== 'computed') {
+        cell.style.animation = 'none';
+        cell.offsetHeight;
+        cell.style.animation = 'fillCell 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+      }
+      prevCellClasses[key] = cls;
 
       cell.textContent = val;
       cell.title = `dp[${i}][${w}] = ${val}`;
@@ -423,25 +514,38 @@ function renderGrid(dp, hl, srcExclude, srcInclude, btSel) {
 }
 
 // ── Knapsack visual update ─────────────────────────────────────────────
+let prevKsItemCount = 0;
+
 function updateKnapsack(selIndices, optVal) {
   const ksItems = document.getElementById('ksItems');
   const ksBar = document.getElementById('ksBar');
-  ksItems.innerHTML = '';
+
+  // Only re-render if selection changed
+  const countChanged = (selIndices || []).length !== prevKsItemCount;
+  prevKsItemCount = (selIndices || []).length;
+
+  if (countChanged) {
+    ksItems.innerHTML = '';
+  }
+
   let totalW = 0, totalV = 0;
   if (selIndices) {
     selIndices.forEach(idx => {
       const item = items[idx];
       totalW += item.w;
       totalV += item.v;
-      const el = document.createElement('div');
-      el.className = 'ks-item';
-      el.style.background = item.color + '33';
-      el.style.border = `1px solid ${item.color}`;
-      el.style.color = item.color;
-      el.textContent = `${item.icon} ${item.name}`;
-      ksItems.appendChild(el);
+      if (countChanged) {
+        const el = document.createElement('div');
+        el.className = 'ks-item';
+        el.style.background = item.color + '22';
+        el.style.border = `1px solid ${item.color}`;
+        el.style.color = item.color;
+        el.textContent = `${item.icon} ${item.name}`;
+        ksItems.appendChild(el);
+      }
     });
   }
+
   ksBar.style.width = `${Math.min(100, totalW / W * 100)}%`;
   document.getElementById('ksValue').textContent = totalV;
   if (optVal !== undefined) document.getElementById('statOpt').textContent = optVal;
@@ -460,10 +564,21 @@ function highlightCode(lineIdx) {
 function applyStep(idx) {
   if (idx >= steps.length) { stopPlay(); return; }
   const s = steps[idx];
-  document.getElementById('explanation').textContent = s.explanation || '';
+
+  // Animate explanation
+  const expEl = document.getElementById('explanation');
+  expEl.style.animation = 'none';
+  expEl.offsetHeight;
+  expEl.style.animation = 'waveIn 0.3s ease';
+  expEl.textContent = s.explanation || '';
+
   document.getElementById('statStep').textContent = idx + 1;
   if (s.result !== undefined) {
-    document.getElementById('statOpt').textContent = s.result;
+    const optEl = document.getElementById('statOpt');
+    optEl.style.animation = 'none';
+    optEl.offsetHeight;
+    optEl.style.animation = 'bounceIn 0.4s cubic-bezier(0.34,1.56,0.64,1)';
+    optEl.textContent = s.result;
   }
   if (s.btSel !== undefined) {
     document.getElementById('statItems').textContent = s.btSel.length > 0 ? s.btSel.map(j => items[j].icon).join(' ') : '—';
@@ -473,12 +588,11 @@ function applyStep(idx) {
   renderItems(s.btSel);
   updateKnapsack(s.btSel || [], s.result);
 
-  // Cell info panel
   if (s.hl) {
     const i = s.hl.r, w = s.hl.c;
     const item = i > 0 ? items[i-1] : null;
     document.getElementById('currentCellInfo').innerHTML =
-      `<b style="color:#4eff91">dp[${i}][${w}]</b><br>` +
+      `<b style="color:#22c55e">dp[${i}][${w}]</b><br>` +
       (item ? `Item: ${item.icon} ${item.name} (w=${item.w}, v=${item.v})<br>` : '') +
       `Capacity: ${w}<br>` +
       (s.srcExclude ? `Exclude: dp[${s.srcExclude.r}][${s.srcExclude.c}]<br>` : '') +
@@ -512,6 +626,8 @@ function stepForward() {
 }
 function resetAnim() {
   stopPlay(); stepIdx = 0;
+  prevKsItemCount = 0;
+  Object.keys(prevCellClasses).forEach(k => delete prevCellClasses[k]);
   document.getElementById('statStep').textContent = '0';
   document.getElementById('statOpt').textContent = '—';
   document.getElementById('statItems').textContent = '—';

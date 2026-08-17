@@ -2,538 +2,421 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>29 - Thuật toán Bellman-Ford</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bellman-Ford — Đường đi ngắn nhất (có cạnh âm)</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',sans-serif;background:#0a0c14;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-@keyframes waveSwoop{0%{stroke-dashoffset:400;opacity:0.3}100%{stroke-dashoffset:0;opacity:1}}
-@keyframes nodeActive{0%,100%{filter:drop-shadow(0 0 6px rgba(246,173,85,0.5))}50%{filter:drop-shadow(0 0 24px rgba(246,173,85,1))}}
-@keyframes relaxGreen{0%{filter:drop-shadow(0 0 3px rgba(72,187,120,0.4))}50%{filter:drop-shadow(0 0 20px rgba(72,187,120,1))}100%{filter:drop-shadow(0 0 6px rgba(72,187,120,0.7))}}
-@keyframes edgeProcess{0%{stroke:#f6ad55;stroke-width:4}50%{stroke:#fbd38d;stroke-width:6;filter:drop-shadow(0 0 8px rgba(246,173,85,0.8))}100%{stroke:#48bb78;stroke-width:3}}
-@keyframes flash{0%{background:rgba(116,66,16,0.7)}100%{background:transparent}}
-@keyframes grow{0%{transform:scale(1.4)}100%{transform:scale(1)}}
-@keyframes pulseRed{from{opacity:0.6}to{opacity:1}}
-@keyframes iterWave{0%{opacity:0;transform:scaleX(0)}100%{opacity:1;transform:scaleX(1)}}
-@keyframes pqSlideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-@keyframes bfWave{0%{transform:scale(1);opacity:0.8}100%{transform:scale(1.7);opacity:0}}
-header{background:linear-gradient(135deg,#141825,#1e1a0e);padding:10px 20px;border-bottom:1px solid #3d2e14;display:flex;align-items:center;gap:12px;flex-shrink:0;flex-wrap:wrap;box-shadow:0 2px 12px rgba(0,0,0,0.4)}
-header h1{font-size:1.1rem;background:linear-gradient(135deg,#f6ad55,#ed8936);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.badge{background:linear-gradient(135deg,#744210,#5c3400);color:#fbd38d;padding:2px 10px;border-radius:12px;font-size:0.75rem;box-shadow:0 0 8px rgba(116,66,16,0.4)}
-.main{display:flex;flex:1;overflow:hidden}
-.left-panel{width:230px;background:#1a1f2e;border-right:1px solid #2d3748;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
-.panel-title{padding:8px 12px;font-size:0.75rem;font-weight:700;text-transform:uppercase;color:#718096;border-bottom:1px solid #2d3748}
-.center{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.right-panel{width:264px;background:linear-gradient(180deg,#141825,#111420);border-left:1px solid #1e2535;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
-#svg-container{flex:1;position:relative;overflow:hidden;background:radial-gradient(ellipse at center,#0d1220 0%,#080a12 100%)}
-svg{width:100%;height:100%}
-.controls{background:#141825;border-top:1px solid #1e2535;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap}
-button{padding:5px 14px;border:none;border-radius:8px;cursor:pointer;font-size:0.8rem;font-weight:600;transition:all 0.2s}
-.btn-play{background:linear-gradient(135deg,#744210,#5c3400);color:#fff;box-shadow:0 2px 10px rgba(116,66,16,0.4)}
-.btn-play:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(116,66,16,0.6)}
-.btn-step{background:linear-gradient(135deg,#2b6cb0,#2c5282);color:#fff}
-.btn-reset{background:linear-gradient(135deg,#c53030,#9b2c2c);color:#fff}
-.btn-sm{background:#1e2535;color:#a0aec0;padding:4px 10px;font-size:0.75rem;border-radius:6px;border:1px solid #2d3748}
-.btn-sm.active{background:linear-gradient(135deg,#553c9a,#44337a);color:#e9d8fd;border-color:#9f7aea}
-label{font-size:0.8rem;color:#718096}
-input[type=range]{accent-color:#f6ad55;width:80px}
-.info-box{padding:10px 12px;font-size:0.8rem;line-height:1.6;color:#8896ab;border-bottom:1px solid #1e2535}
-.info-box strong{color:#f6ad55}
-.iter-display{padding:10px 12px;text-align:center}
-.iter-badge{background:linear-gradient(135deg,#744210,#5c3400);color:#fbd38d;padding:6px 20px;border-radius:20px;font-size:1rem;font-weight:700;display:inline-block;margin-bottom:6px;box-shadow:0 0 14px rgba(116,66,16,0.5);animation:iterWave 0.3s ease}
-.iter-sub{font-size:0.75rem;color:#4a6080}
-.dist-table{padding:8px 12px}
-.dist-table table{width:100%;border-collapse:collapse;font-size:0.8rem}
-.dist-table th{color:#4a6080;text-align:left;padding:3px 6px;border-bottom:1px solid #1e2535;font-size:0.75rem}
-.dist-table td{padding:4px 6px;border-bottom:1px solid #111420;transition:all 0.4s}
-.dist-table tr.updated td{animation:flash 0.6s ease}
-.dist-table tr.current td{background:rgba(116,66,16,0.3);box-shadow:inset 2px 0 0 #f6ad55}
-.dist-table td.dist-val{font-weight:700;color:#f6ad55}
-.dist-table td.dist-val.changed{color:#68d391;animation:grow 0.4s ease}
-.edge-list{padding:8px 12px;display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto}
-.edge-item{background:linear-gradient(135deg,#1e2535,#252d3e);border-radius:8px;padding:5px 10px;font-size:0.78rem;display:flex;justify-content:space-between;align-items:center;transition:all 0.35s;animation:pqSlideIn 0.2s ease;border:1px solid #2d3748}
-.edge-item.processing{background:linear-gradient(135deg,#744210,#5c3400);border-color:#f6ad55;box-shadow:0 0 12px rgba(246,173,85,0.4);animation:edgeProcess 0.5s ease}
-.edge-item.relaxed{background:linear-gradient(135deg,#1a4a36,#276749);border-color:#48bb78;box-shadow:0 0 10px rgba(72,187,120,0.3)}
-.edge-item.skipped{background:linear-gradient(135deg,#3d1515,#c53030);border-color:#fc8181;opacity:0.75}
-.code-panel{padding:8px 12px;font-family:'Courier New',monospace;font-size:0.74rem;line-height:1.8}
-.code-line{padding:2px 6px;border-radius:5px;color:#718096;white-space:pre;transition:background 0.25s,transform 0.2s}
-.code-line.active{background:linear-gradient(135deg,#4a3000,#3a2200);color:#fbd38d;transform:translateX(3px);box-shadow:0 0 10px rgba(74,48,0,0.5)}
-.step-log{padding:8px 12px;font-size:0.78rem;line-height:1.7;color:#8896ab;max-height:150px;overflow-y:auto}
-.step-log .entry{margin-bottom:5px;border-left:2px solid #2d3748;padding-left:8px}
-.step-log .entry.relax{border-color:#48bb78;color:#9ae6b4}
-.step-log .entry.cycle{border-color:#fc8181;color:#fc8181;font-weight:700;animation:pulseRed 0.5s ease infinite alternate}
-.neg-cycle-alert{display:none;background:linear-gradient(135deg,#742a2a,#5a1f1f);border:1px solid #fc8181;border-radius:10px;padding:12px;margin:8px;font-size:0.8rem;color:#fc8181;line-height:1.6;box-shadow:0 0 14px rgba(252,129,129,0.3)}
-.compare-box{padding:8px 12px;font-size:0.78rem;color:#8896ab;border-bottom:1px solid #1e2535}
-.compare-box .row{display:flex;gap:8px;margin-bottom:4px}
-.compare-box .col{flex:1;background:#2d3748;border-radius:6px;padding:6px;text-align:center}
-.compare-box .col.bf{border-top:2px solid #f6ad55}
-.compare-box .col.dj{border-top:2px solid #63b3ed}
+  :root {
+    --bg:#0e1525;--surface:#151d32;--surface2:#1c2744;--border:#2a3a5c;
+    --text:#eef1f8;--muted:#8899bb;--accent:#a78bfa;--yellow:#ffd43b;
+    --green:#2ecc71;--red:#fc5c7d;--blue:#5b8def;--orange:#ffb347;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(91,141,239,0.07) 0%,transparent 55%),radial-gradient(ellipse at 70% 80%,rgba(252,92,125,0.05) 0%,transparent 55%);pointer-events:none;}
+  header{background:var(--surface);padding:10px 24px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border);z-index:2;flex-shrink:0;}
+  header h1{font-size:1.15rem;font-weight:700;background:linear-gradient(135deg,#fc5c7d,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .badge{background:linear-gradient(135deg,#c0143c,#fc5c7d);color:#fff;padding:2px 10px;border-radius:12px;font-size:.68rem;font-weight:700;}
+  .complexity{display:flex;gap:6px;margin-left:auto;}
+  .cx{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:2px 9px;font-size:.72rem;color:var(--muted);}
+  .cx span{color:var(--yellow);font-weight:700;}
+  main{flex:1;display:flex;overflow:hidden;z-index:1;min-height:0;}
+  #status-display{text-align:center;padding:10px 20px;min-height:56px;display:flex;align-items:center;justify-content:center;gap:12px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;}
+  .sd-idle{color:var(--muted);font-size:.95rem;}
+  .sd-node{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;font-size:.95rem;font-weight:800;color:#fff;border:2px solid rgba(255,255,255,0.2);}
+  .sd-node.active{background:linear-gradient(135deg,#ffd43b,#e67e22);box-shadow:0 0 14px rgba(255,212,59,0.6);}
+  .sd-node.done{background:linear-gradient(135deg,#2ecc71,#1a9c54);box-shadow:0 0 14px rgba(46,204,113,0.5);}
+  .sd-node.neg{background:linear-gradient(135deg,#fc5c7d,#c0143c);box-shadow:0 0 14px rgba(252,92,125,0.6);}
+  .sd-dist{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 12px;font-size:.9rem;font-weight:700;}
+  .sd-dist.improved{color:var(--green);border-color:var(--green);}
+  .sd-dist.rejected{color:var(--red);border-color:var(--red);}
+  .sd-tag{padding:4px 12px;border-radius:6px;font-size:.82rem;font-weight:700;color:#fff;}
+  .sd-tag.improve{background:linear-gradient(135deg,#2ecc71,#1a9c54);}
+  .sd-tag.reject{background:linear-gradient(135deg,#fc5c7d,#c0143c);}
+  .sd-tag.neg-cycle{background:linear-gradient(135deg,#fc5c7d,#7c0000);animation:negFlash .5s ease infinite;}
+  #explain-viz{padding:10px 24px;min-height:52px;background:linear-gradient(135deg,rgba(21,29,50,0.95),rgba(28,39,68,0.9));border-bottom:1px solid var(--border);font-size:.88rem;line-height:1.55;color:var(--text);display:flex;align-items:center;gap:12px;flex-shrink:0;}
+  #explain-viz .step-icon{flex-shrink:0;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all .3s;}
+  .step-icon.info{background:rgba(91,141,239,0.15);border:1px solid rgba(91,141,239,0.3);}
+  .step-icon.iter{background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);}
+  .step-icon.improve{background:rgba(46,204,113,0.15);border:1px solid rgba(46,204,113,0.3);}
+  .step-icon.reject{background:rgba(252,92,125,0.15);border:1px solid rgba(252,92,125,0.3);}
+  .step-icon.neg{background:rgba(252,92,125,0.25);border:1px solid rgba(252,92,125,0.5);}
+  .step-icon.done{background:rgba(46,204,113,0.15);border:1px solid rgba(46,204,113,0.3);}
+  #explain-text{flex:1;}
+  #explain-text b{color:var(--yellow);}
+  #explain-text code{background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.8rem;color:var(--accent);}
+  #step-counter{font-size:.72rem;color:var(--muted);white-space:nowrap;}
+  #viz-center{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
+  #svg-area{flex:1;position:relative;background:radial-gradient(ellipse at center,#0d1525 0%,#070c18 100%);}
+  svg{width:100%;height:100%;}
+  #right-panel{width:280px;min-width:260px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+  .panel-title{padding:10px 14px;background:var(--surface2);font-size:.78rem;font-weight:600;color:var(--accent);border-bottom:1px solid var(--border);flex-shrink:0;}
+  #iter-panel{padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
+  .iter-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  .iter-label{font-size:.72rem;color:var(--muted);}
+  .iter-bar-wrap{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;}
+  .iter-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--blue));border-radius:4px;transition:width .4s;}
+  .iter-counter{font-size:1.1rem;font-weight:800;color:var(--yellow);font-variant-numeric:tabular-nums;}
+  .edge-scan-list{display:flex;flex-wrap:wrap;gap:3px;min-height:24px;}
+  .edge-scan-item{font-size:.7rem;padding:2px 6px;border-radius:4px;background:var(--surface2);border:1px solid var(--border);animation:slideIn .2s ease;}
+  .edge-scan-item.current{border-color:var(--yellow);color:var(--yellow);}
+  .edge-scan-item.imp{border-color:var(--green);color:var(--green);}
+  #dist-panel{flex:1;overflow-y:auto;padding:10px 12px;}
+  .dist-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+  .dist-table th{text-align:left;color:var(--muted);font-weight:600;padding:4px 6px;border-bottom:1px solid var(--border);font-size:.72rem;}
+  .dist-table td{padding:5px 6px;border-bottom:1px solid rgba(42,58,92,.4);transition:all .3s;}
+  .dist-table tr.upd td{background:rgba(46,204,113,.08);}
+  .dist-table td.dv{font-weight:800;font-variant-numeric:tabular-nums;}
+  .dist-table td.dv.upd{color:var(--green);animation:distFlash .4s ease;}
+  .dist-table td.inf{color:var(--muted);}
+  .neg-banner{background:linear-gradient(135deg,rgba(252,92,125,.2),rgba(192,20,60,.1));border:1px solid var(--red);border-radius:8px;padding:8px 12px;font-size:.82rem;color:var(--red);font-weight:700;display:none;margin-top:8px;animation:fadeIn .3s ease;}
+  #insight{padding:12px 14px;background:var(--bg);border-top:1px solid var(--border);font-size:.8rem;line-height:1.5;color:var(--muted);flex-shrink:0;}
+  #insight .insight-title{color:var(--accent);font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+  #insight b{color:var(--text);}
+  #controls{background:var(--surface);padding:8px 24px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);z-index:2;flex-wrap:wrap;flex-shrink:0;}
+  button{border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:.8rem;font-weight:600;transition:all .2s;}
+  button:active{transform:scale(.95);}
+  button:disabled{background:var(--surface2)!important;color:#3a4d6e!important;cursor:not-allowed;}
+  #btn-play{background:linear-gradient(135deg,#00b894,#05c46b);color:#fff;box-shadow:0 2px 10px rgba(5,196,107,.25);min-width:85px;}
+  #btn-step{background:linear-gradient(135deg,#7c5ce7,#a78bfa);color:#fff;}
+  #btn-reset,#btn-neg{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+  #btn-neg{border-color:var(--red);color:var(--red);}
+  label{font-size:.76rem;color:var(--muted);}
+  input[type=range]{accent-color:var(--accent);width:85px;}
+  #stats{display:flex;gap:8px;margin-left:auto;}
+  .stat{background:var(--surface2);padding:4px 10px;border-radius:6px;font-size:.8rem;color:var(--muted);border:1px solid var(--border);}
+  .stat span{color:var(--yellow);font-weight:800;}
+  #progress-wrap{width:140px;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;}
+  #progress-bar{height:100%;width:0%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .4s;}
+  @keyframes distFlash{0%{background:rgba(46,204,113,.3);transform:scale(1.05)}100%{background:transparent;transform:scale(1)}}
+  @keyframes negFlash{0%,100%{opacity:1}50%{opacity:.5}}
+  @keyframes slideIn{from{opacity:0;transform:translateX(-4px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes edgeDraw{from{stroke-dashoffset:400}to{stroke-dashoffset:0}}
 </style>
 </head>
 <body>
 <header>
-  <h1>🔁 Thuật toán Bellman-Ford — Đường đi ngắn nhất</h1>
-  <span class="badge">Module 6 · Bài 29</span>
-  <button class="btn-sm" id="btn-neg">⚠️ Thêm chu trình âm</button>
-  <button class="btn-sm" id="btn-compare">🆚 So sánh Dijkstra</button>
-  <button class="btn-sm" id="btn-add-neg-edge">➕ Cạnh âm</button>
+  <h1>⚡ Bellman-Ford</h1>
+  <span class="badge">GRAPH — NEGATIVE EDGES OK</span>
+  <div class="complexity">
+    <div class="cx">Time <span>O(V·E)</span></div>
+    <div class="cx">Space <span>O(V)</span></div>
+    <div class="cx">Negative cycle <span>✅ Detect</span></div>
+  </div>
 </header>
-<div class="main">
-  <!-- Left -->
-  <div class="left-panel">
-    <div class="panel-title">📋 Giải thích</div>
-    <div class="info-box">
-      <strong>Bellman-Ford</strong> tìm đường đi ngắn nhất, hoạt động với cả <em>cạnh có trọng số âm</em>.<br><br>
-      <strong>Ý tưởng:</strong> Lặp V-1 lần, mỗi lần thư giãn <em>tất cả</em> cạnh.<br><br>
-      <strong>Độ phức tạp:</strong> O(V·E) — chậm hơn Dijkstra nhưng tổng quát hơn.
-    </div>
-    <div class="iter-display">
-      <div class="iter-badge" id="iter-badge">Vòng lặp 0 / 5</div>
-      <div class="iter-sub" id="iter-sub">Nhấn Chạy để bắt đầu</div>
-    </div>
-    <div class="panel-title">🔢 Bảng khoảng cách</div>
-    <div class="dist-table" id="dist-table"></div>
-    <div class="neg-cycle-alert" id="neg-cycle-alert">
-      🔴 <strong>CHU TRÌNH ÂM PHÁT HIỆN!</strong><br>
-      Vòng lặp thứ V vẫn cập nhật được → Tồn tại chu trình có tổng trọng số âm → Không có đường đi ngắn nhất xác định!
+
+<div id="status-display"><span class="sd-idle">Nhấn Play để bắt đầu. Bellman-Ford duyệt tất cả cạnh V-1 lần.</span></div>
+
+<div id="explain-viz">
+  <div class="step-icon info">💡</div>
+  <div id="explain-text">Bellman-Ford thư giãn <b>tất cả cạnh</b> V-1 lần. Không cần Priority Queue, chậm hơn Dijkstra nhưng <b>xử lý được cạnh âm</b> và phát hiện chu trình âm.</div>
+  <div id="step-counter"></div>
+</div>
+
+<main>
+  <div id="viz-center">
+    <div id="svg-area">
+      <svg id="graph-svg" viewBox="0 0 700 400" preserveAspectRatio="xMidYMid meet"></svg>
     </div>
   </div>
-  <!-- Center -->
-  <div class="center">
-    <div id="svg-container">
-      <svg id="graph-svg">
-        <defs>
-          <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L8,3 z" fill="#718096"/>
-          </marker>
-          <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L8,3 z" fill="#48bb78"/>
-          </marker>
-          <marker id="arrow-yellow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L8,3 z" fill="#ecc94b"/>
-          </marker>
-          <marker id="arrow-red" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L8,3 z" fill="#fc8181"/>
-          </marker>
-        </defs>
-        <g id="edges-group"></g>
-        <g id="nodes-group"></g>
-        <g id="compare-group"></g>
-      </svg>
-    </div>
-    <div class="controls">
-      <button class="btn-play" id="btn-play">▶ Chạy</button>
-      <button class="btn-step" id="btn-step">⏭ Bước</button>
-      <button class="btn-reset" id="btn-reset">↺ Reset</button>
-      <label>Tốc độ:</label>
-      <input type="range" id="speed" min="100" max="2000" value="700" step="100">
-      <span style="margin-left:auto;font-size:0.8rem;color:#718096" id="status-bar">Chọn đỉnh nguồn</span>
-    </div>
-  </div>
-  <!-- Right -->
-  <div class="right-panel">
-    <div class="panel-title">📋 Danh sách cạnh (xử lý theo thứ tự)</div>
-    <div class="edge-list" id="edge-list"></div>
-    <div class="panel-title">💻 Code (Python)</div>
-    <div class="code-panel" id="code-panel"></div>
-    <div class="panel-title">📝 Nhật ký</div>
-    <div class="step-log" id="step-log"></div>
-    <div class="panel-title">🆚 So sánh thuật toán</div>
-    <div class="compare-box" id="compare-box">
-      <div class="row">
-        <div class="col bf"><div style="color:#f6ad55;font-weight:700">Bellman-Ford</div>O(V·E)<br>Hỗ trợ cạnh âm ✓</div>
-        <div class="col dj"><div style="color:#63b3ed;font-weight:700">Dijkstra</div>O(E log V)<br>Chỉ cạnh dương ✗</div>
+  <div id="right-panel">
+    <div class="panel-title">🔄 Iteration Tracker</div>
+    <div id="iter-panel">
+      <div class="iter-row">
+        <span class="iter-label">Vòng:</span>
+        <span class="iter-counter" id="iter-counter">0</span>
+        <span class="iter-label">/ <span id="total-iters">—</span></span>
+        <div class="iter-bar-wrap"><div class="iter-bar" id="iter-bar" style="width:0%"></div></div>
       </div>
+      <div style="font-size:.72rem;color:var(--muted);margin-bottom:5px">Cạnh đang quét trong vòng hiện tại:</div>
+      <div class="edge-scan-list" id="edge-scan-list"></div>
     </div>
+    <div class="panel-title" style="border-top:1px solid var(--border)">📏 Bảng khoảng cách</div>
+    <div id="dist-panel">
+      <table class="dist-table">
+        <thead><tr><th>Node</th><th>dist[]</th><th>prev</th></tr></thead>
+        <tbody id="dist-tbody"></tbody>
+      </table>
+      <div class="neg-banner" id="neg-banner">🔴 Phát hiện Chu trình âm!<br><small>dist vẫn giảm sau V-1 vòng → negative cycle tồn tại. Đường ngắn nhất = −∞</small></div>
+    </div>
+    <div id="insight">
+      <div class="insight-title">💡 Bellman-Ford vs Dijkstra</div>
+      BF duyệt <b>tất cả cạnh mỗi vòng</b> → O(VE). Dijkstra dùng PQ → O((V+E)logV). BF chậm hơn nhưng <b>xử lý cạnh âm</b> và phát hiện negative cycle.
+    </div>
+  </div>
+</main>
+
+<div id="controls">
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-step">⏭ Step</button>
+  <button id="btn-reset">↺ Reset</button>
+  <button id="btn-neg">🔴 Graph có chu trình âm</button>
+  <label>Speed <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <div id="stats">
+    <div class="stat">Relaxations <span id="s-relax">0</span></div>
+    <div class="stat">Improved <span id="s-improve">0</span></div>
+    <div id="progress-wrap"><div id="progress-bar"></div></div>
   </div>
 </div>
 
 <script>
-const W=()=>document.getElementById('svg-container').clientWidth;
-const H=()=>document.getElementById('svg-container').clientHeight;
+const GRAPH_NORMAL={
+  nodes:[{id:'A',x:110,y:200},{id:'B',x:260,y:100},{id:'C',x:260,y:300},{id:'D',x:420,y:100},{id:'E',x:420,y:300},{id:'F',x:580,y:200}],
+  edges:[{from:'A',to:'B',w:4},{from:'A',to:'C',w:2},{from:'B',to:'D',w:5},{from:'B',to:'E',w:11},{from:'C',to:'B',w:-3},{from:'C',to:'E',w:7},{from:'D',to:'F',w:3},{from:'E',to:'F',w:1}],
+  source:'A'
+};
+const GRAPH_NEG_CYCLE={
+  nodes:[{id:'A',x:110,y:200},{id:'B',x:280,y:120},{id:'C',x:450,y:120},{id:'D',x:450,y:280},{id:'E',x:610,y:200}],
+  edges:[{from:'A',to:'B',w:3},{from:'B',to:'C',w:2},{from:'C',to:'D',w:-6},{from:'D',to:'B',w:1},{from:'C',to:'E',w:4},{from:'D',to:'E',w:2}],
+  source:'A'
+};
 
-let nodes=[
-  {id:'A'},{id:'B'},{id:'C'},{id:'D'},{id:'E'},{id:'F'}
-];
-let edges=[
-  {from:'A',to:'B',w:4},
-  {from:'A',to:'C',w:2},
-  {from:'B',to:'D',w:5},
-  {from:'C',to:'B',w:1},
-  {from:'C',to:'D',w:8},
-  {from:'C',to:'E',w:10},
-  {from:'D',to:'E',w:2},
-  {from:'D',to:'F',w:6},
-  {from:'E',to:'F',w:3},
-];
-let negCycleEdge=null, negStraightEdge=null;
-let hasNegCycle=false, compareMode=false;
+let graph=GRAPH_NORMAL,steps=[],stepIdx=0,playing=false,timer=null;
+let relaxCount=0,improveCount=0,useNeg=false;
 
-function initPositions(){
-  const cx=W()/2, cy=H()/2;
-  const layout=[
-    {id:'A',x:cx-200,y:cy-60},{id:'B',x:cx-50,y:cy-130},
-    {id:'C',x:cx-60,y:cy+60},{id:'D',x:cx+100,y:cy-80},
-    {id:'E',x:cx+100,y:cy+80},{id:'F',x:cx+240,y:cy},
-  ];
-  layout.forEach(p=>{const n=nodes.find(n=>n.id===p.id);if(n){n.x=p.x;n.y=p.y;}});
-}
+function svgEl(t){return document.createElementNS('http://www.w3.org/2000/svg',t);}
+function ds(v){return v===Infinity?'∞':v;}
 
-// State
-let source=null,dist={},prev={};
-let steps=[],stepIdx=0;
-let playing=false,timer=null;
-let nodeColors={},edgeColors={};
-let currentIter=0, totalIter=0;
-
-const CODE=[
-  'def bellman_ford(graph, V, src):',
-  '    dist = {v: ∞ for v in V}',
-  '    dist[src] = 0',
-  '    for i in range(V - 1):      # V-1 lần',
-  '        changed = False',
-  '        for u, v, w in edges:   # mọi cạnh',
-  '            if dist[u] + w < dist[v]:',
-  '                dist[v] = dist[u] + w',
-  '                changed = True',
-  '        if not changed: break   # hội tụ sớm',
-  '    # Kiểm tra chu trình âm',
-  '    for u, v, w in edges:',
-  '        if dist[u] + w < dist[v]:',
-  '            return "Negative Cycle!"',
-  '    return dist',
-];
-
-function buildSteps(src){
-  steps=[];
-  dist={};prev={};
-  nodes.forEach(n=>{dist[n.id]=Infinity;prev[n.id]=null;});
-  dist[src]=0;
-  const allEdges=[...edges,...(negCycleEdge?[negCycleEdge]:[]),...(negStraightEdge?[negStraightEdge]:[])];
-  totalIter=nodes.length;
-
-  steps.push({type:'init',src,dist:{...dist},code:2,iter:0,log:`Khởi tạo dist[${src}]=0, tất cả còn lại = ∞`});
-
-  for(let i=1;i<=nodes.length-1;i++){
-    let changed=false;
-    steps.push({type:'iter_start',iter:i,dist:{...dist},code:3,log:`=== Vòng lặp ${i}/${nodes.length-1} ===`});
-    for(const e of allEdges){
-      const u=e.from,v=e.to,w=e.w;
-      if(dist[u]===Infinity) continue;
-      const newD=dist[u]+w;
-      steps.push({type:'relax_try',from:u,to:v,w,newD,oldD:dist[v],dist:{...dist},code:6,iter:i,log:`Cạnh ${u}→${v}(${w}): dist[${u}]+${w}=${newD} vs dist[${v}]=${dist[v]===Infinity?'∞':dist[v]}`});
-      if(newD<dist[v]){
-        dist[v]=newD;prev[v]=u;changed=true;
-        steps.push({type:'relax_ok',from:u,to:v,w,newD,dist:{...dist},code:7,iter:i,log:`✓ Cập nhật dist[${v}]=${newD}`});
-      } else {
-        steps.push({type:'relax_fail',from:u,to:v,w,dist:{...dist},code:6,iter:i,log:`✗ Không cải thiện dist[${v}]`});
-      }
-    }
-    if(!changed){
-      steps.push({type:'converge',iter:i,dist:{...dist},code:9,log:`Không thay đổi ở vòng ${i} → dừng sớm (hội tụ)!`});
-      break;
-    }
-  }
-
-  // V-th iteration check
-  let negCycleFound=false;
-  for(const e of allEdges){
-    const u=e.from,v=e.to,w=e.w;
-    if(dist[u]!==Infinity&&dist[u]+w<dist[v]){
-      negCycleFound=true;
-      steps.push({type:'neg_cycle',from:u,to:v,w,dist:{...dist},code:12,log:`🔴 CHU TRÌNH ÂM! Vòng ${nodes.length}: cạnh ${u}→${v} vẫn cập nhật được!`});
-      break;
-    }
-  }
-  if(!negCycleFound){
-    steps.push({type:'done',dist:{...dist},prev:{...prev},code:14,log:'✅ Hoàn thành! Không có chu trình âm.'});
-  }
-}
-
-function renderCode(line){
-  const p=document.getElementById('code-panel');
-  p.innerHTML=CODE.map((l,i)=>`<div class="code-line${i===line?' active':''}">${escHtml(l)}</div>`).join('');
-}
-function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
-function renderDistTable(distObj,cur){
-  const c=document.getElementById('dist-table');
-  const allEdges=[...edges,...(negCycleEdge?[negCycleEdge]:[]),...(negStraightEdge?[negStraightEdge]:[])];
-  let html='<table><tr><th>Đỉnh</th><th>dist</th><th>Qua</th></tr>';
-  nodes.forEach(n=>{
-    const d=distObj[n.id];
-    const isCur=n.id===cur;
-    html+=`<tr class="${isCur?'current':''}">
-      <td>${n.id}</td>
-      <td class="dist-val">${d===Infinity?'∞':d}</td>
-      <td>${prev[n.id]||'-'}</td>
-    </tr>`;
-  });
-  html+='</table>';
-  c.innerHTML=html;
-}
-
-function renderEdgeList(processingFrom, processingTo, resultType){
-  const allEdges=[...edges,...(negCycleEdge?[negCycleEdge]:[]),...(negStraightEdge?[negStraightEdge]:[])];
-  const c=document.getElementById('edge-list');
-  c.innerHTML=allEdges.map(e=>{
-    const isProc=e.from===processingFrom&&e.to===processingTo;
-    const cls=isProc?(resultType==='ok'?'relaxed':resultType==='fail'?'skipped':'processing'):'';
-    return `<div class="edge-item ${cls}">
-      <span style="color:${e.w<0?'#fc8181':'#e2e8f0'}">${e.from}→${e.to}</span>
-      <span style="color:#718096">w=${e.w}</span>
-    </div>`;
-  }).join('');
-}
-
-function updateIterBadge(iter){
-  document.getElementById('iter-badge').textContent=`Vòng lặp ${iter} / ${nodes.length-1}`;
-}
-
-// SVG
-let dragging=null,dragOffX=0,dragOffY=0;
-function getPos(id){const n=nodes.find(n=>n.id===id);return n?{x:n.x,y:n.y}:{x:0,y:0};}
-function edgeKey(f,t){return f+'→'+t;}
-function calcEP(from,to,r=22){
-  const f=getPos(from),t=getPos(to);
-  const dx=t.x-f.x,dy=t.y-f.y,len=Math.sqrt(dx*dx+dy*dy)||1;
-  return{x1:f.x+dx/len*r,y1:f.y+dy/len*r,x2:t.x-dx/len*(r+8),y2:t.y-dy/len*(r+8),mx:(f.x+t.x)/2,my:(f.y+t.y)/2};
-}
-function markerForColor(c){
-  if(c==='#48bb78')return'url(#arrow-green)';
-  if(c==='#ecc94b')return'url(#arrow-yellow)';
-  if(c==='#fc8181')return'url(#arrow-red)';
-  return'url(#arrow)';
-}
-
-function renderGraph(){
+function renderGraph(g){
   const svg=document.getElementById('graph-svg');
-  const eg=document.getElementById('edges-group');
-  const ng=document.getElementById('nodes-group');
-  eg.innerHTML='';ng.innerHTML='';
-  const allEdges=[...edges,...(negCycleEdge?[negCycleEdge]:[]),...(negStraightEdge?[negStraightEdge]:[])];
+  svg.innerHTML='';
+  const defs=svgEl('defs');
+  [['ng-default','#5b8def','#2c5aa0'],['ng-source','#a78bfa','#7c5ce7'],['ng-current','#ffd43b','#e67e22'],['ng-updated','#2ecc71','#1a9c54'],['ng-neg','#fc5c7d','#c0143c']].forEach(([id,t,b])=>{
+    const rg=svgEl('radialGradient');rg.id=id;rg.setAttribute('cx','35%');rg.setAttribute('cy','30%');rg.setAttribute('r','70%');
+    const s1=svgEl('stop');s1.setAttribute('offset','0%');s1.setAttribute('stop-color',t);
+    const s2=svgEl('stop');s2.setAttribute('offset','100%');s2.setAttribute('stop-color',b);
+    rg.appendChild(s1);rg.appendChild(s2);defs.appendChild(rg);
+  });
+  ['default','source','current','updated','neg'].forEach(k=>{
+    const f=svgEl('filter');f.id='glow-'+k;
+    const fe=svgEl('feGaussianBlur');fe.setAttribute('stdDeviation','4');fe.setAttribute('result','blur');
+    const fm=svgEl('feMerge');
+    ['blur','SourceGraphic'].forEach(i=>{const fn=svgEl('feMergeNode');fn.setAttribute('in',i);fm.appendChild(fn);});
+    f.appendChild(fe);f.appendChild(fm);defs.appendChild(f);
+  });
+  [['#2a3a5c','arrow-d'],['#2ecc71','arrow-g'],['#ffd43b','arrow-y'],['#fc5c7d','arrow-r']].forEach(([fill,id])=>{
+    const m=svgEl('marker');m.id=id;m.setAttribute('viewBox','0 0 10 10');m.setAttribute('refX','5');m.setAttribute('refY','5');m.setAttribute('markerWidth','6');m.setAttribute('markerHeight','6');m.setAttribute('orient','auto-start-reverse');
+    const p=svgEl('path');p.setAttribute('d','M 0 0 L 10 5 L 0 10 z');p.setAttribute('fill',fill);m.appendChild(p);defs.appendChild(m);
+  });
+  svg.appendChild(defs);
 
-  allEdges.forEach(e=>{
-    const key=edgeKey(e.from,e.to);
-    const color=edgeColors[key]||'#4a5568';
-    const w=color==='#48bb78'?3:1.5;
-    const ep=calcEP(e.from,e.to);
-    const line=document.createElementNS('http://www.w3.org/2000/svg','line');
-    line.setAttribute('x1',ep.x1);line.setAttribute('y1',ep.y1);
-    line.setAttribute('x2',ep.x2);line.setAttribute('y2',ep.y2);
-    line.setAttribute('stroke',color);line.setAttribute('stroke-width',w);
-    line.setAttribute('marker-end',markerForColor(color));
-    eg.appendChild(line);
-    const wt=document.createElementNS('http://www.w3.org/2000/svg','text');
-    wt.setAttribute('x',ep.mx);wt.setAttribute('y',ep.my-5);
-    wt.setAttribute('text-anchor','middle');
-    wt.setAttribute('font-size','11');wt.setAttribute('fill',e.w<0?'#fc8181':'#a0aec0');
-    wt.textContent=e.w;
-    eg.appendChild(wt);
+  const edgeG=svgEl('g');edgeG.id='edge-group';svg.appendChild(edgeG);
+  g.edges.forEach(e=>{
+    const n1=g.nodes.find(n=>n.id===e.from),n2=g.nodes.find(n=>n.id===e.to);
+    const dx=n2.x-n1.x,dy=n2.y-n1.y,len=Math.sqrt(dx*dx+dy*dy),r=22;
+    const x1=n1.x+dx/len*r,y1=n1.y+dy/len*r,x2=n2.x-dx/len*(r+3),y2=n2.y-dy/len*(r+3);
+    const line=svgEl('line');line.id='edge-'+e.from+'-'+e.to;
+    line.setAttribute('x1',x1);line.setAttribute('y1',y1);line.setAttribute('x2',x2);line.setAttribute('y2',y2);
+    line.setAttribute('stroke',e.w<0?'#8b1c3c':'#2a3a5c');line.setAttribute('stroke-width','2');
+    line.setAttribute('marker-end','url(#arrow-d)');
+    if(e.w<0)line.setAttribute('stroke-dasharray','5,3');
+    edgeG.appendChild(line);
+    const mx=(n1.x+n2.x)/2,my=(n1.y+n2.y)/2;
+    const wt=svgEl('text');wt.setAttribute('x',mx+8);wt.setAttribute('y',my-6);wt.setAttribute('font-size','11');
+    wt.setAttribute('fill',e.w<0?'#fc5c7d':'#5b7aaa');wt.setAttribute('font-weight','700');wt.setAttribute('font-family','monospace');
+    wt.textContent=e.w;svg.appendChild(wt);
   });
 
-  // Ensure SVG defs with radial gradients exist
-  if(!svg.querySelector('defs')){
-    const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
-    const grads=[
-      {id:'bfGradUn',c1:'#2d3a52',c2:'#1a2035'},
-      {id:'bfGradSrc',c1:'#d69e2e',c2:'#744210'},
-      {id:'bfGradActive',c1:'#ecc94b',c2:'#b7791f'},
-      {id:'bfGradRelaxed',c1:'#48bb78',c2:'#276749'},
-      {id:'bfGradNeg',c1:'#e53e3e',c2:'#742a2a'},
-    ];
-    grads.forEach(({id,c1,c2})=>{
-      const rg=document.createElementNS('http://www.w3.org/2000/svg','radialGradient');
-      rg.setAttribute('id',id);rg.setAttribute('cx','35%');rg.setAttribute('cy','35%');rg.setAttribute('r','65%');
-      const s1=document.createElementNS('http://www.w3.org/2000/svg','stop');s1.setAttribute('offset','0%');s1.setAttribute('stop-color',c1);
-      const s2=document.createElementNS('http://www.w3.org/2000/svg','stop');s2.setAttribute('offset','100%');s2.setAttribute('stop-color',c2);
-      rg.appendChild(s1);rg.appendChild(s2);defs.appendChild(rg);
-    });
-    svg.insertBefore(defs,svg.firstChild);
-  }
-  const bfColorToGrad={'#2d3748':'url(#bfGradUn)','#744210':'url(#bfGradSrc)','#ecc94b':'url(#bfGradActive)','#d69e2e':'url(#bfGradActive)','#276749':'url(#bfGradRelaxed)','#48bb78':'url(#bfGradRelaxed)','#742a2a':'url(#bfGradNeg)'};
+  const nodeG=svgEl('g');nodeG.id='node-group';svg.appendChild(nodeG);
+  g.nodes.forEach(n=>{
+    const g2=svgEl('g');g2.id='node-'+n.id;
+    const c=svgEl('circle');c.setAttribute('cx',n.x);c.setAttribute('cy',n.y);c.setAttribute('r','22');
+    const isSource=n.id===g.source;
+    c.setAttribute('fill','url(#ng-'+(isSource?'source':'default')+')');
+    c.setAttribute('filter','url(#glow-'+(isSource?'source':'default')+')');
+    c.setAttribute('stroke','rgba(255,255,255,0.15)');c.setAttribute('stroke-width','1.5');g2.appendChild(c);
+    const lbl=svgEl('text');lbl.setAttribute('x',n.x);lbl.setAttribute('y',n.y+1);lbl.setAttribute('text-anchor','middle');lbl.setAttribute('dominant-baseline','middle');
+    lbl.setAttribute('font-size','13');lbl.setAttribute('font-weight','800');lbl.setAttribute('fill','#fff');lbl.setAttribute('font-family','sans-serif');lbl.textContent=n.id;g2.appendChild(lbl);
+    const dl=svgEl('text');dl.id='dist-'+n.id;dl.setAttribute('x',n.x);dl.setAttribute('y',n.y-30);dl.setAttribute('text-anchor','middle');dl.setAttribute('font-size','11');dl.setAttribute('font-weight','700');dl.setAttribute('fill','#5b7aaa');dl.setAttribute('font-family','monospace');dl.textContent='∞';g2.appendChild(dl);
+    nodeG.appendChild(g2);
+  });
+}
 
-  nodes.forEach(n=>{
-    const rawColor=nodeColors[n.id]||'#2d3748';
-    const fillColor=bfColorToGrad[rawColor]||rawColor;
-    const isSource=n.id===source;
-    const isActive=rawColor==='#ecc94b'||rawColor==='#d69e2e';
-    const isRelaxed=rawColor==='#276749'||rawColor==='#48bb78';
-    const isNeg=rawColor==='#742a2a';
-    const stroke=isSource?'#f6ad55':isNeg?'#fc8181':isRelaxed?'#48bb78':isActive?'#ecc94b':'#4a5568';
-    const g=document.createElementNS('http://www.w3.org/2000/svg','g');
-    g.setAttribute('transform',`translate(${n.x},${n.y})`);
-    g.style.cursor='pointer';
-    if(isActive){
-      const ring=document.createElementNS('http://www.w3.org/2000/svg','circle');
-      ring.setAttribute('r',24);ring.setAttribute('fill','none');
-      ring.setAttribute('stroke','rgba(236,201,75,0.5)');ring.setAttribute('stroke-width',2);
-      ring.style.animation='bfWave 1.2s ease-out infinite';
-      g.appendChild(ring);
-    }
-    const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
-    circle.setAttribute('r',22);circle.setAttribute('fill',fillColor);
-    circle.setAttribute('stroke',stroke);circle.setAttribute('stroke-width',2);
-    if(isActive)circle.style.filter='drop-shadow(0 0 12px rgba(236,201,75,0.8))';
-    else if(isRelaxed)circle.style.filter='drop-shadow(0 0 8px rgba(72,187,120,0.6))';
-    else if(isNeg)circle.style.filter='drop-shadow(0 0 8px rgba(229,62,62,0.6))';
-    else if(isSource)circle.style.filter='drop-shadow(0 0 8px rgba(246,173,85,0.5))';
-    const text=document.createElementNS('http://www.w3.org/2000/svg','text');
-    text.setAttribute('text-anchor','middle');text.setAttribute('dy','0.35em');
-    text.setAttribute('fill','#e2e8f0');text.setAttribute('font-size','13');text.setAttribute('font-weight','700');
-    text.textContent=n.id;
-    g.appendChild(circle);g.appendChild(text);
-    g.addEventListener('mousedown',ev=>{
-      dragging=n.id;
-      const r=document.getElementById('svg-container').getBoundingClientRect();
-      dragOffX=ev.clientX-r.left-n.x;dragOffY=ev.clientY-r.top-n.y;ev.preventDefault();
-    });
-    g.addEventListener('click',()=>{
-      if(!source&&steps.length===0){
-        source=n.id;nodeColors[n.id]='#744210';
-        buildSteps(n.id);stepIdx=0;
-        renderDistTable(dist,null);renderEdgeList(null,null,null);
-        renderCode(2);renderGraph();
-        document.getElementById('status-bar').textContent='Nhấn Chạy hoặc Bước';
+function setNodeState(id,state){
+  const c=document.querySelector('#node-'+id+' circle');if(!c)return;
+  c.setAttribute('fill','url(#ng-'+state+')');c.setAttribute('filter','url(#glow-'+state+')');
+}
+function setDistLabel(id,val){
+  const el=document.getElementById('dist-'+id);if(!el)return;
+  el.textContent=ds(val);el.setAttribute('fill',val===Infinity?'#5b7aaa':'#ffd43b');
+}
+function setEdgeState(from,to,state){
+  const line=document.getElementById('edge-'+from+'-'+to);if(!line)return;
+  const m={d:{s:'#2a3a5c',w:'2',da:'',mk:'arrow-d'},c:{s:'#ffd43b',w:'3',da:'6,3',mk:'arrow-y'},i:{s:'#2ecc71',w:'3.5',da:'',mk:'arrow-g'},r:{s:'#fc5c7d',w:'2',da:'4,3',mk:'arrow-r'},res:{s:'#2ecc71',w:'4',da:'',mk:'arrow-g'}};
+  const st=m[state]||m.d;
+  line.setAttribute('stroke',st.s);line.setAttribute('stroke-width',st.w);line.setAttribute('stroke-dasharray',st.da);line.setAttribute('marker-end','url(#'+st.mk+')');
+  if(state==='res'){const len=300;line.setAttribute('stroke-dasharray',len);line.setAttribute('stroke-dashoffset',len);line.style.animation='edgeDraw .5s ease forwards';}
+}
+
+function buildSteps(g){
+  const steps=[];const dist={},prev={};
+  g.nodes.forEach(n=>{dist[n.id]=Infinity;prev[n.id]=null;});
+  dist[g.source]=0;
+  const V=g.nodes.length;
+  steps.push({type:'init',dist:{...dist},V,E:g.edges.length});
+  let earlyOut=false;
+  for(let iter=0;iter<V-1;iter++){
+    let anyImprove=false;
+    steps.push({type:'iter-start',iter,dist:{...dist}});
+    for(let ei=0;ei<g.edges.length;ei++){
+      const e=g.edges[ei];
+      if(dist[e.from]===Infinity){steps.push({type:'relax',from:e.from,to:e.to,w:e.w,result:'skip',dist:{...dist},prev:{...prev},iter,ei});continue;}
+      const nd=dist[e.from]+e.w;
+      if(nd<dist[e.to]){
+        const old=dist[e.to];dist[e.to]=nd;prev[e.to]=e.from;anyImprove=true;
+        steps.push({type:'relax',from:e.from,to:e.to,w:e.w,result:'improve',old,nd,dist:{...dist},prev:{...prev},iter,ei});
+      } else {
+        steps.push({type:'relax',from:e.from,to:e.to,w:e.w,result:'reject',old:dist[e.to],nd,dist:{...dist},prev:{...prev},iter,ei});
       }
-    });
-    ng.appendChild(g);
+    }
+    steps.push({type:'iter-end',iter,anyImprove,dist:{...dist}});
+    if(!anyImprove){steps.push({type:'early',iter,dist:{...dist}});earlyOut=true;break;}
+  }
+  let negCycle=false;
+  for(const e of g.edges){
+    if(dist[e.from]!==Infinity&&dist[e.from]+e.w<dist[e.to]){
+      negCycle=true;
+      steps.push({type:'neg-cycle',from:e.from,to:e.to,w:e.w,dist:{...dist}});
+      break;
+    }
+  }
+  if(!negCycle)steps.push({type:'done',dist:{...dist},prev:{...prev}});
+  return steps;
+}
+
+function updateDistTable(dist,prev,highlight){
+  const tbody=document.getElementById('dist-tbody');tbody.innerHTML='';
+  graph.nodes.forEach(n=>{
+    const tr=document.createElement('tr');
+    const d=dist[n.id];const isInf=d===Infinity||d===undefined;const isHL=highlight===n.id;
+    if(isHL)tr.className='upd';
+    tr.innerHTML=`<td>${n.id}</td><td class="dv${isHL?' upd':''}${isInf?' inf':''}">${isInf?'∞':d}</td><td>${prev&&prev[n.id]?prev[n.id]:'—'}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+function updateEdgeScan(edges,ci,impSet){
+  const el=document.getElementById('edge-scan-list');el.innerHTML='';
+  edges.slice(0,ci+1).forEach((e,i)=>{
+    const span=document.createElement('span');
+    const isImp=impSet&&impSet.has(e.from+e.to);
+    span.className='edge-scan-item'+(i===ci?' current':isImp?' imp':'');
+    span.textContent=`${e.from}→${e.to}(${e.w})`;el.appendChild(span);
   });
 }
 
-document.getElementById('graph-svg').addEventListener('mousemove',ev=>{
-  if(!dragging)return;
-  const r=document.getElementById('svg-container').getBoundingClientRect();
-  const n=nodes.find(n=>n.id===dragging);
-  if(n){n.x=ev.clientX-r.left-dragOffX;n.y=ev.clientY-r.top-dragOffY;renderGraph();}
-});
-document.getElementById('graph-svg').addEventListener('mouseup',()=>{dragging=null;});
-
-function addLog(msg,cls){
-  const log=document.getElementById('step-log');
-  const div=document.createElement('div');div.className='entry '+(cls||'');div.textContent=msg;
-  log.appendChild(div);log.scrollTop=log.scrollHeight;
+function setExplain(icon,cls,html){
+  const ic=document.querySelector('#explain-viz .step-icon');ic.textContent=icon;ic.className='step-icon '+cls;
+  document.getElementById('explain-text').innerHTML=html;
+  document.getElementById('step-counter').textContent=`${stepIdx}/${steps.length}`;
 }
+function setInsight(title,html){document.getElementById('insight').innerHTML=`<div class="insight-title">${title}</div>${html}`;}
 
+const improveSets=[];
 function applyStep(s){
-  // Clear yellow highlights
-  const allEdges=[...edges,...(negCycleEdge?[negCycleEdge]:[]),...(negStraightEdge?[negStraightEdge]:[])];
-  allEdges.forEach(e=>{if(edgeColors[edgeKey(e.from,e.to)]==='#ecc94b')edgeColors[edgeKey(e.from,e.to)]='#4a5568';});
+  if(!s)return;
+  // reset edges
+  graph.edges.forEach(e=>{const l=document.getElementById('edge-'+e.from+'-'+e.to);if(l){l.setAttribute('stroke',e.w<0?'#8b1c3c':'#2a3a5c');l.setAttribute('stroke-width','2');l.setAttribute('stroke-dasharray',e.w<0?'5,3':'');l.setAttribute('marker-end','url(#arrow-d)');l.style.animation='';}});
 
-  if(s.type==='init'){
-    nodeColors[s.src]='#744210';
-    renderDistTable(s.dist,s.src);renderCode(s.code);
-    updateIterBadge(0);renderEdgeList(null,null,null);addLog(s.log,'');
+  switch(s.type){
+    case 'init':
+      relaxCount=0;improveCount=0;
+      document.getElementById('neg-banner').style.display='none';
+      graph.nodes.forEach(n=>{setNodeState(n.id,n.id===graph.source?'source':'default');setDistLabel(n.id,s.dist[n.id]);});
+      document.getElementById('iter-counter').textContent='0';
+      document.getElementById('total-iters').textContent=s.V-1;
+      document.getElementById('iter-bar').style.width='0%';
+      document.getElementById('edge-scan-list').innerHTML='';
+      updateDistTable(s.dist,{},'');
+      document.getElementById('status-display').innerHTML=`<span class="sd-idle">Khởi tạo: dist[${graph.source}]=0, tất cả còn lại=∞. Sẽ thực hiện ${s.V-1} vòng lặp trên ${s.E} cạnh.</span>`;
+      setExplain('💡','info',`Bellman-Ford: thư giãn <b>tất cả ${s.E} cạnh</b> tổng cộng <b>${s.V-1} vòng</b>. Đảm bảo đường ngắn nhất qua tối đa V-1 cạnh.`);
+      setInsight('📚 Vì sao V-1 lần?',`Đường ngắn nhất không có chu trình có tối đa <b>V-1 cạnh</b>. Sau V-1 vòng, mọi dist đã hội tụ (trừ khi có negative cycle).`);
+      break;
+    case 'iter-start':
+      document.getElementById('iter-counter').textContent=s.iter+1;
+      document.getElementById('iter-bar').style.width=((s.iter+1)/(graph.nodes.length-1)*100)+'%';
+      document.getElementById('edge-scan-list').innerHTML='';
+      document.getElementById('progress-bar').style.width=((s.iter+1)/(graph.nodes.length-1)*100)+'%';
+      graph.nodes.forEach(n=>setDistLabel(n.id,s.dist[n.id]));
+      document.getElementById('status-display').innerHTML=`<span style="color:var(--accent);font-size:1rem">🔄 Bắt đầu vòng lặp ${s.iter+1}/${graph.nodes.length-1} — quét tất cả ${graph.edges.length} cạnh với wave effect</span>`;
+      setExplain('🔄','iter',`<b>Vòng lặp ${s.iter+1}/${graph.nodes.length-1}:</b> Duyệt tất cả ${graph.edges.length} cạnh theo thứ tự. Mỗi cạnh được thử relaxation.`);
+      break;
+    case 'relax':
+      relaxCount++;document.getElementById('s-relax').textContent=relaxCount;
+      graph.nodes.forEach(n=>setDistLabel(n.id,s.dist[n.id]));
+      if(s.result==='skip'){
+        updateEdgeScan(graph.edges,s.ei,null);
+        setExplain('⏭','reject',`Bỏ qua cạnh <b>${s.from}→${s.to}</b>: dist[${s.from}]=∞, chưa thể relaxation.`);
+        break;
+      }
+      setEdgeState(s.from,s.to,s.result==='improve'?'i':'r');
+      updateEdgeScan(graph.edges,s.ei,null);
+      if(s.result==='improve'){
+        improveCount++;document.getElementById('s-improve').textContent=improveCount;
+        setNodeState(s.to,'current');
+        updateDistTable(s.dist,s.prev,s.to);
+        document.getElementById('status-display').innerHTML=`<span class="sd-node active">${s.from}</span><span style="margin:0 8px;color:var(--muted)">→</span><span class="sd-node active">${s.to}</span><span style="margin:0 8px;color:var(--muted)">w=${s.w}</span><span class="sd-dist improved">${ds(s.dist[s.from]-s.w)}+${s.w}=${s.nd}</span><span style="margin:0 6px;color:var(--muted)">vs</span><span class="sd-dist rejected">${ds(s.old)}</span><span class="sd-tag improve">✅ Cập nhật!</span>`;
+        setExplain('✅','improve',`Vòng lặp ${s.iter+1}/${graph.nodes.length-1}: xét cạnh <b>${s.from}→${s.to}</b> (w=${s.w}). dist[${s.from}]+${s.w}=${s.nd} &lt; dist[${s.to}]=${ds(s.old)} → <b>Cập nhật! Relaxation thành công.</b>`);
+        setInsight('📉 Relaxation thành công',`Tìm được đường ngắn hơn đến <b>${s.to}</b> qua ${s.from}. dist[${s.to}] giảm từ ${ds(s.old)} → ${s.nd}.`);
+      } else {
+        updateDistTable(s.dist,s.prev,'');
+        document.getElementById('status-display').innerHTML=`<span class="sd-node done">${s.from}</span><span style="margin:0 8px;color:var(--muted)">→</span><span class="sd-node done">${s.to}</span><span style="margin:0 8px;color:var(--muted)">w=${s.w}</span><span class="sd-dist">${ds(s.dist[s.from]-s.w)}+${s.w}=${s.nd}</span><span style="margin:0 6px;color:var(--muted)">vs</span><span class="sd-dist">${ds(s.old)}</span><span class="sd-tag reject">❌ Giữ nguyên</span>`;
+        setExplain('❌','reject',`Xét cạnh <b>${s.from}→${s.to}</b> (w=${s.w}). dist[${s.from}]+${s.w}=${s.nd} ≥ dist[${s.to}]=${ds(s.old)} → <b>Không cải thiện, bỏ qua.</b>`);
+      }
+      break;
+    case 'iter-end':
+      graph.nodes.forEach(n=>setDistLabel(n.id,s.dist[n.id]));
+      setExplain('📊','iter',`Vòng ${s.iter+1} hoàn tất. ${s.anyImprove?'Có cải thiện → tiếp tục vòng tiếp.':'Không có cải thiện → dừng sớm (Early Exit)!'}`);
+      break;
+    case 'early':
+      graph.nodes.forEach(n=>{setNodeState(n.id,'updated');setDistLabel(n.id,s.dist[n.id]);});
+      document.getElementById('progress-bar').style.width='90%';
+      document.getElementById('status-display').innerHTML=`<span style="color:var(--green);font-size:1rem">⚡ Early Exit! Không có relaxation nào ở vòng ${s.iter+1} → mọi dist đã tối ưu.</span>`;
+      setExplain('⚡','done',`<b>Early Termination!</b> Vòng ${s.iter+1} không có relaxation nào → mảng dist đã hội tụ. Dừng sớm thay vì tiếp tục ${graph.nodes.length-2-s.iter} vòng vô nghĩa.`);
+      setInsight('⚡ Tối ưu Early Exit','Khi không có edge nào relax được, thuật toán đã hội tụ. Dừng sớm tiết kiệm đáng kể thời gian trong trường hợp tốt.');
+      break;
+    case 'neg-cycle':
+      setEdgeState(s.from,s.to,'r');
+      document.getElementById('neg-banner').style.display='block';
+      graph.nodes.forEach(n=>setNodeState(n.id,'neg'));
+      document.getElementById('status-display').innerHTML=`<span class="sd-node neg">${s.from}</span><span style="margin:0 8px;color:var(--red)">→</span><span class="sd-node neg">${s.to}</span><span style="margin:0 8px;color:var(--red)">w=${s.w}</span><span class="sd-tag neg-cycle">🔴 Negative Cycle Detected!</span>`;
+      setExplain('🔴','neg',`<b>Chu trình âm phát hiện!</b> Cạnh ${s.from}→${s.to} (w=${s.w}) vẫn có thể giảm dist[${s.to}] sau V-1 vòng. Không tồn tại đường ngắn nhất hữu hạn.`);
+      setInsight('🔴 Negative Cycle','Chu trình âm = tổng trọng số cạnh trong vòng < 0. Đường ngắn nhất = −∞. <b>Dijkstra không phát hiện được điều này!</b>');
+      stopPlay();
+      break;
+    case 'done':
+      graph.nodes.forEach(n=>{setNodeState(n.id,'updated');setDistLabel(n.id,s.dist[n.id]);});
+      graph.nodes.forEach(n=>{if(s.prev[n.id])setEdgeState(s.prev[n.id],n.id,'res');});
+      document.getElementById('progress-bar').style.width='100%';
+      updateDistTable(s.dist,s.prev,'');
+      document.getElementById('status-display').innerHTML=`<span style="color:var(--green);font-size:1.1rem;font-weight:700">🎉 Bellman-Ford hoàn tất! Tìm được tất cả đường ngắn nhất từ ${graph.source}.</span>`;
+      setExplain('🎉','done',`Hoàn tất! ${relaxCount} relaxations, ${improveCount} lần cải thiện. Không có chu trình âm. Cạnh xanh = Shortest Path Tree từ ${graph.source}.`);
+      setInsight('✅ Kết quả',`Bellman-Ford tìm được đường ngắn nhất từ <b>${graph.source}</b> đến mọi đỉnh. Theo dõi prev[] để tái tạo đường đi cụ thể.`);
+      stopPlay();
+      break;
   }
-  if(s.type==='iter_start'){
-    currentIter=s.iter;updateIterBadge(s.iter);
-    document.getElementById('iter-sub').textContent=s.iter<nodes.length-1?`Còn ${nodes.length-1-s.iter} vòng`:'Vòng cuối cùng';
-    renderCode(s.code);addLog(s.log,'extract');
-  }
-  if(s.type==='relax_try'){
-    edgeColors[edgeKey(s.from,s.to)]='#ecc94b';
-    renderEdgeList(s.from,s.to,'try');renderCode(s.code);addLog(s.log,'');
-  }
-  if(s.type==='relax_ok'){
-    edgeColors[edgeKey(s.from,s.to)]='#48bb78';
-    nodeColors[s.to]='#276749';
-    renderDistTable(s.dist,s.to);renderEdgeList(s.from,s.to,'ok');renderCode(s.code);addLog(s.log,'relax');
-  }
-  if(s.type==='relax_fail'){
-    edgeColors[edgeKey(s.from,s.to)]='#fc8181';
-    renderEdgeList(s.from,s.to,'fail');renderCode(s.code);addLog(s.log,'');
-  }
-  if(s.type==='converge'){
-    document.getElementById('iter-sub').textContent='Hội tụ sớm!';
-    renderCode(s.code);addLog(s.log,'relax');
-  }
-  if(s.type==='neg_cycle'){
-    edgeColors[edgeKey(s.from,s.to)]='#fc8181';
-    document.getElementById('neg-cycle-alert').style.display='block';
-    // Highlight cycle
-    nodes.forEach(n=>{nodeColors[n.id]='#742a2a';});
-    nodeColors[source]='#744210';
-    renderCode(s.code);addLog(s.log,'cycle');
-    document.getElementById('iter-badge').style.background='#742a2a';
-    document.getElementById('iter-badge').textContent='CHU TRÌNH ÂM!';
-  }
-  if(s.type==='done'){
-    nodes.forEach(n=>{nodeColors[n.id]=dist[n.id]===Infinity?'#742a2a':'#276749';});
-    nodeColors[source]='#744210';
-    renderCode(s.code);addLog(s.log,'relax');
-    document.getElementById('status-bar').textContent='Hoàn thành!';
-  }
-  renderGraph();
 }
 
-function step(){
-  if(!source){document.getElementById('status-bar').textContent='Click đỉnh để chọn nguồn';return;}
-  if(stepIdx>=steps.length)return;
-  applyStep(steps[stepIdx++]);
-  document.getElementById('status-bar').textContent=`Bước ${stepIdx}/${steps.length}`;
-}
-
-function play(){
-  if(!source)return;
-  playing=!playing;
-  document.getElementById('btn-play').textContent=playing?'⏸ Dừng':'▶ Chạy';
-  if(playing)runNext();
-}
-function runNext(){
-  if(!playing||stepIdx>=steps.length){playing=false;document.getElementById('btn-play').textContent='▶ Chạy';return;}
-  step();
-  const sp=parseInt(document.getElementById('speed').value);
-  timer=setTimeout(runNext,sp);
-}
-
+function getDelay(){return Math.round(1200-document.getElementById('speed').value*110);}
+function tick(){if(stepIdx>=steps.length){stopPlay();return;}applyStep(steps[stepIdx++]);if(playing)timer=setTimeout(tick,getDelay());}
+function startPlay(){if(stepIdx>=steps.length)reset();playing=true;document.getElementById('btn-play').textContent='⏸ Pause';tick();}
+function stopPlay(){playing=false;clearTimeout(timer);document.getElementById('btn-play').textContent='▶ Play';}
 function reset(){
-  playing=false;clearTimeout(timer);
-  source=null;steps=[];stepIdx=0;dist={};prev={};
-  nodeColors={};edgeColors={};currentIter=0;
-  document.getElementById('btn-play').textContent='▶ Chạy';
-  document.getElementById('status-bar').textContent='Chọn đỉnh nguồn';
-  document.getElementById('step-log').innerHTML='';
-  document.getElementById('edge-list').innerHTML='';
-  document.getElementById('dist-table').innerHTML='';
-  document.getElementById('neg-cycle-alert').style.display='none';
-  document.getElementById('iter-badge').textContent='Vòng lặp 0 / '+(nodes.length-1);
-  document.getElementById('iter-badge').style.background='#744210';
-  document.getElementById('iter-sub').textContent='Nhấn Chạy để bắt đầu';
-  renderCode(-1);renderGraph();
+  stopPlay();stepIdx=0;relaxCount=0;improveCount=0;
+  document.getElementById('s-relax').textContent='0';document.getElementById('s-improve').textContent='0';
+  document.getElementById('progress-bar').style.width='0%';
+  renderGraph(graph);steps=buildSteps(graph);applyStep(steps[stepIdx++]);
 }
 
-document.getElementById('btn-play').onclick=play;
-document.getElementById('btn-step').onclick=step;
+document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
+document.getElementById('btn-step').onclick=()=>{stopPlay();if(stepIdx<steps.length)applyStep(steps[stepIdx++]);};
 document.getElementById('btn-reset').onclick=reset;
-
-document.getElementById('btn-neg').onclick=function(){
-  negCycleEdge={from:'E',to:'C',w:-15};
-  negStraightEdge=null;
-  this.textContent='⚠️ Chu trình âm BẬT';
-  this.classList.add('active');
-  reset();initPositions();renderGraph();
-  document.getElementById('status-bar').textContent='Chu trình âm: E→C(-15). Chọn đỉnh nguồn';
+document.getElementById('btn-neg').onclick=()=>{
+  useNeg=!useNeg;graph=useNeg?GRAPH_NEG_CYCLE:GRAPH_NORMAL;
+  document.getElementById('btn-neg').textContent=useNeg?'📊 Graph bình thường':'🔴 Graph có chu trình âm';
+  reset();
 };
 
-document.getElementById('btn-add-neg-edge').onclick=function(){
-  const from=prompt('Từ đỉnh:','D');
-  const to=prompt('Đến đỉnh:','A');
-  const w=parseInt(prompt('Trọng số âm:','-5'));
-  if(from&&to&&!isNaN(w)){
-    negStraightEdge={from,to,w};
-    reset();renderGraph();
-  }
-};
-
-document.getElementById('btn-compare').onclick=function(){
-  alert('So sánh: Bellman-Ford O(VE) hoạt động với cạnh âm. Dijkstra O(E log V) nhanh hơn nhưng chỉ với cạnh dương. Thêm cạnh âm để thấy Dijkstra cho kết quả sai!');
-};
-
-document.getElementById('speed').oninput=function(){
-  const v=parseInt(this.value);
-};
-
-window.addEventListener('resize',()=>{initPositions();renderGraph();});
-window.addEventListener('load',()=>{initPositions();renderGraph();renderCode(-1);renderEdgeList(null,null,null);});
+renderGraph(graph);steps=buildSteps(graph);applyStep(steps[stepIdx++]);
 </script>
 </body>
 </html>

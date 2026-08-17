@@ -3,654 +3,462 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>23 - Quay Lui (Backtracking)</title>
+<title>Backtracking — Quay Lui</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0a0a1a; color: #e0e0f0; font-family: 'Segoe UI', monospace; min-height: 100vh;
-    background-image: radial-gradient(ellipse at 50% 30%, rgba(232,121,249,0.07) 0%, transparent 60%); }
-  h1 { text-align: center; padding: 18px; background: linear-gradient(135deg, #1a0428, #1c0630);
-    font-size: 1.5rem; color: #e879f9; border-bottom: 2px solid #a21caf; letter-spacing: 2px;
-    text-shadow: 0 0 20px rgba(232,121,249,0.5); }
-  .subtitle { text-align: center; font-size: 0.85rem; color: #94a3b8; padding: 6px; background: #120318; }
-
-  @keyframes fadeScale { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-  @keyframes queenDrop { 0% { transform: translateY(-50px) scale(0.5); opacity: 0; }
-    60% { transform: translateY(4px) scale(1.1); } 100% { transform: translateY(0) scale(1); opacity: 1; } }
-  @keyframes queenLift { 0% { transform: translateY(0) scale(1); opacity: 1; }
-    100% { transform: translateY(-40px) scale(0.5); opacity: 0; } }
-  @keyframes flashRed { 0%,100% { background: rgba(239,68,68,0.2); }
-    50% { background: rgba(239,68,68,0.6); box-shadow: 0 0 20px rgba(239,68,68,0.8); } }
-  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
-  @keyframes pathExtend { 0% { opacity: 0; transform: scale(0); } 60% { transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
-  @keyframes pathRetract { 0% { opacity: 1; } 100% { opacity: 0; transform: scale(0); } }
-  @keyframes typeIn { 0% { transform: scale(0) rotate(-10deg); opacity: 0; } 60% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
-  @keyframes typeShake { 0%,100% { transform: translateX(0); color: #fbbf24; } 25% { transform: translateX(-4px); color: #ef4444; } 75% { transform: translateX(4px); color: #ef4444; } }
-  @keyframes backtackPulse { 0% { background: rgba(239,68,68,0.3); } 50% { background: rgba(239,68,68,0.7); } 100% { background: rgba(239,68,68,0); } }
-  @keyframes mazeTrail { 0% { background: rgba(232,121,249,0.8); } 100% { background: rgba(34,197,94,0.3); } }
-  @keyframes cellPulse { 0%,100% { box-shadow: 0 0 8px #e879f9; } 50% { box-shadow: 0 0 20px #e879f9, 0 0 40px #e879f944; } }
-  @keyframes solutionGlow { 0% { box-shadow: 0 0 0 rgba(34,197,94,0); }
-    50% { box-shadow: 0 0 30px rgba(34,197,94,0.8), 0 0 60px rgba(34,197,94,0.4); }
-    100% { box-shadow: 0 0 10px rgba(34,197,94,0.4); } }
-
-  .tabs { display: flex; gap: 4px; padding: 10px 16px; background: #120318; border-bottom: 1px solid #3d1a50; }
-  .tab { padding: 8px 18px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem;
-    border: 1px solid #3d1a50; border-bottom: none; transition: all 0.25s; color: #6a3a80; background: #1a0428; }
-  .tab.active { background: linear-gradient(135deg, #a21caf, #86198f); color: #fff; border-color: #a21caf;
-    box-shadow: 0 -4px 15px rgba(162,28,175,0.4); }
-
-  .main { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 110px); }
-  .viz-panel { padding: 16px; overflow-y: auto; background: #0a0a1a; }
-  .code-panel { background: #120318; border-left: 2px solid #3d1a50; display: flex; flex-direction: column; }
-
-  .bt-principle { padding: 10px 14px; border-radius: 10px; background: linear-gradient(135deg, #1a042a, #22083a);
-    border: 1px solid rgba(232,121,249,0.2); margin: 8px 0; font-size: 0.82rem; }
-  .bt-title { color: #e879f9; font-weight: bold; margin-bottom: 6px; }
-  .bt-steps-inline { display: flex; gap: 8px; flex-wrap: wrap; }
-  .bt-tag { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; }
-  .bt-tag.choose { background: rgba(34,197,94,0.1); border: 1px solid #22c55e; color: #22c55e; }
-  .bt-tag.explore { background: rgba(59,130,246,0.1); border: 1px solid #3b82f6; color: #60a5fa; }
-  .bt-tag.unchoose { background: rgba(239,68,68,0.1); border: 1px solid #ef4444; color: #ef4444; }
-
-  /* Chess board with rich cell animations */
-  .chess-board { display: inline-grid; border: 3px solid #3d1a50; border-radius: 6px; overflow: hidden;
-    box-shadow: 0 0 30px rgba(162,28,175,0.3); }
-  .chess-cell { width: 52px; height: 52px; display: flex; align-items: center; justify-content: center;
-    font-size: 1.5rem; position: relative; transition: background 0.3s; }
-  .chess-cell.light { background: #e8d5b7; }
-  .chess-cell.dark { background: #b58863; }
-  .chess-cell.queen { }
-  .chess-cell.queen .queen-piece { animation: queenDrop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .chess-cell.queen-lift .queen-piece { animation: queenLift 0.35s ease-in forwards; }
-  .chess-cell.conflict { animation: flashRed 0.5s ease; }
-  .chess-cell.conflict.light, .chess-cell.conflict.dark { background: rgba(239,68,68,0.5); }
-  .chess-cell.trying.light { background: rgba(245,158,11,0.4); }
-  .chess-cell.trying.dark { background: rgba(245,158,11,0.3); }
-  .chess-cell.solution .queen-piece { animation: solutionGlow 1s ease-in-out infinite; border-radius: 50%; }
-  .queen-piece { transition: all 0.3s; }
-
-  /* Maze with gradient path trail */
-  .maze-grid { display: inline-grid; border: 2px solid #3d1a50; border-radius: 6px; overflow: hidden;
-    gap: 1px; background: #1a0428; box-shadow: 0 0 20px rgba(162,28,175,0.2); }
-  .maze-cell { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
-    font-size: 0.85rem; font-weight: bold; transition: all 0.35s; }
-  .maze-cell.wall { background: #0f0a1a; color: #2d2d4e; }
-  .maze-cell.open { background: #1a0428; }
-  .maze-cell.path { background: rgba(34,197,94,0.25); border: 2px solid rgba(34,197,94,0.6);
-    animation: mazeTrail 0.5s ease; }
-  .maze-cell.current { background: #e879f9; color: #fff; animation: cellPulse 0.8s ease-in-out infinite;
-    border-radius: 50%; }
-  .maze-cell.backtrack { background: rgba(239,68,68,0.2); border: 2px solid rgba(239,68,68,0.5);
-    animation: backtackPulse 0.5s ease; }
-  .maze-cell.start { background: rgba(59,130,246,0.4); color: #60a5fa; font-weight: bold; }
-  .maze-cell.end { background: rgba(245,158,11,0.4); color: #fbbf24; font-weight: bold; }
-  .maze-cell.found { background: rgba(34,197,94,0.5); border: 2px solid #22c55e;
-    box-shadow: 0 0 15px rgba(34,197,94,0.6); }
-
-  /* Sudoku with typewriter */
-  .sudoku-grid { display: inline-grid; grid-template-columns: repeat(9, 1fr); gap: 1px;
-    background: #2d1a40; border: 3px solid #3d1a50; border-radius: 6px; overflow: hidden;
-    box-shadow: 0 0 20px rgba(162,28,175,0.2); }
-  .sudoku-cell { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
-    font-size: 0.9rem; font-weight: bold; background: #1a0428; transition: all 0.25s; }
-  .sudoku-cell.given { background: #12011e; color: #8b7aa0; }
-  .sudoku-cell.filled { background: rgba(34,197,94,0.1); color: #22c55e;
-    animation: typeIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .sudoku-cell.trying { background: rgba(245,158,11,0.15); color: #fbbf24;
-    animation: typeIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .sudoku-cell.conflict { background: rgba(239,68,68,0.2); color: #ef4444;
-    animation: typeShake 0.4s ease; }
-  .sudoku-cell.backtrack-cell { background: rgba(239,68,68,0.1); color: rgba(239,68,68,0.4);
-    text-decoration: line-through; }
-  .sudoku-cell:nth-child(3n) { border-right: 2px solid #3d1a50; }
-  .sudoku-cell:nth-child(n+19):nth-child(-n+27),
-  .sudoku-cell:nth-child(n+46):nth-child(-n+54) { border-bottom: 2px solid #3d1a50; }
-
-  .status-row { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
-  .status-card { flex: 1; min-width: 80px; padding: 8px 10px; border-radius: 10px;
-    background: linear-gradient(135deg, #1a0428, #12021e); border: 1px solid #3d1a50; font-size: 0.78rem; }
-  .status-card .label { font-size: 0.65rem; color: #5a3060; margin-bottom: 2px; }
-  .status-card .val { font-size: 1rem; font-weight: bold; color: #e879f9; }
-
-  .step-desc { padding: 10px 14px; border-radius: 8px; background: linear-gradient(90deg, #1a0428, #12021e);
-    border-left: 3px solid #e879f9; font-size: 0.82rem; color: #94a3b8; margin: 8px 0; min-height: 40px; }
-  .step-desc strong { color: #e879f9; }
-  .step-desc .ok { color: #22c55e; }
-  .step-desc .fail { color: #ef4444; }
-  .step-desc .back { color: #f59e0b; }
-
-  .result-box { padding: 12px 16px; border-radius: 10px; background: linear-gradient(135deg, #052e16, #064e20);
-    border: 2px solid #22c55e; font-size: 0.85rem; color: #86efac; margin: 8px 0;
-    animation: fadeScale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .result-box strong { color: #22c55e; text-shadow: 0 0 10px rgba(34,197,94,0.6); }
-
-  .code-header { padding: 10px 14px; background: #120318; border-bottom: 1px solid #3d1a50;
-    font-size: 0.78rem; color: #a21caf; font-weight: bold; }
-  .code-body { flex: 1; overflow-y: auto; padding: 12px; font-size: 0.75rem;
-    font-family: 'Courier New', monospace; line-height: 1.7; }
-  .code-line { padding: 2px 8px; border-radius: 4px; transition: all 0.25s; white-space: pre; color: #4a2060; }
-  .code-line.hl { background: linear-gradient(90deg, #a21caf33, transparent);
-    border-left: 3px solid #e879f9; color: #f0c0ff; }
-  .kw { color: #c084fc; } .fn { color: #60a5fa; } .num { color: #fbbf24; }
-  .cmt { color: #2a1040; font-style: italic; } .str { color: #34d399; }
-
-  .controls { display: flex; gap: 8px; align-items: center; padding: 10px 16px;
-    background: #120318; border-top: 1px solid #3d1a50; flex-wrap: wrap; }
-  .btn { padding: 7px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
-  .btn-play { background: linear-gradient(135deg, #a21caf, #86198f); color: #fff; }
-  .btn-play:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(162,28,175,0.4); }
-  .btn-step { background: #0e7490; color: #fff; }
-  .btn-reset { background: #374151; color: #d1d5db; }
-  .speed-label { font-size: 0.78rem; color: #94a3b8; }
-  input[type=range] { width: 90px; accent-color: #a21caf; }
-
-  .info-bar { padding: 8px 16px; background: #120318; font-size: 0.78rem; color: #94a3b8;
-    display: flex; gap: 16px; flex-wrap: wrap; }
-  .info-item strong { color: #e879f9; }
-
-  section.prob { display: none; }
-  section.prob.active { display: block; }
+  :root{
+    --bg:#0e1525;--surface:#151d32;--surface2:#1c2744;--border:#2a3a5c;
+    --text:#eef1f8;--muted:#8899bb;--accent:#a78bfa;--yellow:#ffd43b;
+    --queen-top:#ffd43b;--queen-bot:#e6a800;--queen-glow:rgba(255,212,59,.6);
+    --conflict-top:#ff5e7a;--conflict-bot:#c0143c;--conflict-glow:rgba(255,94,122,.6);
+    --back-top:#fd79a8;--back-bot:#c0006a;--back-glow:rgba(253,121,168,.5);
+    --path-top:#2ecc71;--path-bot:#1a9c54;--path-glow:rgba(46,204,113,.5);
+    --dead-top:#636e72;--dead-bot:#4a5568;
+    --maze-wall:#1c2744;--maze-open:#0e1525;
+    --cell-sz:44px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(255,212,59,.06) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(253,121,168,.05) 0%,transparent 55%);pointer-events:none}
+  header{background:var(--surface);padding:10px 24px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border)}
+  header h1{font-size:1.15rem;font-weight:700;background:linear-gradient(135deg,#ffd43b,#fd79a8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .badge{background:linear-gradient(135deg,#ffd43b,#e6a800);color:#000;padding:2px 10px;border-radius:12px;font-size:.68rem;font-weight:700}
+  .complexity{display:flex;gap:6px;margin-left:auto}
+  .cx{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:2px 9px;font-size:.72rem;color:var(--muted)}
+  .cx span{color:var(--yellow);font-weight:700}
+  main{flex:1;display:flex;overflow:hidden;z-index:1;min-height:0}
+  #viz{flex:1;display:flex;flex-direction:column;min-width:0}
+  /* Status Display */
+  #status-display{padding:8px 20px;min-height:58px;display:flex;align-items:center;justify-content:center;gap:14px;background:var(--surface);border-bottom:1px solid var(--border)}
+  .sd-idle{color:var(--muted);font-size:.95rem}
+  .action-badge{padding:6px 18px;border-radius:20px;font-size:.9rem;font-weight:700;animation:fadeIn .3s ease}
+  .action-badge.place{background:rgba(255,212,59,.12);border:1px solid rgba(255,212,59,.3);color:var(--queen-top)}
+  .action-badge.conflict{background:rgba(255,94,122,.12);border:1px solid rgba(255,94,122,.3);color:var(--conflict-top);animation:shake .4s ease}
+  .action-badge.back{background:rgba(253,121,168,.12);border:1px solid rgba(253,121,168,.3);color:var(--back-top)}
+  .action-badge.path{background:rgba(46,204,113,.12);border:1px solid rgba(46,204,113,.3);color:var(--path-top)}
+  .action-badge.done{background:rgba(46,204,113,.15);border:1px solid rgba(46,204,113,.4);color:var(--path-top)}
+  /* Explain */
+  #explain-viz{padding:10px 24px;min-height:52px;background:linear-gradient(135deg,rgba(21,29,50,.95),rgba(28,39,68,.9));border-bottom:1px solid var(--border);font-size:.88rem;line-height:1.55;color:var(--text);display:flex;align-items:center;gap:12px}
+  #explain-viz .step-icon{flex-shrink:0;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all .3s}
+  .step-icon.place{background:rgba(255,212,59,.15);border:1px solid rgba(255,212,59,.3)}
+  .step-icon.conflict{background:rgba(255,94,122,.15);border:1px solid rgba(255,94,122,.3)}
+  .step-icon.back{background:rgba(253,121,168,.15);border:1px solid rgba(253,121,168,.3)}
+  .step-icon.path{background:rgba(46,204,113,.15);border:1px solid rgba(46,204,113,.3)}
+  .step-icon.info{background:rgba(91,141,239,.15);border:1px solid rgba(91,141,239,.3)}
+  #explain-text{flex:1}
+  #explain-text b{color:var(--yellow)}
+  #explain-text code{background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.8rem;color:var(--accent)}
+  #step-counter{font-size:.72rem;color:var(--muted);white-space:nowrap}
+  /* Mode tabs */
+  #mode-tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border)}
+  .mode-tab{padding:8px 18px;font-size:.78rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+  .mode-tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--surface2)}
+  /* Viz area */
+  #viz-area{flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:32px;padding:16px}
+  /* N-Queens board */
+  #queens-board{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+  .board-row{display:flex;gap:2px}
+  .board-cell{width:var(--cell-sz);height:var(--cell-sz);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;transition:all .35s cubic-bezier(.34,1.56,.64,1);cursor:default;position:relative}
+  .board-cell.light{background:rgba(44,90,160,.3);border:1px solid rgba(91,141,239,.15)}
+  .board-cell.dark{background:rgba(28,39,68,.6);border:1px solid rgba(42,58,92,.4)}
+  .board-cell.queen{background:linear-gradient(135deg,var(--queen-top),var(--queen-bot));box-shadow:0 0 18px var(--queen-glow);border-color:rgba(255,212,59,.4);animation:queenDrop .4s cubic-bezier(.34,1.56,.64,1)}
+  .board-cell.conflict-cell{background:linear-gradient(135deg,var(--conflict-top),var(--conflict-bot));box-shadow:0 0 16px var(--conflict-glow);animation:conflictFlash .5s ease 2}
+  .board-cell.attack-zone{background:rgba(255,94,122,.08);border-color:rgba(255,94,122,.2)}
+  .board-cell.removing{animation:queenLift .3s ease forwards}
+  /* Row indicators */
+  #row-indicators{display:flex;flex-direction:column;gap:2px}
+  .row-ind{width:28px;height:var(--cell-sz);display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;border-radius:5px;transition:all .3s}
+  .row-ind.active{background:rgba(255,212,59,.15);color:var(--yellow)}
+  .row-ind.done{background:rgba(46,204,113,.1);color:var(--path-top)}
+  .row-ind.back-row{background:rgba(253,121,168,.15);color:var(--back-top)}
+  /* Maze */
+  #maze-board{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+  .maze-row{display:flex;gap:2px}
+  .maze-cell{width:44px;height:44px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;transition:all .3s cubic-bezier(.34,1.56,.64,1)}
+  .maze-cell.wall{background:var(--maze-wall);border:1px solid rgba(42,58,92,.6)}
+  .maze-cell.open{background:var(--maze-open);border:1px solid rgba(91,141,239,.08)}
+  .maze-cell.start{background:rgba(46,204,113,.25);border:1px solid rgba(46,204,113,.4);color:var(--path-top)}
+  .maze-cell.end{background:rgba(162,155,254,.2);border:1px solid rgba(162,155,254,.4);color:var(--accent)}
+  .maze-cell.path{background:linear-gradient(135deg,var(--path-top),var(--path-bot));box-shadow:0 0 12px var(--path-glow);animation:pathStep .3s ease}
+  .maze-cell.current{background:linear-gradient(135deg,var(--queen-top),var(--queen-bot));box-shadow:0 0 14px var(--queen-glow);color:#000;animation:queenDrop .3s ease}
+  .maze-cell.dead{background:linear-gradient(135deg,var(--dead-top),var(--dead-bot));opacity:.4;animation:deadFlash .4s ease}
+  .maze-cell.backtrack{animation:queenLift .3s ease forwards}
+  /* Bottom */
+  #bottom-bar{display:flex;align-items:center;background:var(--surface);border-top:1px solid var(--border)}
+  #legend{flex:1;display:flex;gap:14px;padding:7px 24px;font-size:.74rem;color:var(--muted);flex-wrap:wrap}
+  .leg{display:flex;align-items:center;gap:6px}
+  .ld{width:12px;height:12px;border-radius:3px}
+  /* Code panel */
+  #code-panel{width:300px;min-width:260px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column}
+  .panel-title{padding:10px 14px;background:var(--surface2);font-size:.78rem;font-weight:600;color:var(--accent);border-bottom:1px solid var(--border)}
+  #code{flex:1;overflow-y:auto;padding:10px 0;font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:.78rem;line-height:2}
+  .code-line{padding:0 14px;color:#5a6d8e;white-space:pre;border-left:3px solid transparent;transition:all .2s}
+  .code-line.comment{color:#3a4d6e;font-style:italic}
+  .code-line.active{background:linear-gradient(90deg,rgba(255,212,59,.1),transparent);color:var(--yellow);border-left-color:var(--yellow);font-weight:600}
+  #insight{padding:12px 14px;background:var(--bg);border-top:1px solid var(--border);font-size:.8rem;line-height:1.5;color:var(--muted)}
+  #insight .insight-title{color:var(--accent);font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  #insight b{color:var(--text)}
+  /* Controls */
+  #controls{background:var(--surface);padding:8px 24px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);flex-wrap:wrap}
+  button{border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:.8rem;font-weight:600;transition:all .2s}
+  button:active{transform:scale(.95)}
+  #btn-play{background:linear-gradient(135deg,#00b894,#05c46b);color:#fff;box-shadow:0 2px 10px rgba(5,196,107,.25);min-width:85px}
+  #btn-step{background:linear-gradient(135deg,#7c5ce7,#a78bfa);color:#fff}
+  #btn-reset{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+  label{font-size:.76rem;color:var(--muted)}
+  input[type=range]{accent-color:var(--accent);width:80px}
+  select{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:3px 6px;font-size:.76rem}
+  #stats{display:flex;gap:8px;margin-left:auto}
+  .stat{background:var(--surface2);padding:4px 10px;border-radius:6px;font-size:.8rem;color:var(--muted);border:1px solid var(--border)}
+  .stat span{color:var(--yellow);font-weight:800}
+  @keyframes queenDrop{from{transform:translateY(-30px) scale(.4);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+  @keyframes queenLift{from{transform:translateY(0) scale(1);opacity:1}to{transform:translateY(-20px) scale(.5);opacity:0}}
+  @keyframes conflictFlash{0%,100%{box-shadow:0 0 16px var(--conflict-glow)}50%{box-shadow:0 0 32px var(--conflict-glow),0 0 60px rgba(255,94,122,.3)}}
+  @keyframes deadFlash{0%,100%{opacity:.4}50%{opacity:.7}}
+  @keyframes pathStep{from{transform:scale(.5);opacity:.3}to{transform:scale(1);opacity:1}}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
-
-<h1>↩️ Quay Lui (Backtracking)</h1>
-<div class="subtitle">Tư duy: Thử → Kiểm tra → Cắt nhánh xấu (Pruning) → Backtrack nếu thất bại</div>
-
-<div class="tabs">
-  <div class="tab active" onclick="switchProblem('queens')">♛ N-Queens</div>
-  <div class="tab" onclick="switchProblem('maze')">🌀 Maze Solving</div>
-  <div class="tab" onclick="switchProblem('sudoku')">🔢 Sudoku</div>
-</div>
-
-<div class="main">
-  <div class="viz-panel">
-
-    <section class="prob active" id="prob-queens">
-      <div class="bt-principle">
-        <div class="bt-title">↩️ Backtracking Pattern</div>
-        <div class="bt-steps-inline">
-          <span class="bt-tag choose">1. CHOOSE: đặt queen</span>
-          <span class="bt-tag explore">2. EXPLORE: đệ quy hàng tiếp</span>
-          <span class="bt-tag unchoose">3. UNCHOOSE: bỏ queen (backtrack)</span>
-        </div>
-      </div>
-      <p style="font-size:0.8rem;color:#4a2060;margin:6px 0;">
-        4-Queens: đặt 4 hậu trên bàn 4×4 — không ai tấn công nhau
-      </p>
-      <div style="display:flex;gap:20px;align-items:flex-start;">
-        <div class="chess-board" id="chess-board"></div>
-        <div style="flex:1;">
-          <div class="status-row">
-            <div class="status-card"><div class="label">Hàng</div><div class="val" id="q-row">—</div></div>
-            <div class="status-card"><div class="label">Cột thử</div><div class="val" id="q-col">—</div></div>
-            <div class="status-card"><div class="label">Backtracks</div><div class="val" id="q-backs">0</div></div>
-            <div class="status-card"><div class="label">Solutions</div><div class="val" id="q-sols">0</div></div>
-          </div>
-        </div>
-      </div>
-      <div class="step-desc" id="queens-desc">Nhấn Play để bắt đầu</div>
-      <div class="result-box" id="queens-result" style="display:none">
-        ✅ <strong id="queens-ans">—</strong>
-      </div>
-    </section>
-
-    <section class="prob" id="prob-maze">
-      <div class="bt-principle">
-        <div class="bt-title">↩️ Maze Backtracking</div>
-        <div class="bt-steps-inline">
-          <span class="bt-tag choose">1. Bước vào ô</span>
-          <span class="bt-tag explore">2. Thử 4 hướng</span>
-          <span class="bt-tag unchoose">3. Dead end → backtrack</span>
-        </div>
-      </div>
-      <p style="font-size:0.8rem;color:#4a2060;margin:6px 0;">Tìm đường từ S đến E — ■ tường, □ đường đi</p>
-      <div style="display:flex;gap:16px;align-items:flex-start;">
-        <div class="maze-grid" id="maze-grid"></div>
-        <div style="flex:1;">
-          <div class="status-row">
-            <div class="status-card"><div class="label">Vị trí</div><div class="val" id="mz-pos">—</div></div>
-            <div class="status-card"><div class="label">Path len</div><div class="val" id="mz-len">0</div></div>
-            <div class="status-card"><div class="label">Backtracks</div><div class="val" id="mz-backs">0</div></div>
-          </div>
-          <div style="font-size:0.72rem;margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-            <span style="color:#22c55e;">■ Path</span>
-            <span style="color:#e879f9;">● Current</span>
-            <span style="color:#ef4444;">■ Backtrack</span>
-            <span style="color:#60a5fa;">S Start</span>
-            <span style="color:#fbbf24;">E End</span>
-          </div>
-        </div>
-      </div>
-      <div class="step-desc" id="maze-desc">Nhấn Play để bắt đầu</div>
-      <div class="result-box" id="maze-result" style="display:none">
-        ✅ <strong id="maze-ans">—</strong>
-      </div>
-    </section>
-
-    <section class="prob" id="prob-sudoku">
-      <div class="bt-principle">
-        <div class="bt-title">↩️ Sudoku Backtracking</div>
-        <div class="bt-steps-inline">
-          <span class="bt-tag choose">1. Thử số 1-9</span>
-          <span class="bt-tag explore">2. Valid → điền tiếp</span>
-          <span class="bt-tag unchoose">3. Conflict → xóa → thử số khác</span>
-        </div>
-      </div>
-      <p style="font-size:0.8rem;color:#4a2060;margin:6px 0;">Giải Sudoku 9×9 — ô xám = cho trước, ô xanh = điền bằng BT</p>
-      <div class="sudoku-grid" id="sudoku-grid"></div>
-      <div class="status-row" style="margin-top:10px;">
-        <div class="status-card"><div class="label">Ô đang giải</div><div class="val" id="sk-cell">—</div></div>
-        <div class="status-card"><div class="label">Thử số</div><div class="val" id="sk-try">—</div></div>
-        <div class="status-card"><div class="label">Backtracks</div><div class="val" id="sk-backs">0</div></div>
-        <div class="status-card"><div class="label">Filled</div><div class="val" id="sk-filled">0</div></div>
-      </div>
-      <div class="step-desc" id="sudoku-desc">Nhấn Play để bắt đầu</div>
-      <div class="result-box" id="sudoku-result" style="display:none">
-        ✅ <strong id="sudoku-ans">—</strong>
-      </div>
-    </section>
-
+<header>
+  <h1>↩️ Backtracking</h1>
+  <span class="badge">PARADIGM</span>
+  <div class="complexity">
+    <div class="cx">N-Queens <span>O(n!)</span></div>
+    <div class="cx">Worst case <span>Exponential</span></div>
+    <div class="cx">Pruning <span>cắt nhánh</span></div>
   </div>
-
-  <div class="code-panel">
-    <div class="code-header">📄 Pseudocode</div>
-    <div class="code-body" id="code-body"></div>
-    <div class="info-bar">
-      <div class="info-item"><strong>Backtracks:</strong> <span id="info-backs">0</span></div>
-      <div class="info-item"><strong>Step:</strong> <span id="info-step">0</span></div>
+</header>
+<main>
+  <div id="viz">
+    <div id="status-display"><span class="sd-idle">Nhấn Play để bắt đầu trình diễn thuật toán</span></div>
+    <div id="explain-viz">
+      <div class="step-icon info">💡</div>
+      <div id="explain-text">Backtracking: thử → kiểm tra → nếu sai thì quay lui. Cắt nhánh (pruning) giảm số trường hợp phải thử.</div>
+      <div id="step-counter"></div>
     </div>
-    <div class="controls">
-      <button class="btn btn-play" id="btn-play" onclick="togglePlay()">▶ Play</button>
-      <button class="btn btn-step" onclick="stepOnce()">⏭ Step</button>
-      <button class="btn btn-reset" onclick="resetAll()">↺ Reset</button>
-      <span class="speed-label">Tốc độ:</span>
-      <input type="range" min="1" max="5" value="3" id="speed-slider">
+    <div id="mode-tabs">
+      <div class="mode-tab active" onclick="switchMode('queens')">👑 N-Queens</div>
+      <div class="mode-tab" onclick="switchMode('maze')">🌀 Maze Solver</div>
+    </div>
+    <div id="viz-area">
+      <div id="queens-view" style="display:flex;gap:12px;align-items:center">
+        <div id="row-indicators"></div>
+        <div id="queens-board"></div>
+      </div>
+      <div id="maze-view" style="display:none">
+        <div id="maze-board"></div>
+      </div>
+    </div>
+    <div id="bottom-bar">
+      <div id="legend">
+        <div class="leg"><div class="ld" style="background:linear-gradient(135deg,var(--queen-top),var(--queen-bot))"></div>Quân hậu / Đường đi</div>
+        <div class="leg"><div class="ld" style="background:linear-gradient(135deg,var(--conflict-top),var(--conflict-bot))"></div>Xung đột / Cụt</div>
+        <div class="leg"><div class="ld" style="background:linear-gradient(135deg,var(--back-top),var(--back-bot))"></div>Quay lui</div>
+        <div class="leg"><div class="ld" style="background:linear-gradient(135deg,var(--path-top),var(--path-bot))"></div>Giải pháp ✓</div>
+      </div>
     </div>
   </div>
+  <div id="code-panel">
+    <div class="panel-title">📝 N-Queens — Backtracking</div>
+    <div id="code"></div>
+    <div id="insight">
+      <div class="insight-title">💡 Pruning quan trọng thế nào?</div>
+      4-Queens không pruning: 4⁴=256 khả năng. Với pruning: chỉ thử <b>~8 trạng thái</b>. Pruning cắt nhánh không hứa hẹn.
+    </div>
+  </div>
+</main>
+<div id="controls">
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-step">⏭ Step</button>
+  <button id="btn-reset">↺ Reset</button>
+  <label>N= <select id="n-sel"><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option></select></label>
+  <label>Speed <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <div id="stats">
+    <div class="stat">Placements <span id="s-place">0</span></div>
+    <div class="stat">Backtracks <span id="s-back">0</span></div>
+    <div class="stat">Solutions <span id="s-sol">0</span></div>
+  </div>
 </div>
-
 <script>
-let currentProblem = 'queens';
-let playing = false;
-let timer = null;
-let stepIndex = 0;
-let steps = [];
-
-const codes = {
-  queens: [
-    '// N-Queens Backtracking',
-    'function solve(board, row):',
-    '  // Base: tất cả hàng đã đặt',
-    '  if row == N: record solution; return',
-    '',
-    '  for col in 0..N-1:',
-    '    // Kiểm tra an toàn',
-    '    if isSafe(board, row, col):',
-    '      // 1. CHOOSE: đặt queen',
-    '      board[row][col] = QUEEN',
-    '      // 2. EXPLORE',
-    '      solve(board, row + 1)',
-    '      // 3. UNCHOOSE (backtrack)',
-    '      board[row][col] = EMPTY',
-    '    // else: cắt nhánh (pruning)',
-  ],
-  maze: [
-    '// Maze Backtracking',
-    'function solve(maze, x, y, path):',
-    '  // Base: đến đích',
-    '  if (x,y) == END: return true',
-    '',
-    '  // Kiểm tra hợp lệ',
-    '  if isWall(x,y) OR visited(x,y):',
-    '    return false  // cắt nhánh',
-    '',
-    '  // 1. CHOOSE: đánh dấu đường đi',
-    '  path.add(x, y)',
-    '  mark as visited',
-    '',
-    '  // 2. EXPLORE: 4 hướng',
-    '  for each dir:',
-    '    if solve(maze, nx, ny, path):',
-    '      return true',
-    '',
-    '  // 3. UNCHOOSE (backtrack)',
-    '  path.remove(x, y)',
-    '  return false',
-  ],
-  sudoku: [
-    '// Sudoku Backtracking',
-    'function solve(board):',
-    '  // Tìm ô trống tiếp theo',
-    '  cell = findEmpty(board)',
-    '  if no empty: return true  // xong!',
-    '',
-    '  for num in 1..9:',
-    '    // Kiểm tra hợp lệ',
-    '    if isValid(board, cell, num):',
-    '      // 1. CHOOSE',
-    '      board[cell] = num',
-    '      // 2. EXPLORE',
-    '      if solve(board): return true',
-    '      // 3. UNCHOOSE (backtrack)',
-    '      board[cell] = 0',
-    '',
-    '  return false  // trigger backtrack',
-  ]
-};
-
-// N-QUEENS
-function genQueensSteps() {
-  const N = 4;
-  const steps = [];
-  let backtracks = 0, solutions = 0;
-  const board = Array.from({ length: N }, () => Array(N).fill(0));
-
-  function isSafe(r, c) {
-    for (let i = 0; i < r; i++) if (board[i][c]) return false;
-    for (let i = r-1, j = c-1; i >= 0 && j >= 0; i--, j--) if (board[i][j]) return false;
-    for (let i = r-1, j = c+1; i >= 0 && j < N; i--, j++) if (board[i][j]) return false;
-    return true;
-  }
-
-  function solve(row) {
-    if (row === N) {
-      solutions++;
-      steps.push({ board: board.map(r => [...r]), row, col: -1, phase: 'solution', backtracks, solutions, desc: `🎉 Solution #${solutions}! Queen ở mỗi hàng không tấn công nhau`, codeLine: 3 });
-      return;
+const QUEENS_CODE=[
+  'function solve(board, row, n) {',
+  '  if (row === n) {',
+  '    solutions.push([...board]);',
+  '    return; // Tìm thấy giải pháp!',
+  '  }',
+  '  for (let col=0; col<n; col++) {',
+  '    if (isSafe(board, row, col)) {',
+  '      board[row] = col;      // Đặt quân hậu',
+  '      solve(board, row+1, n); // Đệ quy',
+  '      board[row] = -1;       // Quay lui!',
+  '    }',
+  '  }',
+  '}',
+];
+const MAZE_CODE=[
+  'function solveMaze(maze, r, c, path) {',
+  '  if (r===endR && c===endC)',
+  '    return true; // Tìm thấy đích!',
+  '  if (!valid(r,c) || maze[r][c]===WALL)',
+  '    return false; // Cụt đường',
+  '  maze[r][c] = VISITED;',
+  '  path.push([r,c]);',
+  '  const dirs = [[0,1],[1,0],[0,-1],[-1,0]];',
+  '  for (const [dr,dc] of dirs) {',
+  '    if (solveMaze(maze,r+dr,c+dc,path))',
+  '      return true;',
+  '  }',
+  '  path.pop(); // Quay lui',
+  '  maze[r][c] = OPEN;',
+  '  return false;',
+  '}',
+];
+let mode='queens',steps=[],stepIdx=0,playing=false,timer=null;
+let placeCount=0,backCount=0,solCount=0;
+let N=4;
+// N-Queens
+function buildQueensSteps(){
+  steps=[];
+  const board=new Array(N).fill(-1);
+  let firstSol=null;
+  function solve(row){
+    if(row===N){
+      if(!firstSol){firstSol=[...board];steps.push({type:'solution',board:[...board]});}
+      return firstSol!==null;
     }
-    for (let col = 0; col < N; col++) {
-      const safe = isSafe(row, col);
-      steps.push({ board: board.map(r => [...r]), row, col, phase: safe ? 'try' : 'conflict', backtracks, solutions,
-        desc: `Hàng ${row}: thử cột ${col} — ${safe ? '✅ An toàn → đặt queen' : '❌ Xung đột → cắt nhánh (pruning)'}`, codeLine: safe ? 9 : 14 });
-      if (safe) {
-        board[row][col] = 1;
-        steps.push({ board: board.map(r => [...r]), row, col, phase: 'place', backtracks, solutions,
-          desc: `✅ Đặt queen tại (${row}, ${col}) — khám phá hàng ${row+1}`, codeLine: 9 });
-        solve(row + 1);
-        board[row][col] = 0;
-        backtracks++;
-        steps.push({ board: board.map(r => [...r]), row, col, phase: 'backtrack', backtracks, solutions,
-          desc: `↩️ BACKTRACK: bỏ queen (${row},${col}) — thử cột tiếp`, codeLine: 13 });
+    for(let col=0;col<N;col++){
+      const safe=isSafe(board,row,col);
+      steps.push({type:'try',row,col,board:[...board],safe});
+      if(safe){
+        board[row]=col;
+        steps.push({type:'place',row,col,board:[...board]});
+        if(solve(row+1))return true;
+        steps.push({type:'backtrack',row,col,board:[...board]});
+        board[row]=-1;
+        steps.push({type:'removed',row,col,board:[...board]});
       }
     }
+    return false;
   }
   solve(0);
-  steps.push({ board: board.map(r => [...r]), phase: 'done', backtracks, solutions, desc: `Hoàn thành! ${solutions} solutions, ${backtracks} lần backtrack`, done: true });
-  return steps;
+  steps.push({type:'done',board:firstSol||board});
 }
-
-let prevBoard = null;
-function renderQueens(s) {
-  const N = 4;
-  const el = document.getElementById('chess-board');
-  el.style.gridTemplateColumns = `repeat(${N}, 52px)`;
-  el.innerHTML = '';
-  for (let r = 0; r < N; r++) {
-    for (let c = 0; c < N; c++) {
-      const cell = document.createElement('div');
-      const isLight = (r + c) % 2 === 0;
-      let extra = '';
-      const hasQueen = s.board[r][c];
-      const isTarget = r === s.row && c === s.col;
-      if (hasQueen && s.phase === 'solution') extra = 'solution';
-      else if (hasQueen) extra = 'queen';
-      else if (isTarget && s.phase === 'conflict') extra = 'conflict';
-      else if (isTarget && s.phase === 'try') extra = 'trying';
-      else if (isTarget && s.phase === 'backtrack') extra = 'backtrack-cell';
-      cell.className = `chess-cell ${isLight ? 'light' : 'dark'} ${extra}`;
-      if (hasQueen) {
-        const span = document.createElement('span');
-        span.className = 'queen-piece';
-        span.textContent = '♛';
-        span.style.color = s.phase === 'solution' ? '#22c55e' : '#e879f9';
-        cell.appendChild(span);
-      }
-      el.appendChild(cell);
-    }
+function isSafe(board,row,col){
+  for(let r=0;r<row;r++){
+    if(board[r]===col)return false;
+    if(Math.abs(board[r]-col)===Math.abs(r-row))return false;
   }
-  document.getElementById('q-row').textContent = s.row !== undefined ? s.row : '—';
-  document.getElementById('q-col').textContent = s.col !== undefined && s.col >= 0 ? s.col : '—';
-  document.getElementById('q-backs').textContent = s.backtracks;
-  document.getElementById('q-sols').textContent = s.solutions;
-  document.getElementById('queens-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
-  document.getElementById('info-backs').textContent = s.backtracks;
-  if (s.done) { document.getElementById('queens-result').style.display = 'block'; document.getElementById('queens-ans').textContent = `${s.solutions} solutions tìm được, ${s.backtracks} lần backtrack`; }
+  return true;
 }
-
-// MAZE
-const mazeLayout = [
-  [0,0,0,1,0,0,0],
-  [1,1,0,1,0,1,0],
-  [0,0,0,0,0,1,0],
-  [0,1,1,1,0,1,0],
-  [0,0,0,1,0,0,0],
-  [1,1,0,1,1,1,0],
-  [0,0,0,0,0,0,2],
+// Maze
+const MAZE_TEMPLATE=[
+  [0,0,1,0,0,0],
+  [1,0,1,0,1,0],
+  [0,0,0,0,1,0],
+  [0,1,1,0,0,0],
+  [0,0,0,1,0,0],
+  [0,1,0,0,0,0],
 ];
-const ROWS = 7, COLS = 7;
-const START = [0,0], END = [6,6];
-const DIRS = [[0,1],[1,0],[0,-1],[-1,0]];
-
-function genMazeSteps() {
-  const steps = [];
-  let backtracks = 0;
-  const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
-  const path = [];
-  function solve(r, c) {
-    if (r < 0 || r >= ROWS || c < 0 || c >= COLS) return false;
-    if (mazeLayout[r][c] === 1 || visited[r][c]) {
-      if (mazeLayout[r][c] !== 1) steps.push({ path: [...path], current: [r,c], phase: 'blocked', backtracks, desc: `❌ (${r},${c}) đã thăm — cắt nhánh`, codeLine: 7 });
-      return false;
-    }
-    visited[r][c] = true;
-    path.push([r, c]);
-    steps.push({ path: [...path], current: [r,c], phase: 'enter', backtracks, desc: `Bước vào (${r},${c}) — path length = ${path.length}`, codeLine: 10 });
-    if (r === END[0] && c === END[1]) {
-      steps.push({ path: [...path], current: [r,c], phase: 'found', backtracks, desc: `🎉 Đường đi tìm được! Length = ${path.length}`, codeLine: 3, done: true, ans: `Path length = ${path.length}` });
+function buildMazeSteps(){
+  steps=[];
+  const maze=MAZE_TEMPLATE.map(r=>[...r]);
+  const R=maze.length,C=maze[0].length;
+  const path=[];
+  steps.push({type:'maze-init',maze:cloneMaze(maze),path:[],cur:null});
+  function solve(r,c){
+    if(r<0||r>=R||c<0||c>=C||maze[r][c]===1)return false;
+    if(maze[r][c]===2)return false; // visited
+    if(r===R-1&&c===C-1){
+      path.push([r,c]);
+      steps.push({type:'maze-path',maze:cloneMaze(maze),path:[...path],cur:[r,c]});
       return true;
     }
-    for (const [dr, dc] of DIRS) if (solve(r+dr, c+dc)) return true;
-    path.pop(); backtracks++;
-    steps.push({ path: [...path], current: [r,c], phase: 'backtrack', backtracks, desc: `↩️ Dead end tại (${r},${c}) — BACKTRACK!`, codeLine: 20 });
+    maze[r][c]=2;path.push([r,c]);
+    steps.push({type:'maze-step',maze:cloneMaze(maze),path:[...path],cur:[r,c]});
+    const dirs=[[0,1],[1,0],[0,-1],[-1,0]];
+    for(const[dr,dc]of dirs){
+      if(solve(r+dr,c+dc))return true;
+    }
+    path.pop();
+    steps.push({type:'maze-back',maze:cloneMaze(maze),path:[...path],cur:[r,c],backAt:[r,c]});
+    maze[r][c]=0;
     return false;
   }
-  solve(START[0], START[1]);
-  return steps;
+  solve(0,0);
+  steps.push({type:'done'});
 }
-
-function renderMaze(s) {
-  const el = document.getElementById('maze-grid');
-  el.style.gridTemplateColumns = `repeat(${COLS}, 40px)`;
-  el.innerHTML = '';
-  const pathSet = new Set(s.path.map(([r,c]) => `${r},${c}`));
-  const curKey = s.current ? `${s.current[0]},${s.current[1]}` : '';
-  const pathArr = s.path;
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      const cell = document.createElement('div');
-      const key = `${r},${c}`;
-      let cls = 'open', content = '';
-      if (mazeLayout[r][c] === 1) { cls = 'wall'; content = ''; }
-      else if (r === START[0] && c === START[1]) { cls = 'start'; content = 'S'; }
-      else if (r === END[0] && c === END[1]) { cls = s.phase === 'found' ? 'found' : 'end'; content = 'E'; }
-      else if (key === curKey) {
-        cls = s.phase === 'backtrack' ? 'backtrack' : 'current';
-        content = s.phase === 'backtrack' ? '✗' : '●';
-      }
-      else if (pathSet.has(key)) {
-        // gradient color based on position in path
-        const idx = pathArr.findIndex(([pr, pc]) => pr === r && pc === c);
-        cls = 'path';
-        const t = idx / Math.max(pathArr.length - 1, 1);
-        cell.style.background = `rgba(34,197,94,${0.15 + t * 0.3})`;
-        cell.style.borderColor = `rgba(34,197,94,${0.4 + t * 0.4})`;
-      }
-      cell.className = `maze-cell ${cls}`;
-      cell.textContent = content;
-      el.appendChild(cell);
+function cloneMaze(m){return m.map(r=>[...r]);}
+// Render queens board
+function renderQueens(board,highlights){
+  const b=document.getElementById('queens-board');
+  b.innerHTML='';
+  for(let r=0;r<N;r++){
+    const row=document.createElement('div');row.className='board-row';
+    for(let c=0;c<N;c++){
+      const cell=document.createElement('div');
+      const isLight=(r+c)%2===0;
+      cell.className='board-cell '+(isLight?'light':'dark');
+      const h=highlights?.find(h=>h.r===r&&h.c===c);
+      if(h)cell.classList.add(h.cls);
+      else if(board[r]===c)cell.classList.add('queen');
+      if(board[r]===c||h?.cls==='queen')cell.textContent='♛';
+      row.appendChild(cell);
     }
+    b.appendChild(row);
   }
-  document.getElementById('mz-pos').textContent = s.current ? `(${s.current.join(',')})` : '—';
-  document.getElementById('mz-len').textContent = s.path.length;
-  document.getElementById('mz-backs').textContent = s.backtracks;
-  document.getElementById('maze-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
-  document.getElementById('info-backs').textContent = s.backtracks;
-  if (s.done) { document.getElementById('maze-result').style.display = 'block'; document.getElementById('maze-ans').textContent = s.ans; }
+  // Row indicators
+  const ri=document.getElementById('row-indicators');
+  ri.innerHTML='';
+  for(let r=0;r<N;r++){
+    const ind=document.createElement('div');ind.className='row-ind';
+    ind.textContent=`R${r}`;
+    if(highlights?.find(h=>h.r===r&&h.cls==='queen'))ind.classList.add('active');
+    else if(board[r]!==-1)ind.classList.add('done');
+    ri.appendChild(ind);
+  }
 }
-
-// SUDOKU
-const sudokuGiven = [
-  [5,3,0,0,7,0,0,0,0],
-  [6,0,0,1,9,5,0,0,0],
-  [0,9,8,0,0,0,0,6,0],
-  [8,0,0,0,6,0,0,0,3],
-  [4,0,0,8,0,3,0,0,1],
-  [7,0,0,0,2,0,0,0,6],
-  [0,6,0,0,0,0,2,8,0],
-  [0,0,0,4,1,9,0,0,5],
-  [0,0,0,0,8,0,0,7,9],
-];
-
-function genSudokuSteps() {
-  const board = sudokuGiven.map(r => [...r]);
-  const givenMask = sudokuGiven.map(r => r.map(v => v !== 0));
-  const steps = [];
-  let backtracks = 0, filled = 0;
-
-  function isValid(r, c, num) {
-    for (let j = 0; j < 9; j++) if (board[r][j] === num) return false;
-    for (let i = 0; i < 9; i++) if (board[i][c] === num) return false;
-    const br = Math.floor(r/3)*3, bc = Math.floor(c/3)*3;
-    for (let i = br; i < br+3; i++) for (let j = bc; j < bc+3; j++) if (board[i][j] === num) return false;
-    return true;
-  }
-
-  function findEmpty() {
-    for (let r = 0; r < 9; r++) for (let c = 0; c < 9; c++) if (!board[r][c]) return [r,c];
-    return null;
-  }
-
-  let stepLimit = 0;
-  function solve() {
-    if (stepLimit > 250) return true;
-    const empty = findEmpty();
-    if (!empty) return true;
-    const [r, c] = empty;
-    for (let num = 1; num <= 9; num++) {
-      stepLimit++;
-      const valid = isValid(r, c, num);
-      if (stepLimit % 3 === 0) {
-        steps.push({ board: board.map(row => [...row]), given: givenMask, r, c, num,
-          phase: valid ? 'trying' : 'conflict', backtracks, filled,
-          desc: `Ô (${r},${c}): thử ${num} — ${valid ? '✅ Hợp lệ' : '❌ Xung đột'}`, codeLine: valid ? 10 : 14 });
-      }
-      if (valid) {
-        board[r][c] = num; filled++;
-        if (solve()) return true;
-        board[r][c] = 0; filled--; backtracks++;
-        if (stepLimit % 5 === 0) {
-          steps.push({ board: board.map(row => [...row]), given: givenMask, r, c, num: 0,
-            phase: 'backtrack', backtracks, filled, desc: `↩️ Backtrack ô (${r},${c}) — thử số tiếp`, codeLine: 14 });
-        }
-      }
+// Render maze
+function renderMaze(maze,path,cur,backAt){
+  const mb=document.getElementById('maze-board');
+  mb.innerHTML='';
+  const R=maze.length,C=maze[0].length;
+  for(let r=0;r<R;r++){
+    const row=document.createElement('div');row.className='maze-row';
+    for(let c=0;c<C;c++){
+      const cell=document.createElement('div');
+      if(r===0&&c===0){cell.className='maze-cell start';cell.textContent='S';}
+      else if(r===R-1&&c===C-1){cell.className='maze-cell end';cell.textContent='E';}
+      else if(maze[r][c]===1)cell.className='maze-cell wall';
+      else if(backAt&&backAt[0]===r&&backAt[1]===c)cell.className='maze-cell dead';
+      else if(cur&&cur[0]===r&&cur[1]===c)cell.className='maze-cell current';
+      else if(path?.some(p=>p[0]===r&&p[1]===c))cell.className='maze-cell path';
+      else cell.className='maze-cell open';
+      row.appendChild(cell);
     }
-    return false;
+    mb.appendChild(row);
   }
-
-  steps.push({ board: board.map(r => [...r]), given: givenMask, r: -1, c: -1, num: 0, phase: 'init', backtracks: 0, filled: 0, desc: 'Bắt đầu — tìm ô trống đầu tiên', codeLine: 3 });
-  solve();
-  steps.push({ board: board.map(r => [...r]), given: givenMask, done: true, backtracks, filled, desc: `✅ Sudoku giải xong! ${backtracks} lần backtrack`, ans: `Solved! ${backtracks} lần backtrack`, codeLine: 4 });
-  return steps;
 }
-
-function renderSudoku(s) {
-  const el = document.getElementById('sudoku-grid');
-  el.innerHTML = '';
-  for (let r = 0; r < 9; r++) {
-    for (let c = 0; c < 9; c++) {
-      const cell = document.createElement('div');
-      let cls = '';
-      if (s.given && s.given[r][c]) cls = 'given';
-      else if (r === s.r && c === s.c) {
-        cls = s.phase === 'conflict' ? 'conflict' : s.phase === 'backtrack' ? 'backtrack-cell' : s.num ? 'trying' : 'filled';
-      } else if (s.board[r][c] && !(s.given && s.given[r][c])) cls = 'filled';
-      cell.className = `sudoku-cell ${cls}`;
-      cell.textContent = s.board[r][c] || '';
-      el.appendChild(cell);
-    }
+function applyStep(s){
+  if(!s)return;
+  switch(s.type){
+    case'try':
+      if(s.safe)renderQueens(s.board,[{r:s.row,c:s.col,cls:'queen'}]);
+      else renderQueens(s.board,[{r:s.row,c:s.col,cls:'conflict-cell'}]);
+      hl(6);
+      setStatus(s.safe?'place':'conflict',s.row,s.col);
+      setExp(s.safe?'🔍':'⚠️',s.safe?'place':'conflict',
+        s.safe?`Thử đặt quân hậu tại (<b>${s.row},${s.col}</b>). Kiểm tra: an toàn! Tiếp tục hàng ${s.row+1}.`
+        :`Thử (<b>${s.row},${s.col}</b>): <b>xung đột!</b> Đường ngang, dọc, hoặc chéo với quân hậu đã đặt.`);
+      break;
+    case'place':
+      placeCount++;document.getElementById('s-place').textContent=placeCount;
+      renderQueens(s.board);hl(7);
+      setStatus('place',s.row,s.col);
+      setExp('♛','place',`Đặt quân hậu tại (<b>${s.row},${s.col}</b>). Đệ quy sang hàng ${s.row+1}.`);
+      setInsight(`👑 Hàng ${s.row} — Cột ${s.col}`,`Quân hậu an toàn. Không xung đột hàng ngang, dọc, chéo. Tiếp tục với hàng ${s.row+1}.`);
+      break;
+    case'backtrack':
+      backCount++;document.getElementById('s-back').textContent=backCount;
+      renderQueens(s.board,[{r:s.row,c:s.col,cls:'conflict-cell'}]);hl(9);
+      setStatus('back',s.row,s.col);
+      setExp('↩️','back',`<b>Quay lui!</b> Không thể đặt quân hậu nào ở hàng ${s.row+1}. Gỡ quân hậu tại (<b>${s.row},${s.col}</b>).`);
+      setInsight(`↩️ Backtrack từ hàng ${s.row+1}`,`Tất cả cột ở hàng ${s.row+1} đều bị chặn. Quay lui về hàng ${s.row}, thử cột tiếp theo. Đây là sức mạnh của backtracking!`);
+      break;
+    case'removed':
+      renderQueens(s.board);hl(9);
+      break;
+    case'solution':
+      solCount++;document.getElementById('s-sol').textContent=solCount;
+      renderQueens(s.board);
+      setStatus('done',0,0);
+      setExp('🎉','path',`<b>Tìm thấy giải pháp!</b> Tất cả ${N} quân hậu đặt thành công không xung đột.`);
+      setInsight(`✅ Giải pháp N=${N}-Queens`,`Quân hậu tại cột: [${s.board.join(', ')}]. Với N=${N}, có ${N===4?2:N===5?10:N===6?4:'?'} giải pháp tổng cộng.`);
+      break;
+    case'maze-init':
+      renderMaze(s.maze,[],null,null);hl(0);
+      setStatus('path',0,0);
+      setExp('💡','info','Tìm đường từ S(0,0) đến E(cuối). Thử mỗi hướng: phải→dưới→trái→lên. Nếu cụt → quay lui.');
+      setInsight('🌀 Maze Backtracking','Mỗi ô chỉ được đi qua 1 lần (đánh dấu VISITED). Cụt đường → quay lui, thử hướng khác.');
+      break;
+    case'maze-step':
+      renderMaze(s.maze,s.path,s.cur,null);placeCount++;document.getElementById('s-place').textContent=placeCount;hl(5);
+      setStatus('path',s.cur[0],s.cur[1]);
+      setExp('🚶','path',`Di chuyển đến (<b>${s.cur[0]},${s.cur[1]}</b>). Đánh dấu VISITED. Thử 4 hướng.`);
+      setInsight(`📍 Vị trí [${s.cur[0]},${s.cur[1]}]`,`Đường đi hiện tại: ${s.path.length} bước. Tiếp tục khám phá các hướng chưa thử.`);
+      break;
+    case'maze-back':
+      backCount++;document.getElementById('s-back').textContent=backCount;
+      renderMaze(s.maze,s.path,null,s.backAt);hl(12);
+      setStatus('back',s.backAt[0],s.backAt[1]);
+      setExp('↩️','back',`Cụt! Quay lui từ (<b>${s.backAt[0]},${s.backAt[1]}</b>). Thử hướng khác.`);
+      setInsight(`↩️ Dead End [${s.backAt[0]},${s.backAt[1]}]`,'Không có hướng nào đi được. Xóa đánh dấu VISITED, quay về ô trước.');
+      break;
+    case'maze-path':
+      renderMaze(s.maze,s.path,null,null);
+      setStatus('done',0,0);
+      setExp('🎉','path',`<b>Tìm thấy đường đi!</b> Dài <b>${s.path.length}</b> bước từ S đến E.`);
+      setInsight(`✅ Đường đi tìm thấy`,`${s.path.length} bước. Backtracking đã thử nhiều hướng và loại bỏ các nhánh cụt.`);
+      break;
+    case'done':
+      stopPlay();
+      if(mode==='queens')setExp('🏆','path',`Hoàn tất! Tìm được giải pháp N=${N}-Queens. <b>${placeCount}</b> lần đặt, <b>${backCount}</b> lần quay lui.`);
+      else setExp('🏆','path',`Maze solved! <b>${placeCount}</b> bước đi, <b>${backCount}</b> lần quay lui.`);
+      setInsight('📈 Backtracking','Hiệu quả nhờ <b>pruning</b>: cắt sớm các nhánh vi phạm ràng buộc. Không cần thử tất cả trường hợp.');
+      break;
   }
-  document.getElementById('sk-cell').textContent = s.r >= 0 ? `(${s.r},${s.c})` : '—';
-  document.getElementById('sk-try').textContent = s.num || '—';
-  document.getElementById('sk-backs').textContent = s.backtracks;
-  document.getElementById('sk-filled').textContent = s.filled;
-  document.getElementById('sudoku-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
-  document.getElementById('info-backs').textContent = s.backtracks;
-  if (s.done) { document.getElementById('sudoku-result').style.display = 'block'; document.getElementById('sudoku-ans').textContent = s.ans; }
 }
-
-function highlightCode(line) {
-  document.querySelectorAll('.code-line').forEach((el, i) => el.classList.toggle('hl', i === line));
+function setStatus(type,r,c){
+  const d=document.getElementById('status-display');
+  if(type==='place')d.innerHTML=`<span class="action-badge place">♛ Đặt quân hậu (${r},${c})</span>`;
+  else if(type==='conflict')d.innerHTML=`<span class="action-badge conflict">⚠️ Xung đột! (${r},${c})</span>`;
+  else if(type==='back')d.innerHTML=`<span class="action-badge back">↩️ Quay lui từ hàng ${r}</span>`;
+  else if(type==='done')d.innerHTML=`<span class="action-badge done">🎉 Giải pháp tìm thấy!</span>`;
+  else if(type==='path')d.innerHTML=`<span class="action-badge path">🚶 Đang khám phá...</span>`;
+  else d.innerHTML='<span class="sd-idle">Nhấn Play để bắt đầu</span>';
 }
-
-function applyStep(s) {
-  if (currentProblem === 'queens') renderQueens(s);
-  else if (currentProblem === 'maze') renderMaze(s);
-  else if (currentProblem === 'sudoku') renderSudoku(s);
-  if (s.codeLine !== undefined) highlightCode(s.codeLine);
-  document.getElementById('info-step').textContent = stepIndex;
-  document.getElementById('info-backs').textContent = s.backtracks || 0;
+function setExp(icon,cls,html){
+  const ic=document.querySelector('#explain-viz .step-icon');
+  ic.textContent=icon;ic.className='step-icon '+cls;
+  document.getElementById('explain-text').innerHTML=html;
+  document.getElementById('step-counter').textContent=`${stepIdx}/${steps.length}`;
 }
-
-function getDelay() { return [900,650,450,280,150][parseInt(document.getElementById('speed-slider').value)-1]; }
-
-function stepOnce() {
-  if (stepIndex >= steps.length) return;
-  applyStep(steps[stepIndex]);
-  stepIndex++;
-  if (stepIndex >= steps.length) stopPlay();
+function setInsight(title,html){document.getElementById('insight').innerHTML=`<div class="insight-title">${title}</div>${html}`;}
+function hl(i){document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));document.querySelector(`[data-i="${i}"]`)?.classList.add('active');}
+function buildCode(lines){document.getElementById('code').innerHTML=lines.map((l,i)=>`<div class="code-line${l.trim().startsWith('//')?' comment':''}" data-i="${i}">${l}</div>`).join('');}
+function switchMode(m){
+  mode=m;
+  document.querySelectorAll('.mode-tab').forEach((t,i)=>t.classList.toggle('active',['queens','maze'][i]===m));
+  document.querySelector('.panel-title').textContent=m==='queens'?'📝 N-Queens — Backtracking':'📝 Maze Solver';
+  buildCode(m==='queens'?QUEENS_CODE:MAZE_CODE);
+  document.getElementById('queens-view').style.display=m==='queens'?'flex':'none';
+  document.getElementById('maze-view').style.display=m==='maze'?'block':'none';
+  reset();
 }
-
-function togglePlay() {
-  if (playing) { stopPlay(); return; }
-  playing = true;
-  document.getElementById('btn-play').textContent = '⏸ Pause';
-  function tick() {
-    if (stepIndex >= steps.length) { stopPlay(); return; }
-    stepOnce(); timer = setTimeout(tick, getDelay());
-  }
-  tick();
+function getDelay(){return Math.round(1200-document.getElementById('speed').value*110);}
+function tick(){if(stepIdx>=steps.length){stopPlay();return;}applyStep(steps[stepIdx++]);if(playing)timer=setTimeout(tick,getDelay());}
+function startPlay(){if(stepIdx>=steps.length)reset();playing=true;document.getElementById('btn-play').textContent='⏸ Pause';tick();}
+function stopPlay(){playing=false;clearTimeout(timer);document.getElementById('btn-play').textContent='▶ Play';}
+function reset(){
+  stopPlay();stepIdx=0;placeCount=0;backCount=0;solCount=0;
+  document.getElementById('s-place').textContent='0';
+  document.getElementById('s-back').textContent='0';
+  document.getElementById('s-sol').textContent='0';
+  N=+document.getElementById('n-sel').value;
+  document.getElementById('status-display').innerHTML='<span class="sd-idle">Nhấn Play để bắt đầu</span>';
+  if(mode==='queens'){buildQueensSteps();renderQueens(new Array(N).fill(-1));}
+  else{buildMazeSteps();const i=steps.find(s=>s.type==='maze-init');if(i){applyStep(i);stepIdx=1;}}
+  setExp('💡','info',mode==='queens'
+    ?`N-Queens: đặt ${N} quân hậu trên bàn ${N}×${N} sao cho không quân nào tấn công quân nào.`
+    :`Maze Solver: tìm đường từ S đến E bằng backtracking.`);
+  setInsight('💡 Backtracking','Thử từng khả năng, kiểm tra ràng buộc. Nếu vi phạm → <b>quay lui ngay</b> (pruning). Hiệu quả hơn brute force.');
+  hl(-1);
 }
-
-function stopPlay() { playing = false; clearTimeout(timer); document.getElementById('btn-play').textContent = '▶ Play'; }
-
-function resetAll() {
-  stopPlay(); stepIndex = 0;
-  ['queens-result','maze-result','sudoku-result'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
-  document.getElementById('info-backs').textContent = '0';
-  initProblem(currentProblem);
-}
-
-function renderCode(prob) {
-  document.getElementById('code-body').innerHTML = codes[prob].map((l, i) =>
-    `<div class="code-line" data-line="${i}">${l || '&nbsp;'}</div>`).join('');
-}
-
-function initProblem(prob) {
-  renderCode(prob);
-  if (prob === 'queens') { steps = genQueensSteps(); renderQueens(steps[0]); }
-  else if (prob === 'maze') { steps = genMazeSteps(); renderMaze(steps[0]); }
-  else if (prob === 'sudoku') { steps = genSudokuSteps(); renderSudoku(steps[0]); }
-}
-
-function switchProblem(prob) {
-  stopPlay(); currentProblem = prob; stepIndex = 0;
-  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['queens','maze','sudoku'][i] === prob));
-  document.querySelectorAll('.prob').forEach(s => s.classList.remove('active'));
-  document.getElementById(`prob-${prob}`).classList.add('active');
-  initProblem(prob);
-}
-
-initProblem('queens');
+document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
+document.getElementById('btn-step').onclick=()=>{stopPlay();if(stepIdx<steps.length)applyStep(steps[stepIdx++]);};
+document.getElementById('btn-reset').onclick=reset;
+document.getElementById('n-sel').onchange=()=>{if(mode==='queens')reset();};
+buildCode(QUEENS_CODE);reset();
 </script>
 </body>
 </html>

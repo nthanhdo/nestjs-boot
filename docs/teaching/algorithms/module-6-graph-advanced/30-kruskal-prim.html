@@ -2,612 +2,499 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>30 - Cây khung nhỏ nhất (Kruskal & Prim)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kruskal & Prim — Cây khung nhỏ nhất (MST)</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',sans-serif;background:#0a0c14;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-@keyframes mstGlow{0%,100%{filter:drop-shadow(0 0 5px rgba(72,187,120,0.5))}50%{filter:drop-shadow(0 0 20px rgba(72,187,120,1))}}
-@keyframes ufMerge{0%{transform:scale(1.15);background:rgba(85,60,154,0.8)}100%{transform:scale(1)}}
-@keyframes edgeDraw{from{stroke-dashoffset:300}to{stroke-dashoffset:0}}
-@keyframes rejectFlash{0%{stroke:#fc8181;stroke-dasharray:4,4}100%{stroke:#2d3748;stroke-dasharray:4,4;opacity:0.4}}
-@keyframes pqSlideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-@keyframes nodeGlow{0%,100%{filter:drop-shadow(0 0 5px rgba(159,122,234,0.5))}50%{filter:drop-shadow(0 0 20px rgba(159,122,234,1))}}
-@keyframes kWave{0%{transform:scale(1);opacity:0.8}100%{transform:scale(1.7);opacity:0}}
-header{background:linear-gradient(135deg,#141825,#1a152e);padding:8px 16px;border-bottom:1px solid #2a1e4e;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap;box-shadow:0 2px 12px rgba(0,0,0,0.4)}
-header h1{font-size:1.05rem;background:linear-gradient(135deg,#9f7aea,#805ad5);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.badge{background:linear-gradient(135deg,#553c9a,#44337a);color:#e9d8fd;padding:2px 10px;border-radius:12px;font-size:0.75rem;box-shadow:0 0 8px rgba(85,60,154,0.4)}
-.tabs{display:flex;gap:4px;margin-left:auto}
-.tab{padding:4px 14px;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:600;border:1px solid #2d3748;background:#1e2535;color:#718096;transition:all 0.25s}
-.tab.active{background:linear-gradient(135deg,#553c9a,#44337a);color:#e9d8fd;border-color:#9f7aea;box-shadow:0 0 12px rgba(85,60,154,0.4)}
-.main{display:flex;flex:1;overflow:hidden}
-.left-panel{width:224px;background:linear-gradient(180deg,#141825,#111420);border-right:1px solid #1e2535;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
-.panel-title{padding:7px 12px;font-size:0.72rem;font-weight:700;text-transform:uppercase;color:#4a3a70;border-bottom:1px solid #1e2535;flex-shrink:0;letter-spacing:1.5px}
-.center{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.right-panel{width:254px;background:linear-gradient(180deg,#141825,#111420);border-left:1px solid #1e2535;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
-#svg-container{flex:1;position:relative;overflow:hidden;background:radial-gradient(ellipse at center,#0d1220 0%,#080a12 100%)}
-svg{width:100%;height:100%}
-.controls{background:#141825;border-top:1px solid #1e2535;padding:7px 12px;display:flex;align-items:center;gap:7px;flex-shrink:0;flex-wrap:wrap}
-button{padding:5px 14px;border:none;border-radius:8px;cursor:pointer;font-size:0.8rem;font-weight:600;transition:all 0.2s}
-.btn-play{background:linear-gradient(135deg,#553c9a,#44337a);color:#fff;box-shadow:0 2px 10px rgba(85,60,154,0.4)}.btn-play:hover{transform:translateY(-1px)}
-.btn-step{background:linear-gradient(135deg,#2b6cb0,#2c5282);color:#fff}
-.btn-reset{background:linear-gradient(135deg,#c53030,#9b2c2c);color:#fff}
-.btn-sm{background:#1e2535;color:#a0aec0;padding:4px 10px;font-size:0.75rem;border-radius:6px;border:1px solid #2d3748}
-label{font-size:0.8rem;color:#718096}
-input[type=range]{accent-color:#9f7aea;width:80px}
-.info-box{padding:9px 12px;font-size:0.79rem;line-height:1.6;color:#8896ab;border-bottom:1px solid #1e2535}
-.info-box strong{color:#9f7aea}
-.mst-stat{padding:8px 12px;display:flex;gap:10px;align-items:center;border-bottom:1px solid #1e2535}
-.stat-box{flex:1;background:linear-gradient(135deg,#1e2535,#252d3e);border-radius:10px;padding:6px 10px;text-align:center;border:1px solid #2d3748}
-.stat-box .val{font-size:1.3rem;font-weight:700;background:linear-gradient(135deg,#9f7aea,#805ad5);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.stat-box .lbl{font-size:0.7rem;color:#4a6080}
-.edge-list{padding:6px 12px;display:flex;flex-direction:column;gap:4px;overflow-y:auto;max-height:200px}
-.edge-item{background:linear-gradient(135deg,#1e2535,#252d3e);border-radius:8px;padding:5px 10px;font-size:0.78rem;display:flex;justify-content:space-between;align-items:center;transition:all 0.35s;animation:pqSlideIn 0.2s ease;border:1px solid #2d3748}
-.edge-item.current{background:linear-gradient(135deg,#3c2d6e,#553c9a);border-color:#9f7aea;box-shadow:0 0 12px rgba(159,122,234,0.4)}
-.edge-item.accepted{background:linear-gradient(135deg,#1a4a36,#276749);border-color:#48bb78;box-shadow:0 0 10px rgba(72,187,120,0.3)}
-.edge-item.rejected{background:linear-gradient(135deg,#3d1515,#742a2a);border-color:#fc8181;opacity:0.7}
-.uf-display{padding:6px 12px;font-size:0.78rem;display:flex;flex-direction:column;gap:4px}
-.uf-set{background:linear-gradient(135deg,#1e2535,#252d3e);border-radius:8px;padding:6px 10px;display:flex;gap:6px;flex-wrap:wrap;transition:all 0.4s;border:1px solid #2d3748;animation:ufMerge 0.4s ease}
-.uf-node{background:linear-gradient(135deg,#553c9a,#44337a);color:#e9d8fd;padding:3px 8px;border-radius:6px;font-weight:700;font-size:0.8rem;box-shadow:0 0 6px rgba(85,60,154,0.3)}
-.pq-list{padding:6px 12px;display:flex;flex-direction:column;gap:4px;max-height:160px;overflow-y:auto}
-.pq-item{background:linear-gradient(135deg,#1e2535,#252d3e);border-radius:8px;padding:5px 10px;font-size:0.78rem;display:flex;justify-content:space-between;transition:all 0.35s;animation:pqSlideIn 0.2s ease;border:1px solid #2d3748}
-.pq-item.top{background:linear-gradient(135deg,#553c9a,#44337a);color:#e9d8fd;border-color:#9f7aea;box-shadow:0 0 12px rgba(85,60,154,0.4)}
-.cut-display{padding:6px 12px;display:flex;gap:8px;font-size:0.78rem}
-.cut-group{flex:1;background:linear-gradient(135deg,#1e2535,#252d3e);border-radius:8px;padding:6px;text-align:center;border:1px solid #2d3748}
-.cut-group.in-mst{border-top:2px solid #48bb78}
-.cut-group.out-mst{border-top:2px solid #fc8181}
-.cut-group .nodes{color:#e2e8f0;font-weight:700;font-size:0.9rem;margin-top:4px}
-.code-panel{padding:7px 12px;font-family:'Courier New',monospace;font-size:0.73rem;line-height:1.8}
-.code-line{padding:2px 6px;border-radius:5px;color:#718096;white-space:pre;transition:background 0.25s,transform 0.2s}
-.code-line.active{background:linear-gradient(135deg,#3c2d6e,#2a1e50);color:#d6bcfa;transform:translateX(3px);box-shadow:0 0 10px rgba(60,45,110,0.5)}
-.step-log{padding:6px 12px;font-size:0.77rem;line-height:1.6;color:#8896ab;max-height:130px;overflow-y:auto}
-.step-log .entry{border-left:2px solid #2d3748;padding-left:7px;margin-bottom:4px}
-.step-log .entry.good{border-color:#48bb78;color:#9ae6b4}
-.step-log .entry.bad{border-color:#fc8181;color:#fc8181}
-.panel-content.hidden{display:none}
+  :root {
+    --bg:#0e1525;--surface:#151d32;--surface2:#1c2744;--border:#2a3a5c;
+    --text:#eef1f8;--muted:#8899bb;--accent:#a78bfa;--yellow:#ffd43b;
+    --green:#2ecc71;--red:#fc5c7d;--blue:#5b8def;--orange:#ffb347;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 25% 20%,rgba(46,204,113,0.06) 0%,transparent 55%),radial-gradient(ellipse at 75% 80%,rgba(167,139,250,0.05) 0%,transparent 55%);pointer-events:none;}
+  header{background:var(--surface);padding:10px 24px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border);z-index:2;flex-shrink:0;}
+  header h1{font-size:1.15rem;font-weight:700;background:linear-gradient(135deg,#2ecc71,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .badge{background:linear-gradient(135deg,#1a9c54,#2ecc71);color:#fff;padding:2px 10px;border-radius:12px;font-size:.68rem;font-weight:700;}
+  .complexity{display:flex;gap:6px;margin-left:auto;}
+  .cx{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:2px 9px;font-size:.72rem;color:var(--muted);}
+  .cx span{color:var(--yellow);font-weight:700;}
+  /* TABS */
+  .tabs{display:flex;background:var(--surface2);border-bottom:1px solid var(--border);flex-shrink:0;}
+  .tab{padding:9px 24px;font-size:.85rem;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;}
+  .tab:hover{color:var(--text);}
+  .tab.active{color:var(--green);border-bottom-color:var(--green);}
+  main{flex:1;display:flex;overflow:hidden;z-index:1;min-height:0;}
+  #status-display{text-align:center;padding:10px 20px;min-height:52px;display:flex;align-items:center;justify-content:center;gap:12px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;}
+  .sd-idle{color:var(--muted);font-size:.95rem;}
+  .sd-edge{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:.88rem;font-weight:700;}
+  .sd-edge.accept{border-color:var(--green);color:var(--green);}
+  .sd-edge.reject{border-color:var(--red);color:var(--red);}
+  .sd-edge.try{border-color:var(--yellow);color:var(--yellow);}
+  .sd-tag{padding:3px 10px;border-radius:6px;font-size:.82rem;font-weight:700;color:#fff;}
+  .sd-tag.accept{background:linear-gradient(135deg,#2ecc71,#1a9c54);}
+  .sd-tag.reject{background:linear-gradient(135deg,#fc5c7d,#c0143c);}
+  .sd-tag.mst{background:linear-gradient(135deg,#a78bfa,#7c5ce7);}
+  #explain-viz{padding:10px 24px;min-height:52px;background:linear-gradient(135deg,rgba(21,29,50,.95),rgba(28,39,68,.9));border-bottom:1px solid var(--border);font-size:.88rem;line-height:1.55;color:var(--text);display:flex;align-items:center;gap:12px;flex-shrink:0;}
+  #explain-viz .step-icon{flex-shrink:0;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all .3s;}
+  .step-icon.info{background:rgba(91,141,239,.15);border:1px solid rgba(91,141,239,.3);}
+  .step-icon.accept{background:rgba(46,204,113,.15);border:1px solid rgba(46,204,113,.3);}
+  .step-icon.reject{background:rgba(252,92,125,.15);border:1px solid rgba(252,92,125,.3);}
+  .step-icon.merge{background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);}
+  .step-icon.done{background:rgba(46,204,113,.15);border:1px solid rgba(46,204,113,.3);}
+  #explain-text{flex:1;}#explain-text b{color:var(--yellow);}
+  #explain-text code{background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.8rem;color:var(--accent);}
+  #step-counter{font-size:.72rem;color:var(--muted);white-space:nowrap;}
+  #viz-center{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;}
+  #svg-area{flex:1;position:relative;background:radial-gradient(ellipse at center,#0d1525 0%,#070c18 100%);}
+  svg{width:100%;height:100%;}
+  #right-panel{width:290px;min-width:270px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;}
+  .panel-title{padding:10px 14px;background:var(--surface2);font-size:.78rem;font-weight:600;color:var(--accent);border-bottom:1px solid var(--border);flex-shrink:0;}
+  /* KRUSKAL edge list */
+  #edge-list-panel{padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0;max-height:180px;overflow-y:auto;}
+  .edge-list-item{display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:5px;font-size:.78rem;margin-bottom:2px;transition:all .25s;}
+  .edge-list-item.current{background:rgba(255,212,59,.1);border:1px solid rgba(255,212,59,.3);}
+  .edge-list-item.accepted{background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.2);}
+  .edge-list-item.rejected{background:rgba(252,92,125,.05);color:var(--muted);}
+  .edge-list-item .ew{font-weight:800;font-variant-numeric:tabular-nums;width:28px;}
+  .edge-list-item .en{flex:1;}
+  .edge-list-item .est{font-size:.7rem;}
+  /* PRIM cut panel */
+  #cut-panel{padding:10px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
+  .cut-title{font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+  .cut-edges{display:flex;flex-wrap:wrap;gap:4px;min-height:24px;}
+  .cut-edge{padding:2px 8px;border-radius:4px;font-size:.75rem;font-weight:700;border:1px solid var(--border);background:var(--surface2);animation:slideIn .2s ease;}
+  .cut-edge.min{border-color:var(--green);color:var(--green);}
+  /* Union-Find panel */
+  #uf-panel{flex:1;overflow-y:auto;padding:10px 12px;}
+  .uf-title{font-size:.72rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+  .uf-groups{display:flex;flex-wrap:wrap;gap:6px;}
+  .uf-group{border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:.78rem;background:var(--surface2);}
+  .uf-group.merging{border-color:var(--accent);color:var(--accent);}
+  /* MST summary */
+  #mst-summary{padding:10px 12px;border-top:1px solid var(--border);font-size:.8rem;flex-shrink:0;}
+  .mst-cost{font-size:1.2rem;font-weight:800;color:var(--green);}
+  #insight{padding:12px 14px;background:var(--bg);border-top:1px solid var(--border);font-size:.8rem;line-height:1.5;color:var(--muted);flex-shrink:0;}
+  #insight .insight-title{color:var(--accent);font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+  #insight b{color:var(--text);}
+  #controls{background:var(--surface);padding:8px 24px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);z-index:2;flex-wrap:wrap;flex-shrink:0;}
+  button{border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:.8rem;font-weight:600;transition:all .2s;}
+  button:active{transform:scale(.95);}
+  button:disabled{background:var(--surface2)!important;color:#3a4d6e!important;cursor:not-allowed;}
+  #btn-play{background:linear-gradient(135deg,#00b894,#05c46b);color:#fff;box-shadow:0 2px 10px rgba(5,196,107,.25);min-width:85px;}
+  #btn-step{background:linear-gradient(135deg,#7c5ce7,#a78bfa);color:#fff;}
+  #btn-reset{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+  label{font-size:.76rem;color:var(--muted);}
+  input[type=range]{accent-color:var(--accent);width:85px;}
+  #stats{display:flex;gap:8px;margin-left:auto;}
+  .stat{background:var(--surface2);padding:4px 10px;border-radius:6px;font-size:.8rem;color:var(--muted);border:1px solid var(--border);}
+  .stat span{color:var(--yellow);font-weight:800;}
+  #progress-wrap{width:140px;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;}
+  #progress-bar{height:100%;width:0%;border-radius:3px;background:linear-gradient(90deg,var(--green),var(--accent));transition:width .4s;}
+  @keyframes slideIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes edgeDraw{from{stroke-dashoffset:400}to{stroke-dashoffset:0}}
+  @keyframes groupMerge{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
 </style>
 </head>
 <body>
 <header>
-  <h1>🌲 Cây khung nhỏ nhất (MST)</h1>
-  <span class="badge">Module 6 · Bài 30</span>
-  <div class="tabs">
-    <div class="tab active" id="tab-kruskal" onclick="switchTab('kruskal')">Kruskal</div>
-    <div class="tab" id="tab-prim" onclick="switchTab('prim')">Prim</div>
+  <h1>🌳 Kruskal & Prim</h1>
+  <span class="badge">MST — MINIMUM SPANNING TREE</span>
+  <div class="complexity">
+    <div class="cx">Kruskal <span>O(E log E)</span></div>
+    <div class="cx">Prim <span>O((V+E) log V)</span></div>
   </div>
-  <button class="btn-sm" id="btn-add-node">+ Đỉnh</button>
-  <button class="btn-sm" id="btn-add-edge">+ Cạnh</button>
 </header>
-<div class="main">
-  <!-- Left -->
-  <div class="left-panel">
-    <div class="panel-title">📋 Giải thích</div>
-    <div class="info-box" id="algo-desc">
-      <strong>Kruskal's:</strong> Sắp xếp cạnh theo trọng số tăng dần. Thêm cạnh nhỏ nhất vào MST nếu không tạo chu trình (dùng Union-Find để kiểm tra).
+
+<div class="tabs">
+  <div class="tab active" id="tab-kruskal" onclick="switchTab('kruskal')">🔗 Kruskal (Union-Find)</div>
+  <div class="tab" id="tab-prim" onclick="switchTab('prim')">✂️ Prim (Cut Property)</div>
+</div>
+
+<div id="status-display"><span class="sd-idle">Nhấn Play để bắt đầu trình diễn thuật toán MST</span></div>
+
+<div id="explain-viz">
+  <div class="step-icon info">💡</div>
+  <div id="explain-text">Cây khung nhỏ nhất (MST) là cây con nối tất cả V đỉnh với tổng trọng số nhỏ nhất. Kruskal và Prim là 2 thuật toán Greedy để tìm MST.</div>
+  <div id="step-counter"></div>
+</div>
+
+<main>
+  <div id="viz-center">
+    <div id="svg-area">
+      <svg id="graph-svg" viewBox="0 0 700 380" preserveAspectRatio="xMidYMid meet"></svg>
     </div>
-    <div class="mst-stat">
-      <div class="stat-box"><div class="val" id="mst-weight">0</div><div class="lbl">Tổng trọng số</div></div>
-      <div class="stat-box"><div class="val" id="mst-edges">0</div><div class="lbl">Cạnh MST</div></div>
-    </div>
-    <!-- Kruskal left: sorted edge list -->
-    <div id="kruskal-left">
-      <div class="panel-title">📊 Cạnh (đã sắp xếp)</div>
-      <div class="edge-list" id="edge-list"></div>
-      <div class="panel-title">🔗 Union-Find (tập hợp)</div>
-      <div class="uf-display" id="uf-display"></div>
-    </div>
-    <!-- Prim left: cut visualization -->
-    <div id="prim-left" class="panel-content hidden">
-      <div class="panel-title">✂️ Cắt (Cut Property)</div>
-      <div class="cut-display" id="cut-display">
-        <div class="cut-group in-mst"><div>Trong MST</div><div class="nodes" id="in-mst-nodes">-</div></div>
-        <div class="cut-group out-mst"><div>Ngoài MST</div><div class="nodes" id="out-mst-nodes">-</div></div>
+  </div>
+  <div id="right-panel">
+    <div class="panel-title" id="right-title">📋 Danh sách cạnh (đã sắp xếp)</div>
+    <div id="kruskal-panel">
+      <div id="edge-list-panel"><div id="edge-list"></div></div>
+      <div id="uf-panel">
+        <div class="uf-title">🔗 Union-Find Groups</div>
+        <div class="uf-groups" id="uf-groups"></div>
       </div>
     </div>
-    <div class="panel-title">📝 Nhật ký</div>
-    <div class="step-log" id="step-log"></div>
+    <div id="prim-panel" style="display:none;flex:1;overflow-y:auto;">
+      <div class="panel-title">✂️ Cut Visualization</div>
+      <div id="cut-panel">
+        <div class="cut-title">Crossing edges (cut property):</div>
+        <div class="cut-edges" id="cut-edges-list"></div>
+      </div>
+      <div style="padding:10px 12px;flex:1;overflow-y:auto;">
+        <div class="uf-title">✅ MST Nodes (S):</div>
+        <div id="prim-mst-nodes" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;"></div>
+        <div class="uf-title">⏳ Remaining (V-S):</div>
+        <div id="prim-rem-nodes" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
+      </div>
+    </div>
+    <div id="mst-summary" style="background:var(--surface2);border-top:1px solid var(--border);">
+      <span style="color:var(--muted);font-size:.78rem">MST Cost: </span>
+      <span class="mst-cost" id="mst-cost">—</span>
+      <span style="color:var(--muted);font-size:.78rem"> | Edges: </span>
+      <span style="color:var(--yellow);font-weight:700" id="mst-edges">0</span>
+    </div>
+    <div id="insight">
+      <div class="insight-title">💡 Greedy correctness (Cut Property)</div>
+      Với bất kỳ "cut" (S, V-S) nào, <b>cạnh nhỏ nhất qua cut</b> luôn thuộc MST. Đây là nền tảng để cả Kruskal và Prim hoạt động đúng.
+    </div>
   </div>
-  <!-- Center -->
-  <div class="center">
-    <div id="svg-container">
-      <svg id="graph-svg">
-        <defs>
-          <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L8,3 z" fill="#48bb78"/>
-          </marker>
-        </defs>
-        <g id="edges-group"></g>
-        <g id="nodes-group"></g>
-      </svg>
-    </div>
-    <div class="controls">
-      <button class="btn-play" id="btn-play">▶ Chạy</button>
-      <button class="btn-step" id="btn-step">⏭ Bước</button>
-      <button class="btn-reset" id="btn-reset">↺ Reset</button>
-      <label>Tốc độ:</label>
-      <input type="range" id="speed" min="200" max="2000" value="800" step="100">
-      <span style="margin-left:auto;font-size:0.8rem;color:#718096" id="status-bar">Nhấn Chạy để bắt đầu</span>
-    </div>
-  </div>
-  <!-- Right -->
-  <div class="right-panel">
-    <!-- Kruskal right: code -->
-    <div id="kruskal-right">
-      <div class="panel-title">💻 Kruskal (Python)</div>
-      <div class="code-panel" id="code-kruskal"></div>
-    </div>
-    <!-- Prim right: PQ + code -->
-    <div id="prim-right" class="panel-content hidden">
-      <div class="panel-title">🎯 Hàng ưu tiên (Cạnh cắt)</div>
-      <div class="pq-list" id="pq-list"></div>
-      <div class="panel-title">💻 Prim (Python)</div>
-      <div class="code-panel" id="code-prim"></div>
-    </div>
+</main>
+
+<div id="controls">
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-step">⏭ Step</button>
+  <button id="btn-reset">↺ Reset</button>
+  <label>Speed <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <div id="stats">
+    <div class="stat">MST Edges <span id="s-mstedges">0</span></div>
+    <div class="stat">Cost <span id="s-cost">0</span></div>
+    <div id="progress-wrap"><div id="progress-bar"></div></div>
   </div>
 </div>
 
 <script>
-const W=()=>document.getElementById('svg-container').clientWidth;
-const H=()=>document.getElementById('svg-container').clientHeight;
+const GRAPH={
+  nodes:[
+    {id:'A',x:120,y:190},{id:'B',x:260,y:90},{id:'C',x:260,y:290},
+    {id:'D',x:420,y:90},{id:'E',x:420,y:290},{id:'F',x:560,y:190}
+  ],
+  edges:[
+    {from:'A',to:'B',w:4},{from:'A',to:'C',w:2},{from:'B',to:'C',w:1},
+    {from:'B',to:'D',w:5},{from:'C',to:'E',w:7},{from:'D',to:'E',w:3},
+    {from:'D',to:'F',w:6},{from:'E',to:'F',w:2}
+  ]
+};
 
-let nodes=[
-  {id:'A'},{id:'B'},{id:'C'},{id:'D'},{id:'E'},{id:'F'},{id:'G'}
-];
-let edges=[
-  {from:'A',to:'B',w:7},{from:'A',to:'D',w:5},
-  {from:'B',to:'C',w:8},{from:'B',to:'D',w:9},{from:'B',to:'E',w:7},
-  {from:'C',to:'E',w:5},{from:'D',to:'E',w:15},{from:'D',to:'F',w:6},
-  {from:'E',to:'F',w:8},{from:'E',to:'G',w:9},{from:'F',to:'G',w:11},
-];
-
-function initPositions(){
-  const cx=W()/2,cy=H()/2;
-  const r=Math.min(W(),H())*0.33;
-  const layout=[
-    {id:'A',x:cx-180,y:cy-80},{id:'B',x:cx-40,y:cy-150},
-    {id:'C',x:cx+120,y:cy-80},{id:'D',x:cx-180,y:cy+80},
-    {id:'E',x:cx+40,y:cy+40},{id:'F',x:cx-40,y:cy+150},
-    {id:'G',x:cx+160,y:cy+80},
-  ];
-  layout.forEach(p=>{const n=nodes.find(n=>n.id===p.id);if(n){n.x=p.x;n.y=p.y;}});
-}
-
-// ─── State ─────────────────────────────────────────────────────────────────
-let currentTab='kruskal';
-let steps=[],stepIdx=0,playing=false,timer=null;
-let nodeColors={},edgeColors={};
-let mstEdges=[],mstWeight=0;
-
-// ─── Kruskal algorithm ─────────────────────────────────────────────────────
-let ufParent={},ufRank={};
-function ufFind(x){
-  if(ufParent[x]!==x)ufParent[x]=ufFind(ufParent[x]);
-  return ufParent[x];
-}
-function ufUnion(x,y){
-  const rx=ufFind(x),ry=ufFind(y);
-  if(rx===ry)return false;
-  if((ufRank[rx]||0)<(ufRank[ry]||0)){ufParent[rx]=ry;}
-  else if((ufRank[rx]||0)>(ufRank[ry]||0)){ufParent[ry]=rx;}
-  else{ufParent[ry]=rx;ufRank[rx]=(ufRank[rx]||0)+1;}
-  return true;
-}
-function getUFSets(){
-  const sets={};
-  nodes.forEach(n=>{
-    const root=ufFind(n.id);
-    if(!sets[root])sets[root]=[];
-    sets[root].push(n.id);
-  });
-  return Object.values(sets);
-}
-
-function buildKruskalSteps(){
-  steps=[];
-  nodes.forEach(n=>{ufParent[n.id]=n.id;ufRank[n.id]=0;});
-  const sorted=[...edges].sort((a,b)=>a.w-b.w);
-  let totalW=0,edgeCount=0;
-  steps.push({type:'init',sorted,uf:getUFSets(),dist:{},log:'Sắp xếp tất cả cạnh theo trọng số tăng dần',code:1});
-  for(const e of sorted){
-    steps.push({type:'consider',from:e.from,to:e.to,w:e.w,uf:getUFSets(),code:3,log:`Xét cạnh ${e.from}-${e.to} (w=${e.w}): kiểm tra chu trình...`});
-    const canAdd=ufFind(e.from)!==ufFind(e.to);
-    if(canAdd){
-      ufUnion(e.from,e.to);totalW+=e.w;edgeCount++;
-      steps.push({type:'accept',from:e.from,to:e.to,w:e.w,uf:getUFSets(),totalW,edgeCount,code:4,log:`✓ Thêm cạnh ${e.from}-${e.to} (w=${e.w}) vào MST! Tổng=${totalW}`});
-    } else {
-      steps.push({type:'reject',from:e.from,to:e.to,w:e.w,uf:getUFSets(),totalW,edgeCount,code:5,log:`✗ Từ chối! ${e.from} và ${e.to} đã cùng tập hợp → Chu trình!`});
-    }
-    if(edgeCount===nodes.length-1)break;
-  }
-  steps.push({type:'done',totalW,edgeCount,code:6,log:`MST hoàn thành! V-1=${nodes.length-1} cạnh, tổng trọng số=${totalW}`});
-}
-
-// ─── Prim algorithm ────────────────────────────────────────────────────────
-function buildPrimSteps(){
-  steps=[];
-  const inMST=new Set();
-  const pq=[]; // [{from,to,w}]
-  let totalW=0,edgeCount=0;
-  const startNode=nodes[0].id;
-  inMST.add(startNode);
-  steps.push({type:'prim_init',node:startNode,inMST:new Set(inMST),pq:[],totalW:0,code:1,log:`Bắt đầu từ đỉnh ${startNode}, thêm vào MST`});
-
-  // Add crossing edges
-  const addCrossing=(pqCopy)=>{
-    edges.forEach(e=>{
-      const bothDir=[{from:e.from,to:e.to,w:e.w},{from:e.to,to:e.from,w:e.w}];
-      bothDir.forEach(ed=>{
-        if(inMST.has(ed.from)&&!inMST.has(ed.to)&&!pqCopy.find(p=>p.from===ed.from&&p.to===ed.to)){
-          pqCopy.push({from:ed.from,to:ed.to,w:ed.w});
-        }
-      });
-    });
-    pqCopy.sort((a,b)=>a.w-b.w);
-  };
-
-  addCrossing(pq);
-  steps.push({type:'prim_pq',inMST:new Set(inMST),pq:[...pq],code:2,log:`Thêm các cạnh cắt từ ${startNode}: ${pq.map(p=>`${p.from}-${p.to}(${p.w})`).join(', ')}`});
-
-  while(pq.length&&inMST.size<nodes.length){
-    const best=pq.shift();
-    if(inMST.has(best.to)){
-      steps.push({type:'prim_skip',from:best.from,to:best.to,w:best.w,inMST:new Set(inMST),pq:[...pq],code:4,log:`Bỏ qua ${best.from}-${best.to}: ${best.to} đã trong MST`});
-      continue;
-    }
-    inMST.add(best.to);totalW+=best.w;edgeCount++;
-    steps.push({type:'prim_add',from:best.from,to:best.to,w:best.w,inMST:new Set(inMST),pq:[...pq],totalW,edgeCount,code:5,log:`✓ Thêm cạnh ${best.from}-${best.to} (w=${best.w}), đỉnh ${best.to} vào MST! Tổng=${totalW}`});
-    addCrossing(pq);
-    steps.push({type:'prim_pq',inMST:new Set(inMST),pq:[...pq],code:3,log:`Cập nhật hàng ưu tiên: ${pq.slice(0,3).map(p=>`${p.from}-${p.to}(${p.w})`).join(', ')}...`});
-  }
-  steps.push({type:'done',totalW,edgeCount,code:6,log:`MST hoàn thành! ${edgeCount} cạnh, tổng trọng số=${totalW}`});
-}
-
-// ─── Render edge list (Kruskal) ────────────────────────────────────────────
-function renderEdgeList(sorted, currentE, accepted, rejected){
-  const c=document.getElementById('edge-list');
-  if(!sorted){c.innerHTML='';return;}
-  c.innerHTML=sorted.map(e=>{
-    const key=e.from+'-'+e.to;
-    const isCur=currentE&&e.from===currentE.from&&e.to===currentE.to;
-    const isAcc=accepted&&accepted.has(key);
-    const isRej=rejected&&rejected.has(key);
-    return`<div class="edge-item${isCur?' current':isAcc?' accepted':isRej?' rejected':''}">
-      <span>${e.from}–${e.to}</span>
-      <span style="color:#9f7aea;font-weight:700">w=${e.w}</span>
-    </div>`;
-  }).join('');
-}
-
-function renderUF(sets){
-  const c=document.getElementById('uf-display');
-  if(!sets){c.innerHTML='';return;}
-  c.innerHTML=sets.map(set=>`<div class="uf-set">${set.map(n=>`<span class="uf-node">${n}</span>`).join('')}</div>`).join('');
-}
-
-function renderPrimPQ(pq){
-  const c=document.getElementById('pq-list');
-  if(!pq||pq.length===0){c.innerHTML='<div style="color:#718096;font-size:0.8rem;padding:4px">PQ rỗng</div>';return;}
-  c.innerHTML=pq.map((item,i)=>`
-    <div class="pq-item${i===0?' top':''}">
-      <span>${item.from}–${item.to}</span>
-      <span style="color:#9f7aea;font-weight:700">w=${item.w}</span>
-    </div>`).join('');
-}
-
-function renderCut(inMST){
-  const inIds=[...inMST].join(', ')||'-';
-  const outIds=nodes.filter(n=>!inMST.has(n.id)).map(n=>n.id).join(', ')||'-';
-  document.getElementById('in-mst-nodes').textContent=inIds;
-  document.getElementById('out-mst-nodes').textContent=outIds;
-}
-
-function updateMSTStats(w,e){
-  document.getElementById('mst-weight').textContent=w;
-  document.getElementById('mst-edges').textContent=e;
-}
-
-// ─── Code panels ───────────────────────────────────────────────────────────
-const KRUSKAL_CODE=[
-  'def kruskal(nodes, edges):',
-  '    edges.sort(key=lambda e: e.weight)',
-  '    uf = UnionFind(nodes)',
-  '    for u, v, w in edges:',
-  '        if uf.find(u) != uf.find(v):',
-  '            uf.union(u, v); mst.add(u,v,w)',
-  '        # else: reject (creates cycle)',
-  '    return mst',
-];
-const PRIM_CODE=[
-  'def prim(graph, start):',
-  '    in_mst = {start}',
-  '    pq = crossing_edges(in_mst)',
-  '    while pq:',
-  '        u,v,w = heappop(pq)',
-  '        if v in in_mst: continue',
-  '        in_mst.add(v); mst.add(u,v,w)',
-  '        pq.extend(new_crossing(v, in_mst))',
-  '    return mst',
-];
-
-function renderCode(id,line){
-  const code=id==='kruskal'?KRUSKAL_CODE:PRIM_CODE;
-  const panel=document.getElementById('code-'+id);
-  if(!panel)return;
-  panel.innerHTML=code.map((l,i)=>`<div class="code-line${i===line?' active':''}">${escHtml(l)}</div>`).join('');
-}
-
-function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
-function addLog(msg,cls){
-  const log=document.getElementById('step-log');
-  const div=document.createElement('div');div.className='entry '+(cls||'');div.textContent=msg;
-  log.appendChild(div);log.scrollTop=log.scrollHeight;
-}
-
-// ─── SVG ─────────────────────────────────────────────────────────────────
-let dragging=null,dragOffX=0,dragOffY=0;
-function getPos(id){const n=nodes.find(n=>n.id===id);return n?{x:n.x,y:n.y}:{x:0,y:0};}
-function edgeKey(f,t){const a=[f,t].sort();return a[0]+'—'+a[1];}
-function calcEP(from,to,r=22){
-  const f=getPos(from),t=getPos(to);
-  const dx=t.x-f.x,dy=t.y-f.y,len=Math.sqrt(dx*dx+dy*dy)||1;
-  return{x1:f.x+dx/len*r,y1:f.y+dy/len*r,x2:t.x-dx/len*r,y2:t.y-dy/len*r,mx:(f.x+t.x)/2,my:(f.y+t.y)/2};
-}
-
-function renderGraph(){
-  const eg=document.getElementById('edges-group');
-  const ng=document.getElementById('nodes-group');
-  eg.innerHTML='';ng.innerHTML='';
-
-  // Deduplicate for undirected
-  const drawnEdges=new Set();
-  edges.forEach(e=>{
-    const key=edgeKey(e.from,e.to);
-    if(drawnEdges.has(key))return;drawnEdges.add(key);
-    const color=edgeColors[key]||'#4a5568';
-    const w=color==='#48bb78'?4:1.5;
-    const ep=calcEP(e.from,e.to);
-    const line=document.createElementNS('http://www.w3.org/2000/svg','line');
-    line.setAttribute('x1',ep.x1);line.setAttribute('y1',ep.y1);
-    line.setAttribute('x2',ep.x2);line.setAttribute('y2',ep.y2);
-    line.setAttribute('stroke',color);line.setAttribute('stroke-width',w);
-    eg.appendChild(line);
-    const wt=document.createElementNS('http://www.w3.org/2000/svg','text');
-    wt.setAttribute('x',ep.mx);wt.setAttribute('y',ep.my-6);
-    wt.setAttribute('text-anchor','middle');wt.setAttribute('font-size','11');
-    wt.setAttribute('fill',color==='#48bb78'?'#48bb78':color==='#ecc94b'?'#ecc94b':'#a0aec0');
-    wt.textContent=e.w;
-    eg.appendChild(wt);
-    // X mark for rejected
-    if(color==='#fc8181'){
-      const x=document.createElementNS('http://www.w3.org/2000/svg','text');
-      x.setAttribute('x',ep.mx);x.setAttribute('y',ep.my+2);
-      x.setAttribute('text-anchor','middle');x.setAttribute('font-size','16');x.setAttribute('fill','#fc8181');
-      x.textContent='✕';
-      eg.appendChild(x);
-    }
-  });
-
-  // Ensure SVG defs with radial gradients exist
-  let svgEl=document.getElementById('graph-svg');
-  if(!svgEl.querySelector('defs')){
-    const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
-    const grads=[
-      {id:'kGradUn',c1:'#2d3a52',c2:'#1a2035'},
-      {id:'kGradActive',c1:'#ecc94b',c2:'#b7791f'},
-      {id:'kGradMST',c1:'#48bb78',c2:'#276749'},
-      {id:'kGradPrim',c1:'#9f7aea',c2:'#553c9a'},
-      {id:'kGradSrc',c1:'#d69e2e',c2:'#744210'},
-    ];
-    grads.forEach(({id,c1,c2})=>{
-      const rg=document.createElementNS('http://www.w3.org/2000/svg','radialGradient');
-      rg.setAttribute('id',id);rg.setAttribute('cx','35%');rg.setAttribute('cy','35%');rg.setAttribute('r','65%');
-      const s1=document.createElementNS('http://www.w3.org/2000/svg','stop');s1.setAttribute('offset','0%');s1.setAttribute('stop-color',c1);
-      const s2=document.createElementNS('http://www.w3.org/2000/svg','stop');s2.setAttribute('offset','100%');s2.setAttribute('stop-color',c2);
-      rg.appendChild(s1);rg.appendChild(s2);defs.appendChild(rg);
-    });
-    svgEl.insertBefore(defs,svgEl.firstChild);
-  }
-  const kColorToGrad={'#2d3748':'url(#kGradUn)','#ecc94b':'url(#kGradActive)','#276749':'url(#kGradMST)','#48bb78':'url(#kGradMST)','#553c9a':'url(#kGradPrim)','#744210':'url(#kGradSrc)'};
-
-  nodes.forEach(n=>{
-    const rawColor=nodeColors[n.id]||'#2d3748';
-    const fillColor=kColorToGrad[rawColor]||rawColor;
-    const isActive=rawColor==='#ecc94b';
-    const isMST=rawColor==='#276749'||rawColor==='#48bb78';
-    const isPrim=rawColor==='#553c9a';
-    const g=document.createElementNS('http://www.w3.org/2000/svg','g');
-    g.setAttribute('transform',`translate(${n.x},${n.y})`);g.style.cursor='pointer';
-    if(isActive||isPrim){
-      const ring=document.createElementNS('http://www.w3.org/2000/svg','circle');
-      ring.setAttribute('r',24);ring.setAttribute('fill','none');
-      ring.setAttribute('stroke',isPrim?'rgba(159,122,234,0.5)':'rgba(236,201,75,0.5)');
-      ring.setAttribute('stroke-width',2);
-      ring.style.animation='kWave 1.2s ease-out infinite';
-      g.appendChild(ring);
-    }
-    const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
-    circle.setAttribute('r',22);circle.setAttribute('fill',fillColor);
-    const strokeColor=isMST?'#48bb78':isPrim?'#9f7aea':isActive?'#ecc94b':'#9f7aea';
-    circle.setAttribute('stroke',strokeColor);circle.setAttribute('stroke-width',2);
-    if(isActive)circle.style.filter='drop-shadow(0 0 12px rgba(236,201,75,0.8))';
-    else if(isMST)circle.style.filter='drop-shadow(0 0 10px rgba(72,187,120,0.6))';
-    else if(isPrim)circle.style.filter='drop-shadow(0 0 10px rgba(159,122,234,0.6))';
-    const text=document.createElementNS('http://www.w3.org/2000/svg','text');
-    text.setAttribute('text-anchor','middle');text.setAttribute('dy','0.35em');
-    text.setAttribute('fill','#e2e8f0');text.setAttribute('font-size','13');text.setAttribute('font-weight','700');
-    text.textContent=n.id;
-    g.appendChild(circle);g.appendChild(text);
-    g.addEventListener('mousedown',ev=>{
-      dragging=n.id;
-      const r=document.getElementById('svg-container').getBoundingClientRect();
-      dragOffX=ev.clientX-r.left-n.x;dragOffY=ev.clientY-r.top-n.y;ev.preventDefault();
-    });
-    ng.appendChild(g);
-  });
-}
-
-document.getElementById('graph-svg').addEventListener('mousemove',ev=>{
-  if(!dragging)return;
-  const r=document.getElementById('svg-container').getBoundingClientRect();
-  const n=nodes.find(n=>n.id===dragging);
-  if(n){n.x=ev.clientX-r.left-dragOffX;n.y=ev.clientY-r.top-dragOffY;renderGraph();}
-});
-document.getElementById('graph-svg').addEventListener('mouseup',()=>{dragging=null;});
-
-// ─── Step application ─────────────────────────────────────────────────────
-let acceptedEdges=new Set(), rejectedEdges=new Set();
-let sortedEdges=[];
-let inMSTSet=new Set();
-
-function resetEdgeColors(){
-  const seen=new Set();
-  edges.forEach(e=>{const k=edgeKey(e.from,e.to);if(!seen.has(k)){seen.add(k);if(edgeColors[k]==='#ecc94b')edgeColors[k]='#4a5568';}});
-}
-
-function applyStep(s){
-  resetEdgeColors();
-  if(currentTab==='kruskal'){
-    if(s.type==='init'){
-      sortedEdges=[...s.sorted];
-      renderEdgeList(sortedEdges,null,acceptedEdges,rejectedEdges);
-      renderUF(s.uf);renderCode('kruskal',1);addLog(s.log,'');
-    }
-    if(s.type==='consider'){
-      const k=edgeKey(s.from,s.to);
-      edgeColors[k]='#ecc94b';
-      renderEdgeList(sortedEdges,{from:s.from,to:s.to},acceptedEdges,rejectedEdges);
-      renderUF(s.uf);renderCode('kruskal',s.code);addLog(s.log,'');
-    }
-    if(s.type==='accept'){
-      const k=edgeKey(s.from,s.to);
-      edgeColors[k]='#48bb78';acceptedEdges.add(k);
-      nodeColors[s.from]='#276749';nodeColors[s.to]='#276749';
-      renderEdgeList(sortedEdges,null,acceptedEdges,rejectedEdges);
-      renderUF(s.uf);updateMSTStats(s.totalW,s.edgeCount);
-      renderCode('kruskal',s.code);addLog(s.log,'good');
-    }
-    if(s.type==='reject'){
-      const k=edgeKey(s.from,s.to);
-      edgeColors[k]='#fc8181';rejectedEdges.add(k);
-      renderEdgeList(sortedEdges,null,acceptedEdges,rejectedEdges);
-      renderUF(s.uf);renderCode('kruskal',s.code);addLog(s.log,'bad');
-    }
-    if(s.type==='done'){
-      renderCode('kruskal',s.code);addLog(s.log,'good');
-      document.getElementById('status-bar').textContent='MST hoàn thành!';
-    }
-  } else {
-    // Prim
-    if(s.type==='prim_init'){
-      inMSTSet=new Set(s.inMST);
-      nodeColors[s.node]='#553c9a';
-      renderPrimPQ(s.pq);renderCut(inMSTSet);
-      renderCode('prim',s.code);addLog(s.log,'');
-    }
-    if(s.type==='prim_pq'){
-      inMSTSet=new Set(s.inMST);
-      // Highlight crossing edges
-      const seen=new Set();
-      edges.forEach(e=>{const k=edgeKey(e.from,e.to);if(!seen.has(k)){seen.add(k);
-        const fromIn=inMSTSet.has(e.from),toIn=inMSTSet.has(e.to);
-        if((fromIn&&!toIn)||(!fromIn&&toIn)){if(edgeColors[k]!=='#48bb78')edgeColors[k]='#ecc94b';}
-      }});
-      renderPrimPQ(s.pq);renderCut(inMSTSet);
-      renderCode('prim',s.code);addLog(s.log,'');
-    }
-    if(s.type==='prim_skip'){
-      renderPrimPQ(s.pq);renderCut(s.inMST);
-      renderCode('prim',s.code);addLog(s.log,'bad');
-    }
-    if(s.type==='prim_add'){
-      inMSTSet=new Set(s.inMST);
-      const k=edgeKey(s.from,s.to);
-      edgeColors[k]='#48bb78';
-      nodeColors[s.from]='#553c9a';nodeColors[s.to]='#553c9a';
-      renderPrimPQ(s.pq);renderCut(inMSTSet);
-      updateMSTStats(s.totalW,s.edgeCount);
-      renderCode('prim',s.code);addLog(s.log,'good');
-    }
-    if(s.type==='done'){
-      renderCode('prim',s.code);addLog(s.log,'good');
-      document.getElementById('status-bar').textContent='MST hoàn thành!';
-    }
-  }
-  renderGraph();
-}
-
-function step(){
-  if(stepIdx>=steps.length)return;
-  applyStep(steps[stepIdx++]);
-  document.getElementById('status-bar').textContent=`Bước ${stepIdx}/${steps.length}`;
-}
-function play(){
-  playing=!playing;
-  document.getElementById('btn-play').textContent=playing?'⏸ Dừng':'▶ Chạy';
-  if(playing)runNext();
-}
-function runNext(){
-  if(!playing||stepIdx>=steps.length){playing=false;document.getElementById('btn-play').textContent='▶ Chạy';return;}
-  step();const sp=parseInt(document.getElementById('speed').value);
-  timer=setTimeout(runNext,sp);
-}
-function reset(){
-  playing=false;clearTimeout(timer);
-  steps=[];stepIdx=0;nodeColors={};edgeColors={};
-  acceptedEdges=new Set();rejectedEdges=new Set();inMSTSet=new Set();
-  document.getElementById('btn-play').textContent='▶ Chạy';
-  document.getElementById('status-bar').textContent='Nhấn Chạy để bắt đầu';
-  document.getElementById('step-log').innerHTML='';
-  updateMSTStats(0,0);
-  renderGraph();
-  if(currentTab==='kruskal'){renderCode('kruskal',-1);renderEdgeList(null,null,null,null);renderUF(null);}
-  else{renderCode('prim',-1);renderPrimPQ([]);renderCut(new Set());}
-}
+let currentTab='kruskal',steps=[],stepIdx=0,playing=false,timer=null;
+let mstEdgesCount=0,mstCost=0;
 
 function switchTab(tab){
   currentTab=tab;
-  document.getElementById('tab-kruskal').classList.toggle('active',tab==='kruskal');
-  document.getElementById('tab-prim').classList.toggle('active',tab==='prim');
-  document.getElementById('kruskal-left').style.display=tab==='kruskal'?'block':'none';
-  document.getElementById('prim-left').classList.toggle('hidden',tab!=='prim');
-  document.getElementById('kruskal-right').style.display=tab==='kruskal'?'block':'none';
-  document.getElementById('prim-right').classList.toggle('hidden',tab!=='prim');
-  document.getElementById('algo-desc').innerHTML=tab==='kruskal'
-    ?'<strong>Kruskal\'s:</strong> Sắp xếp cạnh theo trọng số tăng dần. Thêm cạnh nhỏ nhất vào MST nếu không tạo chu trình (dùng Union-Find).'
-    :'<strong>Prim\'s:</strong> Bắt đầu từ một đỉnh, mở rộng MST ra ngoài. Mỗi bước chọn cạnh cắt (crossing edge) nhỏ nhất.';
+  document.getElementById('tab-kruskal').className='tab'+(tab==='kruskal'?' active':'');
+  document.getElementById('tab-prim').className='tab'+(tab==='prim'?' active':'');
+  document.getElementById('kruskal-panel').style.display=tab==='kruskal'?'flex':'none';
+  document.getElementById('kruskal-panel').style.flexDirection='column';
+  document.getElementById('prim-panel').style.display=tab==='prim'?'flex':'none';
+  document.getElementById('right-title').textContent=tab==='kruskal'?'📋 Danh sách cạnh (đã sắp xếp)':'✂️ Prim State';
   reset();
-  if(tab==='kruskal')buildKruskalSteps();
-  else buildPrimSteps();
 }
 
-document.getElementById('btn-play').onclick=play;
-document.getElementById('btn-step').onclick=step;
+function svgEl(t){return document.createElementNS('http://www.w3.org/2000/svg',t);}
+
+function renderGraph(){
+  const g=GRAPH,svg=document.getElementById('graph-svg');svg.innerHTML='';
+  const defs=svgEl('defs');
+  [['ng-def','#5b8def','#2c5aa0'],['ng-mst','#2ecc71','#1a9c54'],['ng-current','#ffd43b','#e67e22'],['ng-prim-s','#a78bfa','#7c5ce7']].forEach(([id,t,b])=>{
+    const rg=svgEl('radialGradient');rg.id=id;rg.setAttribute('cx','35%');rg.setAttribute('cy','30%');rg.setAttribute('r','70%');
+    const s1=svgEl('stop');s1.setAttribute('offset','0%');s1.setAttribute('stop-color',t);
+    const s2=svgEl('stop');s2.setAttribute('offset','100%');s2.setAttribute('stop-color',b);
+    rg.appendChild(s1);rg.appendChild(s2);defs.appendChild(rg);
+  });
+  ['def','mst','current','prim-s'].forEach(k=>{
+    const f=svgEl('filter');f.id='glow-'+k;
+    const fe=svgEl('feGaussianBlur');fe.setAttribute('stdDeviation','4');fe.setAttribute('result','blur');
+    const fm=svgEl('feMerge');
+    ['blur','SourceGraphic'].forEach(i=>{const fn=svgEl('feMergeNode');fn.setAttribute('in',i);fm.appendChild(fn);});
+    f.appendChild(fe);f.appendChild(fm);defs.appendChild(f);
+  });
+  [['#2a3a5c','ad'],['#2ecc71','ag'],['#ffd43b','ay'],['#fc5c7d','ar']].forEach(([fill,id])=>{
+    const m=svgEl('marker');m.id='m-'+id;m.setAttribute('viewBox','0 0 10 10');m.setAttribute('refX','5');m.setAttribute('refY','5');m.setAttribute('markerWidth','5');m.setAttribute('markerHeight','5');m.setAttribute('orient','auto-start-reverse');
+    const p=svgEl('path');p.setAttribute('d','M 0 0 L 10 5 L 0 10 z');p.setAttribute('fill',fill);m.appendChild(p);defs.appendChild(m);
+  });
+  svg.appendChild(defs);
+  const edgeG=svgEl('g');edgeG.id='edge-group';svg.appendChild(edgeG);
+  g.edges.forEach(e=>{
+    const n1=g.nodes.find(n=>n.id===e.from),n2=g.nodes.find(n=>n.id===e.to);
+    const dx=n2.x-n1.x,dy=n2.y-n1.y,len=Math.sqrt(dx*dx+dy*dy),r=22;
+    const x1=n1.x+dx/len*r,y1=n1.y+dy/len*r,x2=n2.x-dx/len*r,y2=n2.y-dy/len*r;
+    const line=svgEl('line');line.id='edge-'+e.from+'-'+e.to;
+    line.setAttribute('x1',x1);line.setAttribute('y1',y1);line.setAttribute('x2',x2);line.setAttribute('y2',y2);
+    line.setAttribute('stroke','#2a3a5c');line.setAttribute('stroke-width','2');
+    edgeG.appendChild(line);
+    const mx=(n1.x+n2.x)/2,my=(n1.y+n2.y)/2;
+    const wt=svgEl('text');wt.setAttribute('x',mx+8);wt.setAttribute('y',my-6);wt.setAttribute('font-size','12');wt.setAttribute('fill','#5b7aaa');wt.setAttribute('font-weight','800');wt.setAttribute('font-family','monospace');wt.textContent=e.w;svg.appendChild(wt);
+  });
+  const nodeG=svgEl('g');nodeG.id='node-group';svg.appendChild(nodeG);
+  g.nodes.forEach(n=>{
+    const g2=svgEl('g');g2.id='node-'+n.id;
+    const c=svgEl('circle');c.setAttribute('cx',n.x);c.setAttribute('cy',n.y);c.setAttribute('r','22');
+    c.setAttribute('fill','url(#ng-def)');c.setAttribute('filter','url(#glow-def)');c.setAttribute('stroke','rgba(255,255,255,.15)');c.setAttribute('stroke-width','1.5');g2.appendChild(c);
+    const lbl=svgEl('text');lbl.setAttribute('x',n.x);lbl.setAttribute('y',n.y+1);lbl.setAttribute('text-anchor','middle');lbl.setAttribute('dominant-baseline','middle');lbl.setAttribute('font-size','13');lbl.setAttribute('font-weight','800');lbl.setAttribute('fill','#fff');lbl.setAttribute('font-family','sans-serif');lbl.textContent=n.id;g2.appendChild(lbl);
+    nodeG.appendChild(g2);
+  });
+}
+
+function setNodeState(id,state){const c=document.querySelector('#node-'+id+' circle');if(!c)return;c.setAttribute('fill','url(#ng-'+state+')');c.setAttribute('filter','url(#glow-'+state+')');}
+function setEdgeState(from,to,state){
+  const line=document.getElementById('edge-'+from+'-'+to)||document.getElementById('edge-'+to+'-'+from);if(!line)return;
+  const m={def:{s:'#2a3a5c',w:'2',da:''},try:{s:'#ffd43b',w:'3',da:'6,3'},accept:{s:'#2ecc71',w:'5',da:''},reject:{s:'#fc5c7d',w:'2',da:'4,3'},mst:{s:'#2ecc71',w:'5',da:''},cut:{s:'#ffb347',w:'2.5',da:'5,3'}};
+  const st=m[state]||m.def;
+  line.setAttribute('stroke',st.s);line.setAttribute('stroke-width',st.w);line.setAttribute('stroke-dasharray',st.da);
+  if(state==='mst'||state==='accept'){line.style.filter='drop-shadow(0 0 6px rgba(46,204,113,0.8))';}else{line.style.filter='';}
+}
+
+// ─── KRUSKAL (Union-Find) ───────────────────────────────────────────────────
+function buildKruskalSteps(){
+  const steps=[];
+  const edges=[...GRAPH.edges].sort((a,b)=>a.w-b.w);
+  const parent={},rank={};
+  GRAPH.nodes.forEach(n=>{parent[n.id]=n.id;rank[n.id]=0;});
+  const find=x=>{if(parent[x]!==x)parent[x]=find(parent[x]);return parent[x];};
+  const union=(a,b)=>{const ra=find(a),rb=find(b);if(ra===rb)return false;if(rank[ra]<rank[rb])parent[ra]=rb;else if(rank[ra]>rank[rb])parent[rb]=ra;else{parent[rb]=ra;rank[ra]++;}return true;};
+  const getGroups=()=>{const m={};GRAPH.nodes.forEach(n=>{const r=find(n.id);m[r]=m[r]||[];m[r].push(n.id);});return Object.values(m);};
+
+  steps.push({type:'init',edges,groups:getGroups()});
+  const mstEdges=[];let mstCost=0;
+  for(const e of edges){
+    const uf=find(e.from),ut=find(e.to);
+    steps.push({type:'consider',from:e.from,to:e.to,w:e.w,gFrom:uf,gTo:ut,edges,mstEdges:[...mstEdges],groups:getGroups()});
+    if(uf!==ut){
+      union(e.from,e.to);mstEdges.push(e);mstCost+=e.w;
+      steps.push({type:'accept',from:e.from,to:e.to,w:e.w,mstEdges:[...mstEdges],mstCost,groups:getGroups(),edges});
+    } else {
+      steps.push({type:'reject',from:e.from,to:e.to,w:e.w,mstEdges:[...mstEdges],mstCost,groups:getGroups(),edges,reason:'same-component'});
+    }
+    if(mstEdges.length===GRAPH.nodes.length-1)break;
+  }
+  steps.push({type:'done',mstEdges,mstCost});
+  return steps;
+}
+
+// ─── PRIM ──────────────────────────────────────────────────────────────────
+function buildPrimSteps(){
+  const steps=[];
+  const start=GRAPH.nodes[0].id;
+  const inMST=new Set([start]),mstEdges=[],key={},prev={};
+  GRAPH.nodes.forEach(n=>{key[n.id]=Infinity;prev[n.id]=null;});
+  key[start]=0;
+  let mstCost=0;
+  steps.push({type:'init',start,inMST:[...inMST]});
+
+  while(inMST.size<GRAPH.nodes.length){
+    // find min crossing edge
+    let minE=null,minW=Infinity;
+    for(const e of GRAPH.edges){
+      const inS=inMST.has(e.from),inT=inMST.has(e.to);
+      if((inS&&!inT)||(inT&&!inS)){
+        if(e.w<minW){minW=e.w;minE=e;}
+      }
+    }
+    const crossEdges=GRAPH.edges.filter(e=>{const is=inMST.has(e.from),it=inMST.has(e.to);return(is&&!it)||(it&&!is);});
+    if(!minE)break;
+    const newNode=inMST.has(minE.from)?minE.to:minE.from;
+    steps.push({type:'cut',minEdge:minE,crossEdges,inMST:[...inMST],newNode});
+    inMST.add(newNode);mstEdges.push(minE);mstCost+=minW;
+    steps.push({type:'add-mst',edge:minE,newNode,inMST:[...inMST],mstEdges:[...mstEdges],mstCost});
+  }
+  steps.push({type:'done',mstEdges,mstCost});
+  return steps;
+}
+
+function updateEdgeList(edges,currentFrom,currentTo,mstEdges){
+  const el=document.getElementById('edge-list');el.innerHTML='';
+  edges.forEach(e=>{
+    const isCurrent=e.from===currentFrom&&e.to===currentTo;
+    const isMST=mstEdges&&mstEdges.some(m=>m.from===e.from&&m.to===e.to);
+    const isRej=!isMST&&!isCurrent&&mstEdges&&currentFrom;
+    const div=document.createElement('div');
+    div.className='edge-list-item'+(isCurrent?' current':isMST?' accepted':isRej&&edges.indexOf(e)<edges.findIndex(e2=>e2.from===currentFrom&&e2.to===currentTo)?' rejected':'');
+    div.innerHTML=`<span class="ew" style="color:${isMST?'var(--green)':isCurrent?'var(--yellow)':'var(--muted)'}">${e.w}</span><span class="en">${e.from}–${e.to}</span><span class="est">${isMST?'✅ MST':isCurrent?'🔍 Xét':'⏳'}</span>`;
+    el.appendChild(div);
+  });
+}
+function updateUFGroups(groups){
+  const el=document.getElementById('uf-groups');el.innerHTML='';
+  groups.forEach(g=>{
+    const div=document.createElement('div');div.className='uf-group';
+    div.textContent='{'+g.sort().join(',')+'}';el.appendChild(div);
+  });
+}
+function updatePrimNodes(inMST){
+  const mstEl=document.getElementById('prim-mst-nodes');
+  const remEl=document.getElementById('prim-rem-nodes');
+  mstEl.innerHTML='';remEl.innerHTML='';
+  GRAPH.nodes.forEach(n=>{
+    const span=document.createElement('span');
+    span.style.cssText='display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;font-weight:800;font-size:.85rem;';
+    if(inMST.includes(n.id)){span.style.background='linear-gradient(135deg,#a78bfa,#7c5ce7)';span.style.color='#fff';}
+    else{span.style.background='var(--surface2)';span.style.border='1px solid var(--border)';span.style.color='var(--muted)';}
+    span.textContent=n.id;
+    (inMST.includes(n.id)?mstEl:remEl).appendChild(span);
+  });
+}
+function updateCutEdges(crossEdges,minEdge){
+  const el=document.getElementById('cut-edges-list');el.innerHTML='';
+  crossEdges.forEach(e=>{
+    const isMin=e.from===minEdge?.from&&e.to===minEdge?.to;
+    const span=document.createElement('span');
+    span.className='cut-edge'+(isMin?' min':'');
+    span.textContent=`${e.from}-${e.to}(${e.w})`;el.appendChild(span);
+  });
+}
+
+function setExplain(icon,cls,html){
+  const ic=document.querySelector('#explain-viz .step-icon');ic.textContent=icon;ic.className='step-icon '+cls;
+  document.getElementById('explain-text').innerHTML=html;
+  document.getElementById('step-counter').textContent=`${stepIdx}/${steps.length}`;
+}
+function setInsight(title,html){document.getElementById('insight').innerHTML=`<div class="insight-title">${title}</div>${html}`;}
+function updateMSTStats(cost,ecount){
+  document.getElementById('mst-cost').textContent=cost||'—';
+  document.getElementById('mst-edges').textContent=ecount||'0';
+  document.getElementById('s-mstedges').textContent=ecount||'0';
+  document.getElementById('s-cost').textContent=cost||'0';
+}
+
+function applyStep(s){
+  if(!s)return;
+  if(currentTab==='kruskal') applyKruskal(s);
+  else applyPrim(s);
+}
+
+function applyKruskal(s){
+  GRAPH.edges.forEach(e=>{const l=document.getElementById('edge-'+e.from+'-'+e.to);if(l){l.setAttribute('stroke','#2a3a5c');l.setAttribute('stroke-width','2');l.setAttribute('stroke-dasharray','');l.style.filter='';}});
+  if(s.mstEdges)s.mstEdges.forEach(e=>setEdgeState(e.from,e.to,'mst'));
+
+  switch(s.type){
+    case 'init':
+      mstEdgesCount=0;mstCost=0;
+      GRAPH.nodes.forEach(n=>setNodeState(n.id,'def'));
+      updateEdgeList(s.edges,'','',[]); updateUFGroups(s.groups); updateMSTStats(0,0);
+      document.getElementById('status-display').innerHTML=`<span class="sd-idle">Kruskal: sắp xếp ${s.edges.length} cạnh theo trọng số tăng dần. Union-Find để kiểm tra chu trình.</span>`;
+      setExplain('💡','info',`<b>Kruskal:</b> sắp xếp tất cả cạnh theo trọng số tăng dần → lần lượt thêm cạnh nhỏ nhất chưa tạo chu trình vào MST.`);
+      setInsight('🔗 Union-Find','Cấu trúc Union-Find kiểm tra xem 2 đỉnh có cùng tập hợp (component) không. Nếu cùng tập → thêm cạnh sẽ tạo chu trình → bỏ qua.');
+      break;
+    case 'consider':
+      setEdgeState(s.from,s.to,'try');
+      updateEdgeList(s.edges,s.from,s.to,s.mstEdges);
+      updateUFGroups(s.groups);
+      const sameComp=s.gFrom===s.gTo;
+      document.getElementById('status-display').innerHTML=`<span class="sd-edge try">${s.from}–${s.to} (w=${s.w})</span><span class="sd-edge ${sameComp?'reject':'try'}">${s.from}∈{${s.gFrom}} | ${s.to}∈{${s.gTo}}</span>`;
+      setExplain('🔍','info',`Kruskal: xét cạnh <b>${s.from}–${s.to}</b> (w=${s.w}). ${s.from}∈{${s.gFrom}}, ${s.to}∈{${s.gTo}}. ${sameComp?'<b>Cùng tập → tạo chu trình → bỏ qua!</b>':'Khác tập → an toàn thêm vào MST.'}`);
+      break;
+    case 'accept':
+      mstEdgesCount++;mstCost=s.mstCost;
+      document.getElementById('progress-bar').style.width=(mstEdgesCount/(GRAPH.nodes.length-1)*100)+'%';
+      setEdgeState(s.from,s.to,'mst');
+      setNodeState(s.from,'mst');setNodeState(s.to,'mst');
+      updateUFGroups(s.groups);updateEdgeList(GRAPH.edges.sort((a,b)=>a.w-b.w),s.from,s.to,s.mstEdges);
+      updateMSTStats(s.mstCost,mstEdgesCount);
+      document.getElementById('status-display').innerHTML=`<span class="sd-edge accept">✅ ${s.from}–${s.to} (w=${s.w})</span><span class="sd-tag accept">Chấp nhận! Merge thành ${s.groups.length} nhóm</span>`;
+      setExplain('✅','accept',`Kruskal: xét cạnh <b>${s.from}–${s.to}</b> (w=${s.w}). ${s.from}∈{${s.groups.find(g=>g.includes(s.from))?.join(',')}}, ${s.to} ban đầu khác tập → <b>Chấp nhận! Merge thành ${s.groups.length} nhóm.</b>`);
+      setInsight('🌳 MST tiến triển',`Đã thêm cạnh <b>${s.from}–${s.to}</b> (w=${s.w}). MST hiện có ${mstEdgesCount} cạnh, cost=${s.mstCost}. Cần thêm ${GRAPH.nodes.length-1-mstEdgesCount} cạnh nữa.`);
+      break;
+    case 'reject':
+      setEdgeState(s.from,s.to,'reject');
+      updateEdgeList(GRAPH.edges.sort((a,b)=>a.w-b.w),s.from,s.to,s.mstEdges);
+      document.getElementById('status-display').innerHTML=`<span class="sd-edge reject">❌ ${s.from}–${s.to} (w=${s.w})</span><span class="sd-tag reject">Tạo chu trình! Bỏ qua.</span>`;
+      setExplain('❌','reject',`Cạnh <b>${s.from}–${s.to}</b> (w=${s.w}): ${s.from} và ${s.to} đã cùng tập hợp → thêm vào sẽ tạo chu trình → <b>bỏ qua!</b>`);
+      setInsight('🔄 Cycle Detection','Union-Find phát hiện chu trình trong O(α(n)) ≈ O(1). Đây là lý do Kruskal hiệu quả hơn DFS để kiểm tra chu trình.');
+      break;
+    case 'done':
+      GRAPH.nodes.forEach(n=>setNodeState(n.id,'mst'));
+      s.mstEdges.forEach(e=>setEdgeState(e.from,e.to,'mst'));
+      document.getElementById('progress-bar').style.width='100%';
+      updateMSTStats(s.mstCost,s.mstEdges.length);
+      document.getElementById('status-display').innerHTML=`<span style="color:var(--green);font-size:1.1rem;font-weight:700">🎉 MST hoàn tất! Kruskal: ${s.mstEdges.length} cạnh, tổng cost = ${s.mstCost}</span>`;
+      setExplain('🎉','done',`Kruskal hoàn tất! MST có <b>${s.mstEdges.length} cạnh</b>, tổng trọng số = <b>${s.mstCost}</b>. Cây khung nhỏ nhất đảm bảo nối tất cả đỉnh với chi phí tối thiểu.`);
+      setInsight('🌳 MST Proof','Kruskal đúng nhờ <b>Cut Property</b>: mỗi cạnh được thêm luôn là cạnh nhỏ nhất không tạo chu trình → là một safe edge cho MST.');
+      stopPlay();
+      break;
+  }
+}
+
+function applyPrim(s){
+  GRAPH.edges.forEach(e=>{const l=document.getElementById('edge-'+e.from+'-'+e.to);if(l){l.setAttribute('stroke','#2a3a5c');l.setAttribute('stroke-width','2');l.setAttribute('stroke-dasharray','');l.style.filter='';}});
+  if(s.mstEdges)s.mstEdges.forEach(e=>setEdgeState(e.from,e.to,'mst'));
+
+  switch(s.type){
+    case 'init':
+      mstEdgesCount=0;mstCost=0;
+      GRAPH.nodes.forEach(n=>setNodeState(n.id,'def'));
+      setNodeState(s.start,'prim-s');
+      updatePrimNodes([s.start]);
+      document.getElementById('cut-edges-list').innerHTML='';
+      updateMSTStats(0,0);
+      document.getElementById('status-display').innerHTML=`<span class="sd-idle">Prim: bắt đầu từ đỉnh ${s.start}. Mở rộng MST từng bước bằng cách chọn cạnh nhỏ nhất qua cut.</span>`;
+      setExplain('💡','info',`<b>Prim:</b> khởi đầu từ đỉnh <b>${s.start}</b>. Mỗi bước, chọn cạnh nhỏ nhất <b>crossing the cut</b> (nối S với V-S) để mở rộng MST.`);
+      setInsight('✂️ Cut Property','Cut = chia đỉnh thành 2 tập S (trong MST) và V-S (chưa). <b>Cạnh nhỏ nhất qua cut</b> luôn là safe edge → thuộc MST tối ưu.');
+      break;
+    case 'cut':
+      updatePrimNodes(s.inMST);
+      s.inMST.forEach(n=>setNodeState(n,'prim-s'));
+      updateCutEdges(s.crossEdges,s.minEdge);
+      s.crossEdges.forEach(e=>setEdgeState(e.from,e.to,'cut'));
+      if(s.minEdge)setEdgeState(s.minEdge.from,s.minEdge.to,'try');
+      const minStr=s.minEdge?`${s.minEdge.from}–${s.minEdge.to}(w=${s.minEdge.w})`:'—';
+      document.getElementById('status-display').innerHTML=`<span style="color:var(--muted)">Cut S={${s.inMST.join(',')}} vs V-S={${GRAPH.nodes.map(n=>n.id).filter(n=>!s.inMST.includes(n)).join(',')}}</span><span class="sd-edge try">${s.crossEdges.length} crossing edges</span><span class="sd-edge accept">Min: ${minStr}</span>`;
+      setExplain('✂️','info',`<b>Cut Property:</b> S={${s.inMST.join(',')}} vs V-S. ${s.crossEdges.length} crossing edges (cam). Cạnh nhỏ nhất qua cut: <b>${minStr}</b> → safe edge!`);
+      setInsight('🔑 Tại sao đúng?',`Cạnh nhỏ nhất qua cut <b>luôn</b> thuộc một MST nào đó. Prim khai thác điều này để mở rộng MST greedy một cách đúng đắn.`);
+      break;
+    case 'add-mst':
+      mstEdgesCount++;mstCost=s.mstCost;
+      document.getElementById('progress-bar').style.width=(mstEdgesCount/(GRAPH.nodes.length-1)*100)+'%';
+      s.inMST.forEach(n=>setNodeState(n,'prim-s'));
+      setNodeState(s.newNode,'mst');
+      s.mstEdges.forEach(e=>setEdgeState(e.from,e.to,'mst'));
+      updatePrimNodes(s.inMST);
+      updateMSTStats(s.mstCost,mstEdgesCount);
+      document.getElementById('status-display').innerHTML=`<span class="sd-edge accept">✅ Thêm ${s.edge.from}–${s.edge.to} (w=${s.edge.w})</span><span class="sd-tag accept">Đỉnh mới: ${s.newNode}</span>`;
+      setExplain('✅','accept',`Prim: thêm cạnh <b>${s.edge.from}–${s.edge.to}</b> (w=${s.edge.w}) vào MST. Đỉnh <b>${s.newNode}</b> được thêm vào S. MST giờ có ${mstEdgesCount} cạnh, cost=${s.mstCost}.`);
+      setInsight('🌱 Mở rộng MST',`S mở rộng thêm đỉnh <b>${s.newNode}</b>. Các crossing edges sẽ được cập nhật ở bước tiếp theo.`);
+      break;
+    case 'done':
+      GRAPH.nodes.forEach(n=>setNodeState(n.id,'mst'));
+      s.mstEdges.forEach(e=>setEdgeState(e.from,e.to,'mst'));
+      document.getElementById('progress-bar').style.width='100%';
+      updateMSTStats(s.mstCost,s.mstEdges.length);
+      updatePrimNodes(GRAPH.nodes.map(n=>n.id));
+      document.getElementById('status-display').innerHTML=`<span style="color:var(--green);font-size:1.1rem;font-weight:700">🎉 MST hoàn tất! Prim: ${s.mstEdges.length} cạnh, tổng cost = ${s.mstCost}</span>`;
+      setExplain('🎉','done',`Prim hoàn tất! MST có <b>${s.mstEdges.length} cạnh</b>, tổng trọng số = <b>${s.mstCost}</b>. Mọi đỉnh đã được nối với chi phí tối thiểu.`);
+      setInsight('🌳 Kết quả MST',`Prim và Kruskal cho cùng MST (có thể có nhiều MST nếu có trọng số bằng nhau). Kruskal tốt cho <b>sparse graph</b>, Prim tốt cho <b>dense graph</b>.`);
+      stopPlay();
+      break;
+  }
+}
+
+function getDelay(){return Math.round(1200-document.getElementById('speed').value*110);}
+function tick(){if(stepIdx>=steps.length){stopPlay();return;}applyStep(steps[stepIdx++]);if(playing)timer=setTimeout(tick,getDelay());}
+function startPlay(){if(stepIdx>=steps.length)reset();playing=true;document.getElementById('btn-play').textContent='⏸ Pause';tick();}
+function stopPlay(){playing=false;clearTimeout(timer);document.getElementById('btn-play').textContent='▶ Play';}
+function reset(){
+  stopPlay();stepIdx=0;mstEdgesCount=0;mstCost=0;
+  document.getElementById('s-mstedges').textContent='0';document.getElementById('s-cost').textContent='0';
+  document.getElementById('progress-bar').style.width='0%';
+  renderGraph();
+  steps=currentTab==='kruskal'?buildKruskalSteps():buildPrimSteps();
+  applyStep(steps[stepIdx++]);
+}
+
+document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
+document.getElementById('btn-step').onclick=()=>{stopPlay();if(stepIdx<steps.length)applyStep(steps[stepIdx++]);};
 document.getElementById('btn-reset').onclick=reset;
 
-document.getElementById('btn-add-node').onclick=function(){
-  const id=prompt('Tên đỉnh (1 chữ):','H');
-  if(id&&!nodes.find(n=>n.id===id)){
-    nodes.push({id,x:W()/2+Math.random()*100-50,y:H()/2+Math.random()*100-50});
-    reset();renderGraph();
-  }
-};
-document.getElementById('btn-add-edge').onclick=function(){
-  const f=prompt('Từ:','A');const t=prompt('Đến:','B');const w=parseInt(prompt('Trọng số:','5'));
-  if(f&&t&&!isNaN(w)){edges.push({from:f,to:t,w});reset();renderGraph();}
-};
-
-window.addEventListener('resize',()=>{initPositions();renderGraph();});
-window.addEventListener('load',()=>{
-  initPositions();
-  buildKruskalSteps();
-  renderGraph();
-  renderCode('kruskal',-1);
-  renderCode('prim',-1);
-  renderEdgeList(null,null,null,null);
-  renderUF(null);
-  renderPrimPQ([]);
-  renderCut(new Set());
-});
+renderGraph();steps=buildKruskalSteps();applyStep(steps[stepIdx++]);
 </script>
 </body>
 </html>

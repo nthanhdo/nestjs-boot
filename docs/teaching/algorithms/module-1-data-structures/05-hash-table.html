@@ -3,570 +3,334 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>05 — Bảng băm (Hash Table) | Data Structures</title>
+<title>Bảng băm (Hash Table) — Cấu trúc dữ liệu</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #0d0d1a; --panel-bg: #111128; --code-bg: #080816;
-    --accent: #ec4899; --accent2: #ff4d6d; --accent3: #ffd60a; --accent4: #00ff88;
-    --text: #e8e8f0; --text-dim: #6b6d8a; --border: #1e1e3a;
-    --node: #1a0410; --node-border: #9d174d; --node-active: #ec4899;
-    --node-found: #00ff88; --node-delete: #ff4d6d; --node-insert: #ffd60a;
-    --glow-pink: rgba(236,72,153,0.5); --glow-green: rgba(0,255,136,0.5);
-    --glow-red: rgba(255,77,109,0.5); --glow-yellow: rgba(255,214,10,0.5);
+    --bg:#0e1525;--surface:#151d32;--surface2:#1c2744;--border:#2a3a5c;
+    --text:#eef1f8;--muted:#8899bb;
+    --blue-top:#5b8def;--blue-bot:#2c5aa0;
+    --pink-top:#ff5e7a;--pink-bot:#c0143c;--pink-glow:rgba(255,94,122,0.6);
+    --orange-top:#ffb347;--orange-bot:#e67e22;--orange-glow:rgba(255,179,71,0.6);
+    --green-top:#2ecc71;--green-bot:#1a9c54;--green-glow:rgba(46,204,113,0.4);
+    --red-top:#e74c3c;--red-bot:#c0392b;--red-glow:rgba(231,76,60,0.5);
+    --accent:#a78bfa;--yellow:#ffd43b;
   }
-  body { background: var(--bg); color: var(--text); font-family: system-ui,-apple-system,sans-serif;
-    display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-  body::before { content:''; position:fixed; inset:0; pointer-events:none;
-    background: radial-gradient(ellipse at 70% 30%, rgba(236,72,153,0.04) 0%, transparent 60%); }
-
-  header { background: linear-gradient(90deg, #111128, #0d0d1a);
-    border-bottom: 1px solid var(--border); padding: 10px 20px;
-    display: flex; align-items: center; gap: 16px; flex-shrink: 0; box-shadow: 0 2px 20px rgba(0,0,0,0.5); }
-  header h1 { font-size: 1.1rem; color: var(--accent); text-shadow: 0 0 20px rgba(236,72,153,0.4); }
-  .badge { background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-    backdrop-filter: blur(10px); padding: 2px 10px; border-radius: 20px;
-    font-size: 0.75rem; color: var(--text-dim); }
-
-  .main { display: flex; flex: 1; overflow: hidden; }
-  .viz { flex: 0 0 60%; display: flex; flex-direction: column; padding: 14px; gap: 10px; overflow: hidden; }
-  .ops-bar { display: flex; gap: 8px; flex-wrap: wrap; }
-  .op-btn { background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text-dim);
-    padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 0.82rem;
-    transition: all 0.25s; }
-  .op-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 14px rgba(236,72,153,0.2); }
-  .op-btn.active { background: linear-gradient(135deg, rgba(236,72,153,0.2), rgba(236,72,153,0.06));
-    color: var(--accent); border-color: var(--accent);
-    box-shadow: 0 0 20px rgba(236,72,153,0.25); font-weight: 600; }
-  .input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .input-row label { font-size: 0.8rem; color: var(--text-dim); }
-  .input-row input[type=text] { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text);
-    padding: 6px 10px; border-radius: 8px; width: 100px; font-size: 0.85rem; }
-  .input-row input[type=number] { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text);
-    padding: 6px 10px; border-radius: 8px; width: 70px; font-size: 0.85rem; }
-  .input-row input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 12px rgba(236,72,153,0.2); }
-  .run-btn { background: linear-gradient(135deg, var(--accent), rgba(180,30,100,0.8));
-    color: #fff; border: none; padding: 6px 18px; border-radius: 8px;
-    cursor: pointer; font-weight: 700; font-size: 0.85rem;
-    transition: all 0.2s; box-shadow: 0 0 16px rgba(236,72,153,0.3); }
-  .run-btn:hover { transform: translateY(-1px); box-shadow: 0 0 24px rgba(236,72,153,0.5); }
-  .mode-toggle { display: flex; gap: 6px; align-items: center; font-size: 0.78rem; color: var(--text-dim); }
-  .mode-btn { background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text-dim);
-    padding: 4px 10px; border-radius: 8px; cursor: pointer; font-size: 0.75rem; transition: all 0.2s; }
-  .mode-btn.active { border-color: var(--accent); color: var(--accent);
-    box-shadow: 0 0 10px rgba(236,72,153,0.2); }
-
-  .canvas-area { flex: 1; background: rgba(255,255,255,0.02); border: 1px solid var(--border);
-    backdrop-filter: blur(10px); border-radius: 16px;
-    display: flex; gap: 16px; padding: 16px; overflow: hidden; position: relative; }
-  .canvas-area::before { content:''; position:absolute; inset:0; border-radius:16px;
-    background: linear-gradient(135deg, rgba(236,72,153,0.02) 0%, transparent 50%); pointer-events:none; }
-
-  /* Hash calc panel */
-  .hash-calc { width: 165px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; z-index:1; }
-  .hash-title { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
-  .hash-step { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px;
-    padding: 8px; font-family: 'Courier New',monospace; font-size: 0.75rem; transition: all 0.3s; }
-  .hash-step.active { border-color: var(--accent); background: rgba(236,72,153,0.08);
-    box-shadow: 0 0 16px rgba(236,72,153,0.15); }
-  .hash-step .hl { color: var(--accent3); font-weight: 700; }
-  .hash-step .result { color: var(--accent); font-weight: 700; font-size: 0.9rem; }
-  .hash-arrow { text-align: center; color: var(--accent); font-size: 1.1rem;
-    text-shadow: 0 0 8px var(--glow-pink); }
-
-  /* Hash table */
-  .table-section { flex: 1; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; z-index:1; }
-  .table-title { font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; }
-  .bucket-row { display: flex; align-items: center; gap: 6px; }
-  .bucket-idx { width: 24px; text-align: right; font-size: 0.72rem; color: var(--text-dim);
-    font-family: monospace; flex-shrink: 0; }
-  .bucket-cell { min-width: 64px; height: 34px;
-    background: rgba(255,255,255,0.02); border: 1px solid var(--border);
-    border-radius: 8px; display: flex; align-items: center; justify-content: center;
-    font-size: 0.78rem; font-family: monospace; transition: all 0.35s; }
-  .bucket-cell.occupied { background: linear-gradient(145deg, var(--node), #0d0208);
-    border-color: var(--node-border); color: var(--text);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
-  .bucket-cell.active-cell { border-color: var(--node-active);
-    background: linear-gradient(145deg, rgba(236,72,153,0.18), rgba(200,30,100,0.06));
-    color: var(--node-active); box-shadow: 0 0 16px var(--glow-pink); }
-  .bucket-cell.found-cell { border-color: var(--node-found);
-    background: linear-gradient(145deg, rgba(0,255,136,0.12), rgba(0,200,100,0.04));
-    color: var(--node-found); box-shadow: 0 0 16px var(--glow-green); }
-  .bucket-cell.collision { border-color: var(--accent3);
-    background: linear-gradient(145deg, rgba(255,214,10,0.1), rgba(200,160,0,0.04));
-    color: var(--accent3); animation: collisionBounce 0.4s ease; }
-  @keyframes collisionBounce { 0%{transform:scale(1)} 30%{transform:scale(1.1)} 60%{transform:scale(0.95)} 100%{transform:scale(1)} }
-  .bucket-cell.deleted { background: rgba(255,77,109,0.08); border-color: var(--accent2);
-    color: var(--accent2); text-decoration: line-through; }
-  .chain-arrow { color: var(--node-border); font-size: 0.9rem;
-    text-shadow: 0 0 8px rgba(157,23,77,0.4); }
-  .null-cell { font-size: 0.7rem; color: #2a2a40; padding: 0 6px; }
-
-  @keyframes cellIn {
-    from { opacity:0; transform:scale(0.5) translateY(-10px); }
-    60%  { opacity:1; transform:scale(1.08); }
-    to   { opacity:1; transform:scale(1); } }
-  .bucket-cell.entering { animation: cellIn 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards; }
-
-  .status-msg { background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-    backdrop-filter: blur(8px); border-radius: 10px;
-    padding: 7px 14px; font-size: 0.82rem; color: var(--text-dim); text-align: center; transition: all 0.3s; }
-  .status-msg.info { border-color: var(--accent); color: var(--accent); background: rgba(236,72,153,0.06); }
-  .status-msg.success { border-color: var(--node-found); color: var(--node-found); background: rgba(0,255,136,0.06); }
-  .status-msg.error { border-color: var(--accent2); color: var(--accent2); background: rgba(255,77,109,0.06); }
-
-  .complexity-row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .complexity-badge { background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-    backdrop-filter: blur(8px); border-radius: 10px; padding: 5px 12px; text-align: center; }
-  .complexity-badge .label { font-size: 0.65rem; color: var(--text-dim); }
-  .complexity-badge .value { font-size: 0.9rem; font-weight: 700; margin-top: 1px; }
-  .green { color: #00ff88; } .yellow { color: var(--accent3); } .red { color: var(--accent2); }
-  .complexity-badge.active-badge { border-color: var(--accent); box-shadow: 0 0 12px rgba(236,72,153,0.25); }
-
-  .code-panel { flex: 0 0 40%; background: var(--code-bg); border-left: 1px solid var(--border);
-    display: flex; flex-direction: column; overflow: hidden; }
-  .code-panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border);
-    font-size: 0.8rem; color: var(--text-dim); display: flex; gap: 8px; align-items: center;
-    background: linear-gradient(90deg, rgba(236,72,153,0.04), transparent); }
-  .code-panel-header span { color: var(--accent); font-weight: 600; font-size: 0.85rem; }
-  .code-body { flex: 1; overflow-y: auto; padding: 12px 0; font-family: 'Courier New',monospace; font-size: 0.82rem; }
-  .code-line { display: flex; padding: 3px 0; transition: background 0.25s; }
-  .code-line.highlight { background: rgba(236,72,153,0.1); border-left: 3px solid var(--accent); }
-  .ln { width: 36px; text-align: right; padding-right: 12px; color: #333; flex-shrink: 0; user-select: none; }
-  .code-text { color: #abb2bf; white-space: pre; }
-  .kw { color: #c678dd; } .fn { color: #61afef; } .cm { color: #4a4f60; font-style: italic; }
-  .num { color: #d19a66; } .str { color: #98c379; }
-
-  .controls { background: linear-gradient(90deg, var(--panel-bg), var(--bg));
-    border-top: 1px solid var(--border); padding: 10px 20px;
-    display: flex; align-items: center; gap: 16px; flex-shrink: 0; flex-wrap: wrap; }
-  .ctrl-btn { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text);
-    width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: all 0.2s; }
-  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 12px rgba(236,72,153,0.2); }
-  .speed-group { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-dim); }
-  input[type=range] { -webkit-appearance: none; width: 100px; height: 4px;
-    background: linear-gradient(90deg, var(--accent), var(--border)); border-radius: 2px; outline: none; cursor: pointer; }
-  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px;
-    background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--glow-pink); }
-  .step-info { font-size: 0.78rem; color: var(--text-dim); }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 25% 15%,rgba(91,141,239,0.07) 0%,transparent 55%),radial-gradient(ellipse at 75% 85%,rgba(167,139,250,0.05) 0%,transparent 55%);pointer-events:none;}
+  header{background:var(--surface);padding:10px 24px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border);z-index:2;flex-wrap:wrap;}
+  header h1{font-size:1.15rem;font-weight:700;background:linear-gradient(135deg,#a78bfa,#7c5ce7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+  .badge{background:linear-gradient(135deg,#2c5aa0,#5b8def);color:#fff;padding:2px 10px;border-radius:12px;font-size:.68rem;font-weight:700;}
+  .complexity{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;}
+  .cx{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:2px 9px;font-size:.72rem;color:var(--muted);}
+  .cx span{color:var(--yellow);font-weight:700;}
+  main{flex:1;display:flex;overflow:hidden;z-index:1;min-height:0;}
+  #viz{flex:1;display:flex;flex-direction:column;min-width:0;}
+  #status-display{padding:10px 20px;min-height:52px;display:flex;align-items:center;justify-content:center;gap:10px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .sd-idle{color:var(--muted);font-size:.9rem;}
+  .sd-box{display:inline-flex;align-items:center;justify-content:center;min-width:42px;height:38px;border-radius:8px;font-size:.95rem;font-weight:800;color:#fff;padding:0 10px;}
+  .sd-box.insert{background:linear-gradient(135deg,var(--orange-top),var(--orange-bot));box-shadow:0 0 12px var(--orange-glow);}
+  .sd-box.found{background:linear-gradient(135deg,var(--green-top),var(--green-bot));box-shadow:0 0 12px var(--green-glow);}
+  .sd-box.search{background:linear-gradient(135deg,var(--pink-top),var(--pink-bot));box-shadow:0 0 12px var(--pink-glow);}
+  .sd-box.hash{background:linear-gradient(135deg,#7c5ce7,#a78bfa);box-shadow:0 0 12px rgba(167,139,250,0.5);}
+  .sd-label{font-size:.8rem;color:var(--muted);}
+  .sd-arrow{font-size:1.1rem;color:var(--yellow);}
+  #explain-bar{padding:10px 24px;min-height:52px;background:linear-gradient(135deg,rgba(21,29,50,0.95),rgba(28,39,68,0.9));border-bottom:1px solid var(--border);font-size:.88rem;line-height:1.55;color:var(--text);display:flex;align-items:center;gap:12px;}
+  .step-icon{flex-shrink:0;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all 0.3s;}
+  .step-icon.info{background:rgba(91,141,239,0.15);border:1px solid rgba(91,141,239,0.3);}
+  .step-icon.hash{background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);}
+  .step-icon.insert{background:rgba(255,179,71,0.15);border:1px solid rgba(255,179,71,0.3);}
+  .step-icon.search{background:rgba(255,94,122,0.15);border:1px solid rgba(255,94,122,0.3);}
+  .step-icon.found{background:rgba(46,204,113,0.15);border:1px solid rgba(46,204,113,0.3);}
+  .step-icon.collision{background:rgba(231,76,60,0.15);border:1px solid rgba(231,76,60,0.3);}
+  #explain-text{flex:1;}
+  #explain-text b{color:var(--yellow);}
+  #explain-text code{background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.8rem;color:var(--accent);}
+  /* MAIN AREA */
+  #ht-area{flex:1;display:flex;gap:16px;padding:16px 20px;overflow:hidden;}
+  /* HASH FUNCTION PANEL */
+  #hash-fn-panel{width:200px;flex-shrink:0;background:var(--surface);border-radius:10px;border:1px solid var(--border);padding:12px;display:flex;flex-direction:column;gap:8px;}
+  .hfp-title{font-size:.72rem;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;}
+  #hash-steps{display:flex;flex-direction:column;gap:4px;}
+  .hstep{background:var(--surface2);border-radius:6px;padding:5px 8px;font-size:.75rem;color:var(--muted);border-left:3px solid var(--border);transition:all 0.3s;}
+  .hstep.active{color:var(--text);border-left-color:var(--yellow);background:rgba(255,212,59,0.05);}
+  .hstep b{color:var(--yellow);}
+  #hash-result{margin-top:4px;padding:8px;border-radius:8px;background:linear-gradient(135deg,rgba(124,92,231,0.15),rgba(167,139,250,0.1));border:1px solid rgba(167,139,250,0.3);font-size:.85rem;text-align:center;}
+  #hash-result b{color:var(--accent);font-size:1rem;}
+  /* BUCKETS */
+  #buckets-area{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;}
+  .bucket-row{display:flex;align-items:flex-start;gap:8px;}
+  .bucket-idx{width:36px;height:44px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:var(--muted);border-radius:6px;background:var(--surface2);border:1px solid var(--border);}
+  .bucket-idx.active{color:var(--yellow);border-color:var(--yellow);background:rgba(255,212,59,0.05);}
+  .bucket-slot{flex:1;min-height:44px;border-radius:8px;border:1px dashed var(--border);display:flex;align-items:center;padding:4px 8px;gap:6px;flex-wrap:wrap;transition:all 0.3s;background:var(--surface);}
+  .bucket-slot.active{border-color:var(--orange-top);background:rgba(255,179,71,0.05);}
+  .bucket-slot.found{border-color:var(--green-top);background:rgba(46,204,113,0.05);}
+  .bucket-slot.colliding{border-color:var(--red-top);background:rgba(231,76,60,0.05);animation:shake 0.4s ease;}
+  .bucket-item{display:flex;flex-direction:column;align-items:center;background:linear-gradient(135deg,var(--blue-top),var(--blue-bot));border-radius:8px;padding:5px 10px;border:2px solid rgba(255,255,255,0.1);box-shadow:0 2px 8px rgba(0,0,0,0.3);transition:all 0.3s;position:relative;}
+  .bucket-item.new-item{background:linear-gradient(135deg,var(--orange-top),var(--orange-bot));animation:bounceIn 0.5s cubic-bezier(0.34,1.56,0.64,1);}
+  .bucket-item.found-item{background:linear-gradient(135deg,var(--green-top),var(--green-bot));box-shadow:0 0 16px var(--green-glow);}
+  .bucket-item.deleting-item{animation:shrink 0.4s ease forwards;}
+  .item-key{font-size:.65rem;color:rgba(255,255,255,0.7);}
+  .item-val{font-size:.95rem;font-weight:800;color:#fff;}
+  /* COLLISION CHAIN ARROWS */
+  .chain-arrow{font-size:.85rem;color:rgba(91,141,239,0.6);align-self:center;}
+  /* CODE PANEL */
+  #code-panel{width:300px;min-width:260px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;}
+  .panel-title{padding:10px 14px;background:var(--surface2);font-size:.78rem;font-weight:600;color:var(--accent);border-bottom:1px solid var(--border);}
+  #code{flex:1;overflow-y:auto;padding:10px 0;font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:.8rem;line-height:2;}
+  .code-line{padding:0 14px;color:#5a6d8e;white-space:pre;border-left:3px solid transparent;transition:all 0.2s;}
+  .code-line.comment{color:#3a4d6e;font-style:italic;}
+  .code-line.active{background:linear-gradient(90deg,rgba(255,212,59,0.1),transparent);color:var(--yellow);border-left-color:var(--yellow);font-weight:600;}
+  #insight{padding:12px 14px;background:var(--bg);border-top:1px solid var(--border);font-size:.8rem;line-height:1.5;color:var(--muted);}
+  #insight .insight-title{color:var(--accent);font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+  #insight b{color:var(--text);}
+  /* CONTROLS */
+  #controls{background:var(--surface);padding:8px 24px;display:flex;align-items:center;gap:8px;border-top:1px solid var(--border);z-index:2;flex-wrap:wrap;}
+  button{border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:.8rem;font-weight:600;transition:all 0.2s;}
+  button:active{transform:scale(0.95);}
+  .btn-insert{background:linear-gradient(135deg,var(--orange-top),var(--orange-bot));color:#fff;}
+  .btn-search{background:linear-gradient(135deg,var(--pink-top),var(--pink-bot));color:#fff;}
+  .btn-delete{background:linear-gradient(135deg,var(--red-top),var(--red-bot));color:#fff;}
+  .btn-rst{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+  input[type=text]{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:.8rem;width:80px;font-family:monospace;}
+  label{font-size:.76rem;color:var(--muted);}
+  @keyframes bounceIn{0%{transform:scale(0);opacity:0}70%{transform:scale(1.1);opacity:1}100%{transform:scale(1);opacity:1}}
+  @keyframes shrink{0%{transform:scale(1);opacity:1}100%{transform:scale(0);opacity:0}}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+  @keyframes hashCalc{0%{opacity:0;transform:translateY(5px)}100%{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
 <header>
-  <h1>#️⃣ Bảng băm — Hash Table</h1>
-  <span class="badge">Module 1 · Cấu trúc dữ liệu</span>
-  <span class="badge">O(1) average · Collision handling</span>
+  <h1>#️⃣ Bảng băm (Hash Table)</h1>
+  <span class="badge">DATA STRUCTURE</span>
+  <div class="complexity">
+    <div class="cx">Insert Avg <span>O(1)</span></div>
+    <div class="cx">Search Avg <span>O(1)</span></div>
+    <div class="cx">Delete Avg <span>O(1)</span></div>
+    <div class="cx">Worst <span>O(n)</span></div>
+  </div>
 </header>
-
-<div class="main">
-  <div class="viz">
-    <div class="ops-bar">
-      <button class="op-btn active" onclick="selectOp('insert',event)">➕ Insert</button>
-      <button class="op-btn" onclick="selectOp('search',event)">🔍 Search</button>
-      <button class="op-btn" onclick="selectOp('delete',event)">🗑 Delete</button>
-      <div class="mode-toggle">
-        Collision:
-        <button class="mode-btn active" id="modeChaining" onclick="setMode('chaining')">Chaining</button>
-        <button class="mode-btn" id="modeProbing" onclick="setMode('probing')">Linear Probing</button>
-      </div>
+<main>
+  <div id="viz">
+    <div id="status-display"><span class="sd-idle">Nhập key để thực hiện thao tác</span></div>
+    <div id="explain-bar">
+      <div class="step-icon info" id="step-icon">💡</div>
+      <div id="explain-text">Hash Table dùng <b>hàm băm</b> để tính index từ key. Truy cập gần như <b>O(1)</b>! Khi 2 key cùng hash → <b>collision</b> → xử lý bằng chaining.</div>
     </div>
-    <div class="input-row">
-      <label>Key:</label>
-      <input type="text" id="inpKey" value="alice" maxlength="10">
-      <label>Value:</label>
-      <input type="number" id="inpVal" value="42">
-      <button class="run-btn" onclick="runOperation()">▶ Chạy</button>
-    </div>
-    <div class="canvas-area">
-      <div class="hash-calc">
-        <div class="hash-title">Hash Function</div>
-        <div class="hash-step" id="hs0">
-          <div class="hl" id="hs0key">key = "?"</div>
+    <div id="ht-area">
+      <div id="hash-fn-panel">
+        <div class="hfp-title">🔧 Hash Function</div>
+        <div id="hash-steps">
+          <div class="hstep" id="hs-1">1. Lấy key: "<span id="hs-key">—</span>"</div>
+          <div class="hstep" id="hs-2">2. Tính charCode sum</div>
+          <div class="hstep" id="hs-3">3. Modulo <span id="hs-size">8</span></div>
+          <div class="hstep" id="hs-4">4. index = <span id="hs-idx">—</span></div>
         </div>
-        <div class="hash-arrow">↓</div>
-        <div class="hash-step" id="hs1">
-          <div style="color:var(--text-dim);font-size:0.7rem">charCode sum:</div>
-          <div class="hl" id="hs1sum">?</div>
-        </div>
-        <div class="hash-arrow">↓</div>
-        <div class="hash-step" id="hs2">
-          <div style="color:var(--text-dim);font-size:0.7rem">% tableSize (7):</div>
-          <div class="result" id="hs2idx">index = ?</div>
-        </div>
-        <div style="height:8px"></div>
-        <div class="complexity-row" style="flex-direction:column;gap:6px;">
-          <div class="complexity-badge active-badge"><div class="label">Avg Case</div><div class="value green">O(1)</div></div>
-          <div class="complexity-badge"><div class="label">Worst (all collide)</div><div class="value red">O(n)</div></div>
-        </div>
+        <div id="hash-result"><b id="hr-val">—</b><br><span style="font-size:.68rem;color:var(--muted);">hash index</span></div>
       </div>
-      <div class="table-section">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div class="table-title" id="tableTitle">Hash Table (Chaining)</div>
-        </div>
-        <div id="hashTableDisplay"></div>
-        <div class="status-msg" id="statusMsg">Nhập key/value và nhấn ▶ Chạy</div>
-      </div>
+      <div id="buckets-area"></div>
     </div>
   </div>
-  <div class="code-panel">
-    <div class="code-panel-header">📄 Pseudocode — <span id="codeTitle">Hash Insert</span></div>
-    <div class="code-body" id="codeBody"></div>
+  <div id="code-panel">
+    <div class="panel-title">📝 Pseudocode</div>
+    <div id="code"></div>
+    <div id="insight">
+      <div class="insight-title">💡 Tại sao Hash Table nhanh?</div>
+      Không cần duyệt. Key → hash → index → truy cập trực tiếp. <b>Load factor</b> &lt; 0.7 để tránh collision nhiều. JavaScript Object = Hash Table!
+    </div>
   </div>
+</main>
+<div id="controls">
+  <label>Key: <input type="text" id="key-input" value="name" maxlength="8"></label>
+  <label>Value: <input type="text" id="val-input" value="Alice" maxlength="8"></label>
+  <button class="btn-insert" onclick="opInsert()">➕ Insert</button>
+  <button class="btn-search" onclick="opSearch()">🔍 Search</button>
+  <button class="btn-delete" onclick="opDelete()">🗑 Delete</button>
+  <button class="btn-rst" onclick="initHT()">↺ Reset</button>
 </div>
-
-<div class="controls">
-  <button class="ctrl-btn" onclick="stepBack()">⏮</button>
-  <button class="ctrl-btn" id="btnPlay" onclick="togglePlay()">▶</button>
-  <button class="ctrl-btn" onclick="stepForward()">⏭</button>
-  <button class="ctrl-btn" onclick="resetAll()">🔄</button>
-  <div class="speed-group">🐢 <input type="range" id="speedSlider" min="1" max="5" value="3"> 🐇</div>
-  <div class="step-info" id="stepInfo">Bước 0 / 0</div>
-</div>
-
 <script>
-const TABLE_SIZE = 7;
-let collisionMode = 'chaining';
-let currentOp = 'insert';
-let steps = [], stepIdx = -1, playing = false, playTimer = null;
-const speedMap = { 1:1400, 2:1000, 3:650, 4:380, 5:200 };
+const TABLE_SIZE=8;
+let table=new Array(TABLE_SIZE).fill(null).map(()=>[]); // chaining
+let busy=false;
 
-let chainingTable = Array.from({length:TABLE_SIZE},()=>[]);
-let probingTable  = new Array(TABLE_SIZE).fill(null);
-
-function initTable() {
-  chainingTable = Array.from({length:TABLE_SIZE},()=>[]);
-  probingTable  = new Array(TABLE_SIZE).fill(null);
-  const seeds = [['bob',10],['cat',20],['dog',30],['eve',40]];
-  seeds.forEach(([k,v]) => {
-    const h = hashKey(k);
-    if (collisionMode==='chaining') chainingTable[h].push({key:k,val:v});
-    else {
-      let idx = h;
-      while (probingTable[idx]!==null && probingTable[idx]!=='DELETED') idx=(idx+1)%TABLE_SIZE;
-      probingTable[idx]={key:k,val:v};
-    }
-  });
+function hashFn(key) {
+  let h=0;
+  for(const ch of key) h+=ch.charCodeAt(0);
+  return h%TABLE_SIZE;
 }
 
-function hashKey(key) {
-  let sum = 0;
-  for (let i=0; i<key.length; i++) sum += key.charCodeAt(i);
-  return sum % TABLE_SIZE;
-}
-function hashSum(key) {
-  let sum = 0;
-  for (let i=0; i<key.length; i++) sum += key.charCodeAt(i);
-  return sum;
-}
-
-const codes = {
-  insert_chaining: { title:'Insert (Chaining) — O(1) avg', lines:[
-    ['cm','// Insert với Separate Chaining'],
-    ['kw','function ','fn','insert','(table, key, value):'],
-    ['cm','  // Tính hash index'],
-    ['','  index = hash(key) % tableSize'],
-    ['cm','  // Chèn vào đầu linked list của bucket'],
-    ['','  node = ','kw','new ','','Node(key, value)'],
-    ['','  table[index].prepend(node)'],
-    ['kw','  return ','cm','"// O(1) avg — O(n) worst"'],
-  ]},
-  insert_probing: { title:'Insert (Linear Probing) — O(1) avg', lines:[
-    ['cm','// Insert với Open Addressing'],
-    ['kw','function ','fn','insert','(table, key, value):'],
-    ['','  index = hash(key) % tableSize'],
-    ['','  start = index'],
-    ['kw','  while ','','table[index] ≠ null:'],
-    ['cm','    // Ô đã dùng → thử ô tiếp theo'],
-    ['','    index = (index + 1) % tableSize'],
-    ['','    ','kw','if ','','index == start: ','kw','throw ','str','"Full"'],
-    ['','  table[index] = {key, value}'],
-    ['kw','  return ','cm','"// O(1) avg"'],
-  ]},
-  search_chaining: { title:'Search (Chaining) — O(1) avg', lines:[
-    ['cm','// Search với Chaining'],
-    ['kw','function ','fn','search','(table, key):'],
-    ['','  index = hash(key) % tableSize'],
-    ['cm','  // Duyệt linked list tại bucket'],
-    ['kw','  for ','','node in table[index]:'],
-    ['','    ','kw','if ','','node.key == key:'],
-    ['kw','      return ','','node.value'],
-    ['kw','  return ','','null ','cm','// không thấy'],
-  ]},
-  search_probing: { title:'Search (Linear Probing) — O(1) avg', lines:[
-    ['cm','// Search với Open Addressing'],
-    ['kw','function ','fn','search','(table, key):'],
-    ['','  index = hash(key) % tableSize'],
-    ['kw','  while ','','table[index] ≠ null:'],
-    ['','    ','kw','if ','','table[index].key == key:'],
-    ['kw','      return ','','table[index].value'],
-    ['cm','    // Bỏ qua "DELETED" tombstone'],
-    ['','    index = (index + 1) % tableSize'],
-    ['kw','  return ','','null'],
-  ]},
-  delete_chaining: { title:'Delete (Chaining) — O(1) avg', lines:[
-    ['cm','// Delete với Chaining'],
-    ['kw','function ','fn','delete','(table, key):'],
-    ['','  index = hash(key) % tableSize'],
-    ['kw','  for ','','node in table[index]:'],
-    ['','    ','kw','if ','','node.key == key:'],
-    ['','      table[index].remove(node)'],
-    ['kw','      return ','','true'],
-    ['kw','  return ','','false'],
-  ]},
-  delete_probing: { title:'Delete (Linear Probing) — tombstone', lines:[
-    ['cm','// Delete với Probing — dùng tombstone'],
-    ['kw','function ','fn','delete','(table, key):'],
-    ['','  index = hash(key) % tableSize'],
-    ['kw','  while ','','table[index] ≠ null:'],
-    ['','    ','kw','if ','','table[index].key == key:'],
-    ['cm','      // Đánh dấu DELETED (tombstone)'],
-    ['','      table[index] = "DELETED"'],
-    ['kw','      return ','','true'],
-    ['','    index = (index + 1) % tableSize'],
-    ['kw','  return ','','false'],
-  ]}
-};
-
-function renderCode(op, hl=-1) {
-  const key = op + '_' + collisionMode;
-  const c = codes[key] || codes[op+'_chaining'];
-  document.getElementById('codeTitle').textContent = c.title;
-  const body = document.getElementById('codeBody');
-  body.innerHTML = '';
-  c.lines.forEach((parts,i) => {
-    const div = document.createElement('div');
-    div.className = 'code-line'+(i===hl?' highlight':'');
-    const ln = document.createElement('span'); ln.className='ln'; ln.textContent=i+1;
-    const txt = document.createElement('span'); txt.className='code-text';
-    let html='';
-    for(let j=0;j<parts.length;j+=2){const cls=parts[j],cnt=parts[j+1]||''; html+=cls?`<span class="${cls}">${cnt}</span>`:cnt;}
-    txt.innerHTML=html; div.appendChild(ln); div.appendChild(txt);
-    body.appendChild(div);
-    if(i===hl) div.scrollIntoView({block:'nearest'});
-  });
+function initHT() {
+  table=new Array(TABLE_SIZE).fill(null).map(()=>[]);
+  busy=false;
+  // seed some data
+  const seeds=[{k:'name',v:'Alice'},{k:'age',v:'25'},{k:'city',v:'HCM'},{k:'lang',v:'JS'}];
+  seeds.forEach(s=>{const i=hashFn(s.k);table[i].push({key:s.k,val:s.v});});
+  renderTable();
+  showStatus('idle');
+  setExplain('💡','info','Hash Table dùng <b>hàm băm</b> để tính index từ key. Truy cập gần như <b>O(1)</b>! Khi 2 key cùng hash → <b>collision</b> → xử lý bằng chaining.');
+  setInsight('💡 Tại sao Hash Table nhanh?','Không cần duyệt. Key → hash → index → truy cập trực tiếp. <b>Load factor</b> &lt; 0.7 để tránh collision nhiều. JavaScript Object = Hash Table!');
+  setCode(['// Hash Function','hash(key) {','  let h = 0;','  for (const c of key)','    h += c.charCodeAt(0);','  return h % TABLE_SIZE;','}','// Insert O(1) avg','insert(key, val) {','  const i = this.hash(key);','  this.table[i].push({key,val});','}'],-1);
+  clearHashSteps();
 }
 
-function renderHashTable(highlights={}) {
-  const container = document.getElementById('hashTableDisplay');
-  container.innerHTML = '';
-  document.getElementById('tableTitle').textContent = `Hash Table (${collisionMode==='chaining'?'Chaining':'Linear Probing'})`;
-
-  if (collisionMode === 'chaining') {
-    for (let i=0; i<TABLE_SIZE; i++) {
-      const row = document.createElement('div'); row.className='bucket-row';
-      const idx = document.createElement('div'); idx.className='bucket-idx'; idx.textContent=i;
-      row.appendChild(idx);
-      const hl = highlights[i] || '';
-      const bc = document.createElement('div'); bc.className='bucket-cell'+(chainingTable[i].length?' occupied':'');
-      if (hl==='active') bc.classList.add('active-cell');
-      if (hl==='found')  bc.classList.add('found-cell');
-      if (hl==='collision') bc.classList.add('collision');
-      bc.textContent = chainingTable[i].length ? `[${i}]` : 'empty';
-      row.appendChild(bc);
-      chainingTable[i].forEach((node, ni) => {
-        const arr = document.createElement('span'); arr.className='chain-arrow'; arr.textContent=' →';
-        const nc = document.createElement('div'); nc.className='bucket-cell occupied';
-        const nodeHl = highlights[`${i}_${ni}`] || '';
-        if (nodeHl==='active') nc.classList.add('active-cell');
-        if (nodeHl==='found')  nc.classList.add('found-cell');
-        if (nodeHl==='deleted') nc.classList.add('deleted');
-        nc.textContent = `${node.key}:${node.val}`;
-        row.appendChild(arr); row.appendChild(nc);
+function renderTable(activeIdx=-1, state='', foundKey='') {
+  const area=document.getElementById('buckets-area');
+  area.innerHTML='';
+  table.forEach((bucket,i)=>{
+    const row=document.createElement('div');
+    row.className='bucket-row';
+    const idx=document.createElement('div');
+    idx.className='bucket-idx'+(i===activeIdx?' active':'');
+    idx.textContent=i;
+    const slot=document.createElement('div');
+    slot.className='bucket-slot'+(i===activeIdx?' '+state:'');
+    if(bucket.length===0){
+      slot.innerHTML='<span style="font-size:.72rem;color:var(--border)">—empty—</span>';
+    } else {
+      bucket.forEach((item,j)=>{
+        if(j>0){const arr=document.createElement('span');arr.className='chain-arrow';arr.textContent='→';slot.appendChild(arr);}
+        const bi=document.createElement('div');
+        bi.className='bucket-item'+(item.isNew?' new-item':'')+(item.key===foundKey&&i===activeIdx?' found-item':'')+(item.isDeleting?' deleting-item':'');
+        const k=document.createElement('div');k.className='item-key';k.textContent=item.key;
+        const v=document.createElement('div');v.className='item-val';v.textContent=item.val;
+        bi.appendChild(k);bi.appendChild(v);slot.appendChild(bi);
       });
-      const nl = document.createElement('span'); nl.className='null-cell'; nl.textContent='→ null';
-      row.appendChild(nl);
-      container.appendChild(row);
     }
+    row.appendChild(idx);row.appendChild(slot);area.appendChild(row);
+  });
+}
+
+function clearHashSteps() {
+  ['hs-1','hs-2','hs-3','hs-4'].forEach(id=>document.getElementById(id).className='hstep');
+  document.getElementById('hs-key').textContent='—';
+  document.getElementById('hs-idx').textContent='—';
+  document.getElementById('hr-val').textContent='—';
+}
+
+async function animateHash(key) {
+  clearHashSteps();
+  document.getElementById('hs-key').textContent=key;
+  await delay(200);
+  document.getElementById('hs-1').className='hstep active';
+  await delay(300);
+  let h=0;
+  for(const ch of key) h+=ch.charCodeAt(0);
+  document.getElementById('hs-2').className='hstep active';
+  document.getElementById('hs-2').innerHTML=`2. sum = <b>${h}</b>`;
+  await delay(400);
+  document.getElementById('hs-3').className='hstep active';
+  document.getElementById('hs-3').innerHTML=`3. ${h} % ${TABLE_SIZE}`;
+  await delay(400);
+  const idx=h%TABLE_SIZE;
+  document.getElementById('hs-4').className='hstep active';
+  document.getElementById('hs-idx').textContent=idx;
+  document.getElementById('hr-val').textContent=idx;
+  return idx;
+}
+
+function showStatus(t,...a) {
+  const d=document.getElementById('status-display');
+  if(t==='idle'){d.innerHTML='<span class="sd-idle">Nhập key để thực hiện thao tác</span>';return;}
+  if(t==='hash') d.innerHTML=`<span class="sd-label">hash("${a[0]}")</span><span class="sd-arrow">→</span><span class="sd-box hash">[${a[1]}]</span>`;
+  if(t==='insert') d.innerHTML=`<span class="sd-label">INSERT</span><span class="sd-box insert">"${a[0]}"</span><span class="sd-arrow">→</span><span class="sd-box insert">[${a[1]}]</span>`;
+  if(t==='found') d.innerHTML=`<span class="sd-label">FOUND</span><span class="sd-box found">"${a[0]}"</span><span class="sd-label">= ${a[1]} @ bucket</span><span class="sd-box found">[${a[2]}]</span>`;
+  if(t==='search') d.innerHTML=`<span class="sd-label">SEARCH</span><span class="sd-box search">"${a[0]}"</span><span class="sd-arrow">→</span><span class="sd-label">bucket</span><span class="sd-box hash">[${a[1]}]</span>`;
+  if(t==='done') d.innerHTML=`<span style="color:var(--green-top);font-weight:700">✅ ${a[0]}</span>`;
+  if(t==='err') d.innerHTML=`<span style="color:var(--red-top);font-weight:700">❌ ${a[0]}</span>`;
+}
+function setExplain(icon,cls,html){document.getElementById('step-icon').textContent=icon;document.getElementById('step-icon').className='step-icon '+cls;document.getElementById('explain-text').innerHTML=html;}
+function setInsight(title,html){document.getElementById('insight').innerHTML=`<div class="insight-title">${title}</div>${html}`;}
+function setCode(lines,active){document.getElementById('code').innerHTML=lines.map((l,i)=>`<div class="code-line${l.trim().startsWith('//')?' comment':''}${i===active?' active':''}">${l}</div>`).join('');}
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+
+async function opInsert() {
+  if(busy)return;busy=true;
+  const key=document.getElementById('key-input').value.trim()||'key';
+  const val=document.getElementById('val-input').value.trim()||'val';
+  setExplain('🔧','hash',`Tính hash("${key}") để tìm bucket...`);
+  const idx=await animateHash(key);
+  showStatus('hash',key,idx);
+  await delay(300);
+  const bucket=table[idx];
+  const exists=bucket.findIndex(e=>e.key===key);
+  if(exists>=0){
+    // update
+    bucket[exists].val=val;
+    renderTable(idx,'found',key);
+    setExplain('✅','found',`Key "${key}" đã tồn tại ở bucket <b>[${idx}]</b>. Cập nhật value = "${val}".`);
+    showStatus('done',`Update "${key}" = "${val}" tại [${idx}]`);
   } else {
-    for (let i=0; i<TABLE_SIZE; i++) {
-      const row = document.createElement('div'); row.className='bucket-row';
-      const idx = document.createElement('div'); idx.className='bucket-idx'; idx.textContent=i;
-      row.appendChild(idx);
-      const cell = probingTable[i];
-      const hl = highlights[i] || '';
-      const bc = document.createElement('div'); bc.className='bucket-cell';
-      if (cell && cell!=='DELETED') { bc.classList.add('occupied'); bc.textContent=`${cell.key}:${cell.val}`; }
-      else if (cell==='DELETED') { bc.classList.add('deleted'); bc.textContent='DELETED'; }
-      else { bc.textContent='empty'; }
-      if (hl==='active') bc.classList.add('active-cell');
-      if (hl==='found')  bc.classList.add('found-cell');
-      if (hl==='collision') bc.classList.add('collision');
-      row.appendChild(bc);
-      container.appendChild(row);
+    const collision=bucket.length>0;
+    if(collision){
+      renderTable(idx,'colliding');
+      setExplain('💥','collision',`Collision! Bucket <b>[${idx}]</b> đã có dữ liệu. Dùng <b>chaining</b>: thêm vào linked list của bucket này.`);
+      setInsight('💥 Collision!',`Khi 2 key có cùng hash index → collision. <b>Chaining</b>: mỗi bucket là linked list. <b>Open Addressing</b>: tìm slot trống khác. Chaining phổ biến hơn!`);
+      await delay(500);
     }
+    bucket.push({key,val,isNew:true});
+    renderTable(idx,collision?'colliding':'active');
+    showStatus('insert',key,idx);
+    setExplain('➕','insert',`Insert ("${key}","${val}") vào bucket <b>[${idx}]</b>${collision?'. Chaining: thêm vào cuối danh sách':''}. O(1) average!`);
+    await delay(700);
+    bucket[bucket.length-1].isNew=false;
+    renderTable(idx);
   }
+  busy=false;
 }
 
-function setHashCalc(key='?', sum='?', idx='?', activeStep=-1) {
-  document.getElementById('hs0key').textContent = `key = "${key}"`;
-  document.getElementById('hs1sum').textContent = sum==='?' ? '?' : `Σ charCode = ${sum}`;
-  document.getElementById('hs2idx').textContent = idx==='?' ? 'index = ?' : `index = ${sum} % 7 = ${idx}`;
-  ['hs0','hs1','hs2'].forEach((id,i)=>{
-    document.getElementById(id).classList.toggle('active', i===activeStep);
-  });
-}
-
-function buildSteps(op, key, val) {
-  steps = [];
-  const sum = hashSum(key);
-  const idx = hashKey(key);
-
-  steps.push({ highlights:{}, calcStep:-1, calcKey:'?', calcSum:'?', calcIdx:'?', code:-1, msg:`Bắt đầu ${op} key="${key}"` });
-  steps.push({ highlights:{}, calcStep:0, calcKey:key, calcSum:'?', calcIdx:'?', code:2, msg:`Bước 1: Nhận key = "${key}"` });
-  steps.push({ highlights:{}, calcStep:1, calcKey:key, calcSum:sum, calcIdx:'?', code:3, msg:`Bước 2: Tính tổng charCode = ${sum}` });
-  steps.push({ highlights:{[idx]:'active'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:3, msg:`Bước 3: index = ${sum} % 7 = ${idx}` });
-
-  if (op === 'insert') {
-    if (collisionMode === 'chaining') {
-      const hasCollision = chainingTable[idx].length > 0;
-      if (hasCollision) {
-        steps.push({ highlights:{[idx]:'collision'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:5, msg:`⚠ Collision! bucket[${idx}] đã có ${chainingTable[idx].length} node — dùng chaining` });
-      }
-      const nc = chainingTable.map(b=>[...b]);
-      nc[idx] = [{key,val}, ...nc[idx]];
-      steps.push({ table:nc, highlights:{[idx]:'active',[`${idx}_0`]:'active'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:6, msg:`Thêm node "${key}:${val}" vào đầu linked list bucket[${idx}]` });
-      steps.push({ table:nc, highlights:{[idx]:'found',[`${idx}_0`]:'found'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:7, msg:`✓ Insert thành công — O(1) average` });
-      chainingTable = nc;
-    } else {
-      let probe = idx, probeCount = 0;
-      while (probingTable[probe] !== null && probingTable[probe] !== 'DELETED' && probeCount < TABLE_SIZE) {
-        steps.push({ highlights:{[probe]:'collision'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:5, msg:`⚠ Ô [${probe}] đã dùng! Linear probing → thử ô [${(probe+1)%TABLE_SIZE}]` });
-        probe = (probe + 1) % TABLE_SIZE; probeCount++;
-      }
-      const np = [...probingTable]; np[probe] = {key,val};
-      steps.push({ ptable:np, highlights:{[probe]:'active'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:8, msg:`Ô [${probe}] trống → ghi vào` });
-      steps.push({ ptable:np, highlights:{[probe]:'found'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:9, msg:`✓ Insert tại [${probe}] thành công` });
-      probingTable = np;
-    }
-  } else if (op === 'search') {
-    if (collisionMode === 'chaining') {
-      steps.push({ highlights:{[idx]:'active'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:3, msg:`Đến bucket[${idx}], duyệt linked list` });
-      let found = false;
-      chainingTable[idx].forEach((node,ni) => {
-        const h = {[idx]:'active',[`${idx}_${ni}`]:'active'};
-        if (node.key === key) {
-          steps.push({ highlights:{...h,[`${idx}_${ni}`]:'found'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:5, msg:`✓ Tìm thấy "${key}" = ${node.val}` });
-          found = true;
-        } else {
-          steps.push({ highlights:h, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:4, msg:`"${node.key}" ≠ "${key}", tiếp tục` });
-        }
-      });
-      if (!found) steps.push({ highlights:{}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:7, msg:`✗ Không tìm thấy "${key}"` });
-    } else {
-      let probe = idx, probeCount = 0;
-      while (probingTable[probe] !== null && probeCount < TABLE_SIZE) {
-        const cell = probingTable[probe];
-        if (cell !== 'DELETED' && cell.key === key) {
-          steps.push({ highlights:{[probe]:'found'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:5, msg:`✓ Tìm thấy "${key}" tại [${probe}] = ${cell.val}` });
-          break;
-        }
-        steps.push({ highlights:{[probe]:'active'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:3, msg:`[${probe}]: ${cell==='DELETED'?'DELETED':cell?.key||'empty'} ≠ "${key}", probe tiếp` });
-        probe = (probe+1)%TABLE_SIZE; probeCount++;
-      }
-    }
-  } else if (op === 'delete') {
-    if (collisionMode === 'chaining') {
-      let found = false;
-      chainingTable[idx].forEach((node,ni) => {
-        if (node.key === key) {
-          steps.push({ highlights:{[idx]:'active',[`${idx}_${ni}`]:'active'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:4, msg:`Tìm thấy "${key}" tại bucket[${idx}][${ni}]` });
-          const nc = chainingTable.map(b=>[...b]);
-          nc[idx].splice(ni,1);
-          steps.push({ table:nc, highlights:{[idx]:'active'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:5, msg:`✓ Xóa node "${key}" khỏi linked list` });
-          chainingTable = nc; found = true;
-        }
-      });
-      if (!found) steps.push({ highlights:{}, code:7, msg:`✗ Không tìm thấy "${key}" để xóa` });
-    } else {
-      let probe = idx, probeCount = 0, found = false;
-      while (probingTable[probe] !== null && probeCount < TABLE_SIZE) {
-        const cell = probingTable[probe];
-        if (cell !== 'DELETED' && cell.key === key) {
-          steps.push({ highlights:{[probe]:'active'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:5, msg:`Tìm thấy "${key}" tại [${probe}] — đánh dấu DELETED (tombstone)` });
-          const np = [...probingTable]; np[probe]='DELETED';
-          steps.push({ ptable:np, highlights:{[probe]:'active'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:6, msg:`✓ [${probe}] = "DELETED" — search vẫn hoạt động đúng` });
-          probingTable = np; found = true; break;
-        }
-        probe=(probe+1)%TABLE_SIZE; probeCount++;
-      }
-      if (!found) steps.push({ highlights:{}, code:9, msg:`✗ Không tìm thấy "${key}"` });
-    }
+async function opSearch() {
+  if(busy)return;busy=true;
+  const key=document.getElementById('key-input').value.trim()||'key';
+  setExplain('🔧','hash',`Tính hash("${key}") để tìm bucket...`);
+  const idx=await animateHash(key);
+  showStatus('search',key,idx);
+  renderTable(idx,'active');
+  await delay(400);
+  const bucket=table[idx];
+  const found=bucket.find(e=>e.key===key);
+  if(found){
+    renderTable(idx,'found',key);
+    showStatus('found',key,found.val,idx);
+    setExplain('✅','found',`Tìm thấy! Key "${key}" ở bucket <b>[${idx}]</b>, value = "${found.val}". O(1) average!`);
+    setInsight('✅ Tìm thấy O(1)!',`hash("${key}") = ${idx} → truy cập trực tiếp. Dù bảng có 1 triệu entry cũng vẫn O(1). <b>Load factor</b> thấp = ít collision = nhanh hơn.`);
+  } else {
+    setExplain('❌','search',`Bucket <b>[${idx}]</b> không có key "${key}". Không tìm thấy!`);
+    showStatus('err',`Không tìm thấy "${key}"`);
+    renderTable(idx,'active');
   }
+  await delay(1500);
+  renderTable();
+  busy=false;
 }
 
-function applyStep(idx) {
-  if (idx<0||idx>=steps.length) return;
-  const s = steps[idx];
-  if (s.table) chainingTable = s.table;
-  if (s.ptable) probingTable = s.ptable;
-  renderHashTable(s.highlights||{});
-  setHashCalc(s.calcKey||'?', s.calcSum||'?', s.calcIdx||'?', s.calcStep??-1);
-  renderCode(currentOp, s.code);
-  const msg = document.getElementById('statusMsg');
-  msg.textContent = s.msg||'';
-  msg.className = 'status-msg'+(s.msg?.startsWith('✓')?' success':s.msg?.startsWith('✗')?' error':' info');
-  document.getElementById('stepInfo').textContent = `Bước ${idx+1} / ${steps.length}`;
-}
-
-function stepForward() { if(stepIdx<steps.length-1){stepIdx++;applyStep(stepIdx);}else stopPlay(); }
-function stepBack()    { if(stepIdx>0){stepIdx--;applyStep(stepIdx);} }
-function togglePlay()  { playing?stopPlay():startPlay(); }
-function startPlay() {
-  playing=true; document.getElementById('btnPlay').textContent='⏸';
-  function tick() {
-    if(stepIdx<steps.length-1){stepIdx++;applyStep(stepIdx);
-      playTimer=setTimeout(tick,speedMap[document.getElementById('speedSlider').value]);
-    } else stopPlay();
+async function opDelete() {
+  if(busy)return;busy=true;
+  const key=document.getElementById('key-input').value.trim()||'key';
+  setExplain('🔧','hash',`Tính hash("${key}") để tìm bucket...`);
+  const idx=await animateHash(key);
+  showStatus('search',key,idx);
+  renderTable(idx,'active');
+  await delay(400);
+  const bucket=table[idx];
+  const fi=bucket.findIndex(e=>e.key===key);
+  if(fi>=0){
+    bucket[fi].isDeleting=true;
+    renderTable(idx,'found',key);
+    setExplain('🗑','insert',`Xóa key "${key}" khỏi bucket <b>[${idx}]</b>. O(1) average!`);
+    await delay(400);
+    bucket.splice(fi,1);
+    renderTable();
+    showStatus('done',`Xóa "${key}" khỏi [${idx}] thành công`);
+  } else {
+    setExplain('❌','search',`Không tìm thấy key "${key}" để xóa.`);
+    showStatus('err',`Không tìm thấy "${key}"`);
+    renderTable();
   }
-  tick();
-}
-function stopPlay() { playing=false;document.getElementById('btnPlay').textContent='▶';clearTimeout(playTimer); }
-
-function setMode(mode) {
-  collisionMode = mode;
-  document.getElementById('modeChaining').classList.toggle('active',mode==='chaining');
-  document.getElementById('modeProbing').classList.toggle('active',mode==='probing');
-  resetAll();
+  busy=false;
 }
 
-function selectOp(op, e) {
-  currentOp = op;
-  document.querySelectorAll('.op-btn').forEach(b=>b.classList.remove('active'));
-  e.target.classList.add('active');
-  resetAll();
-}
-
-function runOperation() {
-  stopPlay();
-  initTable();
-  const key = document.getElementById('inpKey').value.trim() || 'test';
-  const val = parseInt(document.getElementById('inpVal').value) || 99;
-  buildSteps(currentOp, key, val);
-  stepIdx = -1;
-  renderHashTable({});
-  setHashCalc();
-  renderCode(currentOp,-1);
-  document.getElementById('statusMsg').textContent='Nhấn ⏭ để từng bước';
-  document.getElementById('statusMsg').className='status-msg';
-  document.getElementById('stepInfo').textContent=`Bước 0 / ${steps.length}`;
-}
-
-function resetAll() {
-  stopPlay();
-  initTable(); steps=[]; stepIdx=-1;
-  renderHashTable({});
-  setHashCalc();
-  renderCode(currentOp,-1);
-  document.getElementById('statusMsg').textContent='Nhập key/value và nhấn ▶ Chạy';
-  document.getElementById('statusMsg').className='status-msg';
-  document.getElementById('stepInfo').textContent='Bước 0 / 0';
-}
-
-initTable();
-renderHashTable({});
-renderCode('insert',-1);
+initHT();
 </script>
 </body>
 </html>

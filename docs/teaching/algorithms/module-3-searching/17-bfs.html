@@ -3,828 +3,552 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>17 - Tìm Kiếm Theo Chiều Rộng (BFS)</title>
+<title>BFS — Tìm kiếm theo chiều rộng</title>
 <style>
+  :root {
+    --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+    --text: #eef1f8; --muted: #8899bb;
+    --node-default: #2c5aa0; --node-default-stroke: #5b8def;
+    --node-visiting: #e9c46a; --node-visiting-glow: rgba(233,196,106,0.7);
+    --node-visited: #00b4d8; --node-visited-glow: rgba(0,180,216,0.4);
+    --node-found: #2ecc71; --node-found-glow: rgba(46,204,113,0.6);
+    --wave-color: rgba(0,180,216,0.3);
+    --path-color: #ffd43b;
+    --edge-default: #2a3a5c; --edge-tree: #00b4d8; --edge-cross: #e9c46a;
+    --accent: #a78bfa; --yellow: #ffd43b;
+    --queue-bg: rgba(0,180,216,0.12);
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', sans-serif; background: #0a0c14; color: #e0e0e0; min-height: 100vh; }
+  body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  body::before { content:''; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 20%, rgba(0,180,216,0.07) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(46,204,113,0.05) 0%, transparent 50%); pointer-events: none; }
 
-  @keyframes wavePulse {
-    0%   { r: 22; opacity: 0.9; stroke-width: 3; }
-    100% { r: 44; opacity: 0; stroke-width: 1; }
+  header { background: var(--surface); padding: 10px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); z-index: 2; }
+  header h1 { font-size: 1.15rem; font-weight: 700; background: linear-gradient(135deg,#00b4d8,#2ecc71); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .badge { background: linear-gradient(135deg,#0096c7,#00b4d8); color: #fff; padding: 2px 10px; border-radius: 12px; font-size: .68rem; font-weight: 700; }
+  .complexity { display: flex; gap: 6px; margin-left: auto; }
+  .cx { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 9px; font-size: .72rem; color: var(--muted); }
+  .cx span { color: var(--yellow); font-weight: 700; }
+
+  main { flex: 1; display: flex; overflow: hidden; z-index: 1; min-height: 0; }
+  #viz { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+  #status-display { padding: 8px 20px; min-height: 52px; display: flex; align-items: center; gap: 10px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; overflow: hidden; }
+  .sd-idle { color: var(--muted); font-size: .9rem; }
+  .sd-label { font-size: .72rem; color: var(--muted); white-space: nowrap; }
+  .wave-level { display: flex; gap: 5px; align-items: center; }
+  .wave-node { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 5px; font-weight: 800; font-size: .8rem; animation: fadeIn 0.25s ease; }
+  .wn-current { background: var(--node-visiting); color: #1a1a2e; box-shadow: 0 0 8px var(--node-visiting-glow); }
+  .wn-visited { background: var(--node-visited); color: #fff; }
+  .wn-found { background: var(--node-found); color: #fff; box-shadow: 0 0 10px var(--node-found-glow); }
+  .level-badge { background: rgba(0,180,216,0.15); border: 1px solid rgba(0,180,216,0.3); border-radius: 5px; padding: 2px 7px; font-size: .7rem; color: var(--node-visited); font-weight: 700; white-space: nowrap; }
+
+  #explain-viz {
+    padding: 10px 24px; min-height: 52px;
+    background: linear-gradient(135deg,rgba(21,29,50,0.95),rgba(28,39,68,0.9));
+    border-bottom: 1px solid var(--border);
+    font-size: .88rem; line-height: 1.55; color: var(--text);
+    display: flex; align-items: center; gap: 12px;
   }
-  @keyframes edgeDraw {
-    from { stroke-dashoffset: 300; }
-    to { stroke-dashoffset: 0; }
-  }
-  @keyframes nodeGlow {
-    0%,100% { filter: drop-shadow(0 0 6px rgba(249,168,37,0.5)); }
-    50% { filter: drop-shadow(0 0 22px rgba(249,168,37,1)); }
-  }
-  @keyframes queueSlideIn {
-    from { opacity: 0; transform: translateX(18px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-  @keyframes queueSlideOut {
-    from { opacity: 1; transform: translateX(0); }
-    to { opacity: 0; transform: translateX(-18px) scale(0.9); }
-  }
-  @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes waveDelay {
-    0%,100% { filter: drop-shadow(0 0 4px rgba(128,203,196,0.3)); }
-    50% { filter: drop-shadow(0 0 16px rgba(128,203,196,0.9)); }
-  }
-  @keyframes pathGlow {
-    0%,100% { stroke-width: 4; filter: drop-shadow(0 0 4px rgba(255,213,79,0.6)); }
-    50% { stroke-width: 6; filter: drop-shadow(0 0 14px rgba(255,213,79,1)); }
-  }
+  #explain-viz .step-icon { flex-shrink:0; width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transition:all 0.3s; }
+  #explain-viz .step-icon.visit { background:rgba(233,196,106,0.15); border:1px solid rgba(233,196,106,0.3); }
+  #explain-viz .step-icon.enqueue { background:rgba(0,180,216,0.15); border:1px solid rgba(0,180,216,0.3); }
+  #explain-viz .step-icon.wave { background:rgba(46,204,113,0.1); border:1px solid rgba(46,204,113,0.2); }
+  #explain-viz .step-icon.found { background:rgba(46,204,113,0.15); border:1px solid rgba(46,204,113,0.3); }
+  #explain-viz .step-icon.info { background:rgba(0,180,216,0.15); border:1px solid rgba(0,180,216,0.3); }
+  #explain-text { flex:1; }
+  #explain-text b { color:var(--yellow); }
+  #explain-text code { background:var(--surface2); padding:1px 5px; border-radius:3px; font-family:monospace; font-size:.8rem; color:var(--accent); }
+  #step-counter { font-size:.72rem; color:var(--muted); white-space:nowrap; }
 
-  h1 { text-align: center; padding: 18px; font-size: 1.5rem; background: linear-gradient(135deg, #80cbc4, #26a69a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .subtitle { text-align: center; color: #607d8b; margin-bottom: 16px; font-size: 0.9rem; }
+  #graph-queue-area { flex:1; display:flex; overflow:hidden; }
+  #graph-area { flex:1; position:relative; }
+  #graph-svg { width:100%; height:100%; }
 
-  .layout { display: grid; grid-template-columns: 1fr 320px; gap: 16px; padding: 0 16px 20px; max-width: 1200px; margin: 0 auto; }
-  .left-panel { display: flex; flex-direction: column; gap: 12px; }
+  .node-circle { transition: fill 0.35s, stroke 0.35s; }
+  .node-label { font-family: -apple-system,'Segoe UI',sans-serif; font-weight: 800; font-size: 13px; fill: #fff; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+  .node-dist { font-family: -apple-system,'Segoe UI',sans-serif; font-size: 9px; fill: rgba(255,255,255,0.6); text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+  .edge-line { stroke-width: 1.5; transition: stroke 0.35s, stroke-width 0.35s; }
+  .wave-ring { fill: none; stroke: var(--node-visited); stroke-width: 2; animation: waveExpand 0.8s ease-out forwards; }
+  .path-edge { stroke: var(--path-color); stroke-width: 3; stroke-dasharray: 6 3; filter: drop-shadow(0 0 4px rgba(255,212,59,0.6)); animation: pathGlow 1s ease infinite; }
 
-  .card { background: linear-gradient(145deg, #1a1d27, #151821); border-radius: 14px; padding: 16px; border: 1px solid #252836; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
-  .card-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 2px; color: #80cbc4; margin-bottom: 12px; }
+  /* QUEUE PANEL */
+  #queue-panel { width: 180px; background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+  .panel-title { padding: 10px 14px; background: var(--surface2); font-size: .78rem; font-weight: 600; color: var(--accent); border-bottom: 1px solid var(--border); }
+  #queue-display { flex:1; padding: 8px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; justify-content: flex-start; }
+  .queue-item { background: var(--queue-bg); border: 1px solid rgba(0,180,216,0.35); border-radius: 7px; padding: 5px 10px; font-size: .82rem; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: space-between; animation: queueIn 0.25s ease both; }
+  .queue-item.front { border-color: var(--node-visiting); background: rgba(233,196,106,0.15); color: var(--node-visiting); }
+  .queue-item.out { animation: queueOut 0.2s ease-in forwards; }
+  .q-dist { font-size: .68rem; color: var(--muted); }
+  .queue-empty { color: var(--muted); font-size: .78rem; text-align: center; padding: 8px; }
+  .fifo-note { padding: 8px 10px; border-top: 1px solid var(--border); font-size: .68rem; color: var(--muted); line-height: 1.5; }
 
-  .btn { padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s; }
-  .btn-teal { background: linear-gradient(135deg, #00695c, #00796b); color: #fff; box-shadow: 0 2px 10px rgba(0,105,92,0.4); }
-  .btn-teal:hover { transform: translateY(-1px); }
-  .btn-green { background: linear-gradient(135deg, #2e7d32, #388e3c); color: #fff; }
-  .btn-green:hover { transform: translateY(-1px); }
-  .btn-gray { background: #1e2130; color: #b0bec5; border: 1px solid #252836; }
-  .btn-gray:hover { background: #252836; }
-  .btn-orange { background: linear-gradient(135deg, #bf360c, #e64a19); color: #fff; }
-  .btn-sm { padding: 5px 10px; font-size: 0.79rem; }
+  #bottom-bar { display:flex; align-items:center; background:var(--surface); border-top:1px solid var(--border); }
+  #legend { flex:1; display:flex; gap:12px; padding:7px 20px; font-size:.74rem; color:var(--muted); flex-wrap:wrap; }
+  .leg { display:flex; align-items:center; gap:5px; }
+  .leg-dot { width:12px; height:12px; border-radius:50%; }
+  .leg-line { width:20px; height:2px; border-radius:1px; }
+  #progress-wrap { width:160px; height:5px; background:var(--surface2); border-radius:3px; margin-right:20px; overflow:hidden; }
+  #progress-bar { height:100%; width:0%; border-radius:3px; background:linear-gradient(90deg,var(--accent),var(--node-found)); transition:width 0.4s; }
 
-  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .speed-row { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-  .speed-row label { font-size: 0.78rem; color: #78909c; }
-  input[type=range] { accent-color: #80cbc4; width: 90px; }
+  #code-panel { width:280px; min-width:240px; background:var(--surface); border-left:1px solid var(--border); display:flex; flex-direction:column; }
+  #code { flex:1; overflow-y:auto; padding:10px 0; font-family:'SF Mono','Fira Code',Consolas,monospace; font-size:.78rem; line-height:1.9; }
+  .code-line { padding:0 12px; color:#5a6d8e; white-space:pre; border-left:3px solid transparent; transition:all 0.2s; }
+  .code-line.comment { color:#3a4d6e; font-style:italic; }
+  .code-line.active { background:linear-gradient(90deg,rgba(255,212,59,0.1),transparent); color:var(--yellow); border-left-color:var(--yellow); font-weight:600; }
+  #insight { padding:12px 14px; background:var(--bg); border-top:1px solid var(--border); font-size:.78rem; line-height:1.5; color:var(--muted); }
+  #insight .insight-title { color:var(--accent); font-weight:700; font-size:.7rem; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; }
+  #insight b { color:var(--text); }
 
-  .mode-tabs { display: flex; gap: 4px; margin-bottom: 12px; }
-  .mode-tab { padding: 6px 16px; border-radius: 8px; border: 1px solid #2e3347; background: #1e2130; color: #78909c; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
-  .mode-tab.active { background: linear-gradient(135deg, #00695c, #00796b); border-color: #80cbc4; color: #fff; box-shadow: 0 0 12px rgba(0,105,92,0.4); }
+  #controls { background:var(--surface); padding:8px 24px; display:flex; align-items:center; gap:10px; border-top:1px solid var(--border); z-index:2; flex-wrap:wrap; }
+  button { border:none; border-radius:8px; padding:7px 14px; cursor:pointer; font-size:.8rem; font-weight:600; transition:all 0.2s; }
+  button:active { transform:scale(0.95); }
+  #btn-play { background:linear-gradient(135deg,#00b894,#05c46b); color:#fff; min-width:85px; }
+  #btn-step { background:linear-gradient(135deg,#7c5ce7,#a78bfa); color:#fff; }
+  #btn-reset,#btn-new { background:var(--surface2); color:var(--muted); border:1px solid var(--border); }
+  label { font-size:.76rem; color:var(--muted); }
+  input[type=range] { accent-color:var(--accent); width:80px; }
+  select { background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:5px; padding:3px 6px; font-size:.76rem; }
+  #stats { display:flex; gap:8px; margin-left:auto; }
+  .stat { background:var(--surface2); padding:4px 10px; border-radius:6px; font-size:.8rem; color:var(--muted); border:1px solid var(--border); }
+  .stat span { color:var(--yellow); font-weight:800; }
 
-  /* GRAPH */
-  #graphSvg { width: 100%; background: #0d1018; border-radius: 12px; border: 1px solid #1e2130; cursor: pointer; }
-  .gnode-unvisited circle { fill: url(#bfsGradUn); stroke: #37474f; stroke-width: 2.5; }
-  .gnode-unvisited text { fill: #78909c; }
-  .gnode-inqueue circle { fill: url(#bfsGradQ); stroke: #ffd54f; stroke-width: 3; }
-  .gnode-inqueue text { fill: #000; font-weight: 900; }
-  .gnode-visited circle { fill: url(#bfsGradVis); stroke: #42a5f5; stroke-width: 2.5; }
-  .gnode-visited text { fill: #fff; }
-  .gnode-start circle { fill: url(#bfsGradStart); stroke: #80cbc4; stroke-width: 3; }
-  .gnode-start text { fill: #fff; }
-  .gnode-target circle { fill: url(#bfsGradTarget); stroke: #ef5350; stroke-width: 3; }
-  .gnode-target text { fill: #fff; }
-  .gnode-path circle { fill: url(#bfsGradPath); stroke: #ffd54f; stroke-width: 3; }
-  .gnode-path text { fill: #000; font-weight: 900; }
-
-  .gedge { stroke: #2e3347; stroke-width: 2; fill: none; transition: stroke 0.35s, stroke-width 0.35s; }
-  .gedge-tree { stroke: #80cbc4; stroke-width: 3; stroke-dasharray: 300; animation: edgeDraw 0.5s ease-out forwards; }
-  .gedge-path { stroke: #ffd54f; stroke-width: 5; animation: pathGlow 1.2s ease-in-out infinite; }
-
-  /* GRID */
-  #gridCanvas { border-radius: 10px; border: 1px solid #1e2130; display: block; cursor: crosshair; }
-
-  /* QUEUE VIZ */
-  .queue-outer { overflow-x: auto; padding: 4px 0; }
-  .queue-container { display: flex; gap: 5px; min-width: max-content; }
-  .queue-item {
-    background: #1e2130; border: 1px solid #80cbc4; border-radius: 8px; padding: 5px 12px;
-    font-size: 0.84rem; font-weight: 700; color: #80cbc4;
-    animation: queueSlideIn 0.25s ease;
-    transition: all 0.3s;
-  }
-  .queue-item.front { background: linear-gradient(135deg, #00695c, #00796b); border-color: #80cbc4; color: #fff; box-shadow: 0 0 12px rgba(0,105,92,0.5); }
-  .queue-item.label { background: transparent; border: none; color: #37474f; font-size: 0.74rem; padding: 5px 4px; animation: none; }
-  .queue-empty { color: #37474f; font-size: 0.8rem; padding: 8px; }
-
-  /* LEVEL ORDER */
-  .levels-container { display: flex; flex-direction: column; gap: 6px; }
-  .level-row { display: flex; align-items: center; gap: 8px; }
-  .level-label { font-size: 0.72rem; color: #80cbc4; width: 60px; }
-  .level-nodes { display: flex; gap: 5px; }
-  .level-badge { background: #1e2130; border: 1px solid #42a5f5; border-radius: 6px; padding: 2px 10px; font-size: 0.8rem; color: #42a5f5; }
-  .level-badge.current-level { background: linear-gradient(135deg, #1565c0, #0d47a1); border-color: #80cbc4; color: #fff; animation: waveDelay 0.8s ease-in-out; }
-
-  .comp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .comp-item { background: #1e2130; border-radius: 10px; padding: 10px; border-left: 3px solid; }
-  .comp-item.tc { border-color: #ef5350; } .comp-item.sc { border-color: #80cbc4; }
-  .comp-label { font-size: 0.7rem; color: #78909c; }
-  .comp-val { font-size: 1rem; font-weight: 700; margin-top: 3px; font-family: monospace; }
-  .comp-item.tc .comp-val { color: #ef5350; } .comp-item.sc .comp-val { color: #80cbc4; }
-
-  .explanation-box { background: #1e2130; border-radius: 12px; padding: 12px; min-height: 52px; border-left: 3px solid #80cbc4; font-size: 0.87rem; line-height: 1.7; }
-
-  .right-panel { display: flex; flex-direction: column; gap: 12px; }
-  .code-panel { background: #141720; border-radius: 14px; padding: 16px; border: 1px solid #1e2130; font-family: 'Courier New', monospace; font-size: 0.79rem; }
-  .code-line { padding: 3px 10px; border-radius: 6px; line-height: 1.7; white-space: pre; transition: background 0.25s, transform 0.2s; }
-  .code-line.active { background: linear-gradient(135deg, #00695c, #004d40); color: #fff; transform: translateX(4px); box-shadow: 0 0 12px rgba(0,105,92,0.4); }
-  .kw { color: #ce93d8; } .fn { color: #80cbc4; } .cm { color: #37474f; } .num { color: #ffcc02; }
-
-  .trace-log { max-height: 160px; overflow-y: auto; }
-  .trace-log::-webkit-scrollbar { width: 4px; }
-  .trace-log::-webkit-scrollbar-thumb { background: #2e3347; border-radius: 2px; }
-  .trace-entry { font-size: 0.77rem; padding: 4px 0; border-bottom: 1px solid #1e2130; color: #78909c; animation: slideDown 0.2s ease; }
-  .trace-entry.enq { color: #80cbc4; }
-  .trace-entry.deq { color: #42a5f5; }
-  .trace-entry.path { color: #ffd54f; font-weight: 600; }
-
-  select { background: #1e2130; border: 1px solid #2e3347; color: #e0e0e0; padding: 6px 10px; border-radius: 8px; font-size: 0.85rem; }
-  .graph-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-
-  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: #78909c; }
-  .legend-dot { width: 12px; height: 12px; border-radius: 4px; }
+  @keyframes waveExpand { 0%{r:20;opacity:0.8;stroke-width:3} 100%{r:50;opacity:0;stroke-width:1} }
+  @keyframes queueIn { 0%{opacity:0;transform:translateX(16px)} 100%{opacity:1;transform:translateX(0)} }
+  @keyframes queueOut { 0%{opacity:1;transform:translateX(0)} 100%{opacity:0;transform:translateX(-16px)} }
+  @keyframes fadeIn { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
+  @keyframes pathGlow { 0%,100%{stroke-width:3;opacity:0.8} 50%{stroke-width:5;opacity:1} }
+  @keyframes foundGlow { 0%,100%{filter:drop-shadow(0 0 8px var(--node-found-glow))} 50%{filter:drop-shadow(0 0 24px var(--node-found-glow))} }
+  @keyframes wavefront { 0%,100%{filter:drop-shadow(0 0 5px var(--node-visited-glow))} 50%{filter:drop-shadow(0 0 18px var(--node-visited-glow))} }
 </style>
 </head>
 <body>
-<h1>🌊 Tìm Kiếm Theo Chiều Rộng — BFS (Breadth-First Search)</h1>
-<p class="subtitle">Khám phá theo từng "lớp" (level) — Queue — Đảm bảo đường đi ngắn nhất</p>
+<header>
+  <h1>🌊 BFS — Breadth-First Search</h1>
+  <span class="badge">GRAPH</span>
+  <div class="complexity">
+    <div class="cx">Time <span>O(V+E)</span></div>
+    <div class="cx">Space <span>O(V)</span></div>
+    <div class="cx">Cấu trúc <span>Queue</span></div>
+    <div class="cx">Đường ngắn nhất <span>✓</span></div>
+  </div>
+</header>
+<main>
+  <div id="viz">
+    <div id="status-display">
+      <span class="sd-idle">Nhấn Play để bắt đầu BFS</span>
+    </div>
 
-<div class="layout">
-  <div class="left-panel">
+    <div id="explain-viz">
+      <div class="step-icon info">💡</div>
+      <div id="explain-text">BFS (Breadth-First Search) duyệt theo chiều rộng — thăm tất cả node cùng khoảng cách trước khi đi xa hơn. Dùng Queue (FIFO). Đảm bảo tìm đường ngắn nhất trong đồ thị không trọng số.</div>
+      <div id="step-counter"></div>
+    </div>
 
-    <div class="card">
-      <div class="card-title">⚙ Cấu hình</div>
-      <div class="mode-tabs">
-        <button class="mode-tab active" onclick="setMode('graph')">📊 Đồ thị</button>
-        <button class="mode-tab" onclick="setMode('grid')">🔲 Mê cung (Grid)</button>
+    <div id="graph-queue-area">
+      <div id="graph-area">
+        <svg id="graph-svg" xmlns="http://www.w3.org/2000/svg"></svg>
       </div>
-      <div id="graphConfig" class="graph-controls">
-        <select id="graphSelect" onchange="loadPreset()">
-          <option value="0">Đồ thị mẫu 1 (7 đỉnh)</option>
-          <option value="1">Đồ thị có chu trình</option>
-          <option value="2">Cây nhị phân</option>
-          <option value="3">Đồ thị tuyến tính</option>
-        </select>
-        <button class="btn btn-gray btn-sm" onclick="generateRandom()">🎲 Ngẫu nhiên</button>
-        <button class="btn btn-orange btn-sm" onclick="setTargetMode()">🎯 Chọn Target</button>
-        <span id="modeHint" style="font-size:0.75rem;color:#78909c">Click đỉnh để đặt Start</span>
-      </div>
-      <div id="gridConfig" style="display:none">
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <span style="font-size:0.78rem;color:#78909c">Click: </span>
-          <button class="btn btn-green btn-sm" onclick="gridMode='start'">🚀 Start</button>
-          <button class="btn btn-orange btn-sm" onclick="gridMode='end'">🎯 End</button>
-          <button class="btn btn-gray btn-sm" onclick="gridMode='wall'">🧱 Wall</button>
-          <button class="btn btn-gray btn-sm" onclick="clearGrid()">🗑 Clear</button>
-          <button class="btn btn-teal btn-sm" onclick="generateMaze()">🎲 Mê cung</button>
+      <div id="queue-panel">
+        <div class="panel-title">🚦 Queue (FIFO)</div>
+        <div id="queue-display"><div class="queue-empty">Queue rỗng</div></div>
+        <div class="fifo-note">
+          <b>FIFO:</b> vào trước → ra trước<br>
+          ← OUT &nbsp;&nbsp; IN →<br>
+          BFS đảm bảo đường ngắn nhất
         </div>
       </div>
     </div>
 
-    <div class="card" id="graphCard" style="padding:12px">
-      <div class="card-title">📊 Đồ thị — wavefront đồng tâm BFS</div>
-      <svg id="graphSvg" height="300">
-        <defs>
-          <radialGradient id="bfsGradUn" cx="40%" cy="35%"><stop offset="0%" stop-color="#2a2e40"/><stop offset="100%" stop-color="#1a1d27"/></radialGradient>
-          <radialGradient id="bfsGradQ" cx="40%" cy="35%"><stop offset="0%" stop-color="#ffca28"/><stop offset="100%" stop-color="#f57f17"/></radialGradient>
-          <radialGradient id="bfsGradVis" cx="40%" cy="35%"><stop offset="0%" stop-color="#1976d2"/><stop offset="100%" stop-color="#0d47a1"/></radialGradient>
-          <radialGradient id="bfsGradStart" cx="40%" cy="35%"><stop offset="0%" stop-color="#00897b"/><stop offset="100%" stop-color="#00695c"/></radialGradient>
-          <radialGradient id="bfsGradTarget" cx="40%" cy="35%"><stop offset="0%" stop-color="#e53935"/><stop offset="100%" stop-color="#b71c1c"/></radialGradient>
-          <radialGradient id="bfsGradPath" cx="40%" cy="35%"><stop offset="0%" stop-color="#ffca28"/><stop offset="100%" stop-color="#f57f17"/></radialGradient>
-        </defs>
-      </svg>
-      <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#1e2130;border:1px solid #37474f"></div>Chưa thăm</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#f9a825"></div>Trong queue</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#1565c0"></div>Đã thăm</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#ffd54f;border:2px solid #ffd54f"></div>Đường ngắn nhất</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#c62828"></div>Target</div>
+    <div id="bottom-bar">
+      <div id="legend">
+        <div class="leg"><div class="leg-dot" style="background:var(--node-default-stroke)"></div>Chưa thăm</div>
+        <div class="leg"><div class="leg-dot" style="background:var(--node-visiting)"></div>Đang xét</div>
+        <div class="leg"><div class="leg-dot" style="background:var(--node-visited)"></div>Đã thăm</div>
+        <div class="leg"><div class="leg-dot" style="background:var(--node-found)"></div>Đích ✓</div>
+        <div class="leg"><div class="leg-line" style="background:var(--node-visited)"></div>Tree edge</div>
+        <div class="leg"><div class="leg-line" style="background:var(--path-color)"></div>Đường ngắn nhất</div>
       </div>
+      <div id="progress-wrap"><div id="progress-bar"></div></div>
     </div>
-
-    <div class="card" id="gridCard" style="display:none;padding:12px">
-      <div class="card-title">🔲 Grid BFS — Wavefront Expansion</div>
-      <canvas id="gridCanvas" width="560" height="280"></canvas>
-      <div class="legend" style="margin-top:8px">
-        <div class="legend-item"><div class="legend-dot" style="background:#00695c"></div>Start</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#c62828"></div>End</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#455a64"></div>Tường</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#1565c0"></div>Đã thăm</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#ffd54f"></div>Đường đi</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">🎮 Điều khiển</div>
-      <div class="controls">
-        <button class="btn btn-green" id="playPauseBtn" onclick="togglePlayPause()">▶ Chạy</button>
-        <button class="btn btn-gray" onclick="stepForward()">⏭ Bước</button>
-        <button class="btn btn-gray" onclick="resetBFS()">↺ Reset</button>
-        <div class="speed-row">
-          <label>Tốc độ:</label>
-          <input type="range" id="speedSlider" min="1" max="5" value="3">
-          <span id="speedLabel">3x</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">🔢 Level-order (Theo từng tầng)</div>
-      <div class="levels-container" id="levelsContainer"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">⏱ Độ phức tạp</div>
-      <div class="comp-row">
-        <div class="comp-item tc"><div class="comp-label">Thời gian</div><div class="comp-val">O(V + E)</div><div style="font-size:0.7rem;color:#78909c;margin-top:2px">V đỉnh, E cạnh</div></div>
-        <div class="comp-item sc"><div class="comp-label">Không gian</div><div class="comp-val">O(V)</div><div style="font-size:0.7rem;color:#78909c;margin-top:2px">Queue chứa tối đa V đỉnh</div></div>
-      </div>
-      <div style="background:#1e2130;border-radius:10px;padding:10px;margin-top:8px;font-size:0.8rem;color:#b0bec5">
-        <strong style="color:#80cbc4">BFS vs DFS đường đi ngắn nhất:</strong><br>
-        BFS <strong style="color:#66bb6a">đảm bảo ngắn nhất</strong> vì khám phá theo layer.<br>
-        DFS <strong style="color:#ef5350">không đảm bảo</strong> — tìm đường dài hơn trước.
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">💬 Giải thích</div>
-      <div class="explanation-box" id="explanation">Chọn đồ thị hoặc Grid rồi nhấn "Chạy".</div>
-    </div>
-
   </div>
 
-  <div class="right-panel">
-
-    <div class="card">
-      <div class="card-title">📬 Queue — FIFO, Dequeue FRONT, Enqueue BACK</div>
-      <div class="queue-outer">
-        <div class="queue-container" id="queueViz"><div class="queue-empty">[ Queue rỗng ]</div></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:0.72rem;color:#37474f">
-        <span>← DEQUEUE (Front)</span>
-        <span>ENQUEUE (Back) →</span>
-      </div>
+  <div id="code-panel">
+    <div class="panel-title">📝 BFS (Iterative)</div>
+    <div id="code"></div>
+    <div id="insight">
+      <div class="insight-title">🌊 Tại sao BFS = đường ngắn nhất?</div>
+      BFS thăm theo từng lớp (level). Node ở khoảng cách <b>k</b> được thăm hoàn toàn trước khi xét khoảng cách <b>k+1</b>. Lần đầu chạm target = đường ngắn nhất.
     </div>
-
-    <div class="code-panel">
-      <div class="card-title" style="margin-bottom:10px">📝 Mã nguồn BFS</div>
-      <div class="code-line" id="cl0"><span class="kw">function</span> <span class="fn">bfs</span>(graph, start) {</div>
-      <div class="code-line" id="cl1">  <span class="kw">const</span> visited = <span class="kw">new</span> Set([start]);</div>
-      <div class="code-line" id="cl2">  <span class="kw">const</span> queue = [start];</div>
-      <div class="code-line" id="cl3">  <span class="kw">const</span> dist = {[start]: <span class="num">0</span>};</div>
-      <div class="code-line" id="cl4">  </div>
-      <div class="code-line" id="cl5">  <span class="kw">while</span> (queue.length &gt; <span class="num">0</span>) {</div>
-      <div class="code-line" id="cl6">    <span class="cm">// Dequeue từ FRONT (FIFO)</span></div>
-      <div class="code-line" id="cl7">    <span class="kw">const</span> node = queue.shift();</div>
-      <div class="code-line" id="cl8">    process(node); <span class="cm">// Level-order</span></div>
-      <div class="code-line" id="cl9">    </div>
-      <div class="code-line" id="cl10">    <span class="kw">for</span> (<span class="kw">const</span> nb <span class="kw">of</span> graph[node]) {</div>
-      <div class="code-line" id="cl11">      <span class="kw">if</span> (!visited.has(nb)) {</div>
-      <div class="code-line" id="cl12">        visited.add(nb);</div>
-      <div class="code-line" id="cl13">        dist[nb] = dist[node] + <span class="num">1</span>;</div>
-      <div class="code-line" id="cl14">        queue.push(nb); <span class="cm">// Enqueue</span></div>
-      <div class="code-line" id="cl15">      }</div>
-      <div class="code-line" id="cl16">    }</div>
-      <div class="code-line" id="cl17">  }</div>
-      <div class="code-line" id="cl18">  <span class="kw">return</span> dist;</div>
-      <div class="code-line" id="cl19">}</div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">📋 Nhật ký</div>
-      <div class="trace-log" id="traceLog"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">💡 BFS vs DFS</div>
-      <div style="font-size:0.8rem;line-height:1.85;color:#b0bec5">
-        <div>✅ <strong style="color:#80cbc4">Đường đi ngắn nhất</strong> (unweighted)</div>
-        <div>✅ <strong style="color:#80cbc4">Peer-to-peer networks</strong> (6 degrees)</div>
-        <div>✅ <strong style="color:#80cbc4">Level-order traversal</strong> cây</div>
-        <div>✅ <strong style="color:#80cbc4">Tìm đỉnh gần nhất</strong></div>
-        <div>❌ Weighted graph → Dijkstra</div>
-      </div>
-    </div>
-
+  </div>
+</main>
+<div id="controls">
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-step">⏭ Step</button>
+  <button id="btn-reset">↺ Reset</button>
+  <button id="btn-new">🎲 Đồ thị mới</button>
+  <label>Target <select id="target-sel"></select></label>
+  <label>Speed <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <div id="stats">
+    <div class="stat">Level hiện tại <span id="s-level">—</span></div>
+    <div class="stat">Đã thăm <span id="s-visited">0</span></div>
+    <div class="stat">Đường ngắn nhất <span id="s-dist">—</span></div>
   </div>
 </div>
 
 <script>
-const PRESETS = [
-  { nodes:[{id:0,label:'A',x:300,y:55},{id:1,label:'B',x:150,y:145},{id:2,label:'C',x:450,y:145},{id:3,label:'D',x:80,y:250},{id:4,label:'E',x:240,y:250},{id:5,label:'F',x:380,y:250},{id:6,label:'G',x:500,y:250}], edges:[[0,1],[0,2],[1,3],[1,4],[2,5],[2,6],[3,4]] },
-  { nodes:[{id:0,label:'A',x:280,y:45},{id:1,label:'B',x:120,y:135},{id:2,label:'C',x:440,y:135},{id:3,label:'D',x:60,y:235},{id:4,label:'E',x:200,y:235},{id:5,label:'F',x:360,y:235},{id:6,label:'G',x:480,y:235},{id:7,label:'H',x:300,y:290}], edges:[[0,1],[0,2],[1,3],[1,4],[2,5],[2,6],[4,7],[5,7],[6,3]] },
-  { nodes:[{id:0,label:'1',x:280,y:38},{id:1,label:'2',x:150,y:118},{id:2,label:'3',x:410,y:118},{id:3,label:'4',x:80,y:205},{id:4,label:'5',x:220,y:205},{id:5,label:'6',x:340,y:205},{id:6,label:'7',x:480,y:205}], edges:[[0,1],[0,2],[1,3],[1,4],[2,5],[2,6]] },
-  { nodes:[{id:0,label:'A',x:60,y:155},{id:1,label:'B',x:160,y:155},{id:2,label:'C',x:260,y:155},{id:3,label:'D',x:360,y:155},{id:4,label:'E',x:460,y:155}], edges:[[0,1],[1,2],[2,3],[3,4]] }
+const CODE_LINES = [
+  'function bfs(graph, start, target) {',
+  '  const visited = new Set([start]);',
+  '  const queue = [start];',
+  '  const parent = { [start]: null };',
+  '  while (queue.length > 0) {',
+  '    // Lấy node từ đầu queue (FIFO)',
+  '    const node = queue.shift();',
+  '    if (node === target) {',
+  '      return buildPath(parent, target);',
+  '    }',
+  '    // Enqueue neighbors chưa thăm',
+  '    for (const nb of graph[node]) {',
+  '      if (!visited.has(nb)) {',
+  '        visited.add(nb);',
+  '        parent[nb] = node;',
+  '        queue.push(nb);',
+  '      }',
+  '    }',
+  '  }',
+  '  return null; // Không tìm thấy',
+  '}',
 ];
 
-let mode = 'graph';
-let nodes = [], edges = [], adj = {};
-let startNode = 0, targetNode = -1, selectingTarget = false;
-let steps = [], stepIdx = 0;
-let playing = false, timer = null;
-let dragging = null, dragOffX = 0, dragOffY = 0;
-
-const GCOLS = 20, GROWS = 10, CELL = 28;
-let grid = [], gridStart = null, gridEnd = null, gridMode = 'wall';
-let gridSteps = [], gridStepIdx = 0;
-
-function getSpeed() {
-  const v = parseInt(document.getElementById('speedSlider').value);
-  document.getElementById('speedLabel').textContent = v + 'x';
-  return [1400, 950, 550, 250, 80][v - 1];
-}
-document.getElementById('speedSlider').addEventListener('input', getSpeed);
-
-function setMode(m) {
-  mode = m;
-  document.querySelectorAll('.mode-tab').forEach((t, i) => t.classList.toggle('active', (i === 0) === (m === 'graph')));
-  document.getElementById('graphCard').style.display = m === 'graph' ? '' : 'none';
-  document.getElementById('gridCard').style.display = m === 'grid' ? '' : 'none';
-  document.getElementById('graphConfig').style.display = m === 'graph' ? '' : 'none';
-  document.getElementById('gridConfig').style.display = m === 'grid' ? '' : 'none';
-  if (m === 'grid') { initGrid(); }
-  else { loadPreset(); }
-}
-
-function loadPreset() {
-  const idx = parseInt(document.getElementById('graphSelect').value);
-  const p = PRESETS[idx];
-  nodes = JSON.parse(JSON.stringify(p.nodes));
-  edges = JSON.parse(JSON.stringify(p.edges));
-  buildAdj(); startNode = 0; targetNode = -1; selectingTarget = false;
-  initBFS(); renderGraph();
-}
-
-function buildAdj() {
-  adj = {};
-  nodes.forEach(n => adj[n.id] = []);
-  edges.forEach(([a, b]) => { adj[a].push(b); adj[b].push(a); });
-}
-
-function generateRandom() {
-  const n = 6 + Math.floor(Math.random() * 4);
-  nodes = [];
-  const W = 520, H = 270, cx = W / 2, cy = H / 2, r = 105;
-  for (let i = 0; i < n; i++) {
-    const angle = (2 * Math.PI * i) / n - Math.PI / 2;
-    nodes.push({ id: i, label: String.fromCharCode(65 + i), x: Math.round(cx + r * Math.cos(angle)), y: Math.round(cy + r * Math.sin(angle)) });
+const GRAPHS = [
+  {
+    nodes: ['S','A','B','C','D','E','T'],
+    edges: [['S','A'],['S','B'],['A','C'],['A','D'],['B','D'],['B','E'],['C','T'],['D','T'],['E','T']],
+    positions: { S:[50,10], A:[20,38], B:[80,38], C:[8,65], D:[50,65], E:[92,65], T:[50,90] }
+  },
+  {
+    nodes: ['A','B','C','D','E','F','G','H'],
+    edges: [['A','B'],['A','C'],['B','D'],['B','E'],['C','F'],['D','G'],['E','G'],['F','H'],['G','H']],
+    positions: { A:[50,8], B:[22,30], C:[78,30], D:[10,55], E:[35,55], F:[65,55], G:[25,80], H:[75,80] }
+  },
+  {
+    nodes: ['1','2','3','4','5','6','7'],
+    edges: [['1','2'],['1','3'],['2','4'],['2','5'],['3','5'],['3','6'],['4','7'],['5','7'],['6','7']],
+    positions: { '1':[50,8], '2':[22,35], '3':[78,35], '4':[10,62], '5':[50,62], '6':[90,62], '7':[50,88] }
   }
-  edges = [];
-  for (let i = 1; i < n; i++) edges.push([Math.floor(Math.random() * i), i]);
-  for (let i = 0; i < n; i++) for (let j = i + 2; j < n; j++) if (Math.random() < 0.3) edges.push([i, j]);
-  buildAdj(); startNode = 0; targetNode = -1;
-  initBFS(); renderGraph();
+];
+
+let graphDef, steps=[], stepIdx=0, playing=false, timer=null, visitedCount=0, currentLevel=-1, shortestPath=[];
+let currentGraphIdx=0;
+
+function buildCode(){
+  document.getElementById('code').innerHTML=CODE_LINES.map((l,i)=>
+    `<div class="code-line${l.trim().startsWith('//')?' comment':''}" data-i="${i}">${l}</div>`
+  ).join('');
+}
+function hl(i){
+  document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));
+  if(i>=0) document.querySelector(`[data-i="${i}"]`)?.classList.add('active');
+}
+function setExplain(icon,cls,html){
+  const ic=document.querySelector('#explain-viz .step-icon');
+  ic.textContent=icon; ic.className='step-icon '+cls;
+  document.getElementById('explain-text').innerHTML=html;
+  document.getElementById('step-counter').textContent=steps.length?`${stepIdx}/${steps.length}`:'';
+}
+function setInsight(title,html){
+  document.getElementById('insight').innerHTML=`<div class="insight-title">${title}</div>${html}`;
 }
 
-function setTargetMode() {
-  selectingTarget = !selectingTarget;
-  document.getElementById('modeHint').textContent = selectingTarget ? 'Click đỉnh để đặt TARGET' : 'Click đỉnh để đặt Start';
-  document.getElementById('modeHint').style.color = selectingTarget ? '#ef5350' : '#78909c';
+function loadGraph(idx){
+  graphDef=GRAPHS[idx];
+  const sel=document.getElementById('target-sel');
+  sel.innerHTML=graphDef.nodes.map(n=>`<option value="${n}">${n}</option>`).join('');
+  sel.value=graphDef.nodes[graphDef.nodes.length-1];
 }
 
-function buildGraphSteps() {
-  steps = [];
-  const visited = new Set([startNode]);
-  const queue = [startNode];
-  const dist = { [startNode]: 0 };
-  const prev = { [startNode]: null };
-  const levelMap = { [startNode]: 0 };
-  const treeEdges = new Set();
+function buildSteps(){
+  const g=graphDef, target=document.getElementById('target-sel').value;
+  const adj={};
+  g.nodes.forEach(n=>adj[n]=[]);
+  g.edges.forEach(([a,b])=>{adj[a].push(b); adj[b].push(a);});
 
-  steps.push({ type: 'init', queue: [startNode], visited: new Set([startNode]), dist: { ...dist }, treeEdges: new Set(), levelMap: { ...levelMap }, code: 2 });
+  steps=[];
+  const start=g.nodes[0];
+  steps.push({type:'init',start,target,adj});
 
-  while (queue.length > 0) {
-    const node = queue.shift();
-    steps.push({ type: 'dequeue', node, queue: [...queue], visited: new Set(visited), dist: { ...dist }, treeEdges: new Set(treeEdges), levelMap: { ...levelMap }, code: 7 });
+  const visited=new Set([start]);
+  const queue=[start];
+  const parent={[start]:null};
+  const dist={[start]:0};
 
-    if (node === targetNode) {
-      const path = [];
-      let cur = node;
-      while (cur !== null) { path.unshift(cur); cur = prev[cur]; }
-      steps.push({ type: 'found-target', node, path, queue: [...queue], visited: new Set(visited), dist: { ...dist }, treeEdges: new Set(treeEdges), levelMap: { ...levelMap }, code: 8 });
-      break;
+  steps.push({type:'enqueue',node:start,queue:[...queue],visited:new Set(visited),dist:{...dist},reason:'start'});
+
+  let found=false;
+  while(queue.length>0){
+    const node=queue[0];
+    steps.push({type:'dequeue',node,queue:[...queue],visited:new Set(visited),dist:{...dist},parent:{...parent}});
+    queue.shift();
+
+    steps.push({type:'visit',node,queue:[...queue],visited:new Set(visited),dist:{...dist},target,level:dist[node]});
+    if(node===target){
+      // build path
+      const path=[]; let cur=node;
+      while(cur!==null){path.unshift(cur); cur=parent[cur];}
+      steps.push({type:'found',node,path,queue:[...queue],visited:new Set(visited),dist:{...dist}});
+      found=true; break;
     }
-
-    steps.push({ type: 'process', node, queue: [...queue], visited: new Set(visited), dist: { ...dist }, treeEdges: new Set(treeEdges), levelMap: { ...levelMap }, code: 8 });
-
-    for (const nb of adj[node]) {
-      if (!visited.has(nb)) {
+    const newNeighbors=[];
+    for(const nb of adj[node]){
+      if(!visited.has(nb)){
         visited.add(nb);
-        dist[nb] = dist[node] + 1;
-        prev[nb] = node;
-        levelMap[nb] = dist[nb];
+        parent[nb]=node;
+        dist[nb]=dist[node]+1;
         queue.push(nb);
-        treeEdges.add(Math.min(node, nb) + '-' + Math.max(node, nb));
-        steps.push({ type: 'enqueue', node: nb, from: node, queue: [...queue], visited: new Set(visited), dist: { ...dist }, treeEdges: new Set(treeEdges), levelMap: { ...levelMap }, code: 14 });
+        newNeighbors.push(nb);
       }
     }
+    if(newNeighbors.length>0){
+      steps.push({type:'enqueue-neighbors',node,neighbors:newNeighbors,queue:[...queue],visited:new Set(visited),dist:{...dist},level:dist[node]});
+    }
   }
-  steps.push({ type: 'end', queue: [], visited: new Set(visited), dist: { ...dist }, treeEdges: new Set(treeEdges), levelMap: { ...levelMap }, code: 18 });
+  if(!found) steps.push({type:'notfound',target});
 }
 
-function initBFS() {
-  if (mode === 'grid') { initGridBFS(); return; }
-  buildGraphSteps();
-  stepIdx = 0;
-  renderGraphStep(steps[0]);
-  document.getElementById('traceLog').innerHTML = '';
-  document.getElementById('levelsContainer').innerHTML = '';
+let svgW,svgH;
+function getPos(node){
+  const pct=graphDef.positions[node];
+  return [pct[0]/100*svgW, pct[1]/100*svgH];
 }
 
-function renderGraph(step) {
-  step = step || (steps[stepIdx] || {});
-  const svg = document.getElementById('graphSvg');
-  const W = svg.parentElement.clientWidth || 580;
-  svg.setAttribute('width', W);
-  const defs = svg.querySelector('defs');
-  svg.innerHTML = '';
-  if (defs) svg.appendChild(defs);
+function drawGraph(visitedSet, currentNode, distMap, pathEdges){
+  const svg=document.getElementById('graph-svg');
+  svgW=svg.clientWidth||600; svgH=svg.clientHeight||340;
+  svg.innerHTML='';
 
-  const te = step.treeEdges || new Set();
-  const path = step.path || [];
-  const pathEdges = new Set();
-  for (let i = 0; i < path.length - 1; i++) {
-    pathEdges.add(Math.min(path[i], path[i+1]) + '-' + Math.max(path[i], path[i+1]));
-  }
-
-  edges.forEach(([a, b]) => {
-    const na = nodes[a], nb = nodes[b];
-    const eKey = Math.min(a, b) + '-' + Math.max(a, b);
-    let cls = 'gedge';
-    if (pathEdges.has(eKey)) cls = 'gedge-path';
-    else if (te.has(eKey)) cls = 'gedge-tree';
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', na.x); line.setAttribute('y1', na.y);
-    line.setAttribute('x2', nb.x); line.setAttribute('y2', nb.y);
-    line.setAttribute('class', cls);
+  // Draw edges
+  graphDef.edges.forEach(([a,b])=>{
+    const [x1,y1]=getPos(a), [x2,y2]=getPos(b);
+    const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+    const r=20, sx=x1+dx/len*r, sy=y1+dy/len*r, ex=x2-dx/len*r, ey=y2-dy/len*r;
+    const isPath=pathEdges&&pathEdges.some(([pa,pb])=>(pa===a&&pb===b)||(pa===b&&pb===a));
+    const bothVisited=visitedSet.has(a)&&visitedSet.has(b);
+    const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',sx); line.setAttribute('y1',sy);
+    line.setAttribute('x2',ex); line.setAttribute('y2',ey);
+    if(isPath){
+      line.setAttribute('stroke',`var(--path-color)`);
+      line.setAttribute('stroke-width','4');
+      line.setAttribute('stroke-dasharray','7 3');
+      line.setAttribute('class','path-edge');
+    } else {
+      line.setAttribute('stroke',bothVisited?'var(--edge-tree)':'var(--edge-default)');
+      line.setAttribute('stroke-width',bothVisited?'2':'1.5');
+      line.setAttribute('opacity',bothVisited?'0.7':'0.35');
+    }
     svg.appendChild(line);
   });
 
-  const vis = step.visited || new Set();
-  const dist = step.dist || {};
-  const q = new Set(step.queue || []);
-  const pathSet = new Set(path);
+  // Draw nodes
+  graphDef.nodes.forEach(node=>{
+    const [cx,cy]=getPos(node);
+    const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('id','node-'+node);
 
-  nodes.forEach(node => {
-    let state = 'gnode-unvisited';
-    if (node.id === startNode) state = 'gnode-start';
-    if (node.id === targetNode) state = 'gnode-target';
-    if (vis.has(node.id) && node.id !== startNode && node.id !== targetNode) state = 'gnode-visited';
-    if (q.has(node.id) && node.id !== startNode && node.id !== targetNode) state = 'gnode-inqueue';
-    if (path.length > 1 && pathSet.has(node.id) && node.id !== startNode && node.id !== targetNode) state = 'gnode-path';
-    if (step.type === 'dequeue' && step.node === node.id) state = 'gnode-inqueue';
+    const circle=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('cx',cx); circle.setAttribute('cy',cy); circle.setAttribute('r',20);
+    circle.setAttribute('class','node-circle');
 
-    // BFS wavefront ring for in-queue nodes
-    if (state === 'gnode-inqueue') {
-      const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      ring.setAttribute('cx', node.x); ring.setAttribute('cy', node.y); ring.setAttribute('r', 22);
-      ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', 'rgba(255,213,79,0.7)'); ring.setAttribute('stroke-width', '2');
-      ring.style.animation = 'wavePulse 1s ease-out infinite';
-      svg.appendChild(ring);
+    let fill, stroke, strokeW='2';
+    if(node===currentNode){
+      fill='var(--node-visiting)'; stroke='rgba(233,196,106,0.9)'; strokeW='3';
+      // wave
+      const w=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      w.setAttribute('cx',cx); w.setAttribute('cy',cy); w.setAttribute('r',20);
+      w.setAttribute('class','wave-ring'); svg.appendChild(w);
+    } else if(visitedSet.has(node)){
+      fill='var(--node-visited)'; stroke='rgba(0,180,216,0.5)';
+    } else {
+      fill='var(--node-default)'; stroke='var(--node-default-stroke)';
+    }
+    circle.setAttribute('fill',fill);
+    circle.setAttribute('stroke',stroke);
+    circle.setAttribute('stroke-width',strokeW);
+
+    const label=document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x',cx); label.setAttribute('y',cy-3);
+    label.setAttribute('class','node-label');
+    label.textContent=node;
+
+    // distance label
+    if(distMap&&distMap[node]!==undefined){
+      const dLabel=document.createElementNS('http://www.w3.org/2000/svg','text');
+      dLabel.setAttribute('x',cx); dLabel.setAttribute('y',cy+10);
+      dLabel.setAttribute('class','node-dist');
+      dLabel.textContent='d='+distMap[node];
+      g.appendChild(dLabel);
     }
 
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.setAttribute('class', 'graph-node ' + state);
-    const circ = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    circ.setAttribute('cx', node.x); circ.setAttribute('cy', node.y); circ.setAttribute('r', 22);
-    g.appendChild(circ);
-
-    const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    txt.setAttribute('x', node.x); txt.setAttribute('y', node.y);
-    txt.setAttribute('style', 'font-size:12px;font-weight:700;text-anchor:middle;dominant-baseline:central;pointer-events:none');
-    txt.textContent = node.label;
-    g.appendChild(txt);
-
-    if (dist[node.id] !== undefined) {
-      const dtxt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      dtxt.setAttribute('x', node.x + 18); dtxt.setAttribute('y', node.y - 18);
-      dtxt.setAttribute('style', 'font-size:9px;fill:#ffd54f;font-weight:700');
-      dtxt.textContent = 'd=' + dist[node.id];
-      g.appendChild(dtxt);
-    }
-
-    g.addEventListener('mousedown', e => startDrag(e, node.id));
-    g.addEventListener('click', e => {
-      if (dragging !== null) return;
-      if (selectingTarget) { targetNode = node.id; selectingTarget = false; document.getElementById('modeHint').textContent = 'Click đỉnh để đặt Start'; document.getElementById('modeHint').style.color = '#78909c'; initBFS(); }
-      else { startNode = node.id; initBFS(); renderGraph(); }
-    });
+    g.appendChild(circle); g.appendChild(label);
     svg.appendChild(g);
   });
+}
 
-  // Labels
-  const labelData = [['START', startNode, '#80cbc4']];
-  if (targetNode >= 0) labelData.push(['TARGET', targetNode, '#ef5350']);
-  labelData.forEach(([lbl, nid, color]) => {
-    const sn = nodes[nid]; if (!sn) return;
-    const ltxt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    ltxt.setAttribute('x', sn.x); ltxt.setAttribute('y', sn.y - 32);
-    ltxt.setAttribute('style', `font-size:9px;fill:${color};text-anchor:middle;font-weight:700`);
-    ltxt.textContent = lbl;
-    svg.appendChild(ltxt);
+function drawFoundGraph(visitedSet, foundNode, distMap, path){
+  const pathEdges=[];
+  for(let i=0;i<path.length-1;i++) pathEdges.push([path[i],path[i+1]]);
+  drawGraph(visitedSet, null, distMap, pathEdges);
+  // color found node
+  const g=document.getElementById('node-'+foundNode);
+  if(g){
+    const c=g.querySelector('circle');
+    c.setAttribute('fill','var(--node-found)');
+    c.setAttribute('stroke','var(--node-found-glow)');
+    c.setAttribute('stroke-width','3');
+    c.style.animation='foundGlow 1s ease infinite';
+    // path nodes highlight
+    path.slice(0,-1).forEach(n=>{
+      const ng=document.getElementById('node-'+n);
+      if(ng){ const nc=ng.querySelector('circle'); nc.setAttribute('fill','var(--node-visited)'); }
+    });
+    // celebration waves
+    const [cx,cy]=getPos(foundNode);
+    const svg=document.getElementById('graph-svg');
+    for(let i=0;i<4;i++){
+      const w=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      w.setAttribute('cx',cx); w.setAttribute('cy',cy); w.setAttribute('r',20);
+      w.setAttribute('class','wave-ring');
+      w.style.animationDelay=(i*200)+'ms';
+      svg.appendChild(w);
+    }
+  }
+}
+
+function updateQueue(queueArr, currentNode, distMap){
+  const div=document.getElementById('queue-display');
+  if(queueArr.length===0){div.innerHTML='<div class="queue-empty">Queue rỗng</div>';return;}
+  div.innerHTML='';
+  queueArr.forEach((n,i)=>{
+    const item=document.createElement('div');
+    item.className='queue-item'+(i===0?' front':'');
+    const dist=distMap&&distMap[n]!==undefined?distMap[n]:'?';
+    item.innerHTML=`<span>${n}${i===0?' ← FRONT':''}</span><span class="q-dist">d=${dist}</span>`;
+    div.appendChild(item);
   });
 }
 
-function startDrag(e, id) {
-  e.preventDefault(); dragging = id;
-  const svg = document.getElementById('graphSvg');
-  const rect = svg.getBoundingClientRect();
-  dragOffX = e.clientX - rect.left - nodes[id].x;
-  dragOffY = e.clientY - rect.top - nodes[id].y;
-}
-document.addEventListener('mousemove', e => {
-  if (dragging === null || mode !== 'graph') return;
-  const svg = document.getElementById('graphSvg');
-  const rect = svg.getBoundingClientRect();
-  nodes[dragging].x = Math.max(25, Math.min(rect.width - 25, e.clientX - rect.left - dragOffX));
-  nodes[dragging].y = Math.max(25, Math.min(rect.height - 25, e.clientY - rect.top - dragOffY));
-  renderGraph(steps[stepIdx]);
-});
-document.addEventListener('mouseup', () => { dragging = null; });
-
-function renderGraphStep(step) {
-  if (!step) return;
-  for (let k = 0; k <= 19; k++) { const el = document.getElementById('cl' + k); if (el) el.classList.remove('active'); }
-  const el = document.getElementById('cl' + step.code);
-  if (el) el.classList.add('active');
-
-  renderGraph(step);
-
-  // Queue viz
-  const qv = document.getElementById('queueViz');
-  qv.innerHTML = '';
-  if (!step.queue || step.queue.length === 0) {
-    qv.innerHTML = '<div class="queue-empty">[ Queue rỗng ]</div>';
-  } else {
-    const fl = document.createElement('div'); fl.className = 'queue-item label'; fl.textContent = 'FRONT→'; qv.appendChild(fl);
-    step.queue.forEach((nid, i) => {
-      const item = document.createElement('div');
-      item.className = 'queue-item' + (i === 0 ? ' front' : '');
-      const n = nodes[nid]; item.textContent = n ? n.label : nid;
-      qv.appendChild(item);
-    });
-    const bl = document.createElement('div'); bl.className = 'queue-item label'; bl.textContent = '→BACK'; qv.appendChild(bl);
+function updateStatusDisplay(type, data){
+  const d=document.getElementById('status-display');
+  if(type==='idle'){d.innerHTML='<span class="sd-idle">Nhấn Play để bắt đầu BFS</span>';return;}
+  if(type==='level'){
+    d.innerHTML=`<span class="sd-label">Level <b style="color:var(--node-visited)">${data.level}</b> — Tất cả node cách ${data.level} bước:</span>
+    <div class="wave-level">${data.nodes.map(n=>`<div class="wave-node ${n===data.current?'wn-current':'wn-visited'}">${n}</div>`).join('<span style="color:var(--muted);font-size:.8rem;margin:0 2px">·</span>')}</div>`;
+  } else if(type==='found'){
+    d.innerHTML=`<span class="sd-label">Đường ngắn nhất:</span><div class="wave-level">${data.path.map((n,i)=>`<div class="wave-node ${n===data.target?'wn-found':'wn-visited'}">${n}</div>${i<data.path.length-1?'<span style="color:var(--yellow)">→</span>':''}`).join('')}</div>
+    <div class="level-badge">Độ dài: ${data.path.length-1} bước</div>`;
   }
-
-  // Level order
-  const lc = document.getElementById('levelsContainer');
-  lc.innerHTML = '';
-  const lm = step.levelMap || {};
-  const byLevel = {};
-  Object.entries(lm).forEach(([nid, lv]) => { if (!byLevel[lv]) byLevel[lv] = []; byLevel[lv].push(parseInt(nid)); });
-  const maxLv = Object.values(lm).length > 0 ? Math.max(...Object.values(lm)) : 0;
-  Object.keys(byLevel).sort((a, b) => a - b).forEach(lv => {
-    const row = document.createElement('div'); row.className = 'level-row';
-    const ll = document.createElement('div'); ll.className = 'level-label'; ll.textContent = `Level ${lv}:`; row.appendChild(ll);
-    const ln = document.createElement('div'); ln.className = 'level-nodes';
-    byLevel[lv].forEach(nid => {
-      const b = document.createElement('div');
-      const isCurrent = parseInt(lv) === maxLv && step.type !== 'end' && step.type !== 'init';
-      b.className = 'level-badge' + (isCurrent ? ' current-level' : '');
-      b.textContent = nodes[nid] ? nodes[nid].label : nid;
-      ln.appendChild(b);
-    });
-    row.appendChild(ln); lc.appendChild(row);
-  });
-
-  const nl = n => nodes[n] ? nodes[n].label : n;
-  const dist = step.dist || {};
-  const expls = {
-    init: `🚀 BFS từ <strong style="color:#80cbc4">${nl(startNode)}</strong>. Enqueue đỉnh start, đánh dấu đã thăm. d[${nl(startNode)}]=0.`,
-    dequeue: `📤 Dequeue <strong style="color:#f9a825">${nl(step.node)}</strong> từ FRONT. Khoảng cách: d=${dist[step.node] ?? '?'}. Xét hàng xóm.`,
-    process: `⚙ Xử lý <strong style="color:#f9a825">${nl(step.node)}</strong> (level-order). Duyệt các cạnh kề.`,
-    enqueue: `📥 Phát hiện <strong style="color:#80cbc4">${nl(step.node)}</strong> từ ${nl(step.from)}. Enqueue, d[${nl(step.node)}]=${dist[step.node]}. Wavefront mở rộng!`,
-    'found-target': `🎯 <strong style="color:#ffd54f">TÌM THẤY TARGET!</strong> Đường ngắn nhất: [${(step.path || []).map(nl).join(' → ')}], ${(step.path||[]).length-1} bước.`,
-    end: `🏁 BFS hoàn tất! ${Object.keys(dist).length}/${nodes.length} đỉnh đã thăm.`
-  };
-  document.getElementById('explanation').innerHTML = expls[step.type] || '';
-
-  const log = document.getElementById('traceLog');
-  const entry = document.createElement('div');
-  const tmsgs = {
-    init: `[INIT] Start=${nl(startNode)}, d=0`,
-    dequeue: `[DEQ ] Dequeue ${nl(step.node)} (d=${dist[step.node]})`,
-    process: `[PROC] ${nl(step.node)}`,
-    enqueue: `[ENQ ] ${nl(step.from)}→${nl(step.node)}: d=${dist[step.node]}`,
-    'found-target': `[FOUND] ${nl(step.node)}! Path: ${(step.path||[]).map(nl).join('→')}`,
-    end: `[END ] ${Object.keys(dist).length} đỉnh thăm`
-  };
-  entry.className = 'trace-entry' + (step.type === 'enqueue' ? ' enq' : step.type === 'dequeue' ? ' deq' : step.type === 'found-target' ? ' path' : '');
-  entry.textContent = tmsgs[step.type] || '';
-  if (entry.textContent) { log.appendChild(entry); log.scrollTop = log.scrollHeight; }
 }
 
-// ===== GRID =====
-function initGrid() {
-  grid = Array.from({ length: GROWS }, () => Array(GCOLS).fill(0));
-  gridStart = { r: 4, c: 2 }; gridEnd = { r: 4, c: GCOLS - 3 };
-  grid[gridStart.r][gridStart.c] = 2;
-  grid[gridEnd.r][gridEnd.c] = 3;
-  renderGridCanvas();
-  initGridBFS();
-}
+// Track nodes by level
+let levelNodes={};
 
-function renderGridCanvas(visitedMap, pathSet, currentSet) {
-  const canvas = document.getElementById('gridCanvas');
-  const ctx = canvas.getContext('2d');
-  const W = GCOLS * CELL, H = GROWS * CELL;
-  canvas.width = W; canvas.height = H;
-  ctx.clearRect(0, 0, W, H);
-  for (let r = 0; r < GROWS; r++) {
-    for (let c = 0; c < GCOLS; c++) {
-      const x = c * CELL, y = r * CELL;
-      const key = r + ',' + c;
-      const dist = visitedMap ? visitedMap[key] : undefined;
-      let color = '#141720';
-      if (grid[r][c] === 1) {
-        // Wall with inset shadow
-        ctx.fillStyle = '#37474f';
-        ctx.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
-        ctx.fillStyle = 'rgba(0,0,0,0.4)';
-        ctx.fillRect(x + 1, y + 1, CELL - 2, 3);
-        ctx.fillRect(x + 1, y + 1, 3, CELL - 2);
-        continue;
-      } else if (grid[r][c] === 2) color = '#00695c';
-      else if (grid[r][c] === 3) color = '#c62828';
-      else if (pathSet && pathSet.has(key)) {
-        // Path gradient
-        const grad = ctx.createLinearGradient(x, y, x + CELL, y + CELL);
-        grad.addColorStop(0, '#f57f17');
-        grad.addColorStop(1, '#ffd54f');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.roundRect(x + 1, y + 1, CELL - 2, CELL - 2, 4);
-        ctx.fill();
-        continue;
-      } else if (currentSet && currentSet.has(key)) color = '#f9a825';
-      else if (dist !== undefined) {
-        // Blue gradient based on distance
-        const maxDist = 40;
-        const ratio = Math.min(dist / maxDist, 1);
-        const r1 = Math.round(21 + ratio * 10);
-        const g1 = Math.round(101 - ratio * 30);
-        const b1 = Math.round(192 - ratio * 50);
-        color = `rgb(${r1},${g1},${b1})`;
+function applyStep(s){
+  if(!s)return;
+  document.getElementById('progress-bar').style.width=(stepIdx/steps.length*100)+'%';
+
+  switch(s.type){
+    case 'init':
+      visitedCount=0; currentLevel=-1; levelNodes={}; shortestPath=[];
+      drawGraph(new Set(),'',{});
+      updateQueue([],null,{});
+      updateStatusDisplay('idle');
+      hl(-1);
+      setExplain('💡','info',`BFS từ <b>${s.start}</b>, tìm <b>${s.target}</b>. Queue FIFO — duyệt theo chiều rộng, đảm bảo đường ngắn nhất.`);
+      setInsight('🌊 BFS Wavefront','BFS lan như sóng: thăm hết node cách <b>1 bước</b>, rồi <b>2 bước</b>, rồi <b>3 bước</b>... Đây là lý do BFS tìm đường ngắn nhất trong đồ thị không trọng số.');
+      break;
+    case 'enqueue':
+      hl(2);
+      drawGraph(s.visited,null,s.dist);
+      updateQueue(s.queue,null,s.dist);
+      setExplain('📥','enqueue',`Enqueue <b>${s.node}</b> (level ${s.dist[s.node]||0}) vào queue. Queue: [${s.queue.join(', ')}]. FIFO — vào sau, ra sau.`);
+      break;
+    case 'dequeue':
+      hl(6);
+      drawGraph(s.visited,s.node,s.dist);
+      updateQueue(s.queue.slice(1)||[],s.node,s.dist);
+      setExplain('📤','visit',`Dequeue <b>${s.node}</b> từ FRONT queue (FIFO). Level <b>${s.dist[s.node]}</b>. Chuẩn bị xử lý.`);
+      break;
+    case 'visit':
+      visitedCount++; document.getElementById('s-visited').textContent=visitedCount;
+      const lvl=s.level;
+      if(lvl!==currentLevel){
+        currentLevel=lvl; levelNodes[lvl]=[];
+        document.getElementById('s-level').textContent=lvl;
       }
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.roundRect(x + 1, y + 1, CELL - 2, CELL - 2, 4);
-      ctx.fill();
-      // Distance number
-      if (dist !== undefined && grid[r][c] === 0 && dist > 0 && CELL >= 24) {
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.font = `${Math.round(CELL * 0.35)}px monospace`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(dist, x + CELL / 2, y + CELL / 2);
-      }
-    }
+      levelNodes[lvl]=(levelNodes[lvl]||[]).concat([s.node]);
+      hl(7);
+      drawGraph(s.visited,s.node,s.dist);
+      updateStatusDisplay('level',{level:lvl,nodes:levelNodes[lvl],current:s.node});
+      setExplain('🔍','visit',`Thăm <b>${s.node}</b> (level ${lvl}). ${s.node===s.target?'<b>Đây là target!</b>':'Kiểm tra neighbors...'}`);
+      setInsight(`🌊 Duyệt level ${lvl}`,`Tất cả node cách nguồn <b>${lvl} bước</b>: [${(levelNodes[lvl]||[]).join(', ')}]. BFS đảm bảo hoàn thành level ${lvl} trước khi xét level ${lvl+1}.`);
+      break;
+    case 'enqueue-neighbors':
+      hl(15);
+      drawGraph(s.visited,s.node,s.dist);
+      updateQueue(s.queue,null,s.dist);
+      setExplain('📥','enqueue',`Enqueue neighbors của <b>${s.node}</b>: [${s.neighbors.join(', ')}] → level ${s.level+1}. Queue: [${s.queue.join(', ')}].`);
+      setInsight(`📊 Level ${s.level} → Level ${s.level+1}`,`Neighbors [${s.neighbors.join(', ')}] được thêm vào queue với level <b>${s.level+1}</b>. FIFO đảm bảo chúng được xét SAU tất cả node level ${s.level} hiện tại.`);
+      break;
+    case 'found':
+      hl(8); shortestPath=s.path;
+      drawFoundGraph(s.visited,s.node,s.dist,s.path);
+      updateQueue([],null,s.dist);
+      document.getElementById('s-dist').textContent=s.path.length-1;
+      document.getElementById('progress-bar').style.width='100%';
+      updateStatusDisplay('found',{path:s.path,target:s.node});
+      stopPlay();
+      setExplain('🎉','found',`Tìm thấy <b>${s.node}</b>! Đường ngắn nhất: <b>${s.path.join(' → ')}</b> (${s.path.length-1} bước).`);
+      setInsight('✅ BFS đảm bảo đường ngắn nhất!',`Path: <b>${s.path.join(' → ')}</b>. Độ dài = <b>${s.path.length-1} bước</b>. Đã thăm <b>${visitedCount} node</b>. BFS không thể trả về path dài hơn vì luôn xét node gần nhất trước.`);
+      break;
+    case 'notfound':
+      hl(19);
+      document.getElementById('progress-bar').style.width='100%';
+      stopPlay();
+      setExplain('❌','info',`Không tìm thấy <b>${s.target}</b>. Queue rỗng mà chưa gặp target. Trả về <code>null</code>.`);
+      setInsight('❌ Không thể đến','Node <b>target</b> không liên thông với node bắt đầu trong đồ thị này.');
+      break;
   }
 }
 
-let gridDrawing = false;
-document.getElementById('gridCanvas').addEventListener('mousedown', e => { gridDrawing = true; handleGridClick(e); });
-document.getElementById('gridCanvas').addEventListener('mousemove', e => { if (gridDrawing && gridMode === 'wall') handleGridClick(e); });
-document.addEventListener('mouseup', () => { gridDrawing = false; });
-
-function handleGridClick(e) {
-  if (mode !== 'grid') return;
-  const canvas = document.getElementById('gridCanvas');
-  const rect = canvas.getBoundingClientRect();
-  const c = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width) / CELL);
-  const r = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height) / CELL);
-  if (r < 0 || r >= GROWS || c < 0 || c >= GCOLS) return;
-  if (gridMode === 'start') { if (gridStart) grid[gridStart.r][gridStart.c] = 0; gridStart = { r, c }; grid[r][c] = 2; }
-  else if (gridMode === 'end') { if (gridEnd) grid[gridEnd.r][gridEnd.c] = 0; gridEnd = { r, c }; grid[r][c] = 3; }
-  else if (gridMode === 'wall') { grid[r][c] = grid[r][c] === 1 ? 0 : 1; }
-  renderGridCanvas();
+function getDelay(){return Math.round(1200-document.getElementById('speed').value*110);}
+function tick(){if(stepIdx>=steps.length){stopPlay();return;} applyStep(steps[stepIdx++]); if(playing) timer=setTimeout(tick,getDelay());}
+function startPlay(){if(stepIdx>=steps.length)reset(); playing=true; document.getElementById('btn-play').textContent='⏸ Pause'; tick();}
+function stopPlay(){playing=false; clearTimeout(timer); document.getElementById('btn-play').textContent='▶ Play';}
+function reset(){
+  stopPlay(); stepIdx=0; visitedCount=0; currentLevel=-1; levelNodes={}; shortestPath=[];
+  buildSteps();
+  document.getElementById('s-level').textContent='—';
+  document.getElementById('s-visited').textContent='0';
+  document.getElementById('s-dist').textContent='—';
+  document.getElementById('progress-bar').style.width='0%';
+  hl(-1);
+  drawGraph(new Set(),'',{});
+  updateQueue([],null,{});
+  updateStatusDisplay('idle');
+  setExplain('💡','info',`BFS từ <b>${graphDef.nodes[0]}</b>, tìm <b>${document.getElementById('target-sel').value}</b>. Queue FIFO — duyệt theo chiều rộng.`);
+  setInsight('🌊 BFS Wavefront','BFS lan như sóng: thăm hết node cách <b>1 bước</b>, rồi <b>2 bước</b>, rồi <b>3 bước</b>... Đảm bảo đường ngắn nhất trong đồ thị không trọng số.');
 }
 
-function clearGrid() { initGrid(); }
+document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
+document.getElementById('btn-step').onclick=()=>{stopPlay();if(stepIdx<steps.length)applyStep(steps[stepIdx++]);};
+document.getElementById('btn-reset').onclick=reset;
+document.getElementById('btn-new').onclick=()=>{currentGraphIdx=(currentGraphIdx+1)%GRAPHS.length; loadGraph(currentGraphIdx); reset();};
+document.getElementById('target-sel').onchange=reset;
+window.addEventListener('resize',()=>{if(graphDef)drawGraph(new Set(),'',{});});
 
-function generateMaze() {
-  grid = Array.from({ length: GROWS }, () => Array(GCOLS).fill(1));
-  const visited = new Set();
-  const carve = (r, c) => {
-    visited.add(r + ',' + c); grid[r][c] = 0;
-    const dirs = [[0,2],[0,-2],[2,0],[-2,0]].sort(() => Math.random() - 0.5);
-    for (const [dr, dc] of dirs) {
-      const nr = r + dr, nc = c + dc;
-      if (nr >= 0 && nr < GROWS && nc >= 0 && nc < GCOLS && !visited.has(nr + ',' + nc)) {
-        grid[r + dr/2][c + dc/2] = 0;
-        carve(nr, nc);
-      }
-    }
-  };
-  carve(1, 1);
-  gridStart = { r: 1, c: 1 }; gridEnd = { r: GROWS - 2, c: GCOLS - 2 };
-  grid[gridStart.r][gridStart.c] = 2; grid[gridEnd.r][gridEnd.c] = 3;
-  renderGridCanvas();
-  initGridBFS();
-}
-
-function initGridBFS() {
-  if (!gridStart || !gridEnd) return;
-  gridSteps = [];
-  const visited = new Set();
-  const distMap = {};
-  const queue = [[gridStart.r, gridStart.c]];
-  visited.add(gridStart.r + ',' + gridStart.c);
-  distMap[gridStart.r + ',' + gridStart.c] = 0;
-  const prev = {};
-  const dirs = [[0,1],[1,0],[0,-1],[-1,0]];
-
-  gridSteps.push({ type: 'init', visitedMap: { ...distMap }, queue: [[gridStart.r, gridStart.c]], current: new Set(), path: null });
-
-  let found = false;
-  while (queue.length > 0 && !found) {
-    const [r, c] = queue.shift();
-    const current = new Set([r + ',' + c]);
-    if (r === gridEnd.r && c === gridEnd.c) {
-      const path = new Set();
-      let cur = r + ',' + c;
-      while (cur) { path.add(cur); cur = prev[cur]; }
-      gridSteps.push({ type: 'found', visitedMap: { ...distMap }, queue: [], current: new Set(), path });
-      found = true; break;
-    }
-    for (const [dr, dc] of dirs) {
-      const nr = r + dr, nc = c + dc;
-      const key = nr + ',' + nc;
-      if (nr >= 0 && nr < GROWS && nc >= 0 && nc < GCOLS && grid[nr][nc] !== 1 && !visited.has(key)) {
-        visited.add(key);
-        distMap[key] = distMap[r + ',' + c] + 1;
-        queue.push([nr, nc]);
-        prev[key] = r + ',' + c;
-      }
-    }
-    gridSteps.push({ type: 'expand', visitedMap: { ...distMap }, queue: [...queue], current, path: null });
-  }
-  if (!found) gridSteps.push({ type: 'notfound', visitedMap: { ...distMap }, queue: [], current: new Set(), path: null });
-
-  gridStepIdx = 0;
-  renderGridStep(gridSteps[0]);
-  document.getElementById('traceLog').innerHTML = '';
-}
-
-function renderGridStep(step) {
-  if (!step) return;
-  renderGridCanvas(step.visitedMap, step.path, step.current);
-  const expls = {
-    init: `🚀 BFS Grid: bắt đầu từ ô (${gridStart.r},${gridStart.c}). Wavefront lan ra 4 hướng.`,
-    expand: `🌊 Wavefront mở rộng: ${step.queue ? step.queue.length : 0} ô trong queue. Distance gradient màu xanh đậm dần.`,
-    found: `🎯 <strong style="color:#ffd54f">Tìm thấy đích!</strong> Đường ngắn nhất highlight vàng. BFS luôn đảm bảo tối ưu!`,
-    notfound: `❌ <strong style="color:#ef5350">Không có đường đi</strong> từ Start đến End!`
-  };
-  document.getElementById('explanation').innerHTML = expls[step.type] || '';
-
-  const qv = document.getElementById('queueViz');
-  qv.innerHTML = '';
-  if (step.queue && step.queue.length > 0) {
-    const item = document.createElement('div');
-    item.className = 'queue-item';
-    item.textContent = `${step.queue.length} ô trong queue`;
-    qv.appendChild(item);
-  } else {
-    qv.innerHTML = '<div class="queue-empty">[ Queue rỗng ]</div>';
-  }
-
-  const log = document.getElementById('traceLog');
-  const entry = document.createElement('div');
-  entry.className = 'trace-entry' + (step.type === 'found' ? ' path' : step.type === 'notfound' ? ' deq' : '');
-  const msgs = { init: '[INIT] BFS grid bắt đầu', expand: `[EXP ] Queue: ${step.queue ? step.queue.length : 0} ô`, found: '[FOUND] Đường ngắn nhất!', notfound: '[NF] Không có đường đi!' };
-  entry.textContent = msgs[step.type] || '';
-  if (entry.textContent) { log.appendChild(entry); log.scrollTop = log.scrollHeight; }
-}
-
-// ===== SHARED CONTROLS =====
-function stepForward() {
-  if (mode === 'grid') {
-    if (gridStepIdx >= gridSteps.length - 1) { stopPlaying(); return; }
-    gridStepIdx++;
-    renderGridStep(gridSteps[gridStepIdx]);
-    if (gridStepIdx >= gridSteps.length - 1) stopPlaying();
-  } else {
-    if (stepIdx >= steps.length - 1) { stopPlaying(); return; }
-    stepIdx++;
-    renderGraphStep(steps[stepIdx]);
-    if (stepIdx >= steps.length - 1) stopPlaying();
-  }
-}
-
-function togglePlayPause() { playing ? stopPlaying() : startPlaying(); }
-function startPlaying() {
-  const maxI = mode === 'grid' ? gridSteps.length - 1 : steps.length - 1;
-  const curI = mode === 'grid' ? gridStepIdx : stepIdx;
-  if (curI >= maxI) return;
-  playing = true; document.getElementById('playPauseBtn').textContent = '⏸ Tạm dừng';
-  timer = setInterval(() => { stepForward(); }, getSpeed());
-}
-function stopPlaying() { playing = false; clearInterval(timer); document.getElementById('playPauseBtn').textContent = '▶ Chạy'; }
-function resetBFS() {
-  stopPlaying();
-  if (mode === 'grid') { gridStepIdx = 0; if (gridSteps.length) renderGridStep(gridSteps[0]); else initGridBFS(); }
-  else { stepIdx = 0; if (steps.length) renderGraphStep(steps[0]); }
-  document.getElementById('traceLog').innerHTML = '';
-  document.getElementById('levelsContainer').innerHTML = '';
-}
-
-window.onload = () => { loadPreset(); };
-window.addEventListener('resize', () => { if (mode === 'graph') renderGraph(steps[stepIdx]); });
+buildCode();
+loadGraph(0);
+reset();
 </script>
 </body>
 </html>

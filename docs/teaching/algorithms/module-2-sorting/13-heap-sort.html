@@ -3,451 +3,536 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Heap Sort — Sắp xếp đống</title>
+<title>Heap Sort — Sắp xếp vun đống</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',sans-serif;background:#080c14;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(248,113,113,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(248,113,113,.04) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;z-index:0}
+  :root {
+    --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+    --text: #eef1f8; --muted: #8899bb;
+    --default-top: #5b8def; --default-bot: #2c5aa0;
+    --compare-top: #ff5e7a; --compare-bot: #c0143c; --compare-glow: rgba(255,94,122,0.65);
+    --swap-top: #ffb347; --swap-bot: #e67e22; --swap-glow: rgba(255,179,71,0.6);
+    --sorted-top: #2ecc71; --sorted-bot: #1a9c54; --sorted-glow: rgba(46,204,113,0.4);
+    --heap-top: #a78bfa; --heap-bot: #7c5ce7; --heap-glow: rgba(167,139,250,0.6);
+    --root-top: #ffd43b; --root-bot: #e6a817; --root-glow: rgba(255,212,59,0.7);
+    --accent: #a78bfa; --yellow: #ffd43b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  body::before { content:''; position: fixed; inset: 0; background: radial-gradient(ellipse at 25% 15%, rgba(167,139,250,0.07) 0%, transparent 55%), radial-gradient(ellipse at 75% 85%, rgba(255,212,59,0.04) 0%, transparent 55%); pointer-events: none; }
+  header { background: var(--surface); padding: 10px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); z-index: 2; }
+  header h1 { font-size: 1.15rem; font-weight: 700; background: linear-gradient(135deg,#a78bfa,#ffd43b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .badge { background: linear-gradient(135deg,#7c5ce7,#a78bfa); color: #fff; padding: 2px 10px; border-radius: 12px; font-size: .68rem; font-weight: 700; }
+  .complexity { display: flex; gap: 6px; margin-left: auto; }
+  .cx { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 9px; font-size: .72rem; color: var(--muted); }
+  .cx span { color: var(--yellow); font-weight: 700; }
+  main { flex: 1; display: flex; overflow: hidden; z-index: 1; min-height: 0; }
+  #viz { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  #compare-display { text-align: center; padding: 10px 20px; min-height: 56px; display: flex; align-items: center; justify-content: center; gap: 12px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .cd-idle { color: var(--muted); font-size: .95rem; }
+  .cd-box { display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 10px; font-size: 1.2rem; font-weight: 800; color: #fff; transition: all 0.3s; }
+  .cd-box.parent { background: linear-gradient(135deg,var(--heap-top),var(--heap-bot)); box-shadow: 0 0 16px var(--heap-glow); }
+  .cd-box.child { background: linear-gradient(135deg,var(--compare-top),var(--compare-bot)); box-shadow: 0 0 16px var(--compare-glow); }
+  .cd-box.root-box { background: linear-gradient(135deg,var(--root-top),var(--root-bot)); box-shadow: 0 0 20px var(--root-glow); color: #000; }
+  .cd-op { font-size: 1.5rem; color: var(--yellow); text-shadow: 0 0 10px rgba(255,212,59,0.5); }
+  .cd-tag { padding: 4px 12px; border-radius: 6px; font-size: .82rem; font-weight: 700; color: #fff; animation: fadeIn 0.25s ease; }
+  .cd-tag.ok { background: linear-gradient(135deg,var(--sorted-top),var(--sorted-bot)); }
+  .cd-tag.sift { background: linear-gradient(135deg,var(--heap-top),var(--heap-bot)); }
+  .cd-tag.swap { background: linear-gradient(135deg,var(--swap-top),var(--swap-bot)); }
+  #explain-viz { padding: 10px 24px; min-height: 52px; background: linear-gradient(135deg, rgba(21,29,50,0.95), rgba(28,39,68,0.9)); border-bottom: 1px solid var(--border); font-size: .88rem; line-height: 1.55; color: var(--text); display: flex; align-items: center; gap: 12px; backdrop-filter: blur(4px); }
+  #explain-viz .step-icon { flex-shrink: 0; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: all 0.3s; }
+  #explain-viz .step-icon.compare { background: rgba(255,94,122,0.15); border: 1px solid rgba(255,94,122,0.3); }
+  #explain-viz .step-icon.swap { background: rgba(255,179,71,0.15); border: 1px solid rgba(255,179,71,0.3); }
+  #explain-viz .step-icon.sorted { background: rgba(46,204,113,0.15); border: 1px solid rgba(46,204,113,0.3); }
+  #explain-viz .step-icon.heap { background: rgba(167,139,250,0.15); border: 1px solid rgba(167,139,250,0.3); }
+  #explain-viz .step-icon.root { background: rgba(255,212,59,0.15); border: 1px solid rgba(255,212,59,0.3); }
+  #explain-viz .step-icon.info { background: rgba(91,141,239,0.15); border: 1px solid rgba(91,141,239,0.3); }
+  #explain-text { flex: 1; }
+  #explain-text b { color: var(--yellow); }
+  #explain-text code { background: var(--surface2); padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: .8rem; color: var(--accent); }
+  #step-counter { font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-header{background:linear-gradient(135deg,#140606,#2a0a0a);padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #450a0a;position:relative;z-index:1}
-header h1{font-size:1.1rem;color:#f87171;text-shadow:0 0 20px rgba(248,113,113,.4)}
-.badge{background:#450a0a;color:#fca5a5;padding:2px 8px;border-radius:4px;font-size:.75rem}
-.complexity{display:flex;gap:8px;margin-left:auto}
-.cx{background:#1e293b;border:1px solid #334155;border-radius:4px;padding:2px 8px;font-size:.75rem;color:#94a3b8}
-.cx span{color:#fbbf24}
+  /* Split view: top=bars, bottom=tree */
+  #split-view { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  #bar-area { flex: 0 0 55%; position: relative; padding: 10px 32px 0; border-bottom: 1px solid var(--border); }
+  #bars-container { position: absolute; bottom: 36px; left: 32px; right: 32px; top: 10px; display: flex; align-items: flex-end; gap: 3px; }
+  #tree-area { flex: 1; position: relative; overflow: hidden; }
+  #tree-canvas { width: 100%; height: 100%; }
+  #tree-label { position: absolute; top: 4px; left: 12px; font-size: .7rem; color: var(--accent); background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.2); padding: 2px 8px; border-radius: 4px; }
 
-main{flex:1;display:flex;overflow:hidden;min-height:0;position:relative;z-index:1}
-#viz{width:60%;background:transparent;display:flex;flex-direction:column;overflow:hidden}
-#bar-area{height:42%;position:relative;padding:6px 16px 0;border-bottom:1px solid #1e293b}
-#bars-container{position:absolute;bottom:0;left:16px;right:16px;top:6px;display:flex;align-items:flex-end;gap:3px}
+  .bar-wrap { display: flex; flex-direction: column; align-items: center; flex: 1; position: relative; }
+  .bar { width: 100%; border-radius: 5px 5px 1px 1px; background: linear-gradient(180deg,var(--default-top),var(--default-bot)); position: relative; overflow: hidden; min-height: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12); transition: box-shadow 0.3s, background 0.3s; }
+  .bar::before { content:''; position: absolute; top:0; left:0; width: 45%; height: 100%; background: linear-gradient(90deg,rgba(255,255,255,0.1),transparent); border-radius: 5px 0 0 1px; }
+  .bar::after { content:''; position: absolute; inset: 0; background: linear-gradient(105deg,transparent 25%,rgba(255,255,255,0.22) 50%,transparent 75%); background-size: 300% 100%; opacity: 0; border-radius: inherit; }
+  .bar-val-inside { position: absolute; top: 3px; left: 0; right: 0; text-align: center; font-size: 11px; font-weight: 800; color: rgba(255,255,255,0.95); text-shadow: 0 1px 3px rgba(0,0,0,0.6); z-index: 2; pointer-events: none; }
+  .bar-idx { font-size: 9px; color: var(--muted); margin-top: 2px; font-variant-numeric: tabular-nums; }
+  #pointers { position: absolute; bottom: 2px; left: 32px; right: 32px; height: 18px; }
+  .ptr { position: absolute; bottom: 0; padding: 1px 4px; border-radius: 3px; font-size: 9px; font-weight: 800; color: #fff; transition: left 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s; opacity: 0; white-space: nowrap; }
+  .ptr::before { content:'▲'; display: block; text-align: center; font-size: 7px; line-height: 1; margin-bottom: 1px; }
+  .ptr-root { background: var(--root-bot); color: #000; }
+  .ptr-i { background: var(--heap-bot); }
+  .ptr-j { background: var(--compare-bot); }
 
-.bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1;position:relative}
-.bar{width:100%;border-radius:4px 4px 0 0;background:linear-gradient(to top,#1d4ed8,#60a5fa);position:relative;overflow:hidden;transition:background .25s,box-shadow .2s}
-.bar::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.15) 50%,transparent 60%);background-size:200% 100%;opacity:0}
-.bar-val{font-size:9px;color:#94a3b8;margin-top:2px;font-weight:600}
+  .bar.heap-root { background: linear-gradient(180deg,var(--root-top),var(--root-bot)); box-shadow: 0 0 24px var(--root-glow), inset 0 1px 0 rgba(255,255,255,0.25); animation: barPulse 0.7s ease-in-out infinite; }
+  .bar-wrap:has(.bar.heap-root) .bar-idx { color: var(--root-top); font-weight: 700; }
+  .bar.heap-node { background: linear-gradient(180deg,var(--heap-top),var(--heap-bot)); box-shadow: 0 0 12px var(--heap-glow), inset 0 1px 0 rgba(255,255,255,0.15); }
+  .bar-wrap:has(.bar.heap-node) .bar-idx { color: var(--heap-top); }
+  .bar.comparing { animation: barPulse 0.5s ease-in-out infinite; }
+  .bar.swapping { background: linear-gradient(180deg,var(--swap-top),var(--swap-bot)); box-shadow: 0 0 26px var(--swap-glow), inset 0 1px 0 rgba(255,255,255,0.25); }
+  .bar-wrap:has(.bar.swapping) .bar-idx { color: var(--swap-top); font-weight: 700; }
+  .bar.sorted { background: linear-gradient(180deg,var(--sorted-top),var(--sorted-bot)); box-shadow: 0 0 10px var(--sorted-glow), inset 0 1px 0 rgba(255,255,255,0.12); }
+  .bar.sorted::after { animation: shimmer 2.5s linear infinite; opacity: 1; }
+  .bar-wrap:has(.bar.sorted) .bar-idx { color: var(--sorted-top); }
 
-.bar.root{background:linear-gradient(to top,#7f1d1d,#f87171);box-shadow:0 0 24px rgba(248,113,113,.8);animation:rootGlow .7s ease-in-out infinite}
-.bar.comparing{background:linear-gradient(to top,#991b1b,#ef4444);box-shadow:0 0 12px rgba(239,68,68,.6);animation:pulseBar .4s ease-in-out infinite}
-.bar.swapping{background:linear-gradient(to top,#c2410c,#f97316);box-shadow:0 0 18px rgba(249,115,22,.7)}
-.bar.sorted{background:linear-gradient(to top,#065f46,#34d399);box-shadow:0 0 8px rgba(52,211,153,.2)}
-.bar.sorted::after{animation:shimmer 2s linear infinite;opacity:1}
-.bar.heapify-path{background:linear-gradient(to top,#78350f,#fbbf24);box-shadow:0 0 14px rgba(251,191,36,.5)}
-.bar.heap-node{background:linear-gradient(to top,#1e3a5f,#4a90d9)}
-
-/* Tree canvas */
-#tree-area{flex:1;position:relative;overflow:hidden}
-#tree-canvas{width:100%;height:100%;display:block}
-
-#legend{display:flex;gap:10px;padding:4px 16px;background:rgba(8,6,6,.9);font-size:.7rem;flex-wrap:wrap}
-.leg{display:flex;align-items:center;gap:4px}
-.leg-dot{width:9px;height:9px;border-radius:2px}
-
-#code-panel{width:40%;background:#140606;border-left:1px solid #450a0a;display:flex;flex-direction:column}
-.panel-title{padding:8px 14px;background:#0e0404;font-size:.8rem;color:#8b92c4;border-bottom:1px solid #450a0a}
-#code{flex:1;overflow-y:auto;padding:8px 0;font-family:'Courier New',monospace;font-size:.76rem;line-height:1.65}
-.code-line{padding:2px 14px;color:#8b92c4;white-space:pre;border-left:3px solid transparent;transition:all .2s}
-.code-line.active{background:linear-gradient(90deg,rgba(251,191,36,.12),transparent);color:#fde68a;border-left-color:#fbbf24}
-#explain{padding:8px 14px;background:#080c14;border-top:1px solid #450a0a;font-size:.78rem;color:#94a3b8;min-height:52px;line-height:1.4}
-
-#controls{background:linear-gradient(135deg,#140606,#111827);padding:7px 14px;display:flex;align-items:center;gap:8px;border-top:1px solid #1e293b;flex-wrap:wrap;position:relative;z-index:1}
-button{background:#1d4ed8;color:#e2e8f0;border:1px solid #2563eb;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:.8rem;transition:all .2s}
-button:hover{background:#2563eb;box-shadow:0 0 12px rgba(37,99,235,.3)}
-#btn-play{background:#991b1b;border-color:#dc2626}
-#btn-play:hover{background:#dc2626;box-shadow:0 0 12px rgba(220,38,38,.4)}
-#stats{display:flex;gap:10px;margin-left:auto;font-size:.78rem}
-.stat{background:#1e293b;padding:3px 8px;border-radius:6px;border:1px solid #2d3748}
-.stat span{color:#f59e0b;font-weight:700}
-label{font-size:.75rem;color:#64748b}
-input[type=range]{accent-color:#f87171;width:80px}
-select{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:3px 5px;font-size:.75rem}
-#phase-info{background:#1e293b;padding:3px 8px;border-radius:6px;font-size:.78rem;color:#f87171;border:1px solid #450a0a}
-
-@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
-@keyframes pulseBar{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.07);transform-origin:bottom}}
-@keyframes rootGlow{0%,100%{box-shadow:0 0 16px rgba(248,113,113,.6)}50%{box-shadow:0 0 32px rgba(248,113,113,1),0 0 10px #f87171}}
-@keyframes dropIn{0%{transform:translateY(-30px);opacity:0}100%{transform:translateY(0);opacity:1}}
-@keyframes nodeSwap{0%{transform:scale(1)}30%{transform:scale(1.2)}70%{transform:scale(0.9)}100%{transform:scale(1)}}
+  #bottom-bar { display: flex; align-items: center; background: var(--surface); border-top: 1px solid var(--border); }
+  #legend { flex: 1; display: flex; gap: 12px; padding: 6px 20px; font-size: .72rem; color: var(--muted); flex-wrap: wrap; }
+  .leg { display: flex; align-items: center; gap: 5px; }
+  .leg-dot { width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(255,255,255,0.08); }
+  #progress-wrap { width: 160px; height: 5px; background: var(--surface2); border-radius: 3px; margin-right: 16px; overflow: hidden; }
+  #progress-bar { height: 100%; width: 0%; border-radius: 3px; background: linear-gradient(90deg,var(--accent),var(--sorted-top)); transition: width 0.4s; box-shadow: 0 0 6px rgba(167,139,250,0.4); }
+  #code-panel { width: 320px; min-width: 280px; background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+  .panel-title { padding: 10px 14px; background: var(--surface2); font-size: .78rem; font-weight: 600; color: var(--accent); border-bottom: 1px solid var(--border); }
+  #code { flex: 1; overflow-y: auto; padding: 10px 0; font-family: 'SF Mono','Fira Code',Consolas,monospace; font-size: .78rem; line-height: 1.9; }
+  .code-line { padding: 0 12px; color: #5a6d8e; white-space: pre; border-left: 3px solid transparent; transition: all 0.2s; }
+  .code-line.comment { color: #3a4d6e; font-style: italic; }
+  .code-line.active { background: linear-gradient(90deg,rgba(255,212,59,0.1),transparent); color: var(--yellow); border-left-color: var(--yellow); font-weight: 600; }
+  #insight { padding: 10px 14px; background: var(--bg); border-top: 1px solid var(--border); font-size: .78rem; line-height: 1.5; color: var(--muted); }
+  #insight .insight-title { color: var(--accent); font-weight: 700; font-size: .7rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  #insight b { color: var(--text); }
+  #controls { background: var(--surface); padding: 8px 24px; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--border); z-index: 2; flex-wrap: wrap; }
+  button { border: none; border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: .8rem; font-weight: 600; transition: all 0.2s; }
+  button:active { transform: scale(0.95); }
+  button:disabled { background: var(--surface2)!important; color: #3a4d6e!important; cursor: not-allowed; }
+  #btn-play { background: linear-gradient(135deg,#00b894,#05c46b); color: #fff; box-shadow: 0 2px 10px rgba(5,196,107,0.25); min-width: 85px; }
+  #btn-step { background: linear-gradient(135deg,#7c5ce7,#a78bfa); color: #fff; }
+  #btn-reset,#btn-new { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  label { font-size: .76rem; color: var(--muted); }
+  input[type=range] { accent-color: var(--accent); width: 85px; }
+  select { background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 5px; padding: 3px 6px; font-size: .76rem; }
+  #stats { display: flex; gap: 8px; margin-left: auto; }
+  .stat { background: var(--surface2); padding: 4px 10px; border-radius: 6px; font-size: .8rem; color: var(--muted); border: 1px solid var(--border); }
+  .stat span { color: var(--yellow); font-weight: 800; font-variant-numeric: tabular-nums; }
+  #pass-info { background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.3); padding: 4px 10px; border-radius: 6px; font-size: .82rem; color: var(--accent); font-weight: 700; }
+  @keyframes barPulse { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(1.04)} }
+  @keyframes shimmer { 0%{background-position:-300% center} 100%{background-position:300% center} }
+  @keyframes dropIn { 0%{transform:scaleY(0);opacity:0;transform-origin:bottom} 70%{transform:scaleY(1.03);opacity:1} 100%{transform:scaleY(1);opacity:1} }
+  @keyframes celebrate { 0%,100%{transform:scaleY(1)} 40%{transform:scaleY(1.08)} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
 </style>
 </head>
 <body>
 <header>
-  <h1>🏔️ Heap Sort — Sắp xếp đống</h1>
-  <span class="badge">Module 2</span>
+  <h1>🌳 Heap Sort</h1>
+  <span class="badge">SORTING</span>
   <div class="complexity">
-    <div class="cx">Best: <span>O(n log n)</span></div>
-    <div class="cx">Avg: <span>O(n log n)</span></div>
-    <div class="cx">Worst: <span>O(n log n)</span></div>
-    <div class="cx">Space: <span>O(1)</span></div>
-    <div class="cx">Stable: <span>✗</span></div>
+    <div class="cx">Best <span>O(n log n)</span></div>
+    <div class="cx">Avg <span>O(n log n)</span></div>
+    <div class="cx">Worst <span>O(n log n)</span></div>
+    <div class="cx">Space <span>O(1)</span></div>
   </div>
 </header>
 <main>
   <div id="viz">
-    <div id="bar-area"><div id="bars-container"></div></div>
-    <canvas id="tree-canvas"></canvas>
-    <div id="legend">
-      <div class="leg"><div class="leg-dot" style="background:#f87171;box-shadow:0 0 5px #f87171"></div>Root (max)</div>
-      <div class="leg"><div class="leg-dot" style="background:#ef4444"></div>Đang so sánh</div>
-      <div class="leg"><div class="leg-dot" style="background:#fbbf24"></div>Heapify path</div>
-      <div class="leg"><div class="leg-dot" style="background:#f97316"></div>Đang swap</div>
-      <div class="leg"><div class="leg-dot" style="background:#34d399"></div>Đã sắp xếp</div>
+    <div id="compare-display"><span class="cd-idle">Nhấn Play để bắt đầu trình diễn thuật toán</span></div>
+    <div id="explain-viz">
+      <div class="step-icon info">💡</div>
+      <div id="explain-text">Heap Sort dùng cấu trúc Max-Heap. Phase 1: Build Max-Heap. Phase 2: Lặp lại: đưa root (max) về cuối, heapify lại. Cây và thanh được đồng bộ.</div>
+      <div id="step-counter"></div>
+    </div>
+    <div id="split-view">
+      <div id="bar-area">
+        <div id="bars-container"></div>
+        <div id="pointers">
+          <div class="ptr ptr-root" id="ptr-root">root</div>
+          <div class="ptr ptr-i" id="ptr-i">node</div>
+          <div class="ptr ptr-j" id="ptr-j">child</div>
+        </div>
+      </div>
+      <div id="tree-area">
+        <canvas id="tree-canvas"></canvas>
+        <div id="tree-label">🌳 Binary Heap Tree</div>
+      </div>
+    </div>
+    <div id="bottom-bar">
+      <div id="legend">
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(180deg,var(--root-top),var(--root-bot));box-shadow:0 0 6px var(--root-glow)"></div>Max/Root</div>
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(180deg,var(--heap-top),var(--heap-bot))"></div>Heap node</div>
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(180deg,var(--compare-top),var(--compare-bot))"></div>So sánh</div>
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(180deg,var(--swap-top),var(--swap-bot))"></div>Swap</div>
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(180deg,var(--sorted-top),var(--sorted-bot));box-shadow:0 0 6px var(--sorted-glow)"></div>Đã xếp ✓</div>
+      </div>
+      <div id="progress-wrap"><div id="progress-bar"></div></div>
     </div>
   </div>
   <div id="code-panel">
-    <div class="panel-title">📄 Code — Heap Sort (Max-Heap)</div>
+    <div class="panel-title">📝 Heap Sort</div>
     <div id="code"></div>
-    <div id="explain">👋 Nhấn Play để bắt đầu!</div>
+    <div id="insight">
+      <div class="insight-title">💡 Max-Heap = Priority Queue</div>
+      Heap là cây nhị phân hoàn chỉnh lưu trong mảng: <b>parent=i</b>, <b>left=2i+1</b>, <b>right=2i+2</b>. Root luôn là phần tử lớn nhất (Max-Heap).
+    </div>
   </div>
 </main>
 <div id="controls">
   <button id="btn-play">▶ Play</button>
   <button id="btn-step">⏭ Step</button>
   <button id="btn-reset">↺ Reset</button>
-  <button id="btn-new">🎲 Mảng mới</button>
-  <label>Tốc độ: <input type="range" id="speed" min="1" max="10" value="5"></label>
-  <label>Size: <select id="size-sel">
-    <option value="7">7</option><option value="10">10</option>
-    <option value="15" selected>15</option><option value="20">20</option>
-  </select></label>
-  <div id="phase-info">Phase: —</div>
+  <button id="btn-new">🎲 Mới</button>
+  <label>Speed <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <label>Size <select id="size-sel"><option value="8">8</option><option value="15" selected>15</option><option value="20">20</option></select></label>
+  <div id="pass-info">Build Heap</div>
   <div id="stats">
-    <div class="stat">So sánh: <span id="s-cmp">0</span></div>
-    <div class="stat">Swap: <span id="s-swap">0</span></div>
-    <div class="stat">Acc: <span id="s-acc">0</span></div>
+    <div class="stat">Cmp <span id="s-cmp">0</span></div>
+    <div class="stat">Swap <span id="s-swap">0</span></div>
   </div>
 </div>
 <script>
-const CODE=[
-  {t:'function heapSort(arr) {'},
-  {t:'  const n = arr.length;'},
-  {t:'  // Bước 1: Xây dựng Max-Heap'},
-  {t:'  for (let i = Math.floor(n/2)-1; i>=0; i--)'},
-  {t:'    heapify(arr, n, i);'},
-  {t:'  // Bước 2: Lần lượt rút max về cuối'},
-  {t:'  for (let i = n-1; i > 0; i--) {'},
-  {t:'    // root (max) ↔ phần tử cuối heap'},
-  {t:'    [arr[0], arr[i]] = [arr[i], arr[0]];'},
-  {t:'    // Khôi phục heap property'},
-  {t:'    heapify(arr, i, 0);'},
-  {t:'  }'},
-  {t:'}'},
-  {t:''},
-  {t:'function heapify(arr, heapSize, i) {'},
-  {t:'  let largest = i;'},
-  {t:'  const l = 2*i+1, r = 2*i+2;'},
-  {t:'  if (l < heapSize && arr[l] > arr[largest])'},
-  {t:'    largest = l;'},
-  {t:'  if (r < heapSize && arr[r] > arr[largest])'},
-  {t:'    largest = r;'},
-  {t:'  if (largest !== i) {'},
-  {t:'    [arr[i], arr[largest]] = [arr[largest], arr[i]];'},
-  {t:'    heapify(arr, heapSize, largest);'},
-  {t:'  }'},
-  {t:'}'},
+const CODE_LINES = [
+  'function heapSort(arr) {',
+  '  const n = arr.length;',
+  '  // Phase 1: Build Max-Heap',
+  '  for (let i = Math.floor(n/2)-1; i >= 0; i--)',
+  '    heapify(arr, n, i);',
+  '  // Phase 2: Extract max lần lượt',
+  '  for (let i = n-1; i > 0; i--) {',
+  '    swap(arr[0], arr[i]); // Root về cuối',
+  '    heapify(arr, i, 0);   // Heapify lại',
+  '  }',
+  '}',
+  'function heapify(arr, n, i) {',
+  '  let largest = i;',
+  '  const l = 2*i+1, r = 2*i+2;',
+  '  if (l < n && arr[l] > arr[largest])',
+  '    largest = l;',
+  '  if (r < n && arr[r] > arr[largest])',
+  '    largest = r;',
+  '  if (largest !== i) {',
+  '    swap(arr[i], arr[largest]);',
+  '    heapify(arr, n, largest);',
+  '  }',
+  '}',
 ];
 
-let arr=[],steps=[],stepIdx=0,playing=false,timer=null,cmp=0,swp=0,acc=0;
-let awaitingSwap=false;
-// track tree animation state
-let treeAnimNodes={highlighted:[],swapping:[]};
+let arr=[], steps=[], stepIdx=0, playing=false, timer=null;
+let cmpCount=0, swapCount=0, sortedFrom=Infinity, awaitingSwap=false;
+let activeNodes=[], highlightNodes=[];
 
-function buildCode(){document.getElementById('code').innerHTML=CODE.map((c,i)=>`<div class="code-line" data-i="${i}">${c.t||' '}</div>`).join('');}
-function hl(i){document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));if(i>=0)document.querySelector(`[data-i="${i}"]`)?.classList.add('active');}
-function genArray(){const n=+document.getElementById('size-sel').value;arr=Array.from({length:n},()=>Math.floor(Math.random()*85)+15);}
-
-function buildSteps(){
-  steps=[];
-  const a=[...arr];const n=a.length;
-  steps.push({type:'init',arr:[...a],heapSize:n,line:-1});
-
-  function heapify(ar,hs,i){
-    let largest=i;
-    const l=2*i+1,r=2*i+2;
-    steps.push({type:'heapify_start',i,l,r,hs,arr:[...ar],line:15});
-    if(l<hs){cmp++;acc+=2;steps.push({type:'cmp_left',i,l,largest,hs,arr:[...ar],line:17});if(ar[l]>ar[largest])largest=l;}
-    if(r<hs){cmp++;acc+=2;steps.push({type:'cmp_right',i,r,largest,hs,arr:[...ar],line:19});if(ar[r]>ar[largest])largest=r;}
+function buildCode() {
+  document.getElementById('code').innerHTML = CODE_LINES.map((l,i) =>
+    `<div class="code-line${l.trim().startsWith('//')?' comment':''}" data-i="${i}">${l}</div>`
+  ).join('');
+}
+function hl(i) {
+  document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));
+  if(i>=0) document.querySelector(`[data-i="${i}"]`)?.classList.add('active');
+}
+function setExplain(icon, iconClass, html) {
+  const ic=document.querySelector('#explain-viz .step-icon');
+  ic.textContent=icon; ic.className='step-icon '+iconClass;
+  document.getElementById('explain-text').innerHTML=html;
+  document.getElementById('step-counter').textContent=`${stepIdx}/${steps.length}`;
+}
+function setInsight(title, html) {
+  document.getElementById('insight').innerHTML=`<div class="insight-title">${title}</div>${html}`;
+}
+function genArray() {
+  const n=+document.getElementById('size-sel').value;
+  arr=Array.from({length:n},()=>Math.floor(Math.random()*80)+15);
+}
+function buildSteps() {
+  steps=[]; const a=[...arr], n=a.length;
+  steps.push({type:'init',arr:[...a]});
+  // Phase 1: Build max heap
+  steps.push({type:'phase1',arr:[...a]});
+  function heapify(a,hn,i,phase){
+    let largest=i, l=2*i+1, r=2*i+2;
+    steps.push({type:'heapify-start',i,l,r,heapN:hn,phase,arr:[...a]});
+    cmpCount++;
+    if(l<hn&&a[l]>a[largest]){largest=l;steps.push({type:'new-largest',i,largest,heapN:hn,phase,arr:[...a]});}
+    cmpCount++;
+    if(r<hn&&a[r]>a[largest]){largest=r;steps.push({type:'new-largest',i,largest,heapN:hn,phase,arr:[...a]});}
     if(largest!==i){
-      swp++;acc+=2;
-      steps.push({type:'heapify_swap',i,largest,hs,arr:[...ar],line:22});
-      [ar[i],ar[largest]]=[ar[largest],ar[i]];
-      steps.push({type:'after_swap',i,largest,hs,arr:[...ar],line:23});
-      heapify(ar,hs,largest);
-    }else{
-      steps.push({type:'heap_ok',i,hs,arr:[...ar],line:21});
+      swapCount++;
+      steps.push({type:'heapify-swap',i,largest,v1:a[i],v2:a[largest],heapN:hn,phase,arr:[...a]});
+      [a[i],a[largest]]=[a[largest],a[i]];
+      steps.push({type:'after-heapify-swap',i,largest,heapN:hn,phase,arr:[...a]});
+      heapify(a,hn,largest,phase);
+    } else {
+      steps.push({type:'heapify-ok',i,heapN:hn,phase,arr:[...a]});
     }
   }
-
-  steps.push({type:'phase_build',arr:[...a],heapSize:n,line:3});
-  for(let i=Math.floor(n/2)-1;i>=0;i--){
-    steps.push({type:'build_node',i,arr:[...a],heapSize:n,line:3});
-    heapify(a,n,i);
-  }
-  steps.push({type:'heap_built',arr:[...a],heapSize:n,line:5});
-  steps.push({type:'phase_extract',arr:[...a],heapSize:n,line:6});
+  for(let i=Math.floor(n/2)-1;i>=0;i--) heapify(a,n,i,'build');
+  steps.push({type:'heap-built',arr:[...a]});
+  // Phase 2: Extract
+  steps.push({type:'phase2',arr:[...a]});
   for(let i=n-1;i>0;i--){
-    steps.push({type:'extract',rootVal:a[0],i,heapSize:i+1,arr:[...a],line:8});
-    swp++;acc+=2;[a[0],a[i]]=[a[i],a[0]];
-    steps.push({type:'after_extract',i,heapSize:i,arr:[...a],line:8});
-    heapify(a,i,0);
-    steps.push({type:'extracted',i,heapSize:i,arr:[...a],line:10});
+    swapCount++;
+    steps.push({type:'extract',i,root:a[0],arr:[...a]});
+    [a[0],a[i]]=[a[i],a[0]];
+    steps.push({type:'after-extract',i,sorted:a[i],arr:[...a]});
+    heapify(a,i,0,'sort');
+    steps.push({type:'pass-done',i,arr:[...a]});
   }
   steps.push({type:'done',arr:[...a]});
-  cmp=0;swp=0;acc=0;
 }
 
-function buildBarsDOM(a,hs){
-  const con=document.getElementById('bars-container');
-  con.innerHTML='';
+function buildBarsDOM(a) {
+  const con=document.getElementById('bars-container'); con.innerHTML='';
   const max=Math.max(...a);
   a.forEach((v,i)=>{
-    const wrap=document.createElement('div');wrap.className='bar-wrap';wrap.dataset.idx=i;
-    const bar=document.createElement('div');bar.className='bar';
-    if(i>=hs) bar.classList.add('sorted');
-    else if(i===0&&hs>0) bar.classList.add('root');
-    else bar.classList.add('heap-node');
-    bar.style.height=Math.round((v/max)*100)+'%';
-    bar.style.animation='dropIn .4s ease both';
-    bar.style.animationDelay=(i*0.02)+'s';
-    const val=document.createElement('div');val.className='bar-val';val.textContent=v;
-    wrap.appendChild(bar);wrap.appendChild(val);con.appendChild(wrap);
+    const wrap=document.createElement('div'); wrap.className='bar-wrap';
+    const bar=document.createElement('div'); bar.className='bar';
+    bar.style.height=Math.round((v/max)*80)+'%';
+    bar.style.animation=`dropIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both`;
+    bar.style.animationDelay=(i*20)+'ms';
+    const valIn=document.createElement('div'); valIn.className='bar-val-inside'; valIn.textContent=v;
+    bar.appendChild(valIn);
+    const idx=document.createElement('div'); idx.className='bar-idx'; idx.textContent=i;
+    wrap.appendChild(bar); wrap.appendChild(idx); con.appendChild(wrap);
   });
 }
 
-function renderBars(a,hs,highlighted,swapping){
+function updateBars(rootIdx, heapifyI, heapifyLargest, swapping, heapN) {
   const wraps=document.querySelectorAll('.bar-wrap');
-  if(wraps.length!==a.length){buildBarsDOM(a,hs);return;}
-  const max=Math.max(...a);
-  a.forEach((v,idx)=>{
-    const wrap=wraps[idx];
+  wraps.forEach((wrap,i)=>{
     const bar=wrap.querySelector('.bar');
-    const val=wrap.querySelector('.bar-val');
-    bar.className='bar';
-    bar.style.height=Math.round((v/max)*100)+'%';
-    val.textContent=v;
-    if(idx>=hs) bar.classList.add('sorted');
-    else if(swapping&&swapping.includes(idx)) bar.classList.add('swapping');
-    else if(highlighted&&highlighted.includes(idx)) bar.classList.add('heapify-path');
-    else if(idx===0&&hs>0) bar.classList.add('root');
-    else bar.classList.add('heap-node');
+    bar.classList.remove('heap-root','heap-node','comparing','swapping','sorted');
+    if(heapN!=null&&i>=heapN) bar.classList.add('sorted');
+    else if(swapping?.includes(i)) bar.classList.add('swapping');
+    else if(i===0&&heapN==null) bar.classList.add('heap-root');
+    else if(i===rootIdx) bar.classList.add('heap-root');
+    else if(i===heapifyI) { bar.classList.add('heap-node'); bar.classList.add('comparing'); }
+    else if(i===heapifyLargest) bar.classList.add('comparing');
+    else if(heapN!=null&&i<heapN) bar.classList.add('heap-node');
   });
 }
 
-function drawTree(ar,hs,highlighted,swapping){
-  const canvas=document.getElementById('tree-canvas');
-  const ctx=canvas.getContext('2d');
-  canvas.width=canvas.clientWidth;canvas.height=canvas.clientHeight;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(!ar||ar.length===0) return;
-  const n=Math.min(hs,ar.length);
-  if(n===0) return;
-  const W=canvas.width,H=canvas.height;
-  const maxDepth=Math.floor(Math.log2(n));
-  const nodeR=Math.min(20,Math.max(10,(H-40)/(2*(maxDepth+1))));
+function showPointers(rootI, nodeI, childI) {
+  const wraps=[...document.querySelectorAll('.bar-wrap')];
+  const pr=document.getElementById('ptr-root'), pi=document.getElementById('ptr-i'), pj=document.getElementById('ptr-j');
+  if(rootI>=0&&wraps[rootI]){pr.style.opacity='1';pr.style.left=(wraps[rootI].offsetLeft+wraps[rootI].offsetWidth/2-14)+'px';}else pr.style.opacity='0';
+  if(nodeI>=0&&wraps[nodeI]){pi.style.opacity='1';pi.style.left=(wraps[nodeI].offsetLeft+wraps[nodeI].offsetWidth/2-14)+'px';}else pi.style.opacity='0';
+  if(childI>=0&&wraps[childI]){pj.style.opacity='1';pj.style.left=(wraps[childI].offsetLeft+wraps[childI].offsetWidth/2-14)+'px';}else pj.style.opacity='0';
+}
 
-  function getPos(idx){
-    const d=Math.floor(Math.log2(idx+1));
-    const pos=idx+1-Math.pow(2,d);
+/* Tree drawing */
+let currentArr=[], currentHeapN=0, treeHighlight={};
+function drawTree(a, hn, highlight) {
+  const canvas=document.getElementById('tree-canvas');
+  const area=document.getElementById('tree-area');
+  canvas.width=area.clientWidth; canvas.height=area.clientHeight;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(!a||a.length===0) return;
+  const n=Math.min(hn,a.length);
+  if(n===0) return;
+  const depth=Math.floor(Math.log2(n));
+  const levels=depth+1;
+  const W=canvas.width, H=canvas.height;
+  const nodeR=Math.min(18,Math.max(10,(W/(Math.pow(2,depth)*2.2))));
+  const vGap=Math.max(28,(H-nodeR*2)/(levels));
+  function nodePos(i){
+    const d=Math.floor(Math.log2(i+1));
+    const pos=i-(Math.pow(2,d)-1);
     const total=Math.pow(2,d);
     const x=W*(pos+0.5)/total;
-    const y=20+d*(H-40)/(maxDepth+1);
-    return[x,y];
+    const y=nodeR+d*vGap+10;
+    return{x,y};
   }
-
-  // Draw animated edges
+  // Draw edges
   for(let i=1;i<n;i++){
     const p=Math.floor((i-1)/2);
-    const[px,py]=getPos(p);const[cx2,cy]=getPos(i);
-    const isActive=(highlighted&&(highlighted.includes(i)||highlighted.includes(p)))||
-                   (swapping&&(swapping.includes(i)||swapping.includes(p)));
-    ctx.strokeStyle=isActive?'rgba(248,113,113,.5)':'rgba(51,65,85,.6)';
-    ctx.lineWidth=isActive?2:1.5;
-    ctx.shadowColor=isActive?'#f87171':'transparent';
-    ctx.shadowBlur=isActive?6:0;
-    ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(cx2,cy);ctx.stroke();
-    ctx.shadowBlur=0;
+    const {x:cx,y:cy}=nodePos(i);
+    const {x:px,y:py}=nodePos(p);
+    ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(cx,cy);
+    ctx.strokeStyle='rgba(42,58,92,0.8)'; ctx.lineWidth=1.5; ctx.stroke();
   }
-
   // Draw nodes
   for(let i=0;i<n;i++){
-    const[x,y]=getPos(i);
-    let fillCol='#1e3a5f';
-    let strokeCol='#334155';
-    let textCol='#e2e8f0';
-    let glowCol='transparent';
-    let glowBlur=0;
-
-    if(swapping&&swapping.includes(i)){fillCol='#c2410c';strokeCol='#f97316';glowCol='#f97316';glowBlur=12;}
-    else if(highlighted&&highlighted.includes(i)){fillCol='#92400e';strokeCol='#fbbf24';glowCol='#fbbf24';glowBlur=8;}
-    else if(i===0){fillCol='#7f1d1d';strokeCol='#f87171';glowCol='#f87171';glowBlur=10;textCol='#fff'}
-
-    ctx.save();
-    ctx.shadowColor=glowCol;ctx.shadowBlur=glowBlur;
-    ctx.beginPath();ctx.arc(x,y,nodeR,0,2*Math.PI);
-    ctx.fillStyle=fillCol;ctx.fill();
-    ctx.strokeStyle=strokeCol;ctx.lineWidth=1.5;ctx.stroke();
-    ctx.restore();
-    ctx.fillStyle=textCol;
-    ctx.font=`bold ${Math.max(9,nodeR*0.85)}px monospace`;
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(ar[i],x,y);
+    const {x,y}=nodePos(i);
+    let fillColor='#1c2744', strokeColor='#2a3a5c', textColor='#eef1f8', glowColor=null;
+    if(i>=hn){fillColor='rgba(26,156,84,0.3)';strokeColor='#1a9c54';textColor='#2ecc71';}
+    else if(highlight.root===i){fillColor='rgba(230,168,23,0.3)';strokeColor='#e6a817';textColor='#ffd43b';glowColor='rgba(255,212,59,0.5)';}
+    else if(highlight.swap?.includes(i)){fillColor='rgba(230,126,34,0.3)';strokeColor='#e67e22';textColor='#ffb347';glowColor='rgba(255,179,71,0.5)';}
+    else if(highlight.compare?.includes(i)){fillColor='rgba(255,94,122,0.2)';strokeColor='#ff5e7a';textColor='#ff5e7a';glowColor='rgba(255,94,122,0.4)';}
+    else if(highlight.heap?.includes(i)){fillColor='rgba(124,92,231,0.25)';strokeColor='#7c5ce7';textColor='#a78bfa';}
+    if(glowColor){ctx.shadowColor=glowColor;ctx.shadowBlur=12;}else{ctx.shadowBlur=0;}
+    ctx.beginPath(); ctx.arc(x,y,nodeR,0,Math.PI*2);
+    ctx.fillStyle=fillColor; ctx.fill();
+    ctx.strokeStyle=strokeColor; ctx.lineWidth=i===0&&hn>0?2:1.5; ctx.stroke();
+    ctx.shadowBlur=0;
+    ctx.fillStyle=textColor; ctx.font=`bold ${Math.max(9,nodeR*0.7)}px monospace`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(a[i],x,y);
+    // index label
+    ctx.fillStyle='rgba(136,153,187,0.6)'; ctx.font=`${Math.max(7,nodeR*0.5)}px sans-serif`;
+    ctx.fillText(i,x,y+nodeR+8);
   }
-
-  // Draw sorted nodes (outside heap, faded green)
-  for(let i=n;i<ar.length;i++){
-    const[x,y]=getPos(i);
-    ctx.save();
-    ctx.globalAlpha=0.55;
-    ctx.shadowColor='#34d399';ctx.shadowBlur=4;
-    ctx.beginPath();ctx.arc(x,y,nodeR,0,2*Math.PI);
-    ctx.fillStyle='#065f46';ctx.fill();
-    ctx.strokeStyle='#34d399';ctx.lineWidth=1;ctx.stroke();
-    ctx.restore();
-    ctx.fillStyle='#6ee7b7';ctx.globalAlpha=0.7;
-    ctx.font=`bold ${Math.max(9,nodeR*0.75)}px monospace`;
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillText(ar[i],x,y);
-    ctx.globalAlpha=1;
+  // Draw sorted nodes
+  for(let i=hn;i<a.length;i++){
+    const {x,y}=nodePos(i);
+    ctx.beginPath(); ctx.arc(x,y,nodeR,0,Math.PI*2);
+    ctx.fillStyle='rgba(26,156,84,0.2)'; ctx.fill();
+    ctx.strokeStyle='#1a9c54'; ctx.lineWidth=1; ctx.stroke();
+    ctx.fillStyle='#2ecc71'; ctx.font=`bold ${Math.max(9,nodeR*0.7)}px monospace`;
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(a[i],x,y);
+    ctx.fillStyle='rgba(46,204,113,0.4)'; ctx.font=`${Math.max(7,nodeR*0.5)}px sans-serif`;
+    ctx.fillText(i,x,y+nodeR+8);
   }
 }
 
-function animateSwap(i1,i2,a,hs,callback){
-  const wraps=document.querySelectorAll('.bar-wrap');
-  const bar1=wraps[i1],bar2=wraps[i2];
-  if(!bar1||!bar2){callback&&callback();return;}
-  const dx=bar2.offsetLeft-bar1.offsetLeft;
-  const dur=Math.max(130,400-document.getElementById('speed').value*32);
-  bar1.style.transition=`transform ${dur}ms cubic-bezier(0.4,0,0.2,1)`;
-  bar2.style.transition=`transform ${dur}ms cubic-bezier(0.4,0,0.2,1)`;
-  bar1.style.transform=`translateX(${dx}px)`;
-  bar2.style.transform=`translateX(${-dx}px)`;
-  bar1.style.zIndex=2;bar2.style.zIndex=1;
-  // Also animate tree
-  drawTree(a,hs,[],[i1,i2]);
+function animateSwap(i, j, cb) {
+  const wraps=[...document.querySelectorAll('.bar-wrap')];
+  const a=wraps[i], b=wraps[j];
+  if(!a||!b){cb?.();return;}
+  const dist=b.offsetLeft-a.offsetLeft;
+  const dur=Math.max(150,480-document.getElementById('speed').value*33);
+  a.style.transition=`transform ${dur}ms cubic-bezier(0.4,0,0.2,1)`;
+  b.style.transition=`transform ${dur}ms cubic-bezier(0.4,0,0.2,1)`;
+  a.style.transform=`translateX(${dist}px)`; b.style.transform=`translateX(${-dist}px)`;
+  a.style.zIndex='3'; b.style.zIndex='2';
   setTimeout(()=>{
-    bar1.style.transition='none';bar2.style.transition='none';
-    bar1.style.transform='';bar2.style.transform='';
-    bar1.style.zIndex='';bar2.style.zIndex='';
-    if(i1<i2) bar1.parentNode.insertBefore(bar2,bar1);
-    else bar1.parentNode.insertBefore(bar1,bar2.nextSibling);
-    callback&&callback();
-  },dur+20);
+    a.style.transition='none'; b.style.transition='none';
+    a.style.transform=''; b.style.transform='';
+    a.style.zIndex=''; b.style.zIndex='';
+    if(dist>0){a.parentNode.insertBefore(b,a);}else{a.parentNode.insertBefore(a,b.nextSibling);}
+    [...document.querySelectorAll('.bar-wrap')].forEach((w,idx)=>w.querySelector('.bar-idx').textContent=idx);
+    cb?.();
+  }, dur+30);
 }
 
-function applyStep(s){
-  if(!s)return;
-  hl(s.line>=0?s.line:-1);
-  const a=s.arr||arr;const hs=s.heapSize!==undefined?s.heapSize:arr.length;
-
-  if(s.type==='init'){
-    buildBarsDOM(a,hs);drawTree(a,hs,[],[]);
-    document.getElementById('explain').textContent='Heap Sort: (1) Xây max-heap từ dưới lên. (2) Lần lượt rút max về cuối.';
-  }
-  else if(s.type==='phase_build'){
-    document.getElementById('phase-info').textContent='Phase: BUILD HEAP';
-    document.getElementById('explain').textContent='🏗️ Xây dựng Max-Heap từ dưới lên (từ nút lá gần nhất đến root).';
-    buildBarsDOM(a,hs);drawTree(a,hs,[],[]);
-  }
-  else if(s.type==='build_node'){
-    document.getElementById('explain').innerHTML=`🔨 Heapify nút i=${s.i} (val=${a[s.i]}).`;
-    renderBars(a,hs,[s.i],[]);drawTree(a,hs,[s.i],[]);
-  }
-  else if(s.type==='heapify_start'){
-    document.getElementById('explain').innerHTML=`🔍 Heapify(${s.i}): l=${s.l<hs?s.l:'—'}, r=${s.r<hs?s.r:'—'}`;
-    renderBars(a,hs,[s.i],[]);drawTree(a,hs,[s.i],[]);
-  }
-  else if(s.type==='cmp_left'||s.type==='cmp_right'){
-    cmp++;document.getElementById('s-cmp').textContent=cmp;
-    acc+=2;document.getElementById('s-acc').textContent=acc;
-    const which=s.type==='cmp_left'?s.l:s.r;
-    document.getElementById('explain').innerHTML=`🔴 So sánh arr[${which}]=${a[which]} vs largest arr[${s.largest}]=${a[s.largest]}`;
-    renderBars(a,hs,[s.i,which],[]);drawTree(a,hs,[s.i,which],[]);
-  }
-  else if(s.type==='heap_ok'){
-    document.getElementById('explain').innerHTML=`✅ Nút ${s.i} thỏa heap property.`;
-    renderBars(a,hs,[],[]);drawTree(a,hs,[],[]);
-  }
-  else if(s.type==='heapify_swap'){
-    swp++;document.getElementById('s-swap').textContent=swp;
-    acc+=2;document.getElementById('s-acc').textContent=acc;
-    document.getElementById('explain').innerHTML=`🔄 Swap arr[${s.i}]=${a[s.i]} ↔ arr[${s.largest}]=${a[s.largest]}`;
-    awaitingSwap=true;
-    if(playing) stopPlay();
-    renderBars(a,hs,[],[s.i,s.largest]);
-    const prevArr=[...a];
-    animateSwap(s.i,s.largest,a,hs,()=>{
-      awaitingSwap=false;
-      // After DOM swap, find next step
-      if(stepIdx<steps.length&&steps[stepIdx].type==='after_swap'){
-        applyStep(steps[stepIdx++]);
-      }
-      if(playing) continuePlay();
-    });
-    return;
-  }
-  else if(s.type==='after_swap'){
-    renderBars(a,hs,[s.largest],[]);drawTree(a,hs,[s.largest],[]);
-  }
-  else if(s.type==='heap_built'){
-    document.getElementById('phase-info').textContent='Phase: BUILD HEAP ✓';
-    document.getElementById('explain').innerHTML=`✅ <b>Max-Heap xây xong!</b> Root = ${a[0]} (lớn nhất).`;
-    renderBars(a,hs,[0],[]);drawTree(a,hs,[0],[]);
-  }
-  else if(s.type==='phase_extract'){
-    document.getElementById('phase-info').textContent='Phase: EXTRACT MAX';
-    document.getElementById('explain').textContent='📤 Rút root (max) về cuối, giảm heap, heapify lại.';
-    renderBars(a,hs,[],[]);drawTree(a,hs,[],[]);
-  }
-  else if(s.type==='extract'){
-    swp++;document.getElementById('s-swap').textContent=swp;
-    acc+=2;document.getElementById('s-acc').textContent=acc;
-    document.getElementById('explain').innerHTML=`📤 <b>Extract max = ${s.rootVal}</b>. Swap root[0] ↔ arr[${s.i}]`;
-    awaitingSwap=true;
-    if(playing) stopPlay();
-    renderBars(a,s.heapSize,[],[0,s.i]);drawTree(a,s.heapSize,[],[0,s.i]);
-    animateSwap(0,s.i,a,s.heapSize,()=>{
-      awaitingSwap=false;
-      if(stepIdx<steps.length&&steps[stepIdx].type==='after_extract'){
-        applyStep(steps[stepIdx++]);
-      }
-      if(playing) continuePlay();
-    });
-    return;
-  }
-  else if(s.type==='after_extract'){
-    renderBars(a,hs,[0],[]);drawTree(a,hs,[0],[]);
-    document.getElementById('explain').innerHTML=`🏔️ Heapify lại từ root (${a[0]}). Heap size = ${hs}`;
-  }
-  else if(s.type==='extracted'){
-    renderBars(a,hs,[],[]);drawTree(a,hs,[],[]);
-  }
-  else if(s.type==='done'){
-    buildBarsDOM(a,0);drawTree(a,0,[],[]);
-    document.getElementById('explain').textContent='🎉 Hoàn tất! O(n log n) mọi trường hợp, in-place.';
-    document.getElementById('phase-info').textContent='Phase: DONE ✓';
-    stopPlay();
+function applyStep(s) {
+  if(!s) return;
+  const hn=s.heapN!=null?s.heapN:(s.i!=null&&s.type!=='done'?arr.length:arr.length);
+  currentArr=s.arr; currentHeapN=hn;
+  switch(s.type) {
+    case 'init':
+      sortedFrom=Infinity; buildBarsDOM(s.arr); showPointers(-1,-1,-1);
+      document.getElementById('compare-display').innerHTML=`<span class="cd-idle">Nhấn Play để bắt đầu trình diễn thuật toán</span>`;
+      hl(-1);
+      drawTree(s.arr,s.arr.length,{});
+      setExplain('💡','info','Heap Sort: Phase 1 = Build Max-Heap. Phase 2 = Lặp lại đưa root (max) về cuối mảng và heapify lại. Cây và thanh được đồng bộ!');
+      setInsight('💡 Max-Heap = Priority Queue','Heap là cây nhị phân hoàn chỉnh lưu trong mảng: <b>parent=i</b>, <b>left=2i+1</b>, <b>right=2i+2</b>. Root luôn là phần tử lớn nhất (Max-Heap).');
+      break;
+    case 'phase1':
+      hl(3); document.getElementById('pass-info').textContent='Build Heap';
+      drawTree(s.arr,s.arr.length,{});
+      setExplain('🏗️','heap',`<b>Phase 1: Build Max-Heap</b>. Bắt đầu heapify từ node cuối non-leaf (index ${Math.floor(arr.length/2)-1}) ngược lên root. Sau phase này root = phần tử lớn nhất.`);
+      setInsight('🏗️ Build Max-Heap',`Chỉ cần heapify các node không phải lá (n/2-1 nodes). Mỗi heapify O(log n) → Build Heap tổng O(n) — bất ngờ hiệu quả!`);
+      break;
+    case 'heapify-start':
+      hl(12); document.getElementById('s-cmp').textContent=cmpCount;
+      updateBars(-1,s.i,-1,null,s.heapN);
+      showPointers(-1,s.i,-1);
+      drawTree(s.arr,s.heapN,{compare:[s.i,s.l,s.r].filter(x=>x<s.heapN)});
+      setExplain('🔍','heap',`Heapify tại node <b>[${s.i}]=${s.arr[s.i]}</b>. Con trái: [${s.l}]=${s.l<s.heapN?s.arr[s.l]:'N/A'}, con phải: [${s.r}]=${s.r<s.heapN?s.arr[s.r]:'N/A'}. Tìm largest trong 3 node này.`);
+      break;
+    case 'new-largest':
+      hl(15); updateBars(-1,s.i,s.largest,null,s.heapN);
+      showPointers(-1,s.i,s.largest);
+      drawTree(s.arr,s.heapN,{compare:[s.i],root:s.largest});
+      setExplain('⬆️','heap',`Tìm thấy largest mới: <b>[${s.largest}]=${s.arr[s.largest]}</b> > [${s.i}]=${s.arr[s.i]}. Cần swap để đảm bảo heap property.`);
+      break;
+    case 'heapify-ok':
+      hl(18); updateBars(s.phase==='sort'?0:-1,s.i,-1,null,s.heapN);
+      showPointers(-1,s.i,-1);
+      drawTree(s.arr,s.heapN,{heap:[s.i]});
+      setExplain('✅','heap',`Node [${s.i}]=${s.arr[s.i]} đã là lớn nhất trong subtree. Heap property đã đúng tại đây.`);
+      break;
+    case 'heapify-swap':
+      swapCount++; document.getElementById('s-swap').textContent=swapCount;
+      hl(19); updateBars(-1,s.i,s.largest,[s.i,s.largest],s.heapN);
+      showPointers(-1,s.i,s.largest);
+      drawTree(s.arr,s.heapN,{swap:[s.i,s.largest]});
+      setExplain('⇄','swap',`Swap! [${s.i}]=${s.v1} ⇄ [${s.largest}]=${s.v2}. Đẩy ${s.v1} xuống subtree, kéo ${s.v2} lên.`);
+      setInsight('⇄ Sift Down',`Swap xong → đệ quy heapify xuống node largest để đảm bảo subtree bên dưới cũng thoả heap property.`);
+      awaitingSwap=true;
+      if(playing) clearTimeout(timer);
+      animateSwap(s.i,s.largest,()=>{
+        awaitingSwap=false;
+        if(stepIdx<steps.length&&steps[stepIdx].type==='after-heapify-swap') applyStep(steps[stepIdx++]);
+        if(playing) timer=setTimeout(tick,getDelay());
+      });
+      return;
+    case 'after-heapify-swap':
+      updateBars(-1,-1,-1,null,s.heapN); hl(20);
+      drawTree(s.arr,s.heapN,{});
+      break;
+    case 'heap-built':
+      hl(4); document.getElementById('pass-info').textContent='Heap Built!';
+      updateBars(0,-1,-1,null,arr.length);
+      showPointers(0,-1,-1);
+      drawTree(s.arr,s.arr.length,{root:0});
+      document.getElementById('compare-display').innerHTML=`<span style="color:var(--accent);font-size:1rem">✅ Max-Heap built! Root = <b style="color:var(--yellow);font-size:1.2rem">${s.arr[0]}</b> (phần tử lớn nhất)</span>`;
+      setExplain('✅','sorted',`Max-Heap hoàn tất! Root [0]=${s.arr[0]} là phần tử lớn nhất. Bây giờ bắt đầu Phase 2: lần lượt đưa root về cuối mảng.`);
+      setInsight('✅ Max-Heap Built',`Cây heap đã thoả mãn: mọi parent ≥ children. Root = max = <b>${s.arr[0]}</b>. Phase 2 sẽ extract max ${arr.length-1} lần.`);
+      break;
+    case 'phase2':
+      hl(6); document.getElementById('pass-info').textContent='Extract Max';
+      setExplain('📤','root','<b>Phase 2: Extract Max</b>. Swap root (max) với phần tử cuối heap, thu nhỏ heap, heapify lại. Lặp lại n-1 lần → mảng sắp xếp tăng dần.');
+      break;
+    case 'extract':
+      hl(7); updateBars(0,-1,-1,[0,s.i],s.i);
+      showPointers(0,-1,s.i);
+      drawTree(s.arr,s.i+1,{root:0,swap:[0,s.i]});
+      document.getElementById('pass-info').textContent=`Extract ${s.root}`;
+      document.getElementById('compare-display').innerHTML=`<span class="cd-box root-box">${s.root}</span><span class="cd-op">→</span><span style="color:var(--sorted-top);font-size:1rem">vị trí <b>${s.i}</b></span>`;
+      setExplain('📤','root',`Đưa max = <b>${s.root}</b> (root) về vị trí cuối <b>[${s.i}]</b>. Swap arr[0] ⇄ arr[${s.i}].`);
+      awaitingSwap=true;
+      if(playing) clearTimeout(timer);
+      animateSwap(0,s.i,()=>{
+        awaitingSwap=false;
+        if(stepIdx<steps.length&&steps[stepIdx].type==='after-extract') applyStep(steps[stepIdx++]);
+        if(playing) timer=setTimeout(tick,getDelay());
+      });
+      return;
+    case 'after-extract':
+      sortedFrom=s.i;
+      document.getElementById('s-swap').textContent=swapCount;
+      updateBars(0,-1,-1,null,s.i);
+      showPointers(-1,-1,-1);
+      drawTree(s.arr,s.i,{root:0});
+      document.getElementById('progress-bar').style.width=((arr.length-s.i)/arr.length*100)+'%';
+      setExplain('✅','sorted',`${s.sorted} đã về đúng vị trí <b>[${s.i}]</b>. Heap size giảm xuống ${s.i}. Heapify lại từ root...`);
+      break;
+    case 'pass-done':
+      updateBars(0,-1,-1,null,s.i);
+      drawTree(s.arr,s.i,{root:0});
+      break;
+    case 'done':
+      for(let i=0;i<arr.length;i++) document.querySelectorAll('.bar-wrap')[i]?.querySelector('.bar').classList.add('sorted');
+      showPointers(-1,-1,-1);
+      document.getElementById('compare-display').innerHTML=`<span style="color:var(--sorted-top);font-size:1.2rem;font-weight:700">🎉 Sắp xếp hoàn tất — ${cmpCount} so sánh, ${swapCount} hoán đổi</span>`;
+      drawTree(s.arr,0,{});
+      hl(-1); document.getElementById('progress-bar').style.width='100%';
+      stopPlay();
+      setExplain('🎉','sorted',`Hoàn tất! Tổng cộng <b>${cmpCount}</b> so sánh và <b>${swapCount}</b> hoán đổi.`);
+      setInsight('📈 Phân tích',`Với ${arr.length} phần tử: <b>${cmpCount}</b> so sánh (≈ 2n·log₂n = ${Math.round(2*arr.length*Math.log2(arr.length))}). Heap Sort <b>không ổn định</b> nhưng O(n log n) guaranteed và O(1) space — tốt hơn Quick Sort ở worst case.`);
+      document.querySelectorAll('.bar').forEach((b,i)=>{b.style.animation=`celebrate 0.5s ease ${i*30}ms`});
+      break;
   }
 }
-
-function getDelay(){return Math.round(1100-document.getElementById('speed').value*100);}
-function continuePlay(){playing=true;document.getElementById('btn-play').textContent='⏸ Pause';tick();}
+function getDelay(){return Math.round(1200-document.getElementById('speed').value*110);}
 function tick(){if(awaitingSwap)return;if(stepIdx>=steps.length){stopPlay();return;}applyStep(steps[stepIdx++]);if(playing&&!awaitingSwap)timer=setTimeout(tick,getDelay());}
 function startPlay(){if(stepIdx>=steps.length)reset();playing=true;document.getElementById('btn-play').textContent='⏸ Pause';tick();}
 function stopPlay(){playing=false;clearTimeout(timer);document.getElementById('btn-play').textContent='▶ Play';}
 function reset(){
-  stopPlay();awaitingSwap=false;stepIdx=0;cmp=0;swp=0;acc=0;buildSteps();
-  ['s-cmp','s-swap','s-acc'].forEach(id=>document.getElementById(id).textContent=0);
-  document.getElementById('phase-info').textContent='Phase: —';
-  hl(-1);buildBarsDOM(arr,arr.length);drawTree(arr,arr.length,[],[]);
-  document.getElementById('explain').textContent='👋 Nhấn Play để bắt đầu!';
+  stopPlay();awaitingSwap=false;stepIdx=0;cmpCount=0;swapCount=0;sortedFrom=Infinity;
+  buildSteps();
+  document.getElementById('s-cmp').textContent='0';document.getElementById('s-swap').textContent='0';
+  document.getElementById('pass-info').textContent='Build Heap';
+  document.getElementById('progress-bar').style.width='0%';
+  hl(-1);buildBarsDOM(arr);showPointers(-1,-1,-1);
+  document.getElementById('compare-display').innerHTML=`<span class="cd-idle">Nhấn Play để bắt đầu trình diễn thuật toán</span>`;
+  drawTree(arr,arr.length,{});
+  setExplain('💡','info','Heap Sort: Phase 1 = Build Max-Heap. Phase 2 = Lặp lại đưa root (max) về cuối mảng và heapify lại. Cây và thanh được đồng bộ!');
+  setInsight('💡 Max-Heap = Priority Queue','Heap là cây nhị phân hoàn chỉnh lưu trong mảng: <b>parent=i</b>, <b>left=2i+1</b>, <b>right=2i+2</b>. Root luôn là phần tử lớn nhất (Max-Heap).');
 }
-
+window.addEventListener('resize',()=>drawTree(currentArr||arr,currentHeapN||arr.length,{}));
 document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
 document.getElementById('btn-step').onclick=()=>{stopPlay();if(!awaitingSwap&&stepIdx<steps.length)applyStep(steps[stepIdx++]);};
 document.getElementById('btn-reset').onclick=reset;
 document.getElementById('btn-new').onclick=()=>{genArray();reset();};
 document.getElementById('size-sel').onchange=()=>{genArray();reset();};
-window.addEventListener('resize',()=>{if(steps[stepIdx-1]){const s=steps[stepIdx-1];drawTree(s.arr||arr,s.heapSize!==undefined?s.heapSize:arr.length,[],[]);}});
-
 buildCode();genArray();reset();
 </script>
 </body>

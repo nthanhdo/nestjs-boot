@@ -3,629 +3,458 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DP #27 — Nhân chuỗi ma trận (Matrix Chain Multiplication)</title>
+<title>DP Matrix Chain — Nhân chuỗi ma trận</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #0a0a1a;
-  color: #e0e0e0;
-  min-height: 100vh;
-  background-image:
-    radial-gradient(ellipse at 25% 20%, rgba(245,158,11,0.07) 0%, transparent 60%),
-    radial-gradient(ellipse at 75% 80%, rgba(99,102,241,0.05) 0%, transparent 60%),
-    linear-gradient(rgba(245,158,11,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(245,158,11,0.025) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
-}
-header {
-  background: linear-gradient(135deg, #0f0d05, #1a1608);
-  padding: 16px 24px;
-  border-bottom: 2px solid #f59e0b;
-  display: flex; align-items: center; gap: 16px;
-  box-shadow: 0 2px 20px rgba(245,158,11,0.15);
-}
-header h1 { font-size: 1.3rem; color: #fcd34d; }
-header .badge { background: #451a03; color: #fcd34d; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
-.main { display: grid; grid-template-columns: 1fr 320px; height: calc(100vh - 60px); }
-.left-panel { padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-.right-panel { background: #07060a; border-left: 2px solid #1a1608; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  :root {
+    --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+    --text: #eef1f8; --muted: #8899bb;
+    --accent: #a78bfa; --yellow: #ffd43b;
+    --opt-top: #ffd43b; --opt-bot: #e67e22; --opt-glow: rgba(255,212,59,0.5);
+    --try-top: #5b8def; --try-bot: #2c5aa0; --try-glow: rgba(91,141,239,0.4);
+    --best-top: #2ecc71; --best-bot: #1a9c54; --best-glow: rgba(46,204,113,0.4);
+    --mat-top: #a78bfa; --mat-bot: #7c5ce7; --mat-glow: rgba(167,139,250,0.4);
+    --diag-colors: #ff5e7a,#ffd43b,#2ecc71,#5b8def,#a78bfa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  body::before { content:''; position: fixed; inset: 0; background: radial-gradient(ellipse at 25% 15%, rgba(255,212,59,0.06) 0%, transparent 55%), radial-gradient(ellipse at 75% 85%, rgba(167,139,250,0.05) 0%, transparent 55%); pointer-events: none; }
 
-/* ── Keyframes ──────────────────────────────────────────────────────── */
-@keyframes fillDiag {
-  0%   { transform: scale(0.5) rotate(-10deg); opacity: 0; }
-  60%  { transform: scale(1.12) rotate(2deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
-}
-@keyframes cellGlow {
-  0%, 100% { box-shadow: 0 0 6px rgba(245,158,11,0.4); }
-  50%       { box-shadow: 0 0 22px rgba(245,158,11,0.9); }
-}
-@keyframes splitCandidate {
-  0%, 100% { border-color: #f59e0b; }
-  50%       { border-color: #fcd34d; box-shadow: 0 0 14px rgba(245,158,11,0.7); }
-}
-@keyframes optimalGlow {
-  0%, 100% { box-shadow: 0 0 6px rgba(34,197,94,0.4); }
-  50%       { box-shadow: 0 0 20px rgba(34,197,94,0.85); }
-}
-@keyframes waveIn {
-  0%   { transform: translateX(-6px); opacity: 0; }
-  100% { transform: translateX(0); opacity: 1; }
-}
-@keyframes bounceIn {
-  0%   { transform: scale(0.5); opacity: 0; }
-  60%  { transform: scale(1.15); }
-  100% { transform: scale(1); opacity: 1; }
-}
-@keyframes matrixActivate {
-  0%   { transform: scale(1); }
-  40%  { transform: scale(1.08); box-shadow: 0 0 18px rgba(245,158,11,0.6); }
-  100% { transform: scale(1); }
-}
-@keyframes barGrow {
-  0%   { width: 0; }
-  100% { width: var(--target-width); }
-}
+  header { background: var(--surface); padding: 10px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); z-index: 2; }
+  header h1 { font-size: 1.15rem; font-weight: 700; background: linear-gradient(135deg,#ffd43b,#f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .badge { background: linear-gradient(135deg,#e67e22,#ffd43b); color: #0e1525; padding: 2px 10px; border-radius: 12px; font-size: .68rem; font-weight: 700; }
+  .complexity { display: flex; gap: 6px; margin-left: auto; }
+  .cx { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 9px; font-size: .72rem; color: var(--muted); }
+  .cx span { color: var(--yellow); font-weight: 700; }
 
-/* Matrices display */
-.matrices-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.matrix-card {
-  border-radius: 10px; border: 2px solid #1a1608; background: #0f0d05;
-  padding: 10px 14px; text-align: center; position: relative; min-width: 70px;
-  transition: all 0.3s;
-}
-.matrix-card .mat-name { font-size: 1rem; font-weight: bold; color: #f59e0b; }
-.matrix-card .mat-dim { font-size: 0.72rem; color: #5a4020; margin-top: 3px; }
-.matrix-card.active { border-color: #f59e0b; background: #1a1000; box-shadow: 0 0 14px rgba(245,158,11,0.4); animation: matrixActivate 0.5s ease; }
-.matrix-card.in-chain { border-color: #22c55e; background: #071a0f; }
-.matrix-mult { color: #3a3020; font-size: 1.2rem; padding: 0 2px; }
-.matrix-card .mat-rect { margin: 0 auto 4px; border: 1.5px solid #2a1a08; border-radius: 3px; }
+  main { flex: 1; display: flex; overflow: hidden; z-index: 1; min-height: 0; }
+  #viz { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
-/* Dimensions input */
-.dims-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; background: #0f0d05; border-radius: 10px; padding: 10px 14px; border: 1px solid #1a1608; }
-.dims-row label { font-size: 0.78rem; color: #5a4020; }
-.dim-input { width: 48px; background: #070605; border: 1px solid #2a1a08; border-radius: 6px; color: #fcd34d; padding: 4px 6px; font-size: 0.88rem; text-align: center; font-family: 'Courier New', monospace; }
-.dim-sep { color: #3a2a10; font-size: 0.8rem; }
-.add-btn { background: #1a1200; border: 1px solid #3a2a10; color: #fcd34d; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.78rem; }
-.add-btn:hover { background: #2a1e00; }
-.remove-btn { background: #1a0808; border: 1px solid #3a1010; color: #ef4444; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.78rem; }
+  /* STATUS DISPLAY */
+  #status-display { padding: 8px 20px; min-height: 50px; display: flex; align-items: center; justify-content: center; gap: 12px; background: var(--surface); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .sd-idle { color: var(--muted); font-size: .9rem; }
+  .sd-box { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 8px; font-size: .85rem; font-weight: 800; color: #fff; }
+  .sd-box.try { background: linear-gradient(135deg,var(--try-top),var(--try-bot)); box-shadow: 0 0 10px var(--try-glow); }
+  .sd-box.best { background: linear-gradient(135deg,var(--best-top),var(--best-bot)); box-shadow: 0 0 10px var(--best-glow); }
+  .sd-box.opt { background: linear-gradient(135deg,var(--opt-top),var(--opt-bot)); box-shadow: 0 0 10px var(--opt-glow); color: #0e1525; }
+  .sd-op { font-size: .9rem; color: var(--yellow); }
 
-/* Cost comparison */
-.cost-comp { display: flex; gap: 8px; flex-wrap: wrap; }
-.cost-box { background: #0f0d05; border-radius: 8px; padding: 8px 12px; flex: 1; min-width: 120px; border: 1px solid #1a1608; }
-.cost-box .c-label { font-size: 0.68rem; color: #5a4020; }
-.cost-box .c-value { font-size: 1rem; font-weight: bold; color: #fcd34d; }
-.cost-box.optimal { border-color: #22c55e; }
-.cost-box.worst { border-color: #ef4444; }
-.cost-box.optimal .c-value { color: #22c55e; }
-.cost-box.worst .c-value { color: #ef4444; }
+  /* EXPLAIN BAR */
+  #explain-viz { padding: 10px 24px; min-height: 52px; background: linear-gradient(135deg,rgba(21,29,50,0.95),rgba(28,39,68,0.9)); border-bottom: 1px solid var(--border); font-size: .88rem; line-height: 1.55; color: var(--text); display: flex; align-items: center; gap: 12px; }
+  #explain-viz .step-icon { flex-shrink: 0; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: all 0.3s; }
+  #explain-viz .step-icon.info { background: rgba(91,141,239,0.15); border: 1px solid rgba(91,141,239,0.3); }
+  #explain-viz .step-icon.try { background: rgba(91,141,239,0.15); border: 1px solid rgba(91,141,239,0.3); }
+  #explain-viz .step-icon.best { background: rgba(46,204,113,0.15); border: 1px solid rgba(46,204,113,0.3); }
+  #explain-viz .step-icon.opt { background: rgba(255,212,59,0.15); border: 1px solid rgba(255,212,59,0.3); }
+  #explain-text { flex: 1; }
+  #explain-text b { color: var(--yellow); }
+  #explain-text code { background: var(--surface2); padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: .8rem; color: var(--accent); }
+  #step-counter { font-size: .72rem; color: var(--muted); white-space: nowrap; }
 
-/* Cost bar comparison */
-.cost-bars { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
-.cost-bar-row { display: flex; align-items: center; gap: 8px; }
-.cost-bar-label { font-size: 0.7rem; color: #7a6040; min-width: 60px; }
-.cost-bar-track { flex: 1; background: #1a1608; border-radius: 4px; height: 8px; overflow: hidden; }
-.cost-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1); }
-.cost-bar-val { font-size: 0.68rem; color: #7a6040; min-width: 50px; text-align: right; }
+  /* VIZ AREA */
+  #viz-area { flex: 1; display: flex; gap: 16px; overflow: hidden; padding: 12px 16px; min-height: 0; }
 
-/* DP Table — upper triangular */
-.table-section { overflow: auto; }
-.dp-grid { display: grid; gap: 2px; width: fit-content; }
-.dp-cell {
-  width: 52px; height: 52px; border-radius: 6px; border: 1.5px solid #1a1608;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  font-size: 0.75rem; transition: border-color 0.3s, box-shadow 0.3s; position: relative;
-}
-.dp-cell.header { background: #0f0d05; color: #4a3820; font-size: 0.72rem; border: none; }
-.dp-cell.empty  { background: #070605; color: #1a1608; }
-.dp-cell.na { background: transparent; border: none; }
-.dp-cell.computing { background: #1a1000; border-color: #f59e0b; color: #fcd34d; animation: cellGlow 1s ease-in-out infinite; }
-.dp-cell.computed  { background: #0d0b05; border-color: #2a1a08; color: #7a6040; animation: fillDiag 0.4s cubic-bezier(0.34,1.56,0.64,1); }
-.dp-cell.optimal-split { background: #071a0f; border-color: #22c55e; color: #22c55e; animation: optimalGlow 1.8s ease-in-out infinite; }
-.dp-cell.split-candidate { background: #1a1200; border-color: #f59e0b; color: #f59e0b; animation: splitCandidate 0.8s ease-in-out infinite; }
-.dp-cell.diagonal { background: #07060a; color: #2a2020; border-color: #0f0d08; }
-.dp-cell .cell-k { position: absolute; bottom: 2px; right: 3px; font-size: 0.55rem; color: #3a3010; }
-.dp-cell .cell-val { font-size: 0.85rem; font-weight: bold; }
-.dp-cell .cell-sub { font-size: 0.6rem; color: #5a4020; }
+  /* LEFT: DP TABLE */
+  #dp-section { flex: 1; display: flex; flex-direction: column; gap: 8px; overflow: auto; }
+  #dp-section h3 { font-size: .78rem; color: var(--muted); font-weight: 600; }
+  #dp-table-wrap { overflow: auto; }
+  table { border-collapse: collapse; font-size: .8rem; }
+  th { background: var(--surface2); color: var(--muted); padding: 5px 10px; border: 1px solid var(--border); font-size: .72rem; text-align: center; white-space: nowrap; }
+  td { border: 1px solid var(--border); padding: 0; }
+  .row-label { background: var(--surface2); color: var(--accent); font-size: .72rem; font-weight: 700; padding: 4px 8px; text-align: center; white-space: nowrap; }
+  .dp-cell {
+    width: 62px; height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .8rem; color: var(--muted);
+    background: var(--surface); cursor: default;
+    transition: all 0.3s; position: relative; gap: 1px;
+  }
+  .dp-cell .cell-split { font-size: .55rem; color: var(--muted); }
+  .dp-cell.diag0 { background: rgba(100,116,139,0.05); }
+  .dp-cell.computing { background: rgba(91,141,239,0.15); color: var(--try-top); animation: computePulse 0.8s ease infinite; }
+  .dp-cell.trying { background: rgba(91,141,239,0.08); outline: 2px solid rgba(91,141,239,0.3); }
+  .dp-cell.new-best { background: rgba(46,204,113,0.1); color: var(--best-top); animation: bestFlash 0.4s ease; }
+  .dp-cell.filled { background: rgba(255,212,59,0.06); color: var(--opt-top); }
+  .dp-cell.filling { animation: cellFill 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  .dp-cell.optimal { background: rgba(255,212,59,0.2); color: var(--opt-top); box-shadow: inset 0 0 14px rgba(255,212,59,0.3); font-weight: 900; }
 
-/* Parenthesization display */
-.paren-display { background: #0f0d05; border: 2px solid #2a1a08; border-radius: 12px; padding: 14px; box-shadow: 0 0 16px rgba(245,158,11,0.08); }
-.paren-title { font-size: 0.78rem; color: #5a4020; margin-bottom: 8px; }
-.paren-string { font-size: 1rem; font-family: 'Courier New', monospace; color: #fcd34d; letter-spacing: 1px; word-break: break-all; }
-.paren-cost { font-size: 0.78rem; color: #5a4020; margin-top: 4px; }
+  /* DIAGONAL INDICATOR */
+  #diag-indicator { font-size: .8rem; color: var(--muted); padding: 4px 0; }
+  .diag-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 4px; font-size: .72rem; font-weight: 700; margin-right: 6px; }
 
-/* Controls */
-.controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
-.btn-primary { background: linear-gradient(135deg, #b45309, #f59e0b); color: #0f0d05; box-shadow: 0 2px 10px rgba(245,158,11,0.3); }
-.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(245,158,11,0.4); }
-.btn-secondary { background: #0f0d05; color: #5a4020; border: 1px solid #1a1608; }
-.btn-secondary:hover { background: #151005; }
-.btn-danger { background: #1a0808; color: #ef4444; border: 1px solid #3a1010; }
-select { background: #070605; color: #5a4020; border: 1px solid #1a1608; border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; }
+  /* RIGHT: MATRICES + BAR CHART */
+  #right-section { width: 240px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
+  #right-section h3 { font-size: .78rem; color: var(--muted); font-weight: 600; }
 
-/* Code */
-.code-panel { background: #040302; border-radius: 10px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.74rem; line-height: 1.7; border: 1px solid #1a1608; }
-.code-line { padding: 1px 6px; border-radius: 4px; transition: background 0.2s; white-space: pre; color: #3a2a10; }
-.code-line.highlight { background: rgba(245,158,11,0.12); color: #fcd34d; border-left: 3px solid #f59e0b; }
-.kw { color: #c678dd; } .fn { color: #61afef; } .num { color: #d19a66; } .cm { color: #1a1208; font-style: italic; }
+  #matrices-list { display: flex; flex-direction: column; gap: 5px; }
+  .matrix-card {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 7px;
+    padding: 6px 10px; font-size: .77rem; display: flex; align-items: center; gap: 8px;
+    transition: all 0.3s;
+  }
+  .matrix-card.active { border-color: var(--mat-top); box-shadow: 0 0 10px var(--mat-glow); }
+  .mat-icon { font-size: 1rem; font-weight: 900; color: var(--accent); font-family: monospace; }
+  .mat-dims { color: var(--muted); font-size: .72rem; }
+  .mat-name { font-weight: 700; color: var(--text); }
 
-/* Stats */
-.stats-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.stat-box { background: #0f0d05; border-radius: 8px; padding: 8px 12px; flex: 1; border: 1px solid #1a1608; }
-.stat-box .label { font-size: 0.68rem; color: #4a3820; text-transform: uppercase; }
-.stat-box .value { font-size: 1rem; font-weight: bold; color: #f59e0b; }
+  #cost-chart { display: flex; flex-direction: column; gap: 6px; }
+  .cost-bar-wrap { display: flex; align-items: center; gap: 6px; }
+  .cost-label { font-size: .7rem; color: var(--muted); width: 50px; text-align: right; flex-shrink: 0; }
+  .cost-bar-bg { flex: 1; height: 18px; background: var(--surface); border-radius: 4px; overflow: hidden; }
+  .cost-bar { height: 100%; border-radius: 4px; transition: width 0.5s, background 0.3s; min-width: 2px; }
+  .cost-val { font-size: .68rem; color: var(--muted); width: 50px; text-align: left; flex-shrink: 0; }
 
-/* Explanation */
-.explanation { background: #0f0d05; border-radius: 8px; padding: 8px 14px; font-size: 0.82rem; color: #7a6040; min-height: 36px; border-left: 3px solid #f59e0b; animation: waveIn 0.3s ease; }
+  #paren-display { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: .78rem; }
+  #paren-display .paren-title { font-size: .68rem; color: var(--muted); margin-bottom: 4px; }
+  #paren-str { color: var(--opt-top); font-family: monospace; font-weight: 700; word-break: break-all; }
 
-/* Info */
-.info-box { background: #0f0d05; border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.5; color: #5a4020; border-left: 3px solid #f59e0b; }
-.info-box strong { color: #fcd34d; }
+  /* BOTTOM BAR */
+  #bottom-bar { display: flex; align-items: center; background: var(--surface); border-top: 1px solid var(--border); }
+  #legend { flex: 1; display: flex; gap: 14px; padding: 7px 24px; font-size: .74rem; color: var(--muted); }
+  .leg { display: flex; align-items: center; gap: 6px; }
+  .leg-dot { width: 14px; height: 14px; border-radius: 3px; }
+  #progress-wrap { width: 160px; height: 5px; background: var(--surface2); border-radius: 3px; margin-right: 20px; overflow: hidden; }
+  #progress-bar { height: 100%; width: 0%; border-radius: 3px; background: linear-gradient(90deg,var(--accent),var(--opt-top)); transition: width 0.4s; }
 
-.section-title { font-size: 0.78rem; font-weight: 700; color: #4a3820; text-transform: uppercase; letter-spacing: 0.06em; }
+  /* RIGHT PANEL */
+  #code-panel { width: 300px; min-width: 270px; background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+  .panel-title { padding: 10px 14px; background: var(--surface2); font-size: .78rem; font-weight: 600; color: var(--accent); border-bottom: 1px solid var(--border); }
+  #code { flex: 1; overflow-y: auto; padding: 10px 0; font-family: 'SF Mono','Fira Code',Consolas,monospace; font-size: .75rem; line-height: 2; }
+  .code-line { padding: 0 14px; color: #5a6d8e; white-space: pre; border-left: 3px solid transparent; transition: all 0.2s; }
+  .code-line.comment { color: #3a4d6e; font-style: italic; }
+  .code-line.active { background: linear-gradient(90deg,rgba(255,212,59,0.1),transparent); color: var(--yellow); border-left-color: var(--yellow); font-weight: 600; }
+  #insight { padding: 12px 14px; background: var(--bg); border-top: 1px solid var(--border); font-size: .8rem; line-height: 1.5; color: var(--muted); }
+  #insight .insight-title { color: var(--accent); font-weight: 700; font-size: .72rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  #insight b { color: var(--text); }
 
-/* Legend */
-.legend { display: flex; gap: 8px; flex-wrap: wrap; }
-.legend-item { display: flex; align-items: center; gap: 4px; font-size: 0.72rem; color: #5a4030; }
-.legend-dot { width: 14px; height: 14px; border-radius: 3px; }
+  /* CONTROLS */
+  #controls { background: var(--surface); padding: 8px 24px; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--border); z-index: 2; flex-wrap: wrap; }
+  button { border: none; border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: .8rem; font-weight: 600; transition: all 0.2s; }
+  button:active { transform: scale(0.95); }
+  button:disabled { background: var(--surface2)!important; color: #3a4d6e!important; cursor: not-allowed; }
+  #btn-play { background: linear-gradient(135deg,#00b894,#05c46b); color: #fff; box-shadow: 0 2px 10px rgba(5,196,107,0.25); min-width: 85px; }
+  #btn-step { background: linear-gradient(135deg,#7c5ce7,#a78bfa); color: #fff; }
+  #btn-reset,#btn-new { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  label { font-size: .76rem; color: var(--muted); }
+  input[type=range] { accent-color: var(--accent); width: 80px; }
+  #stats { display: flex; gap: 8px; margin-left: auto; }
+  .stat { background: var(--surface2); padding: 4px 10px; border-radius: 6px; font-size: .8rem; color: var(--muted); border: 1px solid var(--border); }
+  .stat span { color: var(--yellow); font-weight: 800; }
+
+  @keyframes cellFill { 0%{transform:scale(0.5) rotate(-5deg);opacity:0} 70%{transform:scale(1.1);opacity:1} 100%{transform:scale(1);opacity:1} }
+  @keyframes computePulse { 0%,100%{box-shadow:inset 0 0 8px rgba(91,141,239,0.2)} 50%{box-shadow:inset 0 0 22px rgba(91,141,239,0.6)} }
+  @keyframes bestFlash { 0%{background:rgba(46,204,113,0);} 30%{background:rgba(46,204,113,0.3);} 100%{background:rgba(46,204,113,0.1);} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
 </style>
 </head>
 <body>
 <header>
-  <div class="badge">Module 5</div>
-  <h1>🔢 Nhân chuỗi ma trận (Matrix Chain Multiplication)</h1>
-  <div class="badge">#27</div>
+  <h1>🔢 DP Matrix Chain</h1>
+  <span class="badge">DYNAMIC PROGRAMMING</span>
+  <div class="complexity">
+    <div class="cx">Time <span>O(n³)</span></div>
+    <div class="cx">Space <span>O(n²)</span></div>
+    <div class="cx">Diagonals <span>n-1</span></div>
+  </div>
 </header>
+<main>
+  <div id="viz">
+    <div id="status-display"><span class="sd-idle">Nhấn Play để xem tính toán chi phí nhân ma trận tối ưu</span></div>
 
-<div class="main">
-  <div class="left-panel">
-    <!-- Dimension inputs -->
-    <div>
-      <div class="section-title" style="margin-bottom:6px">📐 Kích thước ma trận (p[i] × p[i+1])</div>
-      <div class="dims-row" id="dimsRow"></div>
+    <div id="explain-viz">
+      <div class="step-icon info">💡</div>
+      <div id="explain-text">Matrix Chain: Tìm cách đặt ngoặc để nhân chuỗi ma trận với chi phí nhỏ nhất. Thứ tự nhân không đổi, chỉ thay đổi cách nhóm.</div>
+      <div id="step-counter"></div>
     </div>
 
-    <!-- Matrix visualization -->
-    <div>
-      <div class="section-title" style="margin-bottom:6px">📦 Chuỗi ma trận</div>
-      <div class="matrices-row" id="matricesRow"></div>
-    </div>
-
-    <!-- Cost comparison -->
-    <div class="cost-comp" id="costComp">
-      <div class="cost-box optimal"><div class="c-label">✅ Chi phí tối ưu</div><div class="c-value" id="optCost">—</div></div>
-      <div class="cost-box worst"><div class="c-label">❌ Chi phí tệ nhất</div><div class="c-value" id="worstCost">—</div></div>
-      <div class="cost-box"><div class="c-label">💡 Cải thiện</div><div class="c-value" id="improvement">—</div></div>
-    </div>
-
-    <!-- Cost bar chart -->
-    <div class="cost-bars" id="costBars" style="display:none">
-      <div class="cost-bar-row">
-        <div class="cost-bar-label">Tối ưu</div>
-        <div class="cost-bar-track"><div class="cost-bar-fill" id="barOpt" style="background:#22c55e;width:0%"></div></div>
-        <div class="cost-bar-val" id="barOptVal"></div>
+    <div id="viz-area">
+      <div id="dp-section">
+        <h3>📊 Bảng dp[i][j] — Chi phí tối ưu nhân M[i..j] <span id="diag-indicator"></span></h3>
+        <div id="dp-table-wrap"></div>
+        <div id="cost-chart-wrap" style="margin-top:8px;">
+          <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px;">⚖️ So sánh chi phí các split point k:</div>
+          <div id="cost-chart"></div>
+        </div>
       </div>
-      <div class="cost-bar-row">
-        <div class="cost-bar-label">Tệ nhất</div>
-        <div class="cost-bar-track"><div class="cost-bar-fill" id="barWorst" style="background:#ef4444;width:0%"></div></div>
-        <div class="cost-bar-val" id="barWorstVal"></div>
+      <div id="right-section">
+        <h3>📐 Ma trận</h3>
+        <div id="matrices-list"></div>
+        <div id="paren-display" style="margin-top:4px;">
+          <div class="paren-title">🏆 Cách đặt ngoặc tối ưu:</div>
+          <div id="paren-str">Đang tính...</div>
+        </div>
       </div>
     </div>
 
-    <!-- DP Table -->
-    <div class="table-section">
-      <div class="section-title" style="margin-bottom:6px">📋 Bảng dp[i][j] — chi phí nhân tối thiểu A[i..j]</div>
-      <div id="dpGrid" class="dp-grid"></div>
-    </div>
-
-    <!-- Legend -->
-    <div class="legend">
-      <div class="legend-item"><div class="legend-dot" style="background:#1a1000;border:1px solid #f59e0b"></div>Đang tính dp[i][j]</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#1a1200;border:1px solid #f59e0b"></div>Split k đang xét</div>
-      <div class="legend-item"><div class="legend-dot" style="background:#071a0f;border:1px solid #22c55e"></div>Split tối ưu</div>
-    </div>
-
-    <!-- Parenthesization -->
-    <div class="paren-display" id="parenDisplay">
-      <div class="paren-title">📝 Cách đặt ngoặc tối ưu</div>
-      <div class="paren-string" id="parenStr">Chưa tính...</div>
-      <div class="paren-cost" id="parenCost"></div>
-    </div>
-
-    <!-- Explanation -->
-    <div class="explanation" id="explanation">Nhấn ▶ Play để điền bảng DP từng đường chéo.</div>
-
-    <!-- Stats -->
-    <div class="stats-row">
-      <div class="stat-box"><div class="label">Bước</div><div class="value" id="statStep">0</div></div>
-      <div class="stat-box"><div class="label">Đường chéo</div><div class="value" id="statDiag">0</div></div>
-      <div class="stat-box"><div class="label">Chi phí tối ưu</div><div class="value" id="statOpt">—</div></div>
-    </div>
-
-    <!-- Controls -->
-    <div class="controls">
-      <button class="btn btn-primary" id="btnPlay" onclick="togglePlay()">▶ Play</button>
-      <button class="btn btn-secondary" onclick="stepForward()">⏭ Step</button>
-      <button class="btn btn-danger" onclick="resetAnim()">↺ Reset</button>
-      <select id="speedSel">
-        <option value="1200">Chậm</option>
-        <option value="700" selected>Bình thường</option>
-        <option value="300">Nhanh</option>
-        <option value="80">Rất nhanh</option>
-      </select>
+    <div id="bottom-bar">
+      <div id="legend">
+        <div class="leg"><div class="leg-dot" style="background:rgba(91,141,239,0.2);border:1px solid var(--try-top)"></div>Đang thử k</div>
+        <div class="leg"><div class="leg-dot" style="background:rgba(46,204,113,0.15);border:1px solid var(--best-top)"></div>Best so far</div>
+        <div class="leg"><div class="leg-dot" style="background:rgba(255,212,59,0.15);border:1px solid var(--opt-top)"></div>Optimal ✓</div>
+      </div>
+      <div id="progress-wrap"><div id="progress-bar"></div></div>
     </div>
   </div>
 
-  <div class="right-panel">
-    <div class="section-title">💻 Code</div>
-    <div class="code-panel" id="codePanel">
-<div class="code-line"><span class="kw">function</span> <span class="fn">matrixChain</span>(p):  <span class="cm">// p[0..n]</span></div>
-<div class="code-line">  n = len(p) - 1  <span class="cm">// n matrices</span></div>
-<div class="code-line">  dp = n×n zeros; s = n×n zeros</div>
-<div class="code-line">  <span class="cm">// dp[i][j] = min cost A[i..j]</span></div>
-<div class="code-line">  <span class="cm">// Fill by chain length L</span></div>
-<div class="code-line">  <span class="kw">for</span> L = 2 <span class="kw">to</span> n:  <span class="cm">// chain length</span></div>
-<div class="code-line">    <span class="kw">for</span> i = 1 <span class="kw">to</span> n-L+1:</div>
-<div class="code-line">      j = i + L - 1</div>
-<div class="code-line">      dp[i][j] = ∞</div>
-<div class="code-line">      <span class="kw">for</span> k = i <span class="kw">to</span> j-1:  <span class="cm">// split</span></div>
-<div class="code-line">        cost = dp[i][k] + dp[k+1][j]</div>
-<div class="code-line">              + p[i-1]*p[k]*p[j]</div>
-<div class="code-line">        <span class="kw">if</span> cost < dp[i][j]:</div>
-<div class="code-line">          dp[i][j] = cost</div>
-<div class="code-line">          s[i][j] = k  <span class="cm">// best split</span></div>
-<div class="code-line">  <span class="kw">return</span> dp[1][n], s</div>
-<div class="code-line"><span class="cm">// O(n³) time, O(n²) space</span></div>
+  <div id="code-panel">
+    <div class="panel-title">📝 Matrix Chain Multiplication</div>
+    <div id="code"></div>
+    <div id="insight">
+      <div class="insight-title">💡 Công thức DP</div>
+      dp[i][j] = min(dp[i][k] + dp[k+1][j] + p[i-1]·p[k]·p[j]) với mọi k từ i đến j-1. Điền theo đường chéo.
     </div>
-
-    <div class="section-title">🔀 So sánh phân hoạch</div>
-    <div id="splitComparison" style="background:#0f0d05;border-radius:8px;padding:10px;font-size:0.76rem;color:#5a4020;line-height:1.8;border:1px solid #1a1608">
-      Chưa có cell nào đang tính.
-    </div>
-
-    <div class="info-box">
-      <strong>Tại sao O(n³)?</strong><br>
-      - n² ô trong bảng (upper triangular)<br>
-      - Mỗi ô xét O(n) split points<br>
-      - Tổng: O(n³)<br><br>
-      <strong>Thứ tự điền:</strong> Theo đường chéo — L=2 (chuỗi 2 ma trận) → L=3 → ... → L=n<br><br>
-      <strong>Tại sao quan trọng?</strong><br>
-      (A×B)×C vs A×(B×C) có thể khác nhau <strong>hàng triệu phép tính</strong>!
-    </div>
+  </div>
+</main>
+<div id="controls">
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-step">⏭ Step</button>
+  <button id="btn-reset">↺ Reset</button>
+  <button id="btn-new">🎲 Mới</button>
+  <label>Speed <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <div id="stats">
+    <div class="stat">Diag <span id="s-diag">0</span></div>
+    <div class="stat">Splits tried <span id="s-splits">0</span></div>
+    <div class="stat">Min cost <span id="s-cost">?</span></div>
   </div>
 </div>
 
 <script>
-// ── State ──────────────────────────────────────────────────────────────
-let dims = [30, 35, 15, 5, 10, 20];
-let steps = [], stepIdx = 0;
-let playing = false, playTimer = null;
-let dpFull = [], sFull = [];
-const MAT_NAMES = 'ABCDEFGHIJ';
-const MAT_COLORS = ['#f59e0b','#6366f1','#22c55e','#a855f7','#ef4444','#06b6d4','#fb923c','#4ade80'];
+const CODE_LINES = [
+  'function matrixChain(p) {',
+  '  const n = p.length - 1; // n matrices',
+  '  const dp = Array(n+1).fill(0)',
+  '    .map(() => Array(n+1).fill(Infinity));',
+  '  const split = Array(n+1).fill(0)',
+  '    .map(() => Array(n+1).fill(0));',
+  '  // Diagonal length 1: dp[i][i] = 0',
+  '  for (let i=1; i<=n; i++) dp[i][i]=0;',
+  '  // Fill diagonal by diagonal',
+  '  for (let len=2; len<=n; len++) {',
+  '    for (let i=1; i<=n-len+1; i++) {',
+  '      const j = i+len-1;',
+  '      // Try every split point k',
+  '      for (let k=i; k<j; k++) {',
+  '        const cost = dp[i][k] + dp[k+1][j]',
+  '          + p[i-1]*p[k]*p[j];',
+  '        if (cost < dp[i][j]) {',
+  '          dp[i][j] = cost;',
+  '          split[i][j] = k; // best split',
+  '        }',
+  '      }',
+  '    }',
+  '  }',
+  '  return dp[1][n]; // min cost',
+  '}',
+];
 
-// ── Dimension inputs ───────────────────────────────────────────────────
-function renderDimsRow() {
-  const row = document.getElementById('dimsRow');
-  row.innerHTML = '';
-  dims.forEach((d, i) => {
-    if (i > 0) {
-      const sep = document.createElement('div');
-      sep.className = 'dim-sep';
-      sep.textContent = '×';
-      row.appendChild(sep);
-    }
-    const inp = document.createElement('input');
-    inp.type = 'number';
-    inp.className = 'dim-input';
-    inp.value = d;
-    inp.min = 1; inp.max = 99;
-    inp.oninput = (e) => { dims[i] = Math.max(1, parseInt(e.target.value) || 1); renderAll(); };
-    row.appendChild(inp);
-  });
-  const addBtn = document.createElement('button');
-  addBtn.className = 'add-btn';
-  addBtn.textContent = '+ Ma trận';
-  addBtn.onclick = () => { if (dims.length < 8) { dims.push(15); renderDimsRow(); renderAll(); } };
-  row.appendChild(addBtn);
+const NAMES = ['A₁','A₂','A₃','A₄','A₅','A₆'];
 
-  if (dims.length > 3) {
-    const rmBtn = document.createElement('button');
-    rmBtn.className = 'remove-btn';
-    rmBtn.textContent = '−';
-    rmBtn.onclick = () => { dims.pop(); renderDimsRow(); renderAll(); };
-    row.appendChild(rmBtn);
-  }
+let dims = [], n = 0, steps = [], stepIdx = 0, playing = false, timer = null;
+let splitCount = 0, currentDiag = 0;
+
+function genDims() {
+  n = 3 + Math.floor(Math.random()*2); // 3-4 matrices
+  dims = [10 + Math.floor(Math.random()*20)];
+  for (let i=0; i<n; i++) dims.push(5 + Math.floor(Math.random()*20));
 }
 
-function renderAll() {
-  renderMatrices(null);
-  resetAnim();
-}
-
-// ── Render matrices ────────────────────────────────────────────────────
-function renderMatrices(activeSet) {
-  const row = document.getElementById('matricesRow');
-  row.innerHTML = '';
-  const n = dims.length - 1;
-  for (let i = 0; i < n; i++) {
-    if (i > 0) {
-      const x = document.createElement('div');
-      x.className = 'matrix-mult';
-      x.textContent = '×';
-      row.appendChild(x);
-    }
-    const card = document.createElement('div');
-    card.className = 'matrix-card';
-    if (activeSet && activeSet.includes(i)) card.classList.add('in-chain');
-    const color = MAT_COLORS[i % MAT_COLORS.length];
-    const rows = dims[i], cols = dims[i+1];
-    const scaleR = Math.min(40, rows * 0.8);
-    const scaleC = Math.min(40, cols * 0.8);
-    card.innerHTML = `
-      <canvas class="mat-rect" width="${Math.max(16,scaleC)}" height="${Math.max(12,scaleR)}"
-        style="background:${color}22;border-color:${color}55"></canvas>
-      <div class="mat-name" style="color:${color}">A${MAT_NAMES[i]}</div>
-      <div class="mat-dim">${rows}×${cols}</div>`;
-    row.appendChild(card);
-  }
-}
-
-// ── Build DP steps ─────────────────────────────────────────────────────
 function buildSteps() {
   steps = [];
-  const n = dims.length - 1;
-  const p = dims;
-  const dp = Array.from({length: n+1}, () => new Array(n+1).fill(0));
-  const s = Array.from({length: n+1}, () => new Array(n+1).fill(0));
+  const dp = Array.from({length:n+1}, ()=>new Array(n+1).fill(Infinity));
+  const split = Array.from({length:n+1}, ()=>new Array(n+1).fill(0));
+  for (let i=1; i<=n; i++) dp[i][i]=0;
 
-  steps.push({ type: 'init', dp: J(dp), s: J(s), hl: null, splits: [],
-    explanation: `Khởi tạo: ${n} ma trận, kích thước [${dims.slice(0,n).map((d,i)=>dims[i]+'×'+dims[i+1]).join(', ')}]`, diag: 0, codeLine: 2 });
+  steps.push({ type:'init', dp:dp.map(r=>[...r]) });
 
-  for (let L = 2; L <= n; L++) {
-    for (let i = 1; i <= n - L + 1; i++) {
-      const j = i + L - 1;
-      dp[i][j] = Infinity;
-
-      steps.push({ type: 'start-cell', dp: J(dp), s: J(s), hl: {r:i, c:j}, splits: [],
-        explanation: `Tính dp[${i}][${j}]: nhân A${MAT_NAMES[i-1]}..A${MAT_NAMES[j-1]} (chuỗi dài ${L})`, diag: L, codeLine: 8 });
-
-      const splitCosts = [];
-      let bestK = -1, bestCost = Infinity;
-
-      for (let k = i; k < j; k++) {
-        const leftCost = dp[i][k] === Infinity ? 0 : dp[i][k];
-        const rightCost = dp[k+1][j] === Infinity ? 0 : dp[k+1][j];
-        const multCost = p[i-1] * p[k] * p[j];
-        const cost = leftCost + rightCost + multCost;
-        splitCosts.push({ k, cost, left: leftCost, right: rightCost, mult: multCost });
-
-        steps.push({ type: 'try-split', dp: J(dp), s: J(s), hl: {r:i, c:j}, splitK: k,
-          splits: [...splitCosts], bestK, bestCost,
-          codeLine: 10,
-          explanation: `k=${k}: dp[${i}][${k}]=${leftCost} + dp[${k+1}][${j}]=${rightCost} + ${p[i-1]}×${p[k]}×${p[j]}=${multCost} = ${cost}` });
-
-        if (cost < bestCost) {
-          bestCost = cost;
-          bestK = k;
-        }
+  for (let len=2; len<=n; len++) {
+    steps.push({ type:'diag-start', len, dp:dp.map(r=>[...r]) });
+    for (let i=1; i<=n-len+1; i++) {
+      const j = i+len-1;
+      steps.push({ type:'cell-start', i, j, len, dp:dp.map(r=>[...r]) });
+      const triedCosts = [];
+      for (let k=i; k<j; k++) {
+        const cost = dp[i][k] + dp[k+1][j] + dims[i-1]*dims[k]*dims[j];
+        triedCosts.push({ k, cost });
+        const isNew = cost < dp[i][j];
+        if (isNew) { dp[i][j]=cost; split[i][j]=k; }
+        steps.push({ type:'try-k', i, j, k, cost, isNew, curBest:dp[i][j], split:split[i][j], triedCosts:[...triedCosts], dp:dp.map(r=>[...r]) });
       }
-
-      dp[i][j] = bestCost;
-      s[i][j] = bestK;
-
-      steps.push({ type: 'fill', dp: J(dp), s: J(s), hl: {r:i, c:j}, splitK: bestK,
-        splits: splitCosts, bestK, bestCost,
-        codeLine: 14,
-        explanation: `dp[${i}][${j}] = ${bestCost} (split k=${bestK}: A${MAT_NAMES[i-1]}..A${MAT_NAMES[bestK-1]} × A${MAT_NAMES[bestK]}..A${MAT_NAMES[j-1]})`, diag: L });
+      steps.push({ type:'cell-done', i, j, val:dp[i][j], split:split[i][j], dp:dp.map(r=>[...r]) });
     }
   }
 
-  dpFull = J(dp);
-  sFull = J(s);
-  const opt = dp[1][n];
-  const worst = computeWorstCase(p, n);
-
-  steps.push({ type: 'done', dp: J(dp), s: J(s), hl: null, splits: [],
-    result: opt, worst, codeLine: 15, diag: n,
-    explanation: `✅ Chi phí tối ưu = ${opt.toLocaleString()} phép nhân. Cách đặt ngoặc: ${buildParen(s, 1, n)}` });
+  // Build parenthesization
+  function buildParen(split, i, j) {
+    if (i===j) return NAMES[i-1];
+    const k = split[i][j];
+    const left = buildParen(split,i,k);
+    const right = buildParen(split,k+1,j);
+    return `(${left}×${right})`;
+  }
+  const paren = buildParen(split, 1, n);
+  steps.push({ type:'done', val:dp[1][n], paren, dp:dp.map(r=>[...r]) });
+  return split;
 }
 
-function J(x) { return JSON.parse(JSON.stringify(x)); }
+let splitTable = [];
 
-function computeWorstCase(p, n) {
-  function dfs(i, j) {
-    if (i === j) return 0;
-    let maxCost = 0;
-    for (let k = i; k < j; k++) {
-      const cost = dfs(i, k) + dfs(k+1, j) + p[i-1] * p[k] * p[j];
-      maxCost = Math.max(maxCost, cost);
+function buildTable() {
+  let html = '<table><thead><tr><th>M[i\\j]</th>';
+  for (let j=1; j<=n; j++) html += `<th>${j}</th>`;
+  html += '</tr></thead><tbody>';
+  for (let i=1; i<=n; i++) {
+    html += `<tr><td class="row-label">${i}</td>`;
+    for (let j=1; j<=n; j++) {
+      const cls = j<i ? 'diag0' : '';
+      html += `<td><div class="dp-cell ${cls}" id="dp-${i}-${j}">${j<i?'':j===i?'0':'-'}</div></td>`;
     }
-    return maxCost;
+    html += '</tr>';
   }
-  return dfs(1, n);
+  html += '</tbody></table>';
+  document.getElementById('dp-table-wrap').innerHTML = html;
 }
 
-function buildParen(s, i, j) {
-  if (i === j) return `A${MAT_NAMES[i-1]}`;
-  const k = s[i][j];
-  return `(${buildParen(s, i, k)}×${buildParen(s, k+1, j)})`;
+function buildMatricesList() {
+  document.getElementById('matrices-list').innerHTML = Array.from({length:n},(_,i)=>`
+    <div class="matrix-card" id="mc-${i+1}">
+      <div class="mat-icon">${NAMES[i]}</div>
+      <div>
+        <div class="mat-name">${NAMES[i]}</div>
+        <div class="mat-dims">${dims[i]} × ${dims[i+1]}</div>
+      </div>
+    </div>`).join('');
 }
 
-// ── Render DP grid ─────────────────────────────────────────────────────
-const prevCellClasses = {};
+function updateCostChart(triedCosts, curBest) {
+  if (!triedCosts || triedCosts.length===0) { document.getElementById('cost-chart').innerHTML=''; return; }
+  const maxCost = Math.max(...triedCosts.map(t=>t.cost), 1);
+  document.getElementById('cost-chart').innerHTML = triedCosts.map(t => {
+    const isBest = t.cost === curBest;
+    const pct = (t.cost/maxCost*100).toFixed(1);
+    const col = isBest ? 'linear-gradient(90deg,var(--best-top),var(--best-bot))' : 'linear-gradient(90deg,var(--try-top),var(--try-bot))';
+    return `<div class="cost-bar-wrap">
+      <div class="cost-label">k=${t.k}</div>
+      <div class="cost-bar-bg"><div class="cost-bar" style="width:${pct}%;background:${col}"></div></div>
+      <div class="cost-val">${isBest?'⭐':''}${t.cost.toLocaleString()}</div>
+    </div>`;
+  }).join('');
+}
 
-function renderGrid(dp, s, hl, splitK, bestK) {
-  const grid = document.getElementById('dpGrid');
-  const n = dims.length - 1;
-  grid.style.gridTemplateColumns = `repeat(${n + 1}, 52px)`;
-  grid.innerHTML = '';
+function clearCellStates() {
+  document.querySelectorAll('.dp-cell').forEach(c=>c.classList.remove('computing','trying','new-best'));
+}
 
-  const corner = document.createElement('div'); corner.className = 'dp-cell header'; corner.textContent = 'i\\j'; grid.appendChild(corner);
-  for (let j = 1; j <= n; j++) {
-    const h = document.createElement('div'); h.className = 'dp-cell header';
-    h.textContent = `A${MAT_NAMES[j-1]}`; h.style.color = MAT_COLORS[(j-1) % MAT_COLORS.length]; grid.appendChild(h);
-  }
+function applyStep(s) {
+  if (!s) return;
+  document.getElementById('progress-bar').style.width = (stepIdx/steps.length*100)+'%';
 
-  for (let i = 1; i <= n; i++) {
-    const rh = document.createElement('div'); rh.className = 'dp-cell header';
-    rh.textContent = `A${MAT_NAMES[i-1]}`; rh.style.color = MAT_COLORS[(i-1) % MAT_COLORS.length]; grid.appendChild(rh);
+  if (s.type==='init') {
+    setExplain('📊','info',`Khởi tạo: dp[i][i]=0 (chi phí nhân 1 ma trận = 0). Bảng tam giác trên — điền theo đường chéo từ ngắn đến dài.`);
+    hl(7);
+  } else if (s.type==='diag-start') {
+    currentDiag = s.len;
+    document.getElementById('s-diag').textContent = `${s.len-1}/${n-1}`;
+    document.getElementById('diag-indicator').innerHTML = `<span class="diag-badge" style="background:rgba(255,212,59,0.1);border:1px solid var(--yellow);color:var(--yellow)">📐 Đường chéo ${s.len-1}: chuỗi dài ${s.len} ma trận</span>`;
+    setStatus(`<span class="sd-box opt">Đường chéo ${s.len-1}</span><span class="sd-op">→</span><span style="color:var(--muted);font-size:.85rem">Các chuỗi con ${s.len} ma trận</span>`);
+    setExplain('📐','opt',`<b>Đường chéo ${s.len-1}</b>: Tính chi phí tối ưu cho tất cả chuỗi con có <b>${s.len} ma trận liên tiếp</b>. Phụ thuộc vào đường chéo trước.`);
+    hl(9);
+    updateCostChart([]);
+  } else if (s.type==='cell-start') {
+    clearCellStates();
+    document.getElementById(`dp-${s.i}-${s.j}`)?.classList.add('computing');
+    setStatus(`<span class="sd-box try">dp[${s.i}][${s.j}]</span><span class="sd-op">=</span><span style="color:var(--muted)">M[${s.i}..${s.j}] = ${dims[s.i-1]}×...×${dims[s.j]}</span>`);
+    setExplain('🧮','try',`Tính <b>dp[${s.i}][${s.j}]</b>: chi phí nhân ${NAMES[s.i-1]}...${NAMES[s.j-1]} (${s.j-s.i+1} ma trận). Thử tất cả split point k từ ${s.i} đến ${s.j-1}.`);
+    hl(11);
+    updateCostChart([]);
+  } else if (s.type==='try-k') {
+    splitCount++;
+    document.getElementById('s-splits').textContent = splitCount;
+    clearCellStates();
+    document.getElementById(`dp-${s.i}-${s.j}`)?.classList.add('computing');
+    document.getElementById(`dp-${s.i}-${s.k}`)?.classList.add('trying');
+    document.getElementById(`dp-${s.k+1}-${s.j}`)?.classList.add('trying');
 
-    for (let j = 1; j <= n; j++) {
-      const cell = document.createElement('div');
-      cell.className = 'dp-cell';
-      const key = `${i}-${j}`;
-
-      if (j < i) {
-        cell.classList.add('na');
-      } else if (i === j) {
-        cell.classList.add('diagonal');
-        cell.textContent = '0';
-      } else {
-        const val = dp[i]?.[j];
-        let cls = '';
-        if (hl && hl.r === i && hl.c === j) {
-          cls = 'computing';
-        } else if (val && val !== Infinity) {
-          cls = 'computed';
-        } else {
-          cls = 'empty';
-        }
-
-        cell.classList.add(cls);
-
-        // Trigger fill animation only on new computed cells
-        if (cls === 'computed' && prevCellClasses[key] !== 'computed') {
-          cell.style.animation = 'none';
-          cell.offsetHeight;
-          cell.style.animation = `fillDiag 0.4s cubic-bezier(0.34,1.56,0.64,1)`;
-        }
-        prevCellClasses[key] = cls;
-
-        const displayVal = (!val || val === Infinity) ? '—' : val.toLocaleString();
-        cell.innerHTML = `<div class="cell-val">${displayVal}</div>`;
-
-        if (s && s[i]?.[j] && val && val !== Infinity) {
-          const kEl = document.createElement('div');
-          kEl.className = 'cell-k';
-          kEl.textContent = `k=${s[i][j]}`;
-          cell.appendChild(kEl);
-        }
-        cell.title = `dp[${i}][${j}] = ${displayVal}`;
-      }
-      grid.appendChild(cell);
+    const formula = `dp[${s.i}][${s.k}] + dp[${s.k+1}][${s.j}] + ${dims[s.i-1]}×${dims[s.k]}×${dims[s.j]}`;
+    setStatus(s.isNew ?
+      `<span class="sd-box try">k=${s.k}</span><span class="sd-op">→</span><span class="sd-box best">cost=${s.cost.toLocaleString()} ✨ New best!</span>` :
+      `<span class="sd-box try">k=${s.k}</span><span class="sd-op">→</span><span style="color:var(--muted)">cost=${s.cost.toLocaleString()}</span>`
+    );
+    setExplain(s.isNew?'✨':'🔢', s.isNew?'best':'try',
+      `Thử <b>k=${s.k}</b>: (${NAMES[s.i-1]}...${NAMES[s.k-1]}) × (${NAMES[s.k]}...${NAMES[s.j-1]}). Chi phí = ${formula} = <b>${s.cost.toLocaleString()}</b>.${s.isNew?' 🌟 Best mới!':` Current best: ${s.curBest.toLocaleString()}`}`
+    );
+    if (s.isNew) {
+      document.getElementById(`dp-${s.i}-${s.j}`).classList.add('new-best');
+      document.getElementById(`dp-${s.i}-${s.j}`).innerHTML = `${s.cost.toLocaleString()}<div class="cell-split">k=${s.k}</div>`;
     }
+    hl(14);
+    updateCostChart(s.triedCosts, s.curBest);
+  } else if (s.type==='cell-done') {
+    const cell = document.getElementById(`dp-${s.i}-${s.j}`);
+    if (cell) {
+      cell.innerHTML = `${s.val.toLocaleString()}<div class="cell-split">k=${s.split}</div>`;
+      cell.classList.remove('computing','trying','new-best');
+      cell.classList.add('filled','filling');
+    }
+    const cost = s.val;
+    document.getElementById('s-cost').textContent = cost.toLocaleString();
+    setStatus(`<span class="sd-box opt">dp[${s.i}][${s.j}] = ${cost.toLocaleString()}</span><span class="sd-op">split k=${s.split}</span>`);
+    setExplain('✅','opt',`<b>dp[${s.i}][${s.j}] = ${cost.toLocaleString()}</b>. Split tốt nhất k=${s.split}: (${NAMES[s.i-1]}...${NAMES[s.split-1]}) × (${NAMES[s.split]}...${NAMES[s.j-1]})`);
+    hl(17);
+  } else if (s.type==='done') {
+    document.getElementById('s-cost').textContent = s.val.toLocaleString();
+    document.getElementById(`dp-1-${n}`)?.classList.add('optimal');
+    document.getElementById('paren-str').textContent = s.paren;
+    setStatus(`<span style="color:var(--opt-top);font-size:1rem;font-weight:700">🎉 Chi phí tối ưu: ${s.val.toLocaleString()} phép nhân scalar</span>`);
+    setExplain('🎉','opt',`Hoàn tất! Chi phí tối ưu = <b>${s.val.toLocaleString()}</b>. Cách đặt ngoặc tốt nhất: <b>${s.paren}</b>`);
+    setInsight('🏆 Kết quả',`Với ${n} ma trận ${dims.map((d,i)=>i<n?dims[i]+'×'+dims[i+1]:'').filter(Boolean).join(', ')}: min cost = <b>${s.val.toLocaleString()}</b>. Thuật toán O(n³) duyệt qua C(n) cách phân chia. Naive = O(4ⁿ/n^1.5)!`);
+    stopPlay();
   }
 }
 
-// ── Apply step ─────────────────────────────────────────────────────────
-function applyStep(idx) {
-  if (idx >= steps.length) { stopPlay(); return; }
-  const s = steps[idx];
-
-  const expEl = document.getElementById('explanation');
-  expEl.style.animation = 'none';
-  expEl.offsetHeight;
-  expEl.style.animation = 'waveIn 0.3s ease';
-  expEl.textContent = s.explanation || '';
-
-  document.getElementById('statStep').textContent = idx + 1;
-  if (s.diag) document.getElementById('statDiag').textContent = s.diag;
-
-  if (s.result !== undefined) {
-    const optEl = document.getElementById('statOpt');
-    optEl.style.animation = 'none'; optEl.offsetHeight;
-    optEl.style.animation = 'bounceIn 0.4s cubic-bezier(0.34,1.56,0.64,1)';
-    optEl.textContent = s.result.toLocaleString();
-    document.getElementById('optCost').textContent = s.result.toLocaleString();
-  }
-  if (s.worst !== undefined) {
-    document.getElementById('worstCost').textContent = s.worst.toLocaleString();
-    const imp = s.result > 0 ? Math.round((s.worst - s.result) / s.worst * 100) : 0;
-    document.getElementById('improvement').textContent = `${imp}% ít hơn`;
-
-    // Show animated bar chart
-    const barsEl = document.getElementById('costBars');
-    barsEl.style.display = 'flex';
-    const maxVal = Math.max(s.result, s.worst);
-    const optPct = Math.round(s.result / maxVal * 100);
-    const worstPct = 100;
-
-    document.getElementById('barOpt').style.width = `${optPct}%`;
-    document.getElementById('barWorst').style.width = `${worstPct}%`;
-    document.getElementById('barOptVal').textContent = s.result.toLocaleString();
-    document.getElementById('barWorstVal').textContent = s.worst.toLocaleString();
-  }
-
-  if (s.codeLine !== undefined) highlightCode(s.codeLine);
-  renderGrid(s.dp, s.s, s.hl, s.splitK, s.bestK);
-
-  if (s.type === 'done' && s.s) {
-    const paren = buildParen(s.s, 1, dims.length - 1);
-    document.getElementById('parenStr').textContent = paren;
-    document.getElementById('parenCost').textContent = `Chi phí: ${s.result?.toLocaleString()} phép nhân scalars`;
-  }
-
-  // Split comparison with better styling
-  if (s.splits && s.splits.length > 0) {
-    const html = s.splits.map(sp => {
-      const isBest = sp.k === s.bestK && s.type === 'fill';
-      const isCurrent = sp.k === s.splitK;
-      const color = isBest ? '#22c55e' : (isCurrent ? '#f59e0b' : '#3a2a10');
-      return `<div style="color:${color};padding:1px 0;transition:color 0.2s">
-        k=${sp.k}: ${sp.left}+${sp.right}+${sp.mult} = <b>${sp.cost.toLocaleString()}</b>${isBest ? ' ★ best' : (isCurrent ? ' ← testing' : '')}
-      </div>`;
-    }).join('');
-    document.getElementById('splitComparison').innerHTML = html;
-  }
+function setStatus(html) { document.getElementById('status-display').innerHTML = html; }
+function setExplain(icon, cls, html) {
+  const ic = document.querySelector('#explain-viz .step-icon');
+  ic.textContent = icon; ic.className = 'step-icon ' + cls;
+  document.getElementById('explain-text').innerHTML = html;
+  document.getElementById('step-counter').textContent = `${stepIdx}/${steps.length}`;
+}
+function setInsight(title, html) {
+  document.getElementById('insight').innerHTML = `<div class="insight-title">${title}</div>${html}`;
+}
+function hl(i) {
+  document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));
+  if (i>=0) document.querySelector(`[data-i="${i}"]`)?.classList.add('active');
+}
+function buildCode() {
+  document.getElementById('code').innerHTML = CODE_LINES.map((l,i)=>
+    `<div class="code-line${l.trim().startsWith('//')?' comment':''}" data-i="${i}">${l}</div>`).join('');
 }
 
-function highlightCode(line) {
-  document.querySelectorAll('#codePanel .code-line').forEach((l, i) => {
-    l.classList.remove('highlight');
-    if (i === line) l.classList.add('highlight');
-  });
+function doReset() {
+  stopPlay(); stepIdx=0; splitCount=0; currentDiag=0;
+  splitTable = buildSteps();
+  buildTable(); buildMatricesList();
+  document.getElementById('progress-bar').style.width='0%';
+  document.getElementById('s-diag').textContent='0';
+  document.getElementById('s-splits').textContent='0';
+  document.getElementById('s-cost').textContent='?';
+  document.getElementById('paren-str').textContent='Đang tính...';
+  document.getElementById('cost-chart').innerHTML='';
+  document.getElementById('diag-indicator').innerHTML='';
+  document.getElementById('status-display').innerHTML='<span class="sd-idle">Nhấn Play để xem tính toán chi phí nhân ma trận tối ưu</span>';
+  setExplain('💡','info',`${n} ma trận: ${dims.map((d,i)=>i<n?NAMES[i]+`(${dims[i]}×${dims[i+1]})` :'').filter(Boolean).join(' × ')}. Điền bảng dp theo đường chéo từ 1 đến ${n-1}.`);
+  setInsight('📐 Matrix Chain DP',`Nhân A(10×30)×B(30×5)×C(5×60): cách 1 = (A×B)×C = 4500+18000=22500, cách 2 = A×(B×C) = 9000+1500=10500. <b>Thứ tự quan trọng!</b> DP tìm thứ tự tối ưu trong O(n³).`);
 }
 
-// ── Playback ───────────────────────────────────────────────────────────
-function togglePlay() { if (playing) stopPlay(); else startPlay(); }
-function startPlay() { playing = true; document.getElementById('btnPlay').textContent = '⏸ Pause'; tick(); }
-function stopPlay() { playing = false; document.getElementById('btnPlay').textContent = '▶ Play'; clearTimeout(playTimer); }
-function tick() {
-  if (!playing) return;
-  if (stepIdx >= steps.length) { stopPlay(); return; }
-  applyStep(stepIdx++);
-  playTimer = setTimeout(tick, parseInt(document.getElementById('speedSel').value));
-}
-function stepForward() { stopPlay(); if (stepIdx < steps.length) applyStep(stepIdx++); }
-function resetAnim() {
-  stopPlay(); stepIdx = 0;
-  Object.keys(prevCellClasses).forEach(k => delete prevCellClasses[k]);
-  document.getElementById('statStep').textContent = '0';
-  document.getElementById('statDiag').textContent = '0';
-  document.getElementById('statOpt').textContent = '—';
-  document.getElementById('optCost').textContent = '—';
-  document.getElementById('worstCost').textContent = '—';
-  document.getElementById('improvement').textContent = '—';
-  document.getElementById('explanation').textContent = 'Nhấn ▶ Play để bắt đầu.';
-  document.getElementById('parenStr').textContent = 'Chưa tính...';
-  document.getElementById('parenCost').textContent = '';
-  document.getElementById('splitComparison').textContent = 'Chưa có cell nào đang tính.';
-  document.getElementById('costBars').style.display = 'none';
+function getDelay() { return Math.round(1200 - document.getElementById('speed').value*110); }
+function tick() { if(stepIdx>=steps.length){stopPlay();return;} applyStep(steps[stepIdx++]); if(playing) timer=setTimeout(tick,getDelay()); }
+function startPlay() { if(stepIdx>=steps.length) doReset(); playing=true; document.getElementById('btn-play').textContent='⏸ Pause'; tick(); }
+function stopPlay() { playing=false; clearTimeout(timer); document.getElementById('btn-play').textContent='▶ Play'; }
 
-  buildSteps();
-  const n = dims.length - 1;
-  const emptyDp = Array.from({length: n+1}, () => new Array(n+1).fill(0));
-  const emptyS = Array.from({length: n+1}, () => new Array(n+1).fill(0));
-  renderGrid(emptyDp, emptyS, null, null, null);
-  renderMatrices(null);
-}
+document.getElementById('btn-play').onclick = ()=>playing?stopPlay():startPlay();
+document.getElementById('btn-step').onclick = ()=>{ stopPlay(); if(stepIdx<steps.length) applyStep(steps[stepIdx++]); };
+document.getElementById('btn-reset').onclick = doReset;
+document.getElementById('btn-new').onclick = ()=>{ genDims(); doReset(); };
 
-// ── Init ──────────────────────────────────────────────────────────────
-renderDimsRow();
-resetAnim();
+buildCode(); genDims(); doReset();
 </script>
 </body>
 </html>

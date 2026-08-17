@@ -3,814 +3,680 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DP #24 — Fibonacci & Giới thiệu Dynamic Programming</title>
+<title>DP Fibonacci — Quy hoạch động cơ bản</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #0a0a1a;
-  color: #e0e0e0;
-  min-height: 100vh;
-  background-image:
-    radial-gradient(ellipse at 20% 20%, rgba(99,102,241,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 80%, rgba(6,182,212,0.06) 0%, transparent 60%),
-    linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
-}
-header {
-  background: linear-gradient(135deg, #12122a, #1a1a35);
-  padding: 16px 24px;
-  border-bottom: 2px solid #6366f1;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  box-shadow: 0 2px 20px rgba(99,102,241,0.2);
-}
-header h1 { font-size: 1.3rem; color: #818cf8; }
-header .badge { background: #6366f1; color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
-.main { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 60px); }
-.left-panel { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
-.right-panel { background: #0d0d20; border-left: 2px solid #1e1e40; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  :root {
+    --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+    --text: #eef1f8; --muted: #8899bb;
+    --accent: #a78bfa; --yellow: #ffd43b;
+    --naive-top: #ff5e7a; --naive-bot: #c0143c;
+    --memo-top: #5b8def; --memo-bot: #2c5aa0;
+    --bu-top: #2ecc71; --bu-bot: #1a9c54;
+    --cache-top: #ffd43b; --cache-bot: #e67e22;
+    --dup-top: #f97316; --dup-bot: #c2410c;
+    --hit-top: #34d399; --hit-bot: #059669;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  body::before { content:''; position: fixed; inset: 0; background: radial-gradient(ellipse at 25% 15%, rgba(91,141,239,0.07) 0%, transparent 55%), radial-gradient(ellipse at 75% 85%, rgba(167,139,250,0.05) 0%, transparent 55%); pointer-events: none; }
 
-/* ── Keyframes ─────────────────────────────────────────────────────── */
-@keyframes nodeBloom {
-  0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
-  60%  { transform: scale(1.25) rotate(5deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
-}
-@keyframes cacheFlash {
-  0%   { background: #0a2a1a; box-shadow: 0 0 0px rgba(34,197,94,0); }
-  30%  { background: #0a4a2a; box-shadow: 0 0 24px rgba(34,197,94,0.8); }
-  70%  { background: #062018; box-shadow: 0 0 12px rgba(34,197,94,0.4); }
-  100% { background: #0a2a1a; box-shadow: 0 0 4px rgba(34,197,94,0.2); }
-}
-@keyframes fillCell {
-  0%   { transform: scaleX(0); opacity: 0; }
-  60%  { transform: scaleX(1.05); opacity: 1; }
-  100% { transform: scaleX(1); opacity: 1; }
-}
-@keyframes countTick {
-  0%   { transform: scale(1); }
-  40%  { transform: scale(1.4); color: #ef4444; }
-  100% { transform: scale(1); }
-}
-@keyframes countTickSlow {
-  0%   { transform: scale(1); }
-  40%  { transform: scale(1.3); color: #22c55e; }
-  100% { transform: scale(1); }
-}
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(99,102,241,0.3); }
-  50%       { box-shadow: 0 0 20px rgba(99,102,241,0.7); }
-}
-@keyframes bounceIn {
-  0%   { transform: scale(0.5) translateY(20px); opacity: 0; }
-  60%  { transform: scale(1.1) translateY(-4px); opacity: 1; }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
-}
-@keyframes waveIn {
-  0%   { transform: translateY(-10px) scaleY(0.8); opacity: 0; }
-  60%  { transform: translateY(2px) scaleY(1.05); opacity: 1; }
-  100% { transform: translateY(0) scaleY(1); opacity: 1; }
-}
-@keyframes glowGreen {
-  0%, 100% { box-shadow: 0 0 6px rgba(34,197,94,0.4); }
-  50%       { box-shadow: 0 0 20px rgba(34,197,94,0.9); }
-}
+  header { background: var(--surface); padding: 10px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); z-index: 2; }
+  header h1 { font-size: 1.15rem; font-weight: 700; background: linear-gradient(135deg,#a78bfa,#7c5ce7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .badge { background: linear-gradient(135deg,#7c5ce7,#a78bfa); color: #fff; padding: 2px 10px; border-radius: 12px; font-size: .68rem; font-weight: 700; }
+  .complexity { display: flex; gap: 6px; margin-left: auto; }
+  .cx { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 9px; font-size: .72rem; color: var(--muted); }
+  .cx span { color: var(--yellow); font-weight: 700; }
 
-/* Approach tabs */
-.tabs { display: flex; gap: 6px; }
-.tab { padding: 8px 16px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.82rem; font-weight: 600; border: 2px solid transparent; transition: all 0.2s; }
-.tab.active { background: #1e1e40; border-color: #6366f1; color: #818cf8; }
-.tab:not(.active) { background: #12122a; color: #5060a0; }
-.tab:hover:not(.active) { background: #181830; }
+  /* TABS */
+  #tabs { display: flex; gap: 0; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .tab { padding: 8px 20px; cursor: pointer; font-size: .82rem; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(167,139,250,0.05); }
 
-/* Input section */
-.input-row { display: flex; align-items: center; gap: 12px; background: #12122a; padding: 10px 14px; border-radius: 10px; border: 1px solid #1e1e40; }
-.input-row label { font-size: 0.85rem; color: #6070a0; }
-input[type=range] { flex: 1; accent-color: #6366f1; }
-.n-display { background: linear-gradient(135deg, #6366f1, #818cf8); color: white; font-weight: bold; padding: 4px 12px; border-radius: 8px; min-width: 40px; text-align: center; }
+  main { flex: 1; display: flex; overflow: hidden; z-index: 1; min-height: 0; }
+  #viz { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
-/* Complexity badge */
-.complexity-row { display: flex; gap: 10px; }
-.cmx { padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; }
-.cmx.bad { background: #1a0a0a; color: #ef4444; border: 1px solid #3a1010; }
-.cmx.good { background: #0a1a0a; color: #22c55e; border: 1px solid #103010; }
+  /* STATUS DISPLAY (top) */
+  #status-display { text-align: center; padding: 10px 20px; min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 12px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .sd-idle { color: var(--muted); font-size: .9rem; }
+  .sd-node { display: inline-flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 50%; font-size: 1rem; font-weight: 800; color: #fff; }
+  .sd-node.naive { background: linear-gradient(135deg,var(--naive-top),var(--naive-bot)); box-shadow: 0 0 14px rgba(255,94,122,0.5); }
+  .sd-node.memo { background: linear-gradient(135deg,var(--memo-top),var(--memo-bot)); box-shadow: 0 0 14px rgba(91,141,239,0.5); }
+  .sd-node.bu { background: linear-gradient(135deg,var(--bu-top),var(--bu-bot)); box-shadow: 0 0 14px rgba(46,204,113,0.4); }
+  .sd-node.dup { background: linear-gradient(135deg,var(--dup-top),var(--dup-bot)); box-shadow: 0 0 14px rgba(249,115,22,0.6); }
+  .sd-node.hit { background: linear-gradient(135deg,var(--hit-top),var(--hit-bot)); box-shadow: 0 0 14px rgba(52,211,153,0.6); }
+  .sd-op { font-size: 1.2rem; color: var(--yellow); }
+  .sd-tag { padding: 4px 12px; border-radius: 6px; font-size: .82rem; font-weight: 700; color: #fff; }
+  .sd-tag.naive { background: linear-gradient(135deg,var(--naive-top),var(--naive-bot)); }
+  .sd-tag.hit { background: linear-gradient(135deg,var(--hit-top),var(--hit-bot)); }
+  .sd-tag.fill { background: linear-gradient(135deg,var(--bu-top),var(--bu-bot)); }
 
-/* Visualization areas */
-.viz-box { background: #0d0d20; border: 2px solid #1e1e40; border-radius: 12px; padding: 16px; min-height: 280px; position: relative; }
-.viz-box h3 { font-size: 0.85rem; color: #5060a0; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+  /* EXPLAIN BAR */
+  #explain-viz { padding: 10px 24px; min-height: 52px; background: linear-gradient(135deg,rgba(21,29,50,0.95),rgba(28,39,68,0.9)); border-bottom: 1px solid var(--border); font-size: .88rem; line-height: 1.55; color: var(--text); display: flex; align-items: center; gap: 12px; }
+  #explain-viz .step-icon { flex-shrink: 0; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transition: all 0.3s; }
+  #explain-viz .step-icon.info { background: rgba(91,141,239,0.15); border: 1px solid rgba(91,141,239,0.3); }
+  #explain-viz .step-icon.call { background: rgba(255,94,122,0.15); border: 1px solid rgba(255,94,122,0.3); }
+  #explain-viz .step-icon.hit { background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.3); }
+  #explain-viz .step-icon.fill { background: rgba(46,204,113,0.15); border: 1px solid rgba(46,204,113,0.3); }
+  #explain-viz .step-icon.dup { background: rgba(249,115,22,0.15); border: 1px solid rgba(249,115,22,0.3); }
+  #explain-text { flex: 1; }
+  #explain-text b { color: var(--yellow); }
+  #explain-text code { background: var(--surface2); padding: 1px 5px; border-radius: 3px; font-family: monospace; font-size: .8rem; color: var(--accent); }
+  #step-counter { font-size: .72rem; color: var(--muted); white-space: nowrap; }
 
-/* Tree visualization */
-#treeCanvas { width: 100%; display: block; }
+  /* VIZ AREA */
+  #viz-area { flex: 1; position: relative; overflow: hidden; padding: 12px 16px; display: flex; align-items: flex-start; justify-content: center; }
 
-/* DP Table */
-.dp-table-wrap { overflow-x: auto; }
-.dp-table { display: flex; gap: 4px; flex-wrap: nowrap; padding: 8px; }
-.dp-cell {
-  width: 52px; height: 64px; border-radius: 8px; border: 2px solid #1e1e40;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  font-size: 0.8rem; flex-shrink: 0; transition: border-color 0.3s, box-shadow 0.3s;
-  transform-origin: left center;
-}
-.dp-cell .idx { font-size: 0.65rem; color: #4060a0; margin-bottom: 2px; }
-.dp-cell .val { font-size: 1.1rem; font-weight: bold; }
-.dp-cell.empty  { background: #0d0d20; color: #2a3050; }
-.dp-cell.computing { background: #1a1000; border-color: #f59e0b; color: #f59e0b; animation: pulse 1s ease-in-out infinite; }
-.dp-cell.computed  { background: #0a0a20; border-color: #6366f1; color: #818cf8; animation: fillCell 0.4s cubic-bezier(0.34,1.56,0.64,1); }
-.dp-cell.highlight { background: #0a1a30; border-color: #06b6d4; color: #67e8f9; box-shadow: 0 0 12px rgba(6,182,212,0.5); }
-.dp-cell.backtrack { background: #0a1a0a; border-color: #22c55e; color: #22c55e; animation: glowGreen 1.5s ease-in-out infinite; }
+  /* TREE TAB */
+  #tree-canvas { position: absolute; inset: 0; pointer-events: none; }
+  #tree-nodes { position: relative; width: 100%; height: 100%; }
+  .tree-node {
+    position: absolute; width: 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem; font-weight: 800; color: #fff;
+    transform: scale(0); opacity: 0;
+    transition: background 0.4s, box-shadow 0.4s;
+    cursor: default;
+    z-index: 2;
+  }
+  .tree-node.bloomed { animation: nodeBloom 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  .tree-node.naive-node { background: linear-gradient(135deg,var(--naive-top),var(--naive-bot)); box-shadow: 0 0 12px rgba(255,94,122,0.4); }
+  .tree-node.dup-node { background: linear-gradient(135deg,var(--dup-top),var(--dup-bot)); box-shadow: 0 0 16px rgba(249,115,22,0.6); animation: dupPulse 0.6s ease-in-out; }
+  .tree-node.base-node { background: linear-gradient(135deg,#64748b,#475569); box-shadow: 0 0 8px rgba(100,116,139,0.4); }
+  .tree-node .node-label { position: absolute; top: -18px; font-size: .65rem; color: var(--muted); white-space: nowrap; }
+  .tree-node .node-val { font-size: .75rem; color: var(--yellow); position: absolute; bottom: -18px; white-space: nowrap; }
 
-/* Arrows */
-.arrows-row { display: flex; gap: 4px; align-items: center; height: 20px; padding: 0 4px; margin-top: 2px; }
-.arr-spacer { width: 52px; flex-shrink: 0; }
-.arr-icon { width: 52px; flex-shrink: 0; text-align: center; font-size: 1rem; color: #4060a0; transition: all 0.3s; }
-.arr-icon.active { color: #f59e0b; transform: scale(1.3); }
+  /* MEMO TABLE */
+  #memo-table-wrap { display: flex; flex-direction: column; gap: 8px; align-items: center; width: 100%; padding-top: 8px; }
+  .memo-row { display: flex; align-items: center; gap: 8px; }
+  .memo-label { font-size: .8rem; color: var(--muted); width: 60px; text-align: right; }
+  .memo-cells { display: flex; gap: 4px; }
+  .memo-cell {
+    width: 52px; height: 52px; border-radius: 10px; border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .9rem; font-weight: 800; color: var(--muted);
+    background: var(--surface2); position: relative;
+    transition: all 0.3s;
+  }
+  .memo-cell .cell-idx { position: absolute; top: 2px; left: 4px; font-size: .55rem; color: var(--muted); }
+  .memo-cell.filling { animation: cellFill 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  .memo-cell.hit { animation: cacheFlash 0.6s ease; border-color: var(--hit-top); }
+  .memo-cell.filled { background: rgba(46,204,113,0.12); border-color: var(--bu-top); color: var(--bu-top); }
+  .memo-cell.computing { border-color: var(--accent); box-shadow: 0 0 12px rgba(167,139,250,0.4); animation: computePulse 0.8s ease infinite; }
 
-/* Stats */
-.stats-row { display: flex; gap: 10px; flex-wrap: wrap; }
-.stat-box { background: #0d0d20; border-radius: 8px; padding: 8px 14px; flex: 1; min-width: 100px; border: 1px solid #1e1e40; }
-.stat-box .label { font-size: 0.68rem; color: #4060a0; text-transform: uppercase; }
-.stat-box .value { font-size: 1.4rem; font-weight: bold; color: #818cf8; transition: color 0.3s; }
-.stat-box.calls .value { color: #ef4444; }
-.stat-box.saved .value { color: #22c55e; }
+  /* BU TABLE */
+  #bu-table-wrap { display: flex; flex-direction: column; gap: 12px; align-items: center; width: 100%; }
+  .bu-cells { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; }
+  .bu-cell {
+    width: 58px; height: 58px; border-radius: 10px; border: 2px solid var(--border);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 1rem; font-weight: 800; color: var(--muted);
+    background: var(--surface2); position: relative;
+    transition: all 0.4s;
+  }
+  .bu-cell .cell-idx { font-size: .6rem; color: var(--muted); margin-top: 2px; }
+  .bu-cell.filling { animation: cellFill 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  .bu-cell.filled { background: rgba(46,204,113,0.12); border-color: var(--bu-top); color: var(--bu-top); }
+  .bu-cell.computing { border-color: var(--accent); box-shadow: 0 0 16px rgba(167,139,250,0.5); }
+  .bu-cell.source { border-color: var(--yellow); box-shadow: 0 0 10px rgba(255,212,59,0.35); }
+  .dep-arrow { color: var(--yellow); font-size: 1.2rem; align-self: center; }
 
-/* Code panel */
-.code-panel { background: #060610; border-radius: 10px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.78rem; line-height: 1.7; border: 1px solid #1e1e40; }
-.code-line { padding: 1px 6px; border-radius: 4px; transition: background 0.2s; white-space: pre; color: #5070a0; }
-.code-line.active { background: rgba(99,102,241,0.2); color: #c0d0ff; border-left: 3px solid #818cf8; }
-.code-line.highlight { background: rgba(245,158,11,0.15); color: #fcd34d; border-left: 3px solid #f59e0b; }
-.kw { color: #c678dd; }
-.fn { color: #61afef; }
-.num { color: #d19a66; }
-.cm { color: #4a5568; font-style: italic; }
-.str { color: #98c379; }
+  /* BOTTOM BAR */
+  #bottom-bar { display: flex; align-items: center; background: var(--surface); border-top: 1px solid var(--border); }
+  #legend { flex: 1; display: flex; gap: 14px; padding: 7px 24px; font-size: .74rem; color: var(--muted); }
+  .leg { display: flex; align-items: center; gap: 6px; }
+  .leg-dot { width: 14px; height: 14px; border-radius: 3px; }
+  #progress-wrap { width: 160px; height: 5px; background: var(--surface2); border-radius: 3px; margin-right: 20px; overflow: hidden; }
+  #progress-bar { height: 100%; width: 0%; border-radius: 3px; background: linear-gradient(90deg,var(--accent),var(--bu-top)); transition: width 0.4s; }
 
-/* Controls */
-.controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
-.btn-primary { background: linear-gradient(135deg, #6366f1, #818cf8); color: white; box-shadow: 0 2px 10px rgba(99,102,241,0.3); }
-.btn-primary:hover { background: linear-gradient(135deg, #4f52d8, #6366f1); transform: translateY(-1px); }
-.btn-secondary { background: #12122a; color: #6070a0; border: 1px solid #1e1e40; }
-.btn-secondary:hover { background: #1a1a35; }
-.btn-danger { background: #1a0808; color: #ef4444; border: 1px solid #3a1010; }
-.btn-danger:hover { background: #250a0a; }
-.btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.speed-label { font-size: 0.75rem; color: #4060a0; margin-left: 4px; }
-select { background: #0d0d20; color: #6070a0; border: 1px solid #1e1e40; border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; }
+  /* RIGHT PANEL */
+  #code-panel { width: 340px; min-width: 300px; background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
+  .panel-title { padding: 10px 14px; background: var(--surface2); font-size: .78rem; font-weight: 600; color: var(--accent); border-bottom: 1px solid var(--border); }
+  #code { flex: 1; overflow-y: auto; padding: 10px 0; font-family: 'SF Mono','Fira Code',Consolas,monospace; font-size: .79rem; line-height: 2; }
+  .code-line { padding: 0 14px; color: #5a6d8e; white-space: pre; border-left: 3px solid transparent; transition: all 0.2s; }
+  .code-line.comment { color: #3a4d6e; font-style: italic; }
+  .code-line.active { background: linear-gradient(90deg,rgba(255,212,59,0.1),transparent); color: var(--yellow); border-left-color: var(--yellow); font-weight: 600; }
+  #insight { padding: 12px 14px; background: var(--bg); border-top: 1px solid var(--border); font-size: .8rem; line-height: 1.5; color: var(--muted); }
+  #insight .insight-title { color: var(--accent); font-weight: 700; font-size: .72rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  #insight b { color: var(--text); }
 
-/* Memo array */
-.memo-wrap { margin-top: 8px; }
-.memo-label { font-size: 0.72rem; color: #4060a0; margin-bottom: 4px; }
-.memo-row { display: flex; gap: 3px; flex-wrap: wrap; }
-.memo-cell {
-  width: 44px; height: 44px; border-radius: 6px; border: 1px solid #1e1e40;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  font-size: 0.7rem; transition: all 0.3s;
-}
-.memo-cell .midx { font-size: 0.58rem; color: #3a5070; }
-.memo-cell .mval { font-weight: bold; color: #818cf8; }
-.memo-cell.hit { background: #071a0f; border-color: #22c55e; animation: cacheFlash 0.5s ease; }
-.memo-cell.empty { background: #0d0d1a; color: #2a3050; }
+  /* CONTROLS */
+  #controls { background: var(--surface); padding: 8px 24px; display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--border); z-index: 2; flex-wrap: wrap; }
+  button { border: none; border-radius: 8px; padding: 7px 14px; cursor: pointer; font-size: .8rem; font-weight: 600; transition: all 0.2s; }
+  button:active { transform: scale(0.95); }
+  button:disabled { background: var(--surface2)!important; color: #3a4d6e!important; cursor: not-allowed; }
+  #btn-play { background: linear-gradient(135deg,#00b894,#05c46b); color: #fff; box-shadow: 0 2px 10px rgba(5,196,107,0.25); min-width: 85px; }
+  #btn-step { background: linear-gradient(135deg,#7c5ce7,#a78bfa); color: #fff; }
+  #btn-reset,#btn-new { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  label { font-size: .76rem; color: var(--muted); }
+  input[type=range] { accent-color: var(--accent); width: 85px; }
+  select { background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 5px; padding: 3px 6px; font-size: .76rem; }
+  #stats { display: flex; gap: 8px; margin-left: auto; }
+  .stat { background: var(--surface2); padding: 4px 10px; border-radius: 6px; font-size: .8rem; color: var(--muted); border: 1px solid var(--border); }
+  .stat span { color: var(--yellow); font-weight: 800; }
 
-/* Info box */
-.info-box { background: #0d0d20; border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; line-height: 1.5; color: #6070a0; border-left: 3px solid #6366f1; }
-.info-box strong { color: #818cf8; }
-
-/* Explanation strip */
-.explanation { background: #0f0f20; border-radius: 8px; padding: 8px 14px; font-size: 0.82rem; color: #8090b0; min-height: 36px; border-left: 3px solid #f59e0b; animation: waveIn 0.3s ease; }
-
-.section-title { font-size: 0.8rem; font-weight: 700; color: #4060a0; text-transform: uppercase; letter-spacing: 0.06em; }
+  /* KEYFRAMES */
+  @keyframes nodeBloom { 0%{transform:scale(0) rotate(-20deg);opacity:0} 60%{transform:scale(1.2) rotate(5deg);opacity:1} 100%{transform:scale(1) rotate(0);opacity:1} }
+  @keyframes dupPulse { 0%,100%{transform:scale(1)} 30%{transform:scale(1.3)} 60%{transform:scale(0.95)} }
+  @keyframes cellFill { 0%{transform:scaleX(0);opacity:0;transform-origin:left} 70%{transform:scaleX(1.05);opacity:1} 100%{transform:scaleX(1);opacity:1} }
+  @keyframes cacheFlash { 0%{background:rgba(52,211,153,0);box-shadow:0 0 0 rgba(52,211,153,0)} 30%{background:rgba(52,211,153,0.3);box-shadow:0 0 20px rgba(52,211,153,0.8)} 70%{background:rgba(52,211,153,0.15);box-shadow:0 0 10px rgba(52,211,153,0.4)} 100%{background:rgba(46,204,113,0.12);box-shadow:none} }
+  @keyframes computePulse { 0%,100%{box-shadow:0 0 8px rgba(167,139,250,0.3)} 50%{box-shadow:0 0 20px rgba(167,139,250,0.7)} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
 </style>
 </head>
 <body>
 <header>
-  <div class="badge">Module 5</div>
-  <h1>🎯 Fibonacci & Giới thiệu Dynamic Programming</h1>
-  <div class="badge" style="background:linear-gradient(135deg,#6366f1,#818cf8)">#24</div>
+  <h1>🔢 DP Fibonacci</h1>
+  <span class="badge">DYNAMIC PROGRAMMING</span>
+  <div class="complexity">
+    <div class="cx">Naive <span>O(2ⁿ)</span></div>
+    <div class="cx">Memo <span>O(n)</span></div>
+    <div class="cx">Bottom-up <span>O(n)</span></div>
+    <div class="cx">Space <span>O(n)/O(1)</span></div>
+  </div>
 </header>
 
-<div class="main">
-  <div class="left-panel">
-    <!-- Approach tabs -->
-    <div>
-      <div class="tabs">
-        <div class="tab active" onclick="switchApproach('naive')" id="tab-naive">🌳 Đệ quy ngây thơ</div>
-        <div class="tab" onclick="switchApproach('memo')" id="tab-memo">🧠 Top-Down (Memoization)</div>
-        <div class="tab" onclick="switchApproach('bottom')" id="tab-bottom">📊 Bottom-Up (Tabulation)</div>
+<div id="tabs">
+  <div class="tab active" data-tab="naive">🌳 Naive (Đệ quy thuần)</div>
+  <div class="tab" data-tab="memo">⚡ Memoization (Top-down)</div>
+  <div class="tab" data-tab="bu">📊 Bottom-up (Tabulation)</div>
+</div>
+
+<main>
+  <div id="viz">
+    <div id="status-display"><span class="sd-idle">Nhấn Play để xem trực quan hoá thuật toán</span></div>
+
+    <div id="explain-viz">
+      <div class="step-icon info">💡</div>
+      <div id="explain-text">Fibonacci: fib(n) = fib(n-1) + fib(n-2). Ba cách tiếp cận khác nhau với độ phức tạp khác nhau. Chọn tab để so sánh.</div>
+      <div id="step-counter"></div>
+    </div>
+
+    <div id="viz-area">
+      <!-- Naive tab: tree -->
+      <div id="tab-naive" style="width:100%;height:100%;position:relative;">
+        <canvas id="tree-canvas"></canvas>
+        <div id="tree-nodes"></div>
       </div>
-    </div>
-
-    <!-- Input -->
-    <div class="input-row">
-      <label>N = </label>
-      <input type="range" id="nSlider" min="2" max="12" value="7" oninput="onNChange(this.value)">
-      <div class="n-display" id="nDisplay">7</div>
-      <div style="font-size:0.82rem;color:#4060a0">F(N) = <span id="fnResult" style="color:#818cf8;font-weight:bold"></span></div>
-    </div>
-
-    <!-- Complexity -->
-    <div class="complexity-row" id="complexityRow">
-      <div class="cmx bad">⚡ Đệ quy: O(2ⁿ)</div>
-      <div class="cmx good">✅ DP: O(n)</div>
-      <div class="cmx bad" id="callCountBadge">Gọi hàm: 0</div>
-    </div>
-
-    <!-- Visualization -->
-    <div class="viz-box" id="vizBox">
-      <h3 id="vizTitle">🌳 Cây đệ quy — F(7)</h3>
-      <canvas id="treeCanvas" height="260"></canvas>
-      <!-- Bottom-up table shown here when in bottom approach -->
-      <div id="tableViz" style="display:none">
-        <div class="dp-table-wrap">
-          <div class="dp-table" id="dpTable"></div>
+      <!-- Memo tab -->
+      <div id="tab-memo" style="display:none;width:100%;flex-direction:column;gap:16px;align-items:center;padding-top:16px;">
+        <div id="memo-table-wrap">
+          <div class="memo-row">
+            <div class="memo-label">fib(n)</div>
+            <div class="memo-cells" id="memo-cells"></div>
+          </div>
         </div>
-        <div class="arrows-row" id="arrowsRow"></div>
+        <div id="memo-call-stack" style="font-size:.8rem;color:var(--muted);text-align:center;max-width:500px;"></div>
+      </div>
+      <!-- BU tab -->
+      <div id="tab-bu" style="display:none;width:100%;flex-direction:column;gap:16px;align-items:center;padding-top:20px;">
+        <div id="bu-table-wrap">
+          <div class="bu-cells" id="bu-cells"></div>
+        </div>
+        <div id="bu-formula" style="font-size:.85rem;color:var(--muted);text-align:center;padding:8px 16px;background:var(--surface2);border-radius:8px;border:1px solid var(--border);"></div>
       </div>
     </div>
 
-    <!-- Explanation -->
-    <div class="explanation" id="explanation">Chọn phương pháp và nhấn ▶ Play để bắt đầu.</div>
-
-    <!-- Stats -->
-    <div class="stats-row" id="statsRow">
-      <div class="stat-box calls"><div class="label">Lần gọi hàm</div><div class="value" id="statCalls">0</div></div>
-      <div class="stat-box saved"><div class="label">Cache hit</div><div class="value" id="statHits">0</div></div>
-      <div class="stat-box"><div class="label">Kết quả F(N)</div><div class="value" id="statResult">—</div></div>
-    </div>
-
-    <!-- Controls -->
-    <div class="controls">
-      <button class="btn btn-primary" id="btnPlay" onclick="togglePlay()">▶ Play</button>
-      <button class="btn btn-secondary" id="btnStep" onclick="stepForward()">⏭ Step</button>
-      <button class="btn btn-danger" onclick="resetAnim()">↺ Reset</button>
-      <label class="speed-label">Tốc độ:</label>
-      <select id="speedSel">
-        <option value="1200">Chậm</option>
-        <option value="700" selected>Bình thường</option>
-        <option value="350">Nhanh</option>
-        <option value="100">Rất nhanh</option>
-      </select>
+    <div id="bottom-bar">
+      <div id="legend">
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(135deg,var(--naive-top),var(--naive-bot))"></div>Lần gọi mới</div>
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(135deg,var(--dup-top),var(--dup-bot))"></div>Tính trùng lặp</div>
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(135deg,var(--hit-top),var(--hit-bot))"></div>Cache hit ⚡</div>
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(135deg,var(--bu-top),var(--bu-bot))"></div>Đã tính ✓</div>
+      </div>
+      <div id="progress-wrap"><div id="progress-bar"></div></div>
     </div>
   </div>
 
-  <div class="right-panel">
-    <div class="section-title">💻 Code</div>
-    <div class="code-panel" id="codePanel"></div>
-
-    <div class="section-title">🧩 Memo Array</div>
-    <div class="memo-wrap" id="memoWrap">
-      <div class="memo-label">memo[] = (chưa khởi tạo)</div>
-      <div class="memo-row" id="memoRow"></div>
+  <div id="code-panel">
+    <div class="panel-title" id="code-title">📝 Naive Recursion</div>
+    <div id="code"></div>
+    <div id="insight">
+      <div class="insight-title">💡 Tại sao cần DP?</div>
+      Naive recursion tính <b>fib(3)</b> nhiều lần. Với n=40, có đến <b>2⁴⁰ ≈ 1 tỷ</b> lần gọi hàm! DP lưu kết quả trung gian để tránh tính lại.
     </div>
+  </div>
+</main>
 
-    <div class="info-box" id="infoBox">
-      <strong>Dynamic Programming</strong> giải quyết bài toán bằng cách:<br>
-      1. Chia thành <strong>subproblems</strong> nhỏ hơn<br>
-      2. Lưu kết quả (<strong>memoization/tabulation</strong>)<br>
-      3. Tái sử dụng thay vì tính lại
-    </div>
+<div id="controls">
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-step">⏭ Step</button>
+  <button id="btn-reset">↺ Reset</button>
+  <label>n= <select id="n-sel">
+    <option value="5">5</option>
+    <option value="6" selected>6</option>
+    <option value="7">7</option>
+    <option value="8">8</option>
+  </select></label>
+  <label>Speed <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <div id="stats">
+    <div class="stat">Lần gọi <span id="s-calls">0</span></div>
+    <div class="stat">Cache hits <span id="s-hits">0</span></div>
+    <div class="stat">Tiết kiệm <span id="s-saved">0</span>%</div>
   </div>
 </div>
 
 <script>
-// ── State ──────────────────────────────────────────────────────────────
-let N = 7;
-let approach = 'naive';
-let steps = [];
-let stepIdx = 0;
-let playing = false;
-let playTimer = null;
-
-// Track animated node elements for bloom effect
-const bloomedNodes = new Set();
-
-// ── Fibonacci ──────────────────────────────────────────────────────────
-function fib(n) {
-  if (n <= 1) return n;
-  return fib(n-1) + fib(n-2);
-}
-
-// ── Code templates ─────────────────────────────────────────────────────
 const CODES = {
   naive: [
-    {t:'fn',  c:`<span class="kw">function</span> <span class="fn">fib</span>(n):`},
-    {t:'base',c:`  <span class="kw">if</span> n <= <span class="num">1</span>: <span class="kw">return</span> n`},
-    {t:'rec', c:`  <span class="kw">return</span> <span class="fn">fib</span>(n-<span class="num">1</span>) + <span class="fn">fib</span>(n-<span class="num">2</span>)`},
-    {t:'end', c:`<span class="cm">// Vấn đề: tính lại nhiều lần!</span>`},
-    {t:'call',c:`<span class="fn">fib</span>(<span class="num">${N}</span>)`},
-    {t:'cmx', c:`<span class="cm">// Độ phức tạp: O(2ⁿ)</span>`},
+    'function fib(n) {',
+    '  // Base cases',
+    '  if (n <= 1) return n;',
+    '  // Recursive calls (tính lại nhiều lần!)',
+    '  return fib(n-1) + fib(n-2);',
+    '}',
   ],
   memo: [
-    {t:'init',c:`memo = {}`},
-    {t:'fn',  c:`<span class="kw">function</span> <span class="fn">fib</span>(n):`},
-    {t:'check',c:`  <span class="kw">if</span> n <span class="kw">in</span> memo: <span class="kw">return</span> memo[n]`},
-    {t:'base',c:`  <span class="kw">if</span> n <= <span class="num">1</span>: <span class="kw">return</span> n`},
-    {t:'rec', c:`  memo[n] = <span class="fn">fib</span>(n-<span class="num">1</span>) + <span class="fn">fib</span>(n-<span class="num">2</span>)`},
-    {t:'ret', c:`  <span class="kw">return</span> memo[n]`},
-    {t:'cmx', c:`<span class="cm">// Độ phức tạp: O(n)</span>`},
+    'const cache = {};',
+    'function fib(n) {',
+    '  if (n <= 1) return n;',
+    '  // Kiểm tra cache trước',
+    '  if (cache[n] !== undefined) {',
+    '    return cache[n]; // Cache hit! ⚡',
+    '  }',
+    '  // Tính và lưu vào cache',
+    '  cache[n] = fib(n-1) + fib(n-2);',
+    '  return cache[n];',
+    '}',
   ],
-  bottom: [
-    {t:'init',c:`dp = [<span class="num">0</span>] * (n+<span class="num">1</span>)`},
-    {t:'b0',  c:`dp[<span class="num">0</span>] = <span class="num">0</span>; dp[<span class="num">1</span>] = <span class="num">1</span>`},
-    {t:'loop',c:`<span class="kw">for</span> i <span class="kw">in</span> range(<span class="num">2</span>, n+<span class="num">1</span>):`},
-    {t:'fill',c:`  dp[i] = dp[i-<span class="num">1</span>] + dp[i-<span class="num">2</span>]`},
-    {t:'ret', c:`<span class="kw">return</span> dp[n]`},
-    {t:'cmx', c:`<span class="cm">// Độ phức tạp: O(n)</span>`},
+  bu: [
+    'function fib(n) {',
+    '  const dp = new Array(n+1);',
+    '  // Base cases',
+    '  dp[0] = 0; dp[1] = 1;',
+    '  // Fill left → right',
+    '  for (let i = 2; i <= n; i++) {',
+    '    dp[i] = dp[i-1] + dp[i-2];',
+    '    // dp[i-1] và dp[i-2] đã có sẵn!',
+    '  }',
+    '  return dp[n];',
+    '}',
   ]
 };
 
-// ── Code highlighting ──────────────────────────────────────────────────
-function renderCode(approach, activeLine) {
-  const lines = CODES[approach];
-  const panel = document.getElementById('codePanel');
-  panel.innerHTML = lines.map((l, i) => {
-    let cls = 'code-line';
-    if (i === activeLine) cls += ' highlight';
-    return `<div class="${cls}">${l.c}</div>`;
-  }).join('');
+let currentTab = 'naive';
+let steps = [], stepIdx = 0, playing = false, timer = null;
+let callCount = 0, hitCount = 0;
+let n = 6;
+
+// Tree layout
+function treeLayout(n, parentX, parentY, level, index, spread) {
+  const nodes = [];
+  const x = parentX;
+  const y = parentY;
+  nodes.push({ n, x, y, level, index });
+  if (n > 1) {
+    const childY = y + 80;
+    const childSpread = spread / 2;
+    const leftX = x - childSpread;
+    const rightX = x + childSpread;
+    nodes.push(...treeLayout(n-1, leftX, childY, level+1, index*2, childSpread));
+    nodes.push(...treeLayout(n-2, rightX, childY, level+1, index*2+1, childSpread));
+  }
+  return nodes;
 }
 
-// ── Tree building for naive / memo ─────────────────────────────────────
-let treeNodes = [];
-let treeEdges = [];
-let memoMap = {};
-let callCount = 0;
-let hitCount = 0;
-
 function buildNaiveSteps(n) {
-  steps = [];
-  treeNodes = [];
-  treeEdges = [];
-  bloomedNodes.clear();
-  callCount = 0;
-
-  function dfs(n, parentIdx, depth, x) {
-    const idx = treeNodes.length;
-    treeNodes.push({ n, depth, x, state: 'pending', result: null, parentIdx });
-    callCount++;
-
-    if (parentIdx !== null) treeEdges.push({ from: parentIdx, to: idx });
-
-    steps.push({ type: 'call', nodeIdx: idx, codeLine: n <= 1 ? 1 : 2, calls: callCount, hits: 0,
-      explanation: n <= 1 ? `F(${n}) = ${n} (base case)` : `Gọi F(${n}), tiếp tục phân rã...` });
-
+  const steps = [];
+  const seenCount = {};
+  function rec(n, depth, path) {
+    const key = `fib(${n})`;
+    seenCount[n] = (seenCount[n] || 0) + 1;
+    const isDup = seenCount[n] > 1;
+    steps.push({ type: isDup ? 'dup-call' : 'call', n, depth, path: [...path], seenCount: {...seenCount} });
     if (n <= 1) {
-      treeNodes[idx].result = n;
-      treeNodes[idx].state = 'done';
-      steps.push({ type: 'done', nodeIdx: idx, result: n, calls: callCount, hits: 0,
-        explanation: `F(${n}) = ${n} (base case), trả về ngay` });
+      steps.push({ type: 'base', n, depth, path: [...path], val: n });
       return n;
     }
-
-    const r1 = dfs(n-1, idx, depth+1, x - 1/(depth+1));
-    const r2 = dfs(n-2, idx, depth+1, x + 1/(depth+1));
-    const res = r1 + r2;
-    treeNodes[idx].result = res;
-    treeNodes[idx].state = 'done';
-    steps.push({ type: 'done', nodeIdx: idx, result: res, calls: callCount, hits: 0,
-      explanation: `F(${n}) = F(${n-1}) + F(${n-2}) = ${r1} + ${r2} = ${res}`, codeLine: 2 });
-    return res;
+    const l = rec(n-1, depth+1, [...path, 'L']);
+    const r = rec(n-2, depth+1, [...path, 'R']);
+    const val = l + r;
+    steps.push({ type: 'return', n, val, depth, path: [...path] });
+    return val;
   }
-
-  dfs(n, null, 0, 0.5);
+  rec(n, 0, []);
+  steps.push({ type: 'done', val: steps.filter(s=>s.type==='return'&&s.n===n)[0]?.val || n });
+  return steps;
 }
 
 function buildMemoSteps(n) {
-  steps = [];
-  treeNodes = [];
-  treeEdges = [];
-  memoMap = {};
-  bloomedNodes.clear();
-  callCount = 0;
-  hitCount = 0;
-
-  function dfs(n, parentIdx, depth, x) {
-    const idx = treeNodes.length;
-    treeNodes.push({ n, depth, x, state: 'pending', result: null, parentIdx, cached: false });
-    callCount++;
-
-    if (parentIdx !== null) treeEdges.push({ from: parentIdx, to: idx });
-
-    if (n in memoMap) {
-      hitCount++;
-      treeNodes[idx].result = memoMap[n];
-      treeNodes[idx].state = 'cached';
-      steps.push({ type: 'hit', nodeIdx: idx, result: memoMap[n], calls: callCount, hits: hitCount,
-        codeLine: 2, memoIdx: n,
-        explanation: `F(${n}) đã có trong memo! Trả về ${memoMap[n]} ngay — cache hit! 🚀` });
-      return memoMap[n];
-    }
-
-    steps.push({ type: 'call', nodeIdx: idx, codeLine: n <= 1 ? 3 : 4, calls: callCount, hits: hitCount,
-      explanation: n <= 1 ? `F(${n}) = ${n} (base case)` : `Gọi F(${n}), chưa có trong memo...` });
-
+  const steps = [];
+  const cache = {};
+  function rec(n) {
+    steps.push({ type: 'call', n, cache: {...cache} });
     if (n <= 1) {
-      memoMap[n] = n;
-      treeNodes[idx].result = n;
-      treeNodes[idx].state = 'done';
-      steps.push({ type: 'done', nodeIdx: idx, result: n, calls: callCount, hits: hitCount,
-        codeLine: 3, memoIdx: n,
-        explanation: `F(${n}) = ${n}, lưu vào memo[${n}]` });
+      cache[n] = n;
+      steps.push({ type: 'base', n, val: n, cache: {...cache} });
       return n;
     }
-
-    const r1 = dfs(n-1, idx, depth+1, x - 0.5/(depth+1));
-    const r2 = dfs(n-2, idx, depth+1, x + 0.5/(depth+1));
-    const res = r1 + r2;
-    memoMap[n] = res;
-    treeNodes[idx].result = res;
-    treeNodes[idx].state = 'done';
-    steps.push({ type: 'done', nodeIdx: idx, result: res, calls: callCount, hits: hitCount,
-      codeLine: 5, memoIdx: n,
-      explanation: `F(${n}) = ${r1} + ${r2} = ${res}, lưu memo[${n}] = ${res}` });
-    return res;
+    if (cache[n] !== undefined) {
+      steps.push({ type: 'hit', n, val: cache[n], cache: {...cache} });
+      return cache[n];
+    }
+    steps.push({ type: 'computing', n, cache: {...cache} });
+    const l = rec(n-1);
+    const r = rec(n-2);
+    cache[n] = l + r;
+    steps.push({ type: 'cached', n, val: cache[n], cache: {...cache} });
+    return cache[n];
   }
-
-  dfs(n, null, 0, 0.5);
+  rec(n);
+  steps.push({ type: 'done', val: cache[n] });
+  return steps;
 }
 
-function buildBottomUpSteps(n) {
-  steps = [];
-  const dp = new Array(n+1).fill(-1);
-
-  steps.push({ type: 'init', dp: [...dp], codeLine: 0,
-    explanation: `Khởi tạo mảng dp[0..${n}], tất cả = -1 (chưa tính)` });
+function buildBUSteps(n) {
+  const steps = [];
+  const dp = new Array(n+1).fill(null);
+  steps.push({ type: 'init', dp: [...dp] });
   dp[0] = 0; dp[1] = 1;
-  steps.push({ type: 'base', dp: [...dp], current: [0,1], codeLine: 1,
-    explanation: `Base case: dp[0] = 0, dp[1] = 1` });
-
+  steps.push({ type: 'base', dp: [...dp] });
   for (let i = 2; i <= n; i++) {
-    steps.push({ type: 'computing', dp: [...dp], current: i, deps: [i-1, i-2], codeLine: 2,
-      explanation: `Vòng lặp i = ${i}: tính dp[${i}]` });
+    steps.push({ type: 'computing', i, dp: [...dp] });
     dp[i] = dp[i-1] + dp[i-2];
-    steps.push({ type: 'fill', dp: [...dp], current: i, deps: [i-1, i-2], codeLine: 3,
-      explanation: `dp[${i}] = dp[${i-1}] + dp[${i-2}] = ${dp[i-1]} + ${dp[i-2]} = ${dp[i]}` });
+    steps.push({ type: 'filled', i, val: dp[i], src1: i-1, src2: i-2, dp: [...dp] });
   }
-  steps.push({ type: 'done', dp: [...dp], result: dp[n], codeLine: 4,
-    explanation: `Kết quả: F(${n}) = dp[${n}] = ${dp[n]} ✅` });
+  steps.push({ type: 'done', val: dp[n], dp: [...dp] });
+  return steps;
 }
 
-// ── Tree Layout ─────────────────────────────────────────────────────────
-function layoutTree(nodes) {
-  const byDepth = {};
-  nodes.forEach((nd, i) => {
-    if (!byDepth[nd.depth]) byDepth[nd.depth] = [];
-    byDepth[nd.depth].push(i);
-  });
-  const assigned = {};
-  Object.keys(byDepth).sort((a,b)=>a-b).forEach(d => {
-    const lvl = byDepth[d];
-    lvl.forEach((ni, j) => {
-      assigned[ni] = (j+1)/(lvl.length+1);
-    });
-  });
-  return assigned;
+// ── RENDER ────────────────────────────────────────────────────────────────
+function buildCode() {
+  const lines = CODES[currentTab];
+  document.getElementById('code').innerHTML = lines.map((l,i) =>
+    `<div class="code-line${l.trim().startsWith('//')?' comment':''}" data-i="${i}">${l}</div>`
+  ).join('');
+  document.getElementById('code-title').textContent = {
+    naive:'📝 Naive Recursion', memo:'📝 Memoization', bu:'📝 Bottom-up'
+  }[currentTab];
 }
 
-// ── Canvas Tree Draw ─────────────────────────────────────────────────────
-function drawTree(canvas, highlightIdx, visibleUpTo, flashIdx) {
-  const W = canvas.offsetWidth || 700;
-  const H = 260;
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, W, H);
+function hl(i) {
+  document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));
+  if (i>=0) document.querySelector(`[data-i="${i}"]`)?.classList.add('active');
+}
 
-  if (!treeNodes.length) return;
+function setExplain(icon, cls, html) {
+  const ic = document.querySelector('#explain-viz .step-icon');
+  ic.textContent = icon; ic.className = 'step-icon ' + cls;
+  document.getElementById('explain-text').innerHTML = html;
+  document.getElementById('step-counter').textContent = `${stepIdx}/${steps.length}`;
+}
 
-  const maxDepth = Math.max(...treeNodes.map(n => n.depth));
-  const levelY = d => 24 + d * (H - 40) / Math.max(maxDepth, 1);
-  const xPos = layoutTree(treeNodes);
+function setInsight(title, html) {
+  document.getElementById('insight').innerHTML = `<div class="insight-title">${title}</div>${html}`;
+}
 
-  // Group nodes by n-value for coloring duplicates
-  const dupMap = {};
-  treeNodes.forEach((nd, i) => {
-    if (!dupMap[nd.n]) dupMap[nd.n] = [];
-    dupMap[nd.n].push(i);
+function setStatus(html) {
+  document.getElementById('status-display').innerHTML = html;
+}
+
+function updateStats() {
+  document.getElementById('s-calls').textContent = callCount;
+  document.getElementById('s-hits').textContent = hitCount;
+  const naive = Math.pow(2, n);
+  const saved = callCount > 0 ? Math.max(0, Math.round((1 - callCount/naive)*100)) : 0;
+  document.getElementById('s-saved').textContent = saved;
+}
+
+// ── NAIVE TREE ─────────────────────────────────────────────────────────────
+let treeNodeMap = {}; // key -> DOM element
+
+function initNaiveTree() {
+  const container = document.getElementById('tree-nodes');
+  container.innerHTML = '';
+  document.getElementById('tree-canvas').width = document.getElementById('tree-canvas').offsetWidth;
+  document.getElementById('tree-canvas').height = document.getElementById('tree-canvas').offsetHeight;
+  treeNodeMap = {};
+
+  const nodes = treeLayout(n,
+    document.getElementById('viz-area').offsetWidth/2, 40,
+    0, 0, Math.min(240, document.getElementById('viz-area').offsetWidth/3));
+
+  nodes.forEach(nd => {
+    const el = document.createElement('div');
+    el.className = 'tree-node naive-node';
+    el.textContent = `f(${nd.n})`;
+    el.style.left = (nd.x - 24)+'px';
+    el.style.top = nd.y+'px';
+    el.dataset.key = `${nd.n}-${nd.path||''}`;
+    container.appendChild(el);
+    const key = `${nd.x.toFixed(0)},${nd.y}`;
+    if (!treeNodeMap[`fib${nd.n}`]) treeNodeMap[`fib${nd.n}`] = [];
+    treeNodeMap[`fib${nd.n}`].push({ el, x: nd.x, y: nd.y, nd });
   });
-  const dupColors = ['#ef4444','#f59e0b','#22c55e','#06b6d4','#c678dd','#e5c07b'];
-  const colorFor = {};
-  let ci = 0;
-  Object.entries(dupMap).forEach(([n, idxs]) => {
-    if (idxs.length > 1) { colorFor[n] = dupColors[ci++ % dupColors.length]; }
-  });
+}
 
-  // Draw edges first
-  treeEdges.forEach(e => {
-    if (e.from > visibleUpTo || e.to > visibleUpTo) return;
-    const from = treeNodes[e.from], to = treeNodes[e.to];
-    const fx = xPos[e.from]*W, fy = levelY(from.depth);
-    const tx = xPos[e.to]*W, ty = levelY(to.depth);
-    ctx.beginPath();
-    ctx.moveTo(fx, fy+14);
-    ctx.lineTo(tx, ty-14);
-    ctx.strokeStyle = '#1e1e40';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-  });
-
-  // Draw nodes
-  treeNodes.forEach((nd, i) => {
-    if (i > visibleUpTo) return;
-    const x = xPos[i]*W, y = levelY(nd.depth);
-    const r = 14;
-    const isNew = !bloomedNodes.has(i);
-
-    let fill = '#0d0d20';
-    let stroke = '#2a3060';
-    let textColor = '#5070a0';
-
-    if (nd.state === 'cached') {
-      fill = '#071a0f'; stroke = '#22c55e'; textColor = '#22c55e';
-    } else if (nd.state === 'done') {
-      const c = colorFor[nd.n];
-      if (c) { fill = '#150a0a'; stroke = c; textColor = c; }
-      else { fill = '#090920'; stroke = '#6366f1'; textColor = '#818cf8'; }
+let naiveCallCounter = {};
+function applyNaiveStep(s) {
+  if (s.type === 'call' || s.type === 'dup-call') {
+    callCount++;
+    naiveCallCounter[s.n] = (naiveCallCounter[s.n] || 0) + 1;
+    const instances = treeNodeMap[`fib${s.n}`] || [];
+    const inst = instances[naiveCallCounter[s.n] - 1] || instances[0];
+    if (inst) {
+      inst.el.classList.remove('naive-node','dup-node','base-node');
+      inst.el.classList.add(s.type === 'dup-call' ? 'dup-node' : 'naive-node', 'bloomed');
+      inst.el.style.transform = '';
+      inst.el.style.opacity = '';
     }
-    if (i === highlightIdx) { fill = '#1a1000'; stroke = '#f59e0b'; textColor = '#fcd34d'; }
-
-    // Glow for active / cached
-    if (nd.state === 'cached' || i === flashIdx) {
-      ctx.save();
-      ctx.shadowColor = nd.state === 'cached' ? '#22c55e' : '#f59e0b';
-      ctx.shadowBlur = 18;
-      ctx.beginPath();
-      ctx.arc(x, y, r+2, 0, Math.PI*2);
-      ctx.strokeStyle = stroke;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    ctx.beginPath();
-    ctx.arc(x, y, r, 0, Math.PI*2);
-    ctx.fillStyle = fill;
-    ctx.fill();
-    ctx.strokeStyle = stroke;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    ctx.fillStyle = textColor;
-    ctx.font = `bold 10px Segoe UI`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(nd.result !== null ? `${nd.result}` : `F${nd.n}`, x, y);
-
-    ctx.font = `8px Segoe UI`;
-    ctx.fillStyle = '#3a5070';
-    ctx.fillText(`F(${nd.n})`, x, y + r + 8);
-
-    bloomedNodes.add(i);
-  });
-}
-
-// ── Bottom-up table rendering ───────────────────────────────────────────
-function renderTable(dp, current, deps, backtrack) {
-  const tableEl = document.getElementById('dpTable');
-  const arrowsEl = document.getElementById('arrowsRow');
-  tableEl.innerHTML = '';
-  arrowsEl.innerHTML = '';
-
-  dp.forEach((val, i) => {
-    const cell = document.createElement('div');
-    cell.className = 'dp-cell';
-    if (val === -1) {
-      cell.classList.add('empty');
-    } else if (Array.isArray(current) ? current.includes(i) : i === current && !backtrack) {
-      cell.classList.add('computing');
-    } else if (deps && deps.includes(i)) {
-      cell.classList.add('highlight');
+    if (s.type === 'dup-call') {
+      hitCount++;
+      setStatus(`<span class="sd-node dup">f(${s.n})</span><span class="sd-op">⚠️</span><span class="sd-tag naive">Tính lại lần thứ ${naiveCallCounter[s.n]}!</span>`);
+      setExplain('⚠️','dup',`<b>fib(${s.n})</b> đang được tính lại lần thứ <b>${naiveCallCounter[s.n]}</b>! Đây là bài toán con trùng lặp (overlapping subproblem) — lãng phí CPU.`);
+      hl(4);
     } else {
-      cell.classList.add('computed');
+      setStatus(`<span class="sd-node naive">f(${s.n})</span><span class="sd-op">→</span><span class="sd-tag naive">Lần gọi mới</span>`);
+      setExplain('🌳','call',`Gọi <b>fib(${s.n})</b> = fib(${s.n-1}) + fib(${s.n-2}). Tạo 2 nhánh đệ quy mới.`);
+      hl(4);
     }
-
-    cell.innerHTML = `<div class="idx">dp[${i}]</div><div class="val">${val === -1 ? '—' : val}</div>`;
-    tableEl.appendChild(cell);
-  });
-
-  // Arrows
-  const spacer = document.createElement('div');
-  spacer.className = 'arr-spacer';
-  arrowsEl.appendChild(spacer);
-  dp.forEach((val, i) => {
-    const arr = document.createElement('div');
-    arr.className = 'arr-icon';
-    if (deps && deps.includes(i)) { arr.textContent = '↑'; arr.classList.add('active'); }
-    else if (i >= 2 && val !== -1) arr.textContent = '⬆';
-    else arr.textContent = '';
-    arrowsEl.appendChild(arr);
-  });
+  } else if (s.type === 'base') {
+    setStatus(`<span class="sd-node naive">f(${s.n})</span><span class="sd-op">=</span><span class="sd-tag fill">${s.val}</span>`);
+    setExplain('📌','fill',`<b>fib(${s.n}) = ${s.val}</b> — Base case! Không cần đệ quy thêm.`);
+    hl(2);
+  } else if (s.type === 'return') {
+    setStatus(`<span class="sd-node naive">f(${s.n})</span><span class="sd-op">=</span><span class="sd-tag fill">${s.val}</span>`);
+    setExplain('↩️','fill',`<b>fib(${s.n}) = ${s.val}</b>. Trả về kết quả lên node cha.`);
+    hl(4);
+  } else if (s.type === 'done') {
+    setStatus(`<span style="color:var(--bu-top);font-size:1rem;font-weight:700">🎉 fib(${n}) = ${s.val} — ${callCount} lần gọi hàm!</span>`);
+    setExplain('🎉','fill',`Hoàn tất! <b>fib(${n}) = ${s.val}</b>. Naive cần <b>${callCount}</b> lần gọi. Nếu dùng DP chỉ cần <b>${n+1}</b> lần!`);
+    setInsight('📊 Phân tích Naive',`Với n=${n}: <b>${callCount}</b> lần gọi vs DP cần <b>${n+1}</b> lần. Tỉ lệ lãng phí: <b>${Math.round(callCount/(n+1))}×</b>. Với n=40, naive cần ~1 tỷ lần gọi!`);
+    stopPlay();
+  }
+  updateStats();
+  document.getElementById('progress-bar').style.width = (stepIdx/steps.length*100)+'%';
 }
 
-// ── Memo panel rendering ────────────────────────────────────────────────
-function renderMemo(memoState, hitIdx) {
-  const row = document.getElementById('memoRow');
-  const label = document.querySelector('.memo-label');
-  if (approach !== 'memo') {
-    row.innerHTML = '';
-    label.textContent = 'N/A — chỉ dùng cho Top-Down';
-    return;
-  }
-  label.textContent = `memo[0..${N}]:`;
-  row.innerHTML = '';
-  for (let i = 0; i <= N; i++) {
+// ── MEMO ──────────────────────────────────────────────────────────────────
+function initMemoTable() {
+  const wrap = document.getElementById('memo-cells');
+  wrap.innerHTML = '';
+  for (let i = 0; i <= n; i++) {
     const cell = document.createElement('div');
     cell.className = 'memo-cell';
-    const val = memoState[i] !== undefined ? memoState[i] : '?';
-    cell.innerHTML = `<div class="midx">[${i}]</div><div class="mval">${val}</div>`;
-    if (memoState[i] !== undefined) cell.classList.add('hit');
-    else cell.classList.add('empty');
-    // Trigger flash animation for newly hit index
-    if (i === hitIdx) {
-      cell.style.animation = 'none';
-      cell.offsetHeight; // force reflow
-      cell.style.animation = 'cacheFlash 0.5s ease';
+    cell.innerHTML = `<span class="cell-idx">fib(${i})</span>?`;
+    cell.id = `mc-${i}`;
+    wrap.appendChild(cell);
+  }
+}
+
+function applyMemoStep(s) {
+  const allCells = document.querySelectorAll('.memo-cell');
+  allCells.forEach(c => c.classList.remove('computing','hit'));
+
+  if (s.type === 'call') {
+    callCount++;
+    const cell = document.getElementById(`mc-${s.n}`);
+    if (cell && !cell.classList.contains('filled')) cell.classList.add('computing');
+    setStatus(`<span class="sd-node memo">f(${s.n})</span><span class="sd-op">→</span><span class="sd-tag naive">Kiểm tra cache...</span>`);
+    setExplain('🔍','call',`Gọi <b>fib(${s.n})</b>. Kiểm tra cache trước khi tính.`);
+    hl(4);
+  } else if (s.type === 'hit') {
+    hitCount++;
+    const cell = document.getElementById(`mc-${s.n}`);
+    if (cell) { cell.classList.remove('computing'); cell.classList.add('hit'); }
+    setStatus(`<span class="sd-node hit">f(${s.n})</span><span class="sd-op">⚡</span><span class="sd-tag hit">Cache hit! = ${s.val}</span>`);
+    setExplain('⚡','hit',`<b>Cache hit!</b> fib(${s.n}) = <b>${s.val}</b> đã có trong cache → lấy ngay, không tính lại. Tiết kiệm ${Math.pow(2,s.n)-1} lần gọi!`);
+    hl(5);
+  } else if (s.type === 'base') {
+    const cell = document.getElementById(`mc-${s.n}`);
+    if (cell) { cell.classList.remove('computing'); cell.textContent = s.val; cell.classList.add('filled','filling'); }
+    setExplain('📌','fill',`Base case: <b>fib(${s.n}) = ${s.val}</b>. Lưu vào cache.`);
+    hl(2);
+  } else if (s.type === 'computing') {
+    const cell = document.getElementById(`mc-${s.n}`);
+    if (cell) cell.classList.add('computing');
+    setExplain('🧮','call',`Tính <b>fib(${s.n})</b> = fib(${s.n-1}) + fib(${s.n-2})...`);
+    hl(8);
+  } else if (s.type === 'cached') {
+    const cell = document.getElementById(`mc-${s.n}`);
+    if (cell) { cell.classList.remove('computing'); cell.textContent = s.val; cell.classList.add('filled','filling'); }
+    setStatus(`<span class="sd-node memo">f(${s.n})</span><span class="sd-op">=</span><span class="sd-tag fill">${s.val}</span>`);
+    setExplain('💾','fill',`<b>fib(${s.n}) = ${s.val}</b> → lưu vào cache. Lần sau gọi fib(${s.n}) sẽ là cache hit ⚡`);
+    hl(9);
+    document.getElementById('memo-call-stack').textContent =
+      `Cache hiện tại: {${Object.entries(s.cache).map(([k,v])=>`fib(${k})=${v}`).join(', ')}}`;
+  } else if (s.type === 'done') {
+    setStatus(`<span style="color:var(--bu-top);font-size:1rem;font-weight:700">🎉 fib(${n}) = ${s.val} — ${callCount} lần gọi, ${hitCount} cache hits!</span>`);
+    setExplain('🎉','fill',`Hoàn tất! <b>fib(${n}) = ${s.val}</b>. Memoization cần chỉ <b>${callCount}</b> lần gọi. Tiết kiệm <b>${Math.round((1-callCount/Math.pow(2,n))*100)}%</b> so với naive!`);
+    setInsight('⚡ Memoization hiệu quả',`Memoization = "nhớ kết quả". Gặp bài toán con → lưu cache. Gặp lại → lấy từ cache. <b>Top-down approach</b>: bắt đầu từ n, đệ quy xuống.`);
+    stopPlay();
+  }
+  updateStats();
+  document.getElementById('progress-bar').style.width = (stepIdx/steps.length*100)+'%';
+}
+
+// ── BOTTOM-UP ──────────────────────────────────────────────────────────────
+function initBUTable() {
+  const wrap = document.getElementById('bu-cells');
+  wrap.innerHTML = '';
+  for (let i = 0; i <= n; i++) {
+    if (i > 0) {
+      const arrow = document.createElement('div');
+      arrow.className = 'dep-arrow';
+      arrow.textContent = '←';
+      wrap.appendChild(arrow);
     }
-    row.appendChild(cell);
+    const cell = document.createElement('div');
+    cell.className = 'bu-cell';
+    cell.id = `bc-${i}`;
+    cell.innerHTML = `?<div class="cell-idx">dp[${i}]</div>`;
+    wrap.appendChild(cell);
   }
 }
 
-// ── Counter animation ───────────────────────────────────────────────────
-function animateCounter(elId, value, fast) {
-  const el = document.getElementById(elId);
-  el.textContent = value;
-  el.style.animation = 'none';
-  el.offsetHeight;
-  el.style.animation = fast ? 'countTick 0.25s ease' : 'countTickSlow 0.35s ease';
+function applyBUStep(s) {
+  document.querySelectorAll('.bu-cell').forEach(c => c.classList.remove('computing','source'));
+
+  if (s.type === 'init') {
+    setExplain('📊','info',`<b>Bottom-up (Tabulation)</b>: điền bảng từ trái sang phải. dp[i] = dp[i-1] + dp[i-2]. Không cần đệ quy!`);
+    hl(1);
+  } else if (s.type === 'base') {
+    const c0 = document.getElementById('bc-0');
+    const c1 = document.getElementById('bc-1');
+    c0.innerHTML = `0<div class="cell-idx">dp[0]</div>`; c0.classList.add('filled','filling');
+    c1.innerHTML = `1<div class="cell-idx">dp[1]</div>`; c1.classList.add('filled','filling');
+    callCount += 2;
+    setStatus(`<span class="sd-node bu">dp[0]=0</span><span class="sd-op">,</span><span class="sd-node bu">dp[1]=1</span>`);
+    setExplain('📌','fill',`Base cases: <b>dp[0] = 0, dp[1] = 1</b>. Đây là nền tảng để xây dựng các giá trị tiếp theo.`);
+    hl(3);
+  } else if (s.type === 'computing') {
+    callCount++;
+    const cell = document.getElementById(`bc-${s.i}`);
+    const src1 = document.getElementById(`bc-${s.i-1}`);
+    const src2 = document.getElementById(`bc-${s.i-2}`);
+    if (cell) cell.classList.add('computing');
+    if (src1) src1.classList.add('source');
+    if (src2) src2.classList.add('source');
+    setStatus(`<span class="sd-node bu">dp[${s.i}]</span><span class="sd-op">=</span><span class="sd-node bu">dp[${s.i-1}]</span><span class="sd-op">+</span><span class="sd-node bu">dp[${s.i-2}]</span>`);
+    setExplain('🧮','call',`Tính <b>dp[${s.i}]</b> = dp[${s.i-1}] + dp[${s.i-2}] = <b>${s.dp[s.i-1]}</b> + <b>${s.dp[s.i-2]}</b>. Cả hai đã có sẵn trong bảng!`);
+    document.getElementById('bu-formula').textContent = `dp[${s.i}] = dp[${s.i-1}] + dp[${s.i-2}] = ${s.dp[s.i-1]} + ${s.dp[s.i-2]} = ?`;
+    hl(6);
+  } else if (s.type === 'filled') {
+    const cell = document.getElementById(`bc-${s.i}`);
+    if (cell) { cell.innerHTML = `${s.val}<div class="cell-idx">dp[${s.i}]</div>`; cell.classList.remove('computing'); cell.classList.add('filled','filling'); }
+    setStatus(`<span class="sd-node bu">dp[${s.i}]</span><span class="sd-op">=</span><span class="sd-tag fill">${s.val}</span>`);
+    setExplain('✅','fill',`<b>dp[${s.i}] = ${s.val}</b>. Điền vào bảng. Lần sau cần fib(${s.i}) → đọc trực tiếp, không tính lại!`);
+    document.getElementById('bu-formula').textContent = `dp[${s.i}] = dp[${s.i-1}] + dp[${s.i-2}] = ${s.dp[s.i-1]} + ${s.dp[s.i-2]} = ${s.val} ✓`;
+    hl(6);
+  } else if (s.type === 'done') {
+    setStatus(`<span style="color:var(--bu-top);font-size:1rem;font-weight:700">🎉 fib(${n}) = dp[${n}] = ${s.val}</span>`);
+    setExplain('🎉','fill',`Hoàn tất! <b>fib(${n}) = ${s.val}</b>. Bottom-up chỉ cần ${n-1} phép cộng, O(n) time, O(n) space. Có thể tối ưu thêm xuống O(1) space!`);
+    setInsight('📊 Bottom-up vs Memoization',`Bottom-up <b>không dùng đệ quy</b> → tránh stack overflow với n lớn. Điền bảng từ trái → phải, mỗi ô chỉ tính <b>1 lần</b>. Space O(1) nếu chỉ giữ 2 biến!`);
+    stopPlay();
+  }
+  updateStats();
+  document.getElementById('progress-bar').style.width = (stepIdx/steps.length*100)+'%';
 }
 
-// ── Approach switch ────────────────────────────────────────────────────
-function switchApproach(ap) {
-  approach = ap;
-  ['naive','memo','bottom'].forEach(a => {
-    document.getElementById(`tab-${a}`).classList.toggle('active', a === ap);
-  });
-  resetAnim();
-}
+// ── TABS ──────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    currentTab = t.dataset.tab;
+    ['naive','memo','bu'].forEach(tab => {
+      document.getElementById(`tab-${tab}`).style.display = (tab===currentTab) ? (tab==='naive'?'block':'flex') : 'none';
+    });
+    buildCode();
+    doReset();
+  };
+});
 
-// ── Input change ────────────────────────────────────────────────────────
-function onNChange(val) {
-  N = parseInt(val);
-  document.getElementById('nDisplay').textContent = N;
-  document.getElementById('fnResult').textContent = fib(N);
-  CODES.naive[4].c = `<span class="fn">fib</span>(<span class="num">${N}</span>)`;
-  resetAnim();
-}
+function doReset() {
+  stopPlay(); stepIdx = 0; callCount = 0; hitCount = 0;
+  n = +document.getElementById('n-sel').value;
+  naiveCallCounter = {};
 
-// ── Animation state ────────────────────────────────────────────────────
-let currentMemo = {};
-let visibleNodeCount = 0;
-let prevCalls = 0;
-let prevHits = 0;
+  document.getElementById('progress-bar').style.width = '0%';
+  document.getElementById('s-calls').textContent = '0';
+  document.getElementById('s-hits').textContent = '0';
+  document.getElementById('s-saved').textContent = '0';
+  document.getElementById('status-display').innerHTML = '<span class="sd-idle">Nhấn Play để xem trực quan hoá thuật toán</span>';
+  setExplain('💡','info',{
+    naive:'Naive recursion tính lại bài toán con nhiều lần. Xem cây đệ quy nổi lên để thấy sự lãng phí.',
+    memo:'Memoization lưu kết quả vào cache. Cache hit = ⚡ không tính lại. Top-down approach.',
+    bu:'Bottom-up điền bảng từ trái sang phải. Mỗi ô tính đúng 1 lần. Không cần đệ quy.'
+  }[currentTab]);
 
-function applyStep(idx) {
-  if (idx >= steps.length) { stopPlay(); return; }
-  const s = steps[idx];
-
-  // Animate explanation change
-  const expEl = document.getElementById('explanation');
-  expEl.style.animation = 'none';
-  expEl.offsetHeight;
-  expEl.style.animation = 'waveIn 0.3s ease';
-  expEl.textContent = s.explanation || '';
-
-  // Animate counters
-  const calls = s.calls || 0;
-  const hits = s.hits || 0;
-  if (calls !== prevCalls) {
-    animateCounter('statCalls', calls, approach === 'naive');
-    document.getElementById('callCountBadge').textContent = `Gọi hàm: ${calls}`;
-    prevCalls = calls;
-  }
-  if (hits !== prevHits) {
-    animateCounter('statHits', hits, false);
-    prevHits = hits;
-  }
-  if (s.result !== undefined && s.result !== null) {
-    const el = document.getElementById('statResult');
-    el.style.animation = 'none';
-    el.offsetHeight;
-    el.style.animation = 'bounceIn 0.4s cubic-bezier(0.34,1.56,0.64,1)';
-    el.textContent = s.result;
-  }
-
-  if (approach === 'bottom') {
-    if (s.dp) renderTable(s.dp, s.current, s.deps, false);
-    renderCode('bottom', s.codeLine);
+  if (currentTab === 'naive') {
+    steps = buildNaiveSteps(n);
+    initNaiveTree();
+    setInsight('🌳 Naive Recursion',`fib(n) = fib(n-1) + fib(n-2). Với n=${n}, cây đệ quy có ~<b>${Math.pow(2,n)}</b> node. Nhiều node tính bài toán <b>giống nhau nhiều lần</b>.`);
+  } else if (currentTab === 'memo') {
+    steps = buildMemoSteps(n);
+    initMemoTable();
+    document.getElementById('memo-call-stack').textContent = 'Cache: {}';
+    setInsight('⚡ Memoization',`Lần đầu tính fib(k) → lưu vào cache. Lần sau gặp lại → <b>cache hit</b>, lấy ngay O(1). Tổng: O(n) time, O(n) space.`);
   } else {
-    // Tree approaches
-    if (s.nodeIdx !== undefined) visibleNodeCount = s.nodeIdx;
-    const canvas = document.getElementById('treeCanvas');
-    if (s.type === 'done') treeNodes[s.nodeIdx].state = 'done';
-    if (s.type === 'hit') treeNodes[s.nodeIdx].state = 'cached';
-    const flashIdx = s.type === 'hit' ? s.nodeIdx : -1;
-    drawTree(canvas, s.nodeIdx, visibleNodeCount, flashIdx);
-    renderCode(approach, s.codeLine);
-    if (approach === 'memo') {
-      if (s.memoIdx !== undefined && (s.type === 'done' || s.type === 'hit')) {
-        currentMemo[s.memoIdx] = s.result;
-      }
-      renderMemo(currentMemo, s.type === 'hit' ? s.memoIdx : -1);
-    }
+    steps = buildBUSteps(n);
+    initBUTable();
+    document.getElementById('bu-formula').textContent = 'dp[i] = dp[i-1] + dp[i-2]';
+    setInsight('📊 Bottom-up',`Xây dựng bảng dp[] từ base case lên. dp[${n}] được xây từ dp[${n-1}] và dp[${n-2}]. <b>Dependency arrows</b> (←) cho thấy mỗi ô phụ thuộc vào ô nào.`);
   }
+  buildCode();
 }
 
-function togglePlay() {
-  if (playing) stopPlay(); else startPlay();
+function applyStep(s) {
+  if (!s) return;
+  if (currentTab === 'naive') applyNaiveStep(s);
+  else if (currentTab === 'memo') applyMemoStep(s);
+  else applyBUStep(s);
 }
 
-function startPlay() {
-  playing = true;
-  document.getElementById('btnPlay').textContent = '⏸ Pause';
-  tick();
-}
+function getDelay() { return Math.round(1200 - document.getElementById('speed').value*110); }
+function tick() { if(stepIdx>=steps.length){stopPlay();return;} applyStep(steps[stepIdx++]); if(playing) timer=setTimeout(tick,getDelay()); }
+function startPlay() { if(stepIdx>=steps.length) doReset(); playing=true; document.getElementById('btn-play').textContent='⏸ Pause'; tick(); }
+function stopPlay() { playing=false; clearTimeout(timer); document.getElementById('btn-play').textContent='▶ Play'; }
 
-function stopPlay() {
-  playing = false;
-  document.getElementById('btnPlay').textContent = '▶ Play';
-  clearTimeout(playTimer);
-}
+document.getElementById('btn-play').onclick = () => playing ? stopPlay() : startPlay();
+document.getElementById('btn-step').onclick = () => { stopPlay(); if(stepIdx<steps.length) applyStep(steps[stepIdx++]); };
+document.getElementById('btn-reset').onclick = doReset;
+document.getElementById('btn-new').onclick = doReset;
+document.getElementById('n-sel').onchange = doReset;
 
-function tick() {
-  if (!playing) return;
-  if (stepIdx >= steps.length) { stopPlay(); return; }
-  applyStep(stepIdx++);
-  const speed = parseInt(document.getElementById('speedSel').value);
-  playTimer = setTimeout(tick, speed);
-}
-
-function stepForward() {
-  stopPlay();
-  if (stepIdx < steps.length) applyStep(stepIdx++);
-}
-
-function resetAnim() {
-  stopPlay();
-  stepIdx = 0;
-  currentMemo = {};
-  visibleNodeCount = 0;
-  prevCalls = 0;
-  prevHits = 0;
-  callCount = 0; hitCount = 0;
-  bloomedNodes.clear();
-  document.getElementById('statCalls').textContent = '0';
-  document.getElementById('statHits').textContent = '0';
-  document.getElementById('statResult').textContent = '—';
-  document.getElementById('explanation').textContent = 'Nhấn ▶ Play hoặc ⏭ Step để bắt đầu.';
-  document.getElementById('callCountBadge').textContent = 'Gọi hàm: 0';
-
-  const canvas = document.getElementById('treeCanvas');
-  const tableViz = document.getElementById('tableViz');
-  if (approach === 'bottom') {
-    canvas.style.display = 'none';
-    tableViz.style.display = 'block';
-    buildBottomUpSteps(N);
-    renderCode('bottom', -1);
-    renderTable(new Array(N+1).fill(-1), -1, null, false);
-  } else {
-    canvas.style.display = 'block';
-    tableViz.style.display = 'none';
-    if (approach === 'naive') { buildNaiveSteps(N); renderCode('naive', -1); }
-    else { buildMemoSteps(N); renderCode('memo', -1); }
-    const ctx = canvas.getContext('2d');
-    canvas.width = canvas.offsetWidth || 700;
-    canvas.height = 260;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }
-  renderMemo({}, -1);
-  document.getElementById('vizTitle').textContent =
-    approach === 'naive' ? `🌳 Cây đệ quy — F(${N})` :
-    approach === 'memo' ? `🧠 Cây đệ quy + Memoization — F(${N})` :
-    `📊 Bảng Bottom-Up dp[0..${N}]`;
-}
-
-// ── Init ─────────────────────────────────────────────────────────────────
-// Add counter keyframes dynamically
-const styleEl = document.createElement('style');
-styleEl.textContent = `
-  @keyframes countTick {
-    0%   { transform: scale(1); }
-    40%  { transform: scale(1.5); color: #ef4444; }
-    100% { transform: scale(1); }
-  }
-  @keyframes countTickSlow {
-    0%   { transform: scale(1); }
-    40%  { transform: scale(1.3); color: #22c55e; }
-    100% { transform: scale(1); }
-  }
-  @keyframes bounceIn {
-    0%   { transform: scale(0.5); opacity: 0; }
-    60%  { transform: scale(1.15); opacity: 1; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-`;
-document.head.appendChild(styleEl);
-
-onNChange(7);
-document.getElementById('fnResult').textContent = fib(7);
-resetAnim();
+buildCode(); doReset();
 </script>
 </body>
 </html>

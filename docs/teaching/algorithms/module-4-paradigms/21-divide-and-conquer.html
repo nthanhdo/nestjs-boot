@@ -3,538 +3,396 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>21 - Chia Để Trị (Divide & Conquer)</title>
+<title>Divide & Conquer — Chia Để Trị</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0a0a1a; color: #e0e0f0; font-family: 'Segoe UI', monospace; min-height: 100vh;
-    background-image: radial-gradient(ellipse at 50% 0%, rgba(52,211,153,0.07) 0%, transparent 60%); }
-  h1 { text-align: center; padding: 18px; background: linear-gradient(135deg, #0a1a10, #0d2218);
-    font-size: 1.5rem; color: #34d399; border-bottom: 2px solid #059669; letter-spacing: 2px;
-    text-shadow: 0 0 20px rgba(52,211,153,0.5); }
-  .subtitle { text-align: center; font-size: 0.85rem; color: #94a3b8; padding: 6px; background: #0a1510; }
-
-  @keyframes fadeScale { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-  @keyframes splitLeft { 0% { transform: translateX(0); opacity: 1; } 100% { transform: translateX(-12px); opacity: 1; } }
-  @keyframes splitRight { 0% { transform: translateX(0); opacity: 1; } 100% { transform: translateX(12px); opacity: 1; } }
-  @keyframes mergeIn { 0% { transform: translateY(-8px) scale(0.9); opacity: 0; }
-    70% { transform: translateY(2px) scale(1.02); } 100% { transform: translateY(0) scale(1); opacity: 1; } }
-  @keyframes cascadeIn { 0% { transform: translateY(-10px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
-  @keyframes nodeActivate { 0% { opacity: 0; transform: scale(0.5); } 60% { transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
-  @keyframes glowPulse { 0%,100% { filter: drop-shadow(0 0 4px currentColor); }
-    50% { filter: drop-shadow(0 0 12px currentColor) drop-shadow(0 0 20px currentColor); } }
-  @keyframes countTick { 0% { transform: translateY(5px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
-
-  .tabs { display: flex; gap: 4px; padding: 10px 16px; background: #0a1510; border-bottom: 1px solid #1a3a25; }
-  .tab { padding: 8px 18px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem;
-    border: 1px solid #1a3a25; border-bottom: none; transition: all 0.25s; color: #4a7060; background: #0d1a12; }
-  .tab.active { background: linear-gradient(135deg, #059669, #047857); color: #fff; border-color: #059669;
-    box-shadow: 0 -4px 15px rgba(5,150,105,0.4); }
-
-  .main { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 110px); }
-  .viz-panel { padding: 16px; overflow-y: auto; background: #0a0a1a; }
-  .code-panel { background: #0a1208; border-left: 2px solid #1a3a25; display: flex; flex-direction: column; }
-
-  /* 3-step banner */
-  .dc-steps { display: flex; gap: 6px; margin: 10px 0; }
-  .dc-step { flex: 1; padding: 10px; border-radius: 10px; text-align: center; font-size: 0.82rem;
-    font-weight: bold; border: 2px solid; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .dc-step.divide { border-color: #3b82f6; color: #60a5fa; background: rgba(59,130,246,0.05); }
-  .dc-step.divide.active { background: linear-gradient(135deg, #1e3a5f, #1a3060);
-    box-shadow: 0 0 20px rgba(59,130,246,0.4), 0 0 40px rgba(59,130,246,0.1); transform: translateY(-3px); }
-  .dc-step.conquer { border-color: #f59e0b; color: #fbbf24; background: rgba(245,158,11,0.05); }
-  .dc-step.conquer.active { background: linear-gradient(135deg, #1c1209, #2a1a06);
-    box-shadow: 0 0 20px rgba(245,158,11,0.4); transform: translateY(-3px); }
-  .dc-step.combine { border-color: #34d399; color: #34d399; background: rgba(52,211,153,0.05); }
-  .dc-step.combine.active { background: linear-gradient(135deg, #052e16, #064e20);
-    box-shadow: 0 0 20px rgba(52,211,153,0.4); transform: translateY(-3px); }
-  .dc-step .arrow { font-size: 1.2rem; display: block; margin-top: 4px; }
-
-  .tree-container { overflow-x: auto; background: linear-gradient(180deg, #0a0a1a, #0a1510);
-    border-radius: 12px; border: 1px solid #1a3a25; padding: 8px; }
-  .tree-svg { display: block; }
-
-  /* Merge sort blocks */
-  .merge-level { margin: 8px 0; animation: cascadeIn 0.4s ease; }
-  .merge-level-label { font-size: 0.7rem; color: #4a7060; margin-bottom: 4px; letter-spacing: 1px; }
-  .merge-blocks { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-  .merge-block { display: flex; gap: 3px; padding: 6px 8px; border-radius: 8px; border: 2px solid #1a3a25;
-    background: linear-gradient(135deg, #0d1a12, #0a1208); transition: all 0.35s; }
-  .merge-block.active-block { border-color: #34d399; background: linear-gradient(135deg, #052e16, #064e20);
-    box-shadow: 0 0 15px rgba(52,211,153,0.3); animation: mergeIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .merge-block.merging { border-color: #f59e0b; background: linear-gradient(135deg, #1c1209, #2a1a06);
-    box-shadow: 0 0 12px rgba(245,158,11,0.3); }
-  .mb-cell { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
-    border-radius: 5px; font-size: 0.8rem; font-weight: bold;
-    background: linear-gradient(135deg, #1e293b, #162030); color: #e0e0f0; transition: all 0.3s; }
-  .mb-cell.sorted { background: linear-gradient(135deg, #052e16, #064e20); color: #34d399; }
-  .mb-cell.merging-active { background: linear-gradient(135deg, #1c1209, #2a1a06); color: #fbbf24; }
-
-  /* Status */
-  .status-row { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
-  .status-card { flex: 1; min-width: 90px; padding: 9px 12px; border-radius: 10px;
-    background: linear-gradient(135deg, #0d1a12, #0a1208); border: 1px solid #1a3a25; font-size: 0.8rem; }
-  .status-card .label { font-size: 0.68rem; color: #4a7060; margin-bottom: 3px; }
-  .status-card .val { font-size: 1.05rem; font-weight: bold; color: #34d399; animation: countTick 0.3s ease; }
-
-  .step-desc { padding: 10px 14px; border-radius: 8px;
-    background: linear-gradient(90deg, #0d1a12, #0a1208); border-left: 3px solid #34d399;
-    font-size: 0.82rem; color: #94a3b8; margin: 8px 0; min-height: 40px; }
-  .step-desc strong { color: #34d399; }
-
-  .result-box { padding: 12px 16px; border-radius: 10px; background: linear-gradient(135deg, #052e16, #064e20);
-    border: 2px solid #22c55e; font-size: 0.85rem; color: #86efac; margin: 8px 0;
-    animation: fadeScale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .result-box strong { color: #22c55e; font-size: 1rem; text-shadow: 0 0 10px rgba(34,197,94,0.6); }
-
-  .code-header { padding: 10px 14px; background: #0a1510; border-bottom: 1px solid #1a3a25;
-    font-size: 0.78rem; color: #059669; font-weight: bold; }
-  .code-body { flex: 1; overflow-y: auto; padding: 12px; font-size: 0.75rem;
-    font-family: 'Courier New', monospace; line-height: 1.7; }
-  .code-line { padding: 2px 8px; border-radius: 4px; transition: all 0.25s; white-space: pre; color: #3a5040; }
-  .code-line.hl { background: linear-gradient(90deg, #05996933, transparent);
-    border-left: 3px solid #34d399; color: #a0f0d0; }
-  .kw { color: #c084fc; } .fn { color: #60a5fa; } .num { color: #fbbf24; }
-  .cmt { color: #2a4030; font-style: italic; } .str { color: #34d399; }
-
-  .controls { display: flex; gap: 8px; align-items: center; padding: 10px 16px;
-    background: #0a1510; border-top: 1px solid #1a3a25; flex-wrap: wrap; }
-  .btn { padding: 7px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
-  .btn-play { background: linear-gradient(135deg, #059669, #047857); color: #fff; }
-  .btn-play:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(5,150,105,0.4); }
-  .btn-step { background: #0e7490; color: #fff; }
-  .btn-reset { background: #374151; color: #d1d5db; }
-  .speed-label { font-size: 0.78rem; color: #94a3b8; }
-  input[type=range] { width: 90px; accent-color: #059669; }
-
-  .info-bar { padding: 8px 16px; background: #0a1510; font-size: 0.78rem; color: #94a3b8;
-    display: flex; gap: 16px; flex-wrap: wrap; }
-  .info-item strong { color: #34d399; }
-
-  section.prob { display: none; }
-  section.prob.active { display: block; }
+  :root{
+    --bg:#0e1525;--surface:#151d32;--surface2:#1c2744;--border:#2a3a5c;
+    --text:#eef1f8;--muted:#8899bb;--accent:#a78bfa;--yellow:#ffd43b;
+    --div-top:#a29bfe;--div-bot:#6c5ce7;--div-glow:rgba(162,155,254,.55);
+    --merge-top:#fd79a8;--merge-bot:#c0006a;--merge-glow:rgba(253,121,168,.55);
+    --sorted-top:#2ecc71;--sorted-bot:#1a9c54;--sorted-glow:rgba(46,204,113,.5);
+    --pivot-top:#ffd43b;--pivot-bot:#e6a800;--pivot-glow:rgba(255,212,59,.5);
+    --def-top:#5b8def;--def-bot:#2c5aa0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(162,155,254,.06) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(253,121,168,.05) 0%,transparent 55%);pointer-events:none}
+  header{background:var(--surface);padding:10px 24px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border)}
+  header h1{font-size:1.15rem;font-weight:700;background:linear-gradient(135deg,#a29bfe,#fd79a8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .badge{background:linear-gradient(135deg,#a29bfe,#6c5ce7);color:#fff;padding:2px 10px;border-radius:12px;font-size:.68rem;font-weight:700}
+  .complexity{display:flex;gap:6px;margin-left:auto}
+  .cx{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:2px 9px;font-size:.72rem;color:var(--muted)}
+  .cx span{color:var(--yellow);font-weight:700}
+  main{flex:1;display:flex;overflow:hidden;z-index:1;min-height:0}
+  #viz{flex:1;display:flex;flex-direction:column;min-width:0}
+  /* Status Display */
+  #status-display{padding:10px 24px;min-height:58px;display:flex;align-items:center;justify-content:center;gap:14px;background:var(--surface);border-bottom:1px solid var(--border)}
+  .sd-idle{color:var(--muted);font-size:.95rem}
+  .phase-badge{padding:6px 18px;border-radius:20px;font-size:.9rem;font-weight:700;animation:fadeIn .3s ease}
+  .phase-badge.divide{background:rgba(162,155,254,.15);border:1px solid rgba(162,155,254,.4);color:var(--div-top)}
+  .phase-badge.merge{background:rgba(253,121,168,.15);border:1px solid rgba(253,121,168,.4);color:var(--merge-top)}
+  .phase-badge.done{background:rgba(46,204,113,.15);border:1px solid rgba(46,204,113,.4);color:var(--sorted-top)}
+  /* Explain */
+  #explain-viz{padding:10px 24px;min-height:52px;background:linear-gradient(135deg,rgba(21,29,50,.95),rgba(28,39,68,.9));border-bottom:1px solid var(--border);font-size:.88rem;line-height:1.55;color:var(--text);display:flex;align-items:center;gap:12px}
+  #explain-viz .step-icon{flex-shrink:0;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all .3s}
+  .step-icon.div{background:rgba(162,155,254,.15);border:1px solid rgba(162,155,254,.3)}
+  .step-icon.mrg{background:rgba(253,121,168,.15);border:1px solid rgba(253,121,168,.3)}
+  .step-icon.srt{background:rgba(46,204,113,.15);border:1px solid rgba(46,204,113,.3)}
+  .step-icon.info{background:rgba(91,141,239,.15);border:1px solid rgba(91,141,239,.3)}
+  #explain-text{flex:1}
+  #explain-text b{color:var(--yellow)}
+  #explain-text code{background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.8rem;color:var(--accent)}
+  #step-counter{font-size:.72rem;color:var(--muted);white-space:nowrap}
+  /* Mode tabs */
+  #mode-tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border)}
+  .mode-tab{padding:8px 18px;font-size:.78rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+  .mode-tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--surface2)}
+  /* Recursion tree */
+  #tree-area{flex:1;overflow:hidden;position:relative}
+  #tree-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  /* Array rows at each level */
+  .tree-level{position:absolute;display:flex;gap:12px;left:0;right:0;justify-content:center}
+  .sub-arr{display:flex;gap:3px;align-items:center;animation:fadeIn .3s ease}
+  .sub-cell{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:800;color:#fff;transition:all .4s cubic-bezier(.34,1.56,.64,1);box-shadow:0 2px 6px rgba(0,0,0,.3);position:relative}
+  .sub-cell.dividing{background:linear-gradient(135deg,var(--div-top),var(--div-bot));box-shadow:0 0 14px var(--div-glow);animation:divPop .4s ease}
+  .sub-cell.merging{background:linear-gradient(135deg,var(--merge-top),var(--merge-bot));box-shadow:0 0 14px var(--merge-glow)}
+  .sub-cell.sorted{background:linear-gradient(135deg,var(--sorted-top),var(--sorted-bot));box-shadow:0 0 10px var(--sorted-glow)}
+  .sub-cell.default{background:linear-gradient(135deg,var(--def-top),var(--def-bot))}
+  .sub-cell.pivot{background:linear-gradient(135deg,var(--pivot-top),var(--pivot-bot));color:#000;box-shadow:0 0 16px var(--pivot-glow)}
+  .sub-arr-label{font-size:.65rem;color:var(--muted);margin-right:3px}
+  /* Bottom bar */
+  #bottom-bar{display:flex;align-items:center;background:var(--surface);border-top:1px solid var(--border)}
+  #legend{flex:1;display:flex;gap:14px;padding:7px 24px;font-size:.74rem;color:var(--muted);flex-wrap:wrap}
+  .leg{display:flex;align-items:center;gap:6px}
+  .ld{width:12px;height:12px;border-radius:3px}
+  /* Code panel */
+  #code-panel{width:300px;min-width:260px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column}
+  .panel-title{padding:10px 14px;background:var(--surface2);font-size:.78rem;font-weight:600;color:var(--accent);border-bottom:1px solid var(--border)}
+  #code{flex:1;overflow-y:auto;padding:10px 0;font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:.78rem;line-height:2}
+  .code-line{padding:0 14px;color:#5a6d8e;white-space:pre;border-left:3px solid transparent;transition:all .2s}
+  .code-line.comment{color:#3a4d6e;font-style:italic}
+  .code-line.active{background:linear-gradient(90deg,rgba(255,212,59,.1),transparent);color:var(--yellow);border-left-color:var(--yellow);font-weight:600}
+  #insight{padding:12px 14px;background:var(--bg);border-top:1px solid var(--border);font-size:.8rem;line-height:1.5;color:var(--muted)}
+  #insight .insight-title{color:var(--accent);font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  #insight b{color:var(--text)}
+  /* Controls */
+  #controls{background:var(--surface);padding:8px 24px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);flex-wrap:wrap}
+  button{border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:.8rem;font-weight:600;transition:all .2s}
+  button:active{transform:scale(.95)}
+  #btn-play{background:linear-gradient(135deg,#00b894,#05c46b);color:#fff;box-shadow:0 2px 10px rgba(5,196,107,.25);min-width:85px}
+  #btn-step{background:linear-gradient(135deg,#7c5ce7,#a78bfa);color:#fff}
+  #btn-reset,#btn-new{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+  label{font-size:.76rem;color:var(--muted)}
+  input[type=range]{accent-color:var(--accent);width:80px}
+  select{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:3px 6px;font-size:.76rem}
+  #stats{display:flex;gap:8px;margin-left:auto}
+  .stat{background:var(--surface2);padding:4px 10px;border-radius:6px;font-size:.8rem;color:var(--muted);border:1px solid var(--border)}
+  .stat span{color:var(--yellow);font-weight:800}
+  @keyframes divPop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
-
-<h1>⚔️ Chia Để Trị (Divide & Conquer)</h1>
-<div class="subtitle">Tư duy: DIVIDE → CONQUER → COMBINE | Recursion tree = tư duy trực quan</div>
-
-<div class="tabs">
-  <div class="tab active" onclick="switchProblem('maxsub')">📊 Max Subarray</div>
-  <div class="tab" onclick="switchProblem('mergesort')">🔀 Merge Sort</div>
-</div>
-
-<div class="main">
-  <div class="viz-panel">
-
-    <section class="prob active" id="prob-maxsub">
-      <div class="dc-steps">
-        <div class="dc-step divide" id="step-divide">DIVIDE<span class="arrow">✂️</span><small style="font-weight:normal;font-size:0.72rem;">Chia đôi mảng</small></div>
-        <div style="display:flex;align-items:center;color:#2d4a35;font-size:1.2rem;">→</div>
-        <div class="dc-step conquer" id="step-conquer">CONQUER<span class="arrow">🔍</span><small style="font-weight:normal;font-size:0.72rem;">Giải từng nửa đệ quy</small></div>
-        <div style="display:flex;align-items:center;color:#2d4a35;font-size:1.2rem;">→</div>
-        <div class="dc-step combine" id="step-combine">COMBINE<span class="arrow">🔗</span><small style="font-weight:normal;font-size:0.72rem;">Max cross + max(left, right)</small></div>
-      </div>
-      <p style="font-size:0.8rem;color:#3a5040;margin:4px 0 8px;">
-        Mảng: [-2, 1, -3, 4, -1, 2, 1, -5, 4] — Tìm subarray có tổng lớn nhất
-      </p>
-      <div class="tree-container">
-        <svg class="tree-svg" id="dc-svg" width="660" height="300"></svg>
-      </div>
-      <div class="step-desc" id="maxsub-desc">Nhấn Play để xem cây chia</div>
-      <div class="status-row">
-        <div class="status-card"><div class="label">Đang xử lý</div><div class="val" id="ms-range">—</div></div>
-        <div class="status-card"><div class="label">Left max</div><div class="val" id="ms-left">—</div></div>
-        <div class="status-card"><div class="label">Right max</div><div class="val" id="ms-right">—</div></div>
-        <div class="status-card"><div class="label">Global max</div><div class="val" id="ms-max" style="color:#a855f7">—</div></div>
-      </div>
-      <div class="result-box" id="maxsub-result" style="display:none">
-        ✅ Max Subarray Sum: <strong id="maxsub-ans">—</strong>
-      </div>
-    </section>
-
-    <section class="prob" id="prob-mergesort">
-      <div class="dc-steps">
-        <div class="dc-step divide" id="ms-step-divide">DIVIDE<span class="arrow">✂️</span><small style="font-weight:normal;font-size:0.72rem;">Chia đôi liên tục</small></div>
-        <div style="display:flex;align-items:center;color:#2d4a35;font-size:1.2rem;">→</div>
-        <div class="dc-step conquer" id="ms-step-conquer">CONQUER<span class="arrow">1️⃣</span><small style="font-weight:normal;font-size:0.72rem;">Mảng 1 phần tử = sorted</small></div>
-        <div style="display:flex;align-items:center;color:#2d4a35;font-size:1.2rem;">→</div>
-        <div class="dc-step combine" id="ms-step-combine">COMBINE<span class="arrow">🔗</span><small style="font-weight:normal;font-size:0.72rem;">Merge 2 mảng sorted</small></div>
-      </div>
-      <p style="font-size:0.8rem;color:#3a5040;margin:4px 0 8px;">
-        Mảng: [38, 27, 43, 3, 9, 82, 10] — Sắp xếp bằng Merge Sort
-      </p>
-      <div id="merge-levels"></div>
-      <div class="step-desc" id="mergesort-desc">Nhấn Play để bắt đầu</div>
-      <div class="status-row">
-        <div class="status-card"><div class="label">Giai đoạn</div><div class="val" id="mst-phase">—</div></div>
-        <div class="status-card"><div class="label">Blocks</div><div class="val" id="mst-cmp">—</div></div>
-        <div class="status-card"><div class="label">Đã sắp xếp</div><div class="val" id="mst-done">—</div></div>
-      </div>
-      <div class="result-box" id="mergesort-result" style="display:none">
-        ✅ Sorted: <strong id="mergesort-ans">—</strong>
-      </div>
-    </section>
-
+<header>
+  <h1>⚔️ Divide & Conquer</h1>
+  <span class="badge">PARADIGM</span>
+  <div class="complexity">
+    <div class="cx">Merge Sort <span>O(n log n)</span></div>
+    <div class="cx">Quick Sort avg <span>O(n log n)</span></div>
+    <div class="cx">Levels <span>O(log n)</span></div>
+    <div class="cx">Space <span>O(n)</span></div>
   </div>
-
-  <div class="code-panel">
-    <div class="code-header">📄 Pseudocode</div>
-    <div class="code-body" id="code-body"></div>
-    <div class="info-bar">
-      <div class="info-item"><strong>Phase:</strong> <span id="info-phase">—</span></div>
-      <div class="info-item"><strong>Depth:</strong> <span id="info-depth">0</span></div>
-      <div class="info-item"><strong>Step:</strong> <span id="info-step">0</span></div>
+</header>
+<main>
+  <div id="viz">
+    <div id="status-display"><span class="sd-idle">Nhấn Play để bắt đầu trình diễn thuật toán</span></div>
+    <div id="explain-viz">
+      <div class="step-icon info">💡</div>
+      <div id="explain-text">Divide & Conquer: chia bài toán → giải từng phần nhỏ → gộp kết quả. Merge Sort và Quick Sort đều dùng chiến lược này.</div>
+      <div id="step-counter"></div>
     </div>
-    <div class="controls">
-      <button class="btn btn-play" id="btn-play" onclick="togglePlay()">▶ Play</button>
-      <button class="btn btn-step" onclick="stepOnce()">⏭ Step</button>
-      <button class="btn btn-reset" onclick="resetAll()">↺ Reset</button>
-      <span class="speed-label">Tốc độ:</span>
-      <input type="range" min="1" max="5" value="3" id="speed-slider">
+    <div id="mode-tabs">
+      <div class="mode-tab active" onclick="switchMode('merge')">🔀 Merge Sort</div>
+      <div class="mode-tab" onclick="switchMode('quick')">⚡ Quick Sort</div>
+    </div>
+    <div id="tree-area">
+      <svg id="tree-svg"></svg>
+    </div>
+    <div id="bottom-bar">
+      <div id="legend">
+        <div class="leg"><div class="ld" style="background:linear-gradient(135deg,var(--div-top),var(--div-bot))"></div>Đang chia</div>
+        <div class="leg"><div class="ld" style="background:linear-gradient(135deg,var(--merge-top),var(--merge-bot))"></div>Đang gộp</div>
+        <div class="leg"><div class="ld" style="background:linear-gradient(135deg,var(--sorted-top),var(--sorted-bot))"></div>Đã sắp xếp</div>
+        <div class="leg"><div class="ld" style="background:linear-gradient(135deg,var(--pivot-top),var(--pivot-bot))"></div>Pivot</div>
+      </div>
     </div>
   </div>
+  <div id="code-panel">
+    <div class="panel-title">📝 Merge Sort</div>
+    <div id="code"></div>
+    <div id="insight">
+      <div class="insight-title">💡 Tại sao O(n log n)?</div>
+      <b>log n</b> levels chia (mảng 8 → 4 → 2 → 1). Mỗi level gộp tốn <b>O(n)</b> tổng. → n × log n.
+    </div>
+  </div>
+</main>
+<div id="controls">
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-step">⏭ Step</button>
+  <button id="btn-reset">↺ Reset</button>
+  <button id="btn-new">🎲 Mới</button>
+  <label>Speed <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <label>Size <select id="size-sel"><option value="6">6</option><option value="8" selected>8</option></select></label>
+  <div id="stats">
+    <div class="stat">Level <span id="s-level">0</span></div>
+    <div class="stat">Divides <span id="s-div">0</span></div>
+    <div class="stat">Merges <span id="s-merge">0</span></div>
+  </div>
 </div>
-
 <script>
-let currentProblem = 'maxsub';
-let playing = false;
-let timer = null;
-let stepIndex = 0;
-let steps = [];
-
-const codes = {
-  maxsub: [
-    '// Max Subarray — Divide & Conquer',
-    'function maxSubarray(arr, lo, hi):',
-    '  // Base case: 1 phần tử',
-    '  if lo == hi: return arr[lo]',
-    '',
-    '  mid = (lo + hi) / 2',
-    '',
-    '  // DIVIDE: chia đôi mảng',
-    '  leftMax  = maxSubarray(arr, lo, mid)',
-    '  rightMax = maxSubarray(arr, mid+1, hi)',
-    '',
-    '  // CONQUER: tìm max cross',
-    '  crossMax = maxCrossing(arr, lo, mid, hi)',
-    '',
-    '  // COMBINE: trả về max của 3',
-    '  return max(leftMax, rightMax, crossMax)',
-    '',
-    '// Max qua đường giữa',
-    'function maxCrossing(arr, lo, mid, hi):',
-    '  leftSum = scan left from mid',
-    '  rightSum = scan right from mid+1',
-    '  return leftSum + rightSum',
-  ],
-  mergesort: [
-    '// Merge Sort — O(n log n)',
-    'function mergeSort(arr, lo, hi):',
-    '  // Base case: 1 phần tử',
-    '  if lo >= hi: return',
-    '',
-    '  // DIVIDE',
-    '  mid = (lo + hi) / 2',
-    '  mergeSort(arr, lo, mid)',
-    '  mergeSort(arr, mid+1, hi)',
-    '',
-    '  // COMBINE: merge 2 mảng sorted',
-    '  merge(arr, lo, mid, hi)',
-    '',
-    'function merge(arr, lo, mid, hi):',
-    '  // Tạo 2 mảng tạm',
-    '  L = arr[lo..mid]',
-    '  R = arr[mid+1..hi]',
-    '  i = j = 0; k = lo',
-    '',
-    '  while i < L.len AND j < R.len:',
-    '    if L[i] <= R[j]:',
-    '      arr[k++] = L[i++]  // lấy từ L',
-    '    else:',
-    '      arr[k++] = R[j++]  // lấy từ R',
-    '',
-    '  // Copy phần còn lại',
-    '  copy remaining L or R into arr',
-  ]
-};
-
-const arr = [-2, 1, -3, 4, -1, 2, 1, -5, 4];
-const dcNodes = [], dcEdges = [];
-
-function maxCrossing(lo, mid, hi) {
-  let ls = 0, cur = 0;
-  for (let i = mid; i >= lo; i--) { cur += arr[i]; ls = Math.max(ls, cur); }
-  let rs = 0; cur = 0;
-  for (let i = mid + 1; i <= hi; i++) { cur += arr[i]; rs = Math.max(rs, cur); }
-  return ls + rs;
+const MERGE_CODE=[
+  'function mergeSort(arr) {',
+  '  if (arr.length <= 1) return arr; // base',
+  '  const mid = Math.floor(arr.length/2);',
+  '  // Chia đôi mảng',
+  '  const left  = mergeSort(arr.slice(0,mid));',
+  '  const right = mergeSort(arr.slice(mid));',
+  '  // Gộp hai nửa đã sắp xếp',
+  '  return merge(left, right);',
+  '}',
+  'function merge(L, R) {',
+  '  let result=[], i=0, j=0;',
+  '  while (i<L.length && j<R.length)',
+  '    result.push(L[i]<=R[j] ? L[i++] : R[j++]);',
+  '  return result.concat(L.slice(i), R.slice(j));',
+  '}',
+];
+const QUICK_CODE=[
+  'function quickSort(arr, lo=0, hi=arr.length-1) {',
+  '  if (lo >= hi) return;',
+  '  // Phân hoạch quanh pivot',
+  '  const pi = partition(arr, lo, hi);',
+  '  quickSort(arr, lo, pi-1);  // Nửa trái',
+  '  quickSort(arr, pi+1, hi);  // Nửa phải',
+  '}',
+  'function partition(arr, lo, hi) {',
+  '  const pivot = arr[hi]; // Chọn pivot cuối',
+  '  let i = lo - 1;',
+  '  for (let j=lo; j<hi; j++)',
+  '    if (arr[j] <= pivot) { i++; swap(arr,i,j); }',
+  '  swap(arr, i+1, hi);',
+  '  return i+1; // vị trí pivot đúng',
+  '}',
+];
+let mode='merge',arr=[],steps=[],stepIdx=0,playing=false,timer=null;
+let divCount=0,mergeCount=0,maxLevel=0;
+// Tree node registry: {id, arr, level, xpct, parent, side}
+let treeNodes=[];
+let nodeCounter=0;
+function genArray(){
+  const n=+document.getElementById('size-sel').value;
+  arr=Array.from({length:n},()=>Math.floor(Math.random()*50)+5);
 }
-
-function buildDCTree(lo, hi, x, y, spread, parentId) {
-  const id = dcNodes.length;
-  const mid = Math.floor((lo + hi) / 2);
-  dcNodes.push({ id, lo, hi, mid, x, y, result: null, phase: 'pending' });
-  if (parentId !== null) dcEdges.push({ from: parentId, to: id });
-  if (lo < hi) {
-    buildDCTree(lo, mid, x - spread, y + 65, spread * 0.5, id);
-    buildDCTree(mid + 1, hi, x + spread, y + 65, spread * 0.5, id);
+function buildMergeSteps(){
+  steps=[];treeNodes=[];nodeCounter=0;
+  function ms(a,level,xMin,xMax,parentId){
+    const id=nodeCounter++;
+    treeNodes.push({id,arr:[...a],level,xMid:(xMin+xMax)/2,parent:parentId});
+    steps.push({type:'divide',id,arr:[...a],level,parentId});
+    if(a.length<=1){steps.push({type:'base',id,arr:[...a],level});return a;}
+    const mid=Math.floor(a.length/2);
+    const lArr=a.slice(0,mid),rArr=a.slice(mid);
+    const lId=id*2+1,rId=id*2+2;
+    const midX=(xMin+xMax)/2;
+    ms(lArr,level+1,xMin,midX,id);
+    ms(rArr,level+1,midX,xMax,id);
+    // merge
+    const merged=[];let i=0,j=0,lArr2=[...lArr].sort((a,b)=>a-b),rArr2=[...rArr].sort((a,b)=>a-b);
+    const lS=ms.__sorted?.[lId]||lArr.sort((a,b)=>a-b);
+    const rS=ms.__sorted?.[rId]||rArr.sort((a,b)=>a-b);
+    let li=0,ri=0;
+    while(li<lArr.length&&ri<rArr.length)merged.push(lArr[li]<=rArr[ri]?lArr[li++]:rArr[ri++]);
+    merged.push(...lArr.slice(li),...rArr.slice(ri));
+    merged.sort((a,b)=>a-b);
+    steps.push({type:'merge',id,arr:merged,level,parentId,from:[...a]});
+    return merged;
   }
-}
-
-function genMaxSubSteps() {
-  dcNodes.length = 0; dcEdges.length = 0;
-  buildDCTree(0, arr.length - 1, 330, 30, 130, null);
-  const steps = [];
-  const resultMap = {};
-  function process(nodeId) {
-    const node = dcNodes[nodeId];
-    steps.push({ nodeId, phase: 'divide', desc: `DIVIDE [${node.lo},${node.hi}] → mid=${node.mid}`, codeLine: 7 });
-    if (node.lo < node.hi) {
-      const leftE = dcEdges.find(e => e.from === nodeId && dcNodes[e.to].lo === node.lo);
-      const rightE = dcEdges.find(e => e.from === nodeId && dcNodes[e.to].hi === node.hi && dcNodes[e.to].lo === node.mid + 1);
-      if (leftE) process(leftE.to);
-      if (rightE) process(rightE.to);
-      const lRes = resultMap[dcEdges.find(e => e.from === nodeId)?.to] ?? 0;
-      const rRes = resultMap[dcEdges.filter(e => e.from === nodeId)[1]?.to] ?? 0;
-      const cross = maxCrossing(node.lo, node.mid, node.hi);
-      const res = Math.max(lRes, rRes, cross);
-      resultMap[nodeId] = res; node.result = res;
-      steps.push({ nodeId, phase: 'combine', result: res, desc: `COMBINE [${node.lo},${node.hi}]: max(${lRes}, ${rRes}, cross=${cross}) = ${res}`, codeLine: 15 });
-    } else {
-      const res = arr[node.lo];
-      resultMap[nodeId] = res; node.result = res;
-      steps.push({ nodeId, phase: 'conquer', result: res, desc: `Base case [${node.lo}]: arr[${node.lo}] = ${res}`, codeLine: 3 });
+  // Simpler: pre-compute the tree
+  function buildTree(a,level,lo,hi,parentId){
+    const id=nodeCounter++;
+    const xMid=(lo+hi)/2;
+    treeNodes.push({id,arr:[...a],level,xMid,parent:parentId});
+    if(a.length>1){
+      const mid=Math.floor(a.length/2);
+      buildTree(a.slice(0,mid),level+1,lo,xMid,id);
+      buildTree(a.slice(mid),level+1,xMid,hi,id);
     }
   }
-  process(0);
-  steps.push({ done: true, desc: `Hoàn thành! Max Subarray Sum = ${resultMap[0]}`, ans: resultMap[0] });
-  return steps;
+  nodeCounter=0;buildTree(arr,0,0,100,null);
+  // Now build steps from scratch using in-order traversal
+  steps=[];nodeCounter=0;
+  function gen(a,level,lo,hi,parentId){
+    const id=nodeCounter++;
+    steps.push({type:'divide',id,arr:[...a],level,xMid:(lo+hi)/2,parentId});
+    if(a.length<=1){steps.push({type:'base',id,arr:[...a],level,xMid:(lo+hi)/2});return [...a];}
+    const mid=Math.floor(a.length/2);
+    const lSorted=gen(a.slice(0,mid),level+1,lo,(lo+hi)/2,id);
+    const rSorted=gen(a.slice(mid),level+1,(lo+hi)/2,hi,id);
+    const merged=[...lSorted,...rSorted].sort((a,b)=>a-b);
+    mergeCount++;
+    steps.push({type:'merge',id,arr:merged,level,xMid:(lo+hi)/2,parentId,lSorted,rSorted});
+    return merged;
+  }
+  nodeCounter=0;gen(arr,0,0,100,null);
+  steps.push({type:'done'});
 }
-
-function renderDCTree(activeId, phase) {
-  const svg = document.getElementById('dc-svg');
-  svg.innerHTML = '';
-
-  // Defs
-  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-  ['blue','green','amber','purple'].forEach((name, i) => {
-    const colors = ['59,130,246','52,211,153','245,158,11','168,85,247'];
-    defs.innerHTML += `<filter id="glow-${name}"><feGaussianBlur stdDeviation="4" result="blur"/>
-      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 ${i===0?0.2:0} 0 1 0 0 ${i===1?0.8:0} 0 0 1 0 ${i===2?0:0} 0 0 0 2 0"/>
-      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
-  });
-  svg.appendChild(defs);
-
-  dcEdges.forEach(e => {
-    const from = dcNodes[e.from], to = dcNodes[e.to];
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', from.x); line.setAttribute('y1', from.y + 20);
-    line.setAttribute('x2', to.x); line.setAttribute('y2', to.y - 20);
-    const bothDone = from.result !== null && to.result !== null;
-    line.setAttribute('stroke', bothDone ? '#1a4a2a' : '#1e293b');
-    line.setAttribute('stroke-width', bothDone ? '2' : '1.5');
-    svg.appendChild(line);
-  });
-
-  dcNodes.forEach(node => {
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    const isActive = node.id === activeId;
-    const phaseColor = phase === 'divide' ? '#3b82f6' : phase === 'combine' ? '#34d399' : '#f59e0b';
-    const fill = isActive ? phaseColor + '55' :
-      node.result !== null ? '#1a3a2a' : '#1e293b';
-    const stroke = isActive ? phaseColor : node.result !== null ? '#059669' : '#374151';
-    const strokeW = isActive ? 3 : 2;
-
-    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    rect.setAttribute('x', node.x - 32); rect.setAttribute('y', node.y - 18);
-    rect.setAttribute('width', 64); rect.setAttribute('height', 36); rect.setAttribute('rx', 8);
-    rect.setAttribute('fill', fill); rect.setAttribute('stroke', stroke);
-    rect.setAttribute('stroke-width', strokeW);
-    if (isActive) rect.setAttribute('filter', `url(#glow-${phase === 'divide' ? 'blue' : phase === 'combine' ? 'green' : 'amber'})`);
-
-    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    text.setAttribute('x', node.x); text.setAttribute('y', node.y - 4);
-    text.setAttribute('text-anchor', 'middle'); text.setAttribute('fill', '#a0c0b0');
-    text.setAttribute('font-size', '10'); text.setAttribute('font-family', 'monospace');
-    text.textContent = `[${node.lo},${node.hi}]`;
-
-    const text2 = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    text2.setAttribute('x', node.x); text2.setAttribute('y', node.y + 10);
-    text2.setAttribute('text-anchor', 'middle');
-    text2.setAttribute('fill', node.result !== null ? '#34d399' : '#4b5563');
-    text2.setAttribute('font-size', '11'); text2.setAttribute('font-family', 'monospace');
-    text2.setAttribute('font-weight', 'bold');
-    text2.textContent = node.result !== null ? `${node.result}` : '?';
-
-    g.appendChild(rect); g.appendChild(text); g.appendChild(text2);
-    svg.appendChild(g);
-  });
+function buildQuickSteps(){
+  steps=[];nodeCounter=0;
+  const a=[...arr];
+  function gen(a,level,lo,hi,parentId){
+    const id=nodeCounter++;
+    if(lo>hi||a.length<=1){steps.push({type:'qs-base',id,arr:[...a],level,xMid:50});return;}
+    const pivot=a[hi];
+    steps.push({type:'qs-pivot',id,arr:[...a],level,pivot,pivotIdx:hi});
+    // partition
+    const left=a.slice(0,-1).filter(x=>x<=pivot).sort((a,b)=>a-b);
+    const right=a.slice(0,-1).filter(x=>x>pivot).sort((a,b)=>a-b);
+    steps.push({type:'qs-partition',id,arr:[...a],level,pivot,left,right});
+    divCount++;
+    gen(left,level+1,0,left.length-1,id);
+    gen(right,level+1,0,right.length-1,id);
+    steps.push({type:'qs-done',id,arr:[...left,pivot,...right],level});
+  }
+  gen(a,0,0,a.length-1,null);
+  steps.push({type:'done'});
 }
-
-function genMergeSortSteps() {
-  const orig = [38, 27, 43, 3, 9, 82, 10];
-  const work = [...orig];
-  const steps = [];
-  const levels = [];
-  let cur = [work];
-  while (cur.some(a => a.length > 1)) {
-    levels.push(cur.map(a => [...a]));
-    const next = [];
-    cur.forEach(a => {
-      if (a.length > 1) { const mid = Math.floor(a.length / 2); next.push(a.slice(0, mid), a.slice(mid)); }
-      else next.push([...a]);
+// Visual tree rendering
+let renderedNodes={};
+function ensureLevel(level){
+  const ta=document.getElementById('tree-area');
+  let el=ta.querySelector(`.tree-level[data-lvl="${level}"]`);
+  if(!el){
+    el=document.createElement('div');
+    el.className='tree-level';
+    el.dataset.lvl=level;
+    el.style.top=(20+level*80)+'px';
+    ta.appendChild(el);
+  }
+  return el;
+}
+function renderNode(s,phase){
+  const ta=document.getElementById('tree-area');
+  const nodeId='node-'+s.id;
+  let el=document.getElementById(nodeId);
+  if(!el){
+    const lvlEl=ensureLevel(s.level);
+    const wrap=document.createElement('div');
+    wrap.className='sub-arr';wrap.id=nodeId;
+    s.arr.forEach(v=>{
+      const c=document.createElement('div');c.className='sub-cell default';c.textContent=v;wrap.appendChild(c);
     });
-    cur = next;
-  }
-  levels.push(cur.map(a => [...a]));
-  for (let i = 0; i < levels.length; i++) {
-    steps.push({ phase: 'divide', levels: levels.slice(0, i+1).map(l => l.map(a => [...a])),
-      desc: `DIVIDE: chia thành ${levels[i].length} đoạn`, codeLine: i === levels.length-1 ? 3 : 6,
-      cmpDesc: `${levels[i].length} blocks` });
-  }
-  let merging = cur.map(a => [...a]);
-  const mergeLevels = [merging.map(a => [...a])];
-  while (merging.length > 1) {
-    const next = [];
-    for (let i = 0; i < merging.length; i += 2) {
-      if (i + 1 < merging.length) {
-        const merged = [];
-        let li = 0, ri = 0;
-        const L = merging[i], R = merging[i+1];
-        while (li < L.length && ri < R.length) { if (L[li] <= R[ri]) merged.push(L[li++]); else merged.push(R[ri++]); }
-        while (li < L.length) merged.push(L[li++]);
-        while (ri < R.length) merged.push(R[ri++]);
-        next.push(merged);
-      } else next.push(merging[i]);
-    }
-    merging = next;
-    mergeLevels.push(merging.map(a => [...a]));
-    steps.push({ phase: 'combine', mergeLevels: mergeLevels.map(l => l.map(a => [...a])),
-      desc: `COMBINE: merge → ${merging.length} block(s)`, codeLine: 11, cmpDesc: `${merging.length} blocks` });
-  }
-  steps.push({ phase: 'done', mergeLevels, done: true, desc: `Hoàn thành! [${merging[0].join(', ')}]`, ans: merging[0].join(', ') });
-  return steps;
-}
-
-function renderMergeSort(s) {
-  const el = document.getElementById('merge-levels');
-  el.innerHTML = '';
-  const data = s.mergeLevels || s.levels || [];
-  data.forEach((level, li) => {
-    const row = document.createElement('div');
-    row.className = 'merge-level';
-    row.style.animationDelay = (li * 0.05) + 's';
-    const label = document.createElement('div');
-    label.className = 'merge-level-label';
-    label.textContent = s.phase === 'divide' ? `Level ${li} (DIVIDE)` : `Merge ${li} (COMBINE)`;
-    const blocks = document.createElement('div');
-    blocks.className = 'merge-blocks';
-    level.forEach(block => {
-      const bd = document.createElement('div');
-      bd.className = `merge-block ${li === data.length-1 ? (s.phase === 'combine' ? 'active-block' : 'active-block') : ''}`;
-      block.forEach(v => {
-        const cell = document.createElement('div');
-        cell.className = 'mb-cell' + (s.phase !== 'divide' && li === data.length-1 ? ' sorted' : '');
-        cell.textContent = v;
-        bd.appendChild(cell);
-      });
-      blocks.appendChild(bd);
+    lvlEl.appendChild(wrap);
+  }else{
+    el.innerHTML='';
+    s.arr.forEach((v,i)=>{
+      const c=document.createElement('div');
+      c.className='sub-cell '+(phase==='divide'?'dividing':phase==='merge'?'merging':phase==='base'?'sorted':phase==='pivot'&&i===s.arr.length-1?'pivot':'default');
+      c.textContent=v;el.appendChild(c);
     });
-    row.appendChild(label); row.appendChild(blocks);
-    el.appendChild(row);
-  });
-  document.getElementById('mst-phase').textContent = s.phase || '—';
-  document.getElementById('mst-cmp').textContent = s.cmpDesc || '—';
-  document.getElementById('mst-done').textContent = s.done ? 'Yes' : 'No';
-  document.getElementById('mergesort-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
-  if (s.done) { document.getElementById('mergesort-result').style.display = 'block'; document.getElementById('mergesort-ans').textContent = s.ans; }
-}
-
-function highlightCode(line) {
-  document.querySelectorAll('.code-line').forEach((el, i) => el.classList.toggle('hl', i === line));
-}
-
-function applyStep(s) {
-  if (currentProblem === 'maxsub') {
-    if (s.done) {
-      document.getElementById('maxsub-result').style.display = 'block';
-      document.getElementById('maxsub-ans').textContent = s.ans;
-      document.getElementById('maxsub-desc').innerHTML = `<strong>Done:</strong> ${s.desc}`;
-      return;
-    }
-    const node = dcNodes[s.nodeId];
-    renderDCTree(s.nodeId, s.phase);
-    document.getElementById('maxsub-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
-    document.getElementById('ms-range').textContent = `[${node.lo}, ${node.hi}]`;
-    ['divide','conquer','combine'].forEach(p => document.getElementById(`step-${p}`).classList.toggle('active', s.phase === p));
-    if (s.result !== undefined) document.getElementById('ms-max').textContent = s.result;
-    if (s.codeLine !== undefined) highlightCode(s.codeLine);
-    document.getElementById('info-phase').textContent = s.phase;
-    document.getElementById('info-depth').textContent = Math.floor(Math.log2(s.nodeId + 1));
-  } else if (currentProblem === 'mergesort') {
-    renderMergeSort(s);
-    ['divide','conquer','combine'].forEach(p => document.getElementById(`ms-step-${p}`).classList.toggle('active', s.phase === p));
-    if (s.codeLine !== undefined) highlightCode(s.codeLine);
-    document.getElementById('info-phase').textContent = s.phase || '—';
   }
-  document.getElementById('info-step').textContent = stepIndex;
+  document.getElementById('s-level').textContent=s.level;
+  maxLevel=Math.max(maxLevel,s.level);
 }
-
-function getDelay() { return [900,650,450,280,150][parseInt(document.getElementById('speed-slider').value)-1]; }
-
-function stepOnce() {
-  if (stepIndex >= steps.length) return;
-  applyStep(steps[stepIndex]);
-  stepIndex++;
-  if (stepIndex >= steps.length) stopPlay();
-}
-
-function togglePlay() {
-  if (playing) { stopPlay(); return; }
-  playing = true;
-  document.getElementById('btn-play').textContent = '⏸ Pause';
-  function tick() {
-    if (stepIndex >= steps.length) { stopPlay(); return; }
-    stepOnce(); timer = setTimeout(tick, getDelay());
-  }
-  tick();
-}
-
-function stopPlay() { playing = false; clearTimeout(timer); document.getElementById('btn-play').textContent = '▶ Play'; }
-
-function resetAll() {
-  stopPlay(); stepIndex = 0;
-  ['maxsub-result','mergesort-result'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
-  initProblem(currentProblem);
-}
-
-function renderCode(prob) {
-  document.getElementById('code-body').innerHTML = codes[prob].map((l, i) =>
-    `<div class="code-line" data-line="${i}">${l || '&nbsp;'}</div>`).join('');
-}
-
-function initProblem(prob) {
-  renderCode(prob);
-  if (prob === 'maxsub') {
-    steps = genMaxSubSteps();
-    renderDCTree(null, null);
-    document.getElementById('maxsub-desc').textContent = 'Nhấn Play để xem cây chia';
-  } else if (prob === 'mergesort') {
-    steps = genMergeSortSteps();
-    document.getElementById('merge-levels').innerHTML = '<div style="color:#3a5040;padding:20px;text-align:center;">Nhấn Play...</div>';
-    document.getElementById('mergesort-desc').textContent = 'Nhấn Play để bắt đầu';
+function applyStep(s){
+  if(!s)return;
+  switch(s.type){
+    case'divide':
+      renderNode(s,'divide');divCount++;document.getElementById('s-div').textContent=divCount;
+      document.getElementById('status-display').innerHTML=`<span class="phase-badge divide">⚔️ Chia — Level ${s.level}</span>`;
+      hl(3);
+      setExp('⚔️','div',`<b>Chia</b>: mảng [${s.arr.join(', ')}] (level ${s.level}). Chia đôi thành hai nửa bằng nhau.`);
+      setInsight(`Level ${s.level} — Chia`,`Mảng ${s.arr.length} phần tử → ${Math.floor(s.arr.length/2)} + ${s.arr.length-Math.floor(s.arr.length/2)}. Tiếp tục chia cho đến khi còn 1 phần tử.`);
+      break;
+    case'base':
+      renderNode(s,'base');
+      setExp('⚓','srt',`Base case: [${s.arr[0]}] — mảng 1 phần tử, đã sắp xếp. Trả về ngay.`);
+      hl(1);break;
+    case'merge':
+      renderNode(s,'merge');mergeCount++;document.getElementById('s-merge').textContent=mergeCount;
+      document.getElementById('status-display').innerHTML=`<span class="phase-badge merge">🔀 Gộp — [${s.arr.join(',')}]</span>`;
+      hl(7);
+      setExp('🔀','mrg',`<b>Gộp</b> hai nửa [${s.lSorted?.join(',')}] + [${s.rSorted?.join(',')}] → [${s.arr.join(', ')}].`);
+      setInsight('🔀 Merge — O(n)','So sánh từng cặp từ hai nửa đã sắp xếp → chọn phần tử nhỏ hơn. Tổng tất cả các merge trên 1 level = O(n).');
+      break;
+    case'qs-pivot':
+      renderNode({...s,arr:s.arr},'pivot');
+      document.getElementById('status-display').innerHTML=`<span class="phase-badge divide">⚡ Pivot = ${s.pivot}</span>`;
+      hl(8);
+      setExp('🎯','div',`Chọn pivot=<b>${s.pivot}</b> (phần tử cuối). Phân hoạch: nhỏ ≤ pivot bên trái, lớn > pivot bên phải.`);
+      setInsight('⚡ Quick Sort — Pivot','Pivot lý tưởng = trung vị → O(n log n). Pivot tệ nhất = min/max → O(n²). Random pivot giảm rủi ro.');
+      break;
+    case'qs-partition':
+      renderNode({...s,arr:[...s.left,s.pivot,...s.right]},'merge');divCount++;document.getElementById('s-div').textContent=divCount;
+      setExp('🔀','mrg',`Phân hoạch xong: [${s.left.join(',')}] | <b>${s.pivot}</b> | [${s.right.join(',')}]. Pivot ở đúng vị trí!`);
+      setInsight(`Partition level ${s.level}`,`Pivot <b>${s.pivot}</b> ở đúng chỗ. Bên trái ${s.left.length} phần tử ≤ pivot, bên phải ${s.right.length} phần tử > pivot.`);
+      hl(12);break;
+    case'qs-base':
+      setExp('⚓','srt',`Base: mảng [${s.arr.join(',')}] ≤ 1 phần tử.`);hl(1);break;
+    case'qs-done':
+      renderNode(s,'base');
+      setExp('✅','srt',`Đã sắp xếp: [${s.arr.join(', ')}]`);break;
+    case'done':
+      stopPlay();
+      document.getElementById('status-display').innerHTML=`<span class="phase-badge done">🎉 Hoàn tất! ${divCount} lần chia, ${mergeCount} lần gộp</span>`;
+      setExp('🎉','srt',`Hoàn tất! ${mode==='merge'?`Merge Sort: ${divCount} chia + ${mergeCount} gộp. `:`Quick Sort: ${divCount} partition. `}Tổng complexity: <b>O(n log n)</b>.`);
+      setInsight('📈 Phân tích D&C',`Cây đệ quy có <b>log n</b> levels. Mỗi level xử lý <b>O(n)</b> phần tử. Tổng: <b>O(n log n)</b> — tối ưu cho sorting.`);
+      break;
   }
 }
-
-function switchProblem(prob) {
-  stopPlay(); currentProblem = prob; stepIndex = 0;
-  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['maxsub','mergesort'][i] === prob));
-  document.querySelectorAll('.prob').forEach(s => s.classList.remove('active'));
-  document.getElementById(`prob-${prob}`).classList.add('active');
-  initProblem(prob);
+function setExp(icon,cls,html){
+  const ic=document.querySelector('#explain-viz .step-icon');
+  ic.textContent=icon;ic.className='step-icon '+cls;
+  document.getElementById('explain-text').innerHTML=html;
+  document.getElementById('step-counter').textContent=`${stepIdx}/${steps.length}`;
 }
-
-initProblem('maxsub');
+function setInsight(title,html){document.getElementById('insight').innerHTML=`<div class="insight-title">${title}</div>${html}`;}
+function hl(i){document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));document.querySelector(`[data-i="${i}"]`)?.classList.add('active');}
+function buildCode(lines){document.getElementById('code').innerHTML=lines.map((l,i)=>`<div class="code-line${l.trim().startsWith('//')?' comment':''}" data-i="${i}">${l}</div>`).join('');}
+function switchMode(m){
+  mode=m;
+  document.querySelectorAll('.mode-tab').forEach((t,i)=>t.classList.toggle('active',['merge','quick'][i]===m));
+  document.querySelector('.panel-title').textContent=m==='merge'?'📝 Merge Sort':'📝 Quick Sort';
+  buildCode(m==='merge'?MERGE_CODE:QUICK_CODE);
+  genArray();reset();
+}
+function getDelay(){return Math.round(1200-document.getElementById('speed').value*110);}
+function tick(){if(stepIdx>=steps.length){stopPlay();return;}applyStep(steps[stepIdx++]);if(playing)timer=setTimeout(tick,getDelay());}
+function startPlay(){if(stepIdx>=steps.length)reset();playing=true;document.getElementById('btn-play').textContent='⏸ Pause';tick();}
+function stopPlay(){playing=false;clearTimeout(timer);document.getElementById('btn-play').textContent='▶ Play';}
+function clearTree(){
+  const ta=document.getElementById('tree-area');
+  [...ta.querySelectorAll('.tree-level')].forEach(e=>e.remove());
+}
+function reset(){
+  stopPlay();stepIdx=0;divCount=0;mergeCount=0;maxLevel=0;
+  document.getElementById('s-level').textContent='0';
+  document.getElementById('s-div').textContent='0';
+  document.getElementById('s-merge').textContent='0';
+  document.getElementById('status-display').innerHTML='<span class="sd-idle">Nhấn Play để bắt đầu</span>';
+  clearTree();
+  if(mode==='merge')buildMergeSteps();else buildQuickSteps();
+  setExp('💡','info',mode==='merge'
+    ?`Merge Sort chia mảng [${arr.join(',')}] liên tục cho đến khi còn 1 phần tử, rồi gộp lại.`
+    :`Quick Sort chọn pivot, phân hoạch, rồi đệ quy hai nửa.`);
+  setInsight('💡 Divide & Conquer','Ba bước: <b>Chia</b> (divide) → <b>Giải</b> (conquer) → <b>Gộp</b> (combine). Cây đệ quy có log n levels.');
+  hl(-1);
+}
+document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
+document.getElementById('btn-step').onclick=()=>{stopPlay();if(stepIdx<steps.length)applyStep(steps[stepIdx++]);};
+document.getElementById('btn-reset').onclick=reset;
+document.getElementById('btn-new').onclick=()=>{genArray();reset();};
+document.getElementById('size-sel').onchange=()=>{genArray();reset();};
+buildCode(MERGE_CODE);genArray();reset();
 </script>
 </body>
 </html>

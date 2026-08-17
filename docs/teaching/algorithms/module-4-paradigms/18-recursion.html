@@ -3,644 +3,621 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>18 - Đệ Quy (Recursion)</title>
+<title>Đệ Quy (Recursion) — Call Stack & Fibonacci & Hanoi</title>
 <style>
+  :root {
+    --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+    --text: #eef1f8; --muted: #8899bb;
+    --accent: #a78bfa; --yellow: #ffd43b;
+    --call-top: #7c5ce7; --call-bot: #5a42b0; --call-glow: rgba(124,92,231,0.6);
+    --return-top: #2ecc71; --return-bot: #1a9c54; --return-glow: rgba(46,204,113,0.5);
+    --dup-top: #ff5e7a; --dup-bot: #c0143c; --dup-glow: rgba(255,94,122,0.5);
+    --base-top: #ffd43b; --base-bot: #e6a800; --base-glow: rgba(255,212,59,0.5);
+    --disk1: #ff6b6b; --disk2: #ffd43b; --disk3: #48dbfb; --disk4: #ff9f43; --disk5: #a29bfe;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0a0a1a; color: #e0e0f0; font-family: 'Segoe UI', monospace; min-height: 100vh;
-    background-image: radial-gradient(ellipse at 20% 20%, rgba(99,102,241,0.05) 0%, transparent 60%),
-      radial-gradient(ellipse at 80% 80%, rgba(139,92,246,0.05) 0%, transparent 60%); }
-  h1 { text-align: center; padding: 18px; background: linear-gradient(135deg, #12122a, #1a1a3e);
-    font-size: 1.5rem; color: #a78bfa; border-bottom: 2px solid #7c3aed; letter-spacing: 2px;
-    text-shadow: 0 0 20px rgba(167,139,250,0.5); }
-  .subtitle { text-align: center; font-size: 0.85rem; color: #94a3b8; padding: 6px; background: #16213e; }
+  body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 20% 15%, rgba(124,92,231,0.07) 0%, transparent 55%), radial-gradient(ellipse at 80% 85%, rgba(167,139,250,0.05) 0%, transparent 55%); pointer-events:none; }
 
-  /* Global keyframes */
-  @keyframes fadeScale { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-  @keyframes pulse { 0%,100% { transform: scale(1); box-shadow: 0 0 0 rgba(99,102,241,0); }
-    50% { transform: scale(1.08); box-shadow: 0 0 20px rgba(167,139,250,0.6); } }
-  @keyframes glow { 0%,100% { box-shadow: 0 0 5px currentColor; } 50% { box-shadow: 0 0 25px currentColor, 0 0 40px currentColor; } }
-  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
-  @keyframes ripple { 0% { box-shadow: 0 0 0 0 rgba(99,102,241,0.5); }
-    100% { box-shadow: 0 0 0 18px rgba(99,102,241,0); } }
-  @keyframes slideDown { 0% { transform: translateY(-40px) scaleX(0.8); opacity: 0; }
-    60% { transform: translateY(4px) scaleX(1.02); opacity: 1; }
-    100% { transform: translateY(0) scaleX(1); opacity: 1; } }
-  @keyframes slideUp { 0% { transform: translateY(0) scaleX(1); opacity: 1; }
-    100% { transform: translateY(-40px) scaleX(0.8); opacity: 0; } }
-  @keyframes bounceIn { 0% { transform: scale(0) rotate(-10deg); opacity: 0; }
-    60% { transform: scale(1.15) rotate(2deg); opacity: 1; }
-    100% { transform: scale(1) rotate(0); opacity: 1; } }
-  @keyframes pulseRed { 0%,100% { box-shadow: 0 0 0 rgba(239,68,68,0); }
-    50% { box-shadow: 0 0 20px rgba(239,68,68,0.8), 0 0 40px rgba(239,68,68,0.4); } }
-  @keyframes nodeBloom { 0% { r: 0; opacity: 0; } 70% { r: 26; opacity: 1; } 100% { r: 22; opacity: 1; } }
-  @keyframes diskFly { 0% { transform: translateY(0); } 40% { transform: translateY(-80px); }
-    100% { transform: translateY(0); } }
-  @keyframes countUp { 0% { transform: translateY(8px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+  header { background: var(--surface); padding: 10px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--border); z-index: 2; }
+  header h1 { font-size: 1.15rem; font-weight: 700; background: linear-gradient(135deg,#a78bfa,#7c5ce7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .badge { background: linear-gradient(135deg,#7c5ce7,#a78bfa); color:#fff; padding: 2px 10px; border-radius: 12px; font-size: .68rem; font-weight: 700; }
+  .complexity { display:flex; gap:6px; margin-left:auto; }
+  .cx { background: var(--surface2); border:1px solid var(--border); border-radius:6px; padding:2px 9px; font-size:.72rem; color:var(--muted); }
+  .cx span { color:var(--yellow); font-weight:700; }
 
-  .tabs { display: flex; gap: 4px; padding: 10px 16px; background: #12122a; border-bottom: 1px solid #2d2d4e; }
-  .tab { padding: 8px 18px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem;
-    border: 1px solid #2d2d4e; border-bottom: none; transition: all 0.25s; color: #94a3b8; background: #1a1a2e; }
-  .tab.active { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; border-color: #7c3aed;
-    box-shadow: 0 -4px 15px rgba(124,58,237,0.4); }
-  .tab:hover:not(.active) { background: #252545; color: #c4b5fd; }
+  main { flex:1; display:flex; overflow:hidden; z-index:1; min-height:0; }
+  #viz { flex:1; display:flex; flex-direction:column; min-width:0; }
 
-  .main { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 110px); }
-  .viz-panel { padding: 16px; overflow-y: auto; background: #0a0a1a; }
-  .code-panel { background: #111128; border-left: 2px solid #2d2d4e; display: flex; flex-direction: column; }
+  /* Status Display */
+  #status-display { text-align:center; padding:10px 20px; min-height:56px; display:flex; align-items:center; justify-content:center; gap:12px; background:var(--surface); border-bottom:1px solid var(--border); }
+  .sd-idle { color:var(--muted); font-size:.95rem; }
+  .sd-frame { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:8px; font-size:.9rem; font-weight:700; color:#fff; background: linear-gradient(135deg,var(--call-top),var(--call-bot)); box-shadow:0 0 16px var(--call-glow); animation: fadeIn .3s ease; }
+  .sd-return { background: linear-gradient(135deg,var(--return-top),var(--return-bot)); box-shadow:0 0 16px var(--return-glow); }
+  .sd-base { background: linear-gradient(135deg,var(--base-top),var(--base-bot)); box-shadow:0 0 16px var(--base-glow); color:#000; }
+  .sd-dup { background: linear-gradient(135deg,var(--dup-top),var(--dup-bot)); box-shadow:0 0 16px var(--dup-glow); }
 
-  /* Call Stack */
-  .stack-area { display: flex; flex-direction: column-reverse; align-items: center; min-height: 280px;
-    gap: 4px; padding: 14px; border: 1px solid #2d2d4e; border-radius: 12px;
-    background: linear-gradient(180deg, #0a0a1a, #0d0d1f); position: relative; overflow: hidden; }
-  .stack-area::before { content: 'CALL STACK'; position: absolute; top: 10px; left: 14px;
-    font-size: 0.65rem; color: #4b5563; letter-spacing: 3px; }
-  .stack-area::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, transparent, #7c3aed, transparent); opacity: 0.6; }
+  /* Explain bar */
+  #explain-viz { padding:10px 24px; min-height:52px; background:linear-gradient(135deg,rgba(21,29,50,0.95),rgba(28,39,68,0.9)); border-bottom:1px solid var(--border); font-size:.88rem; line-height:1.55; color:var(--text); display:flex; align-items:center; gap:12px; backdrop-filter:blur(4px); }
+  #explain-viz .step-icon { flex-shrink:0; width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transition:all .3s; }
+  .step-icon.call { background:rgba(124,92,231,0.15); border:1px solid rgba(124,92,231,0.3); }
+  .step-icon.ret { background:rgba(46,204,113,0.15); border:1px solid rgba(46,204,113,0.3); }
+  .step-icon.base { background:rgba(255,212,59,0.15); border:1px solid rgba(255,212,59,0.3); }
+  .step-icon.dup { background:rgba(255,94,122,0.15); border:1px solid rgba(255,94,122,0.3); }
+  .step-icon.info { background:rgba(91,141,239,0.15); border:1px solid rgba(91,141,239,0.3); }
+  #explain-text { flex:1; }
+  #explain-text b { color:var(--yellow); }
+  #explain-text code { background:var(--surface2); padding:1px 5px; border-radius:3px; font-family:monospace; font-size:.8rem; color:var(--accent); }
+  #step-counter { font-size:.72rem; color:var(--muted); white-space:nowrap; }
 
-  .stack-frame { width: 88%; max-width: 340px; padding: 10px 16px; border-radius: 8px; border: 2px solid;
-    font-size: 0.82rem; font-family: monospace; position: relative; }
-  .stack-frame.entering { animation: slideDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-  .stack-frame.exiting { animation: slideUp 0.35s ease-in forwards; }
-  .stack-frame.active { border-color: #a78bfa; background: linear-gradient(135deg, #1e1b4b, #2d1b69);
-    box-shadow: 0 0 20px rgba(124,58,237,0.4), inset 0 1px 0 rgba(167,139,250,0.2);
-    animation: pulse 1.5s ease-in-out infinite; }
-  .stack-frame.active.entering { animation: slideDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
-    pulse 1.5s ease-in-out 0.4s infinite; }
-  .stack-frame.waiting { border-color: #374151; background: #1a1a2e; opacity: 0.75; }
-  .stack-frame.base { border-color: #10b981; background: linear-gradient(135deg, #064e3b22, #065f46);
-    box-shadow: 0 0 15px rgba(16,185,129,0.3); animation: glow 2s ease-in-out infinite; }
-  .frame-name { color: #a78bfa; font-weight: bold; }
-  .frame-param { color: #fbbf24; }
-  .frame-return { color: #34d399; font-size: 0.75rem; margin-top: 4px; animation: countUp 0.3s ease; }
-  .frame-depth { position: absolute; right: 10px; top: 8px; font-size: 0.65rem; color: #4b5563; }
+  /* Mode tabs */
+  #mode-tabs { display:flex; gap:0; border-bottom:1px solid var(--border); background:var(--surface); }
+  .mode-tab { padding:8px 18px; font-size:.78rem; font-weight:600; color:var(--muted); cursor:pointer; border-bottom:2px solid transparent; transition:all .2s; }
+  .mode-tab.active { color:var(--accent); border-bottom-color:var(--accent); background:var(--surface2); }
 
-  .result-box { margin: 12px 0; padding: 14px 18px; border-radius: 10px; background: #0d2818;
-    border: 2px solid #10b981; font-size: 0.9rem; animation: bounceIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .result-box span { color: #34d399; font-weight: bold; font-size: 1.2rem;
-    text-shadow: 0 0 10px rgba(52,211,153,0.6); }
+  /* Viz area */
+  #viz-area { flex:1; display:flex; overflow:hidden; position:relative; }
 
-  /* Fibonacci tree */
-  .fib-tree { overflow-x: auto; padding: 8px; }
-  .tree-svg { display: block; margin: 0 auto; }
+  /* === STACK VIZ === */
+  #stack-view { width:220px; border-right:1px solid var(--border); display:flex; flex-direction:column; background:var(--surface); }
+  #stack-title { padding:8px 14px; font-size:.72rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid var(--border); }
+  #stack-frames { flex:1; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-end; padding:8px; gap:4px; }
+  .stack-frame {
+    border-radius:8px; padding:8px 12px; font-size:.82rem; font-weight:700;
+    background: linear-gradient(135deg,var(--call-top),var(--call-bot));
+    box-shadow:0 0 12px var(--call-glow), inset 0 1px 0 rgba(255,255,255,0.15);
+    color:#fff; display:flex; align-items:center; justify-content:space-between;
+    animation:slideUp .3s cubic-bezier(0.34,1.56,0.64,1) both;
+    border:1px solid rgba(167,139,250,0.3);
+  }
+  .stack-frame.base { background:linear-gradient(135deg,var(--base-top),var(--base-bot)); color:#000; border-color:rgba(255,212,59,0.4); }
+  .stack-frame.returning { background:linear-gradient(135deg,var(--return-top),var(--return-bot)); animation:slideDown .3s ease both; }
+  .stack-frame .frame-n { font-size:.7rem; opacity:.7; }
+  #stack-depth { padding:6px 14px; font-size:.72rem; color:var(--muted); border-top:1px solid var(--border); text-align:center; }
 
-  /* Hanoi */
-  .hanoi-area { display: flex; gap: 16px; align-items: flex-end; justify-content: center;
-    padding: 16px; background: linear-gradient(180deg, #0a0a1a, #0d0d1f);
-    border-radius: 12px; border: 1px solid #2d2d4e; min-height: 200px; position: relative; }
-  .peg-container { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; }
-  .peg-name { font-size: 0.72rem; color: #94a3b8; margin-bottom: 4px; }
-  .peg-pole { width: 6px; background: linear-gradient(180deg, #6b7280, #374151);
-    border-radius: 3px; min-height: 120px; box-shadow: 0 0 8px rgba(107,114,128,0.3); }
-  .peg-base { height: 10px; border-radius: 4px;
-    background: linear-gradient(90deg, #374151, #4b5563, #374151); width: 100%; }
-  .disks { display: flex; flex-direction: column-reverse; align-items: center; gap: 3px; min-height: 120px; }
-  .disk { height: 24px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
-    font-size: 0.7rem; font-weight: bold; color: #fff; border: 2px solid rgba(255,255,255,0.2);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
-    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .disk.flying { animation: diskFly 0.7s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  /* === FIB TREE === */
+  #fib-view { flex:1; position:relative; overflow:hidden; }
+  #fib-canvas { position:absolute; inset:0; }
+  #fib-svg { position:absolute; inset:0; width:100%; height:100%; }
+  .fib-node {
+    position:absolute; width:44px; height:44px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:.82rem; font-weight:800;
+    border:2px solid rgba(255,255,255,0.2); color:#fff; cursor:default;
+    transition:all .3s; box-shadow:0 2px 8px rgba(0,0,0,0.4);
+  }
+  .fib-node.pending { background:var(--surface2); border-color:var(--border); color:var(--muted); }
+  .fib-node.active { background:linear-gradient(135deg,var(--call-top),var(--call-bot)); box-shadow:0 0 18px var(--call-glow); animation:nodePulse .6s ease infinite; }
+  .fib-node.computed { background:linear-gradient(135deg,var(--return-top),var(--return-bot)); box-shadow:0 0 10px var(--return-glow); }
+  .fib-node.duplicate { background:linear-gradient(135deg,var(--dup-top),var(--dup-bot)); box-shadow:0 0 14px var(--dup-glow); }
+  .fib-node.base-case { background:linear-gradient(135deg,var(--base-top),var(--base-bot)); color:#000; box-shadow:0 0 12px var(--base-glow); }
+  .fib-value { position:absolute; bottom:-16px; font-size:.68rem; color:var(--yellow); font-weight:700; white-space:nowrap; }
 
-  .move-log { max-height: 120px; overflow-y: auto; font-size: 0.75rem; color: #94a3b8; padding: 8px;
-    background: #0d0d1f; border-radius: 8px; border: 1px solid #1e293b; }
-  .move-item { padding: 3px 0; border-bottom: 1px solid #1e293b22; transition: all 0.3s; }
-  .move-item.current { color: #a78bfa; font-weight: bold; text-shadow: 0 0 8px rgba(167,139,250,0.5); }
+  /* === HANOI VIZ === */
+  #hanoi-view { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; gap:16px; }
+  #hanoi-pegs { display:flex; gap:40px; align-items:flex-end; justify-content:center; width:100%; }
+  .hanoi-peg-wrap { display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .hanoi-peg-label { font-size:.78rem; color:var(--muted); font-weight:600; }
+  .hanoi-tower { display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:160px; width:140px; position:relative; }
+  .peg-rod { position:absolute; bottom:0; width:6px; background:linear-gradient(180deg,#8899bb,#4a5568); border-radius:3px; height:100%; left:50%; transform:translateX(-50%); }
+  .peg-base { width:140px; height:10px; background:linear-gradient(135deg,#4a5568,#2d3748); border-radius:4px; }
+  .hanoi-disk {
+    height:20px; border-radius:10px; position:relative; z-index:2;
+    display:flex; align-items:center; justify-content:center; font-size:.7rem; font-weight:800; color:#000;
+    transition:all .4s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow:0 3px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+    margin:2px 0;
+  }
+  .hanoi-disk.moving { box-shadow:0 12px 30px rgba(0,0,0,0.5), 0 0 20px currentColor; transform:translateY(-8px); }
+  #hanoi-move-info { font-size:.85rem; color:var(--muted); text-align:center; }
+  #hanoi-moves { font-size:1.8rem; font-weight:800; color:var(--yellow); }
 
-  .warning-box { padding: 10px 14px; border-radius: 8px; background: #7f1d1d22;
-    border: 1px solid #ef4444; font-size: 0.8rem; color: #fca5a5;
-    animation: shake 0.5s ease; display: flex; align-items: center; gap: 8px; }
+  /* RIGHT PANEL */
+  #code-panel { width:300px; min-width:260px; background:var(--surface); border-left:1px solid var(--border); display:flex; flex-direction:column; }
+  .panel-title { padding:10px 14px; background:var(--surface2); font-size:.78rem; font-weight:600; color:var(--accent); border-bottom:1px solid var(--border); }
+  #code { flex:1; overflow-y:auto; padding:10px 0; font-family:'SF Mono','Fira Code',Consolas,monospace; font-size:.78rem; line-height:2; }
+  .code-line { padding:0 14px; color:#5a6d8e; white-space:pre; border-left:3px solid transparent; transition:all .2s; }
+  .code-line.comment { color:#3a4d6e; font-style:italic; }
+  .code-line.active { background:linear-gradient(90deg,rgba(255,212,59,0.1),transparent); color:var(--yellow); border-left-color:var(--yellow); font-weight:600; }
+  #insight { padding:12px 14px; background:var(--bg); border-top:1px solid var(--border); font-size:.8rem; line-height:1.5; color:var(--muted); }
+  #insight .insight-title { color:var(--accent); font-weight:700; font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; margin-bottom:4px; }
+  #insight b { color:var(--text); }
 
-  .concept-row { display: flex; gap: 10px; margin: 10px 0; }
-  .concept-card { flex: 1; padding: 12px; border-radius: 10px; font-size: 0.8rem; transition: all 0.3s; }
-  .concept-card:hover { transform: translateY(-2px); }
-  .concept-base { background: linear-gradient(135deg, #064e3b22, #065f4622); border: 1px solid #10b981; }
-  .concept-rec { background: linear-gradient(135deg, #1e1b4b, #2d1b6922); border: 1px solid #7c3aed; }
-  .concept-title { font-weight: bold; margin-bottom: 4px; }
-  .concept-base .concept-title { color: #34d399; }
-  .concept-rec .concept-title { color: #a78bfa; }
+  /* Bottom */
+  #bottom-bar { display:flex; align-items:center; background:var(--surface); border-top:1px solid var(--border); }
+  #legend { flex:1; display:flex; gap:14px; padding:7px 24px; font-size:.74rem; color:var(--muted); flex-wrap:wrap; }
+  .leg { display:flex; align-items:center; gap:6px; }
+  .leg-dot { width:12px; height:12px; border-radius:3px; }
 
-  /* Code panel */
-  .code-header { padding: 10px 14px; background: #1a1a2e; border-bottom: 1px solid #2d2d4e;
-    font-size: 0.78rem; color: #7c3aed; font-weight: bold; }
-  .code-body { flex: 1; overflow-y: auto; padding: 12px; font-size: 0.75rem;
-    font-family: 'Courier New', monospace; line-height: 1.7; }
-  .code-line { padding: 2px 8px; border-radius: 4px; transition: all 0.25s; white-space: pre; }
-  .code-line.hl { background: linear-gradient(90deg, #7c3aed33, transparent);
-    border-left: 3px solid #a78bfa; color: #e0e0f0; }
-  .kw { color: #c084fc; } .fn { color: #60a5fa; } .num { color: #fbbf24; }
-  .cmt { color: #4b5563; font-style: italic; } .str { color: #34d399; }
+  #controls { background:var(--surface); padding:8px 24px; display:flex; align-items:center; gap:10px; border-top:1px solid var(--border); z-index:2; flex-wrap:wrap; }
+  button { border:none; border-radius:8px; padding:7px 14px; cursor:pointer; font-size:.8rem; font-weight:600; transition:all .2s; }
+  button:active { transform:scale(0.95); }
+  button:disabled { background:var(--surface2)!important; color:#3a4d6e!important; cursor:not-allowed; }
+  #btn-play { background:linear-gradient(135deg,#00b894,#05c46b); color:#fff; box-shadow:0 2px 10px rgba(5,196,107,0.25); min-width:85px; }
+  #btn-step { background:linear-gradient(135deg,#7c5ce7,#a78bfa); color:#fff; }
+  #btn-reset,#btn-new { background:var(--surface2); color:var(--muted); border:1px solid var(--border); }
+  label { font-size:.76rem; color:var(--muted); }
+  input[type=range] { accent-color:var(--accent); width:80px; }
+  select { background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:5px; padding:3px 6px; font-size:.76rem; }
+  #stats { display:flex; gap:8px; margin-left:auto; }
+  .stat { background:var(--surface2); padding:4px 10px; border-radius:6px; font-size:.8rem; color:var(--muted); border:1px solid var(--border); }
+  .stat span { color:var(--yellow); font-weight:800; }
 
-  .controls { display: flex; gap: 8px; align-items: center; padding: 10px 16px;
-    background: #12122a; border-top: 1px solid #2d2d4e; flex-wrap: wrap; }
-  .btn { padding: 7px 16px; border-radius: 8px; border: none; cursor: pointer;
-    font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
-  .btn-play { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; }
-  .btn-play:hover { background: linear-gradient(135deg, #8b5cf6, #7c3aed); transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(124,58,237,0.4); }
-  .btn-step { background: #0e7490; color: #fff; }
-  .btn-step:hover { background: #0891b2; }
-  .btn-reset { background: #374151; color: #d1d5db; }
-  .btn-reset:hover { background: #4b5563; }
-  .speed-label { font-size: 0.78rem; color: #94a3b8; }
-  input[type=range] { width: 90px; accent-color: #7c3aed; }
-
-  .info-bar { padding: 8px 16px; background: #12122a; font-size: 0.78rem; color: #94a3b8;
-    display: flex; gap: 16px; flex-wrap: wrap; }
-  .info-item strong { color: #a78bfa; }
-
-  section.prob { display: none; }
-  section.prob.active { display: block; }
-
-  /* SVG node animations */
-  .fib-node-enter { animation: fadeScale 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-  .fib-node-dup { animation: pulseRed 1s ease-in-out infinite; }
+  @keyframes slideUp { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
+  @keyframes slideDown { from{transform:translateY(0);opacity:1} to{transform:translateY(30px);opacity:0} }
+  @keyframes nodePulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:translateY(0)} }
 </style>
 </head>
 <body>
+<header>
+  <h1>🔄 Đệ Quy (Recursion)</h1>
+  <span class="badge">PARADIGM</span>
+  <div class="complexity">
+    <div class="cx">Fib naive <span>O(2ⁿ)</span></div>
+    <div class="cx">Fib memo <span>O(n)</span></div>
+    <div class="cx">Hanoi <span>O(2ⁿ)</span></div>
+    <div class="cx">Space Stack <span>O(n)</span></div>
+  </div>
+</header>
+<main>
+  <div id="viz">
+    <div id="status-display"><span class="sd-idle">Nhấn Play để bắt đầu trình diễn thuật toán</span></div>
 
-<h1>🔄 Đệ Quy (Recursion)</h1>
-<div class="subtitle">Tư duy: Bài toán lớn = Bài toán nhỏ hơn + Base case</div>
+    <div id="explain-viz">
+      <div class="step-icon info">💡</div>
+      <div id="explain-text">Đệ quy: hàm tự gọi lại chính nó với bài toán nhỏ hơn, cho đến khi đạt base case. Chọn tab để xem Fibonacci hoặc Tower of Hanoi.</div>
+      <div id="step-counter"></div>
+    </div>
 
-<div class="tabs">
-  <div class="tab active" onclick="switchProblem('factorial')">📊 Factorial</div>
-  <div class="tab" onclick="switchProblem('fibonacci')">🌳 Fibonacci Tree</div>
-  <div class="tab" onclick="switchProblem('hanoi')">🗼 Tháp Hà Nội</div>
-</div>
+    <div id="mode-tabs">
+      <div class="mode-tab active" onclick="switchMode('fib')">🌳 Fibonacci Tree</div>
+      <div class="mode-tab" onclick="switchMode('hanoi')">🗼 Tower of Hanoi</div>
+    </div>
 
-<div class="main">
-  <div class="viz-panel">
+    <div id="viz-area">
+      <div id="stack-view">
+        <div id="stack-title">📚 Call Stack</div>
+        <div id="stack-frames"></div>
+        <div id="stack-depth">Depth: 0</div>
+      </div>
+      <div id="fib-view">
+        <svg id="fib-svg"></svg>
+      </div>
+      <div id="hanoi-view" style="display:none">
+        <div id="hanoi-pegs">
+          <div class="hanoi-peg-wrap">
+            <div class="hanoi-tower" id="peg-A"><div class="peg-rod"></div></div>
+            <div class="peg-base"></div>
+            <div class="hanoi-peg-label">A (Nguồn)</div>
+          </div>
+          <div class="hanoi-peg-wrap">
+            <div class="hanoi-tower" id="peg-C"><div class="peg-rod"></div></div>
+            <div class="peg-base"></div>
+            <div class="hanoi-peg-label">C (Trung gian)</div>
+          </div>
+          <div class="hanoi-peg-wrap">
+            <div class="hanoi-tower" id="peg-B"><div class="peg-rod"></div></div>
+            <div class="peg-base"></div>
+            <div class="hanoi-peg-label">B (Đích)</div>
+          </div>
+        </div>
+        <div id="hanoi-move-info">Di chuyển: <span id="hanoi-moves">0</span> / <span id="hanoi-total">0</span></div>
+      </div>
+    </div>
 
-    <section class="prob active" id="prob-factorial">
-      <div class="concept-row">
-        <div class="concept-card concept-base">
-          <div class="concept-title">🛑 Base Case</div>
-          <div>factorial(0) = 1<br>Điều kiện DỪNG — không đệ quy thêm</div>
-        </div>
-        <div class="concept-card concept-rec">
-          <div class="concept-title">🔄 Recursive Case</div>
-          <div>factorial(n) = n × factorial(n-1)<br>Thu nhỏ bài toán mỗi bước</div>
-        </div>
+    <div id="bottom-bar">
+      <div id="legend">
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(135deg,var(--call-top),var(--call-bot))"></div>Đang gọi</div>
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(135deg,var(--return-top),var(--return-bot))"></div>Đã tính xong</div>
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(135deg,var(--base-top),var(--base-bot))"></div>Base case</div>
+        <div class="leg"><div class="leg-dot" style="background:linear-gradient(135deg,var(--dup-top),var(--dup-bot))"></div>Tính lại (lãng phí)</div>
       </div>
-      <p style="font-size:0.8rem;color:#64748b;margin:6px 0 10px;">
-        Tính factorial(5) — quan sát stack lớn dần rồi thu nhỏ khi trả kết quả
-      </p>
-      <div class="stack-area" id="factorial-stack">
-        <div style="color:#2d2d4e;font-size:0.8rem;padding:40px;text-align:center;">Stack trống — nhấn Play</div>
-      </div>
-      <div class="result-box" id="factorial-result" style="display:none">
-        Kết quả: factorial(5) = <span id="factorial-val">—</span>
-      </div>
-      <div class="warning-box" id="factorial-warn" style="display:none;margin-top:8px;">
-        ⚠️ Stack Overflow: Đệ quy quá sâu không có base case → tràn stack!
-      </div>
-    </section>
-
-    <section class="prob" id="prob-fibonacci">
-      <div class="concept-row">
-        <div class="concept-card concept-base">
-          <div class="concept-title">🛑 Base Case</div>
-          <div>fib(0)=0, fib(1)=1<br>2 base cases vì 2 bước nhỏ nhất</div>
-        </div>
-        <div class="concept-card concept-rec">
-          <div class="concept-title">⚠️ Vấn đề</div>
-          <div style="color:#fbbf24;">fib(n) = fib(n-1) + fib(n-2)<br>→ Tính lại cùng giá trị nhiều lần! O(2ⁿ)</div>
-        </div>
-      </div>
-      <p style="font-size:0.8rem;color:#64748b;margin:6px 0 10px;">
-        Cây đệ quy của fib(5) — các ô đỏ = tính toán trùng lặp (explosive!)
-      </p>
-      <div class="fib-tree" id="fib-tree-container">
-        <svg class="tree-svg" id="fib-svg" width="640" height="320"></svg>
-      </div>
-      <div style="display:flex;gap:12px;margin-top:8px;font-size:0.75rem;">
-        <span style="color:#a78bfa;">■ Đang tính</span>
-        <span style="color:#ef4444;">■ Đã tính rồi (duplicate)</span>
-        <span style="color:#34d399;">■ Base case</span>
-        <span style="color:#374151;">■ Chưa tính</span>
-      </div>
-      <div class="result-box" id="fib-result" style="display:none;margin-top:10px">
-        Calls thực hiện: <span id="fib-calls">—</span> | Kết quả: fib(5) = <span id="fib-val">—</span>
-      </div>
-    </section>
-
-    <section class="prob" id="prob-hanoi">
-      <div class="concept-row">
-        <div class="concept-card concept-base">
-          <div class="concept-title">🛑 Base Case</div>
-          <div>1 đĩa → di chuyển trực tiếp từ A sang C</div>
-        </div>
-        <div class="concept-card concept-rec">
-          <div class="concept-title">🔄 Chiến lược</div>
-          <div>1. Di n-1 đĩa từ A→B<br>2. Di đĩa lớn nhất A→C<br>3. Di n-1 đĩa từ B→C</div>
-        </div>
-      </div>
-      <div class="hanoi-area" id="hanoi-pegs">
-        <div class="peg-container" id="peg-A">
-          <div class="peg-name">A (Nguồn)</div>
-          <div class="disks" id="disks-A"></div>
-          <div class="peg-base"></div>
-        </div>
-        <div class="peg-container" id="peg-B">
-          <div class="peg-name">B (Trung gian)</div>
-          <div class="disks" id="disks-B"></div>
-          <div class="peg-base"></div>
-        </div>
-        <div class="peg-container" id="peg-C">
-          <div class="peg-name">C (Đích)</div>
-          <div class="disks" id="disks-C"></div>
-          <div class="peg-base"></div>
-        </div>
-      </div>
-      <div style="margin-top:8px;font-size:0.8rem;color:#94a3b8;">
-        <strong style="color:#a78bfa;">Số bước tối thiểu cho n đĩa: 2ⁿ - 1</strong>
-        &nbsp;(3 đĩa = 7 bước)
-      </div>
-      <div class="move-log" id="move-log" style="margin-top:8px;">
-        <div style="color:#4b5563;">Nhấn Play để bắt đầu...</div>
-      </div>
-    </section>
-
+    </div>
   </div>
 
-  <div class="code-panel">
-    <div class="code-header">📄 Pseudocode (Vietnamese comments)</div>
-    <div class="code-body" id="code-body"></div>
-    <div class="info-bar" id="info-bar">
-      <div class="info-item"><strong>Depth:</strong> <span id="info-depth">0</span></div>
-      <div class="info-item"><strong>Calls:</strong> <span id="info-calls">0</span></div>
-      <div class="info-item"><strong>Step:</strong> <span id="info-step">—</span></div>
+  <div id="code-panel">
+    <div class="panel-title">📝 Đệ Quy — Fibonacci</div>
+    <div id="code"></div>
+    <div id="insight">
+      <div class="insight-title">💡 Tại sao đệ quy nguy hiểm?</div>
+      Fibonacci naive gọi <b>fib(3) tới 5 lần</b> khi tính fib(5). Memoization hoặc DP biến O(2ⁿ) → <b>O(n)</b>.
     </div>
-    <div class="controls">
-      <button class="btn btn-play" id="btn-play" onclick="togglePlay()">▶ Play</button>
-      <button class="btn btn-step" onclick="stepOnce()">⏭ Step</button>
-      <button class="btn btn-reset" onclick="resetAll()">↺ Reset</button>
-      <span class="speed-label">Tốc độ:</span>
-      <input type="range" min="1" max="5" value="3" id="speed-slider">
-    </div>
+  </div>
+</main>
+<div id="controls">
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-step">⏭ Step</button>
+  <button id="btn-reset">↺ Reset</button>
+  <label>N= <select id="fib-n-sel"><option value="4">4</option><option value="5" selected>5</option><option value="6">6</option></select></label>
+  <label>Hanoi Disks <select id="hanoi-n-sel"><option value="3" selected>3</option><option value="4">4</option></select></label>
+  <label>Speed <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <div id="stats">
+    <div class="stat">Calls <span id="s-calls">0</span></div>
+    <div class="stat">Stack Depth <span id="s-depth">0</span></div>
+    <div class="stat">Dup <span id="s-dup">0</span></div>
   </div>
 </div>
 
 <script>
-let currentProblem = 'factorial';
-let playing = false;
-let timer = null;
-let stepIndex = 0;
-let steps = [];
-let callCount = 0;
+const FIB_CODE = [
+  'function fib(n) {',
+  '  // Base case: fib(0)=0, fib(1)=1',
+  '  if (n <= 1) return n;',
+  '  // Gọi đệ quy: fib(n-1) + fib(n-2)',
+  '  const left  = fib(n - 1);',
+  '  const right = fib(n - 2);',
+  '  return left + right;',
+  '}',
+];
+const HANOI_CODE = [
+  'function hanoi(n, from, to, aux) {',
+  '  if (n === 0) return;',
+  '  // Bước 1: chuyển n-1 đĩa từ from → aux',
+  '  hanoi(n-1, from, aux, to);',
+  '  // Bước 2: chuyển đĩa lớn nhất',
+  '  move(from, to);',
+  '  // Bước 3: chuyển n-1 đĩa từ aux → to',
+  '  hanoi(n-1, aux, to, from);',
+  '}',
+];
 
-const codes = {
-  factorial: [
-    { text: '// Đệ quy tính giai thừa', cls: 'cmt' },
-    { text: 'function factorial(n):', cls: '' },
-    { text: '  // Base case: dừng đệ quy', cls: 'cmt' },
-    { text: '  if n == 0:', cls: 'kw' },
-    { text: '    return 1  // ← đáy stack', cls: 'num' },
-    { text: '', cls: '' },
-    { text: '  // Recursive case:', cls: 'cmt' },
-    { text: '  // Gọi chính mình với n nhỏ hơn', cls: 'cmt' },
-    { text: '  sub = factorial(n - 1)', cls: 'fn' },
-    { text: '  result = n * sub', cls: '' },
-    { text: '  return result  // ← trả về stack trên', cls: 'str' },
-  ],
-  fibonacci: [
-    { text: '// Fibonacci đệ quy ngây thơ — O(2ⁿ)', cls: 'cmt' },
-    { text: 'function fib(n):', cls: '' },
-    { text: '  // 2 base cases', cls: 'cmt' },
-    { text: '  if n == 0: return 0', cls: 'kw' },
-    { text: '  if n == 1: return 1', cls: 'kw' },
-    { text: '', cls: '' },
-    { text: '  // Tính 2 nhánh con — TRÙNG LẶP!', cls: 'cmt' },
-    { text: '  left  = fib(n - 1)  // nhánh trái', cls: 'fn' },
-    { text: '  right = fib(n - 2)  // nhánh phải', cls: 'fn' },
-    { text: '  return left + right', cls: 'str' },
-    { text: '', cls: '' },
-    { text: '// Giải pháp: Memoization / DP', cls: 'cmt' },
-    { text: '// → lưu kết quả, không tính lại', cls: 'cmt' },
-  ],
-  hanoi: [
-    { text: '// Tháp Hà Nội — n đĩa', cls: 'cmt' },
-    { text: 'function hanoi(n, from, to, via):', cls: '' },
-    { text: '  // Base case: 1 đĩa', cls: 'cmt' },
-    { text: '  if n == 1:', cls: 'kw' },
-    { text: '    move(from → to)', cls: 'num' },
-    { text: '    return', cls: '' },
-    { text: '', cls: '' },
-    { text: '  // Bước 1: di n-1 đĩa A→B', cls: 'cmt' },
-    { text: '  hanoi(n-1, from, via, to)', cls: 'fn' },
-    { text: '', cls: '' },
-    { text: '  // Bước 2: di đĩa lớn A→C', cls: 'cmt' },
-    { text: '  move(from → to)', cls: 'num' },
-    { text: '', cls: '' },
-    { text: '  // Bước 3: di n-1 đĩa B→C', cls: 'cmt' },
-    { text: '  hanoi(n-1, via, to, from)', cls: 'fn' },
-  ]
-};
+let mode = 'fib', steps = [], stepIdx = 0, playing = false, timer = null;
+let callCount = 0, dupCount = 0, maxDepth = 0;
+let fibN = 5, hanoiN = 3;
 
-// FACTORIAL STEPS
-function genFactorialSteps(n) {
-  const steps = [];
-  const stack = [];
-  function rec(val) {
-    stack.push({ name: 'factorial', param: val, state: 'active' });
-    steps.push({ type: 'push', stack: JSON.parse(JSON.stringify(stack)), codeLine: val === 0 ? 3 : 7, desc: `Gọi factorial(${val})` });
-    if (val === 0) {
-      stack[stack.length - 1].state = 'base';
-      stack[stack.length - 1].ret = 1;
-      steps.push({ type: 'base', stack: JSON.parse(JSON.stringify(stack)), codeLine: 4, desc: `Base case! factorial(0) = 1` });
-    } else {
-      rec(val - 1);
-      const retVal = stack[stack.length - 1].ret;
-      stack.pop();
-      const myRet = val * retVal;
-      if (stack.length) { stack[stack.length - 1].ret = myRet; stack[stack.length - 1].state = 'active'; }
-      steps.push({ type: 'return', stack: JSON.parse(JSON.stringify(stack)), codeLine: 10,
-        desc: `factorial(${val}) = ${val} × ${retVal} = ${myRet}`, result: stack.length === 0 ? myRet : null });
+// FIB tree layout
+const FIB_LAYOUT = {};
+function layoutFib(n, depth, pos) {
+  const key = `${n}_${depth}_${pos}`;
+  // For visualization, layout by call order
+}
+
+// Build fib steps
+function buildFibSteps() {
+  steps = [];
+  const computed = {};
+  const firstCall = {};
+  let callId = 0;
+  function fibRec(n, depth, parentId, side) {
+    const myId = callId++;
+    const isDup = (n in computed) && n > 1;
+    if (!(n in firstCall)) firstCall[n] = myId;
+    steps.push({ type: 'call', n, depth, myId, parentId, side, isDup });
+    if (n <= 1) {
+      steps.push({ type: 'base', n, depth, myId, val: n });
+      computed[n] = n;
+      return n;
     }
+    const left = fibRec(n - 1, depth + 1, myId, 'L');
+    const right = fibRec(n - 2, depth + 1, myId, 'R');
+    const val = left + right;
+    computed[n] = val;
+    steps.push({ type: 'return', n, depth, myId, val });
+    return val;
   }
-  rec(n);
-  return steps;
+  fibRec(fibN, 0, -1, 'root');
+  steps.push({ type: 'done' });
 }
 
-// FIBONACCI TREE
-const fibNodes = [], fibEdges = [];
-const fibComputed = {};
-
-function buildFibTree(n, x, y, spread, parentId) {
-  const id = fibNodes.length;
-  const isDup = fibComputed[n] !== undefined && n > 1;
-  const isBase = n <= 1;
-  fibNodes.push({ id, n, x, y, state: 'pending', isDup, isBase });
-  if (parentId !== null) fibEdges.push({ from: parentId, to: id });
-  if (!isBase) {
-    buildFibTree(n - 1, x - spread, y + 70, spread * 0.5, id);
-    buildFibTree(n - 2, x + spread, y + 70, spread * 0.5, id);
+// Hanoi pegs state
+let pegs = { A: [], B: [], C: [] };
+function buildHanoiSteps() {
+  steps = [];
+  hanoiN = +document.getElementById('hanoi-n-sel').value;
+  pegs = { A: [], B: [], C: [] };
+  for (let i = hanoiN; i >= 1; i--) pegs.A.push(i);
+  steps.push({ type: 'hanoi-init', pegs: clonePegs() });
+  let moveCount = 0;
+  function hanoiRec(n, from, to, aux, depth) {
+    if (n === 0) return;
+    steps.push({ type: 'h-call', n, from, to, aux, depth });
+    hanoiRec(n - 1, from, aux, to, depth + 1);
+    const disk = pegs[from].pop();
+    pegs[to].push(disk);
+    moveCount++;
+    steps.push({ type: 'h-move', from, to, disk, pegs: clonePegs(), moveNum: moveCount });
+    hanoiRec(n - 1, aux, to, from, depth + 1);
+    steps.push({ type: 'h-return', n, from, to, depth });
   }
-  if (!isDup || isBase) fibComputed[n] = true;
+  hanoiRec(hanoiN, 'A', 'B', 'C', 0);
+  steps.push({ type: 'done' });
+  document.getElementById('hanoi-total').textContent = (Math.pow(2, hanoiN) - 1);
 }
+function clonePegs() { return { A: [...pegs.A], B: [...pegs.B], C: [...pegs.C] }; }
 
-function genFibSteps() {
-  fibNodes.length = 0; fibEdges.length = 0;
-  Object.keys(fibComputed).forEach(k => delete fibComputed[k]);
-  buildFibTree(5, 320, 30, 120, null);
-  const steps = [];
-  let order = 0;
-  const queue = [0];
-  const visited = new Set();
-  while (queue.length) {
-    const id = queue.shift();
-    if (visited.has(id)) continue;
-    visited.add(id);
-    order++;
-    steps.push({ type: 'fib-activate', nodeId: id, order });
-    fibEdges.filter(e => e.from === id).forEach(e => queue.push(e.to));
-  }
-  return steps;
+// Stack management
+let stackFrames = [];
+function pushFrame(label, isBase) {
+  stackFrames.push({ label, isBase });
+  renderStack();
 }
-
-// HANOI STEPS
-function genHanoiSteps(n) {
-  const steps = [];
-  const pegs = { A: Array.from({ length: n }, (_, i) => n - i), B: [], C: [] };
-  function rec(k, from, to, via) {
-    if (k === 1) {
-      const disk = pegs[from].pop(); pegs[to].push(disk);
-      steps.push({ pegs: { A: [...pegs.A], B: [...pegs.B], C: [...pegs.C] }, msg: `Đĩa ${disk}: ${from} → ${to}`, codeLine: 3, movedDisk: disk });
-      return;
-    }
-    rec(k - 1, from, via, to);
-    const disk = pegs[from].pop(); pegs[to].push(disk);
-    steps.push({ pegs: { A: [...pegs.A], B: [...pegs.B], C: [...pegs.C] }, msg: `Đĩa ${disk}: ${from} → ${to}`, codeLine: 11, movedDisk: disk });
-    rec(k - 1, via, to, from);
-  }
-  steps.push({ pegs: { A: [...pegs.A], B: [...pegs.B], C: [...pegs.C] }, msg: 'Trạng thái ban đầu', codeLine: 0, initial: true });
-  rec(n, 'A', 'C', 'B');
-  return steps;
+function popFrame() {
+  stackFrames.pop();
+  renderStack();
 }
-
-// RENDER
-const diskColors = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#a855f7'];
-
-let prevFrameCount = 0;
-function renderStack(frames) {
-  const el = document.getElementById('factorial-stack');
-  if (!frames || frames.length === 0) {
-    el.innerHTML = '<div style="color:#2d2d4e;font-size:0.8rem;padding:40px;text-align:center;">Stack trống</div>';
-    prevFrameCount = 0;
-    return;
-  }
-  const isPush = frames.length > prevFrameCount;
-  const isPop = frames.length < prevFrameCount;
-  prevFrameCount = frames.length;
-
-  el.innerHTML = frames.map((f, i) => {
-    const isTop = i === frames.length - 1;
-    const cls = f.state === 'base' ? 'base' : (isTop ? 'active' : 'waiting');
-    const animClass = isTop && isPush ? 'entering' : (isPop && isTop ? 'exiting' : '');
-    return `<div class="stack-frame ${cls} ${animClass}">
-      <div class="frame-name">factorial(<span class="frame-param">${f.param}</span>)</div>
-      ${f.ret !== undefined ? `<div class="frame-return">↩ returns ${f.ret}</div>` : ''}
-      <div class="frame-depth">depth ${i + 1}</div>
-    </div>`;
+function renderStack() {
+  const el = document.getElementById('stack-frames');
+  el.innerHTML = stackFrames.map((f, i) => {
+    const cls = f.isBase ? 'stack-frame base' : 'stack-frame';
+    return `<div class="${cls}" style="animation-delay:0ms"><span>${f.label}</span><span class="frame-n">#${i}</span></div>`;
   }).join('');
+  document.getElementById('stack-depth').textContent = `Depth: ${stackFrames.length}`;
+  document.getElementById('s-depth').textContent = stackFrames.length;
+  maxDepth = Math.max(maxDepth, stackFrames.length);
 }
 
-function renderFibTree(activeId, isNew) {
+// Fib tree rendering
+let fibNodes = {};
+function initFibTree() {
   const svg = document.getElementById('fib-svg');
-  const nodeRadius = 22;
   svg.innerHTML = '';
-
-  // SVG defs for glow filter
-  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-  defs.innerHTML = `<filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/>
-    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
-  svg.appendChild(defs);
-
-  // edges
-  fibEdges.forEach(e => {
-    const from = fibNodes[e.from], to = fibNodes[e.to];
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', from.x); line.setAttribute('y1', from.y);
-    line.setAttribute('x2', to.x); line.setAttribute('y2', to.y);
-    const isActive = from.state === 'visited' || to.state === 'visited';
-    line.setAttribute('stroke', isActive ? '#4b5563' : '#1e293b');
-    line.setAttribute('stroke-width', '1.5');
-    svg.appendChild(line);
-  });
-
-  // nodes
-  fibNodes.forEach(node => {
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    circle.setAttribute('cx', node.x); circle.setAttribute('cy', node.y);
-    circle.setAttribute('r', nodeRadius);
-
-    let fill = '#1e293b', stroke = '#374151';
-    if (node.id === activeId) { fill = '#7c3aed'; stroke = '#a78bfa'; }
-    else if (node.state === 'visited' && node.isBase) { fill = '#064e3b'; stroke = '#10b981'; }
-    else if (node.state === 'visited' && node.isDup) { fill = '#7f1d1d'; stroke = '#ef4444'; }
-    else if (node.state === 'visited') { fill = '#1e3a5f'; stroke = '#3b82f6'; }
-
-    circle.setAttribute('fill', fill);
-    circle.setAttribute('stroke', stroke);
-    circle.setAttribute('stroke-width', node.id === activeId ? '3' : '2');
-    if (node.id === activeId) circle.setAttribute('filter', 'url(#glow)');
-
-    // Animate new node
-    if (node.id === activeId && isNew) {
-      const anim = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
-      anim.setAttribute('attributeName', 'r');
-      anim.setAttribute('from', '0'); anim.setAttribute('to', String(nodeRadius));
-      anim.setAttribute('dur', '0.35s'); anim.setAttribute('fill', 'freeze');
-      circle.appendChild(anim);
+  fibNodes = {};
+  const view = document.getElementById('fib-view');
+  const W = view.clientWidth || 500, H = view.clientHeight || 300;
+  // Compute positions
+  const positions = {};
+  const subtreeWidth = {};
+  function computeWidth(n, depth) {
+    if (n <= 1 || depth > 5) { subtreeWidth[`${n}_${depth}`] = 1; return 1; }
+    const l = computeWidth(n - 1, depth + 1);
+    const r = computeWidth(n - 2, depth + 1);
+    subtreeWidth[`${n}_${depth}`] = l + r;
+    return l + r;
+  }
+  computeWidth(fibN, 0);
+  let nodeCounter = 0;
+  function placeNode(n, depth, xMin, xMax, callId, parentId) {
+    const myId = callId ?? nodeCounter++;
+    const cx = (xMin + xMax) / 2;
+    const cy = 40 + depth * 70;
+    positions[myId] = { cx, cy, n };
+    if (n > 1 && depth < 5) {
+      const lw = subtreeWidth[`${n-1}_${depth+1}`] || 1;
+      const rw = subtreeWidth[`${n-2}_${depth+1}`] || 1;
+      const mid = xMin + (xMax - xMin) * lw / (lw + rw);
+      const lId = nodeCounter++;
+      const rId = nodeCounter++;
+      placeNode(n - 1, depth + 1, xMin, mid, lId, myId);
+      placeNode(n - 2, depth + 1, mid, xMax, rId, myId);
+      // Draw line to children
+      const lineL = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      lineL.setAttribute('x1', cx * W / 100);
+      lineL.setAttribute('y1', cy + 22);
+      lineL.setAttribute('x2', ((xMin + mid) / 2) * W / 100);
+      lineL.setAttribute('y2', 40 + (depth + 1) * 70 - 22);
+      lineL.setAttribute('stroke', '#2a3a5c');
+      lineL.setAttribute('stroke-width', '2');
+      lineL.id = `line-l-${myId}`;
+      svg.appendChild(lineL);
+      const lineR = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      lineR.setAttribute('x1', cx * W / 100);
+      lineR.setAttribute('y1', cy + 22);
+      lineR.setAttribute('x2', ((mid + xMax) / 2) * W / 100);
+      lineR.setAttribute('y2', 40 + (depth + 1) * 70 - 22);
+      lineR.setAttribute('stroke', '#2a3a5c');
+      lineR.setAttribute('stroke-width', '2');
+      lineR.id = `line-r-${myId}`;
+      svg.appendChild(lineR);
     }
-
-    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    text.setAttribute('x', node.x); text.setAttribute('y', node.y + 1);
-    text.setAttribute('text-anchor', 'middle'); text.setAttribute('dominant-baseline', 'middle');
-    text.setAttribute('fill', '#e0e0f0'); text.setAttribute('font-size', '11');
-    text.setAttribute('font-family', 'monospace');
-    text.textContent = `f(${node.n})`;
-
-    // Duplicate pulsing
-    if (node.state === 'visited' && node.isDup) {
-      const animOp = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
-      animOp.setAttribute('attributeName', 'opacity');
-      animOp.setAttribute('values', '1;0.4;1'); animOp.setAttribute('dur', '1s');
-      animOp.setAttribute('repeatCount', 'indefinite');
-      circle.appendChild(animOp);
-    }
-
-    g.appendChild(circle); g.appendChild(text);
-    svg.appendChild(g);
-  });
+    // Create node element
+    const div = document.createElement('div');
+    div.className = 'fib-node pending';
+    div.style.left = (cx * W / 100 - 22) + 'px';
+    div.style.top = cy + 'px';
+    div.textContent = `f(${n})`;
+    div.id = `fn-${myId}`;
+    const val = document.createElement('div');
+    val.className = 'fib-value';
+    val.id = `fv-${myId}`;
+    div.appendChild(val);
+    document.getElementById('fib-view').appendChild(div);
+    fibNodes[myId] = { n, depth, cx, cy };
+    return myId;
+  }
+  nodeCounter = 0;
+  placeNode(fibN, 0, 5, 95);
 }
 
-function renderHanoi(pegs, msg, moveIdx) {
+// Node coloring by call step (simplified — color by call order mapping)
+let callIdToNodeId = {};
+let nodeCallOrder = [];
+function mapCallsToNodes() {
+  callIdToNodeId = {};
+  let nc = 0;
+  function map(n, depth) {
+    const nodeId = nc++;
+    callIdToNodeId[nodeCallOrder.length] = nodeId;
+    nodeCallOrder.push(nodeId);
+    if (n > 1 && depth < 5) { map(n - 1, depth + 1); map(n - 2, depth + 1); }
+  }
+  nodeCallOrder = [];
+  map(fibN, 0);
+}
+
+function setNodeClass(nodeId, cls) {
+  const el = document.getElementById(`fn-${nodeId}`);
+  if (el) el.className = `fib-node ${cls}`;
+}
+function setNodeValue(nodeId, val) {
+  const el = document.getElementById(`fv-${nodeId}`);
+  if (el) el.textContent = `= ${val}`;
+}
+
+// Hanoi rendering
+const DISK_COLORS = ['var(--disk1)', 'var(--disk2)', 'var(--disk3)', 'var(--disk4)', 'var(--disk5)'];
+function renderHanoi(pegState) {
   ['A', 'B', 'C'].forEach(p => {
-    const el = document.getElementById(`disks-${p}`);
-    el.innerHTML = pegs[p].map(d => {
-      const w = 32 + d * 22;
-      return `<div class="disk" style="width:${w}px;background:linear-gradient(135deg,${diskColors[d-1]},${diskColors[d-1]}99);min-width:30px;">${d}</div>`;
-    }).join('');
+    const pId = p === 'C' ? 'peg-C' : p === 'B' ? 'peg-B' : 'peg-A';
+    const tower = document.getElementById(pId);
+    // Remove existing disks (keep rod)
+    [...tower.querySelectorAll('.hanoi-disk')].forEach(d => d.remove());
+    const disks = pegState[p];
+    disks.forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'hanoi-disk';
+      const w = 30 + d * 20;
+      el.style.width = w + 'px';
+      el.style.background = DISK_COLORS[d - 1] || '#888';
+      el.textContent = d;
+      el.id = `disk-${d}`;
+      tower.appendChild(el);
+    });
   });
-  const log = document.getElementById('move-log');
-  if (msg && msg !== 'Trạng thái ban đầu') {
-    const item = document.createElement('div');
-    item.className = 'move-item current';
-    item.textContent = `[${moveIdx}] ${msg}`;
-    log.appendChild(item);
-    log.scrollTop = log.scrollHeight;
-    setTimeout(() => item.classList.remove('current'), 800);
-  }
 }
 
-// PLAYBACK
+// Step application
+let currentCallMap = {};
+let fibCallCursor = 0;
 function applyStep(s) {
-  callCount++;
-  document.getElementById('info-calls').textContent = callCount;
-
-  if (currentProblem === 'factorial') {
-    renderStack(s.stack);
-    highlightCode(s.codeLine);
-    document.getElementById('info-depth').textContent = s.stack.length;
-    document.getElementById('info-step').textContent = s.desc;
-    if (s.result !== undefined && s.result !== null) {
-      document.getElementById('factorial-result').style.display = 'block';
-      document.getElementById('factorial-val').textContent = s.result;
-    }
-  } else if (currentProblem === 'fibonacci') {
-    const isNew = fibNodes[s.nodeId].state !== 'visited';
-    fibNodes[s.nodeId].state = 'visited';
-    renderFibTree(s.nodeId, isNew);
-    document.getElementById('info-step').textContent = `Tính fib(${fibNodes[s.nodeId].n})`;
-    document.getElementById('info-depth').textContent = s.order;
-    if (stepIndex === steps.length - 1) {
-      document.getElementById('fib-result').style.display = 'block';
-      document.getElementById('fib-calls').textContent = steps.length;
-      document.getElementById('fib-val').textContent = 5;
-    }
-  } else if (currentProblem === 'hanoi') {
-    renderHanoi(s.pegs, s.msg, stepIndex);
-    highlightCode(s.codeLine);
-    document.getElementById('info-step').textContent = s.msg;
+  if (!s) return;
+  switch (s.type) {
+    case 'call':
+      callCount++;
+      document.getElementById('s-calls').textContent = callCount;
+      if (s.isDup) {
+        dupCount++;
+        document.getElementById('s-dup').textContent = dupCount;
+      }
+      pushFrame(`fib(${s.n})`, false);
+      setNodeClass(fibCallCursor, s.isDup ? 'duplicate' : 'active');
+      currentCallMap[s.myId] = fibCallCursor;
+      fibCallCursor++;
+      updateStatusFib('call', s.n, s.isDup);
+      hl(s.n <= 1 ? 2 : 4);
+      setExplain(s.isDup ? '⚠️' : '📞', s.isDup ? 'dup' : 'call',
+        `Gọi <b>fib(${s.n})</b> — push frame lên Call Stack. ${s.isDup ? `⚠️ <b>Đã tính trước đó!</b> Đây là lần gọi lãng phí — Memoization sẽ loại bỏ.` : `Cần <b>fib(${s.n - 1})</b> + <b>fib(${s.n - 2})</b> để tính.`}`);
+      setInsight(`📚 Call Stack depth ${s.depth}`, `Stack frame <b>fib(${s.n})</b> đang chờ kết quả từ <b>fib(${s.n - 1})</b>. ${s.depth > 0 ? `Hàm cha fib(${s.n + 1 < fibN + 1 ? s.n + 1 : fibN}) đang bị block.` : ''}`);
+      break;
+    case 'base':
+      setNodeClass(currentCallMap[s.myId], 'base-case');
+      setNodeValue(currentCallMap[s.myId], s.val);
+      popFrame();
+      updateStatusFib('base', s.n, false);
+      hl(2);
+      setExplain('⚓', 'base', `<b>Base case!</b> fib(${s.n}) = <b>${s.val}</b>. Điều kiện dừng — không gọi đệ quy tiếp nữa.`);
+      setInsight('⚓ Base Case', `fib(0)=0 và fib(1)=1 là các trường hợp cơ sở. <b>Thiếu base case → đệ quy vô tận → Stack Overflow!</b>`);
+      break;
+    case 'return':
+      setNodeClass(currentCallMap[s.myId], 'computed');
+      setNodeValue(currentCallMap[s.myId], s.val);
+      popFrame();
+      updateStatusFib('return', s.n, false, s.val);
+      hl(6);
+      setExplain('↩️', 'ret', `fib(${s.n}) = <b>${s.val}</b> — Pop frame khỏi stack, trả về cho hàm cha.`);
+      setInsight(`✅ Kết quả fib(${s.n})`, `<b>${s.val}</b> được tính bằng fib(${s.n - 1}) + fib(${s.n - 2}). Frame được pop khỏi call stack.`);
+      break;
+    case 'h-call':
+      pushFrame(`hanoi(${s.n},${s.from}→${s.to})`, false);
+      hl(3);
+      setExplain('📞', 'call', `hanoi(<b>${s.n}</b>, ${s.from}→${s.to}, aux=${s.aux}). Bước 1: chuyển ${s.n - 1} đĩa từ ${s.from}→${s.aux}.`);
+      break;
+    case 'h-move':
+      renderHanoi(s.pegs);
+      document.getElementById('hanoi-moves').textContent = s.moveNum;
+      const disk = document.getElementById(`disk-${s.disk}`);
+      if (disk) { disk.classList.add('moving'); setTimeout(() => disk.classList.remove('moving'), 400); }
+      hl(5);
+      setExplain('🎯', 'call', `Di chuyển đĩa <b>${s.disk}</b> từ cọc <b>${s.from}</b> → cọc <b>${s.to}</b>. Đây là bước "move" của thuật toán.`);
+      setInsight(`🗼 Di chuyển #${s.moveNum}`, `Đĩa <b>${s.disk}</b> từ ${s.from}→${s.to}. Tổng cộng sẽ cần <b>${Math.pow(2, hanoiN) - 1}</b> lần di chuyển (2ⁿ-1).`);
+      break;
+    case 'h-return':
+      popFrame();
+      hl(7);
+      setExplain('↩️', 'ret', `hanoi(${s.n}, ${s.from}→${s.to}) hoàn thành. Pop frame.`);
+      break;
+    case 'hanoi-init':
+      renderHanoi(s.pegs);
+      break;
+    case 'done':
+      stopPlay();
+      updateStatusFib('done', fibN, false);
+      setExplain('🎉', 'ret', mode === 'fib' ? `Hoàn tất! fib(${fibN}) = <b>${getFib(fibN)}</b>. Tổng <b>${callCount}</b> lần gọi, <b>${dupCount}</b> lần tính lại.` : `Tower of Hanoi ${hanoiN} đĩa hoàn tất! Đã dùng <b>${Math.pow(2, hanoiN) - 1}</b> bước.`);
+      setInsight('📈 Kết luận', mode === 'fib' ? `Fibonacci naive: <b>O(2ⁿ)</b> — exponential! Với n=5 đã cần ${callCount} lần gọi. Memoization giảm còn <b>O(n)</b>.` : `Hanoi n=${hanoiN}: <b>${Math.pow(2, hanoiN) - 1}</b> bước. Công thức: 2ⁿ-1. Với n=64: khoảng <b>584 tỷ năm</b>!`);
+      break;
   }
 }
 
-function highlightCode(lineIdx) {
-  document.querySelectorAll('.code-line').forEach((el, i) => el.classList.toggle('hl', i === lineIdx));
+function getFib(n) { if (n <= 1) return n; return getFib(n - 1) + getFib(n - 2); }
+
+function updateStatusFib(type, n, isDup, val) {
+  const d = document.getElementById('status-display');
+  if (type === 'done') { d.innerHTML = `<span class="sd-frame sd-return">🎉 Hoàn tất! fib(${fibN}) = ${getFib(fibN)}</span>`; return; }
+  if (type === 'base') { d.innerHTML = `<span class="sd-frame sd-base">⚓ Base case: fib(${n}) = ${n}</span>`; return; }
+  if (type === 'return') { d.innerHTML = `<span class="sd-frame sd-return">↩ fib(${n}) = ${val}</span>`; return; }
+  if (isDup) { d.innerHTML = `<span class="sd-frame sd-dup">⚠️ fib(${n}) — Tính lại! (Lãng phí)</span>`; return; }
+  d.innerHTML = `<span class="sd-frame">📞 fib(${n}) → push frame</span>`;
 }
 
-function getDelay() {
-  return [900, 650, 450, 280, 150][parseInt(document.getElementById('speed-slider').value) - 1];
+function setExplain(icon, iconClass, html) {
+  const ic = document.querySelector('#explain-viz .step-icon');
+  ic.textContent = icon; ic.className = 'step-icon ' + iconClass;
+  document.getElementById('explain-text').innerHTML = html;
+  document.getElementById('step-counter').textContent = `${stepIdx}/${steps.length}`;
 }
-
-function stepOnce() {
-  if (stepIndex >= steps.length) return;
-  applyStep(steps[stepIndex]);
-  stepIndex++;
-  if (stepIndex >= steps.length) stopPlay();
+function setInsight(title, html) {
+  document.getElementById('insight').innerHTML = `<div class="insight-title">${title}</div>${html}`;
 }
-
-function togglePlay() {
-  if (playing) { stopPlay(); return; }
-  playing = true;
-  document.getElementById('btn-play').textContent = '⏸ Pause';
-  function tick() {
-    if (stepIndex >= steps.length) { stopPlay(); return; }
-    stepOnce();
-    timer = setTimeout(tick, getDelay());
-  }
-  tick();
+function hl(i) {
+  document.querySelectorAll('.code-line').forEach(e => e.classList.remove('active'));
+  const el = document.querySelector(`[data-i="${i}"]`);
+  if (el) el.classList.add('active');
 }
-
-function stopPlay() {
-  playing = false; clearTimeout(timer);
-  document.getElementById('btn-play').textContent = '▶ Play';
-}
-
-function resetAll() {
-  stopPlay(); stepIndex = 0; callCount = 0; prevFrameCount = 0;
-  document.getElementById('info-calls').textContent = 0;
-  document.getElementById('info-depth').textContent = 0;
-  document.getElementById('info-step').textContent = '—';
-  initProblem(currentProblem);
-}
-
-function renderCode(prob) {
-  const lines = codes[prob];
-  document.getElementById('code-body').innerHTML = lines.map((l, i) =>
-    `<div class="code-line ${l.cls}" data-line="${i}">${l.text || '&nbsp;'}</div>`
+function buildCode(lines) {
+  document.getElementById('code').innerHTML = lines.map((l, i) =>
+    `<div class="code-line${l.trim().startsWith('//')?' comment':''}" data-i="${i}">${l}</div>`
   ).join('');
 }
 
-function initProblem(prob) {
-  renderCode(prob);
-  if (prob === 'factorial') {
-    steps = genFactorialSteps(5);
-    document.getElementById('factorial-stack').innerHTML = '<div style="color:#2d2d4e;font-size:0.8rem;padding:40px;text-align:center;">Stack trống — nhấn Play</div>';
-    document.getElementById('factorial-result').style.display = 'none';
-    document.getElementById('factorial-warn').style.display = 'none';
-  } else if (prob === 'fibonacci') {
-    steps = genFibSteps();
-    renderFibTree(null, false);
-    document.getElementById('fib-result').style.display = 'none';
-  } else if (prob === 'hanoi') {
-    steps = genHanoiSteps(3);
-    document.getElementById('move-log').innerHTML = '<div style="color:#4b5563;">Nhấn Play để bắt đầu...</div>';
-    renderHanoi(steps[0].pegs, '', 0);
-    stepIndex = 1; callCount = 0;
+function switchMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-tab').forEach((t, i) => t.classList.toggle('active', (i === 0) === (m === 'fib')));
+  document.getElementById('fib-view').style.display = m === 'fib' ? '' : 'none';
+  document.getElementById('hanoi-view').style.display = m === 'hanoi' ? '' : 'none';
+  document.getElementById('code-panel').querySelector('.panel-title').textContent = m === 'fib' ? '📝 Fibonacci — Đệ quy' : '📝 Tower of Hanoi';
+  buildCode(m === 'fib' ? FIB_CODE : HANOI_CODE);
+  reset();
+}
+
+function getDelay() { return Math.round(1200 - document.getElementById('speed').value * 110); }
+function tick() { if (stepIdx >= steps.length) { stopPlay(); return; } applyStep(steps[stepIdx++]); if (playing) timer = setTimeout(tick, getDelay()); }
+function startPlay() { if (stepIdx >= steps.length) reset(); playing = true; document.getElementById('btn-play').textContent = '⏸ Pause'; tick(); }
+function stopPlay() { playing = false; clearTimeout(timer); document.getElementById('btn-play').textContent = '▶ Play'; }
+
+function reset() {
+  stopPlay();
+  stepIdx = 0; callCount = 0; dupCount = 0; maxDepth = 0; stackFrames = []; fibCallCursor = 0;
+  document.getElementById('s-calls').textContent = '0';
+  document.getElementById('s-depth').textContent = '0';
+  document.getElementById('s-dup').textContent = '0';
+  document.getElementById('stack-frames').innerHTML = '';
+  document.getElementById('stack-depth').textContent = 'Depth: 0';
+  document.getElementById('status-display').innerHTML = `<span class="sd-idle">Nhấn Play để bắt đầu trình diễn thuật toán</span>`;
+  setExplain('💡', 'info', mode === 'fib'
+    ? `Fibonacci: fib(${fibN}) = fib(${fibN - 1}) + fib(${fibN - 2}). Xem cây gọi đệ quy và các node bị tính lại (màu đỏ).`
+    : `Tower of Hanoi ${hanoiN} đĩa. Cần <b>${Math.pow(2, hanoiN) - 1}</b> bước di chuyển.`);
+  setInsight('💡 Đệ quy là gì?', 'Hàm gọi lại chính nó với bài toán <b>nhỏ hơn</b>. Cần: (1) Base case để dừng, (2) Bài toán nhỏ hơn mỗi bước, (3) Kết hợp kết quả.');
+  if (mode === 'fib') {
+    fibN = +document.getElementById('fib-n-sel').value;
+    buildFibSteps();
+    document.getElementById('fib-view').innerHTML = '<svg id="fib-svg" style="position:absolute;inset:0;width:100%;height:100%"></svg>';
+    setTimeout(initFibTree, 50);
+  } else {
+    buildHanoiSteps();
+    const initStep = steps.find(s => s.type === 'hanoi-init');
+    if (initStep) renderHanoi(initStep.pegs);
+    document.getElementById('hanoi-moves').textContent = '0';
   }
+  hl(-1);
 }
 
-function switchProblem(prob) {
-  stopPlay(); currentProblem = prob; stepIndex = 0; callCount = 0;
-  document.querySelectorAll('.tab').forEach((t, i) =>
-    t.classList.toggle('active', ['factorial', 'fibonacci', 'hanoi'][i] === prob));
-  document.querySelectorAll('.prob').forEach(s => s.classList.remove('active'));
-  document.getElementById(`prob-${prob}`).classList.add('active');
-  initProblem(prob);
-}
+document.getElementById('btn-play').onclick = () => playing ? stopPlay() : startPlay();
+document.getElementById('btn-step').onclick = () => { stopPlay(); if (stepIdx < steps.length) applyStep(steps[stepIdx++]); };
+document.getElementById('btn-reset').onclick = reset;
+document.getElementById('fib-n-sel').onchange = () => { fibN = +document.getElementById('fib-n-sel').value; reset(); };
+document.getElementById('hanoi-n-sel').onchange = () => { hanoiN = +document.getElementById('hanoi-n-sel').value; if (mode === 'hanoi') reset(); };
 
-initProblem('factorial');
+buildCode(FIB_CODE);
+reset();
 </script>
 </body>
 </html>

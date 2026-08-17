@@ -3,609 +3,451 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>22 - Thuật Toán Tham Lam (Greedy)</title>
+<title>Greedy — Thuật Toán Tham Lam</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0a0a1a; color: #e0e0f0; font-family: 'Segoe UI', monospace; min-height: 100vh;
-    background-image: radial-gradient(ellipse at 60% 30%, rgba(251,146,60,0.06) 0%, transparent 60%); }
-  h1 { text-align: center; padding: 18px; background: linear-gradient(135deg, #1a0f05, #1c1005);
-    font-size: 1.5rem; color: #fb923c; border-bottom: 2px solid #ea580c; letter-spacing: 2px;
-    text-shadow: 0 0 20px rgba(251,146,60,0.5); }
-  .subtitle { text-align: center; font-size: 0.85rem; color: #94a3b8; padding: 6px; background: #100a04; }
-
-  @keyframes fadeScale { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-  @keyframes slideInLeft { from { transform: translateX(-30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-  @keyframes glowGreen { 0%,100% { box-shadow: 0 0 8px rgba(34,197,94,0.3); }
-    50% { box-shadow: 0 0 25px rgba(34,197,94,0.7), 0 0 40px rgba(34,197,94,0.3); } }
-  @keyframes fadeGray { 0% { opacity: 1; } 100% { opacity: 0.3; } }
-  @keyframes dropIn { 0% { transform: translateY(-40px) scale(0.8); opacity: 0; }
-    60% { transform: translateY(4px) scale(1.05); } 100% { transform: translateY(0) scale(1); opacity: 1; } }
-  @keyframes bounceStack { 0% { transform: scaleX(0.85); } 40% { transform: scaleX(1.05); } 100% { transform: scaleX(1); } }
-  @keyframes coinDrop { 0% { transform: translateY(-30px) scale(0); opacity: 0; }
-    60% { transform: translateY(4px) scale(1.1); } 100% { transform: translateY(0) scale(1); opacity: 1; } }
-  @keyframes pulseOrange { 0%,100% { box-shadow: 0 0 8px rgba(251,146,60,0.3); }
-    50% { box-shadow: 0 0 25px rgba(251,146,60,0.7); } }
-  @keyframes strikethrough { 0% { text-decoration-color: transparent; }
-    100% { text-decoration-color: #ef4444; text-decoration: line-through; } }
-  @keyframes countUp { 0% { transform: translateY(6px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
-
-  .tabs { display: flex; gap: 4px; padding: 10px 16px; background: #100a04; border-bottom: 1px solid #3a2010; }
-  .tab { padding: 8px 18px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem;
-    border: 1px solid #3a2010; border-bottom: none; transition: all 0.25s; color: #6a4020; background: #1a0f05; }
-  .tab.active { background: linear-gradient(135deg, #ea580c, #c2410c); color: #fff; border-color: #ea580c;
-    box-shadow: 0 -4px 15px rgba(234,88,12,0.4); }
-
-  .main { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 110px); }
-  .viz-panel { padding: 16px; overflow-y: auto; background: #0a0a1a; }
-  .code-panel { background: #100a04; border-left: 2px solid #3a2010; display: flex; flex-direction: column; }
-
-  .greedy-principle { padding: 10px 14px; border-radius: 10px; background: linear-gradient(135deg, #1c0f03, #2a1506);
-    border: 1px solid rgba(251,146,60,0.3); margin: 8px 0; font-size: 0.82rem; }
-  .gp-title { color: #fb923c; font-weight: bold; margin-bottom: 4px; }
-  .gp-rule { color: #94a3b8; }
-  .greedy-choice { display: inline-block; padding: 3px 8px; border-radius: 6px;
-    background: rgba(251,146,60,0.15); border: 1px solid #fb923c; color: #fb923c; font-weight: bold;
-    animation: pulseOrange 1.5s ease-in-out infinite; }
-
-  /* Gantt chart with SLIDE IN */
-  .gantt { position: relative; background: linear-gradient(180deg, #0a0a1a, #100a04);
-    border-radius: 12px; border: 1px solid #3a2010; padding: 10px 40px 36px 65px; min-height: 220px; }
-  .gantt-axis { position: absolute; bottom: 22px; left: 65px; right: 40px; height: 2px;
-    background: linear-gradient(90deg, #374151, #4b5563, #374151); }
-  .gantt-tick { position: absolute; bottom: 14px; font-size: 0.6rem; color: #4b5563; transform: translateX(-50%); }
-  .gantt-bar { position: absolute; height: 30px; border-radius: 6px; display: flex;
-    align-items: center; padding: 0 8px; font-size: 0.72rem; font-weight: bold;
-    transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); cursor: default;
-    border: 2px solid transparent; }
-  .gantt-bar.entering { animation: slideInLeft 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .gantt-bar.selected { animation: glowGreen 2s ease-in-out infinite; }
-  .gantt-bar.skipped { opacity: 0.25; filter: grayscale(0.8); text-decoration: line-through; }
-  .gantt-bar.examining { border-color: #fb923c; animation: pulseOrange 0.8s ease-in-out infinite; }
-
-  /* Knapsack with DROP animation */
-  .knapsack-viz { display: flex; gap: 16px; align-items: flex-start; }
-  .items-pool { flex: 1; }
-  .bag-viz { width: 170px; }
-  .item-card { padding: 8px 12px; border-radius: 8px; border: 2px solid #374151;
-    background: linear-gradient(135deg, #1a1005, #0f0c04); margin: 4px 0; font-size: 0.78rem;
-    display: flex; gap: 8px; align-items: center; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .item-card.selected { border-color: #22c55e; background: linear-gradient(135deg, #052e16, #064e20);
-    box-shadow: 0 0 15px rgba(34,197,94,0.3); animation: glowGreen 2s ease-in-out infinite; }
-  .item-card.partial { border-color: #f59e0b; background: linear-gradient(135deg, #1c1209, #2a1a06);
-    box-shadow: 0 0 12px rgba(245,158,11,0.3); }
-  .item-card.examining { border-color: #fb923c; background: linear-gradient(135deg, #1c0f03, #2a1506);
-    box-shadow: 0 0 20px rgba(251,146,60,0.5); transform: scale(1.03);
-    animation: pulseOrange 0.8s ease-in-out infinite; }
-  .item-card.skipped { opacity: 0.3; transform: scale(0.95); }
-  .item-vr { font-size: 0.7rem; color: #6a4020; }
-
-  .bag-container { border: 3px solid #3a2010; border-radius: 10px; min-height: 140px; padding: 8px;
-    background: linear-gradient(180deg, #0a0a1a, #0d0808); position: relative; overflow: hidden; }
-  .bag-fill { position: absolute; bottom: 0; left: 0; right: 0;
-    background: linear-gradient(0deg, rgba(34,197,94,0.2), rgba(34,197,94,0.05));
-    border-top: 2px solid rgba(34,197,94,0.5); transition: height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .bag-weight { text-align: center; font-size: 0.75rem; color: #94a3b8; margin-top: 4px; }
-  .bag-label { text-align: center; font-size: 0.72rem; color: #fb923c; font-weight: bold; margin-bottom: 4px; }
-  .bag-items { position: relative; z-index: 1; }
-  .bag-item-entry { font-size: 0.65rem; padding: 1px 0; animation: dropIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
-
-  /* Coins with DROP animation */
-  .coin-viz { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
-  .coin { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center;
-    justify-content: center; font-size: 0.75rem; font-weight: bold; border: 3px solid;
-    transition: all 0.3s; cursor: default; }
-  .coin.normal { border-color: #fbbf24; background: linear-gradient(135deg, #1c1707, #2a2008); color: #fbbf24; }
-  .coin.used { border-color: #22c55e; background: linear-gradient(135deg, #052e16, #064e20); color: #22c55e;
-    box-shadow: 0 0 15px rgba(34,197,94,0.4); }
-  .coin.examining { border-color: #fb923c; background: linear-gradient(135deg, #1c0f03, #2a1506);
-    animation: pulseOrange 0.7s ease-in-out infinite; }
-  .coin.fail { border-color: #ef4444; background: #3b0f0f; color: #ef4444; }
-
-  .coins-used { display: flex; flex-wrap: wrap; gap: 5px; min-height: 40px; padding: 6px;
-    background: linear-gradient(135deg, #0d0a04, #0a0d04);
-    border-radius: 8px; border: 1px dashed #3a2010; }
-  .coin-used-entry { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #22c55e;
-    background: linear-gradient(135deg, #052e16, #064e20); color: #22c55e;
-    display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold;
-    animation: coinDrop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
-    box-shadow: 0 0 10px rgba(34,197,94,0.3); }
-
-  .fail-box { padding: 10px 14px; border-radius: 8px; background: rgba(239,68,68,0.08);
-    border: 1px solid #ef4444; font-size: 0.8rem; color: #fca5a5; margin: 8px 0;
-    animation: fadeScale 0.4s ease; }
-  .fail-box strong { color: #ef4444; }
-
-  .status-row { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
-  .status-card { flex: 1; min-width: 90px; padding: 9px 12px; border-radius: 10px;
-    background: linear-gradient(135deg, #1a0f05, #120c04); border: 1px solid #3a2010; font-size: 0.8rem; }
-  .status-card .label { font-size: 0.68rem; color: #6a4020; margin-bottom: 3px; }
-  .status-card .val { font-size: 1.05rem; font-weight: bold; color: #fb923c; animation: countUp 0.3s ease; }
-
-  .step-desc { padding: 10px 14px; border-radius: 8px;
-    background: linear-gradient(90deg, #1a0f05, #120c04); border-left: 3px solid #fb923c;
-    font-size: 0.82rem; color: #94a3b8; margin: 8px 0; min-height: 40px; }
-  .step-desc strong { color: #fb923c; }
-
-  .result-box { padding: 12px 16px; border-radius: 10px; background: linear-gradient(135deg, #052e16, #064e20);
-    border: 2px solid #22c55e; font-size: 0.85rem; color: #86efac; margin: 8px 0;
-    animation: fadeScale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .result-box strong { color: #22c55e; text-shadow: 0 0 10px rgba(34,197,94,0.6); }
-
-  .code-header { padding: 10px 14px; background: #100a04; border-bottom: 1px solid #3a2010;
-    font-size: 0.78rem; color: #ea580c; font-weight: bold; }
-  .code-body { flex: 1; overflow-y: auto; padding: 12px; font-size: 0.75rem;
-    font-family: 'Courier New', monospace; line-height: 1.7; }
-  .code-line { padding: 2px 8px; border-radius: 4px; transition: all 0.25s; white-space: pre; color: #5a3010; }
-  .code-line.hl { background: linear-gradient(90deg, #ea580c33, transparent);
-    border-left: 3px solid #fb923c; color: #ffd0a0; }
-  .kw { color: #c084fc; } .fn { color: #60a5fa; } .num { color: #fbbf24; }
-  .cmt { color: #3a2010; font-style: italic; } .str { color: #34d399; }
-
-  .controls { display: flex; gap: 8px; align-items: center; padding: 10px 16px;
-    background: #100a04; border-top: 1px solid #3a2010; flex-wrap: wrap; }
-  .btn { padding: 7px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
-  .btn-play { background: linear-gradient(135deg, #ea580c, #c2410c); color: #fff; }
-  .btn-play:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(234,88,12,0.4); }
-  .btn-step { background: #0e7490; color: #fff; }
-  .btn-reset { background: #374151; color: #d1d5db; }
-  .speed-label { font-size: 0.78rem; color: #94a3b8; }
-  input[type=range] { width: 90px; accent-color: #ea580c; }
-
-  .info-bar { padding: 8px 16px; background: #100a04; font-size: 0.78rem; color: #94a3b8;
-    display: flex; gap: 16px; flex-wrap: wrap; }
-  .info-item strong { color: #fb923c; }
-
-  section.prob { display: none; }
-  section.prob.active { display: block; }
+  :root{
+    --bg:#0e1525;--surface:#151d32;--surface2:#1c2744;--border:#2a3a5c;
+    --text:#eef1f8;--muted:#8899bb;--accent:#a78bfa;--yellow:#ffd43b;
+    --sel-top:#2ecc71;--sel-bot:#1a9c54;--sel-glow:rgba(46,204,113,.55);
+    --rej-top:#636e72;--rej-bot:#4a5568;
+    --conflict-top:#ff5e7a;--conflict-bot:#c0143c;--conflict-glow:rgba(255,94,122,.5);
+    --coin-top:#ffd43b;--coin-bot:#e6a800;--coin-glow:rgba(255,212,59,.5);
+    --fail-top:#ff5e7a;--fail-bot:#c0143c;--fail-glow:rgba(255,94,122,.5);
+    --item-top:#a29bfe;--item-bot:#6c5ce7;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 25% 15%,rgba(46,204,113,.06) 0%,transparent 50%),radial-gradient(ellipse at 75% 85%,rgba(255,212,59,.05) 0%,transparent 50%);pointer-events:none}
+  header{background:var(--surface);padding:10px 24px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border)}
+  header h1{font-size:1.15rem;font-weight:700;background:linear-gradient(135deg,#2ecc71,#ffd43b);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .badge{background:linear-gradient(135deg,#2ecc71,#00b894);color:#fff;padding:2px 10px;border-radius:12px;font-size:.68rem;font-weight:700}
+  .complexity{display:flex;gap:6px;margin-left:auto}
+  .cx{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:2px 9px;font-size:.72rem;color:var(--muted)}
+  .cx span{color:var(--yellow);font-weight:700}
+  main{flex:1;display:flex;overflow:hidden;z-index:1;min-height:0}
+  #viz{flex:1;display:flex;flex-direction:column;min-width:0}
+  /* Status Display */
+  #status-display{padding:8px 20px;min-height:58px;display:flex;align-items:center;justify-content:center;gap:14px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .sd-idle{color:var(--muted);font-size:.95rem}
+  .sb{padding:5px 14px;border-radius:10px;text-align:center;font-weight:700}
+  .sb .sl{font-size:.62rem;color:var(--muted)}
+  .sb .sv{font-size:1.1rem}
+  .sb.sel{background:rgba(46,204,113,.12);border:1px solid rgba(46,204,113,.3);animation:fadeIn .3s ease}
+  .sb.sel .sv{color:var(--sel-top)}
+  .sb.rej{background:rgba(99,110,114,.12);border:1px solid rgba(99,110,114,.3)}
+  .sb.rej .sv{color:var(--rej-top)}
+  .sb.tot{background:rgba(255,212,59,.12);border:1px solid rgba(255,212,59,.3)}
+  .sb.tot .sv{color:var(--yellow)}
+  .sb.fail{background:rgba(255,94,122,.12);border:1px solid rgba(255,94,122,.3);animation:shake .4s ease}
+  .sb.fail .sv{color:var(--fail-top)}
+  /* Explain */
+  #explain-viz{padding:10px 24px;min-height:52px;background:linear-gradient(135deg,rgba(21,29,50,.95),rgba(28,39,68,.9));border-bottom:1px solid var(--border);font-size:.88rem;line-height:1.55;color:var(--text);display:flex;align-items:center;gap:12px}
+  #explain-viz .step-icon{flex-shrink:0;width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all .3s}
+  .step-icon.sel{background:rgba(46,204,113,.15);border:1px solid rgba(46,204,113,.3)}
+  .step-icon.rej{background:rgba(99,110,114,.15);border:1px solid rgba(99,110,114,.3)}
+  .step-icon.warn{background:rgba(255,94,122,.15);border:1px solid rgba(255,94,122,.3)}
+  .step-icon.coin{background:rgba(255,212,59,.15);border:1px solid rgba(255,212,59,.3)}
+  .step-icon.info{background:rgba(91,141,239,.15);border:1px solid rgba(91,141,239,.3)}
+  #explain-text{flex:1}
+  #explain-text b{color:var(--yellow)}
+  #explain-text code{background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.8rem;color:var(--accent)}
+  #step-counter{font-size:.72rem;color:var(--muted);white-space:nowrap}
+  /* Mode tabs */
+  #mode-tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border)}
+  .mode-tab{padding:8px 18px;font-size:.78rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+  .mode-tab.active{color:var(--accent);border-bottom-color:var(--accent);background:var(--surface2)}
+  /* Main viz area */
+  #viz-area{flex:1;overflow:hidden;padding:16px 24px;display:flex;flex-direction:column;gap:14px}
+  /* Activity Selection: Gantt */
+  #gantt{display:flex;flex-direction:column;gap:8px}
+  #gantt-header{display:flex;gap:0;border-bottom:1px solid var(--border);padding-bottom:4px;margin-left:80px}
+  .gh-tick{flex:1;text-align:center;font-size:.65rem;color:var(--muted)}
+  .gantt-row{display:flex;align-items:center;gap:8px}
+  .gr-label{width:72px;font-size:.78rem;font-weight:600;color:var(--text);text-align:right;flex-shrink:0}
+  .gr-bar-wrap{flex:1;height:28px;background:var(--surface2);border-radius:5px;position:relative;border:1px solid var(--border)}
+  .gr-bar{position:absolute;top:2px;bottom:2px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:#fff;transition:all .4s ease}
+  .gr-bar.pending{background:var(--surface2);border:1px dashed var(--border);color:var(--muted)}
+  .gr-bar.selected{background:linear-gradient(135deg,var(--sel-top),var(--sel-bot));box-shadow:0 0 12px var(--sel-glow)}
+  .gr-bar.rejected{background:linear-gradient(135deg,var(--rej-top),var(--rej-bot));opacity:.5}
+  .gr-bar.conflict{background:linear-gradient(135deg,var(--conflict-top),var(--conflict-bot));animation:flash .4s ease 2}
+  .gr-bar.current{background:linear-gradient(135deg,var(--coin-top),var(--coin-bot));box-shadow:0 0 12px var(--coin-glow);color:#000}
+  /* Coin change */
+  #coin-area{display:flex;flex-direction:column;gap:12px}
+  .coin-denom-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .coin{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:800;background:linear-gradient(135deg,var(--coin-top),var(--coin-bot));box-shadow:0 0 10px var(--coin-glow),inset 0 1px 0 rgba(255,255,255,.3);color:#000;border:2px solid rgba(255,212,59,.4);transition:all .4s cubic-bezier(.34,1.56,.64,1);cursor:default}
+  .coin.used{transform:scale(1.12) translateY(-4px);box-shadow:0 0 20px var(--coin-glow)}
+  .coin.fail-coin{background:linear-gradient(135deg,var(--fail-top),var(--fail-bot));box-shadow:0 0 14px var(--fail-glow);color:#fff;animation:shake .4s ease}
+  #coin-result{display:flex;gap:8px;flex-wrap:wrap;min-height:48px;padding:8px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);align-items:center}
+  .coin-used{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:800;background:linear-gradient(135deg,var(--coin-top),var(--coin-bot));color:#000;animation:coinDrop .4s cubic-bezier(.34,1.56,.64,1)}
+  .coin-used.fail{background:linear-gradient(135deg,var(--fail-top),var(--fail-bot));color:#fff}
+  #coin-target-info{display:flex;gap:16px;align-items:center}
+  .ct-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:6px 18px;text-align:center}
+  .ct-box .ctl{font-size:.68rem;color:var(--muted)}
+  .ct-box .ctv{font-size:1.3rem;font-weight:800;color:var(--yellow)}
+  /* Failure demo */
+  #failure-banner{padding:10px 16px;background:rgba(255,94,122,.08);border:1px solid rgba(255,94,122,.3);border-radius:10px;font-size:.82rem;color:var(--conflict-top);display:none}
+  #failure-banner b{color:#fff}
+  /* Bottom */
+  #bottom-bar{display:flex;align-items:center;background:var(--surface);border-top:1px solid var(--border)}
+  #legend{flex:1;display:flex;gap:14px;padding:7px 24px;font-size:.74rem;color:var(--muted);flex-wrap:wrap}
+  .leg{display:flex;align-items:center;gap:6px}
+  .ld{width:12px;height:12px;border-radius:3px}
+  /* Code panel */
+  #code-panel{width:310px;min-width:270px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column}
+  .panel-title{padding:10px 14px;background:var(--surface2);font-size:.78rem;font-weight:600;color:var(--accent);border-bottom:1px solid var(--border)}
+  #code{flex:1;overflow-y:auto;padding:10px 0;font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:.78rem;line-height:2}
+  .code-line{padding:0 14px;color:#5a6d8e;white-space:pre;border-left:3px solid transparent;transition:all .2s}
+  .code-line.comment{color:#3a4d6e;font-style:italic}
+  .code-line.active{background:linear-gradient(90deg,rgba(255,212,59,.1),transparent);color:var(--yellow);border-left-color:var(--yellow);font-weight:600}
+  #insight{padding:12px 14px;background:var(--bg);border-top:1px solid var(--border);font-size:.8rem;line-height:1.5;color:var(--muted)}
+  #insight .insight-title{color:var(--accent);font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  #insight b{color:var(--text)}
+  /* Controls */
+  #controls{background:var(--surface);padding:8px 24px;display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);flex-wrap:wrap}
+  button{border:none;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:.8rem;font-weight:600;transition:all .2s}
+  button:active{transform:scale(.95)}
+  #btn-play{background:linear-gradient(135deg,#00b894,#05c46b);color:#fff;box-shadow:0 2px 10px rgba(5,196,107,.25);min-width:85px}
+  #btn-step{background:linear-gradient(135deg,#7c5ce7,#a78bfa);color:#fff}
+  #btn-reset,#btn-new{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+  label{font-size:.76rem;color:var(--muted)}
+  input[type=range]{accent-color:var(--accent);width:80px}
+  select{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:3px 6px;font-size:.76rem}
+  #stats{display:flex;gap:8px;margin-left:auto}
+  .stat{background:var(--surface2);padding:4px 10px;border-radius:6px;font-size:.8rem;color:var(--muted);border:1px solid var(--border)}
+  .stat span{color:var(--yellow);font-weight:800}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  @keyframes flash{0%,100%{opacity:1}50%{opacity:.3}}
+  @keyframes coinDrop{from{transform:scale(0) translateY(-20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
-
-<h1>🤑 Thuật Toán Tham Lam (Greedy)</h1>
-<div class="subtitle">Tư duy: Luôn chọn lựa chọn TỐT NHẤT tại thời điểm hiện tại — Không nhìn lại</div>
-
-<div class="tabs">
-  <div class="tab active" onclick="switchProblem('activity')">📅 Activity Selection</div>
-  <div class="tab" onclick="switchProblem('knapsack')">🎒 Fractional Knapsack</div>
-  <div class="tab" onclick="switchProblem('coin')">🪙 Coin Change</div>
-</div>
-
-<div class="main">
-  <div class="viz-panel">
-
-    <section class="prob active" id="prob-activity">
-      <div class="greedy-principle">
-        <div class="gp-title">🍀 Greedy Choice — Activity Selection</div>
-        <div class="gp-rule">Luôn chọn activity có <span class="greedy-choice">thời gian kết thúc sớm nhất</span> → Tối đa số activity</div>
-      </div>
-      <p style="font-size:0.8rem;color:#5a3010;margin:6px 0;">8 activities — chọn không-giao-thoa nhiều nhất có thể</p>
-      <div class="gantt" id="gantt-chart">
-        <div class="gantt-axis"></div>
-      </div>
-      <div class="step-desc" id="activity-desc">Nhấn Play để bắt đầu</div>
-      <div class="status-row">
-        <div class="status-card"><div class="label">Đang xét</div><div class="val" id="act-cur">—</div></div>
-        <div class="status-card"><div class="label">Selected</div><div class="val" id="act-selected">0</div></div>
-        <div class="status-card"><div class="label">Last end</div><div class="val" id="act-lastend">0</div></div>
-      </div>
-      <div class="result-box" id="activity-result" style="display:none">
-        ✅ Max activities: <strong id="activity-ans">—</strong>
-      </div>
-    </section>
-
-    <section class="prob" id="prob-knapsack">
-      <div class="greedy-principle">
-        <div class="gp-title">🍀 Greedy Choice — Fractional Knapsack</div>
-        <div class="gp-rule">Luôn chọn item có <span class="greedy-choice">value/weight cao nhất</span> → Có thể lấy phần (fraction)</div>
-      </div>
-      <p style="font-size:0.8rem;color:#5a3010;margin:6px 0;">Capacity = 50 | Tìm max value</p>
-      <div class="knapsack-viz">
-        <div class="items-pool">
-          <div style="font-size:0.72rem;color:#5a3010;margin-bottom:6px;">Items (sắp xếp theo v/w giảm dần):</div>
-          <div id="kp-items"></div>
-        </div>
-        <div class="bag-viz">
-          <div class="bag-label">🎒 Túi (cap=50)</div>
-          <div class="bag-container" id="kp-bag">
-            <div class="bag-fill" id="kp-fill" style="height:0%"></div>
-            <div class="bag-items" id="kp-bag-items"></div>
-          </div>
-          <div class="bag-weight">Weight: <span id="kp-weight">0</span>/50</div>
-        </div>
-      </div>
-      <div class="step-desc" id="knapsack-desc">Nhấn Play để bắt đầu</div>
-      <div class="status-row">
-        <div class="status-card"><div class="label">Current item</div><div class="val" id="kp-cur">—</div></div>
-        <div class="status-card"><div class="label">Total value</div><div class="val" id="kp-val">0</div></div>
-        <div class="status-card"><div class="label">Remaining cap</div><div class="val" id="kp-rem">50</div></div>
-      </div>
-      <div class="result-box" id="knapsack-result" style="display:none">
-        ✅ Max value: <strong id="knapsack-ans">—</strong>
-      </div>
-    </section>
-
-    <section class="prob" id="prob-coin">
-      <div class="greedy-principle">
-        <div class="gp-title">🍀 Greedy Choice — Coin Change</div>
-        <div class="gp-rule">Luôn dùng đồng xu có mệnh giá <span class="greedy-choice">lớn nhất có thể</span><br>
-          ⚠️ Chỉ đúng với hệ xu chuẩn (1,5,10,25) — SAI với hệ tùy ý!</div>
-      </div>
-      <p style="font-size:0.8rem;color:#5a3010;margin:4px 0 8px;">
-        Amount = 30 | Coins: [1, 5, 10, 25] vs [1, 3, 4] (hệ tùy ý)
-      </p>
-      <div style="display:flex;gap:10px;margin-bottom:8px;">
-        <button class="btn" style="background:linear-gradient(135deg,#059669,#047857);color:#fff;font-size:0.78rem;padding:6px 12px;" onclick="setCoinMode('standard')">✅ Chuẩn [1,5,10,25]</button>
-        <button class="btn" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:0.78rem;padding:6px 12px;" onclick="setCoinMode('arbitrary')">❌ Tùy ý [1,3,4] (Fail)</button>
-      </div>
-      <div style="font-size:0.78rem;color:#94a3b8;margin-bottom:8px;" id="coin-mode-label">Chế độ: Chuẩn (Greedy đúng)</div>
-      <div style="font-size:0.72rem;color:#5a3010;margin-bottom:4px;">Coins có thể dùng:</div>
-      <div class="coin-viz" id="coin-options"></div>
-      <div style="font-size:0.72rem;color:#5a3010;margin:8px 0 4px;">Coins đã dùng:</div>
-      <div class="coins-used" id="coins-used"></div>
-      <div class="step-desc" id="coin-desc">Nhấn Play để bắt đầu</div>
-      <div class="status-row">
-        <div class="status-card"><div class="label">Remaining</div><div class="val" id="cn-rem">30</div></div>
-        <div class="status-card"><div class="label">Coins used</div><div class="val" id="cn-count">0</div></div>
-      </div>
-      <div class="result-box" id="coin-result" style="display:none">
-        ✅ Greedy: <strong id="coin-ans">—</strong>
-      </div>
-      <div class="fail-box" id="coin-fail" style="display:none">
-        ❌ <strong>Greedy FAIL!</strong> Dùng <span id="coin-greedy-coins">—</span> coins nhưng optimal chỉ cần <span id="coin-optimal-coins">—</span> coins
-        <br><small style="color:#9ca3af;">Ví dụ: target=6, [1,3,4]: Greedy 4+1+1=3 coins, Optimal 3+3=2 coins</small>
-      </div>
-    </section>
-
+<header>
+  <h1>🤑 Greedy</h1>
+  <span class="badge">PARADIGM</span>
+  <div class="complexity">
+    <div class="cx">Activity <span>O(n log n)</span></div>
+    <div class="cx">Coin Change <span>O(n·amount)</span></div>
+    <div class="cx">Locally optimal <span>≠ Global</span></div>
   </div>
-
-  <div class="code-panel">
-    <div class="code-header">📄 Pseudocode</div>
-    <div class="code-body" id="code-body"></div>
-    <div class="info-bar">
-      <div class="info-item"><strong>Step:</strong> <span id="info-step">0</span></div>
-      <div class="info-item"><strong>Phase:</strong> <span id="info-phase">—</span></div>
+</header>
+<main>
+  <div id="viz">
+    <div id="status-display"><span class="sd-idle">Nhấn Play để bắt đầu trình diễn thuật toán</span></div>
+    <div id="explain-viz">
+      <div class="step-icon info">💡</div>
+      <div id="explain-text">Greedy: luôn chọn lựa tối ưu cục bộ tại mỗi bước, hy vọng đạt tối ưu toàn cục. Không phải lúc nào cũng đúng!</div>
+      <div id="step-counter"></div>
     </div>
-    <div class="controls">
-      <button class="btn btn-play" id="btn-play" onclick="togglePlay()">▶ Play</button>
-      <button class="btn btn-step" onclick="stepOnce()">⏭ Step</button>
-      <button class="btn btn-reset" onclick="resetAll()">↺ Reset</button>
-      <span class="speed-label">Tốc độ:</span>
-      <input type="range" min="1" max="5" value="3" id="speed-slider">
+    <div id="mode-tabs">
+      <div class="mode-tab active" onclick="switchMode('activity')">📅 Activity Selection</div>
+      <div class="mode-tab" onclick="switchMode('coin')">🪙 Coin Change (Success)</div>
+      <div class="mode-tab" onclick="switchMode('coin-fail')">⚠️ Greedy FAIL (Coin)</div>
+    </div>
+    <div id="viz-area">
+      <div id="gantt" style="display:none"></div>
+      <div id="coin-area" style="display:none">
+        <div id="coin-target-info"></div>
+        <div class="coin-denom-row" id="coin-denoms"></div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:4px">Đã chọn:</div>
+        <div id="coin-result"></div>
+        <div id="failure-banner"></div>
+      </div>
+    </div>
+    <div id="bottom-bar">
+      <div id="legend">
+        <div class="leg"><div class="ld" style="background:linear-gradient(135deg,var(--sel-top),var(--sel-bot))"></div>Chọn ✓</div>
+        <div class="leg"><div class="ld" style="background:linear-gradient(135deg,var(--rej-top),var(--rej-bot))"></div>Loại bỏ (xung đột)</div>
+        <div class="leg"><div class="ld" style="background:linear-gradient(135deg,var(--conflict-top),var(--conflict-bot))"></div>Xung đột</div>
+        <div class="leg"><div class="ld" style="background:linear-gradient(135deg,var(--coin-top),var(--coin-bot))"></div>Đang xét</div>
+      </div>
     </div>
   </div>
+  <div id="code-panel">
+    <div class="panel-title">📝 Activity Selection</div>
+    <div id="code"></div>
+    <div id="insight">
+      <div class="insight-title">💡 Tại sao chọn kết thúc sớm nhất?</div>
+      Chọn hoạt động kết thúc sớm nhất → <b>để lại nhiều thời gian nhất</b> cho các hoạt động sau. Chứng minh bằng exchange argument.
+    </div>
+  </div>
+</main>
+<div id="controls">
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-step">⏭ Step</button>
+  <button id="btn-reset">↺ Reset</button>
+  <button id="btn-new">🎲 Mới</button>
+  <label>Speed <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <div id="stats">
+    <div class="stat">Selected <span id="s-sel">0</span></div>
+    <div class="stat">Rejected <span id="s-rej">0</span></div>
+  </div>
 </div>
-
 <script>
-let currentProblem = 'activity';
-let playing = false;
-let timer = null;
-let stepIndex = 0;
-let steps = [];
-let coinMode = 'standard';
-
-const codes = {
-  activity: [
-    '// Activity Selection — Greedy',
-    '// Sắp xếp theo end time tăng dần',
-    'activities.sort(by endTime)',
-    '',
-    'selected = []',
-    'lastEnd = 0',
-    '',
-    'for each activity a:',
-    '  // Greedy choice: kết thúc sớm nhất',
-    '  if a.start >= lastEnd:',
-    '    selected.add(a)  // Chọn!',
-    '    lastEnd = a.end',
-    '  // Không giao thoa → bỏ qua',
-    '',
-    'return selected',
-  ],
-  knapsack: [
-    '// Fractional Knapsack — Greedy',
-    '// Sắp xếp theo v/w giảm dần',
-    'items.sort(by value/weight DESC)',
-    '',
-    'totalValue = 0',
-    'remainCap = capacity',
-    '',
-    'for each item i:',
-    '  if remainCap >= i.weight:',
-    '    // Lấy toàn bộ item',
-    '    totalValue += i.value',
-    '    remainCap -= i.weight',
-    '  elif remainCap > 0:',
-    '    // Lấy phần (fraction)',
-    '    frac = remainCap / i.weight',
-    '    totalValue += i.value * frac',
-    '    remainCap = 0',
-    '  // Hết chỗ → bỏ qua',
-    '',
-    'return totalValue',
-  ],
-  coin: [
-    '// Coin Change — Greedy',
-    '// (Chỉ đúng với denominations chuẩn)',
-    'coins.sort(DESC)',
-    '',
-    'count = 0',
-    'remaining = amount',
-    '',
-    'for each coin c (lớn → nhỏ):',
-    '  while remaining >= c:',
-    '    // Greedy: dùng xu lớn nhất',
-    '    remaining -= c',
-    '    count++',
-    '    usedCoins.add(c)',
-    '',
-    '// ⚠️ Với [1,3,4]: fail!',
-    '// amount=6: 4+1+1=3 coins',
-    '// Optimal:   3+3=2 coins',
-    '// → Cần Dynamic Programming',
-  ]
-};
-
-const activities = [
-  { name: 'A1', start: 1, end: 4, color: '#3b82f6' },
-  { name: 'A2', start: 3, end: 5, color: '#8b5cf6' },
-  { name: 'A3', start: 0, end: 6, color: '#f59e0b' },
-  { name: 'A4', start: 5, end: 7, color: '#10b981' },
-  { name: 'A5', start: 3, end: 9, color: '#ef4444' },
-  { name: 'A6', start: 6, end: 10, color: '#06b6d4' },
-  { name: 'A7', start: 8, end: 11, color: '#f97316' },
-  { name: 'A8', start: 8, end: 12, color: '#a855f7' },
+const ACTIVITY_CODE=[
+  'activities.sort((a,b)=>a.end-b.end);',
+  '// Chọn hoạt động kết thúc sớm nhất',
+  'let lastEnd = -Infinity;',
+  'const selected = [];',
+  'for (const act of activities) {',
+  '  if (act.start >= lastEnd) {',
+  '    selected.push(act);',
+  '    lastEnd = act.end;',
+  '  }',
+  '  // else: xung đột, bỏ qua',
+  '}',
+  'return selected;',
 ];
-const sortedActs = [...activities].sort((a, b) => a.end - b.end);
-
-const kpItems = [
-  { name: 'Item A', w: 10, v: 60, ratio: 6 },
-  { name: 'Item B', w: 20, v: 100, ratio: 5 },
-  { name: 'Item C', w: 30, v: 120, ratio: 4 },
+const COIN_CODE=[
+  'function coinChange(coins, amount) {',
+  '  // Sắp xếp giảm dần',
+  '  coins.sort((a,b) => b-a);',
+  '  const result = [];',
+  '  for (const coin of coins) {',
+  '    while (amount >= coin) {',
+  '      result.push(coin);',
+  '      amount -= coin;',
+  '    }',
+  '  }',
+  '  return amount===0 ? result : "FAIL";',
+  '}',
 ];
-
-function genActivitySteps() {
-  const steps = [];
-  let lastEnd = 0;
-  const selected = [];
-  steps.push({ phase: 'sort', acts: sortedActs.map(a => ({ ...a, state: 'pending' })), lastEnd: 0, selected: [], desc: 'Sắp xếp theo end time: ' + sortedActs.map(a => `${a.name}(end=${a.end})`).join(', '), codeLine: 2 });
-  sortedActs.forEach((act, i) => {
-    const can = act.start >= lastEnd;
-    const stateMap = {};
-    sortedActs.forEach((a, j) => {
-      if (selected.includes(a.name)) stateMap[a.name] = 'selected';
-      else if (j < i) stateMap[a.name] = 'skipped';
-      else if (j === i) stateMap[a.name] = 'examining';
-      else stateMap[a.name] = 'pending';
-    });
-    steps.push({
-      phase: 'examine', acts: sortedActs.map(a => ({ ...a, state: stateMap[a.name] })),
-      lastEnd, selected: [...selected], examining: act.name,
-      desc: `Xét ${act.name} [${act.start},${act.end}]: start=${act.start} ${can ? '>=' : '<'} lastEnd=${lastEnd} → ${can ? '✅ CHỌN!' : '❌ BỎ QUA'}`,
-      codeLine: can ? 10 : 12
-    });
-    if (can) { selected.push(act.name); lastEnd = act.end; }
-  });
-  steps.push({ phase: 'done', acts: sortedActs.map(a => ({ ...a, state: selected.includes(a.name) ? 'selected' : 'skipped' })), selected, lastEnd, desc: `Hoàn thành! Chọn được ${selected.length} activities: ${selected.join(', ')}`, codeLine: 14, done: true, ans: `${selected.length} activities: ${selected.join(', ')}` });
-  return steps;
-}
-
-function genKnapsackSteps() {
-  const cap = 50;
-  const items = [...kpItems].sort((a, b) => b.ratio - a.ratio);
-  const steps = [];
-  let totalVal = 0, remCap = cap;
-  const chosen = [];
-  steps.push({ items: items.map(i => ({ ...i, state: 'pending' })), totalVal, remCap, chosen: [], desc: 'Sắp xếp theo v/w: ' + items.map(i => `${i.name}(${i.ratio})`).join(' > '), codeLine: 2 });
-  items.forEach((item, idx) => {
-    const stateMap = {};
-    items.forEach((it, j) => {
-      if (chosen.find(c => c.name === it.name)) stateMap[it.name] = chosen.find(c => c.name === it.name).partial ? 'partial' : 'selected';
-      else if (j < idx) stateMap[it.name] = 'skipped';
-      else if (j === idx) stateMap[it.name] = 'examining';
-      else stateMap[it.name] = 'pending';
-    });
-    if (remCap >= item.w) {
-      totalVal += item.v; remCap -= item.w;
-      chosen.push({ ...item, taken: item.w, partial: false });
-      steps.push({ items: items.map(i => ({ ...i, state: stateMap[i.name] })), totalVal, remCap, chosen: [...chosen], desc: `${item.name}: w=${item.w} ≤ cap → Lấy toàn bộ! +${item.v} value`, codeLine: 10 });
-    } else if (remCap > 0) {
-      const frac = remCap / item.w;
-      const partV = +(item.v * frac).toFixed(1);
-      totalVal += partV;
-      chosen.push({ ...item, taken: remCap, partial: true, partV });
-      steps.push({ items: items.map(i => ({ ...i, state: stateMap[i.name] })), totalVal: +totalVal.toFixed(1), remCap: 0, chosen: [...chosen], desc: `${item.name}: lấy ${remCap}/${item.w} (frac=${frac.toFixed(2)}) → +${partV} value`, codeLine: 14 });
-      remCap = 0;
-    } else {
-      steps.push({ items: items.map(i => ({ ...i, state: stateMap[i.name] })), totalVal, remCap, chosen: [...chosen], desc: `${item.name}: cap=0, bỏ qua`, codeLine: 17 });
-    }
-  });
-  steps.push({ items: items.map(i => ({ ...i, state: chosen.find(c => c.name === i.name) ? (chosen.find(c => c.name === i.name).partial ? 'partial' : 'selected') : 'skipped' })), totalVal, remCap, chosen, done: true, desc: `Hoàn thành! Total value = ${+totalVal.toFixed(1)}`, codeLine: 19, ans: +totalVal.toFixed(1) });
-  return steps;
-}
-
-function genCoinSteps(mode) {
-  const amount = mode === 'standard' ? 30 : 6;
-  const coins = mode === 'standard' ? [25, 10, 5, 1] : [4, 3, 1];
-  const steps = [];
-  let rem = amount;
-  const used = [];
-  const coinStates = coins.map(c => ({ val: c, state: 'pending' }));
-  steps.push({ coins: [...coinStates.map(x => ({...x}))], rem, used: [], desc: `Amount = ${amount}, coins sorted DESC: [${coins.join(', ')}]`, codeLine: 2, amount });
-  for (let i = 0; i < coins.length && rem > 0; i++) {
-    const c = coins[i];
-    const cs = coinStates.map(x => ({...x}));
-    cs[i].state = 'examining';
-    steps.push({ coins: cs, rem, used: [...used], desc: `Xét xu ${c}: ${c} ${c <= rem ? '≤' : '>'} ${rem}`, codeLine: 8, amount });
-    while (rem >= c) {
-      rem -= c;
-      used.push(c);
-      const cs2 = coinStates.map(x => ({...x}));
-      cs2[i].state = 'used';
-      steps.push({ coins: cs2, rem, used: [...used], desc: `Dùng xu ${c} → còn ${rem}`, codeLine: 10, amount });
-    }
-    coinStates[i].state = rem === 0 ? 'used' : 'pending';
+const COIN_FAIL_CODE=[
+  '// Mệnh giá: [6, 4, 1], amount=8',
+  '// Greedy chọn 6 trước:',
+  '// 8 - 6 = 2 còn lại',
+  '// Không có mệnh giá nào ≤ 2 ngoài 1',
+  '// Greedy: 6+1+1 = 3 xu (SAI!)',
+  '// Tối ưu: 4+4 = 2 xu (ĐÚNG!)',
+  '//',
+  '// Greedy FAIL vì tham lam lấy 6',
+  '// mà không thấy 4+4 tốt hơn.',
+  '//',
+  '// Fix: dùng Dynamic Programming!',
+];
+let mode='activity',steps=[],stepIdx=0,playing=false,timer=null;
+let selCount=0,rejCount=0;
+// Activity data
+let activities=[];
+const MAX_TIME=16;
+function genActivities(){
+  activities=[];
+  const names=['A1','A2','A3','A4','A5','A6','A7'];
+  for(let i=0;i<6+Math.floor(Math.random()*2);i++){
+    const s=Math.floor(Math.random()*(MAX_TIME-3));
+    const e=s+Math.floor(Math.random()*4)+2;
+    activities.push({name:names[i],start:s,end:Math.min(e,MAX_TIME)});
   }
-  const isOptimal = mode === 'standard';
-  steps.push({ coins: coinStates, rem, used, done: true, desc: isOptimal ? `Greedy ✅: ${used.length} coins [${used.join(',')}]` : `Greedy ❌: ${used.length} coins, optimal = ${amount === 6 ? 2 : '?'}`, codeLine: 11, isOptimal, ans: `${used.length} coins: [${used.join(', ')}]`, amount });
-  return steps;
 }
-
-// RENDER
-function renderGantt(s) {
-  const maxT = 13;
-  const el = document.getElementById('gantt-chart');
-  const W = el.clientWidth - 105;
-  const px = t => (t / maxT) * W;
-  el.querySelectorAll('.gantt-bar,.gantt-label,.gantt-tick').forEach(e => e.remove());
-  for (let t = 0; t <= maxT; t += 2) {
-    const tick = document.createElement('div');
-    tick.className = 'gantt-tick';
-    tick.textContent = t;
-    tick.style.left = (65 + px(t)) + 'px';
-    el.appendChild(tick);
-  }
-  s.acts.forEach((act, i) => {
-    const row = i * 34 + 12;
-    const bar = document.createElement('div');
-    bar.className = `gantt-bar ${act.state}`;
-    bar.style.left = px(act.start) + 'px';
-    bar.style.width = Math.max(px(act.end - act.start) - 3, 10) + 'px';
-    bar.style.top = row + 'px';
-    bar.style.background = act.state === 'selected' ? 'linear-gradient(135deg,#22c55e,#16a34a)' :
-      act.state === 'skipped' ? '#374151' : `linear-gradient(135deg,${act.color},${act.color}99)`;
-    bar.style.color = '#fff';
-    bar.style.opacity = act.state === 'skipped' ? '0.25' : '1';
-    bar.style.borderColor = act.state === 'examining' ? '#fb923c' : 'transparent';
-    bar.textContent = `${act.name} [${act.start}-${act.end}]`;
-
-    const label = document.createElement('div');
-    label.style.cssText = 'position:absolute;left:-50px;font-size:0.65rem;color:#6a4020;top:' + (row+8) + 'px;';
-    label.textContent = act.name;
-    el.appendChild(bar);
-  });
-  document.getElementById('act-cur').textContent = s.examining || '—';
-  document.getElementById('act-selected').textContent = s.selected.length;
-  document.getElementById('act-lastend').textContent = s.lastEnd;
-  document.getElementById('activity-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
-  if (s.done) { document.getElementById('activity-result').style.display = 'block'; document.getElementById('activity-ans').textContent = s.ans; }
-}
-
-function renderKnapsack(s) {
-  document.getElementById('kp-items').innerHTML = s.items.map(it => `
-    <div class="item-card ${it.state}">
-      <div style="flex:1">
-        <strong style="color:${it.state==='selected'?'#22c55e':it.state==='examining'?'#fb923c':'#e0e0f0'}">${it.name}</strong>
-        <div class="item-vr">w=${it.w} | v=${it.v} | v/w=<strong style="color:#fb923c">${it.ratio}</strong></div>
-      </div>
-      <div style="font-size:0.7rem;color:${it.state==='selected'?'#22c55e':it.state==='examining'?'#fb923c':'#4b5563'}">
-        ${it.state==='selected'?'✅ Lấy':it.state==='partial'?'⚡ Phần':it.state==='examining'?'👀 Xét':it.state==='skipped'?'❌ Bỏ':'⏳'}
-      </div>
-    </div>`).join('');
-  const fillPct = Math.min(((50 - s.remCap) / 50) * 100, 100);
-  document.getElementById('kp-fill').style.height = fillPct + '%';
-  document.getElementById('kp-weight').textContent = 50 - s.remCap;
-  document.getElementById('kp-val').textContent = s.totalVal;
-  document.getElementById('kp-rem').textContent = s.remCap;
-  document.getElementById('kp-cur').textContent = s.items.find(i => i.state==='examining')?.name || '—';
-  document.getElementById('kp-bag-items').innerHTML = s.chosen.map(c =>
-    `<div class="bag-item-entry" style="color:${c.partial?'#f59e0b':'#22c55e'}">${c.name}${c.partial?` (${c.taken}/${c.w})`:''}</div>`
-  ).join('');
-  document.getElementById('knapsack-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
-  if (s.done) { document.getElementById('knapsack-result').style.display = 'block'; document.getElementById('knapsack-ans').textContent = s.ans; }
-}
-
-function renderCoin(s) {
-  document.getElementById('coin-options').innerHTML = s.coins.map(c =>
-    `<div class="coin ${c.state}">${c.val}¢</div>`).join('');
-  const usedEl = document.getElementById('coins-used');
-  usedEl.innerHTML = s.used.length
-    ? s.used.map(c => `<div class="coin-used-entry">${c}¢</div>`).join('')
-    : '<span style="color:#5a3010;font-size:0.75rem;padding:4px;">Chưa dùng</span>';
-  document.getElementById('cn-rem').textContent = s.rem;
-  document.getElementById('cn-count').textContent = s.used.length;
-  document.getElementById('coin-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
-  if (s.done) {
-    if (s.isOptimal) {
-      document.getElementById('coin-result').style.display = 'block';
-      document.getElementById('coin-fail').style.display = 'none';
-      document.getElementById('coin-ans').textContent = s.ans;
-    } else {
-      document.getElementById('coin-fail').style.display = 'block';
-      document.getElementById('coin-result').style.display = 'none';
-      document.getElementById('coin-greedy-coins').textContent = s.used.length;
-      document.getElementById('coin-optimal-coins').textContent = '2';
+function buildActivitySteps(){
+  steps=[];
+  const acts=[...activities].sort((a,b)=>a.end-b.end);
+  steps.push({type:'init',acts,sorted:true});
+  let lastEnd=-Infinity;
+  const selected=[];
+  for(const act of acts){
+    if(act.start>=lastEnd){
+      steps.push({type:'check',act,lastEnd,conflict:false,selected:[...selected]});
+      selected.push(act);lastEnd=act.end;
+      steps.push({type:'select',act,lastEnd,selected:[...selected]});
+    }else{
+      steps.push({type:'check',act,lastEnd,conflict:true,selected:[...selected]});
+      steps.push({type:'reject',act,lastEnd,selected:[...selected]});
     }
   }
+  steps.push({type:'done',selected});
 }
-
-function highlightCode(line) {
-  document.querySelectorAll('.code-line').forEach((el, i) => el.classList.toggle('hl', i === line));
-}
-
-function applyStep(s) {
-  if (currentProblem === 'activity') renderGantt(s);
-  else if (currentProblem === 'knapsack') renderKnapsack(s);
-  else if (currentProblem === 'coin') renderCoin(s);
-  if (s.codeLine !== undefined) highlightCode(s.codeLine);
-  document.getElementById('info-step').textContent = stepIndex;
-  document.getElementById('info-phase').textContent = s.phase || s.state || '—';
-}
-
-function getDelay() { return [900,650,450,280,150][parseInt(document.getElementById('speed-slider').value)-1]; }
-
-function stepOnce() {
-  if (stepIndex >= steps.length) return;
-  applyStep(steps[stepIndex]);
-  stepIndex++;
-  if (stepIndex >= steps.length) stopPlay();
-}
-
-function togglePlay() {
-  if (playing) { stopPlay(); return; }
-  playing = true;
-  document.getElementById('btn-play').textContent = '⏸ Pause';
-  function tick() {
-    if (stepIndex >= steps.length) { stopPlay(); return; }
-    stepOnce(); timer = setTimeout(tick, getDelay());
+// Coin data
+let coinDenoms=[],coinAmount=0,isFail=false;
+function genCoin(){
+  if(mode==='coin'){
+    coinDenoms=[25,10,5,1];coinAmount=41;isFail=false;
+  }else{
+    coinDenoms=[6,4,1];coinAmount=8;isFail=true;
   }
-  tick();
 }
-
-function stopPlay() { playing = false; clearTimeout(timer); document.getElementById('btn-play').textContent = '▶ Play'; }
-
-function resetAll() {
-  stopPlay(); stepIndex = 0;
-  ['activity-result','knapsack-result','coin-result','coin-fail'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
-  initProblem(currentProblem);
+function buildCoinSteps(){
+  steps=[];
+  const coins=[...coinDenoms].sort((a,b)=>b-a);
+  const result=[];let rem=coinAmount;
+  steps.push({type:'coin-init',coins,amount:coinAmount,remaining:rem});
+  for(const coin of coins){
+    while(rem>=coin){
+      steps.push({type:'coin-use',coin,remaining:rem,result:[...result],coins});
+      result.push(coin);rem-=coin;
+      steps.push({type:'coin-after',coin,remaining:rem,result:[...result],coins});
+    }
+    if(rem>0&&rem<coin){
+      steps.push({type:'coin-skip',coin,remaining:rem,result:[...result],coins});
+    }
+  }
+  if(isFail&&rem>0){
+    steps.push({type:'coin-fail',remaining:rem,result:[...result],coins,optimal:[4,4]});
+  }else{
+    steps.push({type:'coin-done',result,amount:coinAmount});
+  }
 }
-
-function renderCode(prob) {
-  document.getElementById('code-body').innerHTML = codes[prob].map((l, i) =>
-    `<div class="code-line" data-line="${i}">${l || '&nbsp;'}</div>`).join('');
+function renderGantt(acts,statuses,currentIdx){
+  const gantt=document.getElementById('gantt');
+  gantt.innerHTML='';
+  // Header ticks
+  const hdr=document.createElement('div');hdr.id='gantt-header';
+  for(let t=0;t<=MAX_TIME;t+=2){const tk=document.createElement('div');tk.className='gh-tick';tk.textContent=t;hdr.appendChild(tk);}
+  gantt.appendChild(hdr);
+  acts.forEach((act,i)=>{
+    const row=document.createElement('div');row.className='gantt-row';
+    const lbl=document.createElement('div');lbl.className='gr-label';
+    const st=statuses[i]||'pending';
+    lbl.innerHTML=`<span style="color:${st==='selected'?'var(--sel-top)':st==='rejected'?'var(--rej-top)':st==='conflict'?'var(--conflict-top)':'var(--muted)'}">${act.name}</span>`;
+    const bw=document.createElement('div');bw.className='gr-bar-wrap';
+    const bar=document.createElement('div');bar.className=`gr-bar ${st}`;
+    bar.style.left=(act.start/MAX_TIME*100)+'%';
+    bar.style.width=((act.end-act.start)/MAX_TIME*100)+'%';
+    bar.textContent=`${act.start}-${act.end}`;
+    if(st==='rejected'){bar.style.textDecoration='line-through';bar.style.opacity='.5';}
+    bw.appendChild(bar);row.appendChild(lbl);row.appendChild(bw);
+    gantt.appendChild(row);
+  });
 }
-
-function initProblem(prob) {
-  renderCode(prob);
-  if (prob === 'activity') { steps = genActivitySteps(); renderGantt(steps[0]); }
-  else if (prob === 'knapsack') { steps = genKnapsackSteps(); renderKnapsack(steps[0]); }
-  else if (prob === 'coin') { steps = genCoinSteps(coinMode); renderCoin(steps[0]); }
+function renderCoins(coins,result,remaining,highlightCoin,failCoins){
+  const dr=document.getElementById('coin-denoms');
+  dr.innerHTML='';
+  coins.forEach(c=>{
+    const el=document.createElement('div');
+    el.className='coin'+(c===highlightCoin?' used':failCoins?.includes(c)?' fail-coin':'');
+    el.textContent=c;
+    if(c===highlightCoin)el.style.background='linear-gradient(135deg,var(--coin-top),var(--coin-bot))';
+    dr.appendChild(el);
+  });
+  const rr=document.getElementById('coin-result');
+  rr.innerHTML='';
+  result.forEach(c=>{
+    const el=document.createElement('div');
+    el.className='coin-used'+(isFail&&remaining>0?' fail':'');
+    el.textContent=c;rr.appendChild(el);
+  });
+  const ti=document.getElementById('coin-target-info');
+  ti.innerHTML=`<div class="ct-box"><div class="ctl">Amount</div><div class="ctv">${coinAmount}</div></div><div class="ct-box"><div class="ctl">Còn lại</div><div class="ctv" style="color:${remaining===0?'var(--sel-top)':'var(--yellow)'}">${remaining}</div></div><div class="ct-box"><div class="ctl">Đã dùng</div><div class="ctv">${result.length} xu</div></div>`;
+  document.getElementById('s-sel').textContent=result.length;
 }
-
-function setCoinMode(mode) {
-  coinMode = mode;
-  document.getElementById('coin-mode-label').textContent = mode === 'standard' ? 'Chế độ: Chuẩn [1,5,10,25] — Greedy ✅ đúng' : 'Chế độ: Tùy ý [1,3,4] — Greedy ❌ SAI';
-  resetAll();
+let actStatuses={};
+function applyStep(s){
+  if(!s)return;
+  switch(s.type){
+    case'init':
+      actStatuses={};
+      s.acts.forEach(a=>actStatuses[a.name]='pending');
+      renderGantt(s.acts,actStatuses,-1);hl(0);
+      setStatus([]);
+      setExp('💡','info',`${s.acts.length} hoạt động đã sắp xếp theo thời gian kết thúc. Greedy: luôn chọn hoạt động kết thúc sớm nhất không xung đột.`);
+      setInsight('💡 Activity Selection','Chứng minh tham lam: bất kỳ giải pháp tối ưu nào cũng có thể thay thế hoạt động đầu tiên bằng cái kết thúc sớm nhất mà không tệ hơn.');
+      break;
+    case'check':
+      actStatuses[s.act.name]=s.conflict?'conflict':'current';
+      renderGantt([...activities].sort((a,b)=>a.end-b.end),actStatuses);hl(5);
+      setStatus(s.selected);
+      setExp(s.conflict?'⚠️':'🔍',s.conflict?'warn':'info',
+        s.conflict?`<b>${s.act.name}</b> (${s.act.start}-${s.act.end}): <b>xung đột!</b> start=${s.act.start} < lastEnd=${s.lastEnd}. Loại bỏ.`
+        :`<b>${s.act.name}</b> (${s.act.start}-${s.act.end}): start=${s.act.start} ≥ lastEnd=${s.lastEnd}. Không xung đột → Chọn!`);
+      break;
+    case'select':
+      actStatuses[s.act.name]='selected';selCount++;document.getElementById('s-sel').textContent=selCount;
+      renderGantt([...activities].sort((a,b)=>a.end-b.end),actStatuses);hl(6);
+      setStatus(s.selected);
+      setExp('✅','sel',`Chọn <b>${s.act.name}</b>! lastEnd cập nhật: ${s.lastEnd}. Tìm hoạt động tiếp theo bắt đầu từ ${s.lastEnd}.`);
+      setInsight(`✅ Đã chọn: ${s.selected.map(a=>a.name).join(', ')}`,`${s.selected.length} hoạt động. Greedy chọn kết thúc sớm nhất → để lại nhiều slot nhất cho tương lai.`);
+      break;
+    case'reject':
+      actStatuses[s.act.name]='rejected';rejCount++;document.getElementById('s-rej').textContent=rejCount;
+      renderGantt([...activities].sort((a,b)=>a.end-b.end),actStatuses);hl(9);
+      setExp('❌','rej',`Loại <b>${s.act.name}</b>: xung đột với hoạt động đã chọn (lastEnd=${s.lastEnd}).`);
+      break;
+    case'done':
+      stopPlay();
+      setExp('🎉','sel',`Hoàn tất! Chọn được <b>${s.selected.length}</b> hoạt động: ${s.selected.map(a=>a.name).join(', ')}. Đây là số tối đa có thể chọn.`);
+      setInsight('📈 Greedy tối ưu ở đây',`Activity Selection có <b>greedy choice property</b> → chọn cục bộ tốt nhất = tốt toàn cục. Không phải bài toán nào cũng vậy!`);
+      break;
+    case'coin-init':
+      renderCoins(s.coins,[],s.remaining,null);hl(2);
+      setExp('💡','info',`Đổi ${s.amount}đ bằng ít xu nhất. Mệnh giá: [${s.coins.join(',')}]. Greedy: chọn mệnh giá lớn nhất có thể.`);
+      setInsight(isFail?'⚠️ Chú ý: Greedy có thể thất bại!':'💡 Coin Change Greedy',
+        isFail?'Với mệnh giá [6,4,1] và amount=8, greedy chọn 6 trước — nhưng 4+4 tốt hơn!':'Với mệnh giá USD (25,10,5,1), greedy luôn cho kết quả tối ưu.');
+      document.getElementById('failure-banner').style.display='none';
+      break;
+    case'coin-use':
+      renderCoins(s.coins,s.result,s.remaining,s.coin);hl(5);
+      setExp('🪙','coin',`Dùng xu <b>${s.coin}đ</b>: ${s.remaining} - ${s.coin} = ${s.remaining-s.coin} còn lại.`);
+      setInsight(`🪙 Xu ${s.coin}đ`,`Mệnh giá lớn nhất ≤ ${s.remaining}. Greedy: luôn chọn lớn nhất để giảm nhiều nhất. ${isFail?'⚠️ Có thể không tối ưu!':''}`);
+      break;
+    case'coin-after':
+      renderCoins(s.coins,s.result,s.remaining,null);hl(7);
+      break;
+    case'coin-skip':
+      setExp('⏭','info',`Xu ${s.coin}đ > còn lại ${s.remaining}. Bỏ qua.`);hl(5);break;
+    case'coin-done':
+      stopPlay();
+      renderCoins(s.coins,s.result,0,null);
+      setExp('🎉','sel',`Đổi xong! ${s.amount}đ = ${s.result.join('+')} = <b>${s.result.length} xu</b>.`);
+      setInsight('✅ Greedy thành công',`Với mệnh giá chuẩn (25,10,5,1), greedy luôn tối ưu. Đặc tính: mệnh giá lớn là bội số của nhỏ hơn.`);
+      break;
+    case'coin-fail':
+      stopPlay();
+      renderCoins(s.coins,s.result,s.remaining,null,[6]);
+      const fb=document.getElementById('failure-banner');
+      fb.style.display='block';
+      fb.innerHTML=`⚠️ <b>Greedy THẤT BẠI!</b> Greedy chọn: [${[...s.result].join('+')}] + còn ${s.remaining}đ không đổi được → <b>${s.result.length+s.remaining} bước</b>. Tối ưu: [4+4] = <b>2 xu</b>! Dùng <b>Dynamic Programming</b> thay thế.`;
+      setExp('💥','warn',`<b>Greedy FAIL!</b> Chọn 6 trước, còn lại 2đ, không có xu nào = 2đ. Phải dùng 1+1. Nhưng tối ưu là 4+4 = chỉ 2 xu!`);
+      setInsight('⚠️ Khi Greedy thất bại','Greedy thất bại vì chọn 6 "to" quá → bỏ lỡ 4+4. <b>Optimal substructure không đủ → cần DP</b>. Greedy cần "Greedy Choice Property" + "Optimal Substructure".');
+      break;
+  }
 }
-
-function switchProblem(prob) {
-  stopPlay(); currentProblem = prob; stepIndex = 0;
-  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', ['activity','knapsack','coin'][i] === prob));
-  document.querySelectorAll('.prob').forEach(s => s.classList.remove('active'));
-  document.getElementById(`prob-${prob}`).classList.add('active');
-  initProblem(prob);
+function setStatus(selected){
+  const d=document.getElementById('status-display');
+  if(!selected||!selected.length){d.innerHTML='<span class="sd-idle">Đang phân tích...</span>';return;}
+  d.innerHTML=`<div class="sb sel"><div class="sl">Đã chọn</div><div class="sv">${selected.map(a=>a.name).join(', ')}</div></div><div class="sb tot"><div class="sl">Số lượng</div><div class="sv">${selected.length}</div></div>`;
 }
-
-initProblem('activity');
+function setExp(icon,cls,html){
+  const ic=document.querySelector('#explain-viz .step-icon');
+  ic.textContent=icon;ic.className='step-icon '+cls;
+  document.getElementById('explain-text').innerHTML=html;
+  document.getElementById('step-counter').textContent=`${stepIdx}/${steps.length}`;
+}
+function setInsight(title,html){document.getElementById('insight').innerHTML=`<div class="insight-title">${title}</div>${html}`;}
+function hl(i){document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));document.querySelector(`[data-i="${i}"]`)?.classList.add('active');}
+function buildCode(lines){document.getElementById('code').innerHTML=lines.map((l,i)=>`<div class="code-line${l.trim().startsWith('//')?' comment':''}" data-i="${i}">${l}</div>`).join('');}
+function switchMode(m){
+  mode=m;
+  document.querySelectorAll('.mode-tab').forEach((t,i)=>t.classList.toggle('active',['activity','coin','coin-fail'][i]===m));
+  const titles={activity:'📝 Activity Selection',coin:'📝 Coin Change — Greedy','coin-fail':'📝 Greedy FAIL — Coin Change'};
+  document.querySelector('.panel-title').textContent=titles[m]||'📝 Greedy';
+  buildCode(m==='activity'?ACTIVITY_CODE:m==='coin-fail'?COIN_FAIL_CODE:COIN_CODE);
+  document.getElementById('gantt').style.display=m==='activity'?'flex':'none';
+  document.getElementById('coin-area').style.display=m!=='activity'?'flex':'none';
+  document.getElementById('coin-area').style.flexDirection='column';
+  if(m!=='activity')genCoin();else genActivities();
+  reset();
+}
+function getDelay(){return Math.round(1200-document.getElementById('speed').value*110);}
+function tick(){if(stepIdx>=steps.length){stopPlay();return;}applyStep(steps[stepIdx++]);if(playing)timer=setTimeout(tick,getDelay());}
+function startPlay(){if(stepIdx>=steps.length)reset();playing=true;document.getElementById('btn-play').textContent='⏸ Pause';tick();}
+function stopPlay(){playing=false;clearTimeout(timer);document.getElementById('btn-play').textContent='▶ Play';}
+function reset(){
+  stopPlay();stepIdx=0;selCount=0;rejCount=0;actStatuses={};
+  document.getElementById('s-sel').textContent='0';
+  document.getElementById('s-rej').textContent='0';
+  document.getElementById('status-display').innerHTML='<span class="sd-idle">Nhấn Play để bắt đầu</span>';
+  if(mode==='activity')buildActivitySteps();else buildCoinSteps();
+  const i=steps.find(s=>s.type==='init'||s.type==='coin-init');if(i){applyStep(i);stepIdx=1;}
+  hl(-1);
+}
+document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
+document.getElementById('btn-step').onclick=()=>{stopPlay();if(stepIdx<steps.length)applyStep(steps[stepIdx++]);};
+document.getElementById('btn-reset').onclick=reset;
+document.getElementById('btn-new').onclick=()=>{if(mode==='activity')genActivities();else genCoin();reset();};
+buildCode(ACTIVITY_CODE);
+document.getElementById('gantt').style.display='flex';
+document.getElementById('coin-area').style.display='none';
+genActivities();reset();
 </script>
 </body>
 </html>

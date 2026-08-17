@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03c — DRY KISS YAGNI | Clean Code</title>
+<style>
+:root{--bg:#0e1525;--surface:#151d32;--surface2:#1c2744;--border:#2a3a5c;--text:#eef1f8;--muted:#8899bb;--accent:#a78bfa;--green:#2ecc71;--red:#e74c3c;--blue:#5b8def;--orange:#ffb347;--teal:#00cec9;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.top-nav{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:10px 24px;font-size:.85rem;}
+.top-nav a{color:var(--accent);text-decoration:none;padding:4px 10px;border-radius:6px;border:1px solid transparent;transition:.2s;}
+.top-nav a:hover{border-color:var(--accent);background:#a78bfa18;}
+.nav-center{color:var(--muted);font-size:.8rem;}
+.hero{padding:48px 24px 32px;max-width:860px;margin:0 auto;animation:fadeUp .5s ease;}
+.lesson-tag{display:inline-block;background:#a78bfa22;color:var(--accent);border:1px solid #a78bfa44;border-radius:20px;padding:4px 14px;font-size:.8rem;margin-bottom:16px;}
+h1{font-size:2rem;margin-bottom:8px;}h1 span{color:var(--accent);}
+.subtitle{color:var(--muted);font-size:1rem;margin-bottom:32px;}
+.section{max-width:860px;margin:0 auto 40px;padding:0 24px;}
+h2{font-size:1.2rem;color:var(--accent);margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:1rem;color:var(--orange);margin:16px 0 8px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
+pre{background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:20px;overflow-x:auto;font-size:.88rem;line-height:1.7;}
+.kw{color:#79b8ff;}.fn{color:#b392f0;}.str{color:#9ecbff;}.num{color:var(--orange);}.cmt{color:#6a737d;font-style:italic;}.type{color:var(--teal);}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:600px){.compare{grid-template-columns:1fr;}}
+.compare-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.compare-box.bad{border-top:3px solid var(--red);}
+.compare-box.good{border-top:3px solid var(--green);}
+.compare-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+.compare-box.bad .compare-label{color:var(--red);}
+.compare-box.good .compare-label{color:var(--green);}
+
+/* PRINCIPLE HEADER */
+.principle-header{display:flex;align-items:center;gap:16px;margin-bottom:16px;}
+.acronym{font-size:3rem;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;min-width:60px;}
+.acronym-info h3{font-size:1.1rem;color:var(--text);margin:0 0 4px;}
+.acronym-info p{color:var(--muted);font-size:.85rem;margin:0;}
+
+.principle-block{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px;}
+
+.takeaway{background:linear-gradient(135deg,#a78bfa15,#5b8def10);border:1px solid #a78bfa44;border-radius:12px;padding:20px 24px;margin:32px auto;max-width:860px;}
+.takeaway-label{font-size:.75rem;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.exercise{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:10px;padding:20px;margin-top:16px;}
+.exercise-label{font-size:.75rem;color:var(--orange);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+.next-nav{max-width:860px;margin:0 auto 60px;padding:0 24px;}
+.next-topic{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;text-decoration:none;color:var(--text);transition:.2s;}
+.next-topic:hover{border-color:var(--accent);background:#a78bfa08;}
+.next-icon{font-size:2rem;}.next-text .label{font-size:.75rem;color:var(--muted);}.next-text .title{font-size:1rem;font-weight:600;color:var(--accent);}.next-arrow{margin-left:auto;font-size:1.4rem;color:var(--accent);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="03b-small-functions.html">← 03b Small Functions</a>
+  <span class="nav-center">Bài 03 · DRY/KISS/YAGNI · 03c / 07</span>
+  <a href="03d-solid.html">03d SOLID →</a>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">Bài 03c / 07 · Clean Code</div>
+  <h1>♻️ DRY · KISS · <span>YAGNI</span></h1>
+  <p class="subtitle">Ba nguyên tắc cốt lõi giúp code không bị "thối" theo thời gian. Không lặp code, giữ đơn giản, không build tính năng chưa cần.</p>
+</div>
+
+<!-- DRY -->
+<div class="section">
+  <div class="principle-block">
+    <div class="principle-header">
+      <div class="acronym">D</div>
+      <div class="acronym-info">
+        <h3>DRY — Don't Repeat Yourself</h3>
+        <p>Mỗi piece of knowledge có 1 nơi duy nhất trong hệ thống. Không copy-paste code.</p>
+      </div>
+    </div>
+    <div class="compare">
+      <div class="compare-box bad">
+        <div class="compare-label">❌ Lặp code</div>
+        <pre style="font-size:.82rem;"><span class="cmt">// Ở User service</span>
+email = email.<span class="fn">trim</span>()
+  .<span class="fn">toLowerCase</span>()
+
+<span class="cmt">// Ở Auth service (copy-paste!)</span>
+email = email.<span class="fn">trim</span>()
+  .<span class="fn">toLowerCase</span>()
+
+<span class="cmt">// Fix ở 1 chỗ → 2 chỗ cần sửa</span></pre>
+      </div>
+      <div class="compare-box good">
+        <div class="compare-label">✅ Extract</div>
+        <pre style="font-size:.82rem;"><span class="cmt">// Một nơi duy nhất</span>
+<span class="kw">function</span> <span class="fn">normalizeEmail</span>(e) {
+  <span class="kw">return</span> e.<span class="fn">trim</span>().<span class="fn">toLowerCase</span>()
+}
+
+<span class="cmt">// Dùng ở mọi nơi</span>
+<span class="fn">normalizeEmail</span>(email)
+<span class="cmt">// Fix 1 chỗ → mọi nơi cập nhật ✓</span></pre>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px;margin-bottom:0;">
+      <h3>DRY không chỉ là code — còn là knowledge</h3>
+      <p style="color:var(--muted);font-size:.9rem;">DRY áp dụng cho cả: validation rules, business rules, schema definitions, configuration values. Nếu bạn phải update > 1 nơi khi rule thay đổi → DRY violation.</p>
+    </div>
+  </div>
+</div>
+
+<!-- KISS -->
+<div class="section">
+  <div class="principle-block">
+    <div class="principle-header">
+      <div class="acronym">K</div>
+      <div class="acronym-info">
+        <h3>KISS — Keep It Simple, Stupid</h3>
+        <p>Simple code làm đúng > clever code làm sai. Đừng over-engineer.</p>
+      </div>
+    </div>
+    <div class="compare">
+      <div class="compare-box bad">
+        <div class="compare-label">❌ Over-engineered</div>
+        <pre style="font-size:.82rem;"><span class="kw">abstract class</span> <span class="type">AbstractUserFactory</span>
+  <span class="kw">extends</span> <span class="type">BaseEntityBuilder</span>
+  <span class="kw">implements</span> <span class="type">ICreatable</span>,
+    <span class="type">IConfigurable</span> {
+  <span class="kw">abstract</span> <span class="fn">createFromStrategy</span>(
+    strategy: <span class="type">CreationStrategy</span>
+  ): <span class="type">IEntity</span>
+  <span class="cmt">// 200 lines for creating a user</span>
+}</pre>
+      </div>
+      <div class="compare-box good">
+        <div class="compare-label">✅ Đủ đơn giản</div>
+        <pre style="font-size:.82rem;"><span class="kw">function</span> <span class="fn">createUser</span>(data) {
+  <span class="kw">return</span> {
+    ...data,
+    id: <span class="fn">uuid</span>(),
+    createdAt: <span class="kw">new</span> <span class="fn">Date</span>()
+  }
+}
+<span class="cmt">// 5 lines, does the job ✓</span></pre>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px;margin-bottom:0;">
+      <p style="color:var(--muted);font-size:.9rem;"><strong style="color:var(--orange);">KISS Test:</strong> Có thể giải thích code này cho người mới trong 30 giây không? Nếu không → quá phức tạp. Simple code = dễ test, dễ debug, dễ onboard người mới.</p>
+    </div>
+  </div>
+</div>
+
+<!-- YAGNI -->
+<div class="section">
+  <div class="principle-block">
+    <div class="principle-header">
+      <div class="acronym">Y</div>
+      <div class="acronym-info">
+        <h3>YAGNI — You Aren't Gonna Need It</h3>
+        <p>Đừng build tính năng cho tương lai tưởng tượng. Build when needed.</p>
+      </div>
+    </div>
+    <div style="background:rgba(231,76,60,.06);border:1px solid rgba(231,76,60,.25);border-radius:10px;padding:16px;margin-bottom:12px;">
+      <div style="color:var(--red);font-size:.8rem;font-weight:700;margin-bottom:8px;">❌ YAGNI violations</div>
+      <p style="color:var(--muted);font-size:.9rem;line-height:1.7;">"Tôi sẽ thêm multi-tenancy ngay từ đầu... thêm caching layer... thêm plugin system... thêm internationalization..." → Tốn 3 tuần cho tính năng mà <strong>chưa ai cần</strong>.</p>
+    </div>
+    <div style="background:rgba(46,204,113,.06);border:1px solid rgba(46,204,113,.25);border-radius:10px;padding:16px;">
+      <div style="color:var(--green);font-size:.8rem;font-weight:700;margin-bottom:8px;">✅ Build when needed</div>
+      <p style="color:var(--muted);font-size:.9rem;line-height:1.7;">Ship MVP → nhận feedback → refactor → thêm tính năng thực sự được yêu cầu. Mọi layer abstraction cần có use case thực tế trước khi build.</p>
+    </div>
+    <pre style="margin-top:12px;font-size:.82rem;"><span class="cmt">// ❌ YAGNI: PluginSystem cho 3 users</span>
+<span class="kw">class</span> <span class="type">PluginManager</span> {
+  <span class="fn">register</span>(plugin: <span class="type">IPlugin</span>) { ... }
+  <span class="fn">enable</span>(id: <span class="type">string</span>) { ... }
+  <span class="fn">disable</span>(id: <span class="type">string</span>) { ... }
+}
+<span class="cmt">// Không ai cần plugins. Chỉ cần 2 features.</span>
+
+<span class="cmt">// ✅ YAGNI: build what's needed NOW</span>
+<span class="kw">class</span> <span class="type">OrderService</span> {
+  <span class="fn">create</span>(dto) { ... }   <span class="cmt">// needed</span>
+  <span class="fn">cancel</span>(id) { ... }    <span class="cmt">// needed</span>
+  <span class="cmt">// Thêm sau khi có user request</span>
+}</pre>
+  </div>
+</div>
+
+<div class="takeaway">
+  <div class="takeaway-label">💡 Key Takeaway</div>
+  <p><strong>DRY:</strong> mỗi piece of knowledge có 1 nơi duy nhất — không copy-paste. <strong>KISS:</strong> simple code làm đúng > clever code làm sai. <strong>YAGNI:</strong> đừng viết code cho tương lai tưởng tượng — build when needed. Ba nguyên tắc này cùng nhau chống lại technical debt.</p>
+</div>
+
+<div class="section">
+  <h2>🏋️ Bài Tập</h2>
+  <div class="exercise">
+    <div class="exercise-label">Identify violations</div>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:10px;">Mỗi đoạn code vi phạm DRY, KISS, hay YAGNI? Giải thích và đề xuất fix:</p>
+    <pre style="font-size:.82rem;"><span class="cmt">// Case A:</span>
+<span class="kw">const</span> TAX_VN = <span class="num">0.08</span>  <span class="cmt">// file A</span>
+<span class="kw">const</span> TAX_VN = <span class="num">0.08</span>  <span class="cmt">// file B (copy)</span>
+
+<span class="cmt">// Case B:</span>
+<span class="kw">class</span> <span class="type">AbstractStrategyPatternFactory</span>
+  <span class="kw">implements</span> <span class="type">ICreatable</span> {
+    <span class="cmt">// ...200 lines cho createUser()</span>
+}
+
+<span class="cmt">// Case C:</span>
+<span class="cmt">// "Tôi sẽ thêm OAuth, SAML, LDAP ngay từ đầu"</span>
+<span class="cmt">// Hiện tại chỉ có 10 users, đang dùng email/password</span></pre>
+  </div>
+</div>
+
+<div class="next-nav">
+  <a href="03d-solid.html" class="next-topic">
+    <div class="next-icon">🏛️</div>
+    <div class="next-text">
+      <div class="label">Bài tiếp theo · 03d / 07</div>
+      <div class="title">SOLID Principles — 5 nguyên tắc OOP</div>
+    </div>
+    <span class="next-arrow">→</span>
+  </a>
+</div>
+</body>
+</html>

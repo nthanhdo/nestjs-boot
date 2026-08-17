@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>07a — ERD Modeling | Phase 2</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #1a2235; --border: #2a3a55;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #2dd4bf; --accent2: #818cf8;
+  --success: #34d399; --warning: #fbbf24; --error: #ef4444;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+.top-nav { position: sticky; top: 0; z-index: 100; background: rgba(14,21,37,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .6rem 1.5rem; font-size: .85rem; }
+.top-nav .breadcrumb { color: var(--muted); } .top-nav .breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a { padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-links a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .75rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+
+/* FILE STORY */
+.file-story { display: flex; flex-direction: column; gap: .5rem; margin: .75rem 0; }
+.file-row { display: flex; gap: .75rem; align-items: flex-start; padding: .5rem .75rem; background: var(--bg); border-radius: 6px; border-left: 3px solid var(--border); }
+.file-row.problem { border-left-color: var(--error); }
+.file-row.solution { border-left-color: var(--success); }
+.file-icon { font-size: 1.2rem; flex-shrink: 0; }
+.file-text { font-size: .82rem; color: var(--muted); }
+
+/* ERD DIAGRAM */
+.erd-diagram { display: flex; gap: 1.5rem; flex-wrap: wrap; align-items: flex-start; justify-content: center; }
+.entity-box { background: var(--surface); border: 2px solid var(--accent); border-radius: 8px; overflow: hidden; min-width: 160px; }
+.entity-header { background: rgba(45,212,191,.15); padding: .5rem .75rem; font-weight: 700; font-size: .85rem; color: var(--accent); border-bottom: 1px solid rgba(45,212,191,.3); }
+.entity-fields { padding: .5rem; }
+.field-row { padding: .3rem .5rem; font-size: .78rem; display: flex; gap: .5rem; align-items: center; border-radius: 4px; }
+.field-row:hover { background: rgba(255,255,255,.04); }
+.field-pk { color: #fbbf24; }
+.field-fk { color: #818cf8; }
+.field-name { color: var(--text); font-family: monospace; }
+.field-type { color: var(--muted); font-size: .7rem; }
+.pk-badge { background: rgba(251,191,36,.2); color: #fbbf24; font-size: .6rem; padding: .1rem .25rem; border-radius: 3px; font-weight: 700; }
+.fk-badge { background: rgba(129,140,248,.2); color: #818cf8; font-size: .6rem; padding: .1rem .25rem; border-radius: 3px; font-weight: 700; }
+
+.erd-relation { display: flex; flex-direction: column; align-items: center; gap: .25rem; justify-content: center; font-size: .75rem; color: var(--muted); }
+.erd-line { width: 2px; height: 30px; background: var(--border); }
+.erd-label { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: .15rem .4rem; font-size: .7rem; }
+
+/* CARDINALITY */
+.card-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.card-table th { padding: .5rem .75rem; color: var(--muted); border-bottom: 1px solid var(--border); text-align: left; }
+.card-table td { padding: .5rem .75rem; border-bottom: 1px solid rgba(42,58,85,.5); }
+.card-table tr:last-child td { border: none; }
+.card-type { color: var(--accent); font-weight: 700; font-family: monospace; }
+
+/* CODE BLOCK */
+.code-block { background: #0a0f1e; border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; font-family: 'Courier New', monospace; font-size: .78rem; line-height: 1.7; overflow-x: auto; }
+.c-comment { color: #6b7280; } .c-kw { color: #818cf8; } .c-str { color: #34d399; } .c-type { color: #f472b6; }
+
+.exercise-box { background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.3); border-radius: var(--radius); padding: 1.5rem; }
+.exercise-box h2 { color: var(--accent2); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(129,140,248,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent2); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem; }
+
+.takeaway { background: rgba(45,212,191,.06); border: 1px solid rgba(45,212,191,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--accent); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '✦'; color: var(--accent); }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(14,21,37,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 2 · Database · <span>07a — ERD Modeling</span></div>
+  <div class="nav-links">
+    <a href="../07-database-thinking.html">← Overview</a>
+    <a href="07b-normalization.html" class="next">Normalization →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">07a · Database Thinking</div>
+  <h1><em>ERD</em> Modeling</h1>
+  <p>Entity Relationship Diagram — vẽ trước khi code. Một ERD tốt ngăn chặn 80% data architecture bugs trước khi chúng xảy ra.</p>
+</div>
+
+<div class="content">
+
+  <!-- WHY MODELING -->
+  <section>
+    <h2>Vì sao cần model trước?</h2>
+    <div class="card">
+      <div class="file-story">
+        <div class="file-row problem">
+          <span class="file-icon">😱</span>
+          <div class="file-text"><strong style="color:#ef4444">Không model:</strong> 3 tháng sau, order table có 50 cột, product_name lưu cả trong order lẫn product, giá thay đổi thì order cũ sai, query JOIN phức tạp không ai hiểu.</div>
+        </div>
+        <div class="file-row solution">
+          <span class="file-icon">✅</span>
+          <div class="file-text"><strong style="color:#34d399">Có model:</strong> ERD 30 phút ở đầu → relationships rõ ràng, data không duplicate, schema thay đổi dễ dàng, team mới đọc được ngay.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ERD DIAGRAM -->
+  <section>
+    <h2>ERD — E-commerce Example</h2>
+    <p>Bấm vào entity để highlight relations. PK = Primary Key, FK = Foreign Key:</p>
+    <div class="card">
+      <div class="erd-diagram">
+        <div class="entity-box" id="ent-user" onclick="highlight('user')" style="cursor:pointer">
+          <div class="entity-header">👤 User</div>
+          <div class="entity-fields">
+            <div class="field-row"><span class="pk-badge">PK</span><span class="field-name">id</span><span class="field-type">UUID</span></div>
+            <div class="field-row"><span style="width:22px"></span><span class="field-name">email</span><span class="field-type">string</span></div>
+            <div class="field-row"><span style="width:22px"></span><span class="field-name">name</span><span class="field-type">string</span></div>
+            <div class="field-row"><span style="width:22px"></span><span class="field-name">createdAt</span><span class="field-type">datetime</span></div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25rem">
+          <div class="erd-label">places →</div>
+          <div style="width:40px;height:2px;background:var(--border)"></div>
+          <div class="erd-label">1 : N</div>
+        </div>
+
+        <div class="entity-box" id="ent-order" onclick="highlight('order')" style="cursor:pointer">
+          <div class="entity-header">📦 Order</div>
+          <div class="entity-fields">
+            <div class="field-row"><span class="pk-badge">PK</span><span class="field-name">id</span><span class="field-type">UUID</span></div>
+            <div class="field-row"><span class="fk-badge">FK</span><span class="field-name">userId</span><span class="field-type">→ User.id</span></div>
+            <div class="field-row"><span style="width:22px"></span><span class="field-name">status</span><span class="field-type">enum</span></div>
+            <div class="field-row"><span style="width:22px"></span><span class="field-name">totalAmount</span><span class="field-type">decimal</span></div>
+            <div class="field-row"><span style="width:22px"></span><span class="field-name">createdAt</span><span class="field-type">datetime</span></div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25rem">
+          <div class="erd-label">has →</div>
+          <div style="width:40px;height:2px;background:var(--border)"></div>
+          <div class="erd-label">1 : N</div>
+        </div>
+
+        <div class="entity-box" id="ent-orderitem" onclick="highlight('orderitem')" style="cursor:pointer">
+          <div class="entity-header">🛒 OrderItem</div>
+          <div class="entity-fields">
+            <div class="field-row"><span class="pk-badge">PK</span><span class="field-name">id</span><span class="field-type">UUID</span></div>
+            <div class="field-row"><span class="fk-badge">FK</span><span class="field-name">orderId</span><span class="field-type">→ Order.id</span></div>
+            <div class="field-row"><span class="fk-badge">FK</span><span class="field-name">productId</span><span class="field-type">→ Product.id</span></div>
+            <div class="field-row"><span style="width:22px"></span><span class="field-name">quantity</span><span class="field-type">int</span></div>
+            <div class="field-row"><span style="width:22px"></span><span class="field-name">priceAtTime</span><span class="field-type">decimal</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:1rem;padding:.75rem;background:rgba(45,212,191,.06);border-radius:6px;font-size:.8rem;color:var(--muted)">
+        💡 <code>priceAtTime</code> trong OrderItem lưu giá tại thời điểm mua — vì Product price có thể thay đổi sau. Đây là business rule quan trọng.
+      </div>
+    </div>
+  </section>
+
+  <!-- CARDINALITY -->
+  <section>
+    <h2>Cardinality — Quan hệ giữa Entities</h2>
+    <div class="card">
+      <table class="card-table">
+        <thead><tr><th>Ký hiệu</th><th>Nghĩa</th><th>Ví dụ</th></tr></thead>
+        <tbody>
+          <tr><td class="card-type">1:1</td><td>Một-Một</td><td>User — UserProfile (mỗi user có 1 profile)</td></tr>
+          <tr><td class="card-type">1:N</td><td>Một-Nhiều</td><td>User — Orders (1 user có nhiều orders)</td></tr>
+          <tr><td class="card-type">N:1</td><td>Nhiều-Một</td><td>Orders — User (nhiều orders của 1 user)</td></tr>
+          <tr><td class="card-type">M:N</td><td>Nhiều-Nhiều</td><td>Products — Tags (1 product nhiều tags, 1 tag nhiều products)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.85rem">M:N luôn cần <strong>junction table</strong> (bảng trung gian): <code>ProductTags(productId, tagId)</code>.</p>
+  </section>
+
+  <!-- MONGOOSE SCHEMA -->
+  <section>
+    <h2>From ERD → Mongoose Schema</h2>
+    <div class="code-block">
+<span class="c-comment">// ERD entity → Mongoose Schema</span>
+<span class="c-kw">@Schema</span>({ timestamps: <span class="c-kw">true</span> })
+<span class="c-kw">export class</span> Order {
+  <span class="c-comment">// FK → ref: 'User' (lazy loading via populate)</span>
+  <span class="c-kw">@Prop</span>({ type: <span class="c-type">Types.ObjectId</span>, ref: <span class="c-str">'User'</span>, required: <span class="c-kw">true</span> })
+  userId: <span class="c-type">Types.ObjectId</span>;
+
+  <span class="c-kw">@Prop</span>({ enum: [<span class="c-str">'pending'</span>, <span class="c-str">'paid'</span>, <span class="c-str">'shipped'</span>, <span class="c-str">'done'</span>], default: <span class="c-str">'pending'</span> })
+  status: <span class="c-type">string</span>;
+
+  <span class="c-kw">@Prop</span>({ required: <span class="c-kw">true</span> })
+  totalAmount: <span class="c-type">number</span>;
+}
+
+<span class="c-kw">@Schema</span>()
+<span class="c-kw">export class</span> OrderItem {
+  <span class="c-kw">@Prop</span>({ type: <span class="c-type">Types.ObjectId</span>, ref: <span class="c-str">'Order'</span>, required: <span class="c-kw">true</span> })
+  orderId: <span class="c-type">Types.ObjectId</span>;
+
+  <span class="c-kw">@Prop</span>({ required: <span class="c-kw">true</span> })
+  priceAtTime: <span class="c-type">number</span>; <span class="c-comment">// snapshot giá lúc mua!</span>
+}</div>
+  </section>
+
+  <!-- EXERCISE -->
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — Vẽ ERD</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Cho project hiện tại: list tất cả "nouns" (danh từ) trong domain — đây là candidate entities.</li>
+      <li><span class="step-num">2</span>Với mỗi entity: xác định attributes (fields) và primary key.</li>
+      <li><span class="step-num">3</span>Vẽ relationships: entity nào "có" entity nào? Cardinality là 1:1, 1:N, hay M:N?</li>
+      <li><span class="step-num">4</span>Identify M:N relationships → tạo junction table với composite PK hoặc FK pair.</li>
+      <li><span class="step-num">5</span>Review: có chỗ nào lưu snapshot không? (như priceAtTime). Data nào cần snapshot khi thay đổi theo thời gian?</li>
+    </ul>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>ERD = vẽ data model trước khi code. 30 phút vẽ ngăn 3 tháng refactor.</li>
+      <li>Entities = danh từ domain. Attributes = properties. Relationships = verbs (User "places" Order).</li>
+      <li>4 cardinalities: 1:1, 1:N, N:1, M:N. M:N luôn cần junction table.</li>
+      <li>Snapshot pattern: lưu giá trị tại thời điểm (priceAtTime) khi data gốc thay đổi theo thời gian.</li>
+      <li>FK trong DB → ref trong Mongoose → JOIN/populate khi query.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="../07-database-thinking.html">← Overview</a>
+  <div class="progress-dots">
+    <div class="dot active"></div><div class="dot"></div>
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+  <a href="07b-normalization.html" class="next">Normalization →</a>
+</div>
+
+<script>
+function highlight(id) {
+  document.querySelectorAll('.entity-box').forEach(b => b.style.boxShadow = '');
+  document.getElementById('ent-' + id).style.boxShadow = '0 0 0 3px rgba(45,212,191,.5)';
+}
+</script>
+</body>
+</html>

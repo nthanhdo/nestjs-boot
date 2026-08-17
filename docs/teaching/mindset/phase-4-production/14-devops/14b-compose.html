@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>14b: Docker Compose — Multi-container Orchestration</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.7}
+  .container{max-width:900px;margin:0 auto;padding:40px 24px}
+  h1{font-size:2rem;color:#58a6ff;margin-bottom:8px}
+  h2{font-size:1.4rem;color:#79c0ff;margin:36px 0 14px;padding-left:12px;border-left:3px solid #58a6ff}
+  h3{font-size:1.05rem;color:#a5d6ff;margin:18px 0 8px}
+  p{color:#c9d1d9;margin-bottom:12px}
+  .subtitle{color:#8b949e;font-size:1rem;margin-bottom:36px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;margin-right:6px}
+  .badge-orange{background:#3b1e0d;color:#f0883e;border:1px solid #9e4f1e}
+  .badge-blue{background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e}
+  .card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin:20px 0}
+  .code-block{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px;font-family:'Fira Code','Cascadia Code',monospace;font-size:.85rem;overflow-x:auto;margin:12px 0;white-space:pre}
+  .cm{color:#8b949e}.kw{color:#ff7b72}.str{color:#a5d6ff}.fn{color:#d2a8ff}.var{color:#ffa657}.num{color:#79c0ff}
+  .tip{background:#0d2d1a;border:1px solid #238636;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .tip::before{content:'💡';position:absolute;left:14px;top:14px}
+  .warning{background:#2d1a0d;border:1px solid #9e4f1e;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .warning::before{content:'⚠️';position:absolute;left:14px;top:14px}
+  .section-divider{border:none;border-top:1px solid #21262d;margin:36px 0}
+  .nav-bar{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #30363d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .nav-links{display:flex;gap:8px;flex-wrap:wrap}
+  .nav-link{color:#8b949e;text-decoration:none;font-size:.8rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s;white-space:nowrap}
+  .nav-link:hover{color:#58a6ff;border-color:#58a6ff}
+  .nav-link.current{color:#58a6ff;border-color:#58a6ff;background:#0d1a2d}
+  .nav-center{font-size:.8rem;color:#484f58}
+  /* Compose diagram */
+  .compose-arch{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin:24px 0}
+  .service-box{background:#161b22;border:2px solid #30363d;border-radius:10px;padding:18px;text-align:center}
+  .service-icon{font-size:2rem;margin-bottom:8px}
+  .service-name{font-size:.9rem;font-weight:600;color:#c9d1d9}
+  .service-port{font-size:.78rem;color:#8b949e;margin-top:4px}
+  .service-box.svc-app{border-color:#238636}
+  .service-box.svc-mongo{border-color:#f0883e}
+  .service-box.svc-redis{border-color:#ff4d4d}
+  .service-box.svc-mon{border-color:#bc8cff}
+  /* Network visual */
+  .network-visual{background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:20px;margin:20px 0;text-align:center}
+  .net-label{font-size:.78rem;color:#8b949e;margin-bottom:14px}
+  .net-services{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+  .net-svc{padding:8px 16px;border-radius:8px;font-size:.82rem;font-weight:600}
+  .net-line{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;font-size:.78rem;color:#8b949e}
+  /* Exercises */
+  .exercises{margin:48px 0}
+  .exercises-title{font-size:1.2rem;color:#79c0ff;margin-bottom:24px;padding-left:12px;border-left:3px solid #58a6ff}
+  .ex-card{border-radius:12px;padding:20px 24px;margin:16px 0}
+  .ex-green{background:#0a1f0a;border:1px solid #238636}
+  .ex-yellow{background:#1f1a0a;border:1px solid #9e6c1e}
+  .ex-red{background:#1f0a0a;border:1px solid #9e1e1e}
+  .ex-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .ex-diff{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:10px}
+  .diff-green{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .diff-yellow{background:#3b2a0d;color:#d4a843;border:1px solid #9e6c1e}
+  .diff-red{background:#3b0d0d;color:#ff7b72;border:1px solid #9e1e1e}
+  .ex-num{font-size:.8rem;font-weight:700;color:#8b949e}
+  .ex-title{font-size:.95rem;font-weight:700;color:#c9d1d9}
+  .ex-desc{font-size:.88rem;color:#8b949e;margin-top:4px}
+  .ex-sol-toggle{background:none;border:1px solid #30363d;color:#8b949e;border-radius:6px;padding:4px 12px;font-size:.75rem;cursor:pointer;margin-top:10px;transition:all .2s}
+  .ex-sol-toggle:hover{border-color:#58a6ff;color:#58a6ff}
+  .ex-sol-body{display:none;margin-top:10px;padding:12px;background:#0d1117;border-radius:8px;font-size:.83rem;color:#c9d1d9;line-height:1.6}
+  .ex-sol-body.open{display:block}
+  .takeaway{background:linear-gradient(135deg,#0d2d1a,#0d1a2d);border:2px solid #3fb950;border-radius:12px;padding:24px;margin:40px 0;text-align:center}
+  .takeaway h3{color:#3fb950;margin-bottom:12px}
+  @media(max-width:600px){.compose-arch{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="nav-bar">
+  <div class="nav-links">
+    <a class="nav-link" href="14a-docker.html">← 14a: Docker Basics</a>
+    <span class="nav-link current">14b: Docker Compose</span>
+    <a class="nav-link" href="14c-cicd.html">14c: CI/CD →</a>
+  </div>
+  <div class="nav-center">Phase 4 — DevOps · 14b / 14d</div>
+</nav>
+
+<div class="container">
+  <div style="margin-bottom:20px">
+    <span class="badge badge-orange">Phase 4</span>
+    <span class="badge badge-blue">14b</span>
+  </div>
+  <h1>Docker Compose</h1>
+  <p class="subtitle">Orchestrate multi-container stack bằng một file YAML — App + MongoDB + Redis + Monitoring chạy cùng nhau với một lệnh.</p>
+
+  <h2>1. Tại Sao Cần Docker Compose?</h2>
+  <p>Ứng dụng thực tế không chỉ là một container. Bạn cần: API server, database, cache, queue, monitoring... Docker Compose orchestrate tất cả chúng bằng một file <code>docker-compose.yml</code>.</p>
+
+  <div class="compose-arch">
+    <div class="service-box svc-app">
+      <div class="service-icon">🚀</div>
+      <div class="service-name">App (NestJS)</div>
+      <div class="service-port">port 3000</div>
+    </div>
+    <div class="service-box svc-mongo">
+      <div class="service-icon">🍃</div>
+      <div class="service-name">MongoDB</div>
+      <div class="service-port">port 27017</div>
+    </div>
+    <div class="service-box svc-redis">
+      <div class="service-icon">🔴</div>
+      <div class="service-name">Redis</div>
+      <div class="service-port">port 6379</div>
+    </div>
+    <div class="service-box svc-mon">
+      <div class="service-icon">📊</div>
+      <div class="service-name">Monitoring</div>
+      <div class="service-port">port 9090</div>
+    </div>
+  </div>
+
+  <div class="network-visual">
+    <div class="net-label">Tất cả services trong cùng <strong>internal network</strong> — giao tiếp bằng service name</div>
+    <div class="net-services">
+      <div class="net-svc" style="background:#0d2d1a;color:#3fb950;border:1px solid #238636">app</div>
+      <div class="net-svc" style="background:#2d1a0d;color:#f0883e;border:1px solid #9e4f1e">mongo</div>
+      <div class="net-svc" style="background:#2d0d0d;color:#ff7b72;border:1px solid #9e1e1e">redis</div>
+    </div>
+    <div class="net-line">app → <code>mongodb://mongo:27017</code> (không phải localhost!)</div>
+  </div>
+
+  <hr class="section-divider">
+
+  <h2>2. docker-compose.yml Đầy Đủ</h2>
+  <p>File compose cho NestJS app production-ready với MongoDB, Redis, và health checks.</p>
+
+  <div class="code-block"><span class="var">services</span>:
+  <span class="cm"># ─── Application ───────────────────────────────</span>
+  <span class="var">app</span>:
+    <span class="var">build</span>:
+      <span class="var">context</span>: .
+      <span class="var">target</span>: <span class="str">runner</span>          <span class="cm"># multi-stage target</span>
+    <span class="var">ports</span>: ["<span class="str">3000:3000</span>"]
+    <span class="var">environment</span>:
+      - <span class="str">NODE_ENV=production</span>
+      - <span class="str">MONGO_URI=mongodb://mongo:27017/mydb</span>
+      - <span class="str">REDIS_URL=redis://redis:6379</span>
+      - <span class="str">JWT_SECRET=${JWT_SECRET}</span>    <span class="cm"># từ .env file</span>
+    <span class="var">depends_on</span>:
+      <span class="var">mongo</span>:
+        <span class="var">condition</span>: <span class="str">service_healthy</span>  <span class="cm"># chờ mongo sẵn sàng</span>
+      <span class="var">redis</span>:
+        <span class="var">condition</span>: <span class="str">service_started</span>
+    <span class="var">restart</span>: unless-stopped
+    <span class="var">healthcheck</span>:
+      <span class="var">test</span>: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      <span class="var">interval</span>: <span class="str">30s</span>
+      <span class="var">timeout</span>: <span class="str">10s</span>
+      <span class="var">retries</span>: <span class="num">3</span>
+
+  <span class="cm"># ─── Database ──────────────────────────────────</span>
+  <span class="var">mongo</span>:
+    <span class="var">image</span>: <span class="str">mongo:7-jammy</span>
+    <span class="var">volumes</span>:
+      - <span class="str">mongo_data:/data/db</span>        <span class="cm"># persist data</span>
+    <span class="var">healthcheck</span>:
+      <span class="var">test</span>: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      <span class="var">interval</span>: <span class="str">10s</span>
+      <span class="var">timeout</span>: <span class="str">5s</span>
+      <span class="var">retries</span>: <span class="num">5</span>
+
+  <span class="cm"># ─── Cache ─────────────────────────────────────</span>
+  <span class="var">redis</span>:
+    <span class="var">image</span>: <span class="str">redis:7-alpine</span>
+    <span class="var">volumes</span>:
+      - <span class="str">redis_data:/data</span>
+    <span class="var">command</span>: redis-server --appendonly yes  <span class="cm"># enable AOF persistence</span>
+
+<span class="cm"># ─── Named Volumes ─────────────────────────────</span>
+<span class="var">volumes</span>:
+  <span class="var">mongo_data</span>: {}
+  <span class="var">redis_data</span>: {}</div>
+
+  <hr class="section-divider">
+
+  <h2>3. Environment Files — Secrets Đúng Cách</h2>
+  <p>Không bao giờ hardcode secrets vào docker-compose.yml. Dùng <code>.env</code> file + variable substitution.</p>
+
+  <div class="code-block"><span class="cm"># .env.example (commit vào git)</span>
+<span class="var">JWT_SECRET</span>=change-me-in-production
+<span class="var">MONGO_ROOT_USER</span>=admin
+<span class="var">MONGO_ROOT_PASS</span>=change-me
+
+<span class="cm"># .env (gitignored — secrets thật)</span>
+<span class="var">JWT_SECRET</span>=super-secret-key-dont-share
+<span class="var">MONGO_ROOT_USER</span>=admin
+<span class="var">MONGO_ROOT_PASS</span>=Str0ngP@ssw0rd!</div>
+
+  <div class="warning">
+    <strong>Quan trọng:</strong> Thêm <code>.env</code> vào <code>.gitignore</code>. Chỉ commit <code>.env.example</code> với placeholder values. Secret thật → GitHub Secrets hoặc Vault trong production.
+  </div>
+
+  <hr class="section-divider">
+
+  <h2>4. Essential Commands</h2>
+
+  <div class="code-block"><span class="cm"># Khởi động stack</span>
+docker compose up -d                    <span class="cm"># start all services (detached)</span>
+docker compose up -d --build            <span class="cm"># rebuild image trước khi start</span>
+docker compose up app mongo             <span class="cm"># start specific services only</span>
+
+<span class="cm"># Kiểm tra status</span>
+docker compose ps                       <span class="cm"># xem tất cả services</span>
+docker compose logs app                 <span class="cm"># logs của app service</span>
+docker compose logs -f app mongo        <span class="cm"># follow multiple services</span>
+
+<span class="cm"># Maintenance</span>
+docker compose down                     <span class="cm"># stop + remove containers</span>
+docker compose down -v                  <span class="cm"># + remove volumes (xóa data!)</span>
+docker compose restart app              <span class="cm"># restart một service</span>
+docker compose exec app sh              <span class="cm"># shell vào service</span>
+docker compose exec mongo mongosh       <span class="cm"># mongo shell</span>
+
+<span class="cm"># Scale (đơn giản)</span>
+docker compose up -d --scale app=3      <span class="cm"># chạy 3 instances của app</span></div>
+
+  <hr class="section-divider">
+
+  <h2>5. Override Files — Dev vs Production</h2>
+  <p>Dùng override files để có config khác nhau cho từng môi trường mà không duplicate code.</p>
+
+  <div class="code-block"><span class="cm"># docker-compose.override.yml (dev) — auto-loaded</span>
+<span class="var">services</span>:
+  <span class="var">app</span>:
+    <span class="var">volumes</span>:
+      - <span class="str">.:/app</span>                <span class="cm"># mount source code để hot-reload</span>
+    <span class="var">command</span>: npm run start:dev
+    <span class="var">environment</span>:
+      - <span class="str">NODE_ENV=development</span>
+
+<span class="cm"># Production: docker compose -f docker-compose.yml up</span>
+<span class="cm"># Development: docker compose up (loads both files automatically)</span></div>
+
+  <hr class="section-divider">
+
+  <div class="exercises">
+    <div class="exercises-title">Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header">
+        <span class="ex-diff diff-green">Dễ</span>
+        <span class="ex-num">Bài 1</span>
+      </div>
+      <div class="ex-title">docker-compose.yml: NestJS + MongoDB + Redis</div>
+      <div class="ex-desc">Viết file compose với 3 services. App phải kết nối được MongoDB và Redis. Chạy <code>docker compose up -d</code> và verify <code>/health</code> trả 200.</div>
+      <button class="ex-sol-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Ẩn gợi ý':'Xem gợi ý'">Xem gợi ý</button>
+      <div class="ex-sol-body">
+        <strong>Checklist:</strong><br>
+        1. services: app (build: .), mongo (image: mongo:7), redis (image: redis:7-alpine)<br>
+        2. app.depends_on: [mongo, redis]<br>
+        3. app.environment: MONGO_URI=mongodb://mongo:27017/db, REDIS_URL=redis://redis:6379<br>
+        4. volumes: mongo_data:/data/db (persist data qua restart)<br>
+        5. Test: <code>docker compose up -d && curl localhost:3000/health</code>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header">
+        <span class="ex-diff diff-yellow">Trung bình</span>
+        <span class="ex-num">Bài 2</span>
+      </div>
+      <div class="ex-title">Thêm health checks + depends_on condition</div>
+      <div class="ex-desc">Extend file compose để app chỉ start khi MongoDB đã healthy. Thêm healthcheck vào mongo service. Verify bằng cách <code>docker compose ps</code> — app phải chờ mongo healthy.</div>
+      <button class="ex-sol-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Ẩn gợi ý':'Xem gợi ý'">Xem gợi ý</button>
+      <div class="ex-sol-body">
+        <strong>Mongo healthcheck:</strong><br>
+        <code>test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]</code><br>
+        interval: 10s, timeout: 5s, retries: 5<br><br>
+        <strong>App depends_on:</strong><br>
+        <code>mongo: condition: service_healthy</code><br><br>
+        Kết quả: <code>docker compose up -d</code> → app container chờ cho đến khi mongo healthy trước khi start
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header">
+        <span class="ex-diff diff-red">Khó</span>
+        <span class="ex-num">Bài 3</span>
+      </div>
+      <div class="ex-title">Dev vs Production override setup</div>
+      <div class="ex-desc">Tạo <code>docker-compose.yml</code> (production base) và <code>docker-compose.override.yml</code> (dev additions). Dev mode: source code mounted, hot-reload enabled. Production: no volume mounts, restart policy. Verify behavior khác nhau của 2 modes.</div>
+      <button class="ex-sol-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Ẩn gợi ý':'Xem gợi ý'">Xem gợi ý</button>
+      <div class="ex-sol-body">
+        <strong>Base (production):</strong> image: myapp:latest, restart: unless-stopped, no volumes<br>
+        <strong>Override (dev):</strong> build: ., volumes: [.:/app], command: npm run start:dev<br><br>
+        Run dev: <code>docker compose up</code> (loads base + override)<br>
+        Run prod: <code>docker compose -f docker-compose.yml up</code> (loads base only)<br><br>
+        Verify dev: thay đổi source code → reload tự động không cần rebuild
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <h3>Key Takeaway — 14b</h3>
+    <p style="color:#c9d1d9;margin-top:8px">Docker Compose = orchestrate multi-service stack bằng một lệnh. Services trong cùng network giao tiếp bằng service name (không phải localhost). Health checks + depends_on = startup order đúng. Override files = DRY config cho nhiều môi trường.</p>
+  </div>
+
+  <div style="text-align:center;margin-top:40px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">14b / Bài 14: DevOps — Phase 4</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="14a-docker.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← 14a: Docker Basics</a>
+      <a href="14c-cicd.html" style="color:#58a6ff;text-decoration:none;font-size:.85rem">Tiếp theo: 14c — CI/CD Pipeline →</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

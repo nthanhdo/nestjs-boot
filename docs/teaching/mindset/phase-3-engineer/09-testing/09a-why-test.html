@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>09a — Why Test? | Phase 3</title>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --border: #30363d;
+  --text: #e6edf3; --muted: #7d8590; --accent: #58a6ff; --accent2: #79c0ff;
+  --success: #3fb950; --warning: #d29922; --error: #f85149;
+  --radius: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+.top-nav {
+  position: sticky; top: 0; z-index: 100; background: rgba(13,17,23,.95);
+  backdrop-filter: blur(8px); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; padding: .6rem 1.5rem;
+}
+.breadcrumb { font-size: .82rem; color: var(--muted); }
+.breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a { padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-links a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+.progress-bar { height: 2px; background: var(--border); position: fixed; top: 0; left: 0; right: 0; z-index: 200; }
+.progress-fill { height: 100%; background: var(--accent); transition: width .1s; width: 0; }
+
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .72rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; font-size: 1rem; }
+
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; opacity: 0; transform: translateY(12px); transition: all .4s ease; }
+section.visible { opacity: 1; transform: none; }
+h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+
+/* CRASH STORY */
+.crash-timeline { display: flex; flex-direction: column; }
+.ct-item { display: flex; gap: 1rem; padding: .75rem 0; border-bottom: 1px solid var(--border); }
+.ct-item:last-child { border: none; }
+.ct-time { font-family: monospace; font-size: .75rem; color: var(--muted); min-width: 70px; flex-shrink: 0; }
+.ct-icon { font-size: 1rem; flex-shrink: 0; }
+.ct-text { font-size: .85rem; flex: 1; }
+
+/* COST BARS */
+.cost-row { display: flex; gap: 1rem; align-items: center; margin-bottom: .75rem; }
+.cost-label { width: 140px; font-size: .82rem; flex-shrink: 0; }
+.cost-bar-track { flex: 1; background: rgba(255,255,255,.05); border-radius: 4px; height: 28px; overflow: hidden; }
+.cost-bar { height: 100%; border-radius: 4px; display: flex; align-items: center; padding: 0 .6rem; font-size: .78rem; font-weight: 700; color: #000; transition: width .8s ease; white-space: nowrap; }
+.cost-amount { font-size: .82rem; font-weight: 700; min-width: 80px; text-align: right; }
+
+/* CODE BLOCK */
+.code-block { background: #010409; border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; font-family: 'Courier New', monospace; font-size: .78rem; line-height: 1.7; overflow-x: auto; }
+.c-comment { color: #6e7681; } .c-kw { color: #ff7b72; } .c-str { color: #a5d6ff; }
+.c-fn { color: #d2a8ff; } .c-type { color: #79c0ff; } .c-num { color: #79c0ff; }
+
+/* WHAT TO TEST */
+.test-checklist { list-style: none; }
+.tc-item { display: flex; gap: .75rem; align-items: flex-start; padding: .5rem 0; border-bottom: 1px solid var(--border); }
+.tc-item:last-child { border: none; }
+.tc-check { font-size: 1rem; flex-shrink: 0; }
+.tc-content { flex: 1; font-size: .85rem; }
+.tc-label { font-weight: 600; }
+.tc-desc { color: var(--muted); font-size: .78rem; margin-top: .1rem; }
+
+.exercise-box { background: rgba(88,166,255,.06); border: 1px solid rgba(88,166,255,.25); border-radius: var(--radius); padding: 1.5rem; }
+.exercise-box h2 { color: var(--accent); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(88,166,255,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem; }
+
+.takeaway { background: rgba(63,185,80,.06); border: 1px solid rgba(63,185,80,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--success); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '▸'; color: var(--success); }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(13,17,23,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 3 · Testing · <span>09a — Why Test?</span></div>
+  <div class="nav-links">
+    <a href="../09-testing.html">← Overview</a>
+    <a href="09b-test-pyramid.html" class="next">Test Pyramid →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">09a · Testing</div>
+  <h1>Why <em>Test?</em></h1>
+  <p>Không phải để chứng minh code đúng. Mà để nhận biết ngay khi code bị sai — trước khi user nhận ra. Tests là safety net, không phải overhead.</p>
+</div>
+
+<div class="content">
+
+  <!-- CRASH STORY -->
+  <section>
+    <h2>Production Crash — Câu chuyện thực tế</h2>
+    <div class="card">
+      <div class="crash-timeline">
+        <div class="ct-item">
+          <span class="ct-time">Thứ 6, 23:47</span>
+          <span class="ct-icon">🚀</span>
+          <span class="ct-text">Dev deploy "nhỏ" — refactor order service, ai cũng thấy safe.</span>
+        </div>
+        <div class="ct-item">
+          <span class="ct-time">23:52</span>
+          <span class="ct-icon">🔴</span>
+          <span class="ct-text">Error rate spike: "Cannot read property 'price' of undefined" — checkout bị break.</span>
+        </div>
+        <div class="ct-item">
+          <span class="ct-time">23:58</span>
+          <span class="ct-icon">📱</span>
+          <span class="ct-text">Founder bị wake up: "khách hàng không checkout được!" — Black Friday weekend.</span>
+        </div>
+        <div class="ct-item">
+          <span class="ct-time">00:30</span>
+          <span class="ct-icon">😰</span>
+          <span class="ct-text">Team online tìm bug. Refactor đã thay đổi order của items array. Không ai nhớ edge case.</span>
+        </div>
+        <div class="ct-item">
+          <span class="ct-time">01:15</span>
+          <span class="ct-icon">✅</span>
+          <span class="ct-text">Hotfix deployed. Thiệt hại: ~$15,000 revenue lost, 1.5h engineer time × 5 người.</span>
+        </div>
+        <div class="ct-item">
+          <span class="ct-time">Retrospective</span>
+          <span class="ct-icon">💡</span>
+          <span class="ct-text">Root cause: không có unit test cho "items array manipulation". 1 test = 10 line code đã ngăn được.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COST OF BUGS -->
+  <section>
+    <h2>Cost of Bugs — Theo Giai đoạn</h2>
+    <p>Bug tìm sớm hơn = fix rẻ hơn nhiều lần. Con số thực từ NIST research:</p>
+    <div class="card" id="costChart">
+      <div class="cost-row">
+        <div class="cost-label" style="color:#34d399">🧪 Development</div>
+        <div class="cost-bar-track"><div class="cost-bar" style="background:#3fb950;width:5%" id="cb1">$1</div></div>
+        <div class="cost-amount" style="color:#3fb950">$1</div>
+      </div>
+      <div class="cost-row">
+        <div class="cost-label" style="color:#58a6ff">🔍 Code Review</div>
+        <div class="cost-bar-track"><div class="cost-bar" style="background:#58a6ff;width:10%" id="cb2">$5</div></div>
+        <div class="cost-amount" style="color:#58a6ff">$5</div>
+      </div>
+      <div class="cost-row">
+        <div class="cost-label" style="color:#fbbf24">🧩 Integration</div>
+        <div class="cost-bar-track"><div class="cost-bar" style="background:#fbbf24;width:25%" id="cb3">$25</div></div>
+        <div class="cost-amount" style="color:#fbbf24">$25</div>
+      </div>
+      <div class="cost-row">
+        <div class="cost-label" style="color:#f97316">🎭 QA/Staging</div>
+        <div class="cost-bar-track"><div class="cost-bar" style="background:#f97316;width:50%" id="cb4">$50</div></div>
+        <div class="cost-amount" style="color:#f97316">$50</div>
+      </div>
+      <div class="cost-row">
+        <div class="cost-label" style="color:#ef4444">🚀 Production</div>
+        <div class="cost-bar-track"><div class="cost-bar" style="background:#ef4444;width:100%" id="cb5">$100+</div></div>
+        <div class="cost-amount" style="color:#ef4444">$100+</div>
+      </div>
+    </div>
+    <p style="font-size:.82rem;margin-top:.5rem">Relative cost per bug. Production = 100x đắt hơn development. Tests = investment, không phải overhead.</p>
+  </section>
+
+  <!-- WHAT TESTS DO -->
+  <section>
+    <h2>Tests làm được gì cho bạn?</h2>
+    <div class="card">
+      <ul class="test-checklist">
+        <li class="tc-item">
+          <span class="tc-check">🛡️</span>
+          <div class="tc-content"><div class="tc-label">Safety Net khi Refactor</div><div class="tc-desc">Thay đổi implementation → test vẫn xanh → confident. Không test → mỗi refactor là roulette.</div></div>
+        </li>
+        <li class="tc-item">
+          <span class="tc-check">📚</span>
+          <div class="tc-content"><div class="tc-label">Living Documentation</div><div class="tc-desc">Test code mô tả "how it should behave" tốt hơn comment. Test không bao giờ lỗi thời như docs.</div></div>
+        </li>
+        <li class="tc-item">
+          <span class="tc-check">🎯</span>
+          <div class="tc-content"><div class="tc-label">Instant Bug Detection</div><div class="tc-desc">CI chạy tests mỗi commit → bug bị phát hiện trong vài phút, không phải vài tuần.</div></div>
+        </li>
+        <li class="tc-item">
+          <span class="tc-check">🏗️</span>
+          <div class="tc-content"><div class="tc-label">Force Better Design</div><div class="tc-desc">Code khó test = code kết hợp quá chặt. Tests buộc bạn phân tách concerns đúng.</div></div>
+        </li>
+        <li class="tc-item">
+          <span class="tc-check">💬</span>
+          <div class="tc-content"><div class="tc-label">Confident Code Review</div><div class="tc-desc">PR có tests → reviewer biết behavior đã được verify. PR không có tests → reviewer phải guess.</div></div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- FIRST TEST -->
+  <section>
+    <h2>Test đầu tiên — 10 dòng</h2>
+    <div class="code-block">
+<span class="c-comment">// order.service.spec.ts — Jest</span>
+<span class="c-kw">describe</span>(<span class="c-str">'OrderService'</span>, () => {
+  <span class="c-kw">it</span>(<span class="c-str">'should calculate total correctly'</span>, () => {
+    <span class="c-comment">// Arrange</span>
+    <span class="c-kw">const</span> items = [
+      { name: <span class="c-str">'Laptop'</span>, price: <span class="c-num">500</span>, qty: <span class="c-num">1</span> },
+      { name: <span class="c-str">'Mouse'</span>, price: <span class="c-num">25</span>, qty: <span class="c-num">2</span> },
+    ];
+
+    <span class="c-comment">// Act</span>
+    <span class="c-kw">const</span> total = calculateOrderTotal(items);
+
+    <span class="c-comment">// Assert</span>
+    expect(total).toBe(<span class="c-num">550</span>); <span class="c-comment">// 500 + 25*2</span>
+  });
+
+  <span class="c-kw">it</span>(<span class="c-str">'should return 0 for empty order'</span>, () => {
+    expect(calculateOrderTotal([])).toBe(<span class="c-num">0</span>);
+  });
+});</div>
+    <p style="font-size:.85rem;margin-top:.75rem">AAA pattern: <strong>Arrange</strong> (setup) → <strong>Act</strong> (execute) → <strong>Assert</strong> (verify). Mỗi test chỉ test 1 thing.</p>
+  </section>
+
+  <!-- EXERCISE -->
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — First Tests</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Tìm 1 pure function trong codebase (input → output, không side effect). Ví dụ: price calculation, discount logic.</li>
+      <li><span class="step-num">2</span>Tạo <code>.spec.ts</code> file. Viết 3 test cases: happy path, edge case (0/null/empty), error case.</li>
+      <li><span class="step-num">3</span>Chạy <code>npx jest --watch</code>. Thay đổi implementation → xem test fail ngay lập tức.</li>
+      <li><span class="step-num">4</span>Tính: bao nhiêu thời gian bạn đã dành để debug bug mà một test đơn giản đã bắt được?</li>
+      <li><span class="step-num">5</span>Commit với message "test: add unit tests for X function". PR review bước tiếp theo.</li>
+    </ul>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>Bug tìm ở Production = 100× đắt hơn ở Development. Tests là investment.</li>
+      <li>Tests không chứng minh code đúng — chúng giúp phát hiện khi code bị sai.</li>
+      <li>Tests = safety net cho refactor, living documentation, và CI gate.</li>
+      <li>Code khó test = design problem. Testability forces better separation of concerns.</li>
+      <li>Bắt đầu với pure functions — input/output, không side effects. 10 dòng test = 10 dòng insurance.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="../09-testing.html">← Overview</a>
+  <div class="progress-dots">
+    <div class="dot active"></div><div class="dot"></div>
+    <div class="dot"></div><div class="dot"></div>
+  </div>
+  <a href="09b-test-pyramid.html" class="next">Test Pyramid →</a>
+</div>
+
+<script>
+// Reading progress
+window.addEventListener('scroll', () => {
+  const doc = document.documentElement;
+  const progress = (window.scrollY / (doc.scrollHeight - window.innerHeight)) * 100;
+  document.getElementById('progressFill').style.width = progress + '%';
+});
+
+// Intersection observer for section reveal
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('section').forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

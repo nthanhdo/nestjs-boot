@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>19a — Capstone Requirements | NestJS Boot</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;font-size:16px}
+nav{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #21262d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.nav-left,.nav-right{display:flex;align-items:center;gap:12px}
+.nav-link{color:#8b949e;text-decoration:none;font-size:.85rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s}
+.nav-link:hover{color:#e6edf3;border-color:#d29922}
+.nav-title{color:#e6edf3;font-size:.9rem;font-weight:600}
+.phase-badge{background:#d4b833;color:#000;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.container{max-width:900px;margin:0 auto;padding:40px 24px}
+h1{font-size:2rem;font-weight:700;margin-bottom:8px}
+.subtitle{color:#8b949e;font-size:1rem;margin-bottom:32px}
+h2{font-size:1.3rem;font-weight:600;margin:40px 0 16px;color:#d4b833;padding-left:12px;border-left:3px solid #d4b833}
+h3{font-size:1.05rem;font-weight:600;margin-bottom:10px;color:#e6edf3}
+.card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:24px;margin-bottom:16px}
+.section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
+.tip{background:#132030;border:1px solid #1f6feb;border-radius:8px;padding:14px 18px;color:#79c0ff;font-size:.9rem;margin-top:16px}
+.eng-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+@media(max-width:600px){.eng-grid{grid-template-columns:1fr}}
+.eng-item{display:flex;align-items:flex-start;gap:10px;padding:12px;background:#161b22;border:1px solid #30363d;border-radius:8px;font-size:.85rem;transition:border-color .2s}
+.eng-item:hover{border-color:#3fb950;background:#0d1a0d}
+.eng-check{width:24px;height:24px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#484f58;display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0;font-weight:700}
+.eng-label{color:#c9d1d9;line-height:1.4}
+.eng-sub{font-size:.75rem;color:#8b949e;margin-top:2px}
+.project-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+@media(max-width:600px){.project-grid{grid-template-columns:1fr}}
+.project-card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:18px;transition:border-color .2s,transform .2s}
+.project-card:hover{border-color:#d4b833;transform:translateY(-2px)}
+.proj-icon{font-size:1.8rem;margin-bottom:8px}
+.proj-title{font-weight:700;color:#c9d1d9;margin-bottom:6px;font-size:.95rem}
+.proj-desc{font-size:.8rem;color:#8b949e;margin-bottom:10px;line-height:1.5}
+.proj-tags{display:flex;flex-wrap:wrap;gap:4px}
+.proj-tag{font-size:.7rem;padding:2px 7px;border-radius:8px;background:#0d1a2d;color:#58a6ff;border:1px solid #1f4a9e}
+.rubric-item{margin:10px 0}
+.rubric-header{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+.rubric-label{font-size:.85rem;font-weight:600;color:#c9d1d9;width:200px;flex-shrink:0}
+.rubric-pct{font-size:.85rem;font-weight:700;width:40px;text-align:right;flex-shrink:0;color:#d4b833}
+.rubric-bar-wrap{flex:1;background:#21262d;border-radius:4px;height:8px;overflow:hidden}
+.rubric-bar{height:100%;border-radius:4px}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-left">
+    <span class="phase-badge">Capstone</span>
+    <span class="nav-title">19a — Requirements &amp; Projects</span>
+  </div>
+  <div class="nav-right">
+    <a class="nav-link" href="../18-documentation/18c-adr-rfc.html">← 18c ADR</a>
+    <a class="nav-link" href="19b-career.html" style="color:#d4b833;border-color:#9e8c1e">19b Career →</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>🎓 Capstone Requirements</h1>
+  <p class="subtitle">"Production-Ready" không phải "code chạy được". Đây là 16 engineering requirements để project thực sự sẵn sàng cho môi trường thực tế.</p>
+
+  <h2>✅ 16 Engineering Requirements</h2>
+  <p style="color:#c9d1d9;font-size:.9rem;margin-bottom:16px">Hover vào từng item để mark checked. Tất cả 16 items phải đạt trước khi demo day.</p>
+
+  <div class="eng-grid">
+    <div class="eng-item"><div class="eng-check">①</div><div><div class="eng-label">Architecture Diagram</div><div class="eng-sub">C4 Level 1+2. Services + data flows</div></div></div>
+    <div class="eng-item"><div class="eng-check">②</div><div><div class="eng-label">ERD</div><div class="eng-sub">All entities, relationships, indexes</div></div></div>
+    <div class="eng-item"><div class="eng-check">③</div><div><div class="eng-label">API Documentation</div><div class="eng-sub">Swagger UI đầy đủ, request + response schemas</div></div></div>
+    <div class="eng-item"><div class="eng-check">④</div><div><div class="eng-label">Git History</div><div class="eng-sub">Conventional commits, meaningful messages</div></div></div>
+    <div class="eng-item"><div class="eng-check">⑤</div><div><div class="eng-label">Pull Requests</div><div class="eng-sub">Feature branches với PR descriptions</div></div></div>
+    <div class="eng-item"><div class="eng-check">⑥</div><div><div class="eng-label">Code Review</div><div class="eng-sub">Bằng chứng đã review + constructive comments</div></div></div>
+    <div class="eng-item"><div class="eng-check">⑦</div><div><div class="eng-label">Unit Tests</div><div class="eng-sub">≥70% coverage, services + controllers</div></div></div>
+    <div class="eng-item"><div class="eng-check">⑧</div><div><div class="eng-label">Integration Tests</div><div class="eng-sub">API endpoints với test database</div></div></div>
+    <div class="eng-item"><div class="eng-check">⑨</div><div><div class="eng-label">E2E Tests</div><div class="eng-sub">Critical user flows (register → login → action)</div></div></div>
+    <div class="eng-item"><div class="eng-check">⑩</div><div><div class="eng-label">Error Handling</div><div class="eng-sub">Global exception filter. Proper HTTP status codes</div></div></div>
+    <div class="eng-item"><div class="eng-check">⑪</div><div><div class="eng-label">Authentication</div><div class="eng-sub">JWT with guards. Role-based access control</div></div></div>
+    <div class="eng-item"><div class="eng-check">⑫</div><div><div class="eng-label">Docker / CI</div><div class="eng-sub">Dockerfile + docker-compose. CI pipeline runs tests</div></div></div>
+    <div class="eng-item"><div class="eng-check">⑬</div><div><div class="eng-label">Environment Config</div><div class="eng-sub">No hardcoded secrets. .env.example committed</div></div></div>
+    <div class="eng-item"><div class="eng-check">⑭</div><div><div class="eng-label">Logging</div><div class="eng-sub">Structured logs. Request/response. Error stack traces</div></div></div>
+    <div class="eng-item"><div class="eng-check">⑮</div><div><div class="eng-label">README</div><div class="eng-sub">Quick start, prerequisites, architecture link, test instructions</div></div></div>
+    <div class="eng-item"><div class="eng-check">⑯</div><div><div class="eng-label">ADR (1+)</div><div class="eng-sub">Ít nhất 1 Architecture Decision Record trong docs/adr/</div></div></div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>💡 Capstone Project Ideas</h2>
+
+  <div class="project-grid">
+    <div class="project-card">
+      <div class="proj-icon">🛒</div>
+      <div class="proj-title">E-Commerce Platform</div>
+      <div class="proj-desc">Product catalog, cart, checkout, payment (Stripe), order tracking, admin dashboard. Full e-commerce với real payment gateway.</div>
+      <div class="proj-tags"><span class="proj-tag">NestJS</span><span class="proj-tag">MongoDB</span><span class="proj-tag">Stripe</span><span class="proj-tag">Bull Queue</span></div>
+    </div>
+    <div class="project-card">
+      <div class="proj-icon">📚</div>
+      <div class="proj-title">E-Learning Platform</div>
+      <div class="proj-desc">Course catalog, video lessons, enrollment, progress tracking, quizzes, certificates. Instructor + student roles.</div>
+      <div class="proj-tags"><span class="proj-tag">NestJS</span><span class="proj-tag">PostgreSQL</span><span class="proj-tag">AWS S3</span><span class="proj-tag">WebSocket</span></div>
+    </div>
+    <div class="project-card">
+      <div class="proj-icon">📋</div>
+      <div class="proj-title">Project Management SaaS</div>
+      <div class="proj-desc">Multi-tenant workspace, projects, tasks, assignments, time tracking, Kanban board, notifications. Stripe subscription billing.</div>
+      <div class="proj-tags"><span class="proj-tag">NestJS</span><span class="proj-tag">MongoDB</span><span class="proj-tag">Redis</span><span class="proj-tag">Socket.IO</span></div>
+    </div>
+    <div class="project-card">
+      <div class="proj-icon">💬</div>
+      <div class="proj-title">Real-time Chat App</div>
+      <div class="proj-desc">Rooms, direct messages, file attachments, online presence, message history, read receipts. WebSocket-first architecture.</div>
+      <div class="proj-tags"><span class="proj-tag">NestJS</span><span class="proj-tag">MongoDB</span><span class="proj-tag">Socket.IO</span><span class="proj-tag">Redis Pub/Sub</span></div>
+    </div>
+    <div class="project-card">
+      <div class="proj-icon">🏥</div>
+      <div class="proj-title">Appointment Booking System</div>
+      <div class="proj-desc">Healthcare/services booking với calendar, availability, reminders (SMS/email), rescheduling, waitlist. Complex scheduling logic.</div>
+      <div class="proj-tags"><span class="proj-tag">NestJS</span><span class="proj-tag">PostgreSQL</span><span class="proj-tag">Nodemailer</span><span class="proj-tag">Bull</span></div>
+    </div>
+    <div class="project-card">
+      <div class="proj-icon">🔗</div>
+      <div class="proj-title">Microservices System</div>
+      <div class="proj-desc">3+ services (user, order, notification) connected via message queue. API gateway, service discovery, distributed tracing.</div>
+      <div class="proj-tags"><span class="proj-tag">NestJS Microservices</span><span class="proj-tag">RabbitMQ</span><span class="proj-tag">Docker</span><span class="proj-tag">Jaeger</span></div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>📊 Scoring Rubric</h2>
+
+  <div class="card">
+    <h3 style="margin-bottom:16px">Demo Day Evaluation (100 points)</h3>
+    <div class="rubric-item">
+      <div class="rubric-header">
+        <span class="rubric-label">Engineering Requirements</span>
+        <span class="rubric-pct">40%</span>
+        <div class="rubric-bar-wrap"><div class="rubric-bar" style="width:40%;background:linear-gradient(90deg,#238636,#3fb950)"></div></div>
+      </div>
+      <p style="color:#8b949e;font-size:.78rem;padding-left:212px">16 items, -2.5pts mỗi item thiếu</p>
+    </div>
+    <div class="rubric-item">
+      <div class="rubric-header">
+        <span class="rubric-label">Code Quality &amp; Architecture</span>
+        <span class="rubric-pct">20%</span>
+        <div class="rubric-bar-wrap"><div class="rubric-bar" style="width:20%;background:linear-gradient(90deg,#1f4a9e,#58a6ff)"></div></div>
+      </div>
+      <p style="color:#8b949e;font-size:.78rem;padding-left:212px">Clean code, SOLID, proper layering, no code smells</p>
+    </div>
+    <div class="rubric-item">
+      <div class="rubric-header">
+        <span class="rubric-label">Feature Completeness</span>
+        <span class="rubric-pct">15%</span>
+        <div class="rubric-bar-wrap"><div class="rubric-bar" style="width:15%;background:linear-gradient(90deg,#6e40c9,#bc8cff)"></div></div>
+      </div>
+      <p style="color:#8b949e;font-size:.78rem;padding-left:212px">Core features work, edge cases handled</p>
+    </div>
+    <div class="rubric-item">
+      <div class="rubric-header">
+        <span class="rubric-label">Testing Coverage</span>
+        <span class="rubric-pct">10%</span>
+        <div class="rubric-bar-wrap"><div class="rubric-bar" style="width:10%;background:linear-gradient(90deg,#9e6c1e,#f0883e)"></div></div>
+      </div>
+      <p style="color:#8b949e;font-size:.78rem;padding-left:212px">≥70% unit test coverage, integration tests present</p>
+    </div>
+    <div class="rubric-item">
+      <div class="rubric-header">
+        <span class="rubric-label">Demo &amp; Communication</span>
+        <span class="rubric-pct">10%</span>
+        <div class="rubric-bar-wrap"><div class="rubric-bar" style="width:10%;background:linear-gradient(90deg,#9e4f1e,#f0883e)"></div></div>
+      </div>
+      <p style="color:#8b949e;font-size:.78rem;padding-left:212px">Clear story, explain technical decisions, Q&amp;A</p>
+    </div>
+    <div class="rubric-item">
+      <div class="rubric-header">
+        <span class="rubric-label">Documentation Quality</span>
+        <span class="rubric-pct">5%</span>
+        <div class="rubric-bar-wrap"><div class="rubric-bar" style="width:5%;background:linear-gradient(90deg,#8b949e,#c9d1d9)"></div></div>
+      </div>
+      <p style="color:#8b949e;font-size:.78rem;padding-left:212px">README, Swagger UI, ADR quality</p>
+    </div>
+  </div>
+
+  <div class="tip"><strong>Key insight:</strong> 40% của điểm là Engineering Requirements — những thứ bạn đã học trong 18 bài trước. Project idea quan trọng nhưng engineering process quan trọng hơn. Một Todo App với đủ 16 requirements > một e-commerce "fancy" thiếu tests và docs.</div>
+
+  <div style="text-align:center;margin-top:48px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">Bài 19a / Phase 5 — Capstone</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="../18-documentation/18c-adr-rfc.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← 18c: ADR</a>
+      <a href="19b-career.html" style="color:#d4b833;text-decoration:none;font-size:.85rem">Tiếp theo: 19b — Career →</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

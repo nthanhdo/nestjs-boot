@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>14d: Deploy Strategies — Rolling, Blue-Green, Canary</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.7}
+  .container{max-width:900px;margin:0 auto;padding:40px 24px}
+  h1{font-size:2rem;color:#58a6ff;margin-bottom:8px}
+  h2{font-size:1.4rem;color:#79c0ff;margin:36px 0 14px;padding-left:12px;border-left:3px solid #58a6ff}
+  h3{font-size:1.05rem;color:#a5d6ff;margin:18px 0 8px}
+  p{color:#c9d1d9;margin-bottom:12px}
+  .subtitle{color:#8b949e;font-size:1rem;margin-bottom:36px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;margin-right:6px}
+  .badge-orange{background:#3b1e0d;color:#f0883e;border:1px solid #9e4f1e}
+  .badge-blue{background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e}
+  .card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin:20px 0}
+  .code-block{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px;font-family:'Fira Code','Cascadia Code',monospace;font-size:.85rem;overflow-x:auto;margin:12px 0;white-space:pre}
+  .cm{color:#8b949e}.kw{color:#ff7b72}.str{color:#a5d6ff}.fn{color:#d2a8ff}.var{color:#ffa657}.num{color:#79c0ff}
+  .tip{background:#0d2d1a;border:1px solid #238636;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .tip::before{content:'💡';position:absolute;left:14px;top:14px}
+  .warning{background:#2d1a0d;border:1px solid #9e4f1e;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .warning::before{content:'⚠️';position:absolute;left:14px;top:14px}
+  .section-divider{border:none;border-top:1px solid #21262d;margin:36px 0}
+  .nav-bar{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #30363d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .nav-links{display:flex;gap:8px;flex-wrap:wrap}
+  .nav-link{color:#8b949e;text-decoration:none;font-size:.8rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s;white-space:nowrap}
+  .nav-link:hover{color:#58a6ff;border-color:#58a6ff}
+  .nav-link.current{color:#58a6ff;border-color:#58a6ff;background:#0d1a2d}
+  .nav-center{font-size:.8rem;color:#484f58}
+  /* Strategy cards */
+  .strategy-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:20px 0}
+  .strategy-card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px}
+  .strategy-card h4{color:#79c0ff;margin-bottom:10px;font-size:.95rem}
+  .server-row{display:flex;gap:6px;justify-content:center;margin:12px 0;flex-wrap:wrap}
+  .server{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700}
+  .s-v1{background:#0d2d1a;border:1px solid #238636;color:#3fb950}
+  .s-v2{background:#0d1a2d;border:1px solid #1f4a9e;color:#58a6ff}
+  .s-off{background:#1c1c1c;border:1px solid #30363d;color:#484f58}
+  .s-canary{background:#1a2d0d;border:1px solid #6e9e1e;color:#9fd44f}
+  /* Timeline */
+  .timeline{display:flex;flex-direction:column;gap:0;margin:20px 0}
+  .tl-item{display:flex;gap:16px;padding:12px 0;border-left:2px solid #30363d;padding-left:18px;position:relative}
+  .tl-item::before{content:'';position:absolute;left:-5px;top:18px;width:8px;height:8px;border-radius:50%;background:#30363d}
+  .tl-item.active::before{background:#3fb950;box-shadow:0 0 8px rgba(63,185,80,.4)}
+  .tl-item.warn::before{background:#f0883e}
+  .tl-time{font-size:.75rem;color:#8b949e;width:60px;flex-shrink:0;padding-top:2px}
+  .tl-content{flex:1}
+  .tl-title{font-size:.88rem;font-weight:600;color:#c9d1d9}
+  .tl-desc{font-size:.8rem;color:#8b949e;margin-top:2px}
+  /* Comparison table */
+  .compare-table{width:100%;border-collapse:collapse;margin:20px 0}
+  .compare-table th{background:#21262d;color:#c9d1d9;padding:10px 14px;text-align:left;font-size:.85rem;border-bottom:2px solid #30363d}
+  .compare-table td{padding:10px 14px;border-bottom:1px solid #21262d;font-size:.83rem;vertical-align:top}
+  .compare-table tr:hover td{background:#161b22}
+  .good{color:#3fb950}.warn{color:#f0883e}.bad{color:#ff7b72}
+  /* Monitoring */
+  .dashboard{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}
+  .metric-card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px;text-align:center}
+  .metric-val{font-size:1.8rem;font-weight:700;color:#58a6ff}
+  .metric-label{font-size:.78rem;color:#8b949e;margin-top:4px}
+  /* Exercises */
+  .exercises{margin:48px 0}
+  .exercises-title{font-size:1.2rem;color:#79c0ff;margin-bottom:24px;padding-left:12px;border-left:3px solid #58a6ff}
+  .ex-card{border-radius:12px;padding:20px 24px;margin:16px 0}
+  .ex-green{background:#0a1f0a;border:1px solid #238636}
+  .ex-yellow{background:#1f1a0a;border:1px solid #9e6c1e}
+  .ex-red{background:#1f0a0a;border:1px solid #9e1e1e}
+  .ex-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .ex-diff{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:10px}
+  .diff-green{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .diff-yellow{background:#3b2a0d;color:#d4a843;border:1px solid #9e6c1e}
+  .diff-red{background:#3b0d0d;color:#ff7b72;border:1px solid #9e1e1e}
+  .ex-num{font-size:.8rem;font-weight:700;color:#8b949e}
+  .ex-title{font-size:.95rem;font-weight:700;color:#c9d1d9}
+  .ex-desc{font-size:.88rem;color:#8b949e;margin-top:4px}
+  .ex-sol-toggle{background:none;border:1px solid #30363d;color:#8b949e;border-radius:6px;padding:4px 12px;font-size:.75rem;cursor:pointer;margin-top:10px;transition:all .2s}
+  .ex-sol-toggle:hover{border-color:#58a6ff;color:#58a6ff}
+  .ex-sol-body{display:none;margin-top:10px;padding:12px;background:#0d1117;border-radius:8px;font-size:.83rem;color:#c9d1d9;line-height:1.6}
+  .ex-sol-body.open{display:block}
+  .takeaway{background:linear-gradient(135deg,#0d2d1a,#0d1a2d);border:2px solid #3fb950;border-radius:12px;padding:24px;margin:40px 0;text-align:center}
+  .takeaway h3{color:#3fb950;margin-bottom:12px}
+  @media(max-width:600px){.strategy-grid{grid-template-columns:1fr}.dashboard{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<nav class="nav-bar">
+  <div class="nav-links">
+    <a class="nav-link" href="14c-cicd.html">← 14c: CI/CD Pipeline</a>
+    <span class="nav-link current">14d: Deploy Strategies</span>
+    <a class="nav-link" href="../15-ai-programming/15a-augmented-engineer.html">15a: AI Engineer →</a>
+  </div>
+  <div class="nav-center">Phase 4 — DevOps · 14d / 14d</div>
+</nav>
+
+<div class="container">
+  <div style="margin-bottom:20px">
+    <span class="badge badge-orange">Phase 4</span>
+    <span class="badge badge-blue">14d</span>
+  </div>
+  <h1>Deploy Strategies</h1>
+  <p class="subtitle">Rolling, Blue-Green, Canary — mỗi strategy phù hợp với risk profile khác nhau. Chọn đúng = zero downtime, rollback nhanh, user không biết gì xảy ra.</p>
+
+  <h2>1. Ba Chiến Lược Chính</h2>
+
+  <div class="strategy-grid">
+    <div class="strategy-card">
+      <h4>🔄 Rolling Deploy</h4>
+      <div style="font-size:.8rem;color:#8b949e;margin-bottom:10px">Cập nhật từng instance một</div>
+      <div class="server-row">
+        <div class="server s-v2">v2</div>
+        <div class="server s-v2">v2</div>
+        <div class="server s-v1">v1</div>
+      </div>
+      <div style="font-size:.78rem;color:#8b949e;margin-top:8px;line-height:1.5">Cập nhật từng server một, instance cũ còn chạy trong khi instance mới spin up. Có thể có 2 version cùng lúc.</div>
+      <div style="margin-top:10px;font-size:.75rem">
+        <span class="good">✓ Zero downtime</span><br>
+        <span class="warn">~ 2 versions cùng chạy</span><br>
+        <span class="good">✓ Ít tài nguyên hơn blue-green</span>
+      </div>
+    </div>
+    <div class="strategy-card">
+      <h4>🔵🟢 Blue-Green</h4>
+      <div style="font-size:.8rem;color:#8b949e;margin-bottom:10px">2 môi trường song song</div>
+      <div class="server-row">
+        <div class="server s-v1" title="Blue (active)">B</div>
+        <div class="server s-v1">B</div>
+        <div style="font-size:.8rem;color:#58a6ff;align-self:center">⇄</div>
+        <div class="server s-v2" title="Green (new)">G</div>
+        <div class="server s-v2">G</div>
+      </div>
+      <div style="font-size:.78rem;color:#8b949e;margin-top:8px;line-height:1.5">Deploy lên Green hoàn toàn, switch traffic từ Blue → Green tức thì. Rollback = switch lại Blue.</div>
+      <div style="margin-top:10px;font-size:.75rem">
+        <span class="good">✓ Instant rollback</span><br>
+        <span class="good">✓ Testing trước khi switch</span><br>
+        <span class="warn">~ Double infrastructure cost</span>
+      </div>
+    </div>
+    <div class="strategy-card">
+      <h4>🐤 Canary Deploy</h4>
+      <div style="font-size:.8rem;color:#8b949e;margin-bottom:10px">Rollout từng phần</div>
+      <div class="server-row">
+        <div class="server s-v1">v1</div>
+        <div class="server s-v1">v1</div>
+        <div class="server s-canary">5%</div>
+      </div>
+      <div style="font-size:.78rem;color:#8b949e;margin-top:8px;line-height:1.5">Deploy cho 5% user trước, monitor metrics, nếu OK → rollout 100%. Nếu bug → chỉ 5% bị ảnh hưởng.</div>
+      <div style="margin-top:10px;font-size:.75rem">
+        <span class="good">✓ Risk tối thiểu</span><br>
+        <span class="good">✓ Real user validation</span><br>
+        <span class="warn">~ Phức tạp hơn để implement</span>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <h2>2. So Sánh Chi Tiết</h2>
+
+  <table class="compare-table">
+    <thead>
+      <tr><th>Tiêu chí</th><th>Rolling</th><th>Blue-Green</th><th>Canary</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Downtime</td>
+        <td><span class="good">Zero</span></td>
+        <td><span class="good">Zero</span></td>
+        <td><span class="good">Zero</span></td>
+      </tr>
+      <tr>
+        <td>Rollback speed</td>
+        <td><span class="warn">Phút (re-deploy cũ)</span></td>
+        <td><span class="good">Giây (flip switch)</span></td>
+        <td><span class="warn">Phút (giảm canary → 0)</span></td>
+      </tr>
+      <tr>
+        <td>Infrastructure cost</td>
+        <td><span class="good">Bình thường</span></td>
+        <td><span class="bad">2x (trong deploy)</span></td>
+        <td><span class="good">Bình thường</span></td>
+      </tr>
+      <tr>
+        <td>Complexity</td>
+        <td><span class="good">Đơn giản</span></td>
+        <td><span class="warn">Trung bình</span></td>
+        <td><span class="bad">Phức tạp</span></td>
+      </tr>
+      <tr>
+        <td>Risk profile</td>
+        <td><span class="warn">Trung bình</span></td>
+        <td><span class="good">Thấp</span></td>
+        <td><span class="good">Rất thấp</span></td>
+      </tr>
+      <tr>
+        <td>Best for</td>
+        <td>Small teams, daily deploy</td>
+        <td>Critical systems</td>
+        <td>Large user base, risky changes</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr class="section-divider">
+
+  <h2>3. Environment Pipeline</h2>
+  <p>Code không bao giờ đi thẳng từ local lên production. Phải qua staging để validate trước.</p>
+
+  <div class="timeline">
+    <div class="tl-item active">
+      <div class="tl-time">Dev</div>
+      <div class="tl-content">
+        <div class="tl-title">localhost:3000</div>
+        <div class="tl-desc">Hot reload, debug mode, local MongoDB/Redis. Chỉ developer thấy.</div>
+      </div>
+    </div>
+    <div class="tl-item active">
+      <div class="tl-time">Staging</div>
+      <div class="tl-content">
+        <div class="tl-title">staging.app.com — Mirror production</div>
+        <div class="tl-desc">Giống production 99%: cùng Docker image, cùng config (với test data). QA team test ở đây trước khi approve production deploy.</div>
+      </div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-time">Prod</div>
+      <div class="tl-content">
+        <div class="tl-title">app.com — Real users</div>
+        <div class="tl-desc">Chỉ deploy khi staging pass. Monitor 24h sau deploy. On-call nếu error rate tăng.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <h2>4. Monitoring Sau Deploy</h2>
+  <p>Deploy xong không phải là hết. Monitor 24-48h đầu tiên để catch regression sớm.</p>
+
+  <div class="dashboard">
+    <div class="metric-card">
+      <div class="metric-val">99.9%</div>
+      <div class="metric-label">Uptime (SLA)</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">42ms</div>
+      <div class="metric-label">Avg Response (P95)</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">0.02%</div>
+      <div class="metric-label">Error Rate</div>
+    </div>
+  </div>
+
+  <div class="code-block"><span class="cm"># Health check endpoint — phải có trong mọi production app</span>
+<span class="fn">@Get</span>(<span class="str">'/health'</span>)
+<span class="kw">async</span> <span class="fn">health</span>() {
+  <span class="kw">const</span> <span class="var">dbStatus</span> = <span class="kw">await</span> <span class="kw">this</span>.<span class="fn">checkDb</span>();
+  <span class="kw">return</span> {
+    <span class="var">status</span>: <span class="var">dbStatus</span> ? <span class="str">'ok'</span> : <span class="str">'degraded'</span>,
+    <span class="var">timestamp</span>: <span class="kw">new</span> <span class="fn">Date</span>().toISOString(),
+    <span class="var">version</span>: process.env.<span class="var">APP_VERSION</span>,
+    <span class="var">uptime</span>: process.<span class="fn">uptime</span>(),
+  };
+}
+
+<span class="cm"># CI verify sau deploy:</span>
+<span class="cm"># curl https://app.com/health | jq '.status' → "ok"</span></div>
+
+  <div class="warning">
+    <strong>Rollback plan là bắt buộc:</strong> Trước mỗi production deploy, phải biết: rollback version là gì, rollback cách nào, mất bao lâu. Không có rollback plan = không nên deploy.
+  </div>
+
+  <hr class="section-divider">
+
+  <div class="exercises">
+    <div class="exercises-title">Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header">
+        <span class="ex-diff diff-green">Dễ</span>
+        <span class="ex-num">Bài 1</span>
+      </div>
+      <div class="ex-title">Implement /health endpoint với DB connectivity check</div>
+      <div class="ex-desc">Tạo GET /health endpoint trong NestJS. Response phải include: status, db connection status, timestamp, version, uptime. Return 503 nếu DB down.</div>
+      <button class="ex-sol-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Ẩn gợi ý':'Xem gợi ý'">Xem gợi ý</button>
+      <div class="ex-sol-body">
+        Dùng @nestjs/terminus (official health check library)<br>
+        <code>npm install @nestjs/terminus</code><br>
+        HealthModule: MongooseHealthIndicator, MemoryHealthIndicator<br>
+        Trả HttpStatus.SERVICE_UNAVAILABLE nếu any check fail<br>
+        Test: <code>docker compose stop mongo && curl localhost:3000/health</code> → phải 503
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header">
+        <span class="ex-diff diff-yellow">Trung bình</span>
+        <span class="ex-num">Bài 2</span>
+      </div>
+      <div class="ex-title">Simulate Blue-Green deploy với Docker</div>
+      <div class="ex-desc">Chạy v1 trên port 3000. Build v2. Chạy v2 trên port 3001. Kiểm tra v2 healthy. "Switch" bằng cách update nginx upstream config. Verify zero-downtime bằng cách loop curl trong khi switch.</div>
+      <button class="ex-sol-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Ẩn gợi ý':'Xem gợi ý'">Xem gợi ý</button>
+      <div class="ex-sol-body">
+        1. <code>docker run -d -p 3000:3000 myapp:v1 --name blue</code><br>
+        2. <code>docker run -d -p 3001:3000 myapp:v2 --name green</code><br>
+        3. Test green: <code>curl localhost:3001/health</code><br>
+        4. Loop test: <code>while true; do curl -s localhost:80/health | jq .version; sleep 0.5; done</code><br>
+        5. Update nginx: upstream port 3000 → 3001 + nginx -s reload<br>
+        6. Verify: version changes trong loop, không có error
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header">
+        <span class="ex-diff diff-red">Khó</span>
+        <span class="ex-num">Bài 3</span>
+      </div>
+      <div class="ex-title">Viết Rollback plan cho production deploy</div>
+      <div class="ex-desc">Cho một NestJS app đang chạy version 1.5.0. Viết rollback plan đầy đủ cho deploy v1.6.0: trigger conditions, rollback steps (commands), time estimate, verification sau rollback, communication plan.</div>
+      <button class="ex-sol-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Ẩn gợi ý':'Xem gợi ý'">Xem gợi ý</button>
+      <div class="ex-sol-body">
+        <strong>Trigger conditions:</strong> error rate > 1%, P95 latency > 2s, health check 503<br><br>
+        <strong>Rollback steps:</strong><br>
+        1. docker pull myapp:1.5.0 (pre-pulled trước deploy)<br>
+        2. docker compose stop app<br>
+        3. docker compose up -d --no-deps --build app (với image cũ)<br>
+        4. curl /health → verify 200<br>
+        5. Check error rate về baseline<br>
+        Time estimate: 3-5 phút<br><br>
+        <strong>Post-rollback:</strong> announce trong team channel, create incident ticket, root cause analysis
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <h3>Key Takeaway — 14d</h3>
+    <p style="color:#c9d1d9;margin-top:8px">Rolling = đơn giản, Blue-Green = safe rollback, Canary = risk-minimal. Staging environment là bắt buộc. /health endpoint = litmus test của production. Rollback plan phải viết trước khi deploy, không phải sau khi có incident.</p>
+  </div>
+
+  <div style="text-align:center;margin-top:40px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">14d / Bài 14: DevOps — Phase 4 · Hoàn thành Bài 14!</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="14c-cicd.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← 14c: CI/CD</a>
+      <a href="../15-ai-programming/15a-augmented-engineer.html" style="color:#58a6ff;text-decoration:none;font-size:.85rem">Tiếp theo: Bài 15 — AI Programming →</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

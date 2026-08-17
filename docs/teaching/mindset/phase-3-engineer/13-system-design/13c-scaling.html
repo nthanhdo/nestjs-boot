@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>13c — Scaling | Phase 3</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--accent:#58a6ff;--success:#3fb950;--warning:#d29922;--error:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.progress-bar{position:fixed;top:0;left:0;width:100%;height:3px;background:var(--border);z-index:100;}
+.progress-fill{height:100%;background:var(--accent);width:0;transition:width .1s;}
+nav{position:sticky;top:3px;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:90;}
+nav .brand{font-weight:700;color:var(--accent);font-size:.9rem;}
+nav .links a{color:var(--muted);text-decoration:none;margin-left:1.2rem;font-size:.85rem;transition:color .2s;}
+nav .links a:hover{color:var(--text);}
+.container{max-width:900px;margin:0 auto;padding:2rem 1.5rem;}
+h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;}
+.subtitle{color:var(--muted);margin-bottom:2.5rem;font-size:1.05rem;}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:1rem;color:var(--accent);}
+.section{margin-bottom:3rem;opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
+.section.visible{opacity:1;transform:none;}
+.label{display:inline-block;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;margin-bottom:.5rem;}
+/* scale comparison */
+.scale-compare{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+.scale-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;}
+.scale-card h4{font-size:.95rem;font-weight:700;margin-bottom:.6rem;}
+.scale-card.vertical{border-color:var(--warning);}
+.scale-card.vertical h4{color:var(--warning);}
+.scale-card.horizontal{border-color:var(--success);}
+.scale-card.horizontal h4{color:var(--success);}
+.scale-card ul{padding-left:1rem;font-size:.85rem;color:var(--muted);line-height:1.8;}
+/* LB animation */
+.lb-anim{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin-bottom:1rem;}
+.lb-anim h4{font-size:.9rem;font-weight:700;margin-bottom:1rem;}
+.lb-diagram{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
+.lb-box{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:.5rem .8rem;text-align:center;font-size:.8rem;}
+.lb-box.client-box{border-color:var(--muted);}
+.lb-box.lb-node{border-color:var(--accent);color:var(--accent);}
+.lb-box.server-box{border-color:var(--success);color:var(--success);transition:background .3s;}
+.lb-box.server-box.hit{background:#1a3a1a;}
+.lb-arrow{color:var(--muted);font-size:1rem;}
+.servers-col{display:flex;flex-direction:column;gap:.4rem;}
+.lb-controls{margin-top:1rem;display:flex;gap:.5rem;}
+.btn{padding:.4rem 1rem;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer;font-size:.83rem;transition:all .2s;}
+.btn:hover{border-color:var(--accent);color:var(--accent);}
+.lb-log{margin-top:.6rem;font-family:monospace;font-size:.78rem;color:var(--muted);min-height:3rem;}
+/* table */
+table{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:1rem;}
+th{background:var(--surface);padding:.65rem .9rem;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);}
+td{padding:.65rem .9rem;border-bottom:1px solid var(--border);vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;font-size:.82rem;line-height:1.7;margin-bottom:1rem;font-family:monospace;}
+pre .c{color:var(--muted);}
+pre .good{color:var(--success);}
+.exercise{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.exercise h3{color:var(--accent);margin-bottom:.8rem;font-size:1rem;}
+.exercise ol{padding-left:1.2rem;color:var(--muted);font-size:.9rem;line-height:1.8;}
+.takeaway{background:linear-gradient(135deg,#1a2235,#161b22);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.takeaway h3{color:var(--accent);margin-bottom:1rem;}
+.takeaway ul{padding-left:1.2rem;line-height:2;}
+.nav-links{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-links a{color:var(--accent);text-decoration:none;font-size:.9rem;padding:.5rem 1rem;border:1px solid var(--border);border-radius:6px;transition:border-color .2s;}
+.nav-links a:hover{border-color:var(--accent);}
+@media(max-width:640px){.scale-compare{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav>
+  <span class="brand">Phase 3 — Engineer Mindset</span>
+  <div class="links">
+    <a href="13b-url-shortener.html">← URL Shortener</a>
+    <a href="13d-cache-queue.html">Cache & Queue →</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="section" id="s0">
+    <div class="label">13c / 5</div>
+    <h1>Scaling Strategies</h1>
+    <p class="subtitle">Vertical vs horizontal scaling, load balancing algorithms, and DB replication patterns.</p>
+  </div>
+
+  <div class="section" id="s1">
+    <h2>Vertical vs Horizontal Scaling</h2>
+    <div class="scale-compare">
+      <div class="scale-card vertical">
+        <h4>⬆️ Vertical Scaling (Scale Up)</h4>
+        <ul>
+          <li>Add CPU/RAM/disk to existing server</li>
+          <li>Simple — no code changes</li>
+          <li>Hard ceiling — biggest machine available</li>
+          <li>SPOF — one machine = one failure point</li>
+          <li>Downtime during upgrade</li>
+          <li>Best for: DBs (complex to shard), initial growth</li>
+        </ul>
+      </div>
+      <div class="scale-card horizontal">
+        <h4>↔️ Horizontal Scaling (Scale Out)</h4>
+        <ul>
+          <li>Add more servers (nodes)</li>
+          <li>Complex — needs load balancer, stateless app</li>
+          <li>No hard ceiling — add more machines</li>
+          <li>No SPOF — failure of one node ≠ outage</li>
+          <li>Zero downtime with rolling deploys</li>
+          <li>Best for: stateless API servers, CDN nodes</li>
+        </ul>
+      </div>
+    </div>
+    <p style="color:var(--muted);font-size:.85rem;">Rule: vertical first (simpler), horizontal when you hit the ceiling or need HA.</p>
+  </div>
+
+  <div class="section" id="s2">
+    <h2>Load Balancer — Live Simulation</h2>
+    <div class="lb-anim">
+      <h4>Click "Send Request" to see round-robin distribution:</h4>
+      <div class="lb-diagram">
+        <div class="lb-box client-box">Client</div>
+        <div class="lb-arrow">→</div>
+        <div class="lb-box lb-node">Load<br>Balancer</div>
+        <div class="lb-arrow">→</div>
+        <div class="servers-col" id="servers">
+          <div class="lb-box server-box" id="srv0">Server 1</div>
+          <div class="lb-box server-box" id="srv1">Server 2</div>
+          <div class="lb-box server-box" id="srv2">Server 3</div>
+        </div>
+      </div>
+      <div class="lb-controls">
+        <button class="btn" onclick="sendRequest()">Send Request</button>
+        <button class="btn" onclick="sendBurst()">Burst (10 requests)</button>
+      </div>
+      <div class="lb-log" id="lb-log">Ready. Click "Send Request" to start.</div>
+    </div>
+  </div>
+
+  <div class="section" id="s3">
+    <h2>LB Algorithms</h2>
+    <table>
+      <tr><th>Algorithm</th><th>How it works</th><th>Best for</th></tr>
+      <tr><td><strong>Round Robin</strong></td><td>Rotate through servers sequentially</td><td>Homogeneous servers, equal request cost</td></tr>
+      <tr><td><strong>Least Connections</strong></td><td>Send to server with fewest active connections</td><td>Long-running requests (websockets, file upload)</td></tr>
+      <tr><td><strong>IP Hash</strong></td><td>Hash client IP → always same server</td><td>Session sticky (but stateful — avoid if possible)</td></tr>
+      <tr><td><strong>Weighted</strong></td><td>Higher-capacity servers get more traffic</td><td>Heterogeneous fleet (some servers more powerful)</td></tr>
+    </table>
+  </div>
+
+  <div class="section" id="s4">
+    <h2>DB Replication</h2>
+    <pre><span class="c"># Primary-Replica (Leader-Follower)</span>
+<span class="c"># Writes go to primary, replicated async to replicas</span>
+<span class="c"># Reads can go to any replica → scales read throughput</span>
+
+<span class="good">// NestJS with read/write split (TypeORM example)
+@Module({
+  imports: [
+    TypeOrmModule.forRoot({
+      replication: {
+        master: { host: 'primary-db' },
+        slaves: [
+          { host: 'replica-1' },
+          { host: 'replica-2' },
+        ]
+      }
+    })
+  ]
+})</span>
+
+<span class="c"># Trade-off: async replication = replication lag</span>
+<span class="c"># "Read your own writes" problem: write to primary,</span>
+<span class="c"># immediately read from replica that hasn't caught up yet</span>
+<span class="c"># Solution: read from primary for recent writes, replica for others</span></pre>
+  </div>
+
+  <div class="section" id="s5">
+    <div class="exercise">
+      <h3>🔬 Exercise — Scaling Decision</h3>
+      <ol>
+        <li>Your API handles 2,000 QPS on 1 server (4 CPU, 8GB RAM). CPU is at 90%. What do you do first?</li>
+        <li>Your DB read QPS is 8,000. A single replica can do 2,000 QPS. How many replicas do you need?</li>
+        <li>A user logs in (session stored on Server 1). Next request goes to Server 2 via round-robin. What problem occurs and how do you fix it?</li>
+        <li>You add a 4th server to the pool. A user who was doing a file upload gets their request routed to the new server mid-upload. What breaks?</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section" id="s6">
+    <div class="takeaway">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li>Vertical scaling is simpler but has a ceiling — start here</li>
+        <li>Horizontal scaling requires stateless servers — session state must be external (Redis)</li>
+        <li>Round-robin = simple and effective for equal-cost stateless requests</li>
+        <li>DB replication scales reads, not writes — the primary is still the write bottleneck</li>
+        <li>Replication lag is real — design for eventual consistency or route critical reads to primary</li>
+      </ul>
+    </div>
+    <div class="nav-links">
+      <a href="13b-url-shortener.html">← 13b: URL Shortener</a>
+      <a href="13d-cache-queue.html">13d: Cache & Queue →</a>
+    </div>
+  </div>
+</div>
+<script>
+let rr = 0;
+const counts = [0, 0, 0];
+const log = document.getElementById('lb-log');
+
+function sendRequest() {
+  const prev = (rr + 2) % 3;
+  document.getElementById('srv' + prev).classList.remove('hit');
+  document.getElementById('srv' + rr).classList.add('hit');
+  counts[rr]++;
+  log.textContent = `Request → Server ${rr + 1}  |  Distribution: S1=${counts[0]} S2=${counts[1]} S3=${counts[2]}`;
+  const cur = rr;
+  setTimeout(() => document.getElementById('srv' + cur).classList.remove('hit'), 600);
+  rr = (rr + 1) % 3;
+}
+
+function sendBurst() {
+  let i = 0;
+  const iv = setInterval(() => {
+    sendRequest();
+    if (++i >= 10) clearInterval(iv);
+  }, 150);
+}
+
+window.addEventListener('scroll', () => {
+  document.getElementById('pf').style.width = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100 + '%';
+});
+const obs = new IntersectionObserver(entries => { entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+document.querySelectorAll('.section').forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

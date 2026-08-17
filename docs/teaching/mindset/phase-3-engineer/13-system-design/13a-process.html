@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>13a — System Design Process | Phase 3</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--accent:#58a6ff;--success:#3fb950;--warning:#d29922;--error:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.progress-bar{position:fixed;top:0;left:0;width:100%;height:3px;background:var(--border);z-index:100;}
+.progress-fill{height:100%;background:var(--accent);width:0;transition:width .1s;}
+nav{position:sticky;top:3px;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:90;}
+nav .brand{font-weight:700;color:var(--accent);font-size:.9rem;}
+nav .links a{color:var(--muted);text-decoration:none;margin-left:1.2rem;font-size:.85rem;transition:color .2s;}
+nav .links a:hover{color:var(--text);}
+.container{max-width:860px;margin:0 auto;padding:2rem 1.5rem;}
+h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;}
+.subtitle{color:var(--muted);margin-bottom:2.5rem;font-size:1.05rem;}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:1rem;color:var(--accent);}
+.section{margin-bottom:3rem;opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
+.section.visible{opacity:1;transform:none;}
+.label{display:inline-block;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;margin-bottom:.5rem;}
+/* stepper */
+.stepper{display:flex;flex-direction:column;gap:0;}
+.step-item{display:flex;gap:1.2rem;padding:1rem 0;}
+.step-left{display:flex;flex-direction:column;align-items:center;width:40px;flex-shrink:0;}
+.step-circle{width:40px;height:40px;border-radius:50%;background:var(--surface);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;cursor:pointer;transition:all .2s;flex-shrink:0;}
+.step-circle:hover{border-color:var(--accent);color:var(--accent);}
+.step-circle.active{background:var(--accent);color:#000;border-color:var(--accent);}
+.step-line{width:2px;background:var(--border);flex:1;margin:.3rem 0;}
+.step-right{flex:1;padding-top:.5rem;padding-bottom:.5rem;}
+.step-right h4{font-size:.95rem;font-weight:700;margin-bottom:.2rem;transition:color .2s;}
+.step-right h4.active{color:var(--accent);}
+.step-right .brief{font-size:.85rem;color:var(--muted);}
+.step-right .detail{display:none;font-size:.85rem;color:var(--muted);margin-top:.5rem;line-height:1.7;border-left:3px solid var(--accent);padding-left:.8rem;}
+.step-right .detail.show{display:block;}
+/* constraints table */
+table{width:100%;border-collapse:collapse;font-size:.87rem;margin-bottom:1rem;}
+th{background:var(--surface);padding:.7rem .9rem;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);}
+td{padding:.7rem .9rem;border-bottom:1px solid var(--border);vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+.exercise{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.exercise h3{color:var(--accent);margin-bottom:.8rem;font-size:1rem;}
+.exercise ol{padding-left:1.2rem;color:var(--muted);font-size:.9rem;line-height:1.8;}
+.takeaway{background:linear-gradient(135deg,#1a2235,#161b22);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.takeaway h3{color:var(--accent);margin-bottom:1rem;}
+.takeaway ul{padding-left:1.2rem;line-height:2;}
+.nav-links{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-links a{color:var(--accent);text-decoration:none;font-size:.9rem;padding:.5rem 1rem;border:1px solid var(--border);border-radius:6px;transition:border-color .2s;}
+.nav-links a:hover{border-color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav>
+  <span class="brand">Phase 3 — Engineer Mindset</span>
+  <div class="links">
+    <a href="../12-security/12e-ctf.html">← Security</a>
+    <a href="13b-url-shortener.html">URL Shortener →</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="section" id="s0">
+    <div class="label">13a / 5</div>
+    <h1>System Design Process</h1>
+    <p class="subtitle">A 10-step repeatable framework for designing any large-scale system — from blank page to production-ready architecture.</p>
+  </div>
+
+  <div class="section" id="s1">
+    <h2>10-Step Framework — Click each step</h2>
+    <div class="stepper" id="stepper"></div>
+  </div>
+
+  <div class="section" id="s2">
+    <h2>Key Constraints to Estimate</h2>
+    <table>
+      <tr><th>Constraint</th><th>What to ask</th><th>Why it matters</th></tr>
+      <tr><td><strong>Scale</strong></td><td>How many users? DAU? Peak QPS?</td><td>Determines need for caching, CDN, horizontal scaling</td></tr>
+      <tr><td><strong>Storage</strong></td><td>How much data? Growth rate?</td><td>DB choice (SQL vs NoSQL), sharding, archival</td></tr>
+      <tr><td><strong>Latency</strong></td><td>Read p99? Write p99? Real-time?</td><td>Cache strategy, DB indexes, sync vs async</td></tr>
+      <tr><td><strong>Availability</strong></td><td>99.9% (8.7h/yr downtime) or 99.99%?</td><td>Replication, failover, multi-AZ deployment</td></tr>
+      <tr><td><strong>Consistency</strong></td><td>Strong or eventual? CAP choice?</td><td>DB engine, cache invalidation strategy</td></tr>
+    </table>
+  </div>
+
+  <div class="section" id="s3">
+    <div class="exercise">
+      <h3>🔬 Exercise — Design a Notification System</h3>
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:.8rem;">Apply all 10 steps to: "Design a push notification system for a social app with 10M users."</p>
+      <ol>
+        <li>Clarify scope: what types of notifications? SMS, push, email?</li>
+        <li>Estimate: if 1% trigger notifications/hour, what's the QPS?</li>
+        <li>Define core API: what endpoints? What does the payload look like?</li>
+        <li>Draw the high-level components (ingest → queue → dispatcher → delivery)</li>
+        <li>Identify the single biggest bottleneck — where would it break first at scale?</li>
+        <li>How do you handle delivery failures and retries?</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section" id="s4">
+    <div class="takeaway">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li>Never jump to solutions — clarify requirements first. 10 min of clarification saves hours of wrong design.</li>
+        <li>Estimate before designing — numbers determine which architecture is needed</li>
+        <li>Start with a working monolith design, then add complexity only where justified</li>
+        <li>Identify bottlenecks explicitly — "this DB will hit its limit at X QPS, so..."</li>
+        <li>There is no single right answer — trade-offs are the answer</li>
+      </ul>
+    </div>
+    <div class="nav-links">
+      <a href="../12-security/12e-ctf.html">← 12e: CTF</a>
+      <a href="13b-url-shortener.html">13b: URL Shortener →</a>
+    </div>
+  </div>
+</div>
+<script>
+const steps = [
+  {num:'1', title:'Clarify Requirements', brief:'Understand scope before designing', detail:'Ask: "What exactly does this system do?" What features are in scope vs out? Who are the users? What does success look like? A system that solves the wrong problem precisely is still wrong.'},
+  {num:'2', title:'Define Constraints', brief:'Scale, latency, availability, consistency', detail:'Estimate DAU, QPS, storage needs, latency SLAs. These numbers drive every architectural decision. Don\'t design for 10M users if you have 1K — and don\'t design for 1K if you expect 10M.'},
+  {num:'3', title:'High-Level API', brief:'What does the interface look like?', detail:'Define the core endpoints/events: POST /messages, GET /feed, subscribe(userId, topic). This becomes the contract the rest of the design must honor.'},
+  {num:'4', title:'High-Level Architecture', brief:'Components + their relationships', detail:'Draw the boxes: clients, load balancer, API servers, caches, databases, queues, CDN. Don\'t detail yet — just show what talks to what.'},
+  {num:'5', title:'Data Model', brief:'Schema + storage choice', detail:'Design the core entities and relationships. Choose storage: relational for structured+transactional, document for flexible schema, wide-column for time series, object storage for files.'},
+  {num:'6', title:'Core Algorithms', brief:'Critical logic that needs design', detail:'Identify any non-trivial algorithms: consistent hashing for routing, token bucket for rate limiting, LRU for cache eviction. Sketch them before assuming "the DB will handle it."'},
+  {num:'7', title:'Identify Bottlenecks', brief:'Where will it break at scale?', detail:'"At 10K QPS, the single DB write node becomes the bottleneck." Be explicit about where the design breaks. Then solve THAT problem specifically — don\'t over-engineer the other parts.'},
+  {num:'8', title:'Scale the Design', brief:'Address the bottlenecks', detail:'Introduce caching, replication, sharding, message queues, horizontal scaling — but only where you proved they\'re needed in step 7. Each component adds complexity and failure modes.'},
+  {num:'9', title:'Failure Modes', brief:'What happens when components fail?', detail:'"What if the cache is cold?" "What if the message queue is down?" "What if the primary DB fails?" Define fallback behavior for each. Good systems degrade gracefully.'},
+  {num:'10', title:'Trade-offs Summary', brief:'Explicitly state your choices', detail:'"I chose eventual consistency over strong consistency because writes are 10× more common than reads, and staleness of 100ms is acceptable in this use case." Name every trade-off.'}
+];
+let activeStep = null;
+const stepper = document.getElementById('stepper');
+steps.forEach((s, i) => {
+  const item = document.createElement('div');
+  item.className = 'step-item';
+  item.innerHTML = `
+    <div class="step-left">
+      <div class="step-circle" id="sc${i}" onclick="toggleStep(${i})">${s.num}</div>
+      ${i < steps.length - 1 ? '<div class="step-line"></div>' : ''}
+    </div>
+    <div class="step-right">
+      <h4 id="sh${i}">${s.title}</h4>
+      <div class="brief">${s.brief}</div>
+      <div class="detail" id="sd${i}">${s.detail}</div>
+    </div>`;
+  stepper.appendChild(item);
+});
+
+function toggleStep(i) {
+  const prev = activeStep;
+  if (prev !== null) {
+    document.getElementById(`sc${prev}`).classList.remove('active');
+    document.getElementById(`sh${prev}`).classList.remove('active');
+    document.getElementById(`sd${prev}`).classList.remove('show');
+  }
+  activeStep = prev === i ? null : i;
+  if (activeStep !== null) {
+    document.getElementById(`sc${activeStep}`).classList.add('active');
+    document.getElementById(`sh${activeStep}`).classList.add('active');
+    document.getElementById(`sd${activeStep}`).classList.add('show');
+  }
+}
+
+window.addEventListener('scroll', () => {
+  document.getElementById('pf').style.width = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100 + '%';
+});
+const obs = new IntersectionObserver(entries => { entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+document.querySelectorAll('.section').forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

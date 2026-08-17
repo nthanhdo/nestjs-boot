@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>08b — Status Codes | Phase 2</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #1a2235; --border: #2a3a55;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #a78bfa; --accent2: #818cf8;
+  --success: #34d399; --warning: #fbbf24; --error: #ef4444;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+.top-nav { position: sticky; top: 0; z-index: 100; background: rgba(14,21,37,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .6rem 1.5rem; font-size: .85rem; }
+.top-nav .breadcrumb { color: var(--muted); } .top-nav .breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a { padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-links a.next { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .75rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+
+/* STATUS CODE GROUPS */
+.status-group { margin-bottom: 1rem; }
+.status-group-header { display: flex; align-items: center; gap: .75rem; margin-bottom: .6rem; cursor: pointer; }
+.status-group-header h3 { font-size: 1rem; font-weight: 700; margin: 0; }
+.status-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: .5rem; }
+.status-card {
+  border-radius: 8px; padding: .75rem; cursor: pointer; transition: all .2s;
+  display: flex; gap: .5rem; align-items: flex-start;
+}
+.status-card:hover { transform: translateX(3px); }
+.status-num { font-size: 1rem; font-weight: 800; font-family: monospace; flex-shrink: 0; }
+.status-info { flex: 1; }
+.status-name { font-size: .8rem; font-weight: 600; }
+.status-desc { font-size: .7rem; color: var(--muted); margin-top: .15rem; }
+
+/* COMMON MISTAKES */
+.mistake-row { display: flex; align-items: flex-start; gap: 1rem; padding: .75rem; border-radius: 6px; margin-bottom: .5rem; }
+.mistake-row.bad { background: rgba(239,68,68,.06); border: 1px solid rgba(239,68,68,.2); }
+.mistake-row.good { background: rgba(52,211,153,.05); border: 1px solid rgba(52,211,153,.2); }
+.m-code { font-family: monospace; font-weight: 700; font-size: .85rem; flex-shrink: 0; width: 40px; }
+.bad .m-code { color: #ef4444; } .good .m-code { color: #34d399; }
+.m-text { font-size: .82rem; color: var(--muted); }
+
+/* QUIZ */
+.quiz-item { border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-bottom: .75rem; }
+.quiz-q { font-size: .85rem; margin-bottom: .6rem; }
+.quiz-opts { display: flex; gap: .5rem; flex-wrap: wrap; }
+.quiz-opt { padding: .3rem .75rem; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: .8rem; background: transparent; color: var(--muted); transition: all .2s; }
+.quiz-opt:hover { border-color: var(--accent); color: var(--accent); }
+.quiz-opt.correct { background: rgba(52,211,153,.15); border-color: #34d399; color: #34d399; }
+.quiz-opt.wrong { background: rgba(239,68,68,.1); border-color: #ef4444; color: #ef4444; }
+.quiz-result { font-size: .78rem; margin-top: .5rem; min-height: 18px; }
+
+.exercise-box { background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.3); border-radius: var(--radius); padding: 1.5rem; }
+.exercise-box h2 { color: var(--accent2); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(129,140,248,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent2); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem; }
+
+.takeaway { background: rgba(167,139,250,.08); border: 1px solid rgba(167,139,250,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--accent); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '✦'; color: var(--accent); }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(14,21,37,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 2 · API · <span>08b — Status Codes</span></div>
+  <div class="nav-links">
+    <a href="08a-http-rest.html">← HTTP &amp; REST</a>
+    <a href="08c-auth-jwt.html" class="next">Auth &amp; JWT →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">08b · API Fundamentals</div>
+  <h1>HTTP <em>Status Codes</em></h1>
+  <p>Status code là ngôn ngữ của API. Client biết phải làm gì dựa vào code — không phải body message. Dùng sai code = client xử lý sai, frontend bug, retry storm.</p>
+</div>
+
+<div class="content">
+
+  <!-- STATUS GROUPS -->
+  <section>
+    <h2>5 Nhóm Status Code</h2>
+
+    <div class="status-group">
+      <div class="status-group-header">
+        <span style="background:rgba(52,211,153,.2);color:#34d399;padding:.2rem .6rem;border-radius:4px;font-weight:700;font-size:.82rem">2xx</span>
+        <h3 style="color:#34d399">Success — Request thành công</h3>
+      </div>
+      <div class="status-grid">
+        <div class="status-card" style="background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.25)">
+          <div class="status-num" style="color:#34d399">200</div>
+          <div class="status-info"><div class="status-name">OK</div><div class="status-desc">GET/PATCH/PUT success. Body có data.</div></div>
+        </div>
+        <div class="status-card" style="background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.25)">
+          <div class="status-num" style="color:#34d399">201</div>
+          <div class="status-info"><div class="status-name">Created</div><div class="status-desc">POST tạo resource mới. Location header.</div></div>
+        </div>
+        <div class="status-card" style="background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.25)">
+          <div class="status-num" style="color:#34d399">204</div>
+          <div class="status-info"><div class="status-name">No Content</div><div class="status-desc">DELETE thành công. Không có body.</div></div>
+        </div>
+        <div class="status-card" style="background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.25)">
+          <div class="status-num" style="color:#34d399">202</div>
+          <div class="status-info"><div class="status-name">Accepted</div><div class="status-desc">Request nhận, xử lý async (background job).</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-group">
+      <div class="status-group-header">
+        <span style="background:rgba(96,165,250,.2);color:#60a5fa;padding:.2rem .6rem;border-radius:4px;font-weight:700;font-size:.82rem">3xx</span>
+        <h3 style="color:#60a5fa">Redirect — Tìm ở chỗ khác</h3>
+      </div>
+      <div class="status-grid">
+        <div class="status-card" style="background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.25)">
+          <div class="status-num" style="color:#60a5fa">301</div>
+          <div class="status-info"><div class="status-name">Moved Permanently</div><div class="status-desc">URL đã đổi vĩnh viễn. SEO safe.</div></div>
+        </div>
+        <div class="status-card" style="background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.25)">
+          <div class="status-num" style="color:#60a5fa">302</div>
+          <div class="status-info"><div class="status-name">Found (Temp)</div><div class="status-desc">Redirect tạm thời.</div></div>
+        </div>
+        <div class="status-card" style="background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.25)">
+          <div class="status-num" style="color:#60a5fa">304</div>
+          <div class="status-info"><div class="status-name">Not Modified</div><div class="status-desc">Cache vẫn còn valid. Không trả body.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-group">
+      <div class="status-group-header">
+        <span style="background:rgba(251,191,36,.2);color:#fbbf24;padding:.2rem .6rem;border-radius:4px;font-weight:700;font-size:.82rem">4xx</span>
+        <h3 style="color:#fbbf24">Client Error — Lỗi từ phía client</h3>
+      </div>
+      <div class="status-grid">
+        <div class="status-card" style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.25)">
+          <div class="status-num" style="color:#fbbf24">400</div>
+          <div class="status-info"><div class="status-name">Bad Request</div><div class="status-desc">Request format sai, validation fail.</div></div>
+        </div>
+        <div class="status-card" style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.25)">
+          <div class="status-num" style="color:#fbbf24">401</div>
+          <div class="status-info"><div class="status-name">Unauthorized</div><div class="status-desc">Chưa authen. Token missing/expired.</div></div>
+        </div>
+        <div class="status-card" style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.25)">
+          <div class="status-num" style="color:#fbbf24">403</div>
+          <div class="status-info"><div class="status-name">Forbidden</div><div class="status-desc">Đã authen, không có permission.</div></div>
+        </div>
+        <div class="status-card" style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.25)">
+          <div class="status-num" style="color:#fbbf24">404</div>
+          <div class="status-info"><div class="status-name">Not Found</div><div class="status-desc">Resource không tồn tại.</div></div>
+        </div>
+        <div class="status-card" style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.25)">
+          <div class="status-num" style="color:#fbbf24">409</div>
+          <div class="status-info"><div class="status-name">Conflict</div><div class="status-desc">Duplicate: email đã tồn tại.</div></div>
+        </div>
+        <div class="status-card" style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.25)">
+          <div class="status-num" style="color:#fbbf24">422</div>
+          <div class="status-info"><div class="status-name">Unprocessable</div><div class="status-desc">Format ok, nhưng semantic fail.</div></div>
+        </div>
+        <div class="status-card" style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.25)">
+          <div class="status-num" style="color:#fbbf24">429</div>
+          <div class="status-info"><div class="status-name">Too Many Requests</div><div class="status-desc">Rate limit hit. Retry-After header.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-group">
+      <div class="status-group-header">
+        <span style="background:rgba(239,68,68,.2);color:#ef4444;padding:.2rem .6rem;border-radius:4px;font-weight:700;font-size:.82rem">5xx</span>
+        <h3 style="color:#ef4444">Server Error — Lỗi phía server</h3>
+      </div>
+      <div class="status-grid">
+        <div class="status-card" style="background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.25)">
+          <div class="status-num" style="color:#ef4444">500</div>
+          <div class="status-info"><div class="status-name">Internal Server Error</div><div class="status-desc">Unexpected error. Log ngay.</div></div>
+        </div>
+        <div class="status-card" style="background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.25)">
+          <div class="status-num" style="color:#ef4444">502</div>
+          <div class="status-info"><div class="status-name">Bad Gateway</div><div class="status-desc">Upstream service trả response xấu.</div></div>
+        </div>
+        <div class="status-card" style="background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.25)">
+          <div class="status-num" style="color:#ef4444">503</div>
+          <div class="status-info"><div class="status-name">Service Unavailable</div><div class="status-desc">Server overload / maintenance.</div></div>
+        </div>
+        <div class="status-card" style="background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.25)">
+          <div class="status-num" style="color:#ef4444">504</div>
+          <div class="status-info"><div class="status-name">Gateway Timeout</div><div class="status-desc">Upstream không response kịp.</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMMON MISTAKES -->
+  <section>
+    <h2>Common Mistakes — Sai code phổ biến</h2>
+    <div class="card">
+      <div class="mistake-row bad">
+        <div class="m-code">200</div>
+        <div class="m-text">Return 200 cho tất cả, kể cả lỗi: <code>{"success": false, "error": "Not found"}</code>. Client không biết phải retry hay show error.</div>
+      </div>
+      <div class="mistake-row good">
+        <div class="m-code">404</div>
+        <div class="m-text">Return 404 khi resource không tồn tại. 401 khi thiếu token. 403 khi không có quyền.</div>
+      </div>
+      <div class="mistake-row bad">
+        <div class="m-code">401</div>
+        <div class="m-text">Dùng 401 cho "no permission" — sai! 401 = unauthenticated (chưa login). 403 = unauthorized (đã login, không có quyền).</div>
+      </div>
+      <div class="mistake-row good">
+        <div class="m-code">403</div>
+        <div class="m-text">Đã login nhưng muốn xem data của user khác → 403 Forbidden. Chưa login → 401 Unauthorized.</div>
+      </div>
+      <div class="mistake-row bad">
+        <div class="m-code">400</div>
+        <div class="m-text">Return 400 cho "email đã tồn tại" — 400 cho format error, không phải business conflict.</div>
+      </div>
+      <div class="mistake-row good">
+        <div class="m-code">409</div>
+        <div class="m-text">409 Conflict cho duplicate resource (email, username đã tồn tại).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section>
+    <h2>Quick Quiz — Chọn đúng status code</h2>
+    <div>
+      <div class="quiz-item" id="q1">
+        <div class="quiz-q">User DELETE /posts/999 nhưng post không tồn tại. Server trả gì?</div>
+        <div class="quiz-opts">
+          <button class="quiz-opt" onclick="quiz('q1', this, false)">200</button>
+          <button class="quiz-opt" onclick="quiz('q1', this, true)">404</button>
+          <button class="quiz-opt" onclick="quiz('q1', this, false)">400</button>
+          <button class="quiz-opt" onclick="quiz('q1', this, false)">500</button>
+        </div>
+        <div class="quiz-result" id="q1-result"></div>
+      </div>
+      <div class="quiz-item" id="q2">
+        <div class="quiz-q">User gửi POST /orders nhưng không có Authorization header. Trả gì?</div>
+        <div class="quiz-opts">
+          <button class="quiz-opt" onclick="quiz('q2', this, false)">400</button>
+          <button class="quiz-opt" onclick="quiz('q2', this, true)">401</button>
+          <button class="quiz-opt" onclick="quiz('q2', this, false)">403</button>
+          <button class="quiz-opt" onclick="quiz('q2', this, false)">404</button>
+        </div>
+        <div class="quiz-result" id="q2-result"></div>
+      </div>
+      <div class="quiz-item" id="q3">
+        <div class="quiz-q">POST /products tạo thành công sản phẩm mới. Trả gì?</div>
+        <div class="quiz-opts">
+          <button class="quiz-opt" onclick="quiz('q3', this, false)">200</button>
+          <button class="quiz-opt" onclick="quiz('q3', this, true)">201</button>
+          <button class="quiz-opt" onclick="quiz('q3', this, false)">202</button>
+          <button class="quiz-opt" onclick="quiz('q3', this, false)">204</button>
+        </div>
+        <div class="quiz-result" id="q3-result"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXERCISE -->
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — Status Code Audit</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Grep toàn bộ codebase: tìm tất cả chỗ return 200 với error message trong body. List những chỗ cần fix.</li>
+      <li><span class="step-num">2</span>Tạo global exception filter trong NestJS. Map domain exceptions → đúng HTTP status codes.</li>
+      <li><span class="step-num">3</span>Test edge cases: gửi request với JWT expired → verify 401. Gửi JWT của user A để xem data user B → verify 403.</li>
+      <li><span class="step-num">4</span>Implement rate limiter (NestJS throttler). Gửi &gt;X requests/minute → verify 429 với Retry-After header.</li>
+      <li><span class="step-num">5</span>Review: DELETE endpoint của bạn có trả 204 No Content không? Nếu trả 200 với empty body → fix.</li>
+    </ul>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>2xx = success, 3xx = redirect, 4xx = client error, 5xx = server error.</li>
+      <li>Quan trọng: 401 (unauthenticated) vs 403 (unauthorized) — hai khái niệm khác nhau.</li>
+      <li>DELETE → 204 No Content. POST create → 201 Created + Location header.</li>
+      <li>Không bao giờ return 200 với error trong body — client không thể distinguish.</li>
+      <li>429 Too Many Requests phải có Retry-After header để client biết đợi bao lâu.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="08a-http-rest.html">← HTTP &amp; REST</a>
+  <div class="progress-dots">
+    <div class="dot"></div><div class="dot active"></div>
+    <div class="dot"></div><div class="dot"></div>
+  </div>
+  <a href="08c-auth-jwt.html" class="next">Auth &amp; JWT →</a>
+</div>
+
+<script>
+function quiz(id, btn, correct) {
+  const container = document.getElementById(id);
+  container.querySelectorAll('.quiz-opt').forEach(b => b.disabled = true);
+  btn.classList.add(correct ? 'correct' : 'wrong');
+  if (!correct) {
+    container.querySelectorAll('.quiz-opt').forEach(b => {
+      if (b !== btn && b.onclick.toString().includes('true')) b.classList.add('correct');
+    });
+  }
+  document.getElementById(id + '-result').textContent = correct ? '✅ Correct!' : '❌ Try again next time.';
+  document.getElementById(id + '-result').style.color = correct ? '#34d399' : '#ef4444';
+}
+</script>
+</body>
+</html>

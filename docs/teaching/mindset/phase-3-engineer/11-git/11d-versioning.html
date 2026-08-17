@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>11d — Versioning | Phase 3</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--accent:#58a6ff;--success:#3fb950;--warning:#d29922;--error:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.progress-bar{position:fixed;top:0;left:0;width:100%;height:3px;background:var(--border);z-index:100;}
+.progress-fill{height:100%;background:var(--accent);width:0;transition:width .1s;}
+nav{position:sticky;top:3px;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:90;}
+nav .brand{font-weight:700;color:var(--accent);font-size:.9rem;}
+nav .links a{color:var(--muted);text-decoration:none;margin-left:1.2rem;font-size:.85rem;transition:color .2s;}
+nav .links a:hover{color:var(--text);}
+.container{max-width:860px;margin:0 auto;padding:2rem 1.5rem;}
+h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;}
+.subtitle{color:var(--muted);margin-bottom:2.5rem;font-size:1.05rem;}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:1rem;color:var(--accent);}
+.section{margin-bottom:3rem;opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
+.section.visible{opacity:1;transform:none;}
+.label{display:inline-block;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;margin-bottom:.5rem;}
+/* SemVer interactive */
+.semver-display{font-family:monospace;font-size:2.5rem;font-weight:800;text-align:center;margin-bottom:.5rem;}
+.semver-display .major{color:var(--error);}
+.semver-display .minor{color:var(--warning);}
+.semver-display .patch{color:var(--success);}
+.semver-controls{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1rem;}
+.semver-ctrl{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;text-align:center;}
+.semver-ctrl h4{font-size:.9rem;font-weight:700;margin-bottom:.3rem;}
+.semver-ctrl .inc-btn{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:.4rem .8rem;border-radius:6px;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s;margin-top:.5rem;}
+.semver-ctrl .inc-btn:hover{border-color:var(--accent);color:var(--accent);}
+.semver-ctrl .desc{font-size:.78rem;color:var(--muted);margin-top:.4rem;}
+.semver-note{text-align:center;font-size:.85rem;color:var(--muted);margin-bottom:1.5rem;min-height:1.5rem;}
+/* Commit convention */
+.conv-table{width:100%;border-collapse:collapse;font-size:.87rem;margin-bottom:1rem;}
+.conv-table th{background:var(--surface);padding:.7rem .9rem;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);}
+.conv-table td{padding:.65rem .9rem;border-bottom:1px solid var(--border);font-family:monospace;vertical-align:top;}
+.conv-table tr:last-child td{border-bottom:none;}
+.badge{display:inline-block;font-size:.72rem;font-weight:700;padding:.15rem .45rem;border-radius:4px;}
+.badge.major{background:#2a0808;color:var(--error);}
+.badge.minor{background:#2a1800;color:var(--warning);}
+.badge.patch{background:#1a3a1a;color:var(--success);}
+.badge.none{background:#1a1a1a;color:var(--muted);}
+/* changelog */
+.changelog{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin-bottom:1rem;font-size:.87rem;}
+.changelog h4{font-size:.95rem;font-weight:700;margin-bottom:.8rem;color:var(--accent);}
+.changelog-section{margin-bottom.6rem;}
+.changelog-section h5{font-size:.82rem;font-weight:700;color:var(--muted);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.05em;}
+.changelog-section li{color:var(--text);padding:.15rem 0;padding-left:.8rem;position:relative;}
+.changelog-section li::before{content:'•';position:absolute;left:0;color:var(--muted);}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:1.1rem;overflow-x:auto;font-size:.83rem;line-height:1.7;margin-bottom:1rem;font-family:monospace;}
+pre .c{color:var(--muted);}
+pre .cmd{color:var(--success);}
+.exercise{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.exercise h3{color:var(--accent);margin-bottom:.8rem;font-size:1rem;}
+.exercise ol{padding-left:1.2rem;color:var(--muted);font-size:.9rem;line-height:1.8;}
+.takeaway{background:linear-gradient(135deg,#1a2235,#161b22);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.takeaway h3{color:var(--accent);margin-bottom:1rem;}
+.takeaway ul{padding-left:1.2rem;line-height:2;}
+.nav-links{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-links a{color:var(--accent);text-decoration:none;font-size:.9rem;padding:.5rem 1rem;border:1px solid var(--border);border-radius:6px;transition:border-color .2s;}
+.nav-links a:hover{border-color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav>
+  <span class="brand">Phase 3 — Engineer Mindset</span>
+  <div class="links">
+    <a href="11c-pr-review.html">← PR Review</a>
+    <a href="../12-security/12a-owasp-top10.html">Security →</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="section" id="s0">
+    <div class="label">11d / 4</div>
+    <h1>Versioning</h1>
+    <p class="subtitle">SemVer + Conventional Commits — the standard language of software releases.</p>
+  </div>
+
+  <div class="section" id="s1">
+    <h2>SemVer Interactive</h2>
+    <div class="semver-display">
+      <span class="major" id="sv-major">1</span>.<span class="minor" id="sv-minor">4</span>.<span class="patch" id="sv-patch">2</span>
+    </div>
+    <div class="semver-note" id="sv-note">Click a button to bump the version</div>
+    <div class="semver-controls">
+      <div class="semver-ctrl">
+        <h4 style="color:var(--error)">MAJOR</h4>
+        <button class="inc-btn" onclick="bump('major')">Bump Major</button>
+        <div class="desc">Breaking change — callers must update</div>
+      </div>
+      <div class="semver-ctrl">
+        <h4 style="color:var(--warning)">MINOR</h4>
+        <button class="inc-btn" onclick="bump('minor')">Bump Minor</button>
+        <div class="desc">New feature — backward compatible</div>
+      </div>
+      <div class="semver-ctrl">
+        <h4 style="color:var(--success)">PATCH</h4>
+        <button class="inc-btn" onclick="bump('patch')">Bump Patch</button>
+        <div class="desc">Bug fix — backward compatible</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="s2">
+    <h2>Conventional Commits → SemVer</h2>
+    <table class="conv-table">
+      <tr><th>Commit prefix</th><th>Example</th><th>SemVer bump</th></tr>
+      <tr><td>feat!</td><td>feat!: remove deprecated /v1 endpoints</td><td><span class="badge major">MAJOR</span></td></tr>
+      <tr><td>BREAKING CHANGE</td><td>body: BREAKING CHANGE: auth required on all routes</td><td><span class="badge major">MAJOR</span></td></tr>
+      <tr><td>feat</td><td>feat(orders): add bulk create endpoint</td><td><span class="badge minor">MINOR</span></td></tr>
+      <tr><td>fix</td><td>fix(auth): handle expired JWT gracefully</td><td><span class="badge patch">PATCH</span></td></tr>
+      <tr><td>perf</td><td>perf(db): add index on orders.userId</td><td><span class="badge patch">PATCH</span></td></tr>
+      <tr><td>refactor</td><td>refactor(service): extract validation logic</td><td><span class="badge none">NONE</span></td></tr>
+      <tr><td>docs</td><td>docs: update README setup guide</td><td><span class="badge none">NONE</span></td></tr>
+      <tr><td>test</td><td>test: add unit tests for OrderService</td><td><span class="badge none">NONE</span></td></tr>
+      <tr><td>chore</td><td>chore: upgrade NestJS to v11</td><td><span class="badge none">NONE</span></td></tr>
+    </table>
+  </div>
+
+  <div class="section" id="s3">
+    <h2>Auto-Generate Changelog</h2>
+    <div class="changelog">
+      <h4>CHANGELOG.md — v2.0.0 (2026-08-14)</h4>
+      <div class="changelog-section">
+        <h5>Breaking Changes</h5>
+        <ul>
+          <li>feat!: remove deprecated /api/v1 endpoints — migrate to /api/v2</li>
+          <li>feat!: JWT required on all authenticated routes (BREAKING CHANGE)</li>
+        </ul>
+      </div>
+      <div class="changelog-section" style="margin-top:.6rem;">
+        <h5>Features</h5>
+        <ul>
+          <li>feat(orders): add bulk order create endpoint</li>
+          <li>feat(auth): implement refresh token rotation</li>
+        </ul>
+      </div>
+      <div class="changelog-section" style="margin-top:.6rem;">
+        <h5>Bug Fixes</h5>
+        <ul>
+          <li>fix(auth): handle expired JWT with 401 instead of 500</li>
+          <li>fix(orders): pagination returns correct total count</li>
+        </ul>
+      </div>
+    </div>
+    <pre><span class="c"># Auto-generate with standard-version or release-please</span>
+<span class="cmd">npm install -g standard-version</span>
+<span class="cmd">standard-version</span>  <span class="c"># bumps version + generates CHANGELOG + creates tag</span>
+
+<span class="c"># Or with release-please (GitHub Actions)</span>
+<span class="c"># Reads conventional commits → opens a PR with version bump</span></pre>
+  </div>
+
+  <div class="section" id="s4">
+    <div class="exercise">
+      <h3>🔬 Exercise — Version Classification</h3>
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:.8rem;">Current version: <strong>2.3.1</strong>. For each change, determine the new version number:</p>
+      <ol>
+        <li>Add a new optional field to the POST /products response</li>
+        <li>Fix a bug where DELETE /orders/:id returns 404 incorrectly</li>
+        <li>Change the authentication method from API key to JWT (existing clients break)</li>
+        <li>Add a new endpoint GET /products/trending</li>
+        <li>Remove the GET /v1/products endpoint (deprecated 6 months ago)</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section" id="s5">
+    <div class="takeaway">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li>MAJOR = breaking change (callers must update), MINOR = new feature, PATCH = bug fix</li>
+        <li>Conventional Commits make version bumps automatic and auditable</li>
+        <li>Start at 0.x.x — SemVer allows breaking changes freely. 1.0.0 = public stability promise.</li>
+        <li>Tags are permanent version markers: <code>git tag -a v2.0.0 -m "Release 2.0.0"</code></li>
+        <li>Never modify a published release tag — create a new one</li>
+      </ul>
+    </div>
+    <div class="nav-links">
+      <a href="11c-pr-review.html">← 11c: PR Review</a>
+      <a href="../12-security/12a-owasp-top10.html">12a: OWASP →</a>
+    </div>
+  </div>
+</div>
+<script>
+let v = [1, 4, 2];
+const notes = {
+  major: 'MAJOR bumped → minor and patch reset to 0. Signals breaking change.',
+  minor: 'MINOR bumped → patch resets to 0. New backward-compatible feature.',
+  patch: 'PATCH bumped. Bug fix, no API change.'
+};
+function bump(type) {
+  if (type === 'major') { v[0]++; v[1] = 0; v[2] = 0; }
+  else if (type === 'minor') { v[1]++; v[2] = 0; }
+  else { v[2]++; }
+  document.getElementById('sv-major').textContent = v[0];
+  document.getElementById('sv-minor').textContent = v[1];
+  document.getElementById('sv-patch').textContent = v[2];
+  document.getElementById('sv-note').textContent = notes[type];
+}
+window.addEventListener('scroll', () => {
+  document.getElementById('pf').style.width = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100 + '%';
+});
+const obs = new IntersectionObserver(entries => { entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+document.querySelectorAll('.section').forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

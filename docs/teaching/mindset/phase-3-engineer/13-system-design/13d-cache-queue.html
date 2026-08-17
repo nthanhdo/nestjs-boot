@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>13d — Cache & Message Queue | Phase 3</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--accent:#58a6ff;--success:#3fb950;--warning:#d29922;--error:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.progress-bar{position:fixed;top:0;left:0;width:100%;height:3px;background:var(--border);z-index:100;}
+.progress-fill{height:100%;background:var(--accent);width:0;transition:width .1s;}
+nav{position:sticky;top:3px;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:90;}
+nav .brand{font-weight:700;color:var(--accent);font-size:.9rem;}
+nav .links a{color:var(--muted);text-decoration:none;margin-left:1.2rem;font-size:.85rem;transition:color .2s;}
+nav .links a:hover{color:var(--text);}
+.container{max-width:860px;margin:0 auto;padding:2rem 1.5rem;}
+h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;}
+.subtitle{color:var(--muted);margin-bottom:2.5rem;font-size:1.05rem;}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:1rem;color:var(--accent);}
+.section{margin-bottom:3rem;opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
+.section.visible{opacity:1;transform:none;}
+.label{display:inline-block;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;margin-bottom:.5rem;}
+/* cache layers */
+.cache-layers{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem;}
+.cache-layer{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.8rem 1rem;cursor:pointer;transition:all .2s;display:flex;justify-content:space-between;align-items:center;}
+.cache-layer:hover{border-color:var(--accent);}
+.cache-layer.active{border-color:var(--accent);background:#1a2840;}
+.cache-layer .name{font-weight:700;font-size:.9rem;}
+.cache-layer .latency{font-size:.8rem;color:var(--muted);}
+.cache-detail{background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:1rem;margin-bottom:1rem;display:none;font-size:.87rem;color:var(--muted);line-height:1.7;}
+.cache-detail.show{display:block;}
+/* queue animation */
+.queue-vis{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin-bottom:1rem;}
+.queue-vis h4{font-size:.9rem;font-weight:700;margin-bottom:1rem;}
+.queue-flow{display:flex;gap:.5rem;align-items:flex-start;flex-wrap:wrap;margin-bottom:1rem;}
+.q-box{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:.6rem .9rem;font-size:.8rem;text-align:center;}
+.q-box.producer{border-color:var(--accent);color:var(--accent);}
+.q-box.queue-node{border-color:var(--warning);color:var(--warning);min-width:100px;}
+.q-box.consumer{border-color:var(--success);color:var(--success);}
+.q-msgs{display:flex;gap:.3rem;flex-wrap:wrap;min-height:2rem;margin:.3rem 0;}
+.q-msg{background:#2a1800;border:1px solid var(--warning);color:var(--warning);font-size:.7rem;padding:.15rem .4rem;border-radius:4px;transition:all .3s;}
+.q-msg.processing{background:#1a3a1a;border-color:var(--success);color:var(--success);}
+.q-msg.done{opacity:0;}
+.q-controls{display:flex;gap:.5rem;flex-wrap:wrap;}
+.btn{padding:.4rem 1rem;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer;font-size:.83rem;transition:all .2s;}
+.btn:hover{border-color:var(--accent);color:var(--accent);}
+.q-log{font-size:.8rem;color:var(--muted);margin-top:.6rem;min-height:1.5rem;font-family:monospace;}
+/* patterns */
+.patterns{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.pattern-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;}
+.pattern-card h4{font-size:.9rem;font-weight:700;margin-bottom:.4rem;color:var(--accent);}
+.pattern-card p{font-size:.83rem;color:var(--muted);}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;font-size:.82rem;line-height:1.7;margin-bottom:1rem;font-family:monospace;}
+pre .c{color:var(--muted);}
+pre .good{color:var(--success);}
+.exercise{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.exercise h3{color:var(--accent);margin-bottom:.8rem;font-size:1rem;}
+.exercise ol{padding-left:1.2rem;color:var(--muted);font-size:.9rem;line-height:1.8;}
+.takeaway{background:linear-gradient(135deg,#1a2235,#161b22);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.takeaway h3{color:var(--accent);margin-bottom:1rem;}
+.takeaway ul{padding-left:1.2rem;line-height:2;}
+.nav-links{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-links a{color:var(--accent);text-decoration:none;font-size:.9rem;padding:.5rem 1rem;border:1px solid var(--border);border-radius:6px;transition:border-color .2s;}
+.nav-links a:hover{border-color:var(--accent);}
+@media(max-width:640px){.patterns{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav>
+  <span class="brand">Phase 3 — Engineer Mindset</span>
+  <div class="links">
+    <a href="13c-scaling.html">← Scaling</a>
+    <a href="13e-cap-circuit.html">CAP & Circuit →</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="section" id="s0">
+    <div class="label">13d / 5</div>
+    <h1>Cache & Message Queue</h1>
+    <p class="subtitle">Two tools that solve most scalability problems. Cache kills latency. Queues decouple services and absorb spikes.</p>
+  </div>
+
+  <div class="section" id="s1">
+    <h2>Cache Layers — Click to explore</h2>
+    <div class="cache-layers" id="cache-layers"></div>
+    <div class="cache-detail" id="cache-detail"></div>
+  </div>
+
+  <div class="section" id="s2">
+    <h2>Message Queue — Live Visualization</h2>
+    <div class="queue-vis">
+      <h4>Producer → Queue → Consumers</h4>
+      <div class="queue-flow">
+        <div class="q-box producer">Producer<br>(API Server)</div>
+        <div style="color:var(--muted);font-size:1.2rem;padding-top:.5rem;">→</div>
+        <div>
+          <div class="q-box queue-node">Queue<br>(BullMQ/Redis)</div>
+          <div class="q-msgs" id="q-msgs"></div>
+        </div>
+        <div style="color:var(--muted);font-size:1.2rem;padding-top:.5rem;">→</div>
+        <div style="display:flex;flex-direction:column;gap:.4rem;">
+          <div class="q-box consumer">Worker 1</div>
+          <div class="q-box consumer">Worker 2</div>
+        </div>
+      </div>
+      <div class="q-controls">
+        <button class="btn" onclick="enqueue()">+ Enqueue Job</button>
+        <button class="btn" onclick="burst()">Burst (5 jobs)</button>
+        <button class="btn" onclick="process()">▶ Process</button>
+      </div>
+      <div class="q-log" id="q-log">Ready. Enqueue some jobs, then process them.</div>
+    </div>
+  </div>
+
+  <div class="section" id="s3">
+    <h2>Cache Patterns</h2>
+    <div class="patterns">
+      <div class="pattern-card">
+        <h4>Cache-Aside (Lazy)</h4>
+        <p>App checks cache. Miss → load from DB → populate cache → return. Most common. App controls what's cached.</p>
+      </div>
+      <div class="pattern-card">
+        <h4>Write-Through</h4>
+        <p>Write to cache AND DB together. Cache always current. Higher write latency (both systems must ack).</p>
+      </div>
+      <div class="pattern-card">
+        <h4>Write-Behind (Write-Back)</h4>
+        <p>Write to cache, async to DB. Low write latency. Risk: data loss if cache dies before DB write.</p>
+      </div>
+      <div class="pattern-card">
+        <h4>Read-Through</h4>
+        <p>Cache sits in front of DB. Miss → cache loads from DB transparently. Cache provider manages it.</p>
+      </div>
+    </div>
+    <pre><span class="c">// Cache-Aside with Redis (NestJS)</span>
+<span class="good">async getProduct(id: string): Promise<Product> {
+  const key = `product:${id}`;
+  const cached = await this.redis.get(key);
+  if (cached) return JSON.parse(cached);          // Cache HIT
+
+  const product = await this.productRepo.findById(id); // Cache MISS
+  await this.redis.setex(key, 3600, JSON.stringify(product)); // 1hr TTL
+  return product;
+}</span></pre>
+  </div>
+
+  <div class="section" id="s4">
+    <div class="exercise">
+      <h3>🔬 Exercise — When to Use Which</h3>
+      <ol>
+        <li>Your product catalog (10K products) is read 100K times/day, updated hourly. Cache pattern?</li>
+        <li>User sends 1,000 emails at once. Your email provider rate-limits at 10/sec. Solution?</li>
+        <li>A payment triggers: update DB, send email, update inventory, create invoice. All must succeed. How do you coordinate?</li>
+        <li>Product prices change frequently (every 5 min). If you cache them, what TTL do you set?</li>
+        <li>A "flash sale" will cause 50,000 concurrent users in 60 seconds. What two patterns protect your DB?</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section" id="s5">
+    <div class="takeaway">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li>Cache-aside is the default pattern — simple, effective, app controls what's cached</li>
+        <li>TTL = cache invalidation strategy — choose based on data change frequency</li>
+        <li>Queues decouple producer from consumer — producer doesn't wait for all downstream effects</li>
+        <li>Queues absorb traffic spikes — consumers process at their own rate</li>
+        <li>BullMQ (Redis-backed) = standard NestJS queue. Supports retries, priorities, delays.</li>
+      </ul>
+    </div>
+    <div class="nav-links">
+      <a href="13c-scaling.html">← 13c: Scaling</a>
+      <a href="13e-cap-circuit.html">13e: CAP & Circuit Breaker →</a>
+    </div>
+  </div>
+</div>
+<script>
+const cacheLayers = [
+  {name:'Browser Cache', latency:'~0ms', detail:'Stored in user\'s browser. HTTP headers control it: Cache-Control: max-age=86400. Free — zero server cost. Best for static assets (CSS, JS, images). The fastest cache is the one that never hits your server.'},
+  {name:'CDN (Content Delivery Network)', latency:'~5-20ms', detail:'Global edge nodes cache your content closer to users. Cloudflare, AWS CloudFront. Dramatically reduces latency for geographically distributed users. Also absorbs DDoS traffic.'},
+  {name:'Application Cache (Redis/Memcached)', latency:'~0.1-1ms', detail:'In-memory store shared across all API servers. Cache DB queries, session data, computed results. Redis = Swiss army knife (sorted sets, pub/sub, TTL). The most common caching layer for APIs.'},
+  {name:'DB Query Cache', latency:'~1-5ms', detail:'DB engine caches the result of expensive queries. MySQL had it (deprecated in 8.0 — too many invalidation issues). MongoDB caches frequently accessed documents in WiredTiger engine.'},
+  {name:'Disk Cache (OS Page Cache)', latency:'~0.1-1ms (SSD)', detail:'OS caches disk reads in RAM. Transparent to application. SSDs made this less critical but it still matters for large dataset scans. NVMe SSDs: ~0.1ms reads.'}
+];
+let activeCacheLayer = null;
+const container = document.getElementById('cache-layers');
+cacheLayers.forEach((layer, i) => {
+  const el = document.createElement('div');
+  el.className = 'cache-layer';
+  el.innerHTML = `<span class="name">${layer.name}</span><span class="latency">${layer.latency}</span>`;
+  el.onclick = () => {
+    activeCacheLayer = activeCacheLayer === i ? null : i;
+    container.querySelectorAll('.cache-layer').forEach((c,j) => c.classList.toggle('active', j === activeCacheLayer));
+    const detail = document.getElementById('cache-detail');
+    if (activeCacheLayer === null) { detail.classList.remove('show'); return; }
+    detail.textContent = cacheLayers[activeCacheLayer].detail;
+    detail.classList.add('show');
+  };
+  container.appendChild(el);
+});
+
+let jobCount = 0;
+let queue = [];
+const qLog = document.getElementById('q-log');
+
+function enqueue() {
+  jobCount++;
+  const id = jobCount;
+  queue.push(id);
+  const msgs = document.getElementById('q-msgs');
+  const msg = document.createElement('div');
+  msg.className = 'q-msg';
+  msg.id = `msg${id}`;
+  msg.textContent = `job-${id}`;
+  msgs.appendChild(msg);
+  qLog.textContent = `Job ${id} enqueued. Queue depth: ${queue.length}`;
+}
+
+function burst() { for (let i = 0; i < 5; i++) setTimeout(enqueue, i * 80); }
+
+function process() {
+  if (queue.length === 0) { qLog.textContent = 'Queue is empty.'; return; }
+  const id = queue.shift();
+  const msg = document.getElementById(`msg${id}`);
+  if (!msg) return;
+  msg.classList.add('processing');
+  qLog.textContent = `Processing job-${id}... Queue depth: ${queue.length}`;
+  setTimeout(() => {
+    msg.classList.add('done');
+    setTimeout(() => msg.remove(), 300);
+    qLog.textContent = `job-${id} completed. Queue depth: ${queue.length}`;
+  }, 800);
+}
+
+window.addEventListener('scroll', () => {
+  document.getElementById('pf').style.width = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100 + '%';
+});
+const obs = new IntersectionObserver(entries => { entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+document.querySelectorAll('.section').forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

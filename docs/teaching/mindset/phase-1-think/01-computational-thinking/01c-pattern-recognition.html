@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01c — Nhận Diện Pattern | Computational Thinking</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+  --text: #eef1f8; --muted: #8899bb;
+  --accent: #a78bfa; --yellow: #ffd43b; --green: #2ecc71; --red: #e74c3c;
+  --blue: #5b8def; --orange: #ffb347; --pink: #ff5e7a; --teal: #00cec9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 20% 20%, rgba(167,139,250,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(91,141,239,0.05) 0%, transparent 50%); pointer-events:none; z-index:0; }
+.top-nav { background: var(--surface2); border-bottom: 1px solid var(--border); padding: 10px 24px; position: sticky; top: 0; z-index: 200; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.nav-home { color: var(--accent); text-decoration: none; font-weight: 700; font-size: .82rem; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(167,139,250,0.3); }
+.nav-home:hover { background: rgba(167,139,250,0.1); }
+.nav-topic { color: var(--muted); font-size: .8rem; flex: 1; padding: 0 8px; }
+.nav-sub-prev, .nav-sub-next { color: var(--muted); text-decoration: none; font-size: .8rem; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--border); transition: all .2s; white-space: nowrap; }
+.nav-sub-prev:hover, .nav-sub-next:hover { color: var(--text); border-color: var(--accent); }
+.hero { background: var(--surface); border-bottom: 1px solid var(--border); padding: 28px 24px 24px; }
+.hero-inner { max-width: 860px; margin: 0 auto; }
+.hero-badge { display: inline-flex; gap: 6px; background: linear-gradient(135deg,rgba(124,92,231,0.2),rgba(167,139,250,0.1)); border: 1px solid rgba(167,139,250,0.3); border-radius: 20px; padding: 4px 12px; font-size: .72rem; font-weight: 700; color: var(--accent); letter-spacing: .5px; margin-bottom: 12px; }
+.hero h1 { font-size: 2rem; font-weight: 900; background: linear-gradient(135deg,#fff,var(--accent)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom: 10px; }
+.hero-desc { color: var(--muted); font-size: 1rem; max-width: 600px; }
+main { max-width: 860px; margin: 0 auto; padding: 36px 24px 100px; position: relative; z-index: 1; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+.card-title { font-size: 1rem; font-weight: 700; color: var(--accent); margin-bottom: 14px; }
+.highlight { background: linear-gradient(135deg,rgba(167,139,250,0.1),rgba(91,141,239,0.08)); border: 1px solid rgba(167,139,250,0.3); border-radius: 12px; padding: 18px 22px; margin: 20px 0; }
+.highlight-label { font-size: .7rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.highlight-text { color: var(--text); font-size: .95rem; line-height: 1.7; }
+.takeaway { background: linear-gradient(135deg,rgba(46,204,113,0.1),rgba(46,204,113,0.04)); border: 1px solid rgba(46,204,113,0.3); border-radius: 14px; padding: 24px; margin-top: 28px; }
+.takeaway-title { color: var(--green); font-weight: 700; font-size: .9rem; margin-bottom: 14px; }
+.takeaway-list { list-style: none; }
+.takeaway-list li { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; font-size: .9rem; color: var(--text); line-height: 1.6; }
+.takeaway-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+/* PATTERN CARDS */
+.pattern-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin: 20px 0; }
+.pattern-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; cursor: pointer; transition: all .3s; }
+.pattern-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.pattern-card.matched { border-color: var(--green); background: rgba(46,204,113,0.08); }
+.pattern-icon { font-size: 2rem; margin-bottom: 8px; }
+.pattern-name { font-size: .85rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.pattern-sub { font-size: .75rem; color: var(--muted); }
+.pattern-match { margin-top: 14px; background: rgba(46,204,113,0.08); border: 1px solid rgba(46,204,113,0.3); border-radius: 10px; padding: 12px; color: var(--green); font-size: .85rem; display: none; animation: fadeUp .3s; }
+.pattern-match.show { display: block; }
+
+/* PATTERN CATALOG */
+.catalog { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+.cat-item { background: var(--surface2); border-radius: 10px; padding: 14px; }
+.cat-name { font-size: .82rem; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+.cat-examples { font-size: .78rem; color: var(--muted); line-height: 1.7; }
+.cat-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: .65rem; font-weight: 700; margin-right: 4px; background: rgba(167,139,250,0.15); color: var(--accent); }
+
+.kw { color: #ff9f7f; } .fn { color: #7ec8e3; } .str { color: #a8d8a8; } .num { color: #ffd43b; } .cmt { color: #5a7a6a; }
+.ex-code { background: #0a0f1e; border-radius: 8px; padding: 14px; margin: 10px 0; font-family: monospace; font-size: .8rem; line-height: 1.85; overflow-x: auto; white-space: pre; }
+
+.ex-section { margin-top: 40px; }
+.ex-section h2 { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-bottom: 16px; }
+.exercise { border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; overflow: hidden; }
+.ex-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; cursor: pointer; background: var(--surface); transition: background .2s; }
+.ex-header:hover { background: var(--surface2); }
+.ex-tag { background: rgba(167,139,250,0.15); color: var(--accent); border-radius: 6px; padding: 2px 8px; font-size: .72rem; font-weight: 700; flex-shrink: 0; }
+.ex-title-text { flex: 1; font-weight: 600; font-size: .9rem; }
+.ex-diff { padding: 2px 10px; border-radius: 20px; font-size: .7rem; font-weight: 700; }
+.ex-diff.easy { background: rgba(46,204,113,0.15); color: var(--green); }
+.ex-diff.medium { background: rgba(255,183,71,0.15); color: var(--orange); }
+.ex-toggle { color: var(--muted); font-size: .75rem; transition: transform .3s; }
+.exercise.open .ex-toggle { transform: rotate(90deg); }
+.ex-body { display: none; padding: 18px; background: var(--surface); border-top: 1px solid var(--border); }
+.exercise.open .ex-body { display: block; animation: fadeUp .3s; }
+.ex-prompt { background: var(--surface2); border-left: 3px solid var(--accent); border-radius: 8px; padding: 14px; margin-bottom: 12px; font-size: .9rem; color: var(--text); line-height: 1.7; }
+.ex-hint { background: rgba(255,183,71,0.06); border: 1px solid rgba(255,183,71,0.2); border-radius: 8px; padding: 10px 14px; font-size: .83rem; color: var(--muted); margin-bottom: 12px; }
+.ex-reveal { background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.3); color: var(--accent); padding: 7px 16px; border-radius: 8px; cursor: pointer; font-size: .83rem; font-weight: 600; }
+.ex-answer { display: none; margin-top: 12px; background: var(--surface2); border-left: 3px solid var(--green); border-radius: 8px; padding: 14px; font-size: .88rem; color: var(--text); line-height: 1.7; }
+.next-link { display: flex; align-items: center; gap: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 24px; text-decoration: none; margin-top: 32px; transition: all .3s; }
+.next-link:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+.next-icon { width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg,#7c5ce7,#a78bfa); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+.next-text .label { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.next-text .title { font-weight: 700; color: var(--text); }
+.next-arrow { margin-left: auto; color: var(--muted); font-size: 1.2rem; }
+.prev-link { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--muted); font-size: .85rem; margin-bottom: 16px; transition: color .2s; }
+.prev-link:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="../index.html" class="nav-home">🏠 Hub</a>
+  <span class="nav-topic">Bài 01 — Tư Duy Tính Toán · 01c/07</span>
+  <a href="01b-abstraction.html" class="nav-sub-prev">← 01b Abstraction</a>
+  <a href="01d-algorithmic-thinking.html" class="nav-sub-next">01d Algorithmic Thinking →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">KHÁI NIỆM 03 · 7 PHẦN</div>
+    <h1>🔍 Nhận Diện Pattern</h1>
+    <p class="hero-desc">Ba bài toán trông khác nhau nhưng thực ra có cùng cấu trúc — giải một là giải được tất cả. Đây là cách senior engineer làm việc nhanh hơn junior.</p>
+  </div>
+</div>
+
+<main>
+
+<a href="01b-abstraction.html" class="prev-link">← Quay lại 01b: Abstraction</a>
+
+<!-- INTERACTIVE DEMO -->
+<div class="card">
+  <div class="card-title">🎮 Click vào 3 bài toán để khám phá pattern chung</div>
+  <div style="color:var(--muted);font-size:.88rem;margin-bottom:16px;">Nhìn vào 3 bài toán sau — chúng trông rất khác nhau nhưng đều có cùng pattern.</div>
+  <div class="pattern-grid">
+    <div class="pattern-card" id="pc1" onclick="matchPattern(1)">
+      <div class="pattern-icon">📬</div>
+      <div class="pattern-name">Hàng đợi Bưu điện</div>
+      <div class="pattern-sub">Người đến trước được phục vụ trước</div>
+    </div>
+    <div class="pattern-card" id="pc2" onclick="matchPattern(2)">
+      <div class="pattern-icon">🖨️</div>
+      <div class="pattern-name">Hàng chờ in tài liệu</div>
+      <div class="pattern-sub">Lệnh in đầu tiên được xử lý đầu tiên</div>
+    </div>
+    <div class="pattern-card" id="pc3" onclick="matchPattern(3)">
+      <div class="pattern-icon">🌐</div>
+      <div class="pattern-name">HTTP Request Queue</div>
+      <div class="pattern-sub">Request đến trước được server xử lý trước</div>
+    </div>
+  </div>
+  <div class="pattern-match" id="pm">
+    <strong>✓ Cùng Pattern: QUEUE (FIFO — First In, First Out)</strong><br>
+    Cả 3 bài toán đều là FIFO. Chỉ cần implement Queue một lần, dùng được cho tất cả use cases!
+  </div>
+</div>
+
+<!-- SECOND SET: STACK -->
+<div class="card">
+  <div class="card-title">📚 Nhóm Pattern 2: STACK (LIFO)</div>
+  <div style="color:var(--muted);font-size:.88rem;margin-bottom:16px;">Cùng xem 3 ứng dụng khác nhau của Stack pattern:</div>
+  <div class="catalog">
+    <div class="cat-item">
+      <div class="cat-name">🌐 Browser History (Back/Forward)</div>
+      <div class="cat-examples">Mỗi trang được push vào stack. Back = pop. Forward = pop từ future stack.</div>
+    </div>
+    <div class="cat-item">
+      <div class="cat-name">↩️ Ctrl+Z (Undo)</div>
+      <div class="cat-examples">Mỗi action được push. Undo = pop và reverse. Redo = push vào future stack.</div>
+    </div>
+    <div class="cat-item">
+      <div class="cat-name">📂 Git checkout history</div>
+      <div class="cat-examples">Mỗi commit là 1 state. Checkout về past = navigate stack. HEAD = top of stack.</div>
+    </div>
+    <div class="cat-item">
+      <div class="cat-name">📞 Call Stack trong code</div>
+      <div class="cat-examples">Mỗi function call push frame. Return = pop frame. Stack overflow = quá nhiều frames.</div>
+    </div>
+  </div>
+  <div class="highlight">
+    <div class="highlight-label">Implementation chung cho cả 4</div>
+    <div class="highlight-text">
+      <code style="background:var(--surface2);padding:4px 10px;border-radius:6px;font-family:monospace;font-size:.85rem;color:var(--accent)">class HistoryManager&lt;T&gt; { push(state: T); undo(): T; redo(): T }</code>
+      — Nhận ra pattern → implement 1 lần → dùng cho browser, undo, git navigation.
+    </div>
+  </div>
+</div>
+
+<!-- PATTERN CATALOG -->
+<div class="card">
+  <div class="card-title">🗂️ Catalog Pattern phổ biến cần nhận diện</div>
+  <div class="catalog">
+    <div class="cat-item">
+      <div class="cat-name"><span class="cat-badge">FIFO</span>Queue</div>
+      <div class="cat-examples">Hàng đợi, print queue, message queue, request handling, BFS traversal</div>
+    </div>
+    <div class="cat-item">
+      <div class="cat-name"><span class="cat-badge">LIFO</span>Stack</div>
+      <div class="cat-examples">Undo/redo, browser history, call stack, expression evaluation, DFS traversal</div>
+    </div>
+    <div class="cat-item">
+      <div class="cat-name"><span class="cat-badge">MAP</span>Hash Map</div>
+      <div class="cat-examples">Cache lookup, frequency count, groupBy, dedup, index, session store</div>
+    </div>
+    <div class="cat-item">
+      <div class="cat-name"><span class="cat-badge">GRAPH</span>Graph</div>
+      <div class="cat-examples">Social network, routing, dependency resolution, conflict detection</div>
+    </div>
+    <div class="cat-item">
+      <div class="cat-name"><span class="cat-badge">TREE</span>Tree</div>
+      <div class="cat-examples">File system, DOM, org chart, decision tree, recursive decomposition</div>
+    </div>
+    <div class="cat-item">
+      <div class="cat-name"><span class="cat-badge">SLIDING WINDOW</span></div>
+      <div class="cat-examples">Max in subarray, rate limiting, moving average, substring problems</div>
+    </div>
+  </div>
+</div>
+
+<!-- TAKEAWAY -->
+<div class="takeaway">
+  <div class="takeaway-title">🎯 Key Takeaway</div>
+  <ul class="takeaway-list">
+    <li>Khi bạn nhận ra "bài này giống Queue/Stack/Graph tôi từng làm" → không cần giải lại từ đầu</li>
+    <li>Data Structures = patterns lưu trữ. Algorithms = patterns xử lý. Học cả hai!</li>
+    <li>Pattern mới = pattern cũ + biến thể nhỏ. Luyện bằng cách đọc nhiều bài toán khác nhau.</li>
+  </ul>
+</div>
+
+<!-- EXERCISES -->
+<div class="ex-section">
+  <h2>🏋️ Mini Exercises</h2>
+
+  <div class="exercise">
+    <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="ex-tag">Ex 1</span>
+      <span class="ex-title-text">3 bài toán sau dùng cùng pattern gì? Giải thích.</span>
+      <span class="ex-diff easy">🟢 Dễ</span>
+      <span class="ex-toggle">▶</span>
+    </div>
+    <div class="ex-body">
+      <div class="ex-prompt">
+        <strong>A.</strong> Đếm số lần xuất hiện của từng từ trong đoạn văn.<br>
+        <strong>B.</strong> Kiểm tra xem có user nào đăng ký email trùng không.<br>
+        <strong>C.</strong> Cache kết quả API response để không gọi lại.<br><br>
+        Ba bài toán này có cùng pattern gì? Implement chung như thế nào?
+      </div>
+      <button class="ex-reveal" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">Xem đáp án</button>
+      <div class="ex-answer">
+        <strong style="color:var(--green)">Cùng pattern: HASH MAP (key → value lookup)</strong>
+        <div class="ex-code"><span class="cmt">// A. Word frequency</span>
+<span class="kw">const</span> freq = <span class="kw">new</span> Map&lt;<span class="num">string</span>, <span class="num">number</span>&gt;()
+words.<span class="fn">forEach</span>(w => freq.<span class="fn">set</span>(w, (freq.<span class="fn">get</span>(w) ?? <span class="num">0</span>) + <span class="num">1</span>))
+
+<span class="cmt">// B. Email dedup</span>
+<span class="kw">const</span> emails = <span class="kw">new</span> Set&lt;<span class="num">string</span>&gt;()  <span class="cmt">// Set = Map với boolean value</span>
+<span class="kw">const</span> isDuplicate = emails.<span class="fn">has</span>(email)
+
+<span class="cmt">// C. API Cache</span>
+<span class="kw">const</span> cache = <span class="kw">new</span> Map&lt;<span class="num">string</span>, <span class="fn">ApiResponse</span>&gt;()
+<span class="kw">if</span> (cache.<span class="fn">has</span>(key)) <span class="kw">return</span> cache.<span class="fn">get</span>(key)
+<span class="cmt">// else: fetch, cache.set(key, result), return result</span></div>
+        Tất cả đều là <strong>O(1) lookup bằng key</strong>. Nhận ra pattern → chọn đúng data structure.
+      </div>
+    </div>
+  </div>
+
+  <div class="exercise">
+    <div class="ex-header" onclick="this.parentElement.classList.toggle('open')">
+      <span class="ex-tag">Ex 2</span>
+      <span class="ex-title-text">Bài toán "phụ thuộc module" dùng pattern gì?</span>
+      <span class="ex-diff medium">🟡 Trung bình</span>
+      <span class="ex-toggle">▶</span>
+    </div>
+    <div class="ex-body">
+      <div class="ex-prompt">NestJS cần build các module theo đúng thứ tự phụ thuộc:<br>
+        DatabaseModule → UserModule → AuthModule → AppModule<br><br>
+        Module nào cần module kia phải được build trước. Đây là pattern gì? Dùng thuật toán gì?</div>
+      <div class="ex-hint">💡 Gợi ý: Vẽ sơ đồ với module là node, dependency là edge có hướng. Đây là loại graph gì?</div>
+      <button class="ex-reveal" onclick="this.nextElementSibling.style.display='block';this.style.display='none'">Xem đáp án</button>
+      <div class="ex-answer">
+        <strong style="color:var(--green)">Pattern: Directed Acyclic Graph (DAG) + Topological Sort</strong><br><br>
+        Mỗi module là node. Dependency "A cần B" = edge từ A → B. Topological sort cho thứ tự build đúng.<br><br>
+        <strong>Các bài toán khác dùng cùng pattern:</strong>
+        <ul style="margin-top:8px;list-style:none;line-height:2;color:var(--muted);font-size:.85rem">
+          <li>• npm/yarn resolve package dependencies</li>
+          <li>• Makefile — build targets theo thứ tự</li>
+          <li>• CI/CD pipeline — jobs phụ thuộc nhau</li>
+          <li>• Course prerequisites — môn học nào cần học trước</li>
+        </ul>
+        Nhận ra = dùng Topological Sort, không cần tự nghĩ thuật toán mới.
+      </div>
+    </div>
+  </div>
+</div>
+
+<a href="01d-algorithmic-thinking.html" class="next-link">
+  <div class="next-icon">🔄</div>
+  <div class="next-text">
+    <div class="label">Tiếp theo · 01d / 07</div>
+    <div class="title">Tư Duy Thuật Toán (Algorithmic Thinking)</div>
+  </div>
+  <span class="next-arrow">→</span>
+</a>
+
+</main>
+
+<script>
+let matchCount = 0;
+function matchPattern(n) {
+  const el = document.getElementById('pc' + n);
+  if (!el.classList.contains('matched')) {
+    el.classList.add('matched');
+    matchCount++;
+    if (matchCount === 3) document.getElementById('pm').classList.add('show');
+  }
+}
+</script>
+</body>
+</html>

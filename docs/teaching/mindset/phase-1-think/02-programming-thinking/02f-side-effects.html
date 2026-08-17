@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02f — Side Effects & Immutability | Tư Duy Lập Trình</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #151d32; --surface2: #1c2744;
+  --border: #2a3a5c; --text: #eef1f8; --muted: #8899bb;
+  --accent: #a78bfa; --green: #2ecc71; --red: #e74c3c;
+  --blue: #5b8def; --orange: #ffb347; --teal: #00cec9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; }
+.top-nav { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; font-size: .85rem; }
+.top-nav a { color: var(--accent); text-decoration: none; padding: 4px 10px; border-radius: 6px; border: 1px solid transparent; transition: .2s; }
+.top-nav a:hover { border-color: var(--accent); background: #a78bfa18; }
+.nav-center { color: var(--muted); font-size: .8rem; }
+.hero { padding: 48px 24px 32px; max-width: 860px; margin: 0 auto; animation: fadeUp .5s ease; }
+.lesson-tag { display: inline-block; background: #a78bfa22; color: var(--accent); border: 1px solid #a78bfa44; border-radius: 20px; padding: 4px 14px; font-size: .8rem; margin-bottom: 16px; }
+h1 { font-size: 2rem; margin-bottom: 8px; }
+h1 span { color: var(--accent); }
+.subtitle { color: var(--muted); font-size: 1rem; margin-bottom: 32px; }
+.section { max-width: 860px; margin: 0 auto 40px; padding: 0 24px; }
+h2 { font-size: 1.2rem; color: var(--accent); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1rem; color: var(--orange); margin: 16px 0 8px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:600px){ .card-row { grid-template-columns: 1fr; } }
+pre { background: #0a0f1e; border: 1px solid var(--border); border-radius: 10px; padding: 20px; overflow-x: auto; font-size: .88rem; line-height: 1.7; }
+.kw { color: #79b8ff; } .fn { color: #b392f0; } .str { color: #9ecbff; }
+.num { color: var(--orange); } .cmt { color: #6a737d; font-style: italic; } .type { color: var(--teal); }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:600px){ .compare { grid-template-columns: 1fr; } }
+.compare-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.compare-box.bad { border-top: 3px solid var(--red); }
+.compare-box.good { border-top: 3px solid var(--green); }
+.compare-label { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+.compare-box.bad .compare-label { color: var(--red); }
+.compare-box.good .compare-label { color: var(--green); }
+
+/* EFFECT CHIPS */
+.effect-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: .85rem; margin: 4px; cursor: pointer; transition: .2s; }
+.effect-chip:hover { border-color: var(--orange); }
+.effect-chip.visible { border-color: var(--teal); color: var(--teal); background: #00cec912; }
+.effect-chip span { font-size: .75rem; }
+
+/* ONION */
+.onion { position: relative; width: 280px; height: 280px; margin: 0 auto; }
+.onion-ring { position: absolute; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-align: center; font-size: .8rem; transition: .2s; cursor: pointer; }
+.onion-ring:hover { opacity: .85; transform: scale(1.02); }
+.ring-outer { width: 280px; height: 280px; top: 0; left: 0; background: #e74c3c18; border: 2px solid #e74c3c44; color: var(--red); }
+.ring-mid { width: 200px; height: 200px; top: 40px; left: 40px; background: #ffb34718; border: 2px solid #ffb34744; color: var(--orange); }
+.ring-inner { width: 120px; height: 120px; top: 80px; left: 80px; background: #2ecc7118; border: 2px solid #2ecc7144; color: var(--green); font-weight: 600; }
+
+.takeaway { background: linear-gradient(135deg, #a78bfa15, #5b8def10); border: 1px solid #a78bfa44; border-radius: 12px; padding: 20px 24px; margin: 32px auto; max-width: 860px; }
+.takeaway-label { font-size: .75rem; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
+.exercise { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--orange); border-radius: 10px; padding: 20px; margin-top: 16px; }
+.exercise-label { font-size: .75rem; color: var(--orange); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px; }
+
+/* FINAL NEXT NAV */
+.next-nav { max-width: 860px; margin: 0 auto 60px; padding: 0 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:600px){ .next-nav { grid-template-columns: 1fr; } }
+.next-topic { display: flex; align-items: center; gap: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; text-decoration: none; color: var(--text); transition: .2s; }
+.next-topic:hover { border-color: var(--accent); background: #a78bfa08; }
+.next-topic.phase { border-color: var(--accent); background: #a78bfa08; }
+.next-icon { font-size: 2rem; }
+.next-text .label { font-size: .75rem; color: var(--muted); }
+.next-text .title { font-size: 1rem; font-weight: 600; color: var(--accent); }
+.next-arrow { margin-left: auto; font-size: 1.4rem; color: var(--accent); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="02e-interface-abstraction.html">← 02e Interface</a>
+  <span class="nav-center">Bài 02 · Side Effects · 02f / 06</span>
+  <a href="../03-clean-code/03a-naming.html">03a Naming →</a>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">Bài 02f / 06 · Tư Duy Lập Trình · Bài Cuối</div>
+  <h1>⚡ Side Effects &amp; <span>Immutability</span></h1>
+  <p class="subtitle">Side effect = mọi tác động ra ngoài scope của function. Không tránh được, nhưng phải kiểm soát được. Immutability giúp bạn biết chính xác cái gì thay đổi, khi nào.</p>
+</div>
+
+<!-- WHAT ARE SIDE EFFECTS -->
+<div class="section">
+  <h2>⚡ Side Effects là gì?</h2>
+  <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px;">Bất kỳ thứ gì một function làm <em>ngoài việc return value</em> đều là side effect. Bấm để highlight:</p>
+  <div>
+    <div class="effect-chip" onclick="this.classList.toggle('visible')"><span>💾</span> Write to DB</div>
+    <div class="effect-chip" onclick="this.classList.toggle('visible')"><span>📧</span> Send Email</div>
+    <div class="effect-chip" onclick="this.classList.toggle('visible')"><span>📝</span> Write Log</div>
+    <div class="effect-chip" onclick="this.classList.toggle('visible')"><span>🌐</span> HTTP Request</div>
+    <div class="effect-chip" onclick="this.classList.toggle('visible')"><span>📁</span> File Write</div>
+    <div class="effect-chip" onclick="this.classList.toggle('visible')"><span>🔔</span> Emit Event</div>
+    <div class="effect-chip" onclick="this.classList.toggle('visible')"><span>🔄</span> Mutate global</div>
+    <div class="effect-chip" onclick="this.classList.toggle('visible')"><span>📊</span> Analytics</div>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <p style="color:var(--muted);font-size:.9rem;">
+      <strong style="color:var(--orange);">Side effects không xấu</strong> — chúng cần thiết (không ghi DB thì app làm được gì?). Vấn đề là khi side effects <em>ẩn</em>, <em>không kiểm soát được</em>, hoặc <em>xảy ra sai thứ tự</em>.
+    </p>
+  </div>
+</div>
+
+<!-- PUSH EFFECTS TO EDGES -->
+<div class="section">
+  <h2>🧅 Đẩy Side Effects Ra Ngoài — Functional Core</h2>
+  <p style="color:var(--muted);font-size:.9rem;margin-bottom:20px;">Pattern: "Functional Core, Imperative Shell" — pure logic ở trung tâm, side effects chỉ ở lớp ngoài cùng.</p>
+  <div style="display:flex;gap:32px;align-items:center;flex-wrap:wrap;justify-content:center;">
+    <div class="onion">
+      <div class="onion-ring ring-outer">
+        <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:.75rem;">🔌 Imperative Shell<br><span style="font-size:.7rem;opacity:.7;">Controller, Event Handler</span></div>
+      </div>
+      <div class="onion-ring ring-mid">
+        <div style="position:absolute;top:10px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:.75rem;">⚙️ Application<br><span style="font-size:.7rem;opacity:.7;">Orchestration</span></div>
+      </div>
+      <div class="onion-ring ring-inner">
+        <div style="font-size:.78rem;">🧠 Pure<br>Domain Logic</div>
+      </div>
+    </div>
+    <div style="max-width:320px;">
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:12px;"><strong style="color:var(--green);">Core (pure):</strong> business rules, calculations, validations — không có side effects. Same input → same output, dễ test.</p>
+      <p style="color:var(--muted);font-size:.9rem;"><strong style="color:var(--red);">Shell (impure):</strong> DB writes, HTTP calls, emails, events — side effects được isolate ở đây. Shell gọi Core, không ngược lại.</p>
+    </div>
+  </div>
+</div>
+
+<!-- HIDDEN SIDE EFFECTS -->
+<div class="section">
+  <h2>🕵️ Ẩn vs Explicit Side Effects</h2>
+  <div class="compare">
+    <div class="compare-box bad">
+      <div class="compare-label">❌ Hidden side effect</div>
+      <pre style="font-size:.82rem;"><span class="kw">function</span> <span class="fn">calculateTotal</span>(items) {
+  <span class="cmt">// tên gọi là calculate, nhưng lại...</span>
+  analytics.<span class="fn">track</span>(<span class="str">'viewed'</span>)   <span class="cmt">// ← ẩn!</span>
+  logger.<span class="fn">log</span>(<span class="str">'calc'</span>)        <span class="cmt">// ← ẩn!</span>
+  <span class="kw">return</span> items.<span class="fn">reduce</span>((s,i) => s+i.price, <span class="num">0</span>)
+}
+<span class="cmt">// Test: không thể assert total mà không
+// mock analytics + logger</span></pre>
+    </div>
+    <div class="compare-box good">
+      <div class="compare-label">✅ Explicit — separated</div>
+      <pre style="font-size:.82rem;"><span class="cmt">// Pure function: không side effect</span>
+<span class="kw">function</span> <span class="fn">calculateTotal</span>(items) {
+  <span class="kw">return</span> items.<span class="fn">reduce</span>((s,i) => s+i.price, <span class="num">0</span>)
+}
+
+<span class="cmt">// Caller handles side effects explicitly</span>
+<span class="kw">const</span> total = <span class="fn">calculateTotal</span>(items)
+analytics.<span class="fn">track</span>(<span class="str">'viewed'</span>, { total })
+logger.<span class="fn">log</span>(<span class="str">'total calculated'</span>, total)</pre>
+    </div>
+  </div>
+</div>
+
+<!-- IMMUTABILITY -->
+<div class="section">
+  <h2>🧊 Immutability Patterns</h2>
+  <div class="card-row">
+    <div class="card">
+      <h3>Object spread</h3>
+      <pre style="font-size:.82rem;"><span class="cmt">// Không mutate original</span>
+<span class="kw">const</span> updated = {
+  ...product,
+  price: product.price * <span class="num">0.9</span>,
+  updatedAt: <span class="kw">new</span> <span class="fn">Date</span>()
+}
+<span class="cmt">// product vẫn nguyên</span></pre>
+    </div>
+    <div class="card">
+      <h3>Array spread</h3>
+      <pre style="font-size:.82rem;"><span class="cmt">// add: return new array</span>
+<span class="kw">const</span> newItems = [...items, newItem]
+
+<span class="cmt">// remove: filter creates new</span>
+<span class="kw">const</span> without = items
+  .<span class="fn">filter</span>(i => i.id !== removeId)</pre>
+    </div>
+    <div class="card">
+      <h3>readonly TypeScript</h3>
+      <pre style="font-size:.82rem;"><span class="kw">interface</span> <span class="type">Order</span> {
+  <span class="kw">readonly</span> id: <span class="type">string</span>
+  <span class="kw">readonly</span> createdAt: <span class="type">Date</span>
+  items: <span class="type">ReadonlyArray</span>&lt;<span class="type">Item</span>&gt;
+}
+<span class="cmt">// TypeScript sẽ báo lỗi nếu bạn
+// cố assign lại id/createdAt</span></pre>
+    </div>
+    <div class="card">
+      <h3>Object.freeze (runtime)</h3>
+      <pre style="font-size:.82rem;"><span class="kw">const</span> CONFIG = <span class="fn">Object</span>.<span class="fn">freeze</span>({
+  API_URL: <span class="str">'https://api.astools.app'</span>,
+  MAX_RETRIES: <span class="num">3</span>,
+})
+<span class="cmt">// Mutation sẽ silent-fail hoặc throw
+// tùy strict mode</span></pre>
+    </div>
+  </div>
+</div>
+
+<!-- TAKEAWAY -->
+<div class="takeaway">
+  <div class="takeaway-label">💡 Key Takeaway — Bài 02 Complete</div>
+  <p>Side effects không xấu, nhưng phải <strong>explicit</strong> và <strong>tập trung ở edge</strong>. Core = pure. Shell = side effects. Không hide side effects trong function có tên pure. Immutability = không mutate object, luôn return object mới → dễ trace, dễ test, dễ undo.</p>
+</div>
+
+<!-- EXERCISE -->
+<div class="section">
+  <h2>🏋️ Bài Tập</h2>
+  <div class="exercise">
+    <div class="exercise-label">Refactor: Isolate Side Effects</div>
+    <pre style="font-size:.85rem;"><span class="cmt">// Hàm này có bao nhiêu side effects? Liệt kê, sau đó refactor
+// để business logic trở thành pure function</span>
+<span class="kw">async function</span> <span class="fn">applyDiscount</span>(cart, discountCode) {
+  <span class="kw">const</span> discount = <span class="kw">await</span> db.<span class="fn">findDiscount</span>(discountCode)
+  <span class="kw">if</span> (!discount) <span class="kw">throw</span> <span class="kw">new</span> <span class="fn">Error</span>(<span class="str">'Invalid'</span>)
+
+  cart.total = cart.total * (1 - discount.pct / <span class="num">100</span>)  <span class="cmt">// mutation!</span>
+  cart.appliedCode = discountCode                       <span class="cmt">// mutation!</span>
+
+  <span class="kw">await</span> db.<span class="fn">saveCart</span>(cart)
+  <span class="kw">await</span> analytics.<span class="fn">track</span>(<span class="str">'discount_applied'</span>, { discountCode })
+  <span class="kw">return</span> cart
+}</pre>
+  </div>
+</div>
+
+<!-- NEXT — Phase -->
+<div class="next-nav">
+  <a href="../03-clean-code/03a-naming.html" class="next-topic phase">
+    <div class="next-icon">✨</div>
+    <div class="next-text">
+      <div class="label">Bài tiếp theo · Bài 03</div>
+      <div class="title">Clean Code — Meaningful Naming</div>
+    </div>
+    <span class="next-arrow">→</span>
+  </a>
+  <a href="02a-data-state.html" class="next-topic" style="border-color:var(--border);">
+    <div class="next-icon">🔄</div>
+    <div class="next-text">
+      <div class="label">Ôn lại từ đầu</div>
+      <div class="title">02a — Data & State</div>
+    </div>
+    <span class="next-arrow">↩</span>
+  </a>
+</div>
+</body>
+</html>

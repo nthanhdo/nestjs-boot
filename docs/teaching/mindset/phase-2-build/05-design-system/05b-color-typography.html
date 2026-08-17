@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>05b — Color & Typography | Phase 2</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #1a2235; --border: #2a3a55;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #f472b6; --accent2: #818cf8;
+  --success: #34d399; --warning: #fbbf24; --error: #ef4444; --info: #06b6d4;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+.top-nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(14,21,37,.95); backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .6rem 1.5rem; font-size: .85rem;
+}
+.top-nav .breadcrumb { color: var(--muted); }
+.top-nav .breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a {
+  padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem;
+  border: 1px solid var(--border); color: var(--muted); transition: all .2s;
+}
+.nav-links a:hover, .nav-links a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .75rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+
+/* COLOR PALETTE */
+.palette-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap: .75rem; }
+.color-chip { border-radius: 8px; overflow: hidden; }
+.color-swatch { height: 60px; }
+.color-info { padding: .5rem .6rem; background: var(--surface); border: 1px solid var(--border); border-top: none; }
+.color-info .name { font-size: .75rem; font-weight: 600; }
+.color-info .hex { font-size: .7rem; font-family: monospace; color: var(--muted); }
+
+/* SEMANTIC COLORS */
+.semantic-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: .75rem; }
+.semantic-chip { border-radius: 8px; padding: .75rem; display: flex; flex-direction: column; gap: .25rem; }
+.semantic-chip .label { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+.semantic-chip .use { font-size: .72rem; color: rgba(255,255,255,.7); }
+
+/* TYPOGRAPHY SCALE */
+.type-scale { display: flex; flex-direction: column; gap: .5rem; }
+.type-row { display: flex; align-items: baseline; gap: 1.5rem; padding: .5rem 0; border-bottom: 1px solid var(--border); }
+.type-row:last-child { border: none; }
+.type-meta { width: 160px; flex-shrink: 0; }
+.type-meta .size { font-size: .75rem; font-family: monospace; color: var(--accent); }
+.type-meta .name { font-size: .72rem; color: var(--muted); }
+.type-sample { flex: 1; line-height: 1.2; }
+
+/* CONTRAST CHECKER */
+.contrast-row { display: flex; align-items: center; gap: 1rem; padding: .5rem; border-radius: 6px; margin-bottom: .5rem; }
+.contrast-swatch { width: 40px; height: 40px; border-radius: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: .9rem; font-weight: 700; }
+.contrast-info .ratio { font-size: .85rem; font-weight: 600; }
+.contrast-info .wcag { font-size: .75rem; }
+.pass { color: var(--success); } .fail { color: var(--error); }
+
+/* FONT PAIRING */
+.font-pairing { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.pair-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; }
+.pair-card .heading-sample { font-size: 1.1rem; font-weight: 700; margin-bottom: .25rem; }
+.pair-card .body-sample { font-size: .85rem; line-height: 1.6; color: var(--muted); }
+.pair-label { font-size: .72rem; color: var(--accent2); text-transform: uppercase; margin-bottom: .5rem; letter-spacing: .08em; }
+
+/* LINE LENGTH */
+.measure-demo { border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin: .5rem 0; }
+.measure-demo.too-wide { max-width: 100%; border-color: #ef4444; }
+.measure-demo.ideal { max-width: 65ch; border-color: var(--success); }
+.measure-demo.too-narrow { max-width: 30ch; border-color: var(--warning); }
+.measure-label { font-size: .72rem; margin-bottom: .25rem; font-weight: 600; }
+
+.exercise-box {
+  background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.3);
+  border-radius: var(--radius); padding: 1.5rem;
+}
+.exercise-box h2 { color: var(--accent2); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(129,140,248,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent2); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem; }
+
+.takeaway { background: rgba(244,114,182,.08); border: 1px solid rgba(244,114,182,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--accent); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '✦'; color: var(--accent); }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(14,21,37,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 2 · Design System · <span>05b — Color &amp; Typography</span></div>
+  <div class="nav-links">
+    <a href="05a-tokens.html">← Tokens</a>
+    <a href="05c-components.html" class="next">Components →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">05b · Design System</div>
+  <h1>Color &amp; <em>Typography</em></h1>
+  <p>Màu sắc và typography không chỉ là thẩm mỹ — chúng là ngôn ngữ giao tiếp với người dùng. Chọn đúng → giảm load cognitive, tăng trust.</p>
+</div>
+
+<div class="content">
+
+  <!-- COLOR PALETTE -->
+  <section>
+    <h2>Color Palette — Từ Brand đến Semantic</h2>
+    <p>Một palette tốt gồm: brand colors (identity), neutrals (structure), và semantic colors (feedback).</p>
+    <div class="card" style="margin-bottom:1rem">
+      <p style="margin-bottom:.75rem;font-size:.85rem"><strong>Brand Colors</strong></p>
+      <div class="palette-grid">
+        <div class="color-chip"><div class="color-swatch" style="background:#f472b6"></div><div class="color-info"><div class="name">Brand Primary</div><div class="hex">#f472b6</div></div></div>
+        <div class="color-chip"><div class="color-swatch" style="background:#818cf8"></div><div class="color-info"><div class="name">Brand Secondary</div><div class="hex">#818cf8</div></div></div>
+        <div class="color-chip"><div class="color-swatch" style="background:#e2e8f0"></div><div class="color-info"><div class="name">Neutral 100</div><div class="hex">#e2e8f0</div></div></div>
+        <div class="color-chip"><div class="color-swatch" style="background:#94a3b8"></div><div class="color-info"><div class="name">Neutral 400</div><div class="hex">#94a3b8</div></div></div>
+        <div class="color-chip"><div class="color-swatch" style="background:#1a2235"></div><div class="color-info"><div class="name">Surface</div><div class="hex">#1a2235</div></div></div>
+        <div class="color-chip"><div class="color-swatch" style="background:#0e1525"></div><div class="color-info"><div class="name">Background</div><div class="hex">#0e1525</div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <p style="margin-bottom:.75rem;font-size:.85rem"><strong>Semantic Colors — Feedback Language</strong></p>
+      <div class="semantic-grid">
+        <div class="semantic-chip" style="background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.4)">
+          <div class="label" style="color:#34d399">✅ Success</div>
+          <div class="use">Order placed · Saved · Done</div>
+        </div>
+        <div class="semantic-chip" style="background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.4)">
+          <div class="label" style="color:#fbbf24">⚠️ Warning</div>
+          <div class="use">Low stock · Expiring</div>
+        </div>
+        <div class="semantic-chip" style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4)">
+          <div class="label" style="color:#ef4444">❌ Error</div>
+          <div class="use">Failed · Invalid · Blocked</div>
+        </div>
+        <div class="semantic-chip" style="background:rgba(6,182,212,.15);border:1px solid rgba(6,182,212,.4)">
+          <div class="label" style="color:#06b6d4">ℹ️ Info</div>
+          <div class="use">Tip · Update · Notice</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTRAST -->
+  <section>
+    <h2>Contrast — WCAG Accessibility</h2>
+    <p>WCAG 2.1 yêu cầu ratio 4.5:1 cho text bình thường, 3:1 cho large text. Contrast thấp = barrier cho người khiếm thị và màn hình ngoài trời.</p>
+    <div class="card">
+      <div class="contrast-row" style="background:rgba(244,114,182,.08)">
+        <div class="contrast-swatch" style="background:#f472b6;color:#000">Aa</div>
+        <div class="contrast-info">
+          <div class="ratio">#f472b6 on #000 — ratio 5.2:1</div>
+          <div class="wcag pass">✅ WCAG AA — Large text pass, normal text pass</div>
+        </div>
+      </div>
+      <div class="contrast-row" style="background:rgba(52,211,153,.08)">
+        <div class="contrast-swatch" style="background:#34d399;color:#0a1e18">Aa</div>
+        <div class="contrast-info">
+          <div class="ratio">#34d399 on #0a1e18 — ratio 7.1:1</div>
+          <div class="wcag pass">✅ WCAG AAA — Excellent</div>
+        </div>
+      </div>
+      <div class="contrast-row" style="background:rgba(148,163,184,.08)">
+        <div class="contrast-swatch" style="background:#94a3b8;color:#e2e8f0">Aa</div>
+        <div class="contrast-info">
+          <div class="ratio">#94a3b8 on #e2e8f0 — ratio 2.1:1</div>
+          <div class="wcag fail">❌ Fail — Muted text trên nền sáng quá thấp</div>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:.8rem;margin-top:.5rem">Tool check: <strong>WebAIM Contrast Checker</strong> hoặc browser DevTools → Accessibility tab.</p>
+  </section>
+
+  <!-- TYPE SCALE -->
+  <section>
+    <h2>Typographic Scale — Modular Ratio 1.25</h2>
+    <p>Modular scale = nhân kích thước với hệ số cố định (1.25 = "Major Third"). Mọi bước nhảy đều có tỷ lệ âm nhạc — trông đẹp tự nhiên.</p>
+    <div class="card">
+      <div class="type-scale">
+        <div class="type-row">
+          <div class="type-meta"><div class="size">--text-xs · 10px</div><div class="name">Caption, badge</div></div>
+          <div class="type-sample" style="font-size:10px">AliShopping Badge</div>
+        </div>
+        <div class="type-row">
+          <div class="type-meta"><div class="size">--text-sm · 12px</div><div class="name">Meta, helper</div></div>
+          <div class="type-sample" style="font-size:12px">Thêm vào giỏ hàng · Xem chi tiết</div>
+        </div>
+        <div class="type-row">
+          <div class="type-meta"><div class="size">--text-base · 16px</div><div class="name">Body text</div></div>
+          <div class="type-sample" style="font-size:16px">Sản phẩm trending tuần này từ AliExpress</div>
+        </div>
+        <div class="type-row">
+          <div class="type-meta"><div class="size">--text-lg · 20px</div><div class="name">Subheading</div></div>
+          <div class="type-sample" style="font-size:20px;font-weight:600">Top Deals Hôm Nay</div>
+        </div>
+        <div class="type-row">
+          <div class="type-meta"><div class="size">--text-xl · 24px</div><div class="name">Card title</div></div>
+          <div class="type-sample" style="font-size:24px;font-weight:700">So Sánh Giá</div>
+        </div>
+        <div class="type-row">
+          <div class="type-meta"><div class="size">--text-2xl · 32px</div><div class="name">Section heading</div></div>
+          <div class="type-sample" style="font-size:32px;font-weight:800">Tìm Kiếm Thông Minh</div>
+        </div>
+        <div class="type-row">
+          <div class="type-meta"><div class="size">--text-3xl · 40px</div><div class="name">Hero / Display</div></div>
+          <div class="type-sample" style="font-size:40px;font-weight:800;color:var(--accent)">AliShopping</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FONT PAIRING -->
+  <section>
+    <h2>Font Pairing — Contrast tạo Hierarchy</h2>
+    <div class="font-pairing">
+      <div class="pair-card">
+        <div class="pair-label">System UI (nhanh, không flash)</div>
+        <div class="heading-sample" style="font-family:'Segoe UI',system-ui,sans-serif">Tìm Deal Tốt Nhất</div>
+        <div class="body-sample" style="font-family:'Segoe UI',system-ui,sans-serif">So sánh giá AliExpress, tracking đơn, phân tích xu hướng sản phẩm với AI.</div>
+      </div>
+      <div class="pair-card">
+        <div class="pair-label">Inter (clean, web-optimized)</div>
+        <div class="heading-sample" style="font-family:'Inter',sans-serif">Tìm Deal Tốt Nhất</div>
+        <div class="body-sample" style="font-family:'Inter',sans-serif">So sánh giá AliExpress, tracking đơn, phân tích xu hướng sản phẩm với AI.</div>
+      </div>
+    </div>
+    <p style="margin-top:.75rem;font-size:.85rem">Rule: tối đa 2 font families. Contrast hierarchy bằng weight (400/600/800) và size — không phải bằng nhiều font.</p>
+  </section>
+
+  <!-- LINE LENGTH -->
+  <section>
+    <h2>Line Length — Optimal Reading Width</h2>
+    <p>Chiều rộng lý tưởng cho body text: <strong>60–80 characters</strong> (khoảng 45–65ch tính theo em). Quá rộng mắt mệt, quá hẹp đọc giật cục.</p>
+    <div class="measure-demo too-wide">
+      <div class="measure-label" style="color:#ef4444">❌ Too wide (100% container) — mắt phải track xa</div>
+      <p style="font-size:.85rem;color:var(--muted)">Khi dòng văn bản quá dài, mắt người đọc phải di chuyển khoảng cách lớn từ cuối dòng về đầu dòng tiếp theo và rất dễ bị lạc dòng trong quá trình đọc liên tục.</p>
+    </div>
+    <div class="measure-demo ideal">
+      <div class="measure-label" style="color:var(--success)">✅ Ideal (65ch) — comfortable reading</div>
+      <p style="font-size:.85rem;color:var(--muted)">Dòng độ dài lý tưởng giúp mắt chuyển nhịp nhàng giữa các dòng. Não không phải tracking quá xa, đọc nhanh hơn và nhớ tốt hơn.</p>
+    </div>
+    <div class="measure-demo too-narrow">
+      <div class="measure-label" style="color:var(--warning)">⚠️ Too narrow (30ch) — ngắt nhịp đọc</div>
+      <p style="font-size:.85rem;color:var(--muted)">Dòng quá ngắn khiến mắt phải chuyển dòng liên tục, gián đoạn tư duy.</p>
+    </div>
+  </section>
+
+  <!-- EXERCISE -->
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — Color & Type Audit</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Mở app của bạn → inspect 5 màu đang dùng. Paste vào WebAIM Contrast Checker. Bao nhiêu fail WCAG AA?</li>
+      <li><span class="step-num">2</span>Khai báo semantic tokens: <code>--color-success, --color-warning, --color-error, --color-info</code> và map vào CSS của alert/badge components.</li>
+      <li><span class="step-num">3</span>Tạo type scale với 5 bước dùng modular ratio 1.25. Áp dụng vào heading hierarchy của 1 page bất kỳ.</li>
+      <li><span class="step-num">4</span>Set <code>max-width: 65ch</code> cho mọi paragraph trong blog/article view. So sánh readability.</li>
+      <li><span class="step-num">5</span>Verify: có bao nhiêu font-weight đang dùng? Nếu &gt;3, consolidate xuống 3 (regular/semibold/bold).</li>
+    </ul>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>Semantic colors (success/warning/error/info) = ngôn ngữ feedback toàn app — nhất quán ở mọi component.</li>
+      <li>WCAG contrast 4.5:1 là minimum cho text — không phải optional.</li>
+      <li>Modular scale (ratio 1.25) tạo type hierarchy có tỷ lệ âm nhạc — trông professional tự nhiên.</li>
+      <li>Line length 60–80 chars tối ưu readability — dùng <code>max-width: 65ch</code> cho body text.</li>
+      <li>Tối đa 2 font families, 3 weights — contrast bằng size/weight, không phải bằng nhiều font.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="05a-tokens.html">← Tokens</a>
+  <div class="progress-dots">
+    <div class="dot" title="05a"></div>
+    <div class="dot active" title="05b"></div>
+    <div class="dot" title="05c"></div>
+    <div class="dot" title="05d"></div>
+  </div>
+  <a href="05c-components.html" class="next">Components →</a>
+</div>
+
+</body>
+</html>

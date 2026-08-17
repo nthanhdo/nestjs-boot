@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12c — Injection Attacks | Phase 3</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--accent:#58a6ff;--success:#3fb950;--warning:#d29922;--error:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.progress-bar{position:fixed;top:0;left:0;width:100%;height:3px;background:var(--border);z-index:100;}
+.progress-fill{height:100%;background:var(--accent);width:0;transition:width .1s;}
+nav{position:sticky;top:3px;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:90;}
+nav .brand{font-weight:700;color:var(--accent);font-size:.9rem;}
+nav .links a{color:var(--muted);text-decoration:none;margin-left:1.2rem;font-size:.85rem;transition:color .2s;}
+nav .links a:hover{color:var(--text);}
+.container{max-width:860px;margin:0 auto;padding:2rem 1.5rem;}
+h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;}
+.subtitle{color:var(--muted);margin-bottom:2.5rem;font-size:1.05rem;}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:1rem;color:var(--accent);}
+.section{margin-bottom:3rem;opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
+.section.visible{opacity:1;transform:none;}
+.label{display:inline-block;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;margin-bottom:.5rem;}
+/* live demo */
+.demo-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin-bottom:1rem;}
+.demo-box h4{font-size:.9rem;font-weight:700;margin-bottom:.8rem;}
+.demo-input{display:flex;gap:.5rem;margin-bottom:.8rem;align-items:center;}
+.demo-input input{flex:1;background:#0d1117;border:1px solid var(--border);color:var(--text);padding:.5rem .8rem;border-radius:6px;font-size:.9rem;font-family:monospace;}
+.demo-input input:focus{outline:none;border-color:var(--accent);}
+.demo-input button{background:var(--accent);color:#000;border:none;padding:.5rem 1rem;border-radius:6px;font-weight:700;cursor:pointer;font-size:.85rem;}
+.query-render{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:.7rem 1rem;font-family:monospace;font-size:.85rem;margin-bottom:.5rem;white-space:pre-wrap;word-break:break-all;}
+.danger-highlight{background:#2a0808;color:var(--error);padding:.1rem .2rem;border-radius:2px;}
+.result-box{padding:.7rem 1rem;border-radius:6px;font-size:.85rem;margin-bottom:.5rem;}
+.result-box.safe{background:#1a3a1a;border:1px solid var(--success);color:var(--success);}
+.result-box.danger{background:#2a0808;border:1px solid var(--error);color:var(--error);}
+/* XSS demo */
+.xss-output{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.8rem 1rem;margin-bottom:.5rem;min-height:2rem;}
+/* comparison */
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+.cmp-card{background:var(--surface);border-radius:8px;padding:1rem;overflow:hidden;}
+.cmp-card.bad{border:1px solid var(--error);}
+.cmp-card.good{border:1px solid var(--success);}
+.cmp-card h4{font-size:.85rem;font-weight:700;margin-bottom:.6rem;}
+.cmp-card.bad h4{color:var(--error);}
+.cmp-card.good h4{color:var(--success);}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;font-size:.82rem;line-height:1.6;margin-bottom:1rem;font-family:monospace;}
+pre .c{color:var(--muted);}
+pre .bad{color:var(--error);}
+pre .good{color:var(--success);}
+.exercise{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.exercise h3{color:var(--accent);margin-bottom:.8rem;font-size:1rem;}
+.exercise ol{padding-left:1.2rem;color:var(--muted);font-size:.9rem;line-height:1.8;}
+.takeaway{background:linear-gradient(135deg,#1a2235,#161b22);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.takeaway h3{color:var(--accent);margin-bottom:1rem;}
+.takeaway ul{padding-left:1.2rem;line-height:2;}
+.nav-links{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-links a{color:var(--accent);text-decoration:none;font-size:.9rem;padding:.5rem 1rem;border:1px solid var(--border);border-radius:6px;transition:border-color .2s;}
+.nav-links a:hover{border-color:var(--accent);}
+@media(max-width:640px){.cmp{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav>
+  <span class="brand">Phase 3 — Engineer Mindset</span>
+  <div class="links">
+    <a href="12b-auth-jwt.html">← Auth</a>
+    <a href="12d-path-traversal.html">Path Traversal →</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="section" id="s0">
+    <div class="label">12c / 5</div>
+    <h1>Injection Attacks</h1>
+    <p class="subtitle">SQL injection, NoSQL injection, XSS — when user input becomes code. Live demos included.</p>
+  </div>
+
+  <div class="section" id="s1">
+    <h2>SQL Injection — Live Demo</h2>
+    <div class="demo-box">
+      <h4>Vulnerable query builder — type input to see the rendered SQL:</h4>
+      <div class="demo-input">
+        <input type="text" id="sql-input" placeholder="Enter email..." oninput="renderSql()" value="alice@example.com"/>
+      </div>
+      <div class="query-render" id="sql-render"></div>
+      <div class="result-box" id="sql-result"></div>
+      <p style="color:var(--muted);font-size:.8rem;margin-top:.4rem;">Try: <code>' OR '1'='1</code> or <code>'; DROP TABLE users; --</code></p>
+    </div>
+    <div class="cmp">
+      <div class="cmp-card bad">
+        <h4>❌ Vulnerable</h4>
+        <pre style="margin:0;border:none;padding:0;font-size:.78rem;"><span class="bad">db.query(
+  `SELECT * FROM users
+   WHERE email='${email}'`
+);</span></pre>
+      </div>
+      <div class="cmp-card good">
+        <h4>✅ Parameterized</h4>
+        <pre style="margin:0;border:none;padding:0;font-size:.78rem;"><span class="good">db.query(
+  'SELECT * FROM users WHERE email = ?',
+  [email]
+);</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="s2">
+    <h2>XSS (Cross-Site Scripting) — Live Demo</h2>
+    <div class="demo-box">
+      <h4>Vulnerable HTML render — type to see output:</h4>
+      <div class="demo-input">
+        <input type="text" id="xss-input" placeholder="Enter name..." oninput="renderXss()" value="Alice"/>
+      </div>
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:.4rem;">Raw output (innerHTML — dangerous):</div>
+      <div class="xss-output" id="xss-raw"></div>
+      <div style="font-size:.85rem;color:var(--muted);margin-bottom:.4rem;margin-top:.6rem;">Escaped output (textContent — safe):</div>
+      <div class="xss-output" id="xss-safe"></div>
+      <p style="color:var(--muted);font-size:.8rem;margin-top:.4rem;">Try: <code>&lt;script&gt;alert('XSS')&lt;/script&gt;</code> or <code>&lt;img src=x onerror=alert(1)&gt;</code></p>
+    </div>
+  </div>
+
+  <div class="section" id="s3">
+    <h2>NoSQL Injection (MongoDB)</h2>
+    <pre><span class="c">// ❌ MongoDB operator injection</span>
+<span class="c">// Request body: { "username": { "$gt": "" } }</span>
+<span class="bad">User.findOne({ username: req.body.username }); // $gt matches everything!</span>
+
+<span class="c">// ✅ Sanitize with express-mongo-sanitize</span>
+<span class="good">import mongoSanitize from 'express-mongo-sanitize';
+app.use(mongoSanitize()); // Strips $ operators from input
+
+// ✅ Or validate shape with class-validator DTO
+class LoginDto {
+  @IsString()  // Rejects objects like { $gt: "" }
+  username: string;
+}</span></pre>
+  </div>
+
+  <div class="section" id="s4">
+    <div class="exercise">
+      <h3>🔬 Exercise — Fix the Injections</h3>
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:.8rem;">Fix each vulnerable code snippet:</p>
+      <ol>
+        <li><code>db.query(`SELECT * FROM products WHERE category='${req.query.cat}'`)</code></li>
+        <li><code>document.getElementById('greeting').innerHTML = 'Hello ' + username;</code></li>
+        <li><code>User.find({ email: req.body.email })</code> where body could be <code>{"email": {"$ne": null}}</code></li>
+        <li>Explain: why does parameterized query prevent SQL injection?</li>
+        <li>What's the difference between escaping and parameterizing?</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section" id="s5">
+    <div class="takeaway">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li>Rule: NEVER build queries/HTML with string concatenation of user input</li>
+        <li>SQL: use parameterized queries (?) or ORM query builders — never template literals</li>
+        <li>HTML: use textContent not innerHTML, or sanitize with DOMPurify</li>
+        <li>MongoDB: validate input shape with DTOs + use express-mongo-sanitize</li>
+        <li>Content-Security-Policy header is a defense-in-depth layer against XSS</li>
+      </ul>
+    </div>
+    <div class="nav-links">
+      <a href="12b-auth-jwt.html">← 12b: Auth & JWT</a>
+      <a href="12d-path-traversal.html">12d: Path Traversal →</a>
+    </div>
+  </div>
+</div>
+<script>
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function renderSql(){
+  const v = document.getElementById('sql-input').value;
+  const safe = escapeHtml(v);
+  const q = `SELECT * FROM users WHERE email='${safe}'`;
+  const isMalicious = v.includes("'") || v.toLowerCase().includes('drop') || v.toLowerCase().includes('or') || v.includes('--') || v.includes(';');
+  const highlighted = `SELECT * FROM users WHERE email='<span class="${isMalicious?'danger-highlight':''}">${safe}</span>'`;
+  document.getElementById('sql-render').innerHTML = highlighted;
+  const res = document.getElementById('sql-result');
+  if(isMalicious){
+    res.className='result-box danger';
+    res.textContent='⚠️ Injection detected! Query logic modified. Attacker may bypass auth or delete data.';
+  } else {
+    res.className='result-box safe';
+    res.textContent='✓ Normal query — looks safe';
+  }
+}
+
+function renderXss(){
+  const v = document.getElementById('xss-input').value;
+  document.getElementById('xss-raw').innerHTML = 'Hello ' + v;
+  document.getElementById('xss-safe').textContent = 'Hello ' + v;
+}
+
+renderSql();
+renderXss();
+
+window.addEventListener('scroll',()=>{
+  document.getElementById('pf').style.width=(window.scrollY/(document.documentElement.scrollHeight-window.innerHeight))*100+'%';
+});
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.1});
+document.querySelectorAll('.section').forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

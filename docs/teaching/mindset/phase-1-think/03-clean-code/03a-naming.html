@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03a — Đặt Tên Có Ý Nghĩa | Clean Code</title>
+<style>
+:root { --bg:#0e1525;--surface:#151d32;--surface2:#1c2744;--border:#2a3a5c;--text:#eef1f8;--muted:#8899bb;--accent:#a78bfa;--green:#2ecc71;--red:#e74c3c;--blue:#5b8def;--orange:#ffb347;--teal:#00cec9; }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.top-nav{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:10px 24px;font-size:.85rem;}
+.top-nav a{color:var(--accent);text-decoration:none;padding:4px 10px;border-radius:6px;border:1px solid transparent;transition:.2s;}
+.top-nav a:hover{border-color:var(--accent);background:#a78bfa18;}
+.nav-center{color:var(--muted);font-size:.8rem;}
+.hero{padding:48px 24px 32px;max-width:860px;margin:0 auto;animation:fadeUp .5s ease;}
+.lesson-tag{display:inline-block;background:#a78bfa22;color:var(--accent);border:1px solid #a78bfa44;border-radius:20px;padding:4px 14px;font-size:.8rem;margin-bottom:16px;}
+h1{font-size:2rem;margin-bottom:8px;}
+h1 span{color:var(--accent);}
+.subtitle{color:var(--muted);font-size:1rem;margin-bottom:32px;}
+.section{max-width:860px;margin:0 auto 40px;padding:0 24px;}
+h2{font-size:1.2rem;color:var(--accent);margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+h3{font-size:1rem;color:var(--orange);margin:16px 0 8px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;}
+.card-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:600px){.card-row{grid-template-columns:1fr;}}
+pre{background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:20px;overflow-x:auto;font-size:.88rem;line-height:1.7;}
+.kw{color:#79b8ff;}.fn{color:#b392f0;}.str{color:#9ecbff;}.num{color:var(--orange);}.cmt{color:#6a737d;font-style:italic;}.type{color:var(--teal);}
+.bad-name{color:var(--red);text-decoration:underline wavy;}.good-name{color:var(--green);}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:600px){.compare{grid-template-columns:1fr;}}
+.compare-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.compare-box.bad{border-top:3px solid var(--red);}
+.compare-box.good{border-top:3px solid var(--green);}
+.compare-label{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+.compare-box.bad .compare-label{color:var(--red);}
+.compare-box.good .compare-label{color:var(--green);}
+.rule-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;}
+.rule-box{background:var(--surface2);border-radius:10px;padding:14px;}
+.rule-label{font-size:.78rem;font-weight:700;margin-bottom:8px;}
+.rule-list{font-family:monospace;font-size:.8rem;color:var(--muted);line-height:1.8;}
+/* NAME QUIZ */
+.name-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px;}
+.name-bad{font-family:monospace;color:var(--red);font-size:.9rem;min-width:100px;}
+.name-arrow{color:var(--muted);}
+.name-good{font-family:monospace;color:var(--green);font-size:.9rem;display:none;}
+.name-btn{margin-left:auto;background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:.8rem;}
+.name-btn:hover{border-color:var(--green);color:var(--green);}
+.takeaway{background:linear-gradient(135deg,#a78bfa15,#5b8def10);border:1px solid #a78bfa44;border-radius:12px;padding:20px 24px;margin:32px auto;max-width:860px;}
+.takeaway-label{font-size:.75rem;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.exercise{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:10px;padding:20px;margin-top:16px;}
+.exercise-label{font-size:.75rem;color:var(--orange);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+.exercise ul{padding-left:20px;color:var(--muted);font-size:.9rem;}
+.exercise li{margin-bottom:6px;}
+.next-nav{max-width:860px;margin:0 auto 60px;padding:0 24px;}
+.next-topic{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;text-decoration:none;color:var(--text);transition:.2s;}
+.next-topic:hover{border-color:var(--accent);background:#a78bfa08;}
+.next-icon{font-size:2rem;}
+.next-text .label{font-size:.75rem;color:var(--muted);}
+.next-text .title{font-size:1rem;font-weight:600;color:var(--accent);}
+.next-arrow{margin-left:auto;font-size:1.4rem;color:var(--accent);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="../02-programming-thinking/02f-side-effects.html">← 02f Side Effects</a>
+  <span class="nav-center">Bài 03 · Đặt Tên · 03a / 07</span>
+  <a href="03b-small-functions.html">03b Small Functions →</a>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">Bài 03a / 07 · Clean Code</div>
+  <h1>🏷️ Đặt Tên <span>Có Ý Nghĩa</span></h1>
+  <p class="subtitle">"Code được đọc nhiều hơn viết." Tên biến, hàm, class phải tự giải thích mà không cần comment. Đây là kỹ năng quan trọng nhất trong clean code.</p>
+</div>
+
+<!-- BAD vs GOOD -->
+<div class="section">
+  <h2>🔍 Tên Xấu vs Tên Tốt</h2>
+  <div class="compare">
+    <div class="compare-box bad">
+      <div class="compare-label">❌ Tên xấu — không nói lên gì</div>
+      <pre style="font-size:.85rem;"><span class="kw">let</span> <span class="bad-name">d</span> = <span class="num">86400</span>
+<span class="kw">let</span> <span class="bad-name">tmp</span> = <span class="fn">getList</span>()
+<span class="kw">function</span> <span class="bad-name">proc</span>(<span class="bad-name">l</span>) {
+  <span class="kw">return</span> <span class="bad-name">l</span>.<span class="fn">filter</span>(<span class="bad-name">i</span> =>
+    <span class="bad-name">i</span>.<span class="bad-name">f</span> === <span class="num">1</span>)
+}</pre>
+    </div>
+    <div class="compare-box good">
+      <div class="compare-label">✅ Tên tốt — tự giải thích</div>
+      <pre style="font-size:.85rem;"><span class="kw">const</span> <span class="good-name">SECONDS_PER_DAY</span> = <span class="num">86400</span>
+<span class="kw">const</span> <span class="good-name">activeUsers</span> = <span class="fn">getUsers</span>()
+<span class="kw">function</span> <span class="good-name">filterActiveUsers</span>(<span class="good-name">users</span>) {
+  <span class="kw">return</span> <span class="good-name">users</span>.<span class="fn">filter</span>(<span class="good-name">user</span> =>
+    <span class="good-name">user</span>.<span class="good-name">isActive</span> === <span class="kw">true</span>)
+}</pre>
+    </div>
+  </div>
+</div>
+
+<!-- NAMING RULES -->
+<div class="section">
+  <h2>📋 Quy Tắc Đặt Tên</h2>
+  <div class="rule-grid">
+    <div class="rule-box">
+      <div class="rule-label" style="color:var(--green);">✅ BIẾN — noun phrase</div>
+      <div class="rule-list">elapsedTimeInDays<br>userAccountBalance<br>isEmailVerified<br>MAX_RETRY_COUNT<br>filteredProducts</div>
+    </div>
+    <div class="rule-box">
+      <div class="rule-label" style="color:var(--blue);">✅ HÀM — verb phrase</div>
+      <div class="rule-list">getUserById()<br>sendWelcomeEmail()<br>calculateMonthlyFee()<br>isValidEmail()<br>validatePayment()</div>
+    </div>
+    <div class="rule-box">
+      <div class="rule-label" style="color:var(--orange);">✅ BOOLEAN — is/has/can prefix</div>
+      <div class="rule-list">isActive<br>hasPermission<br>canEditProfile<br>isEmailVerified<br>hasUnreadMessages</div>
+    </div>
+    <div class="rule-box">
+      <div class="rule-label" style="color:var(--accent);">✅ CONSTANT — UPPER_SNAKE_CASE</div>
+      <div class="rule-list">MAX_RETRY_COUNT<br>DEFAULT_TIMEOUT_MS<br>API_BASE_URL<br>SECONDS_PER_DAY<br>MIN_PASSWORD_LENGTH</div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>❌ Từ bị cấm dùng làm tên</h3>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:10px;">Những tên này không nói lên gì — luôn cần context để hiểu:</p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      <span style="background:var(--surface2);border:1px solid var(--red);border-radius:6px;padding:3px 10px;font-family:monospace;font-size:.85rem;color:var(--red);">d</span>
+      <span style="background:var(--surface2);border:1px solid var(--red);border-radius:6px;padding:3px 10px;font-family:monospace;font-size:.85rem;color:var(--red);">tmp</span>
+      <span style="background:var(--surface2);border:1px solid var(--red);border-radius:6px;padding:3px 10px;font-family:monospace;font-size:.85rem;color:var(--red);">data</span>
+      <span style="background:var(--surface2);border:1px solid var(--red);border-radius:6px;padding:3px 10px;font-family:monospace;font-size:.85rem;color:var(--red);">info</span>
+      <span style="background:var(--surface2);border:1px solid var(--red);border-radius:6px;padding:3px 10px;font-family:monospace;font-size:.85rem;color:var(--red);">manager</span>
+      <span style="background:var(--surface2);border:1px solid var(--red);border-radius:6px;padding:3px 10px;font-family:monospace;font-size:.85rem;color:var(--red);">processor</span>
+      <span style="background:var(--surface2);border:1px solid var(--red);border-radius:6px;padding:3px 10px;font-family:monospace;font-size:.85rem;color:var(--red);">handler</span>
+      <span style="background:var(--surface2);border:1px solid var(--red);border-radius:6px;padding:3px 10px;font-family:monospace;font-size:.85rem;color:var(--red);">obj</span>
+      <span style="background:var(--surface2);border:1px solid var(--red);border-radius:6px;padding:3px 10px;font-family:monospace;font-size:.85rem;color:var(--red);">flag</span>
+      <span style="background:var(--surface2);border:1px solid var(--red);border-radius:6px;padding:3px 10px;font-family:monospace;font-size:.85rem;color:var(--red);">result</span>
+    </div>
+  </div>
+</div>
+
+<!-- INTERACTIVE RENAME -->
+<div class="section">
+  <h2>🎯 Đổi Tên — Reveal</h2>
+  <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px;">Bấm "Reveal" để xem tên tốt hơn:</p>
+  <div id="nameItems">
+    <div class="name-item"><span class="name-bad">calc(n)</span><span class="name-arrow">→</span><span class="name-good">calculateMonthlyFee(months)</span><button class="name-btn" onclick="reveal(this)">Reveal</button></div>
+    <div class="name-item"><span class="name-bad">proc(d)</span><span class="name-arrow">→</span><span class="name-good">processOrderData(orderData)</span><button class="name-btn" onclick="reveal(this)">Reveal</button></div>
+    <div class="name-item"><span class="name-bad">chk(e)</span><span class="name-arrow">→</span><span class="name-good">validateEmail(email)</span><button class="name-btn" onclick="reveal(this)">Reveal</button></div>
+    <div class="name-item"><span class="name-bad">flag</span><span class="name-arrow">→</span><span class="name-good">isEmailVerified</span><button class="name-btn" onclick="reveal(this)">Reveal</button></div>
+    <div class="name-item"><span class="name-bad">dt</span><span class="name-arrow">→</span><span class="name-good">createdAt</span><button class="name-btn" onclick="reveal(this)">Reveal</button></div>
+    <div class="name-item"><span class="name-bad">x = a * 0.1728</span><span class="name-arrow">→</span><span class="name-good">taxAmount = price * TAX_RATE_VN</span><button class="name-btn" onclick="reveal(this)">Reveal</button></div>
+  </div>
+</div>
+
+<!-- SPECIFIC CONTEXTS -->
+<div class="section">
+  <h2>🧩 Naming Trong NestJS</h2>
+  <pre style="font-size:.85rem;"><span class="cmt">// DTO — mô tả data transfer</span>
+<span class="kw">class</span> <span class="type">CreateOrderDto</span> { ... }
+<span class="kw">class</span> <span class="type">UpdateProductDto</span> { ... }
+
+<span class="cmt">// Service — verb-based actions</span>
+<span class="kw">class</span> <span class="type">OrderService</span> {
+  <span class="fn">findById</span>(id: <span class="type">string</span>): <span class="type">Promise</span>&lt;<span class="type">Order</span>&gt;
+  <span class="fn">createOrder</span>(dto: <span class="type">CreateOrderDto</span>): <span class="type">Promise</span>&lt;<span class="type">Order</span>&gt;
+  <span class="fn">cancelOrder</span>(id: <span class="type">string</span>): <span class="type">Promise</span>&lt;<span class="kw">void</span>&gt;
+}
+
+<span class="cmt">// Guard — capability-based</span>
+<span class="kw">class</span> <span class="type">JwtAuthGuard</span> { ... }
+<span class="kw">class</span> <span class="type">AdminOnlyGuard</span> { ... }
+
+<span class="cmt">// Repository — CRUD verbs</span>
+<span class="kw">class</span> <span class="type">ProductRepository</span> {
+  <span class="fn">findByCategory</span>(cat: <span class="type">string</span>): <span class="type">Promise</span>&lt;<span class="type">Product</span>[]&gt;
+  <span class="fn">upsert</span>(product: <span class="type">Product</span>): <span class="type">Promise</span>&lt;<span class="type">Product</span>&gt;
+}</pre>
+</div>
+
+<div class="takeaway">
+  <div class="takeaway-label">💡 Key Takeaway</div>
+  <p>Nếu cần comment để giải thích tên → tên đó cần đổi. Tránh: d, tmp, data, info, manager. Boolean: is/has/can prefix. Hàm = verb phrase, Biến = noun phrase, Hằng = UPPER_SNAKE_CASE.</p>
+</div>
+
+<div class="section">
+  <h2>🏋️ Bài Tập</h2>
+  <div class="exercise">
+    <div class="exercise-label">Đặt lại tên 10 biến/hàm xấu</div>
+    <pre style="font-size:.85rem;"><span class="kw">let</span> x = <span class="num">0</span>          <span class="cmt">// đang đếm số đơn hàng hôm nay</span>
+<span class="kw">let</span> tmp = []       <span class="cmt">// đang lưu danh sách user active</span>
+<span class="kw">let</span> flag = <span class="kw">false</span>  <span class="cmt">// đánh dấu email đã verified chưa</span>
+<span class="kw">function</span> <span class="fn">calc</span>(n) { ... }    <span class="cmt">// tính phí hàng tháng</span>
+<span class="kw">function</span> <span class="fn">chk</span>(e) { ... }     <span class="cmt">// validate email format</span>
+<span class="kw">const</span> mgr = <span class="kw">new</span> <span class="type">UserManager</span>()  <span class="cmt">// anti-pattern name</span>
+<span class="kw">const</span> dt = <span class="kw">new</span> <span class="fn">Date</span>()      <span class="cmt">// ngày tạo order</span>
+<span class="kw">const</span> info = user.<span class="fn">getData</span>() <span class="cmt">// profile user</span>
+<span class="kw">let</span> ok = <span class="kw">await</span> <span class="fn">pay</span>(cc)    <span class="cmt">// kết quả thanh toán</span>
+<span class="kw">function</span> <span class="fn">do_</span>(order) { ... } <span class="cmt">// xử lý đơn hàng</span></pre>
+  </div>
+</div>
+
+<div class="next-nav">
+  <a href="03b-small-functions.html" class="next-topic">
+    <div class="next-icon">✂️</div>
+    <div class="next-text">
+      <div class="label">Bài tiếp theo · 03b / 07</div>
+      <div class="title">Small Functions — mỗi hàm làm 1 việc</div>
+    </div>
+    <span class="next-arrow">→</span>
+  </a>
+</div>
+
+<script>
+function reveal(btn) {
+  const good = btn.parentElement.querySelector('.name-good');
+  good.style.display = 'inline';
+  btn.textContent = '✓';
+  btn.style.color = 'var(--green)';
+  btn.style.borderColor = 'var(--green)';
+  btn.onclick = null;
+}
+</script>
+</body>
+</html>

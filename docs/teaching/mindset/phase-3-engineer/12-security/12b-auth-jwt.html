@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12b — Auth & JWT Security | Phase 3</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--accent:#58a6ff;--success:#3fb950;--warning:#d29922;--error:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.progress-bar{position:fixed;top:0;left:0;width:100%;height:3px;background:var(--border);z-index:100;}
+.progress-fill{height:100%;background:var(--accent);width:0;transition:width .1s;}
+nav{position:sticky;top:3px;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:90;}
+nav .brand{font-weight:700;color:var(--accent);font-size:.9rem;}
+nav .links a{color:var(--muted);text-decoration:none;margin-left:1.2rem;font-size:.85rem;transition:color .2s;}
+nav .links a:hover{color:var(--text);}
+.container{max-width:860px;margin:0 auto;padding:2rem 1.5rem;}
+h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;}
+.subtitle{color:var(--muted);margin-bottom:2.5rem;font-size:1.05rem;}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:1rem;color:var(--accent);}
+.section{margin-bottom:3rem;opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
+.section.visible{opacity:1;transform:none;}
+.label{display:inline-block;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;margin-bottom:.5rem;}
+/* Timeline */
+.timeline{position:relative;padding-left:1.5rem;border-left:2px solid var(--border);margin-bottom:1rem;}
+.tl-item{position:relative;margin-bottom:1.2rem;}
+.tl-dot{position:absolute;left:-1.65rem;top:.3rem;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);}
+.tl-dot.bad{background:var(--error);}
+.tl-dot.good{background:var(--success);}
+.tl-year{font-size:.75rem;font-weight:700;color:var(--muted);margin-bottom:.1rem;}
+.tl-text{font-size:.88rem;color:var(--text);}
+.tl-note{font-size:.8rem;color:var(--muted);}
+/* JWT anatomy */
+.jwt-parts{display:flex;gap:4px;margin-bottom:.8rem;flex-wrap:wrap;}
+.jwt-part{padding:.4rem .6rem;border-radius:6px;font-family:monospace;font-size:.75rem;cursor:pointer;transition:opacity .2s;word-break:break-all;}
+.jwt-part.header-tok{background:#2a0808;color:#ff7b72;border:1px solid #f85149;}
+.jwt-part.payload-tok{background:#1a2a00;color:#a5d6ff;border:1px solid #58a6ff;}
+.jwt-part.sig-tok{background:#1a0a2a;color:#d2a8ff;border:1px solid #a371f7;}
+.jwt-part.sep{background:transparent;color:var(--muted);padding:.4rem 0;border:none;cursor:default;}
+.jwt-decoded{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:1rem;font-size:.85rem;display:none;}
+.jwt-decoded.show{display:block;}
+.jwt-decoded h4{font-size:.85rem;font-weight:700;margin-bottom:.6rem;}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:1.1rem;overflow-x:auto;font-size:.83rem;line-height:1.7;margin-bottom:1rem;font-family:monospace;}
+pre .c{color:var(--muted);}
+pre .k{color:#ff7b72;}
+pre .good{color:var(--success);}
+pre .bad{color:var(--error);}
+/* security checklist */
+.sec-list{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem;}
+.sec-item{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.8rem 1rem;display:flex;gap:.8rem;align-items:flex-start;font-size:.87rem;}
+.sec-icon{flex-shrink:0;font-size:1rem;}
+.sec-item.danger{border-color:var(--error);}
+.sec-item.safe{border-color:var(--success);}
+.exercise{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.exercise h3{color:var(--accent);margin-bottom:.8rem;font-size:1rem;}
+.exercise ol{padding-left:1.2rem;color:var(--muted);font-size:.9rem;line-height:1.8;}
+.takeaway{background:linear-gradient(135deg,#1a2235,#161b22);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.takeaway h3{color:var(--accent);margin-bottom:1rem;}
+.takeaway ul{padding-left:1.2rem;line-height:2;}
+.nav-links{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-links a{color:var(--accent);text-decoration:none;font-size:.9rem;padding:.5rem 1rem;border:1px solid var(--border);border-radius:6px;transition:border-color .2s;}
+.nav-links a:hover{border-color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav>
+  <span class="brand">Phase 3 — Engineer Mindset</span>
+  <div class="links">
+    <a href="12a-owasp-top10.html">← OWASP</a>
+    <a href="12c-injection.html">Injection →</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="section" id="s0">
+    <div class="label">12b / 5</div>
+    <h1>Auth & JWT Security</h1>
+    <p class="subtitle">Passwords, tokens, and the exact mistakes that get production systems compromised.</p>
+  </div>
+
+  <div class="section" id="s1">
+    <h2>Password Storage — A Brief History</h2>
+    <div class="timeline">
+      <div class="tl-item"><div class="tl-dot bad"></div><div class="tl-year">1990s</div><div class="tl-text">Plaintext passwords</div><div class="tl-note">Any DB breach = all passwords exposed. RockYou breach: 32M plaintext passwords.</div></div>
+      <div class="tl-item"><div class="tl-dot bad"></div><div class="tl-year">2000s</div><div class="tl-text">MD5 / SHA1 hashing</div><div class="tl-note">Fast = bad for passwords. Rainbow tables crack MD5 in seconds. LinkedIn 2012: 6.5M MD5 hashes cracked.</div></div>
+      <div class="tl-item"><div class="tl-dot bad"></div><div class="tl-year">2000s–2010s</div><div class="tl-text">Salted SHA-256</div><div class="tl-note">Better, but still fast. GPU can try 10B SHA-256/second. Brute force viable.</div></div>
+      <div class="tl-item"><div class="tl-dot good"></div><div class="tl-year">Now</div><div class="tl-text">bcrypt / Argon2 — slow by design</div><div class="tl-note">Cost factor makes it 100ms per hash. GPU has same problem. bcrypt with cost=12 = correct answer.</div></div>
+    </div>
+    <pre><span class="c">// ❌ Never do this</span>
+<span class="bad">const stored = sha256(password);  // Fast, crackable</span>
+<span class="bad">const stored = md5(password);     // Broken</span>
+<span class="bad">const stored = password;          // Criminal</span>
+
+<span class="c">// ✅ bcrypt (NestJS example)</span>
+<span class="good">import * as bcrypt from 'bcrypt';
+const hashed = await bcrypt.hash(password, 12);       // Store this
+const valid  = await bcrypt.compare(input, hashed);   // Verify</span></pre>
+  </div>
+
+  <div class="section" id="s2">
+    <h2>JWT Security — Click the parts</h2>
+    <div class="jwt-parts">
+      <div class="jwt-part header-tok" onclick="showJwt('header')">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9</div>
+      <div class="jwt-part sep">.</div>
+      <div class="jwt-part payload-tok" onclick="showJwt('payload')">eyJzdWIiOiJ1c2VyXzEyMyIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNjkwMDAwMDAwLCJleHAiOjE2OTAwMDM2MDB9</div>
+      <div class="jwt-part sep">.</div>
+      <div class="jwt-part sig-tok" onclick="showJwt('sig')">SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c</div>
+    </div>
+    <div class="jwt-decoded" id="jwt-info"></div>
+    <pre><span class="c">// JWT security rules</span>
+<span class="c">// ❌ NEVER use alg:none — skips signature verification</span>
+<span class="bad">jwt.verify(token, '', { algorithms: ['none'] }); // CRITICAL</span>
+
+<span class="c">// ❌ NEVER store sensitive data in payload (it's base64, not encrypted)</span>
+<span class="bad">{ sub: userId, password: hashedPwd }  // Payload is PUBLIC</span>
+
+<span class="c">// ✅ Short expiry + refresh token pattern</span>
+<span class="good">const access  = jwt.sign({ sub: userId }, secret, { expiresIn: '15m' });
+const refresh = jwt.sign({ sub: userId }, refreshSecret, { expiresIn: '7d' });</span>
+
+<span class="c">// ✅ Store refresh token in httpOnly cookie (not localStorage)</span>
+<span class="good">res.cookie('refreshToken', refresh, { httpOnly: true, secure: true, sameSite: 'strict' });</span></pre>
+  </div>
+
+  <div class="section" id="s3">
+    <h2>Auth Security Checklist</h2>
+    <div class="sec-list">
+      <div class="sec-item danger"><span class="sec-icon">🚨</span><div><strong>Never store JWT in localStorage</strong> — XSS can steal it. Use httpOnly cookies for refresh tokens.</div></div>
+      <div class="sec-item danger"><span class="sec-icon">🚨</span><div><strong>Short access token expiry</strong> — 15 minutes max. Long-lived tokens that can't be revoked = stolen token = persistent breach.</div></div>
+      <div class="sec-item safe"><span class="sec-icon">✅</span><div><strong>Rate limit auth endpoints</strong> — /login, /register, /forgot-password. Max 5 attempts/minute per IP.</div></div>
+      <div class="sec-item safe"><span class="sec-icon">✅</span><div><strong>Timing-safe comparison</strong> — Use <code>crypto.timingSafeEqual()</code> not <code>===</code> for token comparison (prevents timing attacks).</div></div>
+      <div class="sec-item safe"><span class="sec-icon">✅</span><div><strong>Rotate secrets on breach</strong> — JWT secret rotation invalidates all tokens. Have a plan for emergency rotation.</div></div>
+    </div>
+  </div>
+
+  <div class="section" id="s4">
+    <div class="exercise">
+      <h3>🔬 Exercise — Audit This Auth Code</h3>
+      <pre style="background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:1rem;font-size:.82rem;margin-bottom:.8rem;">async login(email: string, password: string) {
+  const user = await this.userRepo.findOne({ email });
+  if (user.password === password) {              // line A
+    const token = jwt.sign(
+      { sub: user.id, password: user.password }, // line B
+      'secret123',                                // line C
+      { expiresIn: '30d' }                        // line D
+    );
+    return { token };
+  }
+  throw new UnauthorizedException();
+}</pre>
+      <ol>
+        <li>Line A: what's wrong with this comparison?</li>
+        <li>Line B: what's the security risk of including password in payload?</li>
+        <li>Line C: what's wrong with a hardcoded secret?</li>
+        <li>Line D: why is 30-day expiry dangerous?</li>
+        <li>Rewrite this function correctly (4 fixes)</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section" id="s5">
+    <div class="takeaway">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li>Passwords: bcrypt(cost=12) minimum — never MD5/SHA1/plaintext</li>
+        <li>JWT payload is BASE64, not encrypted — anyone can read it</li>
+        <li>Access tokens: 15 min expiry. Refresh tokens: httpOnly cookie only.</li>
+        <li>Rate limit all auth endpoints — prevent brute force and credential stuffing</li>
+        <li>Never hardcode JWT secrets — use environment variables, rotate on breach</li>
+      </ul>
+    </div>
+    <div class="nav-links">
+      <a href="12a-owasp-top10.html">← 12a: OWASP</a>
+      <a href="12c-injection.html">12c: Injection →</a>
+    </div>
+  </div>
+</div>
+<script>
+const jwtContent = {
+  header: {title:'Header (red)', body:'Algorithm and token type.\n{\n  "alg": "HS256",\n  "typ": "JWT"\n}\n\n⚠️ alg:none attack: attacker changes this to "none" to skip verification. Always specify allowed algorithms explicitly.'},
+  payload: {title:'Payload (blue)', body:'Claims — data about the user. Not encrypted, just base64!\n{\n  "sub": "user_123",\n  "role": "user",\n  "iat": 1690000000,\n  "exp": 1690003600\n}\n\n⚠️ Never put passwords, secrets, or PII here. Payload is readable by anyone.'},
+  sig: {title:'Signature (purple)', body:'HMAC_SHA256(base64(header) + "." + base64(payload), secret)\n\nThis is what prevents tampering. If you change anything in the header or payload, the signature won\'t match.\n\n⚠️ Only as strong as your secret. Weak secret = signature can be brute-forced.'}
+};
+function showJwt(part) {
+  const el = document.getElementById('jwt-info');
+  el.innerHTML = `<h4>${jwtContent[part].title}</h4><pre style="margin:0;background:#0d1117;border:none;padding:0;white-space:pre-wrap;">${jwtContent[part].body}</pre>`;
+  el.classList.add('show');
+}
+window.addEventListener('scroll', () => {
+  document.getElementById('pf').style.width = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100 + '%';
+});
+const obs = new IntersectionObserver(entries => { entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+document.querySelectorAll('.section').forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

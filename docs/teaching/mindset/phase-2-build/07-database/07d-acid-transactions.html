@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>07d — ACID Transactions | Phase 2</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #1a2235; --border: #2a3a55;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #2dd4bf; --accent2: #818cf8;
+  --success: #34d399; --warning: #fbbf24; --error: #ef4444;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+.top-nav { position: sticky; top: 0; z-index: 100; background: rgba(14,21,37,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .6rem 1.5rem; font-size: .85rem; }
+.top-nav .breadcrumb { color: var(--muted); } .top-nav .breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a { padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-links a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .75rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+
+/* ACID CARDS */
+.acid-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: .75rem; }
+.acid-card { border-radius: 8px; padding: 1rem; cursor: pointer; transition: all .2s; }
+.acid-card:hover { transform: translateY(-2px); }
+.acid-card.open .acid-desc { display: block; }
+.acid-title { font-size: 1.1rem; font-weight: 800; margin-bottom: .15rem; }
+.acid-sub { font-size: .75rem; font-weight: 400; opacity: .8; }
+.acid-desc { display: none; margin-top: .75rem; font-size: .82rem; color: rgba(255,255,255,.75); line-height: 1.6; }
+
+/* TRANSACTION ANIMATION */
+.tx-steps { display: flex; flex-direction: column; gap: .5rem; }
+.tx-step { display: flex; gap: .75rem; align-items: center; padding: .5rem .75rem; border-radius: 6px; font-size: .82rem; transition: all .3s; }
+.tx-step .step-icon { font-size: 1rem; flex-shrink: 0; }
+.tx-step .step-text { flex: 1; }
+.tx-step .step-status { font-size: .72rem; font-weight: 700; }
+.tx-pending { background: rgba(255,255,255,.04); border: 1px solid var(--border); }
+.tx-running { background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.3); }
+.tx-ok { background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.3); }
+.tx-fail { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); }
+.tx-rollback { background: rgba(129,140,248,.1); border: 1px solid rgba(129,140,248,.3); }
+
+.accounts-display { display: flex; gap: 1rem; margin-bottom: 1rem; }
+.account-box { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: .75rem; text-align: center; }
+.account-box .acc-name { font-size: .75rem; color: var(--muted); margin-bottom: .25rem; }
+.account-box .acc-balance { font-size: 1.3rem; font-weight: 800; transition: all .3s; }
+.account-box.changed { border-color: var(--accent); }
+
+/* CODE BLOCK */
+.code-block { background: #0a0f1e; border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; font-family: 'Courier New', monospace; font-size: .78rem; line-height: 1.7; overflow-x: auto; }
+.c-comment { color: #6b7280; } .c-kw { color: #818cf8; } .c-str { color: #34d399; }
+.c-fn { color: #fbbf24; } .c-type { color: #f472b6; }
+
+.exercise-box { background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.3); border-radius: var(--radius); padding: 1.5rem; }
+.exercise-box h2 { color: var(--accent2); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(129,140,248,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent2); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem; }
+
+.takeaway { background: rgba(45,212,191,.06); border: 1px solid rgba(45,212,191,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--accent); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '✦'; color: var(--accent); }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(14,21,37,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 2 · Database · <span>07d — ACID Transactions</span></div>
+  <div class="nav-links">
+    <a href="07c-index-optimization.html">← Index</a>
+    <a href="07e-n1-caching.html" class="next">N+1 &amp; Caching →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">07d · Database Thinking</div>
+  <h1><em>ACID</em> Transactions</h1>
+  <p>Transfer tiền: trừ account A và cộng account B. Nếu server crash giữa chừng — ai chịu trách nhiệm? ACID đảm bảo data luôn nhất quán dù có lỗi.</p>
+</div>
+
+<div class="content">
+
+  <!-- ACID CARDS -->
+  <section>
+    <h2>4 Tính chất ACID — Bấm để xem chi tiết</h2>
+    <div class="acid-grid">
+      <div class="acid-card" style="background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.3)" onclick="this.classList.toggle('open')">
+        <div class="acid-title" style="color:#f472b6">A — Atomicity</div>
+        <div class="acid-sub" style="color:#f472b6">All or Nothing</div>
+        <div class="acid-desc">Transaction hoặc COMMIT toàn bộ hoặc ROLLBACK toàn bộ. Không có trạng thái "half-done". Ví dụ: transfer $100 gồm 2 ops (trừ A, cộng B) — nếu op 2 fail, op 1 phải được undo.</div>
+      </div>
+      <div class="acid-card" style="background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.3)" onclick="this.classList.toggle('open')">
+        <div class="acid-title" style="color:#60a5fa">C — Consistency</div>
+        <div class="acid-sub" style="color:#60a5fa">Valid State Guarantee</div>
+        <div class="acid-desc">DB chỉ chuyển từ valid state sang valid state. Constraints không bao giờ bị violated: foreign keys, unique constraints, check constraints. Nếu transaction vi phạm constraint → ROLLBACK.</div>
+      </div>
+      <div class="acid-card" style="background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.3)" onclick="this.classList.toggle('open')">
+        <div class="acid-title" style="color:#34d399">I — Isolation</div>
+        <div class="acid-sub" style="color:#34d399">Concurrent Safety</div>
+        <div class="acid-desc">Transactions chạy concurrent không interfere nhau. Isolation levels: READ_UNCOMMITTED → READ_COMMITTED → REPEATABLE_READ → SERIALIZABLE. Cao hơn = an toàn hơn nhưng chậm hơn.</div>
+      </div>
+      <div class="acid-card" style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3)" onclick="this.classList.toggle('open')">
+        <div class="acid-title" style="color:#fbbf24">D — Durability</div>
+        <div class="acid-sub" style="color:#fbbf24">Survive Crashes</div>
+        <div class="acid-desc">Committed transactions được lưu bền vững — dù server crash ngay sau COMMIT. DB ghi WAL (Write-Ahead Log) trước khi commit để có thể recovery sau crash.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INTERACTIVE DEMO -->
+  <section>
+    <h2>Live Demo — Transfer Money Transaction</h2>
+    <div class="card">
+      <div class="accounts-display">
+        <div class="account-box" id="accA">
+          <div class="acc-name">💳 Account A (Nguyen An)</div>
+          <div class="acc-balance" id="balA" style="color:var(--accent)">$500</div>
+        </div>
+        <div style="display:flex;align-items:center;font-size:1.5rem;color:var(--muted)">→</div>
+        <div class="account-box" id="accB">
+          <div class="acc-name">💳 Account B (Tran Binh)</div>
+          <div class="acc-balance" id="balB" style="color:var(--accent)">$200</div>
+        </div>
+      </div>
+      <div class="tx-steps" id="txSteps">
+        <div class="tx-step tx-pending" id="step1"><span class="step-icon">1️⃣</span><span class="step-text">BEGIN TRANSACTION</span><span class="step-status" style="color:var(--muted)">pending</span></div>
+        <div class="tx-step tx-pending" id="step2"><span class="step-icon">2️⃣</span><span class="step-text">UPDATE accounts SET balance = balance - 100 WHERE id = 'A'</span><span class="step-status" style="color:var(--muted)">pending</span></div>
+        <div class="tx-step tx-pending" id="step3"><span class="step-icon">3️⃣</span><span class="step-text">UPDATE accounts SET balance = balance + 100 WHERE id = 'B'</span><span class="step-status" style="color:var(--muted)">pending</span></div>
+        <div class="tx-step tx-pending" id="step4"><span class="step-icon">4️⃣</span><span class="step-text">COMMIT</span><span class="step-status" style="color:var(--muted)">pending</span></div>
+      </div>
+      <div style="display:flex;gap:.75rem;margin-top:1rem">
+        <button onclick="runTransaction(false)" style="padding:.4rem 1rem;background:var(--success);color:#000;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:.8rem">▶ Run (Success)</button>
+        <button onclick="runTransaction(true)" style="padding:.4rem 1rem;background:var(--error);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:.8rem">💥 Simulate Crash → Rollback</button>
+        <button onclick="resetTx()" style="padding:.4rem 1rem;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;cursor:pointer;font-size:.8rem">Reset</button>
+      </div>
+      <div id="txResult" style="margin-top:.75rem;font-size:.85rem;min-height:24px"></div>
+    </div>
+  </section>
+
+  <!-- MONGODB TRANSACTIONS -->
+  <section>
+    <h2>MongoDB Multi-Document Transactions</h2>
+    <p>MongoDB hỗ trợ ACID transactions từ v4.0 (replica sets). Multi-document transactions cho operations cần atomic cross-collection:</p>
+    <div class="code-block">
+<span class="c-comment">// NestJS + Mongoose multi-document transaction</span>
+<span class="c-kw">async</span> <span class="c-fn">transferMoney</span>(fromId: <span class="c-type">string</span>, toId: <span class="c-type">string</span>, amount: <span class="c-type">number</span>) {
+  <span class="c-kw">const</span> session = <span class="c-kw">await</span> <span class="c-kw">this</span>.connection.<span class="c-fn">startSession</span>();
+  session.<span class="c-fn">startTransaction</span>();
+
+  <span class="c-kw">try</span> {
+    <span class="c-comment">// Both ops in same session → atomic</span>
+    <span class="c-kw">await</span> <span class="c-class">Account</span>.<span class="c-fn">findByIdAndUpdate</span>(
+      fromId, { $<span class="c-fn">inc</span>: { balance: -amount } }, { session }
+    );
+    <span class="c-kw">await</span> <span class="c-class">Account</span>.<span class="c-fn">findByIdAndUpdate</span>(
+      toId, { $<span class="c-fn">inc</span>: { balance: amount } }, { session }
+    );
+
+    <span class="c-kw">await</span> session.<span class="c-fn">commitTransaction</span>();
+  } <span class="c-kw">catch</span> (err) {
+    <span class="c-kw">await</span> session.<span class="c-fn">abortTransaction</span>(); <span class="c-comment">// Rollback!</span>
+    <span class="c-kw">throw</span> err;
+  } <span class="c-kw">finally</span> {
+    session.<span class="c-fn">endSession</span>();
+  }
+}</div>
+  </section>
+
+  <!-- WHEN TO USE -->
+  <section>
+    <h2>Khi nào cần Transaction?</h2>
+    <div class="card">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div>
+          <p style="color:var(--success);font-weight:600;font-size:.85rem;margin-bottom:.5rem">✅ Cần Transaction</p>
+          <ul style="list-style:none;font-size:.82rem">
+            <li style="padding:.25rem 0;color:var(--muted)">💰 Chuyển tiền, thanh toán</li>
+            <li style="padding:.25rem 0;color:var(--muted)">📦 Đặt hàng + trừ tồn kho cùng lúc</li>
+            <li style="padding:.25rem 0;color:var(--muted)">📝 Tạo user + assign roles + send email</li>
+            <li style="padding:.25rem 0;color:var(--muted)">🔄 Bất kỳ "2+ write ops phải thành công cùng nhau"</li>
+          </ul>
+        </div>
+        <div>
+          <p style="color:var(--warning);font-weight:600;font-size:.85rem;margin-bottom:.5rem">⚠️ Không cần Transaction</p>
+          <ul style="list-style:none;font-size:.82rem">
+            <li style="padding:.25rem 0;color:var(--muted)">👁️ Read-only operations</li>
+            <li style="padding:.25rem 0;color:var(--muted)">✏️ Cập nhật 1 document đơn lẻ</li>
+            <li style="padding:.25rem 0;color:var(--muted)">📊 Analytics/reporting queries</li>
+            <li style="padding:.25rem 0;color:var(--muted)">🗑️ Delete không cần rollback</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXERCISE -->
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — Implement Transaction</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Tìm trong code chỗ nào có 2+ write operations liên quan nhau mà không có transaction. Đây là bug tiềm ẩn.</li>
+      <li><span class="step-num">2</span>Implement transfer function với MongoDB session. Test với <code>jest.spyOn</code> để simulate crash sau op 1.</li>
+      <li><span class="step-num">3</span>Verify: khi crash, op 1 được rollback và balance không thay đổi.</li>
+      <li><span class="step-num">4</span>Thêm optimistic locking: trước khi update, check <code>version</code> field không thay đổi → tránh concurrent update conflicts.</li>
+    </ul>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>ACID: Atomicity (all or nothing), Consistency (valid states), Isolation (concurrent safety), Durability (survive crashes).</li>
+      <li>Transaction = nhóm nhiều operations thành 1 đơn vị atomic. Commit hoặc rollback toàn bộ.</li>
+      <li>MongoDB hỗ trợ multi-document transactions từ v4.0. Cần replica set.</li>
+      <li>Dùng try/catch/finally pattern: commitTransaction trong try, abortTransaction trong catch, endSession trong finally.</li>
+      <li>Transaction có chi phí (locking overhead) — chỉ dùng khi thực sự cần atomicity.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="07c-index-optimization.html">← Index</a>
+  <div class="progress-dots">
+    <div class="dot"></div><div class="dot"></div>
+    <div class="dot"></div><div class="dot active"></div><div class="dot"></div>
+  </div>
+  <a href="07e-n1-caching.html" class="next">N+1 &amp; Caching →</a>
+</div>
+
+<script>
+let balA = 500, balB = 200;
+const steps = [
+  { id: 'step1', icon: '1️⃣', text: 'BEGIN TRANSACTION' },
+  { id: 'step2', icon: '2️⃣', text: 'UPDATE accounts SET balance = balance - 100 WHERE id = A' },
+  { id: 'step3', icon: '3️⃣', text: 'UPDATE accounts SET balance = balance + 100 WHERE id = B' },
+  { id: 'step4', icon: '4️⃣', text: 'COMMIT' },
+];
+
+function setStep(id, cls, statusTxt, statusColor) {
+  const el = document.getElementById(id);
+  el.className = 'tx-step ' + cls;
+  el.children[2].textContent = statusTxt;
+  el.children[2].style.color = statusColor;
+}
+
+async function runTransaction(crash) {
+  resetTx();
+  await delay(300);
+  setStep('step1', 'tx-running', '▶ running', '#fbbf24');
+  await delay(500);
+  setStep('step1', 'tx-ok', '✅ ok', '#34d399');
+
+  await delay(300);
+  setStep('step2', 'tx-running', '▶ running', '#fbbf24');
+  await delay(600);
+  setStep('step2', 'tx-ok', '✅ ok', '#34d399');
+  document.getElementById('balA').textContent = '$400';
+  document.getElementById('accA').classList.add('changed');
+
+  if (crash) {
+    await delay(400);
+    setStep('step3', 'tx-fail', '💥 CRASH', '#ef4444');
+    document.getElementById('txResult').innerHTML = '<span style="color:#818cf8">🔄 Atomicity: rolling back step 2...</span>';
+    await delay(800);
+    document.getElementById('balA').textContent = '$500';
+    document.getElementById('accA').classList.remove('changed');
+    document.getElementById('txResult').innerHTML = '<span style="color:#34d399">✅ Rollback complete. Both balances unchanged. ACID preserved.</span>';
+  } else {
+    await delay(300);
+    setStep('step3', 'tx-running', '▶ running', '#fbbf24');
+    await delay(600);
+    setStep('step3', 'tx-ok', '✅ ok', '#34d399');
+    document.getElementById('balB').textContent = '$300';
+    document.getElementById('accB').classList.add('changed');
+    await delay(300);
+    setStep('step4', 'tx-running', '▶ running', '#fbbf24');
+    await delay(400);
+    setStep('step4', 'tx-ok', '✅ committed', '#34d399');
+    document.getElementById('txResult').innerHTML = '<span style="color:#34d399">✅ Transaction committed. A: $400, B: $300. Total = $700 (unchanged).</span>';
+  }
+}
+
+function resetTx() {
+  balA = 500; balB = 200;
+  document.getElementById('balA').textContent = '$500';
+  document.getElementById('balB').textContent = '$200';
+  document.getElementById('accA').classList.remove('changed');
+  document.getElementById('accB').classList.remove('changed');
+  document.getElementById('txResult').textContent = '';
+  steps.forEach(s => setStep(s.id, 'tx-pending', 'pending', 'var(--muted)'));
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>

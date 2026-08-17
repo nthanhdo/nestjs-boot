@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02c — Function Design | Tư Duy Lập Trình</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #151d32; --surface2: #1c2744;
+  --border: #2a3a5c; --text: #eef1f8; --muted: #8899bb;
+  --accent: #a78bfa; --green: #2ecc71; --red: #e74c3c;
+  --blue: #5b8def; --orange: #ffb347; --teal: #00cec9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; }
+.top-nav { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; font-size: .85rem; }
+.top-nav a { color: var(--accent); text-decoration: none; padding: 4px 10px; border-radius: 6px; border: 1px solid transparent; transition: .2s; }
+.top-nav a:hover { border-color: var(--accent); background: #a78bfa18; }
+.nav-center { color: var(--muted); font-size: .8rem; }
+.hero { padding: 48px 24px 32px; max-width: 860px; margin: 0 auto; animation: fadeUp .5s ease; }
+.lesson-tag { display: inline-block; background: #a78bfa22; color: var(--accent); border: 1px solid #a78bfa44; border-radius: 20px; padding: 4px 14px; font-size: .8rem; margin-bottom: 16px; }
+h1 { font-size: 2rem; margin-bottom: 8px; }
+h1 span { color: var(--accent); }
+.subtitle { color: var(--muted); font-size: 1rem; margin-bottom: 32px; }
+.section { max-width: 860px; margin: 0 auto 40px; padding: 0 24px; }
+h2 { font-size: 1.2rem; color: var(--accent); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1rem; color: var(--orange); margin: 16px 0 8px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:600px){ .card-row { grid-template-columns: 1fr; } }
+pre { background: #0a0f1e; border: 1px solid var(--border); border-radius: 10px; padding: 20px; overflow-x: auto; font-size: .88rem; line-height: 1.7; }
+.kw { color: #79b8ff; } .fn { color: #b392f0; } .str { color: #9ecbff; }
+.num { color: var(--orange); } .cmt { color: #6a737d; font-style: italic; } .type { color: var(--teal); }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:600px){ .compare { grid-template-columns: 1fr; } }
+.compare-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.compare-box.bad { border-top: 3px solid var(--red); }
+.compare-box.good { border-top: 3px solid var(--green); }
+.compare-label { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+.compare-box.bad .compare-label { color: var(--red); }
+.compare-box.good .compare-label { color: var(--green); }
+
+/* PRINCIPLE CARDS */
+.principle { background: var(--surface2); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; cursor: pointer; transition: .2s; }
+.principle:hover { background: var(--surface); border-left-color: var(--teal); }
+.principle-title { font-weight: 600; font-size: .95rem; display: flex; align-items: center; gap: 10px; }
+.principle-body { display: none; margin-top: 12px; color: var(--muted); font-size: .88rem; }
+.principle.open .principle-body { display: block; }
+.principle.open { border-left-color: var(--green); }
+.badge { background: #a78bfa22; color: var(--accent); border: 1px solid #a78bfa44; border-radius: 12px; padding: 2px 10px; font-size: .75rem; }
+
+/* COMPOSE PIPELINE */
+.pipeline { display: flex; align-items: center; gap: 0; overflow-x: auto; padding: 12px 0; }
+.pipe-fn { background: var(--surface); border: 2px solid var(--border); border-radius: 8px; padding: 8px 14px; font-family: monospace; font-size: .85rem; color: var(--teal); white-space: nowrap; transition: .2s; }
+.pipe-fn:hover { border-color: var(--teal); }
+.pipe-arrow { padding: 0 8px; color: var(--muted); }
+
+.takeaway { background: linear-gradient(135deg, #a78bfa15, #5b8def10); border: 1px solid #a78bfa44; border-radius: 12px; padding: 20px 24px; margin: 32px auto; max-width: 860px; }
+.takeaway-label { font-size: .75rem; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
+.exercise { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--orange); border-radius: 10px; padding: 20px; margin-top: 16px; }
+.exercise-label { font-size: .75rem; color: var(--orange); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px; }
+.next-nav { max-width: 860px; margin: 0 auto 60px; padding: 0 24px; }
+.next-topic { display: flex; align-items: center; gap: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; text-decoration: none; color: var(--text); transition: .2s; }
+.next-topic:hover { border-color: var(--accent); background: #a78bfa08; }
+.next-icon { font-size: 2rem; }
+.next-text .label { font-size: .75rem; color: var(--muted); }
+.next-text .title { font-size: 1rem; font-weight: 600; color: var(--accent); }
+.next-arrow { margin-left: auto; font-size: 1.4rem; color: var(--accent); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="02b-control-flow.html">← 02b Control Flow</a>
+  <span class="nav-center">Bài 02 · Function Design · 02c / 06</span>
+  <a href="02d-module-dependency.html">02d Modules →</a>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">Bài 02c / 06 · Tư Duy Lập Trình</div>
+  <h1>🔧 Function <span>Design</span></h1>
+  <p class="subtitle">Function là đơn vị tư duy nhỏ nhất. Thiết kế tốt = mỗi function làm đúng 1 việc, không side effect ẩn, có thể test độc lập.</p>
+</div>
+
+<!-- SRP -->
+<div class="section">
+  <h2>🎯 Single Responsibility — Một Hàm, Một Việc</h2>
+  <div class="compare">
+    <div class="compare-box bad">
+      <div class="compare-label">❌ Hàm làm quá nhiều</div>
+      <pre style="font-size:.82rem;"><span class="kw">async function</span> <span class="fn">handleOrder</span>(dto) {
+  <span class="cmt">// Validate</span>
+  <span class="kw">if</span> (!dto.userId) <span class="kw">throw</span> <span class="fn">Error</span>()
+  <span class="cmt">// DB write</span>
+  <span class="kw">const</span> order = <span class="kw">await</span> db.<span class="fn">save</span>(dto)
+  <span class="cmt">// Email</span>
+  <span class="kw">await</span> mailer.<span class="fn">send</span>(order)
+  <span class="cmt">// Analytics</span>
+  <span class="kw">await</span> analytics.<span class="fn">track</span>(<span class="str">'order'</span>, order)
+  <span class="kw">return</span> order
+  <span class="cmt">// 4 trách nhiệm trong 1 hàm!</span>
+}</pre>
+    </div>
+    <div class="compare-box good">
+      <div class="compare-label">✅ Tách rõ trách nhiệm</div>
+      <pre style="font-size:.82rem;"><span class="kw">async function</span> <span class="fn">createOrder</span>(dto) {
+  <span class="fn">validateOrder</span>(dto)             <span class="cmt">// 1</span>
+  <span class="kw">const</span> order = <span class="kw">await</span> <span class="fn">saveOrder</span>(dto)  <span class="cmt">// 2</span>
+  <span class="kw">await</span> <span class="type">Promise</span>.<span class="fn">all</span>([
+    <span class="fn">sendConfirmation</span>(order),      <span class="cmt">// 3</span>
+    <span class="fn">trackOrderCreated</span>(order),     <span class="cmt">// 4</span>
+  ])
+  <span class="kw">return</span> order
+  <span class="cmt">// Mỗi step = 1 named function ✓</span>
+}</pre>
+    </div>
+  </div>
+</div>
+
+<!-- PRINCIPLES -->
+<div class="section">
+  <h2>📐 Nguyên Tắc Thiết Kế Hàm</h2>
+  <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px;">Bấm để mở rộng từng nguyên tắc.</p>
+
+  <div class="principle" onclick="toggle(this)">
+    <div class="principle-title"><span class="badge">P1</span> Tên hàm = động từ + tân ngữ rõ ràng</div>
+    <div class="principle-body">
+      <p>Tên xấu: <code>process()</code>, <code>handle()</code>, <code>do()</code> — không nói lên gì.</p>
+      <p style="margin-top:8px;">Tên tốt: <code>calculateShippingCost(order)</code>, <code>sendWelcomeEmail(user)</code>, <code>validatePaymentToken(token)</code>.</p>
+      <p style="margin-top:8px;">Rule: Đọc tên xong → biết output là gì, input là gì, side effect là gì.</p>
+    </div>
+  </div>
+
+  <div class="principle" onclick="toggle(this)">
+    <div class="principle-title"><span class="badge">P2</span> Tối đa 3 parameters — dùng object nếu hơn</div>
+    <div class="principle-body">
+      <pre style="font-size:.82rem;"><span class="cmt">// ❌ 5 params — thứ tự khó nhớ</span>
+<span class="fn">createUser</span>(<span class="str">'John'</span>, <span class="str">'Doe'</span>, <span class="str">'john@x.com'</span>, <span class="num">25</span>, <span class="str">'vn'</span>)
+
+<span class="cmt">// ✅ Named params — self-documenting</span>
+<span class="fn">createUser</span>({ firstName: <span class="str">'John'</span>, lastName: <span class="str">'Doe'</span>,
+  email: <span class="str">'john@x.com'</span>, age: <span class="num">25</span>, locale: <span class="str">'vn'</span> })</pre>
+    </div>
+  </div>
+
+  <div class="principle" onclick="toggle(this)">
+    <div class="principle-title"><span class="badge">P3</span> Return early — tránh else sau return</div>
+    <div class="principle-body">
+      <pre style="font-size:.82rem;"><span class="cmt">// ❌ Redundant else</span>
+<span class="kw">if</span> (isValid) { <span class="kw">return</span> process() }
+<span class="kw">else</span> { <span class="kw">return</span> <span class="kw">null</span> }
+
+<span class="cmt">// ✅ Early return</span>
+<span class="kw">if</span> (!isValid) <span class="kw">return</span> <span class="kw">null</span>
+<span class="kw">return</span> <span class="fn">process</span>()</pre>
+    </div>
+  </div>
+
+  <div class="principle" onclick="toggle(this)">
+    <div class="principle-title"><span class="badge">P4</span> Không có flag parameters</div>
+    <div class="principle-body">
+      <pre style="font-size:.82rem;"><span class="cmt">// ❌ Flag param — làm gì với true/false?</span>
+<span class="fn">getProducts</span>(<span class="kw">true</span>)   <span class="cmt">// true = gì?</span>
+
+<span class="cmt">// ✅ Tách thành 2 hàm rõ ràng</span>
+<span class="fn">getActiveProducts</span>()
+<span class="fn">getAllProducts</span>()</pre>
+    </div>
+  </div>
+</div>
+
+<!-- PURE FUNCTIONS -->
+<div class="section">
+  <h2>🧊 Pure vs Impure Functions</h2>
+  <div class="compare">
+    <div class="compare-box good">
+      <div class="compare-label">✅ Pure — Predictable</div>
+      <pre style="font-size:.82rem;"><span class="cmt">// Same input → always same output</span>
+<span class="cmt">// No side effects</span>
+<span class="kw">function</span> <span class="fn">calcDiscount</span>(price, pct) {
+  <span class="kw">return</span> price * (1 - pct / <span class="num">100</span>)
+}
+
+<span class="fn">calcDiscount</span>(<span class="num">100</span>, <span class="num">20</span>) <span class="cmt">// always 80</span>
+<span class="fn">calcDiscount</span>(<span class="num">100</span>, <span class="num">20</span>) <span class="cmt">// still 80</span></pre>
+    </div>
+    <div class="compare-box bad">
+      <div class="compare-label">⚠️ Impure — Dễ gây bug</div>
+      <pre style="font-size:.82rem;"><span class="cmt">// Depends on external state</span>
+<span class="kw">let</span> globalRate = <span class="num">0.2</span>
+
+<span class="kw">function</span> <span class="fn">calcDiscount</span>(price) {
+  <span class="kw">return</span> price * (1 - globalRate)
+  <span class="cmt">// kết quả thay đổi khi globalRate đổi</span>
+  <span class="cmt">// khó test, khó predict</span>
+}</pre>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <p style="color:var(--muted);font-size:.9rem;">
+      <strong style="color:var(--teal);">Quy tắc:</strong> Maximize pure functions. Đẩy side effects (DB write, email, logging) ra edges của hệ thống — vào entry points như controller, event handler. Business logic trong core = pure.
+    </p>
+  </div>
+</div>
+
+<!-- COMPOSITION -->
+<div class="section">
+  <h2>🧱 Function Composition</h2>
+  <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px;">Kết hợp các hàm nhỏ thành pipeline — mỗi hàm nhận output của hàm trước.</p>
+  <div class="pipeline">
+    <div class="pipe-fn">rawInput</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-fn">parse()</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-fn">validate()</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-fn">transform()</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-fn">save()</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-fn">Response</div>
+  </div>
+  <pre style="margin-top:16px;font-size:.85rem;"><span class="cmt">// Pipe helper — compose left-to-right</span>
+<span class="kw">const</span> pipe = (...fns) => (x) => fns.<span class="fn">reduce</span>((v, f) => <span class="fn">f</span>(v), x)
+
+<span class="kw">const</span> processProduct = <span class="fn">pipe</span>(
+  <span class="fn">parseRawData</span>,
+  <span class="fn">validateSchema</span>,
+  <span class="fn">normalizePrice</span>,
+  <span class="fn">addMetadata</span>,
+)
+
+<span class="kw">const</span> result = <span class="fn">processProduct</span>(rawInput)
+<span class="cmt">// Dễ thêm/bớt bước mà không sửa logic</span></pre>
+</div>
+
+<!-- TAKEAWAY -->
+<div class="takeaway">
+  <div class="takeaway-label">💡 Key Takeaway</div>
+  <p>Function tốt = làm <strong>1 việc</strong>, tên <strong>tự mô tả</strong>, tối đa <strong>3 params</strong>, không flag params, <strong>return early</strong>, ưu tiên <strong>pure</strong>. Đây là building blocks để compose thành hệ thống lớn mà vẫn dễ hiểu, dễ test.</p>
+</div>
+
+<!-- EXERCISE -->
+<div class="section">
+  <h2>🏋️ Bài Tập</h2>
+  <div class="exercise">
+    <div class="exercise-label">Thiết kế function pipeline</div>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:10px;">Cho flow: nhận raw JSON từ AliExpress API → parse → validate (price > 0, title exists) → transform (add currency, format price) → return ProductDto</p>
+    <ul style="color:var(--muted);font-size:.9rem;padding-left:20px;">
+      <li>Viết 4 pure functions nhỏ cho từng bước</li>
+      <li>Compose chúng thành 1 pipeline</li>
+      <li>Mỗi function phải có tên tự mô tả</li>
+    </ul>
+  </div>
+</div>
+
+<div class="next-nav">
+  <a href="02d-module-dependency.html" class="next-topic">
+    <div class="next-icon">📦</div>
+    <div class="next-text">
+      <div class="label">Bài tiếp theo · 02d / 06</div>
+      <div class="title">Module & Dependency — tổ chức code ở scale lớn</div>
+    </div>
+    <span class="next-arrow">→</span>
+  </a>
+</div>
+
+<script>
+function toggle(el) { el.classList.toggle('open'); }
+</script>
+</body>
+</html>

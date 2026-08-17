@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12a — OWASP Top 10 | Phase 3</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--accent:#58a6ff;--success:#3fb950;--warning:#d29922;--error:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.progress-bar{position:fixed;top:0;left:0;width:100%;height:3px;background:var(--border);z-index:100;}
+.progress-fill{height:100%;background:var(--accent);width:0;transition:width .1s;}
+nav{position:sticky;top:3px;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:90;}
+nav .brand{font-weight:700;color:var(--accent);font-size:.9rem;}
+nav .links a{color:var(--muted);text-decoration:none;margin-left:1.2rem;font-size:.85rem;transition:color .2s;}
+nav .links a:hover{color:var(--text);}
+.container{max-width:900px;margin:0 auto;padding:2rem 1.5rem;}
+h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;}
+.subtitle{color:var(--muted);margin-bottom:2.5rem;font-size:1.05rem;}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:1rem;color:var(--accent);}
+.section{margin-bottom:3rem;opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
+.section.visible{opacity:1;transform:none;}
+.label{display:inline-block;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;margin-bottom:.5rem;}
+/* OWASP grid */
+.owasp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.8rem;margin-bottom:1rem;}
+.owasp-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;cursor:pointer;transition:all .2s;}
+.owasp-card:hover{border-color:var(--error);transform:translateY(-2px);}
+.owasp-card.active{border-color:var(--error);background:#1a0808;}
+.owasp-card .num{font-size:.75rem;font-weight:800;color:var(--error);margin-bottom:.3rem;}
+.owasp-card .name{font-weight:700;font-size:.9rem;margin-bottom:.2rem;}
+.owasp-card .brief{font-size:.8rem;color:var(--muted);}
+.owasp-detail{background:var(--surface);border:1px solid var(--error);border-radius:8px;padding:1.2rem;margin-bottom:1rem;display:none;}
+.owasp-detail.show{display:block;}
+.owasp-detail h4{color:var(--error);font-size:1rem;font-weight:700;margin-bottom:.6rem;}
+.owasp-detail p{color:var(--muted);font-size:.88rem;margin-bottom:.6rem;line-height:1.6;}
+.owasp-detail .fix{color:var(--success);font-size:.85rem;}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:.8rem 1rem;font-size:.8rem;line-height:1.6;margin-top:.6rem;font-family:monospace;overflow-x:auto;}
+pre .bad{color:var(--error);}
+pre .good{color:var(--success);}
+pre .c{color:var(--muted);}
+.exercise{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.exercise h3{color:var(--accent);margin-bottom:.8rem;font-size:1rem;}
+.exercise ol{padding-left:1.2rem;color:var(--muted);font-size:.9rem;line-height:1.8;}
+.takeaway{background:linear-gradient(135deg,#1a2235,#161b22);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.takeaway h3{color:var(--accent);margin-bottom:1rem;}
+.takeaway ul{padding-left:1.2rem;line-height:2;}
+.nav-links{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-links a{color:var(--accent);text-decoration:none;font-size:.9rem;padding:.5rem 1rem;border:1px solid var(--border);border-radius:6px;transition:border-color .2s;}
+.nav-links a:hover{border-color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav>
+  <span class="brand">Phase 3 — Engineer Mindset</span>
+  <div class="links">
+    <a href="../11-git/11d-versioning.html">← Git</a>
+    <a href="12b-auth-jwt.html">Auth →</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="section" id="s0">
+    <div class="label">12a / 5</div>
+    <h1>OWASP Top 10</h1>
+    <p class="subtitle">The 10 most critical web application security risks. Know them — attackers do.</p>
+  </div>
+
+  <div class="section" id="s1">
+    <h2>Top 10 — Click to expand</h2>
+    <div class="owasp-grid" id="grid"></div>
+    <div class="owasp-detail" id="detail"></div>
+  </div>
+
+  <div class="section" id="s2">
+    <div class="exercise">
+      <h3>🔬 Exercise — Spot the Vulnerability</h3>
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:.8rem;">Identify the OWASP category and fix for each snippet:</p>
+      <ol>
+        <li><code>db.query(`SELECT * FROM users WHERE id=${req.params.id}`)</code></li>
+        <li><code>res.send(`&lt;p&gt;Hello ${req.query.name}&lt;/p&gt;`)</code></li>
+        <li>API returns: <code>{"error": "MongoDB Error: field 'hashedPassword' undefined"}</code></li>
+        <li>Route handler: no authentication check before <code>DELETE /admin/users/:id</code></li>
+        <li><code>const secret = 'my-jwt-secret-key'; // hardcoded</code></li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section" id="s3">
+    <div class="takeaway">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li>A01 Broken Access Control = most common. Check auth on EVERY route.</li>
+        <li>A03 Injection = most dangerous. Never build queries with string concatenation.</li>
+        <li>A07 Auth Failures = JWT, session, password storage. All three need correct implementation.</li>
+        <li>Security is not a feature — it's a baseline. Fail-secure by default.</li>
+        <li>When in doubt: validate input, encode output, deny by default.</li>
+      </ul>
+    </div>
+    <div class="nav-links">
+      <a href="../11-git/11d-versioning.html">← 11d: Versioning</a>
+      <a href="12b-auth-jwt.html">12b: Auth & JWT →</a>
+    </div>
+  </div>
+</div>
+<script>
+const items = [
+  {num:'A01',name:'Broken Access Control',brief:'Users act outside intended permissions',
+   detail:'The most critical category. A user accesses another user\'s data, or a regular user hits an admin endpoint. Access control must be enforced server-side on every request.',
+   bad:`router.get('/users/:id/profile', async (req, res) => {\n  // ❌ No check that req.user.id === req.params.id\n  const user = await User.findById(req.params.id);\n  res.json(user);\n});`,
+   good:`// ✅ Enforce ownership server-side\nif (req.user.id !== req.params.id && !req.user.isAdmin) {\n  throw new ForbiddenException();\n}`},
+  {num:'A02',name:'Cryptographic Failures',brief:'Weak/missing encryption on sensitive data',
+   detail:'Sensitive data (passwords, PII, payment info) stored or transmitted unencrypted. Includes using MD5/SHA1 for passwords, HTTP instead of HTTPS, weak random number generation.',
+   bad:`// ❌ MD5 for passwords\nconst hash = crypto.createHash('md5').update(password).digest('hex');`,
+   good:`// ✅ bcrypt with cost factor\nconst hash = await bcrypt.hash(password, 12);`},
+  {num:'A03',name:'Injection',brief:'Untrusted data sent to interpreter',
+   detail:'SQL, NoSQL, OS command injection. Attacker\'s input is interpreted as code. Classic: SQL injection. Modern: MongoDB operator injection ($where, $regex).',
+   bad:`// ❌ SQL injection\ndb.query(\`SELECT * FROM users WHERE email='${email}'\`);`,
+   good:`// ✅ Parameterized query\ndb.query('SELECT * FROM users WHERE email = ?', [email]);`},
+  {num:'A04',name:'Insecure Design',brief:'Missing or ineffective security architecture',
+   detail:'Security wasn\'t considered during design. No rate limiting on login (brute force), no account lockout, no fraud controls. Designing in security costs 10× less than patching it.',
+   bad:`// ❌ No rate limiting on login endpoint`,
+   good:`// ✅ Rate limit auth endpoints\n@UseGuards(ThrottlerGuard)\n@Throttle(5, 60) // 5 attempts per 60s\nasync login(...)`},
+  {num:'A05',name:'Security Misconfiguration',brief:'Insecure default configs left enabled',
+   detail:'Default credentials unchanged, stack traces exposed in production, debug mode on, unnecessary ports open, CORS allowing all origins (*), verbose error messages.',
+   bad:`// ❌ CORS wildcard\napp.use(cors({ origin: '*' }));\n// ❌ Stack trace in response\nres.json({ error: err.stack });`,
+   good:`// ✅ Explicit CORS allowlist\napp.use(cors({ origin: ['https://app.example.com'] }));\n// ✅ Generic error in prod\nres.status(500).json({ message: 'Internal error' });`},
+  {num:'A06',name:'Vulnerable Components',brief:'Using components with known vulnerabilities',
+   detail:'npm packages with CVEs, outdated frameworks. Equifax breach (2017) was a vulnerable Apache Struts library. Run npm audit regularly.',
+   bad:`// ❌ Ignoring npm audit warnings\n// 3 critical vulnerabilities found`,
+   good:`// ✅ Regular dependency updates\nnpm audit fix\nnpm outdated\n// Use Dependabot / Snyk for automation`},
+  {num:'A07',name:'Identification & Auth Failures',brief:'Broken authentication, session management',
+   detail:'Weak passwords allowed, no MFA, credential stuffing possible, JWT with weak secret/alg:none, sessions not invalidated on logout.',
+   bad:`// ❌ JWT alg:none vulnerability\njwt.verify(token, '', { algorithms: ['none'] });`,
+   good:`// ✅ Explicit algorithm, strong secret\njwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });`},
+  {num:'A08',name:'Software & Data Integrity',brief:'Unverified updates, CI/CD pipeline attacks',
+   detail:'Accepting auto-updates without signature verification, compromised npm packages (supply chain), CI/CD systems with wide permissions.',
+   bad:`// ❌ curl piped to bash (unverified)\ncurl https://example.com/install.sh | bash`,
+   good:`// ✅ Verify checksums, pin dependencies\n// package-lock.json + npm ci (not install)\n// Sign releases`},
+  {num:'A09',name:'Security Logging Failures',brief:'Insufficient logging and monitoring',
+   detail:'No logging of auth failures, privilege escalation, or API abuse. Without logs, you can\'t detect breaches. Average breach dwell time = 197 days.',
+   bad:`// ❌ No logging on failed auth\nif (!user) return null;`,
+   good:`// ✅ Log failures with context\nif (!user) {\n  logger.warn('Auth failure', { email, ip: req.ip, ua: req.headers['user-agent'] });\n  throw new UnauthorizedException();\n}`},
+  {num:'A10',name:'Server-Side Request Forgery',brief:'Server fetches attacker-controlled URL',
+   detail:'App fetches a URL from user input. Attacker passes internal URL (http://169.254.169.254/latest/meta-data/ on AWS) to read cloud metadata, internal services.',
+   bad:`// ❌ Fetching user-supplied URL\nconst data = await fetch(req.body.url);`,
+   good:`// ✅ Allowlist valid domains\nconst url = new URL(req.body.url);\nif (!ALLOWED_HOSTS.includes(url.hostname)) throw new BadRequestException();`}
+];
+
+let activeCard = null;
+
+function showCard(i) {
+  if (activeCard === i) { activeCard = null; }
+  else { activeCard = i; }
+  document.querySelectorAll('.owasp-card').forEach((c,j) => c.classList.toggle('active', j === activeCard));
+  const detail = document.getElementById('detail');
+  if (activeCard === null) { detail.classList.remove('show'); return; }
+  const item = items[activeCard];
+  detail.innerHTML = `<h4>${item.num}: ${item.name}</h4>
+    <p>${item.detail}</p>
+    <pre><span class="bad">${item.bad.replace(/</g,'&lt;')}</span></pre>
+    <p class="fix" style="margin-top:.5rem;font-weight:600;">✅ Fix:</p>
+    <pre><span class="good">${item.good.replace(/</g,'&lt;')}</span></pre>`;
+  detail.classList.add('show');
+}
+
+const grid = document.getElementById('grid');
+items.forEach((item, i) => {
+  const card = document.createElement('div');
+  card.className = 'owasp-card';
+  card.innerHTML = `<div class="num">${item.num}</div><div class="name">${item.name}</div><div class="brief">${item.brief}</div>`;
+  card.onclick = () => showCard(i);
+  grid.appendChild(card);
+});
+
+window.addEventListener('scroll', () => {
+  document.getElementById('pf').style.width = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100 + '%';
+});
+const obs = new IntersectionObserver(entries => { entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+document.querySelectorAll('.section').forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

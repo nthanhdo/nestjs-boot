@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>19b — CV & Career Path | NestJS Boot</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;font-size:16px}
+nav{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #21262d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.nav-left,.nav-right{display:flex;align-items:center;gap:12px}
+.nav-link{color:#8b949e;text-decoration:none;font-size:.85rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s}
+.nav-link:hover{color:#e6edf3;border-color:#d29922}
+.nav-title{color:#e6edf3;font-size:.9rem;font-weight:600}
+.phase-badge{background:#d4b833;color:#000;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.container{max-width:900px;margin:0 auto;padding:40px 24px}
+h1{font-size:2rem;font-weight:700;margin-bottom:8px}
+.subtitle{color:#8b949e;font-size:1rem;margin-bottom:32px}
+h2{font-size:1.3rem;font-weight:600;margin:40px 0 16px;color:#d4b833;padding-left:12px;border-left:3px solid #d4b833}
+h3{font-size:1.05rem;font-weight:600;margin-bottom:10px;color:#e6edf3}
+.card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:24px;margin-bottom:16px}
+.section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
+.tip{background:#132030;border:1px solid #1f6feb;border-radius:8px;padding:14px 18px;color:#79c0ff;font-size:.9rem;margin-top:16px}
+.reshaded{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}
+@media(max-width:600px){.reshaded{grid-template-columns:repeat(2,1fr)}}
+.rs-item{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;text-align:center}
+.rs-letter{font-size:1.5rem;font-weight:800;color:#58a6ff;font-family:monospace}
+.rs-word{font-size:.75rem;font-weight:600;color:#c9d1d9;margin:4px 0}
+.rs-desc{font-size:.7rem;color:#8b949e}
+.cv-compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+@media(max-width:600px){.cv-compare{grid-template-columns:1fr}}
+.cv-bad{background:#2d0d0d;border:1px solid #9e1e1e;border-radius:10px;padding:16px;font-size:.83rem}
+.cv-good{background:#0d2d1a;border:1px solid #238636;border-radius:10px;padding:16px;font-size:.83rem}
+.cv-label{font-weight:700;margin-bottom:10px;font-size:.85rem}
+.cv-line{padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);color:#c9d1d9}
+.cv-strike{text-decoration:line-through;color:#484f58}
+.cv-highlight{color:#3fb950;font-weight:600}
+.roadmap{display:flex;flex-direction:column;gap:0;margin:16px 0}
+.road-level{display:flex;gap:16px;align-items:flex-start;padding:14px 0;border-left:2px solid #30363d;padding-left:20px;position:relative}
+.road-level::before{content:'';position:absolute;left:-5px;top:22px;width:8px;height:8px;border-radius:50%;background:#30363d}
+.road-level.active::before{background:#3fb950;box-shadow:0 0 8px rgba(63,185,80,.4)}
+.road-level.next::before{background:#58a6ff}
+.road-label{font-size:.8rem;font-weight:700;color:#8b949e;width:80px;flex-shrink:0;padding-top:2px}
+.road-tags{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+.road-tag{padding:4px 10px;border-radius:8px;font-size:.78rem}
+.rt-done{background:#0d2d1a;color:#3fb950;border:1px solid #238636}
+.rt-next{background:#0d1a2d;color:#58a6ff;border:1px solid #1f4a9e}
+.rt-later{background:#1a1a1a;color:#484f58;border:1px solid #21262d}
+.oss-flow{display:flex;align-items:center;gap:0;margin:16px 0;overflow-x:auto;padding:10px 0}
+.oss-step{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:100px}
+.oss-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;border:2px solid #30363d}
+.oss-label{font-size:.7rem;color:#8b949e;text-align:center;line-height:1.4}
+.oss-arrow{color:#58a6ff;font-size:1.4rem;padding:0 8px;margin-bottom:22px}
+.github-checklist{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+@media(max-width:600px){.github-checklist{grid-template-columns:1fr}}
+.gh-item{display:flex;gap:10px;padding:10px;background:#161b22;border:1px solid #30363d;border-radius:8px;font-size:.83rem;color:#c9d1d9}
+.gh-check{color:#3fb950;flex-shrink:0;font-size:1rem}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-left">
+    <span class="phase-badge">Capstone</span>
+    <span class="nav-title">19b — Career Path</span>
+  </div>
+  <div class="nav-right">
+    <a class="nav-link" href="19a-requirements.html">← 19a Requirements</a>
+    <a class="nav-link" href="19c-graduation.html" style="color:#d4b833;border-color:#9e8c1e">19c Graduation →</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>🧭 CV &amp; Career Path</h1>
+  <p class="subtitle">Từ "biết code" đến "job-ready". CV tốt, GitHub portfolio, OSS contributions, và roadmap phát triển tiếp theo.</p>
+
+  <h2>📄 RESHADED Framework — CV Structure</h2>
+  <p style="color:#c9d1d9;font-size:.9rem;margin-bottom:16px">RESHADED = 8 elements của một CV engineering mạnh. Thiếu bất kỳ element nào → giảm điểm trong mắt recruiter.</p>
+
+  <div class="reshaded">
+    <div class="rs-item"><div class="rs-letter">R</div><div class="rs-word">Results</div><div class="rs-desc">Số liệu, impact. "Reduced API latency 40%"</div></div>
+    <div class="rs-item"><div class="rs-letter">E</div><div class="rs-word">Experience</div><div class="rs-desc">Chronological, most recent first</div></div>
+    <div class="rs-item"><div class="rs-letter">S</div><div class="rs-word">Skills</div><div class="rs-desc">Tech stack, languages, frameworks</div></div>
+    <div class="rs-item"><div class="rs-letter">H</div><div class="rs-word">Highlights</div><div class="rs-desc">Top 3 achievements nổi bật</div></div>
+    <div class="rs-item"><div class="rs-letter">A</div><div class="rs-word">Accomplishments</div><div class="rs-desc">Awards, publications, OSS</div></div>
+    <div class="rs-item"><div class="rs-letter">D</div><div class="rs-word">Data</div><div class="rs-desc">Metrics prove impact</div></div>
+    <div class="rs-item"><div class="rs-letter">E</div><div class="rs-word">Education</div><div class="rs-desc">Degree, certifications, courses</div></div>
+    <div class="rs-item"><div class="rs-letter">D</div><div class="rs-word">Details</div><div class="rs-desc">GitHub, LinkedIn, portfolio link</div></div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>🆚 CV Bullet Point — Bad vs Good</h2>
+
+  <div class="cv-compare">
+    <div class="cv-bad">
+      <div class="cv-label" style="color:#ff7b72">❌ Weak bullets</div>
+      <div class="cv-line"><span class="cv-strike">Worked on backend development</span></div>
+      <div class="cv-line"><span class="cv-strike">Implemented APIs using NestJS</span></div>
+      <div class="cv-line"><span class="cv-strike">Responsible for database management</span></div>
+      <div class="cv-line"><span class="cv-strike">Fixed bugs in the system</span></div>
+      <div class="cv-line"><span class="cv-strike">Collaborated with team members</span></div>
+    </div>
+    <div class="cv-good">
+      <div class="cv-label" style="color:#3fb950">✅ Strong bullets</div>
+      <div class="cv-line"><span class="cv-highlight">Reduced</span> API response time by 40% via Redis caching + N+1 query optimization</div>
+      <div class="cv-line"><span class="cv-highlight">Built</span> 20+ REST endpoints (NestJS) serving 10,000 req/day</div>
+      <div class="cv-line"><span class="cv-highlight">Designed</span> MongoDB schema for order management — 3 collections, 5 indexes</div>
+      <div class="cv-line"><span class="cv-highlight">Resolved</span> critical auth bug blocking 200 users, deployed hotfix in 2 hours</div>
+      <div class="cv-line"><span class="cv-highlight">Reviewed</span> 30+ PRs — maintained 0 P0 bugs in production for 3 months</div>
+    </div>
+  </div>
+
+  <div class="tip"><strong>Formula:</strong> [Action verb] + [What you did] + [Measurable result]. Không có số = weak bullet. Estimate nếu không có exact → "~10,000 users" better than nothing.</div>
+
+  <hr class="section-divider">
+  <h2>🐙 GitHub Portfolio Checklist</h2>
+
+  <div class="github-checklist">
+    <div class="gh-item"><span class="gh-check">✓</span><span>Profile README với tech stack, current projects, contact</span></div>
+    <div class="gh-item"><span class="gh-check">✓</span><span>Pinned repos: 4-6 best projects nổi bật nhất</span></div>
+    <div class="gh-item"><span class="gh-check">✓</span><span>Mỗi repo có README: setup, screenshots, tech decisions</span></div>
+    <div class="gh-item"><span class="gh-check">✓</span><span>Consistent commit history (không sparse, không bulk push)</span></div>
+    <div class="gh-item"><span class="gh-check">✓</span><span>Conventional commit messages — shows discipline</span></div>
+    <div class="gh-item"><span class="gh-check">✓</span><span>Open PRs và code reviews visible (collaboration signal)</span></div>
+    <div class="gh-item"><span class="gh-check">✓</span><span>No secrets, no credentials, no large binaries committed</span></div>
+    <div class="gh-item"><span class="gh-check">✓</span><span>CI/CD badges (GitHub Actions) on key repos</span></div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>🌐 Open Source Contribution Flow</h2>
+
+  <div class="oss-flow">
+    <div class="oss-step">
+      <div class="oss-icon" style="background:#0d2d1a;border-color:#238636">🔍</div>
+      <div class="oss-label">Find good-first-issue</div>
+    </div>
+    <div class="oss-arrow">→</div>
+    <div class="oss-step">
+      <div class="oss-icon" style="background:#0d1a2d;border-color:#1f4a9e">🍴</div>
+      <div class="oss-label">Fork + branch</div>
+    </div>
+    <div class="oss-arrow">→</div>
+    <div class="oss-step">
+      <div class="oss-icon" style="background:#2d1a0d;border-color:#9e6c1e">⌨️</div>
+      <div class="oss-label">Fix + tests</div>
+    </div>
+    <div class="oss-arrow">→</div>
+    <div class="oss-step">
+      <div class="oss-icon" style="background:#1a0d2d;border-color:#6e40c9">📤</div>
+      <div class="oss-label">Open PR</div>
+    </div>
+    <div class="oss-arrow">→</div>
+    <div class="oss-step">
+      <div class="oss-icon" style="background:#0d2d1a;border-color:#3fb950">✅</div>
+      <div class="oss-label">Merged!</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:10px">Where to find good first issues</h3>
+    <ul style="color:#c9d1d9;padding-left:16px;font-size:.85rem">
+      <li style="margin:6px 0">GitHub: search <code>label:"good first issue" language:typescript</code></li>
+      <li style="margin:6px 0"><a href="https://goodfirstissue.dev" style="color:#58a6ff">goodfirstissue.dev</a> — curated list by language</li>
+      <li style="margin:6px 0">NestJS ecosystem: nestjs/nest, nestjs/typeorm, typestack/class-validator</li>
+      <li style="margin:6px 0">Projects bạn đang dùng — fix bugs bạn tìm thấy khi dùng</li>
+      <li style="margin:6px 0">Docs contributions — often overlooked, high value to project</li>
+    </ul>
+    <div class="tip" style="margin-top:12px">Start với docs/tests improvements — lower bar to entry, teaches you codebase, gets you "merged" experience on resume.</div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>🗺️ Career Roadmap</h2>
+
+  <div class="roadmap">
+    <div class="road-level active">
+      <span class="road-label" style="color:#3fb950">Now</span>
+      <div class="road-tags">
+        <span class="road-tag rt-done">Capstone complete</span>
+        <span class="road-tag rt-done">GitHub portfolio</span>
+        <span class="road-tag rt-done">Resume updated</span>
+      </div>
+    </div>
+    <div class="road-level next">
+      <span class="road-label" style="color:#58a6ff">6 months</span>
+      <div class="road-tags">
+        <span class="road-tag rt-next">First job / internship</span>
+        <span class="road-tag rt-next">1 OSS contribution</span>
+        <span class="road-tag rt-next">Real codebase experience</span>
+        <span class="road-tag rt-next">Docker + AWS basics</span>
+      </div>
+    </div>
+    <div class="road-level">
+      <span class="road-label">1 year</span>
+      <div class="road-tags">
+        <span class="road-tag rt-later">Junior → Mid-level</span>
+        <span class="road-tag rt-later">System design basics</span>
+        <span class="road-tag rt-later">Microservices experience</span>
+        <span class="road-tag rt-later">Mentor junior devs</span>
+      </div>
+    </div>
+    <div class="road-level">
+      <span class="road-label">2 years</span>
+      <div class="road-tags">
+        <span class="road-tag rt-later">Senior Engineer</span>
+        <span class="road-tag rt-later">Tech lead capability</span>
+        <span class="road-tag rt-later">Architecture decisions</span>
+        <span class="road-tag rt-later">Personal blog / talks</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:48px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">Bài 19b / Phase 5 — Capstone</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="19a-requirements.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← 19a: Requirements</a>
+      <a href="19c-graduation.html" style="color:#d4b833;text-decoration:none;font-size:.85rem">Tiếp theo: 19c — Graduation 🎓 →</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

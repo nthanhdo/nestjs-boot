@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>05c — Components & Atomic Design | Phase 2</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #1a2235; --border: #2a3a55;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #f472b6; --accent2: #818cf8;
+  --success: #34d399; --warning: #fbbf24; --error: #ef4444;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+.top-nav { position: sticky; top: 0; z-index: 100; background: rgba(14,21,37,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .6rem 1.5rem; font-size: .85rem; }
+.top-nav .breadcrumb { color: var(--muted); }
+.top-nav .breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a { padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-links a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .75rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+
+/* ATOMIC FLOW */
+.atomic-flow { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.atomic-level {
+  padding: .6rem 1rem; border-radius: 8px; font-size: .8rem; font-weight: 600;
+  cursor: pointer; transition: all .2s; border: 2px solid transparent;
+}
+.atomic-level:hover { transform: translateY(-2px); }
+.atom-detail { display: none; margin-top: .75rem; padding: .75rem; background: rgba(255,255,255,.04); border-radius: 8px; font-size: .85rem; color: var(--muted); line-height: 1.6; }
+.atom-detail.show { display: block; animation: fadeIn .2s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(-5px) } to { opacity:1; transform:none } }
+.arrow { color: var(--muted); font-size: 1.2rem; }
+
+/* COMPONENT SHOWCASE */
+.component-row { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+.btn { padding: .5rem 1.25rem; border-radius: 8px; border: none; cursor: pointer; font-size: .85rem; font-weight: 600; transition: all .15s; display: inline-flex; align-items: center; gap: .4rem; }
+.btn-primary { background: var(--accent); color: #000; }
+.btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn-secondary { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+.btn-secondary:hover { background: rgba(244,114,182,.1); }
+.btn-ghost { background: transparent; color: var(--muted); }
+.btn-ghost:hover { color: var(--text); background: rgba(255,255,255,.05); }
+.btn-danger { background: rgba(239,68,68,.15); color: #ef4444; border: 1px solid rgba(239,68,68,.3); }
+.btn-sm { padding: .3rem .75rem; font-size: .75rem; }
+.btn-lg { padding: .7rem 1.75rem; font-size: 1rem; }
+
+/* BADGE */
+.badge { display: inline-flex; align-items: center; padding: .2rem .55rem; border-radius: 20px; font-size: .7rem; font-weight: 700; }
+.badge-success { background: rgba(52,211,153,.15); color: #34d399; }
+.badge-warning { background: rgba(251,191,36,.15); color: #fbbf24; }
+.badge-error { background: rgba(239,68,68,.15); color: #ef4444; }
+.badge-info { background: rgba(6,182,212,.15); color: #06b6d4; }
+.badge-neutral { background: rgba(148,163,184,.15); color: #94a3b8; }
+
+/* INPUT */
+.input-demo { display: flex; flex-direction: column; gap: .75rem; }
+.input-wrap { display: flex; flex-direction: column; gap: .25rem; }
+.input-wrap label { font-size: .8rem; color: var(--muted); }
+.input-field { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: .5rem .75rem; font-size: .85rem; outline: none; transition: border-color .2s; width: 100%; }
+.input-field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(244,114,182,.15); }
+.input-field.error { border-color: #ef4444; }
+.input-field.success { border-color: var(--success); }
+.helper { font-size: .75rem; margin-top: .2rem; }
+.helper.error { color: #ef4444; } .helper.success { color: var(--success); }
+
+/* CARD COMPONENT */
+.product-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; width: 220px; transition: all .2s; cursor: pointer; }
+.product-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.3); }
+.product-thumb { height: 110px; background: linear-gradient(135deg, #1a2235 0%, #2a3a55 100%); display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+.product-body { padding: .75rem; }
+.product-name { font-size: .85rem; font-weight: 600; margin-bottom: .3rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.product-price { color: var(--accent); font-weight: 700; font-size: .9rem; }
+.product-meta { font-size: .75rem; color: var(--muted); display: flex; justify-content: space-between; margin-top: .3rem; }
+
+/* SPACING GRID */
+.spacing-row { display: flex; align-items: center; gap: 1rem; padding: .5rem 0; border-bottom: 1px solid rgba(42,58,85,.5); }
+.spacing-row:last-child { border: none; }
+.spacing-block { background: var(--accent); border-radius: 3px; flex-shrink: 0; }
+.spacing-meta { font-size: .8rem; }
+.spacing-name { color: var(--text); font-family: monospace; }
+.spacing-use { color: var(--muted); font-size: .75rem; }
+
+.exercise-box { background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.3); border-radius: var(--radius); padding: 1.5rem; }
+.exercise-box h2 { color: var(--accent2); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(129,140,248,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent2); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem; }
+
+.takeaway { background: rgba(244,114,182,.08); border: 1px solid rgba(244,114,182,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--accent); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '✦'; color: var(--accent); }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(14,21,37,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 2 · Design System · <span>05c — Components &amp; Atomic Design</span></div>
+  <div class="nav-links">
+    <a href="05b-color-typography.html">← Color &amp; Type</a>
+    <a href="05d-states-responsive.html" class="next">States &amp; Responsive →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">05c · Design System</div>
+  <h1>Components &amp; <em>Atomic Design</em></h1>
+  <p>Atomic Design của Brad Frost là tư duy phân cấp: từ atom nhỏ nhất lên đến page hoàn chỉnh — mỗi cấp có trách nhiệm riêng, tái dùng được.</p>
+</div>
+
+<div class="content">
+
+  <!-- ATOMIC DESIGN -->
+  <section>
+    <h2>5 Tầng Atomic Design</h2>
+    <p>Nhấn vào từng tầng để xem definition và ví dụ:</p>
+    <div class="card">
+      <div class="atomic-flow">
+        <div class="atomic-level" style="background:rgba(244,114,182,.15);border-color:rgba(244,114,182,.4);color:#f472b6" onclick="showLevel('atom')">⚛️ Atom</div>
+        <span class="arrow">→</span>
+        <div class="atomic-level" style="background:rgba(129,140,248,.15);border-color:rgba(129,140,248,.4);color:#818cf8" onclick="showLevel('molecule')">🧬 Molecule</div>
+        <span class="arrow">→</span>
+        <div class="atomic-level" style="background:rgba(52,211,153,.15);border-color:rgba(52,211,153,.4);color:#34d399" onclick="showLevel('organism')">🦠 Organism</div>
+        <span class="arrow">→</span>
+        <div class="atomic-level" style="background:rgba(251,191,36,.15);border-color:rgba(251,191,36,.4);color:#fbbf24" onclick="showLevel('template')">📐 Template</div>
+        <span class="arrow">→</span>
+        <div class="atomic-level" style="background:rgba(6,182,212,.15);border-color:rgba(6,182,212,.4);color:#06b6d4" onclick="showLevel('page')">📄 Page</div>
+      </div>
+      <div class="atom-detail" id="atom">
+        <strong style="color:#f472b6">Atom</strong> — Đơn vị nhỏ nhất không thể chia nhỏ hơn.<br>
+        Ví dụ: Button, Input, Label, Icon, Badge, Avatar, Checkbox.<br>
+        Rule: Atom không có layout logic, không biết mình đứng ở đâu.
+      </div>
+      <div class="atom-detail" id="molecule">
+        <strong style="color:#818cf8">Molecule</strong> — Kết hợp 2+ Atoms để có tính năng đơn giản.<br>
+        Ví dụ: SearchBar (Input + Button), FormField (Label + Input + Helper), ProductBadgeGroup (Badge + Badge + Badge).<br>
+        Rule: Molecule có 1 nhiệm vụ duy nhất.
+      </div>
+      <div class="atom-detail" id="organism">
+        <strong style="color:#34d399">Organism</strong> — Nhóm Molecules tạo section có nghĩa.<br>
+        Ví dụ: ProductCard (Thumbnail + Name + Price + Button), NavBar (Logo + NavLinks + SearchBar), DealsList (nhiều ProductCard).<br>
+        Rule: Organism có thể có layout logic riêng.
+      </div>
+      <div class="atom-detail" id="template">
+        <strong style="color:#fbbf24">Template</strong> — Bố cục trang không có data thật (wireframe).<br>
+        Ví dụ: ProductListPageTemplate (Header + Sidebar + Grid + Footer).<br>
+        Rule: Template = cấu trúc, chưa có content thật.
+      </div>
+      <div class="atom-detail" id="page">
+        <strong style="color:#06b6d4">Page</strong> — Template được inject data thật.<br>
+        Ví dụ: /deals/electronics → ProductListPageTemplate + real products data.<br>
+        Rule: Page = cuối pipeline, đây là điều người dùng thấy.
+      </div>
+    </div>
+  </section>
+
+  <!-- BUTTON COMPONENT -->
+  <section>
+    <h2>Button — Component Anatomy</h2>
+    <p>Button là atom phổ biến nhất. Cần 4 variants + 2 sizes — không hơn không kém:</p>
+    <div class="card">
+      <div class="component-row">
+        <button class="btn btn-primary">Primary</button>
+        <button class="btn btn-secondary">Secondary</button>
+        <button class="btn btn-ghost">Ghost</button>
+        <button class="btn btn-danger">Danger</button>
+      </div>
+      <div class="component-row">
+        <button class="btn btn-primary btn-sm">Small</button>
+        <button class="btn btn-primary">Default</button>
+        <button class="btn btn-primary btn-lg">Large</button>
+        <button class="btn btn-primary" disabled style="opacity:.4;cursor:not-allowed">Disabled</button>
+      </div>
+      <div style="margin-top:.75rem;font-size:.8rem;color:var(--muted)">
+        ← Bấm để xem hover/active states. Disabled = <code>opacity: .4</code> + <code>pointer-events: none</code>
+      </div>
+    </div>
+  </section>
+
+  <!-- BADGE COMPONENT -->
+  <section>
+    <h2>Badge — Status Indicator</h2>
+    <div class="card">
+      <div class="component-row" style="flex-wrap:wrap">
+        <span class="badge badge-success">✅ Active</span>
+        <span class="badge badge-warning">⚠️ Low Stock</span>
+        <span class="badge badge-error">❌ Out of Stock</span>
+        <span class="badge badge-info">ℹ️ New</span>
+        <span class="badge badge-neutral">Archived</span>
+      </div>
+      <p style="margin-top:.75rem;font-size:.85rem">Badge dùng semantic colors từ token — nhất quán với alert, toast, tooltip.</p>
+    </div>
+  </section>
+
+  <!-- INPUT -->
+  <section>
+    <h2>Input — States quan trọng nhất</h2>
+    <div class="card">
+      <div class="input-demo">
+        <div class="input-wrap">
+          <label>Default</label>
+          <input class="input-field" type="text" placeholder="Tìm sản phẩm...">
+        </div>
+        <div class="input-wrap">
+          <label>Success</label>
+          <input class="input-field success" type="text" value="aliexpress.com/item/123">
+          <span class="helper success">✅ URL hợp lệ</span>
+        </div>
+        <div class="input-wrap">
+          <label>Error</label>
+          <input class="input-field error" type="text" value="không phải URL">
+          <span class="helper error">❌ URL không hợp lệ — phải bắt đầu bằng https://</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUCT CARD (ORGANISM) -->
+  <section>
+    <h2>ProductCard — Organism Example</h2>
+    <p>ProductCard = Organism kết hợp: Thumbnail (atom) + Name (atom) + Price (atom) + Badge (atom) + Button (atom).</p>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap">
+      <div class="product-card">
+        <div class="product-thumb">📱</div>
+        <div class="product-body">
+          <div class="product-name">Xiaomi Redmi Note 13 Pro</div>
+          <div class="product-price">$189.99</div>
+          <div class="product-meta">
+            <span>⭐ 4.8 (2.1k)</span>
+            <span class="badge badge-warning" style="font-size:.65rem">Hot</span>
+          </div>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-thumb">🎧</div>
+        <div class="product-body">
+          <div class="product-name">Sony WH-1000XM5 Headphones</div>
+          <div class="product-price">$248.00</div>
+          <div class="product-meta">
+            <span>⭐ 4.9 (5.3k)</span>
+            <span class="badge badge-success" style="font-size:.65rem">In Stock</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="margin-top:.75rem;font-size:.85rem">Hover để xem interaction state. Organism này có thể tái dùng ở Deals page, Search results, Watchlist.</p>
+  </section>
+
+  <!-- SPACING -->
+  <section>
+    <h2>Spacing Scale — 4px Grid</h2>
+    <p>Mọi spacing đều là bội số của 4px. Consistency → UI nhìn aligned tự nhiên, không cần tweak từng pixel.</p>
+    <div class="card">
+      <div class="spacing-row"><div class="spacing-block" style="width:4px;height:16px"></div><div class="spacing-meta"><div class="spacing-name">--space-1 · 4px</div><div class="spacing-use">Icon gap, inline spacing</div></div></div>
+      <div class="spacing-row"><div class="spacing-block" style="width:8px;height:16px"></div><div class="spacing-meta"><div class="spacing-name">--space-2 · 8px</div><div class="spacing-use">Badge padding, small gaps</div></div></div>
+      <div class="spacing-row"><div class="spacing-block" style="width:12px;height:16px"></div><div class="spacing-meta"><div class="spacing-name">--space-3 · 12px</div><div class="spacing-use">Button padding vertical</div></div></div>
+      <div class="spacing-row"><div class="spacing-block" style="width:16px;height:16px"></div><div class="spacing-meta"><div class="spacing-name">--space-4 · 16px</div><div class="spacing-use">Card padding, section gap</div></div></div>
+      <div class="spacing-row"><div class="spacing-block" style="width:24px;height:16px"></div><div class="spacing-meta"><div class="spacing-name">--space-6 · 24px</div><div class="spacing-use">Component gap, column gap</div></div></div>
+      <div class="spacing-row"><div class="spacing-block" style="width:32px;height:16px"></div><div class="spacing-meta"><div class="spacing-name">--space-8 · 32px</div><div class="spacing-use">Section margin, page padding</div></div></div>
+      <div class="spacing-row"><div class="spacing-block" style="width:48px;height:16px"></div><div class="spacing-meta"><div class="spacing-name">--space-12 · 48px</div><div class="spacing-use">Hero spacing, between sections</div></div></div>
+    </div>
+  </section>
+
+  <!-- EXERCISE -->
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — Build Component Library</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Tạo <code>components/Button.jsx</code> với 4 variants (primary/secondary/ghost/danger) và 3 sizes. Props: <code>variant, size, disabled, children, onClick</code>.</li>
+      <li><span class="step-num">2</span>Tạo <code>components/Badge.jsx</code> dùng semantic color tokens. Props: <code>type (success|warning|error|info), children</code>.</li>
+      <li><span class="step-num">3</span>Tạo <code>components/Input.jsx</code> với states: default, focus, success, error. Props: <code>label, placeholder, error, success</code>.</li>
+      <li><span class="step-num">4</span>Compose <code>organisms/ProductCard.jsx</code> từ các atoms trên. ProductCard nhận props: <code>name, price, rating, stock, image</code>.</li>
+      <li><span class="step-num">5</span>Apply 4px spacing grid: replace tất cả hardcoded spacing bằng multiples of 4px. Verify không còn số lẻ (3px, 7px, 11px).</li>
+    </ul>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>Atomic Design: Atom → Molecule → Organism → Template → Page — mỗi tầng có trách nhiệm rõ ràng.</li>
+      <li>Atom không biết mình đứng ở đâu — layout là trách nhiệm của container/organism bên ngoài.</li>
+      <li>Button cần 4 variants + 3 sizes + disabled state — không ít hơn, không nhiều hơn.</li>
+      <li>4px grid spacing → UI aligned tự nhiên, không cần tweak từng pixel.</li>
+      <li>Component library = investment: viết 1 lần, dùng mọi nơi, bug fix 1 chỗ lan toàn app.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="05b-color-typography.html">← Color &amp; Type</a>
+  <div class="progress-dots">
+    <div class="dot"></div><div class="dot"></div>
+    <div class="dot active"></div><div class="dot"></div>
+  </div>
+  <a href="05d-states-responsive.html" class="next">States &amp; Responsive →</a>
+</div>
+
+<script>
+function showLevel(id) {
+  document.querySelectorAll('.atom-detail').forEach(d => d.classList.remove('show'));
+  document.getElementById(id).classList.add('show');
+}
+</script>
+</body>
+</html>

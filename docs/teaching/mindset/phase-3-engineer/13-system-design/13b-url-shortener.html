@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>13b — URL Shortener Design | Phase 3</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--accent:#58a6ff;--success:#3fb950;--warning:#d29922;--error:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.progress-bar{position:fixed;top:0;left:0;width:100%;height:3px;background:var(--border);z-index:100;}
+.progress-fill{height:100%;background:var(--accent);width:0;transition:width .1s;}
+nav{position:sticky;top:3px;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:90;}
+nav .brand{font-weight:700;color:var(--accent);font-size:.9rem;}
+nav .links a{color:var(--muted);text-decoration:none;margin-left:1.2rem;font-size:.85rem;transition:color .2s;}
+nav .links a:hover{color:var(--text);}
+.container{max-width:900px;margin:0 auto;padding:2rem 1.5rem;}
+h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;}
+.subtitle{color:var(--muted);margin-bottom:2.5rem;font-size:1.05rem;}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:1rem;color:var(--accent);}
+.section{margin-bottom:3rem;opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
+.section.visible{opacity:1;transform:none;}
+.label{display:inline-block;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;margin-bottom:.5rem;}
+/* walkthrough tabs */
+.tabs{display:flex;gap:.5rem;margin-bottom:1.2rem;border-bottom:1px solid var(--border);overflow-x:auto;}
+.tab{padding:.6rem 1rem;cursor:pointer;font-size:.85rem;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;margin-bottom:-1px;white-space:nowrap;}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+/* architecture diagram */
+.arch{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin-bottom:1rem;}
+.arch-row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.5rem;}
+.arch-box{background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:.5rem .8rem;font-size:.82rem;text-align:center;}
+.arch-box.client{border-color:var(--muted);}
+.arch-box.lb{border-color:var(--warning);color:var(--warning);}
+.arch-box.api{border-color:var(--accent);color:var(--accent);}
+.arch-box.cache{border-color:var(--success);color:var(--success);}
+.arch-box.db{border-color:#d2a8ff;color:#d2a8ff;}
+.arch-arrow{color:var(--muted);font-size:1.2rem;}
+/* estimates */
+.estimates{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.8rem;margin-bottom:1rem;}
+.est-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;text-align:center;}
+.est-card .num{font-size:1.5rem;font-weight:800;color:var(--accent);}
+.est-card .label-txt{font-size:.78rem;color:var(--muted);margin-top:.2rem;}
+pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:1rem;overflow-x:auto;font-size:.82rem;line-height:1.7;margin-bottom:1rem;font-family:monospace;}
+pre .c{color:var(--muted);}
+pre .good{color:var(--success);}
+table{width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:1rem;}
+th{background:var(--surface);padding:.65rem .9rem;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);}
+td{padding:.65rem .9rem;border-bottom:1px solid var(--border);vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+.exercise{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.exercise h3{color:var(--accent);margin-bottom:.8rem;font-size:1rem;}
+.exercise ol{padding-left:1.2rem;color:var(--muted);font-size:.9rem;line-height:1.8;}
+.takeaway{background:linear-gradient(135deg,#1a2235,#161b22);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.takeaway h3{color:var(--accent);margin-bottom:1rem;}
+.takeaway ul{padding-left:1.2rem;line-height:2;}
+.nav-links{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-links a{color:var(--accent);text-decoration:none;font-size:.9rem;padding:.5rem 1rem;border:1px solid var(--border);border-radius:6px;transition:border-color .2s;}
+.nav-links a:hover{border-color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav>
+  <span class="brand">Phase 3 — Engineer Mindset</span>
+  <div class="links">
+    <a href="13a-process.html">← Process</a>
+    <a href="13c-scaling.html">Scaling →</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="section" id="s0">
+    <div class="label">13b / 5</div>
+    <h1>URL Shortener Design</h1>
+    <p class="subtitle">The canonical system design walkthrough — applies all 10 steps to a real, deceptively complex system.</p>
+  </div>
+
+  <div class="section" id="s1">
+    <h2>Full Walkthrough</h2>
+    <div class="tabs">
+      <div class="tab active" onclick="showTab('req')">1. Requirements</div>
+      <div class="tab" onclick="showTab('est')">2. Estimates</div>
+      <div class="tab" onclick="showTab('api')">3. API</div>
+      <div class="tab" onclick="showTab('db')">4. Data Model</div>
+      <div class="tab" onclick="showTab('arch')">5. Architecture</div>
+    </div>
+
+    <div class="tab-panel active" id="panel-req">
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Before designing: clarify scope.</p>
+      <table>
+        <tr><th>Functional</th><th>Non-Functional</th></tr>
+        <tr>
+          <td>
+            ✅ Create short URL from long URL<br>
+            ✅ Redirect short URL → original<br>
+            ✅ Custom alias (optional)<br>
+            ✅ Expiration (optional, default 5 years)<br>
+            ❌ Out of scope: analytics, user accounts (for now)
+          </td>
+          <td>
+            • 100M URLs created/day<br>
+            • 10:1 read:write ratio (1B redirects/day)<br>
+            • Redirect latency &lt;10ms p99<br>
+            • 99.99% availability<br>
+            • Short URLs never reused after expiry
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="tab-panel" id="panel-est">
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Back-of-envelope calculations drive the architecture.</p>
+      <div class="estimates">
+        <div class="est-card"><div class="num">~1,160</div><div class="label-txt">Writes/sec (100M/day)</div></div>
+        <div class="est-card"><div class="num">~11,600</div><div class="label-txt">Reads/sec (1B/day)</div></div>
+        <div class="est-card"><div class="num">~365 GB</div><div class="label-txt">Storage/year (100M × 500B)</div></div>
+        <div class="est-card"><div class="num">7 chars</div><div class="label-txt">62⁷ = 3.5T unique IDs</div></div>
+      </div>
+      <p style="color:var(--muted);font-size:.85rem;">Key insight: <strong>reads are 10× writes</strong> → design heavily for read performance → Redis cache for hot URLs.</p>
+    </div>
+
+    <div class="tab-panel" id="panel-api">
+      <pre><span class="c"># Create short URL</span>
+POST /api/v1/urls
+{
+  "longUrl": "https://example.com/very/long/path",
+  "alias": "my-link",      <span class="c">// optional</span>
+  "expireAt": 1800000000   <span class="c">// optional unix timestamp</span>
+}
+→ 201 { "shortUrl": "https://sho.rt/abc1234" }
+
+<span class="c"># Redirect</span>
+GET /:shortCode
+→ 301 Location: https://original.long/url
+
+<span class="c"># Why 301 not 302?</span>
+<span class="c"># 301 = permanent → browser caches, fewer hits to server</span>
+<span class="c"># 302 = temporary → every request hits server (needed for analytics)</span>
+<span class="c"># Choice depends on requirements — analytics vs performance</span></pre>
+    </div>
+
+    <div class="tab-panel" id="panel-db">
+      <pre><span class="c">// MongoDB schema</span>
+<span class="good">{
+  _id: ObjectId,
+  shortCode: String,  // indexed, unique, 7 chars
+  longUrl: String,
+  alias: String,      // indexed, sparse (optional)
+  createdAt: Date,
+  expireAt: Date,     // TTL index — auto-deletes expired
+  userId: ObjectId    // null for anonymous
+}</span>
+
+<span class="c">// Indexes</span>
+{ shortCode: 1 }  <span class="c">// ← the critical one — every redirect hits this</span>
+{ alias: 1, sparse: true }
+{ expireAt: 1, expireAfterSeconds: 0 }  <span class="c">// TTL auto-delete</span>
+
+<span class="c">// Why NoSQL?</span>
+<span class="c">// Simple key-value lookup, no joins, horizontal scale → document DB wins</span></pre>
+    </div>
+
+    <div class="tab-panel" id="panel-arch">
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Components at scale:</p>
+      <div class="arch">
+        <div class="arch-row">
+          <div class="arch-box client">Client</div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box lb">Load Balancer</div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-box api">API Servers (×N)</div>
+        </div>
+        <div class="arch-row" style="margin-left:9rem;">
+          <div class="arch-arrow">↓</div>
+        </div>
+        <div class="arch-row" style="margin-left:6rem;">
+          <div class="arch-box cache">Redis Cache<br><small>hot URLs</small></div>
+          <div class="arch-arrow">miss→</div>
+          <div class="arch-box db">MongoDB<br><small>primary + replicas</small></div>
+        </div>
+      </div>
+      <p style="color:var(--muted);font-size:.85rem;">Read path: Client → LB → API → Redis (hit: 1ms return) → DB (miss: fetch + populate cache) → Client. Redis hit rate target: 80%+ for popular URLs.</p>
+    </div>
+  </div>
+
+  <div class="section" id="s2">
+    <h2>Short Code Generation — The Hard Part</h2>
+    <table>
+      <tr><th>Approach</th><th>How</th><th>Problem</th></tr>
+      <tr><td>MD5 hash → first 7 chars</td><td>Hash long URL, take prefix</td><td>Collision: same URL → same code. Different URLs → rare collision possible</td></tr>
+      <tr><td>Auto-increment ID → Base62</td><td>DB sequence → encode as [a-zA-Z0-9]</td><td>Predictable (sequential). Single point for ID generation.</td></tr>
+      <tr><td>UUID → first 7 chars</td><td>Random UUID, take prefix</td><td>Collision probability low but non-zero. No guarantee of uniqueness.</td></tr>
+      <tr><td><strong>Snowflake ID → Base62</strong></td><td>Time+machine+sequence → unique</td><td>Complex to set up. ✅ Globally unique, distributed, ordered</td></tr>
+    </table>
+    <p style="color:var(--muted);font-size:.85rem;">Practical choice for most: auto-increment + Base62 encoding with uniqueness constraint in DB. Retry on collision (extremely rare).</p>
+  </div>
+
+  <div class="section" id="s3">
+    <div class="exercise">
+      <h3>🔬 Exercise — Extend the Design</h3>
+      <ol>
+        <li>Add analytics: track clicks per short URL, per country, per day. What changes?</li>
+        <li>The DB can handle 10K QPS but you have 11,600 read QPS. How do you scale?</li>
+        <li>A URL expires but the shortCode must never be reused. How do you implement this?</li>
+        <li>Implement a "premium custom alias" feature. What's the API? What validation?</li>
+        <li>A user pastes the same long URL twice. Should they get the same short code?</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section" id="s4">
+    <div class="takeaway">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li>Read/write ratio dictates caching strategy — 10:1 → aggressive Redis caching</li>
+        <li>301 vs 302 is a real trade-off: performance vs analytics. Name it explicitly.</li>
+        <li>Short code generation is the trickiest part — collision avoidance requires a strategy</li>
+        <li>TTL indexes (MongoDB) handle expiration automatically — no cron job needed</li>
+        <li>7 Base62 chars = 3.5 trillion IDs — more than enough for any realistic use case</li>
+      </ul>
+    </div>
+    <div class="nav-links">
+      <a href="13a-process.html">← 13a: Process</a>
+      <a href="13c-scaling.html">13c: Scaling →</a>
+    </div>
+  </div>
+</div>
+<script>
+function showTab(id){
+  const ids=['req','est','api','db','arch'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',ids[i]===id));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+}
+window.addEventListener('scroll',()=>{
+  document.getElementById('pf').style.width=(window.scrollY/(document.documentElement.scrollHeight-window.innerHeight))*100+'%';
+});
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.1});
+document.querySelectorAll('.section').forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

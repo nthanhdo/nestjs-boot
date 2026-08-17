@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02a — Data & State | Tư Duy Lập Trình</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #151d32; --surface2: #1c2744;
+  --border: #2a3a5c; --text: #eef1f8; --muted: #8899bb;
+  --accent: #a78bfa; --green: #2ecc71; --red: #e74c3c;
+  --blue: #5b8def; --orange: #ffb347; --teal: #00cec9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; }
+
+/* NAV */
+.top-nav { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; font-size: .85rem; }
+.top-nav a { color: var(--accent); text-decoration: none; padding: 4px 10px; border-radius: 6px; border: 1px solid transparent; transition: .2s; }
+.top-nav a:hover { border-color: var(--accent); background: #a78bfa18; }
+.nav-center { color: var(--muted); font-size: .8rem; }
+
+/* HERO */
+.hero { padding: 48px 24px 32px; max-width: 860px; margin: 0 auto; animation: fadeUp .5s ease; }
+.lesson-tag { display: inline-block; background: #a78bfa22; color: var(--accent); border: 1px solid #a78bfa44; border-radius: 20px; padding: 4px 14px; font-size: .8rem; margin-bottom: 16px; }
+h1 { font-size: 2rem; margin-bottom: 8px; }
+h1 span { color: var(--accent); }
+.subtitle { color: var(--muted); font-size: 1rem; margin-bottom: 32px; }
+
+/* SECTIONS */
+.section { max-width: 860px; margin: 0 auto 40px; padding: 0 24px; animation: fadeUp .5s ease; }
+h2 { font-size: 1.2rem; color: var(--accent); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1rem; color: var(--orange); margin: 16px 0 8px; }
+
+/* CARDS */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:600px){ .card-row { grid-template-columns: 1fr; } }
+
+/* STATE DEMO */
+.state-demo { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 24px; text-align: center; }
+.var-grid { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 20px; }
+.var-box { background: var(--surface); border: 2px solid var(--border); border-radius: 10px; padding: 12px 20px; min-width: 100px; transition: .3s; }
+.var-box.changed { border-color: var(--teal); background: #00cec910; animation: popIn .3s ease; }
+.var-label { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.var-value { font-size: 1.8rem; font-weight: 700; color: var(--accent); font-family: monospace; }
+.btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+.state-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: .9rem; transition: .2s; }
+.state-btn:hover { background: var(--surface2); border-color: var(--accent); }
+.state-btn.primary { background: #a78bfa22; border-color: var(--accent); color: var(--accent); }
+
+/* CODE */
+pre { background: #0a0f1e; border: 1px solid var(--border); border-radius: 10px; padding: 20px; overflow-x: auto; font-size: .88rem; line-height: 1.7; }
+.kw { color: #79b8ff; } .fn { color: #b392f0; } .str { color: #9ecbff; }
+.num { color: var(--orange); } .cmt { color: #6a737d; font-style: italic; }
+.type { color: var(--teal); }
+
+/* COMPARE */
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:600px){ .compare { grid-template-columns: 1fr; } }
+.compare-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.compare-box.bad { border-top: 3px solid var(--red); }
+.compare-box.good { border-top: 3px solid var(--green); }
+.compare-label { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+.compare-box.bad .compare-label { color: var(--red); }
+.compare-box.good .compare-label { color: var(--green); }
+
+/* PILL LIST */
+.pill-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.pill { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 14px; font-size: .85rem; color: var(--muted); }
+.pill.accent { border-color: var(--accent); color: var(--accent); background: #a78bfa12; }
+
+/* TAKEAWAY */
+.takeaway { background: linear-gradient(135deg, #a78bfa15, #5b8def10); border: 1px solid #a78bfa44; border-radius: 12px; padding: 20px 24px; margin: 32px auto; max-width: 860px; }
+.takeaway-label { font-size: .75rem; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
+.takeaway p { color: var(--text); font-size: .95rem; }
+
+/* EXERCISE */
+.exercise { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--orange); border-radius: 10px; padding: 20px; margin-top: 16px; }
+.exercise-label { font-size: .75rem; color: var(--orange); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px; }
+.exercise ul { padding-left: 20px; color: var(--muted); font-size: .9rem; }
+.exercise li { margin-bottom: 6px; }
+
+/* NEXT NAV */
+.next-nav { max-width: 860px; margin: 0 auto 60px; padding: 0 24px; }
+.next-topic { display: flex; align-items: center; gap: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; text-decoration: none; color: var(--text); transition: .2s; }
+.next-topic:hover { border-color: var(--accent); background: #a78bfa08; }
+.next-icon { font-size: 2rem; }
+.next-text .label { font-size: .75rem; color: var(--muted); }
+.next-text .title { font-size: 1rem; font-weight: 600; color: var(--accent); }
+.next-arrow { margin-left: auto; font-size: 1.4rem; color: var(--accent); }
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes popIn { from { transform: scale(.9); opacity: .5; } to { transform: scale(1); opacity: 1; } }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="../01-computational-thinking/01g-debugging-mindset.html">← 01g Debugging Mindset</a>
+  <span class="nav-center">Bài 02 · Data &amp; State · 02a / 06</span>
+  <a href="02b-control-flow.html">02b Control Flow →</a>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">Bài 02a / 06 · Tư Duy Lập Trình</div>
+  <h1>💾 Data &amp; <span>State</span></h1>
+  <p class="subtitle">Dữ liệu là sự thật. State là lịch sử của sự thật đó. Hiểu rõ cả hai là nền móng của mọi chương trình đúng đắn.</p>
+</div>
+
+<!-- WHY IT MATTERS -->
+<div class="section">
+  <h2>🎯 Tại Sao Data & State Quan Trọng?</h2>
+  <div class="card-row">
+    <div class="card">
+      <h3>Hầu hết bugs là bugs về state</h3>
+      <p style="color:var(--muted);font-size:.9rem;">Race condition, stale data, mutable shared state — chúng chiếm ~60% production incidents. Không phải thuật toán sai, mà là <em>state sai tại thời điểm sai</em>.</p>
+    </div>
+    <div class="card">
+      <h3>Data shape quyết định API shape</h3>
+      <p style="color:var(--muted);font-size:.9rem;">Nếu bạn model dữ liệu sai từ đầu, mọi layer phía trên đều sai theo. Đặt đúng data trước, code sau.</p>
+    </div>
+  </div>
+</div>
+
+<!-- INTERACTIVE STATE DEMO -->
+<div class="section">
+  <h2>🔬 State Demo — Thay Đổi Trạng Thái</h2>
+  <p style="color:var(--muted);margin-bottom:16px;font-size:.9rem;">Bấm các nút để thay đổi state và quan sát từng biến phản ứng.</p>
+  <div class="state-demo">
+    <div class="var-grid">
+      <div class="var-box" id="box-count">
+        <div class="var-label">count</div>
+        <div class="var-value" id="val-count">0</div>
+      </div>
+      <div class="var-box" id="box-total">
+        <div class="var-label">total</div>
+        <div class="var-value" id="val-total">0</div>
+      </div>
+      <div class="var-box" id="box-even">
+        <div class="var-label">isEven</div>
+        <div class="var-value" id="val-even">true</div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="state-btn" onclick="stateAction('inc')">count++</button>
+      <button class="state-btn" onclick="stateAction('dec')">count--</button>
+      <button class="state-btn primary" onclick="stateAction('add')">total += count</button>
+      <button class="state-btn" onclick="stateAction('reset')">reset()</button>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <p style="color:var(--muted);font-size:.9rem;">
+      <strong style="color:var(--teal);">Quan sát:</strong> <code>isEven</code> là <em>derived state</em> — nó không được lưu riêng, chỉ tính từ <code>count</code>.
+      Đây là Single Source of Truth: chỉ <code>count</code> là truth, <code>isEven = count % 2 === 0</code>.
+      Nếu bạn lưu <code>isEven</code> riêng → có thể bị out-of-sync → bug.
+    </p>
+  </div>
+</div>
+
+<!-- DATA VS STATE -->
+<div class="section">
+  <h2>📊 Data vs State — Phân Biệt Rõ</h2>
+  <div class="compare">
+    <div class="compare-box" style="border-top-color:var(--blue);">
+      <div class="compare-label" style="color:var(--blue);">DATA (Dữ liệu)</div>
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:12px;">Thông tin tĩnh, thường đến từ nguồn bên ngoài (DB, API, file). Mô tả <em>thực thể</em>.</p>
+      <pre><span class="cmt">// Data — mô tả product</span>
+<span class="kw">const</span> product = {
+  id: <span class="str">'AE-001'</span>,
+  name: <span class="str">'USB-C Hub'</span>,
+  price: <span class="num">29.99</span>,
+  stock: <span class="num">142</span>
+}</pre>
+    </div>
+    <div class="compare-box" style="border-top-color:var(--orange);">
+      <div class="compare-label" style="color:var(--orange);">STATE (Trạng thái)</div>
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:12px;">Thông tin <em>thay đổi theo thời gian</em> trong ứng dụng. Phản ánh <em>quá trình</em>.</p>
+      <pre><span class="cmt">// State — thay đổi theo hành động</span>
+<span class="kw">interface</span> <span class="type">CartState</span> {
+  items: <span class="type">CartItem</span>[]
+  isLoading: <span class="type">boolean</span>
+  error: <span class="type">string</span> | <span class="kw">null</span>
+  lastUpdated: <span class="type">Date</span>
+}</pre>
+    </div>
+  </div>
+</div>
+
+<!-- TYPES OF STATE -->
+<div class="section">
+  <h2>🗂️ Phân Loại State</h2>
+  <div class="card-row">
+    <div class="card">
+      <h3>🖥️ Local State</h3>
+      <p style="color:var(--muted);font-size:.85rem;margin-bottom:10px;">Chỉ sống trong 1 component/function. Không share ra ngoài.</p>
+      <pre style="font-size:.82rem;"><span class="cmt">// NestJS service local state</span>
+<span class="kw">class</span> <span class="type">PriceService</span> {
+  <span class="kw">private</span> cache = <span class="kw">new</span> <span class="fn">Map</span>()
+  <span class="cmt">// cache chỉ sống trong service này</span>
+}</pre>
+    </div>
+    <div class="card">
+      <h3>🌐 Shared State</h3>
+      <p style="color:var(--muted);font-size:.85rem;margin-bottom:10px;">Nhiều module cùng đọc/ghi. Cần cẩn thận về synchronization.</p>
+      <pre style="font-size:.82rem;"><span class="cmt">// Redis shared state</span>
+<span class="kw">await</span> redis.<span class="fn">set</span>(<span class="str">`session:${id}`</span>, data)
+<span class="cmt">// Nhiều instances đều đọc được</span></pre>
+    </div>
+    <div class="card">
+      <h3>⏳ Derived State</h3>
+      <p style="color:var(--muted);font-size:.85rem;margin-bottom:10px;">Tính <em>từ</em> state khác. KHÔNG lưu riêng — tính lại khi cần.</p>
+      <pre style="font-size:.82rem;"><span class="cmt">// Derived — tính từ items</span>
+<span class="kw">get</span> <span class="fn">totalPrice</span>() {
+  <span class="kw">return</span> <span class="kw">this</span>.items
+    .<span class="fn">reduce</span>((sum, i) => sum + i.price, <span class="num">0</span>)
+}</pre>
+    </div>
+    <div class="card">
+      <h3>💾 Persistent State</h3>
+      <p style="color:var(--muted);font-size:.85rem;margin-bottom:10px;">Sống qua restart — DB, file, localStorage. Cần serialize/deserialize.</p>
+      <pre style="font-size:.82rem;"><span class="cmt">// MongoDB document = persistent state</span>
+<span class="kw">await</span> <span class="kw">this</span>.orderModel.<span class="fn">create</span>({
+  userId, items, status: <span class="str">'pending'</span>
+})</pre>
+    </div>
+  </div>
+</div>
+
+<!-- SINGLE SOURCE OF TRUTH -->
+<div class="section">
+  <h2>⚡ Single Source of Truth (SSOT)</h2>
+  <div class="compare">
+    <div class="compare-box bad">
+      <div class="compare-label">❌ Duplicated state — Nguy hiểm</div>
+      <pre style="font-size:.82rem;"><span class="kw">class</span> <span class="type">UserService</span> {
+  <span class="kw">private</span> userCount = <span class="num">0</span>    <span class="cmt">// copy 1</span>
+  <span class="kw">private</span> users = []
+
+  <span class="kw">async</span> <span class="fn">addUser</span>(u) {
+    <span class="kw">this</span>.users.<span class="fn">push</span>(u)
+    <span class="kw">this</span>.userCount++         <span class="cmt">// dễ quên!</span>
+    <span class="cmt">// → count có thể sai</span>
+  }
+}</pre>
+    </div>
+    <div class="compare-box good">
+      <div class="compare-label">✅ Single source — An toàn</div>
+      <pre style="font-size:.82rem;"><span class="kw">class</span> <span class="type">UserService</span> {
+  <span class="kw">private</span> users = []
+
+  <span class="kw">get</span> <span class="fn">userCount</span>() {        <span class="cmt">// derived!</span>
+    <span class="kw">return</span> <span class="kw">this</span>.users.length
+  }
+
+  <span class="kw">async</span> <span class="fn">addUser</span>(u) {
+    <span class="kw">this</span>.users.<span class="fn">push</span>(u)
+    <span class="cmt">// count tự cập nhật ✓</span>
+  }
+}</pre>
+    </div>
+  </div>
+</div>
+
+<!-- IMMUTABILITY -->
+<div class="section">
+  <h2>🧊 Immutability — Không Mutate Trực Tiếp</h2>
+  <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px;">Mutating state trực tiếp là nguồn gốc của nhiều bugs khó trace nhất. Luôn tạo object mới.</p>
+  <div class="compare">
+    <div class="compare-box bad">
+      <div class="compare-label">❌ Mutate trực tiếp</div>
+      <pre style="font-size:.82rem;"><span class="cmt">// items bị thay đổi ẩn!</span>
+<span class="kw">function</span> <span class="fn">addItem</span>(cart, item) {
+  cart.items.<span class="fn">push</span>(item)  <span class="cmt">// mutation!</span>
+  cart.total += item.price
+  <span class="kw">return</span> cart             <span class="cmt">// same ref</span>
+}</pre>
+    </div>
+    <div class="compare-box good">
+      <div class="compare-label">✅ Return new state</div>
+      <pre style="font-size:.82rem;"><span class="cmt">// Original cart không thay đổi</span>
+<span class="kw">function</span> <span class="fn">addItem</span>(cart, item) {
+  <span class="kw">return</span> {
+    ...cart,
+    items: [...cart.items, item],
+    total: cart.total + item.price
+  }   <span class="cmt">// new object ✓</span>
+}</pre>
+    </div>
+  </div>
+</div>
+
+<!-- TAKEAWAY -->
+<div class="takeaway">
+  <div class="takeaway-label">💡 Key Takeaway</div>
+  <p>Mọi state bug đều có nguyên nhân: hoặc có <strong>nhiều hơn 1 source of truth</strong>, hoặc state bị <strong>mutate từ nơi không ngờ tới</strong>, hoặc <strong>derived state được lưu riêng</strong> thay vì tính lại. Nắm vững 3 nguyên nhân này → giải quyết được 80% state bugs.</p>
+</div>
+
+<!-- EXERCISES -->
+<div class="section">
+  <h2>🏋️ Bài Tập</h2>
+  <div class="exercise">
+    <div class="exercise-label">Bài tập 1 — Phân loại</div>
+    <ul>
+      <li>Liệt kê 5 loại state trong một ứng dụng e-commerce NestJS (cart, session, product catalog, order status, flash sale countdown)</li>
+      <li>Phân loại mỗi cái: Local / Shared / Derived / Persistent</li>
+      <li>Với Derived state: viết getter thay vì store riêng</li>
+    </ul>
+  </div>
+  <div class="exercise">
+    <div class="exercise-label">Bài tập 2 — Fix the bug</div>
+    <pre><span class="cmt">// Bug: discountedPrice có thể out-of-sync với price</span>
+<span class="kw">class</span> <span class="type">ProductState</span> {
+  price = <span class="num">100</span>
+  discountPct = <span class="num">20</span>
+  discountedPrice = <span class="num">80</span>  <span class="cmt">// ← vấn đề ở đây
+
+// Câu hỏi: Refactor để discountedPrice luôn đúng
+// mà không cần update thủ công</span>
+}</pre>
+  </div>
+</div>
+
+<!-- NEXT -->
+<div class="next-nav">
+  <a href="02b-control-flow.html" class="next-topic">
+    <div class="next-icon">🔀</div>
+    <div class="next-text">
+      <div class="label">Bài tiếp theo · 02b / 06</div>
+      <div class="title">Control Flow — if/else, loops, async</div>
+    </div>
+    <span class="next-arrow">→</span>
+  </a>
+</div>
+
+<script>
+let count = 0, total = 0;
+function stateAction(action) {
+  if (action === 'inc') count++;
+  else if (action === 'dec') count--;
+  else if (action === 'add') total += count;
+  else { count = 0; total = 0; }
+  render();
+}
+function render() {
+  const flash = (id) => {
+    const el = document.getElementById(id);
+    el.classList.remove('changed');
+    void el.offsetWidth;
+    el.classList.add('changed');
+  };
+  document.getElementById('val-count').textContent = count;
+  document.getElementById('val-total').textContent = total;
+  document.getElementById('val-even').textContent = (count % 2 === 0).toString();
+  flash('box-count'); flash('box-total'); flash('box-even');
+}
+</script>
+</body>
+</html>

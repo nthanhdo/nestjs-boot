@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>08d — Pagination & Validation | Phase 2</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #1a2235; --border: #2a3a55;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #a78bfa; --accent2: #818cf8;
+  --success: #34d399; --warning: #fbbf24; --error: #ef4444;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+.top-nav { position: sticky; top: 0; z-index: 100; background: rgba(14,21,37,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .6rem 1.5rem; font-size: .85rem; }
+.top-nav .breadcrumb { color: var(--muted); } .top-nav .breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a { padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-links a.next { background: var(--success); color: #000; border-color: var(--success); font-weight: 600; }
+
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .75rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+
+/* PAGINATION BUILDER */
+.pagination-demo { display: flex; flex-direction: column; gap: .75rem; }
+.url-display { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: .5rem .75rem; font-family: monospace; font-size: .82rem; color: var(--accent); }
+.param-row { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+.param-label { font-size: .8rem; color: var(--muted); width: 60px; flex-shrink: 0; }
+.param-input { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: .35rem .6rem; font-size: .8rem; width: 80px; outline: none; }
+.param-input:focus { border-color: var(--accent); }
+.param-select { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: .35rem .6rem; font-size: .8rem; outline: none; }
+
+/* VALIDATION */
+.validation-demo { display: flex; flex-direction: column; gap: .6rem; }
+.field-row { display: grid; grid-template-columns: 120px 1fr 1fr; gap: .5rem; align-items: center; font-size: .8rem; }
+.field-name { color: var(--text); font-family: monospace; }
+.field-rule { color: var(--muted); font-size: .72rem; }
+.field-status { padding: .2rem .5rem; border-radius: 4px; font-size: .72rem; font-weight: 700; text-align: center; }
+.status-pass { background: rgba(52,211,153,.15); color: #34d399; }
+.status-fail { background: rgba(239,68,68,.15); color: #ef4444; }
+
+/* CODE BLOCK */
+.code-block { background: #0a0f1e; border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; font-family: 'Courier New', monospace; font-size: .78rem; line-height: 1.7; overflow-x: auto; }
+.c-comment { color: #6b7280; } .c-kw { color: #818cf8; } .c-str { color: #34d399; }
+.c-fn { color: #fbbf24; } .c-type { color: #f472b6; } .c-deco { color: #fbbf24; }
+
+/* NEXT TOPIC */
+.next-topic { background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.3); border-radius: var(--radius); padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.next-topic h3 { color: var(--success); margin-bottom: .25rem; }
+.next-topic p { margin: 0; font-size: .85rem; }
+.next-topic a { background: var(--success); color: #000; padding: .5rem 1.25rem; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: .85rem; white-space: nowrap; }
+
+.exercise-box { background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.3); border-radius: var(--radius); padding: 1.5rem; }
+.exercise-box h2 { color: var(--accent2); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(129,140,248,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent2); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem; }
+
+.takeaway { background: rgba(167,139,250,.08); border: 1px solid rgba(167,139,250,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--accent); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '✦'; color: var(--accent); }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(14,21,37,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--success); color: #000; border-color: var(--success); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 2 · API · <span>08d — Pagination &amp; Validation</span></div>
+  <div class="nav-links">
+    <a href="08c-auth-jwt.html">← Auth &amp; JWT</a>
+    <a href="../../phase-3-engineer/09-testing/09a-why-test.html" class="next">Phase 3 →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">08d · API Fundamentals</div>
+  <h1>Pagination &amp; <em>Validation</em></h1>
+  <p>Pagination ngăn "SELECT * FROM products" → OOM server. Validation ngăn bad data vào DB. Cả hai là API hygiene cơ bản — implement từ đầu, không phải sau.</p>
+</div>
+
+<div class="content">
+
+  <!-- PAGINATION BUILDER -->
+  <section>
+    <h2>Pagination — Interactive URL Builder</h2>
+    <p>Cursor-based pagination tốt hơn offset/page cho large datasets (offset bị drift khi data thay đổi). Dưới đây là offset-based — phổ biến hơn cho admin:</p>
+    <div class="card">
+      <div class="pagination-demo">
+        <div class="url-display" id="paginationUrl">GET /api/products?page=1&limit=20&sort=createdAt&order=desc</div>
+        <div class="param-row">
+          <span class="param-label">page</span>
+          <input class="param-input" type="number" value="1" min="1" onchange="buildUrl()" id="page">
+          <span style="font-size:.75rem;color:var(--muted)">Trang hiện tại (bắt đầu từ 1)</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label">limit</span>
+          <input class="param-input" type="number" value="20" min="1" max="100" onchange="buildUrl()" id="limit">
+          <span style="font-size:.75rem;color:var(--muted)">Items/trang. Cap ở 100 để tránh OOM</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label">sort</span>
+          <select class="param-select" onchange="buildUrl()" id="sort">
+            <option>createdAt</option><option>price</option><option>name</option><option>updatedAt</option>
+          </select>
+          <span style="font-size:.75rem;color:var(--muted)">Field để sort</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label">order</span>
+          <select class="param-select" onchange="buildUrl()" id="order">
+            <option>desc</option><option>asc</option>
+          </select>
+          <span style="font-size:.75rem;color:var(--muted)">Ascending / Descending</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label">search</span>
+          <input class="param-input" type="text" placeholder="..." oninput="buildUrl()" id="search" style="width:150px">
+          <span style="font-size:.75rem;color:var(--muted)">Full-text search term (optional)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAGINATION RESPONSE -->
+  <section>
+    <h2>Pagination Response — Metadata</h2>
+    <div class="code-block">
+<span class="c-comment">// Standard pagination response shape</span>
+{
+  <span class="c-str">"data"</span>: [
+    { <span class="c-str">"id"</span>: <span class="c-str">"prod_1"</span>, <span class="c-str">"name"</span>: <span class="c-str">"Xiaomi Watch"</span> },
+    <span class="c-comment">// ... 19 more items</span>
+  ],
+  <span class="c-str">"meta"</span>: {
+    <span class="c-str">"page"</span>: 1,
+    <span class="c-str">"limit"</span>: 20,
+    <span class="c-str">"total"</span>: 247,      <span class="c-comment">// total records</span>
+    <span class="c-str">"totalPages"</span>: 13,  <span class="c-comment">// ceil(247/20)</span>
+    <span class="c-str">"hasNext"</span>: <span class="c-kw">true</span>,
+    <span class="c-str">"hasPrev"</span>: <span class="c-kw">false</span>
+  }
+}</div>
+    <p style="font-size:.85rem;margin-top:.75rem">Frontend cần <code>totalPages</code> để render page numbers, <code>hasNext/hasPrev</code> để enable/disable buttons.</p>
+  </section>
+
+  <!-- VALIDATION DEMO -->
+  <section>
+    <h2>Validation — Fail Fast at Boundary</h2>
+    <p>Validate input ngay tại Controller, trước khi đến Service hay DB. Bad data vào DB = technical debt không bao giờ trả hết được:</p>
+    <div class="card">
+      <div style="margin-bottom:.75rem;font-size:.85rem">Live validation demo — thay đổi values để test:</div>
+      <div style="display:grid;gap:.5rem;margin-bottom:1rem">
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <label style="font-size:.8rem;width:100px;flex-shrink:0">name</label>
+          <input id="v-name" type="text" value="Xiaomi Watch" oninput="runValidation()" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:.35rem .6rem;font-size:.8rem;flex:1;outline:none">
+        </div>
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <label style="font-size:.8rem;width:100px;flex-shrink:0">price</label>
+          <input id="v-price" type="text" value="49.99" oninput="runValidation()" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:.35rem .6rem;font-size:.8rem;flex:1;outline:none">
+        </div>
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <label style="font-size:.8rem;width:100px;flex-shrink:0">email</label>
+          <input id="v-email" type="text" value="user@example.com" oninput="runValidation()" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:.35rem .6rem;font-size:.8rem;flex:1;outline:none">
+        </div>
+        <div style="display:flex;gap:.75rem;align-items:center">
+          <label style="font-size:.8rem;width:100px;flex-shrink:0">quantity</label>
+          <input id="v-quantity" type="text" value="3" oninput="runValidation()" style="background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:.35rem .6rem;font-size:.8rem;flex:1;outline:none">
+        </div>
+      </div>
+      <div id="validation-result" style="font-size:.8rem;line-height:1.8"></div>
+    </div>
+  </section>
+
+  <!-- DTO CODE -->
+  <section>
+    <h2>Validation DTO — NestJS + class-validator</h2>
+    <div class="code-block">
+<span class="c-comment">// create-product.dto.ts</span>
+<span class="c-kw">import</span> { IsString, IsNumber, IsEmail, Min, Max, IsOptional, MinLength } <span class="c-kw">from</span> <span class="c-str">'class-validator'</span>;
+
+<span class="c-kw">export class</span> <span class="c-type">CreateProductDto</span> {
+  <span class="c-deco">@IsString</span>()
+  <span class="c-deco">@MinLength</span>(3, { message: <span class="c-str">'Name tối thiểu 3 ký tự'</span> })
+  name: <span class="c-kw">string</span>;
+
+  <span class="c-deco">@IsNumber</span>({ maxDecimalPlaces: 2 })
+  <span class="c-deco">@Min</span>(0, { message: <span class="c-str">'Price phải >= 0'</span> })
+  price: <span class="c-kw">number</span>;
+
+  <span class="c-deco">@IsOptional</span>()
+  <span class="c-deco">@IsNumber</span>()
+  <span class="c-deco">@Min</span>(1) <span class="c-deco">@Max</span>(1000)
+  quantity?: <span class="c-kw">number</span>;
+}
+
+<span class="c-comment">// Controller — auto-validate với ValidationPipe</span>
+<span class="c-kw">@Post</span>()
+<span class="c-fn">create</span>(<span class="c-kw">@Body</span>() dto: <span class="c-type">CreateProductDto</span>) {
+  <span class="c-comment">// dto guaranteed valid here — or 400 already thrown</span>
+  <span class="c-kw">return</span> <span class="c-kw">this</span>.service.<span class="c-fn">create</span>(dto);
+}
+
+<span class="c-comment">// main.ts — enable globally</span>
+app.<span class="c-fn">useGlobalPipes</span>(<span class="c-kw">new</span> <span class="c-type">ValidationPipe</span>({ whitelist: <span class="c-kw">true</span>, transform: <span class="c-kw">true</span> }));</div>
+  </section>
+
+  <!-- NEXT TOPIC -->
+  <section class="next-topic">
+    <div>
+      <h3>Phase 2 hoàn tất! Tiếp theo: Phase 3 — Engineer</h3>
+      <p>Design System, Architecture, Database, API đã xong. Giờ: Testing, Debugging, Git, Security, System Design.</p>
+    </div>
+    <a href="../../phase-3-engineer/09-testing/09a-why-test.html">09a: Why Test? →</a>
+  </section>
+
+  <!-- EXERCISE -->
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — Pagination &amp; Validation</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Tìm endpoint nào đang <code>findAll()</code> không có limit → thêm pagination với default limit=20, max=100.</li>
+      <li><span class="step-num">2</span>Implement PaginateQueryDto với <code>page, limit, sort, order, search</code>. Validate: page&gt;=1, limit 1-100, sort whitelist.</li>
+      <li><span class="step-num">3</span>Service method nhận query → Mongoose: <code>.skip((page-1)*limit).limit(limit).sort()</code>. Return {data, meta} object.</li>
+      <li><span class="step-num">4</span>Enable global <code>ValidationPipe({ whitelist: true, transform: true })</code> trong main.ts. Test: send extra fields → verify bị strip.</li>
+      <li><span class="step-num">5</span>Add validation error format: <code>{ field: 'price', message: 'must be positive number' }</code>. Return 400 với array of errors.</li>
+    </ul>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>Pagination là mandatory cho bất kỳ collection endpoint. Cap limit ở 100, default 20.</li>
+      <li>Response cần meta: total, totalPages, hasNext, hasPrev — frontend cần để render UI.</li>
+      <li>Validation ở Controller boundary — Fail Fast trước khi đến Service/DB.</li>
+      <li><code>whitelist: true</code> strip unknown fields. <code>transform: true</code> auto-cast string "1" → number 1.</li>
+      <li>ValidationPipe global = không bao giờ quên validate ở controller nào.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="08c-auth-jwt.html">← Auth &amp; JWT</a>
+  <div class="progress-dots">
+    <div class="dot"></div><div class="dot"></div>
+    <div class="dot"></div><div class="dot active"></div>
+  </div>
+  <a href="../../phase-3-engineer/09-testing/09a-why-test.html" class="next">Phase 3 →</a>
+</div>
+
+<script>
+function buildUrl() {
+  const page = document.getElementById('page').value || 1;
+  const limit = document.getElementById('limit').value || 20;
+  const sort = document.getElementById('sort').value;
+  const order = document.getElementById('order').value;
+  const search = document.getElementById('search').value;
+  let url = `/api/products?page=${page}&limit=${limit}&sort=${sort}&order=${order}`;
+  if (search) url += `&search=${encodeURIComponent(search)}`;
+  document.getElementById('paginationUrl').textContent = 'GET ' + url;
+}
+
+function runValidation() {
+  const name = document.getElementById('v-name').value;
+  const price = document.getElementById('v-price').value;
+  const email = document.getElementById('v-email').value;
+  const qty = document.getElementById('v-quantity').value;
+  const results = [];
+
+  if (name.length < 3) results.push({ field: 'name', ok: false, msg: `Min 3 chars (current: ${name.length})` });
+  else results.push({ field: 'name', ok: true, msg: '✅ valid' });
+
+  const priceNum = parseFloat(price);
+  if (isNaN(priceNum) || priceNum < 0) results.push({ field: 'price', ok: false, msg: 'Must be positive number' });
+  else results.push({ field: 'price', ok: true, msg: '✅ valid' });
+
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRe.test(email)) results.push({ field: 'email', ok: false, msg: 'Invalid email format' });
+  else results.push({ field: 'email', ok: true, msg: '✅ valid' });
+
+  const qtyNum = parseInt(qty);
+  if (isNaN(qtyNum) || qtyNum < 1 || qtyNum > 1000) results.push({ field: 'quantity', ok: false, msg: 'Must be 1-1000' });
+  else results.push({ field: 'quantity', ok: true, msg: '✅ valid' });
+
+  const allOk = results.every(r => r.ok);
+  const html = results.map(r =>
+    `<div style="display:flex;gap:.5rem;padding:.2rem 0">
+      <code style="color:var(--accent);width:90px;flex-shrink:0">${r.field}</code>
+      <span style="color:${r.ok ? '#34d399' : '#ef4444'}">${r.msg}</span>
+    </div>`
+  ).join('');
+  document.getElementById('validation-result').innerHTML =
+    `<div style="margin-bottom:.5rem;font-weight:700;color:${allOk ? '#34d399' : '#ef4444'}">${allOk ? '✅ All valid — 201 Created' : '❌ Validation failed — 400 Bad Request'}</div>` + html;
+}
+
+buildUrl();
+runValidation();
+</script>
+</body>
+</html>

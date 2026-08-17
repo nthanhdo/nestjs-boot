@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>16c — RFC & Code Review | NestJS Boot</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;font-size:16px}
+nav{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #21262d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.nav-left,.nav-right{display:flex;align-items:center;gap:12px}
+.nav-link{color:#8b949e;text-decoration:none;font-size:.85rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s}
+.nav-link:hover{color:#e6edf3;border-color:#bc8cff}
+.nav-title{color:#e6edf3;font-size:.9rem;font-weight:600}
+.phase-badge{background:#6e40c9;color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.container{max-width:900px;margin:0 auto;padding:40px 24px}
+h1{font-size:2rem;font-weight:700;margin-bottom:8px}
+.subtitle{color:#8b949e;font-size:1rem;margin-bottom:32px}
+h2{font-size:1.3rem;font-weight:600;margin:40px 0 16px;color:#bc8cff;padding-left:12px;border-left:3px solid #6e40c9}
+h3{font-size:1.05rem;font-weight:600;margin-bottom:10px;color:#e6edf3}
+.card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:24px;margin-bottom:16px}
+.section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
+pre{background:#1c2128;border:1px solid #30363d;border-radius:8px;padding:16px;overflow-x:auto;font-family:'Fira Code',monospace;font-size:.82rem;line-height:1.6;color:#e6edf3;margin:8px 0}
+code{background:#1c2128;border:1px solid #30363d;border-radius:4px;padding:1px 6px;font-family:'Fira Code',monospace;font-size:.85rem;color:#f0883e}
+.tip{background:#132030;border:1px solid #1f6feb;border-radius:8px;padding:14px 18px;color:#79c0ff;font-size:.9rem;margin-top:16px}
+.warn{background:#1c1000;border:1px solid #d29922;border-radius:8px;padding:14px 18px;color:#d29922;font-size:.9rem;margin-top:12px}
+.rfc-card{background:#161b22;border:1px solid #21262d;border-radius:12px;overflow:hidden;margin:16px 0}
+.rfc-header{background:#21262d;padding:12px 20px;display:flex;align-items:center;gap:12px}
+.rfc-title{font-weight:700;color:#e6edf3;font-size:.95rem}
+.rfc-status{font-size:.72rem;padding:2px 8px;border-radius:10px}
+.status-draft{background:#2d1a0d;color:#f0883e;border:1px solid #9e4f1e}
+.status-accepted{background:#0d2d1a;color:#3fb950;border:1px solid #238636}
+.status-rejected{background:#1a0d0d;color:#ff7b72;border:1px solid #9e1e1e}
+.rfc-body{padding:20px}
+.rfc-section{margin:12px 0}
+.rfc-section-label{font-size:.78rem;font-weight:700;color:#bc8cff;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.rfc-section-content{font-size:.85rem;color:#c9d1d9;line-height:1.6}
+.review-table{width:100%;border-collapse:collapse;margin:16px 0}
+.review-table th{background:#21262d;color:#c9d1d9;padding:10px 14px;text-align:left;font-size:.83rem}
+.review-table td{padding:10px 14px;border-bottom:1px solid #21262d;font-size:.83rem;vertical-align:top;color:#c9d1d9}
+.review-table tr:hover td{background:#161b22}
+.aspect{color:#58a6ff;font-weight:600}
+.good-comment{color:#3fb950}
+.bad-comment{color:#ff7b72;text-decoration:line-through}
+.exercises{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:24px;margin-top:32px}
+.exercises-title{font-size:1.1rem;font-weight:700;margin-bottom:20px;color:#e6edf3}
+.ex-card{border-radius:10px;padding:18px;margin-bottom:12px}
+.ex-green{background:#0d1a0d;border:1px solid #3fb95040}
+.ex-yellow{background:#1a1200;border:1px solid #d2992240}
+.ex-red{background:#1a0d0d;border:1px solid #f8514940}
+.ex-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ex-diff{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.diff-green{background:#3fb95020;color:#3fb950}
+.diff-yellow{background:#d2992220;color:#d29922}
+.diff-red{background:#f8514920;color:#ff7b72}
+.ex-num{font-size:.8rem;color:#8b949e}
+.ex-title{font-weight:600;color:#e6edf3;margin-bottom:6px}
+.ex-desc{color:#8b949e;font-size:.88rem}
+.ex-solution{margin-top:12px}
+.ex-sol-toggle{background:#1c2128;border:1px solid #30363d;color:#8b949e;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem}
+.ex-sol-body{display:none;margin-top:10px;background:#1c2128;border-radius:8px;padding:14px;color:#c9d1d9;font-size:.85rem;line-height:1.6}
+.ex-sol-body.open{display:block}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-left">
+    <span class="phase-badge">Phase 5</span>
+    <span class="nav-title">16c — RFC &amp; Code Review</span>
+  </div>
+  <div class="nav-right">
+    <a class="nav-link" href="16b-estimation.html">← 16b Estimation</a>
+    <a class="nav-link" href="../17-product/17a-user-problem.html" style="color:#bc8cff;border-color:#6e40c9">17a Product →</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>📄 RFC &amp; Code Review</h1>
+  <p class="subtitle">Technical proposals và collaborative quality check — hai kỹ năng communication không thể thiếu của professional engineer.</p>
+
+  <h2>📋 RFC — Request for Comments</h2>
+  <p style="color:#c9d1d9;font-size:.9rem;margin-bottom:16px">RFC = document propose một technical change lớn, để team review TRƯỚC khi implement. Tránh "tại sao chúng ta làm thế này?" sau 6 tháng.</p>
+
+  <div class="tip"><strong>Khi nào viết RFC?</strong> Khi decision ảnh hưởng đến nhiều người, có trade-offs không rõ ràng, hoặc không thể undo dễ dàng. XS/S tasks = không cần RFC. L/XL hoặc system design = cần RFC.</div>
+
+  <div class="rfc-card">
+    <div class="rfc-header">
+      <span style="font-size:1.1rem">📄</span>
+      <div class="rfc-title">RFC-001: Switch Authentication từ Session sang JWT</div>
+      <span class="rfc-status status-accepted">ACCEPTED</span>
+    </div>
+    <div class="rfc-body">
+      <div class="rfc-section">
+        <div class="rfc-section-label">Context &amp; Problem</div>
+        <div class="rfc-section-content">Hiện tại dùng server-side sessions (Redis). Mobile app cần stateless auth. Session store thêm latency ~20ms mỗi request. Mobile cần token để gọi API.</div>
+      </div>
+      <div class="rfc-section">
+        <div class="rfc-section-label">Proposal</div>
+        <div class="rfc-section-content">Migrate sang JWT với access token 15min + refresh token 7 ngày. Keep Redis cho refresh token revocation list. Implement <code>@nestjs/jwt</code> + custom guards.</div>
+      </div>
+      <div class="rfc-section">
+        <div class="rfc-section-label">Trade-offs</div>
+        <div class="rfc-section-content" style="color:#f0883e">✅ Pros: stateless, mobile-friendly, no Redis latency trên normal requests.<br>⚠️ Cons: token không thể invalidate ngay (phải chờ expire), revocation list phức tạp hơn session.</div>
+      </div>
+      <div class="rfc-section">
+        <div class="rfc-section-label">Alternatives Considered</div>
+        <div class="rfc-section-content">1. Keep session + add mobile API key — simpler nhưng 2 auth systems.<br>2. Opaque tokens với lookup — tradeoff giữa stateless và immediate revocation.</div>
+      </div>
+      <div class="rfc-section">
+        <div class="rfc-section-label">Decision &amp; Migration Plan</div>
+        <div class="rfc-section-content" style="color:#3fb950">ACCEPTED. Sprint 5: implement JWT. Sprint 6: migrate users, deprecate session. Backward compat trong 2 sprints.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="warn"><strong>RFC anti-pattern:</strong> Viết RFC sau khi implement rồi — đó không phải RFC mà là announcement. RFC phải được viết TRƯỚC khi code, với genuine openness to alternative approach.</div>
+
+  <hr class="section-divider">
+  <h2>👀 Code Review — Collaborative Quality</h2>
+  <p style="color:#c9d1d9;font-size:.9rem;margin-bottom:16px">Code review không phải "tìm lỗi của người khác" — đó là collaborative quality check và knowledge sharing.</p>
+
+  <table class="review-table">
+    <thead>
+      <tr><th>Aspect</th><th>Reviewer nhìn gì</th><th>✅ Comment tốt</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="aspect">Correctness</span></td>
+        <td>Logic đúng không? Edge case handled?</td>
+        <td><span class="good-comment">"What happens when <code>userId</code> is null? I'd add a guard clause at L12."</span></td>
+      </tr>
+      <tr>
+        <td><span class="aspect">Security</span></td>
+        <td>Input validated? Auth checked? Injection risk?</td>
+        <td><span class="good-comment">"This query concatenates user input — should use parameterized form to prevent SQL injection."</span></td>
+      </tr>
+      <tr>
+        <td><span class="aspect">Readability</span></td>
+        <td>Code self-explanatory? Naming clear?</td>
+        <td><span class="good-comment">"[nit] <code>x</code> on L30 could be <code>userCount</code> for clarity."</span></td>
+      </tr>
+      <tr>
+        <td><span class="aspect">Performance</span></td>
+        <td>N+1 query? Missing index? Unnecessary loop?</td>
+        <td><span class="good-comment">"This calls DB inside a loop (L45-52). Consider <code>findMany</code> with ID array."</span></td>
+      </tr>
+      <tr>
+        <td><span class="aspect">Tests</span></td>
+        <td>Test coverage đủ không? Edge case có test?</td>
+        <td><span class="good-comment">"Missing test case for empty array input — the function returns undefined instead of []."</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="card" style="border-color:#f8514940">
+    <h3 style="color:#ff7b72;margin-bottom:12px">❌ Comments cần tránh</h3>
+    <ul style="color:#8b949e;padding-left:16px;font-size:.85rem">
+      <li style="margin:6px 0"><span class="bad-comment">"This is wrong."</span> → Không explain tại sao, không suggest fix</li>
+      <li style="margin:6px 0"><span class="bad-comment">"Bad code."</span> → Vague, demoralizing, không actionable</li>
+      <li style="margin:6px 0"><span class="bad-comment">"Why would you do this???"</span> → Aggressive, không professional</li>
+      <li style="margin:6px 0"><span class="bad-comment">"I would have done it differently."</span> → Personal preference, không có technical basis</li>
+    </ul>
+    <div class="tip" style="margin-top:12px"><strong>Rule:</strong> Mỗi comment phải có: (1) observation, (2) tại sao nó quan trọng, (3) suggestion. Dùng "nit:" prefix cho minor style issues — author có thể ignore nit comments.</div>
+  </div>
+
+  <hr class="section-divider">
+  <h2>📝 PR Description Template</h2>
+
+  <div class="card">
+    <h3 style="margin-bottom:12px">PR tốt = reviewer không cần hỏi gì thêm</h3>
+<pre><span style="color:#8b949e">## What does this PR do?</span>
+Implement JWT authentication (access token 15m + refresh token 7d).
+Replaces server-side session with stateless auth.
+
+<span style="color:#8b949e">## Why?</span>
+Mobile app integration requires stateless auth (RFC-001 ACCEPTED).
+
+<span style="color:#8b949e">## How to test?</span>
+1. POST /auth/login → get access + refresh token
+2. Use access token in Authorization header
+3. After 15min, use refresh token at POST /auth/refresh
+4. Test revocation: POST /auth/logout → refresh should fail
+
+<span style="color:#8b949e">## Breaking changes?</span>
+Session cookie auth deprecated. Existing sessions invalidated.
+Migration guide: docs/auth-migration.md
+
+<span style="color:#8b949e">## Checklist</span>
+- [x] Tests pass
+- [x] Documentation updated
+- [x] No sensitive data logged
+- [x] Migration plan documented</pre>
+  </div>
+
+  <!-- EXERCISES -->
+  <hr class="section-divider">
+  <div class="exercises">
+    <div class="exercises-title">🎯 Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 1</span></div>
+      <div class="ex-title">Viết PR description cho feature bất kỳ</div>
+      <div class="ex-desc">Chọn 1 feature bạn đã implement gần đây. Viết PR description đầy đủ theo template: What, Why, How to test, Breaking changes, Checklist. Reviewer phải hiểu feature mà không cần hỏi thêm.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">Đánh giá PR description tốt bằng test: "Nếu tôi join team ngày mai và cần review PR này, tôi có hiểu không?"<br><br>Checklist:<br>✓ What: 2-3 câu mô tả feature, không phải technical detail<br>✓ Why: business reason, không chỉ technical reason<br>✓ How to test: cụ thể, step-by-step, không phải "test it"<br>✓ Breaking changes: mention nếu có, "None" nếu không<br>✓ Checklist: tick tất cả trước khi assign reviewer</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 2</span></div>
+      <div class="ex-title">Viết RFC: propose adding rate limiting vào public API</div>
+      <div class="ex-desc">Viết RFC hoàn chỉnh đề xuất rate limiting (100 req/min per IP) cho public API. Phải có Context, Proposal, Trade-offs, Alternatives, và Migration plan.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>RFC structure:</strong><br><strong>Context:</strong> API bị abuse, 1 IP gọi 1000 req/sec, costs tăng, service degraded for others<br><strong>Proposal:</strong> 100 req/min per IP using @nestjs/throttler, return 429 với Retry-After header<br><strong>Pros:</strong> Protect against abuse, fair usage, standard HTTP behavior<br><strong>Cons:</strong> Legitimate heavy users bị ảnh hưởng, need whitelist mechanism<br><strong>Alternatives:</strong> (1) API key based (track by key not IP), (2) Cloudflare rate limiting (infrastructure level)<br><strong>Migration:</strong> Document rate limits, add Retry-After header, 1 sprint notice trước khi enforce<br><strong>Metrics:</strong> Monitor 429 rate, adjust limits nếu too aggressive</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header"><span class="ex-diff diff-red">🔴 Khó</span><span class="ex-num">Bài 3</span></div>
+      <div class="ex-title">Code review simulation: review PR và viết 5 constructive comments</div>
+      <div class="ex-desc">Tìm một PR public (NestJS/TypeORM repo hoặc project của bạn). Review và viết ít nhất 5 comments: cover correctness, security, readability, performance, tests. Mỗi comment phải có category tag, observation, reason, và suggestion.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Template mỗi comment:</strong><br>[Category] Observation. Reason why it matters. Suggested fix.<br><br>Ví dụ:<br>"[Security] L45: User input is concatenated into SQL query directly. This is vulnerable to SQL injection — attacker can pass <code>' OR '1'='1'--</code> to return all rows. Use parameterized query: <code>WHERE id = $1</code> with <code>[userId]</code> as param array."<br><br>"[nit] L30: Variable name <code>r</code> could be <code>response</code> for readability — makes the code self-documenting without needing to trace back to function signature."<br><br>After writing: read all your comments — if any sounds aggressive, reword. Target: developer feels helped, not attacked.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <hr class="section-divider">
+  <div class="card">
+    <h3>📌 Tóm Tắt — RFC &amp; Code Review</h3>
+    <ul style="color:#c9d1d9;padding-left:20px;margin-top:8px">
+      <li style="margin:6px 0"><strong>RFC</strong> = propose trước khi implement. L/XL decisions cần RFC để align team</li>
+      <li style="margin:6px 0"><strong>RFC structure</strong> = Context → Proposal → Trade-offs → Alternatives → Decision</li>
+      <li style="margin:6px 0"><strong>Code review</strong> = collaborative quality check. 5 aspects: correctness, security, readability, performance, tests</li>
+      <li style="margin:6px 0"><strong>Good comment</strong> = observation + reason + suggestion. Không phải "bad code"</li>
+      <li style="margin:6px 0"><strong>"nit:"</strong> prefix = minor/optional, author có thể ignore</li>
+      <li style="margin:6px 0"><strong>PR description</strong> = What + Why + How to test + Breaking changes. Reviewer không cần hỏi thêm</li>
+    </ul>
+  </div>
+
+  <div style="text-align:center;margin-top:48px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">Bài 16c / Phase 5 — Professional</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="16b-estimation.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← 16b: Estimation</a>
+      <a href="../17-product/17a-user-problem.html" style="color:#bc8cff;text-decoration:none;font-size:.85rem">Tiếp theo: 17a — User Problem →</a>
+    </div>
+  </div>
+</div>
+<script>
+function toggleSol(btn){const b=btn.nextElementSibling;const o=b.classList.toggle('open');btn.textContent=o?'Ẩn gợi ý':'Xem gợi ý';}
+</script>
+</body>
+</html>

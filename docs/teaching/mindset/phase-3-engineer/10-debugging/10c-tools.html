@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10c — Debug Tools | Phase 3</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--accent:#58a6ff;--success:#3fb950;--warning:#d29922;--error:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.progress-bar{position:fixed;top:0;left:0;width:100%;height:3px;background:var(--border);z-index:100;}
+.progress-fill{height:100%;background:var(--accent);width:0;transition:width .1s;}
+nav{position:sticky;top:3px;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:90;}
+nav .brand{font-weight:700;color:var(--accent);font-size:.9rem;}
+nav .links a{color:var(--muted);text-decoration:none;margin-left:1.2rem;font-size:.85rem;transition:color .2s;}
+nav .links a:hover{color:var(--text);}
+.container{max-width:860px;margin:0 auto;padding:2rem 1.5rem;}
+h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;}
+.subtitle{color:var(--muted);margin-bottom:2.5rem;font-size:1.05rem;}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:1rem;color:var(--accent);}
+.section{margin-bottom:3rem;opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
+.section.visible{opacity:1;transform:none;}
+.label{display:inline-block;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;margin-bottom:.5rem;}
+/* Tool tabs */
+.tabs{display:flex;gap:.5rem;margin-bottom:1.2rem;border-bottom:1px solid var(--border);padding-bottom:0;}
+.tab{padding:.6rem 1.2rem;cursor:pointer;font-size:.9rem;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;margin-bottom:-1px;}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+/* Code blocks */
+pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:1.2rem;overflow-x:auto;font-size:.85rem;line-height:1.7;margin-bottom:1rem;}
+pre .c{color:var(--muted);}
+pre .k{color:#ff7b72;}
+pre .s{color:#a5d6ff;}
+pre .fn{color:#d2a8ff;}
+pre .v{color:#79c0ff;}
+pre .num{color:#f2cc60;}
+/* Comparison table */
+table{width:100%;border-collapse:collapse;font-size:.87rem;margin-bottom:1rem;}
+th{background:var(--surface);padding:.7rem .9rem;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);}
+td{padding:.7rem .9rem;border-bottom:1px solid var(--border);vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+.badge{display:inline-block;font-size:.7rem;font-weight:700;padding:.15rem .45rem;border-radius:4px;}
+.badge.good{background:#1a3a1a;color:var(--success);}
+.badge.warn{background:#2a2000;color:var(--warning);}
+.badge.bad{background:#2a0808;color:var(--error);}
+/* Tool card */
+.tool-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.2rem;margin-bottom:1rem;}
+.tool-card h4{font-size:1rem;font-weight:700;margin-bottom:.5rem;color:var(--text);}
+.tool-card p{font-size:.88rem;color:var(--muted);margin-bottom:.8rem;}
+.tool-meta{display:flex;gap:.5rem;flex-wrap:wrap;}
+.exercise{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.exercise h3{color:var(--accent);margin-bottom:.8rem;font-size:1rem;}
+.exercise ol{padding-left:1.2rem;color:var(--muted);font-size:.9rem;line-height:1.8;}
+.takeaway{background:linear-gradient(135deg,#1a2235,#161b22);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.takeaway h3{color:var(--accent);margin-bottom:1rem;}
+.takeaway ul{padding-left:1.2rem;line-height:2;}
+.nav-links{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-links a{color:var(--accent);text-decoration:none;font-size:.9rem;padding:.5rem 1rem;border:1px solid var(--border);border-radius:6px;transition:border-color .2s;}
+.nav-links a:hover{border-color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav>
+  <span class="brand">Phase 3 — Engineer Mindset</span>
+  <div class="links">
+    <a href="10b-5-whys.html">← 5 Whys</a>
+    <a href="10d-stack-trace.html">Stack Trace →</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="section" id="s0">
+    <div class="label">10c / 5</div>
+    <h1>Debug Tools</h1>
+    <p class="subtitle">console.log, the debugger, and network tools — when to use which, and how to use them right.</p>
+  </div>
+
+  <div class="section" id="s1">
+    <h2>Tool Comparison</h2>
+    <table>
+      <tr><th>Tool</th><th>Best for</th><th>Limitations</th><th>Skill</th></tr>
+      <tr>
+        <td><strong>console.log</strong></td>
+        <td>Quick value inspection, tracing flow, production where no debugger</td>
+        <td>Clutters code, easy to forget, no execution control</td>
+        <td><span class="badge good">Beginner</span></td>
+      </tr>
+      <tr>
+        <td><strong>Debugger / Breakpoints</strong></td>
+        <td>Complex logic, stepping through, inspecting all variables at once</td>
+        <td>Requires IDE setup, harder in prod, async can jump around</td>
+        <td><span class="badge warn">Intermediate</span></td>
+      </tr>
+      <tr>
+        <td><strong>Network (DevTools)</strong></td>
+        <td>API calls, headers, payload shape, timing, CORS errors</td>
+        <td>Browser/HTTP only, can't see server internals</td>
+        <td><span class="badge warn">Intermediate</span></td>
+      </tr>
+      <tr>
+        <td><strong>Logger (Winston/Pino)</strong></td>
+        <td>Production debugging, structured search, log levels</td>
+        <td>Requires log aggregation setup (ELK, Datadog)</td>
+        <td><span class="badge bad">Advanced</span></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section" id="s2">
+    <h2>Tool Details</h2>
+    <div class="tabs">
+      <div class="tab active" onclick="showTab('log')">console.log</div>
+      <div class="tab" onclick="showTab('dbg')">Debugger</div>
+      <div class="tab" onclick="showTab('net')">Network</div>
+    </div>
+
+    <div class="tab-panel active" id="panel-log">
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">The most-used and most-abused debug tool. Learn to use it well.</p>
+      <pre><span class="c">// ❌ Bad — tells you nothing useful</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="s">'here'</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(data);
+
+<span class="c">// ✅ Good — labeled, structured</span>
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="s">'[OrderService.create] input:'</span>, { userId, items });
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="s">'[OrderService.create] db result:'</span>, order?.id);
+
+<span class="c">// ✅ Better — use console.table for arrays</span>
+<span class="fn">console</span>.<span class="fn">table</span>(orders.map(o => ({ id: o.id, status: o.status })));
+
+<span class="c">// ✅ Trace — shows call stack</span>
+<span class="fn">console</span>.<span class="fn">trace</span>(<span class="s">'How did we get here?'</span>);
+
+<span class="c">// ✅ Group related logs</span>
+<span class="fn">console</span>.<span class="fn">group</span>(<span class="s">'Processing order'</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="s">'Validating...'</span>);
+<span class="fn">console</span>.<span class="fn">log</span>(<span class="s">'Saving...'</span>);
+<span class="fn">console</span>.<span class="fn">groupEnd</span>();</pre>
+      <p style="color:var(--muted);font-size:.85rem;"><strong>Rule:</strong> Always label with [Module.method], always remove before commit. Use a grep before pushing: <code>git diff | grep 'console.log'</code></p>
+    </div>
+
+    <div class="tab-panel" id="panel-dbg">
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Pause execution, inspect state, step through logic line by line.</p>
+      <pre><span class="c">// In code — trigger programmatic breakpoint</span>
+<span class="k">debugger</span>;  <span class="c">// Pauses when DevTools is open</span>
+
+<span class="c">// VS Code launch.json for NestJS debugging</span>
+{
+  <span class="s">"type"</span>: <span class="s">"node"</span>,
+  <span class="s">"request"</span>: <span class="s">"launch"</span>,
+  <span class="s">"name"</span>: <span class="s">"Debug NestJS"</span>,
+  <span class="s">"runtimeArgs"</span>: [<span class="s">"--inspect"</span>],
+  <span class="s">"program"</span>: <span class="s">"${workspaceFolder}/src/main.ts"</span>,
+  <span class="s">"outFiles"</span>: [<span class="s">"${workspaceFolder}/dist/**/*.js"</span>]
+}</pre>
+      <div style="margin-top:1rem;">
+        <p style="color:var(--text);font-weight:600;margin-bottom:.5rem;">Key debugger controls:</p>
+        <table style="margin:0;">
+          <tr><th>Action</th><th>Shortcut</th><th>What it does</th></tr>
+          <tr><td>Step Over</td><td>F10</td><td>Run current line, go to next</td></tr>
+          <tr><td>Step Into</td><td>F11</td><td>Enter function call</td></tr>
+          <tr><td>Step Out</td><td>Shift+F11</td><td>Finish function, return to caller</td></tr>
+          <tr><td>Continue</td><td>F5</td><td>Run until next breakpoint</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="panel-net">
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Chrome DevTools → Network tab is your HTTP inspector.</p>
+      <div class="tool-card">
+        <h4>What to check in Network tab</h4>
+        <p>Status code • Request URL • Request method • Request headers (Authorization, Content-Type) • Request body (Payload tab) • Response body • Timing (TTFB, download)</p>
+        <div class="tool-meta">
+          <span class="badge good">Status</span>
+          <span class="badge good">Headers</span>
+          <span class="badge warn">Payload</span>
+          <span class="badge warn">Preview</span>
+        </div>
+      </div>
+      <pre><span class="c"># Common pattern: API call fails</span>
+<span class="c"># 1. Open DevTools → Network</span>
+<span class="c"># 2. Trigger the action</span>
+<span class="c"># 3. Click the failing request</span>
+<span class="c"># 4. Check: Status • Headers • Payload • Response</span>
+
+<span class="c"># CORS error shows as network failure with message:</span>
+<span class="c"># "has been blocked by CORS policy"</span>
+<span class="c"># Fix at server, not client (Access-Control-Allow-Origin)</span>
+
+<span class="c"># Use "Copy as cURL" to replay request in terminal:</span>
+curl -X POST https://api.example.com/orders \
+  -H <span class="s">"Authorization: Bearer TOKEN"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"items":[]}'</span></pre>
+    </div>
+  </div>
+
+  <div class="section" id="s3">
+    <div class="exercise">
+      <h3>🔬 Exercise — Tool Selection</h3>
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:.8rem;">For each scenario, choose the right tool and explain why:</p>
+      <ol>
+        <li>A function returns wrong value — you don't know which line</li>
+        <li>An API call returns 401 but you sent the token</li>
+        <li>A NestJS service crashes but only sometimes in production</li>
+        <li>You need to inspect a complex object with 50 fields</li>
+        <li>You want to know the call stack when a value is set</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section" id="s4">
+    <div class="takeaway">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li>console.log = quick, dirty, and forgotten in commits — label everything</li>
+        <li>Debugger = powerful for complex logic — learn step over/into/out</li>
+        <li>Network tab = first stop for any API mystery — check status + headers + payload</li>
+        <li>Production = structured logs (Winston/Pino), not console.log</li>
+        <li>Rule of thumb: use the simplest tool that answers the question</li>
+      </ul>
+    </div>
+    <div class="nav-links">
+      <a href="10b-5-whys.html">← 10b: 5 Whys</a>
+      <a href="10d-stack-trace.html">10d: Stack Trace →</a>
+    </div>
+  </div>
+</div>
+<script>
+function showTab(id){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const ids=['log','dbg','net'];
+    t.classList.toggle('active',ids[i]===id);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+}
+window.addEventListener('scroll',()=>{
+  document.getElementById('pf').style.width=(window.scrollY/(document.documentElement.scrollHeight-window.innerHeight))*100+'%';
+});
+const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.1});
+document.querySelectorAll('.section').forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

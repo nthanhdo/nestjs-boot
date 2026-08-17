@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>07c — Index & Optimization | Phase 2</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #1a2235; --border: #2a3a55;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #2dd4bf; --accent2: #818cf8;
+  --success: #34d399; --warning: #fbbf24; --error: #ef4444;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+.top-nav { position: sticky; top: 0; z-index: 100; background: rgba(14,21,37,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .6rem 1.5rem; font-size: .85rem; }
+.top-nav .breadcrumb { color: var(--muted); } .top-nav .breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a { padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-links a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .75rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+
+/* B-TREE VIS */
+.btree { display: flex; flex-direction: column; align-items: center; gap: .75rem; }
+.btree-level { display: flex; gap: .5rem; justify-content: center; }
+.btree-node {
+  padding: .35rem .7rem; background: rgba(45,212,191,.12); border: 1px solid rgba(45,212,191,.4);
+  border-radius: 6px; font-size: .78rem; font-weight: 600; color: var(--accent);
+  cursor: pointer; transition: all .2s;
+}
+.btree-node:hover { background: rgba(45,212,191,.25); }
+.btree-node.found { background: rgba(52,211,153,.3); border-color: #34d399; color: #34d399; animation: found-pulse .5s ease; }
+.btree-node.visited { background: rgba(251,191,36,.15); border-color: #fbbf24; color: #fbbf24; }
+@keyframes found-pulse { 0%{transform:scale(1)} 50%{transform:scale(1.15)} 100%{transform:scale(1)} }
+.btree-edge { height: 20px; width: 2px; background: var(--border); margin: 0 auto; }
+
+/* SCAN COMPARISON */
+.scan-bar { height: 28px; border-radius: 4px; transition: width .5s ease; display: flex; align-items: center; padding: 0 .5rem; font-size: .75rem; font-weight: 600; white-space: nowrap; }
+.scan-label { width: 100px; font-size: .8rem; flex-shrink: 0; }
+.scan-row { display: flex; align-items: center; gap: .75rem; margin-bottom: .5rem; }
+.scan-track { flex: 1; background: rgba(255,255,255,.04); border-radius: 4px; overflow: hidden; }
+
+/* CODE BLOCK */
+.code-block { background: #0a0f1e; border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; font-family: 'Courier New', monospace; font-size: .78rem; line-height: 1.7; overflow-x: auto; }
+.c-comment { color: #6b7280; } .c-kw { color: #818cf8; } .c-str { color: #34d399; }
+.c-fn { color: #fbbf24; } .c-type { color: #f472b6; }
+
+/* INDEX TYPES */
+.idx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: .75rem; }
+.idx-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: .9rem; }
+.idx-card h3 { font-size: .82rem; font-weight: 700; margin-bottom: .35rem; color: var(--accent); }
+.idx-card p { font-size: .75rem; margin: 0; }
+.idx-card code { font-size: .72rem; color: #34d399; display: block; margin-top: .35rem; }
+
+/* QUERY EXAMPLES */
+.query-pair { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.query-bad, .query-good { border-radius: 8px; overflow: hidden; }
+.query-bad .qh { background: rgba(239,68,68,.15); color: #ef4444; padding: .4rem .75rem; font-size: .75rem; font-weight: 700; }
+.query-good .qh { background: rgba(52,211,153,.1); color: #34d399; padding: .4rem .75rem; font-size: .75rem; font-weight: 700; }
+
+.exercise-box { background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.3); border-radius: var(--radius); padding: 1.5rem; }
+.exercise-box h2 { color: var(--accent2); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(129,140,248,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent2); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem; }
+
+.takeaway { background: rgba(45,212,191,.06); border: 1px solid rgba(45,212,191,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--accent); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '✦'; color: var(--accent); }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(14,21,37,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 2 · Database · <span>07c — Index &amp; Optimization</span></div>
+  <div class="nav-links">
+    <a href="07b-normalization.html">← Normalization</a>
+    <a href="07d-acid-transactions.html" class="next">ACID →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">07c · Database Thinking</div>
+  <h1>Index &amp; <em>Optimization</em></h1>
+  <p>Index đúng chỗ biến query từ O(n) full scan thành O(log n) tree search. Sai chỗ → write chậm, storage bloat. Biết khi nào cần index là kỹ năng quan trọng.</p>
+</div>
+
+<div class="content">
+
+  <!-- FULL SCAN vs INDEX -->
+  <section>
+    <h2>Full Scan vs Index — Tốc độ khác biệt ra sao?</h2>
+    <div class="card">
+      <p style="font-size:.85rem;margin-bottom:1rem">Tìm order của user "Nguyễn An" trong 1 triệu rows:</p>
+      <div id="scanDemo">
+        <div class="scan-row">
+          <span class="scan-label" style="color:#ef4444">Full Scan</span>
+          <div class="scan-track">
+            <div class="scan-bar" id="fullScanBar" style="background:rgba(239,68,68,.3);color:#ef4444;width:0">reading 1,000,000 rows...</div>
+          </div>
+          <span style="font-size:.75rem;color:#ef4444" id="fullTime"></span>
+        </div>
+        <div class="scan-row">
+          <span class="scan-label" style="color:#34d399">Index Scan</span>
+          <div class="scan-track">
+            <div class="scan-bar" id="idxScanBar" style="background:rgba(52,211,153,.2);color:#34d399;width:0">O(log n)...</div>
+          </div>
+          <span style="font-size:.75rem;color:#34d399" id="idxTime"></span>
+        </div>
+      </div>
+      <button onclick="runScanDemo()" style="margin-top:1rem;padding:.4rem 1rem;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:.8rem">▶ Run Demo</button>
+    </div>
+  </section>
+
+  <!-- B-TREE VIS -->
+  <section>
+    <h2>B-Tree — Cấu trúc Index</h2>
+    <p>Database index dùng B-Tree. Search = đi từ root xuống leaf theo so sánh. O(log n) — 1M rows chỉ cần ~20 bước:</p>
+    <div class="card">
+      <div class="btree" id="btree">
+        <div class="btree-level">
+          <div class="btree-node" id="n50" onclick="searchBTree(50)">50</div>
+        </div>
+        <div class="btree-level">
+          <div class="btree-node" id="n25" onclick="searchBTree(25)">25</div>
+          <div class="btree-node" id="n75" onclick="searchBTree(75)">75</div>
+        </div>
+        <div class="btree-level">
+          <div class="btree-node" id="n10" onclick="searchBTree(10)">10</div>
+          <div class="btree-node" id="n35" onclick="searchBTree(35)">35</div>
+          <div class="btree-node" id="n60" onclick="searchBTree(60)">60</div>
+          <div class="btree-node" id="n90" onclick="searchBTree(90)">90</div>
+        </div>
+      </div>
+      <p style="text-align:center;font-size:.8rem;margin-top:.75rem;color:var(--muted)">← Bấm vào node để simulate search path</p>
+      <div id="btree-result" style="margin-top:.5rem;font-size:.8rem;color:var(--muted);min-height:20px"></div>
+    </div>
+  </section>
+
+  <!-- INDEX TYPES -->
+  <section>
+    <h2>Các loại Index trong MongoDB</h2>
+    <div class="idx-grid">
+      <div class="idx-card">
+        <h3>Single Field</h3>
+        <p style="color:var(--muted)">Index trên 1 field. Phổ biến nhất.</p>
+        <code>{ email: 1 } // 1=asc, -1=desc</code>
+      </div>
+      <div class="idx-card">
+        <h3>Compound</h3>
+        <p style="color:var(--muted)">Index trên nhiều fields. ESR rule: Equality → Sort → Range.</p>
+        <code>{ userId: 1, createdAt: -1 }</code>
+      </div>
+      <div class="idx-card">
+        <h3>Unique</h3>
+        <p style="color:var(--muted)">Enforce uniqueness. Implicit cho _id.</p>
+        <code>{ email: 1 }, { unique: true }</code>
+      </div>
+      <div class="idx-card">
+        <h3>Sparse</h3>
+        <p style="color:var(--muted)">Chỉ index documents có field đó. Tiết kiệm space khi field optional.</p>
+        <code>{ phoneNumber: 1 }, { sparse: true }</code>
+      </div>
+      <div class="idx-card">
+        <h3>TTL</h3>
+        <p style="color:var(--muted)">Auto-delete documents sau X giây. Cho sessions, caches.</p>
+        <code>{ createdAt: 1 }, { expireAfterSeconds: 3600 }</code>
+      </div>
+      <div class="idx-card">
+        <h3>Text</h3>
+        <p style="color:var(--muted)">Full-text search. Tokenizes, stems words.</p>
+        <code>{ name: 'text', desc: 'text' }</code>
+      </div>
+    </div>
+  </section>
+
+  <!-- ESR RULE -->
+  <section>
+    <h2>ESR Rule — Compound Index Order</h2>
+    <p><strong>E</strong>quality → <strong>S</strong>ort → <strong>R</strong>ange. Thứ tự fields trong compound index ảnh hưởng lớn đến hiệu quả:</p>
+    <div class="query-pair">
+      <div class="query-bad">
+        <div class="qh">❌ Sai thứ tự</div>
+        <div class="code-block" style="border-radius:0">
+<span class="c-comment">// Query: userId=X, date range, sort by date</span>
+<span class="c-comment">// Index: { createdAt:1, userId:1 }</span>
+<span class="c-comment">// → Không dùng index hiệu quả!</span>
+<span class="c-comment">// Range field trước Equality</span></div>
+      </div>
+      <div class="query-good">
+        <div class="qh">✅ ESR Rule</div>
+        <div class="code-block" style="border-radius:0">
+<span class="c-comment">// Index: { userId:1, createdAt:-1 }</span>
+<span class="c-comment">// Equality (userId) first</span>
+<span class="c-comment">// Sort/Range (createdAt) last</span>
+<span class="c-comment">// → Index sử dụng tối đa!</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CODE: MONGOOSE INDEX -->
+  <section>
+    <h2>Khai báo Index trong Mongoose</h2>
+    <div class="code-block">
+<span class="c-comment">// Method 1: @Prop decorator (NestJS)</span>
+<span class="c-kw">@Prop</span>({ index: <span class="c-kw">true</span> }) <span class="c-comment">// single field</span>
+email: <span class="c-type">string</span>;
+
+<span class="c-kw">@Prop</span>({ unique: <span class="c-kw">true</span>, sparse: <span class="c-kw">true</span> })
+phoneNumber?: <span class="c-type">string</span>;
+
+<span class="c-comment">// Method 2: @Schema decorator compound index</span>
+<span class="c-kw">@Schema</span>({ timestamps: <span class="c-kw">true</span> })
+<span class="c-kw">@Index</span>({ userId: 1, createdAt: -1 }) <span class="c-comment">// ESR: E first, S last</span>
+<span class="c-kw">@Index</span>({ createdAt: 1 }, { expireAfterSeconds: 86400 }) <span class="c-comment">// TTL</span>
+<span class="c-kw">export class</span> Order {}
+
+<span class="c-comment">// Method 3: Check existing indexes</span>
+<span class="c-fn">db</span>.orders.<span class="c-fn">getIndexes</span>() <span class="c-comment">// MongoDB shell</span>
+<span class="c-fn">db</span>.orders.<span class="c-fn">explain</span>(<span class="c-str">"executionStats"</span>).<span class="c-fn">find</span>({userId: <span class="c-str">"xxx"</span>})</div>
+  </section>
+
+  <!-- OVER INDEXING -->
+  <section>
+    <h2>Over-Indexing — Chi phí ẩn</h2>
+    <div class="card" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div>
+        <p style="color:var(--success);font-weight:600;font-size:.85rem;margin-bottom:.5rem">✅ Index giúp</p>
+        <ul style="list-style:none;font-size:.82rem">
+          <li style="padding:.2rem 0;color:var(--muted)">• Query tìm kiếm (find, where)</li>
+          <li style="padding:.2rem 0;color:var(--muted)">• Sort operations</li>
+          <li style="padding:.2rem 0;color:var(--muted)">• Aggregation pipelines</li>
+          <li style="padding:.2rem 0;color:var(--muted)">• Enforce uniqueness</li>
+        </ul>
+      </div>
+      <div>
+        <p style="color:var(--error);font-weight:600;font-size:.85rem;margin-bottom:.5rem">❌ Index tốn kém</p>
+        <ul style="list-style:none;font-size:.82rem">
+          <li style="padding:.2rem 0;color:var(--muted)">• Disk space (index cũng chiếm dung lượng)</li>
+          <li style="padding:.2rem 0;color:var(--muted)">• Write operations chậm hơn (phải update index)</li>
+          <li style="padding:.2rem 0;color:var(--muted)">• RAM để cache index</li>
+          <li style="padding:.2rem 0;color:var(--muted)">• Unused indexes = pure overhead</li>
+        </ul>
+      </div>
+    </div>
+    <p style="font-size:.85rem;margin-top:.75rem">Rule: index những field thường xuất hiện trong <code>find()</code>, <code>sort()</code>, <code>$match</code>. Drop indexes không dùng.</p>
+  </section>
+
+  <!-- EXERCISE -->
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — Index Audit</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Chạy <code>db.collection.getIndexes()</code> trong MongoDB shell. List tất cả indexes hiện tại. Có indexes nào bạn không biết ai tạo?</li>
+      <li><span class="step-num">2</span>Tìm 3 query chậm nhất trong app (dùng MongoDB Compass Performance Advisor hoặc <code>explain("executionStats")</code>). Xem <code>COLLSCAN</code> (full scan) chưa?</li>
+      <li><span class="step-num">3</span>Tạo compound index cho query pattern hay dùng nhất. Apply ESR rule: Equality fields first.</li>
+      <li><span class="step-num">4</span>Chạy lại query với <code>explain()</code>. Verify: <code>IXSCAN</code> thay vì <code>COLLSCAN</code>, <code>totalDocsExamined</code> giảm.</li>
+      <li><span class="step-num">5</span>Thêm TTL index cho session/token collection: <code>expireAfterSeconds: 86400</code>.</li>
+    </ul>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>Index = B-tree data structure. Search O(log n) thay vì O(n) full scan.</li>
+      <li>ESR Rule cho compound index: Equality fields → Sort → Range.</li>
+      <li>Index có chi phí: write chậm hơn, tốn disk/RAM. Chỉ index field thực sự query.</li>
+      <li>Dùng <code>explain("executionStats")</code> để verify index được dùng — IXSCAN tốt, COLLSCAN xấu.</li>
+      <li>TTL index = auto-expiry cho ephemeral data (sessions, OTP, caches).</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="07b-normalization.html">← Normalization</a>
+  <div class="progress-dots">
+    <div class="dot"></div><div class="dot"></div>
+    <div class="dot active"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+  <a href="07d-acid-transactions.html" class="next">ACID →</a>
+</div>
+
+<script>
+function runScanDemo() {
+  const fullBar = document.getElementById('fullScanBar');
+  const idxBar = document.getElementById('idxScanBar');
+  const fullTime = document.getElementById('fullTime');
+  const idxTime = document.getElementById('idxTime');
+  fullBar.style.width = '0'; idxBar.style.width = '0';
+  fullTime.textContent = ''; idxTime.textContent = '';
+  setTimeout(() => {
+    idxBar.style.width = '8%';
+    idxBar.textContent = '~20 steps';
+    idxTime.textContent = '< 1ms ✅';
+  }, 100);
+  setTimeout(() => {
+    fullBar.style.width = '100%';
+    fullBar.textContent = 'reading 1,000,000 rows...';
+    fullTime.textContent = '~2400ms ❌';
+  }, 300);
+}
+
+const treeData = {
+  50: [50],
+  25: [50, 25],
+  75: [50, 75],
+  10: [50, 25, 10],
+  35: [50, 25, 35],
+  60: [50, 75, 60],
+  90: [50, 75, 90],
+};
+
+function searchBTree(val) {
+  document.querySelectorAll('.btree-node').forEach(n => { n.className = 'btree-node'; });
+  const path = treeData[val] || [];
+  let delay = 0;
+  path.forEach((v, i) => {
+    setTimeout(() => {
+      const node = document.getElementById('n' + v);
+      if (node) node.className = i === path.length - 1 ? 'btree-node found' : 'btree-node visited';
+    }, delay);
+    delay += 400;
+  });
+  document.getElementById('btree-result').textContent = `Search ${val}: visited ${path.length} nodes → O(log n)`;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>07b — Normalization | Phase 2</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #1a2235; --border: #2a3a55;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #2dd4bf; --accent2: #818cf8;
+  --success: #34d399; --warning: #fbbf24; --error: #ef4444;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+.top-nav { position: sticky; top: 0; z-index: 100; background: rgba(14,21,37,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .6rem 1.5rem; font-size: .85rem; }
+.top-nav .breadcrumb { color: var(--muted); } .top-nav .breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a { padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-links a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .75rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+
+/* TABS */
+.tab-bar { display: flex; gap: .25rem; margin-bottom: 1rem; }
+.tab-btn { padding: .5rem 1rem; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: .82rem; transition: all .2s; }
+.tab-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; animation: fadeIn .2s ease; }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+/* DATA TABLE */
+.data-table { width: 100%; border-collapse: collapse; font-size: .78rem; }
+.data-table th { padding: .4rem .6rem; background: rgba(255,255,255,.06); border-bottom: 1px solid var(--border); text-align: left; color: var(--muted); }
+.data-table td { padding: .35rem .6rem; border-bottom: 1px solid rgba(42,58,85,.4); }
+.data-table tr:last-child td { border: none; }
+.highlight-bad { background: rgba(239,68,68,.15); color: #ef4444; }
+.highlight-good { background: rgba(52,211,153,.1); }
+.cell-pk { color: #fbbf24; font-weight: 700; }
+.cell-fk { color: #818cf8; }
+
+/* ANOMALY BOX */
+.anomaly-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: .75rem; }
+.anomaly-card { background: rgba(239,68,68,.06); border: 1px solid rgba(239,68,68,.25); border-radius: 8px; padding: .75rem; }
+.anomaly-card h3 { font-size: .8rem; color: #ef4444; margin-bottom: .4rem; }
+.anomaly-card p { font-size: .75rem; margin: 0; }
+
+/* NF PROGRESS */
+.nf-progress { display: flex; gap: .5rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+.nf-step { padding: .4rem .9rem; border-radius: 20px; font-size: .8rem; font-weight: 700; }
+.nf-active { background: var(--accent); color: #000; }
+.nf-done { background: rgba(52,211,153,.15); color: #34d399; border: 1px solid rgba(52,211,153,.4); }
+.nf-pending { background: rgba(42,58,85,.5); color: var(--muted); }
+.nf-arrow { color: var(--muted); }
+
+.exercise-box { background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.3); border-radius: var(--radius); padding: 1.5rem; }
+.exercise-box h2 { color: var(--accent2); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(129,140,248,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent2); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem; }
+
+.takeaway { background: rgba(45,212,191,.06); border: 1px solid rgba(45,212,191,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--accent); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '✦'; color: var(--accent); }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(14,21,37,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 2 · Database · <span>07b — Normalization</span></div>
+  <div class="nav-links">
+    <a href="07a-erd-modeling.html">← ERD</a>
+    <a href="07c-index-optimization.html" class="next">Index →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">07b · Database Thinking</div>
+  <h1>Database <em>Normalization</em></h1>
+  <p>Normalization = loại bỏ data redundancy. Unnormalized data → update anomalies, delete anomalies, insert anomalies. 3NF giải quyết 95% vấn đề thực tế.</p>
+</div>
+
+<div class="content">
+
+  <!-- ANOMALIES -->
+  <section>
+    <h2>3 Loại Anomaly — Vì sao cần Normalize?</h2>
+    <div class="anomaly-grid">
+      <div class="anomaly-card">
+        <h3>❌ Update Anomaly</h3>
+        <p>Địa chỉ supplier lưu trong mỗi order row. Đổi địa chỉ phải update N rows — miss 1 row → inconsistent data.</p>
+      </div>
+      <div class="anomaly-card">
+        <h3>❌ Delete Anomaly</h3>
+        <p>Xóa order cuối cùng của supplier → mất luôn info của supplier (vì không có bảng riêng).</p>
+      </div>
+      <div class="anomaly-card">
+        <h3>❌ Insert Anomaly</h3>
+        <p>Không thể thêm supplier mới nếu chưa có order — vì supplier info chỉ nằm trong order table.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- INTERACTIVE NORMALIZATION -->
+  <section>
+    <h2>Interactive — Unnormalized → 3NF</h2>
+    <div class="nf-progress" id="nfProgress">
+      <span class="nf-step nf-active" id="nf-0">Unnormalized</span>
+      <span class="nf-arrow">→</span>
+      <span class="nf-step nf-pending" id="nf-1">1NF</span>
+      <span class="nf-arrow">→</span>
+      <span class="nf-step nf-pending" id="nf-2">2NF</span>
+      <span class="nf-arrow">→</span>
+      <span class="nf-step nf-pending" id="nf-3">3NF</span>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="showNorm('unnorm', this)">Unnormalized</button>
+      <button class="tab-btn" onclick="showNorm('1nf', this)">1NF</button>
+      <button class="tab-btn" onclick="showNorm('2nf', this)">2NF</button>
+      <button class="tab-btn" onclick="showNorm('3nf', this)">3NF ✅</button>
+    </div>
+
+    <div id="norm-unnorm" class="tab-panel active">
+      <div class="card" style="overflow-x:auto">
+        <p style="margin-bottom:.75rem;font-size:.85rem;color:#ef4444">❌ Vấn đề: nhiều giá trị trong 1 cell, data lặp lại, không có PK rõ ràng</p>
+        <table class="data-table">
+          <thead><tr><th>OrderId</th><th>CustomerName</th><th>CustomerCity</th><th>Products (multiple!)</th><th>SupplierName</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>1</td><td>Nguyễn An</td><td class="highlight-bad">HN</td>
+              <td class="highlight-bad">Laptop, Mouse, Keyboard</td>
+              <td class="highlight-bad">TechCorp</td>
+            </tr>
+            <tr>
+              <td>2</td><td>Trần Bình</td><td class="highlight-bad">HCM</td>
+              <td class="highlight-bad">Phone</td>
+              <td class="highlight-bad">TechCorp</td>
+            </tr>
+            <tr>
+              <td>3</td><td>Nguyễn An</td><td class="highlight-bad">HN</td>
+              <td class="highlight-bad">Headphones</td>
+              <td class="highlight-bad">AudioPro</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="font-size:.78rem;margin-top:.5rem;color:#ef4444">Đỏ = vấn đề. "Products" có nhiều giá trị, CustomerCity lặp lại, SupplierName lặp lại.</p>
+      </div>
+    </div>
+
+    <div id="norm-1nf" class="tab-panel">
+      <div class="card" style="overflow-x:auto">
+        <p style="margin-bottom:.75rem;font-size:.85rem;color:#fbbf24">⚠️ 1NF: Atomic values, mỗi cell 1 giá trị, có PK. Còn partial dependency.</p>
+        <table class="data-table">
+          <thead><tr><th>OrderId (PK)</th><th>ProductId (PK)</th><th>CustomerName</th><th>CustomerCity</th><th>ProductName</th><th>SupplierName</th></tr></thead>
+          <tbody>
+            <tr><td class="cell-pk">1</td><td class="cell-pk">P1</td><td>Nguyễn An</td><td>HN</td><td>Laptop</td><td class="highlight-bad">TechCorp</td></tr>
+            <tr><td class="cell-pk">1</td><td class="cell-pk">P2</td><td>Nguyễn An</td><td>HN</td><td>Mouse</td><td class="highlight-bad">TechCorp</td></tr>
+            <tr><td class="cell-pk">1</td><td class="cell-pk">P3</td><td>Nguyễn An</td><td>HN</td><td>Keyboard</td><td class="highlight-bad">TechCorp</td></tr>
+            <tr><td class="cell-pk">2</td><td class="cell-pk">P4</td><td>Trần Bình</td><td>HCM</td><td>Phone</td><td class="highlight-bad">TechCorp</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:.78rem;margin-top:.5rem;color:#fbbf24">CustomerName phụ thuộc OrderId (partial dep với composite PK). SupplierName lặp.</p>
+      </div>
+    </div>
+
+    <div id="norm-2nf" class="tab-panel">
+      <div class="card" style="overflow-x:auto">
+        <p style="margin-bottom:.75rem;font-size:.85rem;color:#fbbf24">⚠️ 2NF: Loại partial dependency. CustomerName tách ra Orders. Còn transitive dependency.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+          <div>
+            <p style="font-size:.75rem;color:var(--accent);margin-bottom:.4rem">Orders table</p>
+            <table class="data-table">
+              <thead><tr><th>OrderId (PK)</th><th>CustomerId (FK)</th></tr></thead>
+              <tbody>
+                <tr><td class="cell-pk">1</td><td class="cell-fk">C1</td></tr>
+                <tr><td class="cell-pk">2</td><td class="cell-fk">C2</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <p style="font-size:.75rem;color:var(--accent);margin-bottom:.4rem">Customers table</p>
+            <table class="data-table">
+              <thead><tr><th>CustomerId (PK)</th><th>Name</th><th class="highlight-bad">City → Zip?</th></tr></thead>
+              <tbody>
+                <tr><td class="cell-pk">C1</td><td>Nguyễn An</td><td class="highlight-bad">HN</td></tr>
+                <tr><td class="cell-pk">C2</td><td>Trần Bình</td><td class="highlight-bad">HCM</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p style="font-size:.78rem;margin-top:.5rem;color:#fbbf24">City phụ thuộc ZipCode, ZipCode phụ thuộc CustomerId → transitive dependency.</p>
+      </div>
+    </div>
+
+    <div id="norm-3nf" class="tab-panel">
+      <div class="card" style="overflow-x:auto">
+        <p style="margin-bottom:.75rem;font-size:.85rem;color:#34d399">✅ 3NF: Không còn transitive dependency. Mọi attribute phụ thuộc TRỰC TIẾP vào PK.</p>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem">
+          <div>
+            <p style="font-size:.72rem;color:var(--accent);margin-bottom:.3rem">Orders</p>
+            <table class="data-table">
+              <thead><tr><th>id</th><th>customerId</th></tr></thead>
+              <tbody>
+                <tr><td class="cell-pk">1</td><td class="cell-fk">C1</td></tr>
+                <tr><td class="cell-pk">2</td><td class="cell-fk">C2</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <p style="font-size:.72rem;color:var(--accent);margin-bottom:.3rem">Customers</p>
+            <table class="data-table">
+              <thead><tr><th>id</th><th>name</th><th>cityId</th></tr></thead>
+              <tbody>
+                <tr><td class="cell-pk">C1</td><td>Nguyễn An</td><td class="cell-fk">CT1</td></tr>
+                <tr><td class="cell-pk">C2</td><td>Trần Bình</td><td class="cell-fk">CT2</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <p style="font-size:.72rem;color:var(--accent);margin-bottom:.3rem">Cities</p>
+            <table class="data-table">
+              <thead><tr><th>id</th><th>name</th></tr></thead>
+              <tbody>
+                <tr><td class="cell-pk">CT1</td><td>Hà Nội</td></tr>
+                <tr><td class="cell-pk">CT2</td><td>HCM</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p style="font-size:.78rem;margin-top:.5rem;color:#34d399">✅ Đổi tên city → 1 row. Xóa customer → không mất city data. Thêm city → không cần order.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- RULES SUMMARY -->
+  <section>
+    <h2>Quy tắc 3 Normal Forms</h2>
+    <div style="display:flex;flex-direction:column;gap:.75rem">
+      <div class="card" style="border-left:3px solid var(--warning)">
+        <strong style="color:var(--warning)">1NF — Atomic Values</strong>
+        <p style="margin:.25rem 0 0;font-size:.85rem">Mỗi cell chứa 1 giá trị (không phải list/array). Có PK. Không có repeating groups.</p>
+      </div>
+      <div class="card" style="border-left:3px solid #60a5fa">
+        <strong style="color:#60a5fa">2NF — No Partial Dependency</strong>
+        <p style="margin:.25rem 0 0;font-size:.85rem">Áp dụng khi có composite PK. Mọi non-key attribute phải phụ thuộc TOÀN BỘ composite PK, không phải 1 phần.</p>
+      </div>
+      <div class="card" style="border-left:3px solid var(--success)">
+        <strong style="color:var(--success)">3NF — No Transitive Dependency</strong>
+        <p style="margin:.25rem 0 0;font-size:.85rem">Mọi attribute phụ thuộc TRỰC TIẾP vào PK. Không phụ thuộc qua non-key attribute khác (A → B → C thay vì A → C).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- DENORMALIZATION NOTE -->
+  <section>
+    <h2>Khi nào Denormalize?</h2>
+    <p>Normalization = tốt cho write integrity. Đôi khi cần <strong>denormalize</strong> cho read performance:</p>
+    <div class="card" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div>
+        <p style="color:var(--success);font-weight:600;font-size:.85rem;margin-bottom:.5rem">✅ Giữ normalized khi:</p>
+        <ul style="list-style:none;font-size:.82rem">
+          <li style="padding:.2rem 0;color:var(--muted)">• Data thay đổi thường xuyên</li>
+          <li style="padding:.2rem 0;color:var(--muted)">• Write-heavy workload</li>
+          <li style="padding:.2rem 0;color:var(--muted)">• Data integrity quan trọng</li>
+        </ul>
+      </div>
+      <div>
+        <p style="color:var(--warning);font-weight:600;font-size:.85rem;margin-bottom:.5rem">⚠️ Denormalize khi:</p>
+        <ul style="list-style:none;font-size:.82rem">
+          <li style="padding:.2rem 0;color:var(--muted)">• Read-heavy, JOIN chậm (N tables)</li>
+          <li style="padding:.2rem 0;color:var(--muted)">• Analytics/reporting queries</li>
+          <li style="padding:.2rem 0;color:var(--muted)">• MongoDB document model (embed)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXERCISE -->
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — Normalize a Table</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Cho bảng sau (unnormalized): <code>StudentCourses(studentId, studentName, courseIds, courseName, instructorName, instructorEmail)</code>. Identify violations.</li>
+      <li><span class="step-num">2</span>Áp dụng 1NF: tách courseIds thành 1 row per course.</li>
+      <li><span class="step-num">3</span>Áp dụng 2NF: tìm partial dependencies với composite PK (studentId, courseId).</li>
+      <li><span class="step-num">4</span>Áp dụng 3NF: tìm transitive dependency (instructorEmail phụ thuộc instructorName, không phụ thuộc PK).</li>
+      <li><span class="step-num">5</span>Kết quả: list các bảng sau 3NF. Verify: update instructor email → chỉ 1 row thay đổi.</li>
+    </ul>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>Unnormalized data → 3 anomalies: update, delete, insert. Normalization giải quyết cả 3.</li>
+      <li>1NF: atomic values, 2NF: no partial dep (composite PK), 3NF: no transitive dep.</li>
+      <li>3NF giải quyết 95% vấn đề thực tế. BCNF/4NF/5NF cho edge cases phức tạp hơn.</li>
+      <li>Denormalize có chủ đích cho read performance — không phải "lười normalize".</li>
+      <li>MongoDB: embed (denormalized) khi data luôn access together, reference (normalized) khi data access độc lập.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="07a-erd-modeling.html">← ERD</a>
+  <div class="progress-dots">
+    <div class="dot"></div><div class="dot active"></div>
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+  <a href="07c-index-optimization.html" class="next">Index →</a>
+</div>
+
+<script>
+function showNorm(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('norm-' + id).classList.add('active');
+  btn.classList.add('active');
+  const steps = ['unnorm','1nf','2nf','3nf'];
+  const idx = steps.indexOf(id);
+  steps.forEach((s, i) => {
+    const el = document.getElementById('nf-' + i);
+    if (i < idx) el.className = 'nf-step nf-done';
+    else if (i === idx) el.className = 'nf-step nf-active';
+    else el.className = 'nf-step nf-pending';
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06a — Layered Architecture | Phase 2</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #1a2235; --border: #2a3a55;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #60a5fa; --accent2: #818cf8;
+  --success: #34d399; --warning: #fbbf24; --error: #ef4444;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+.top-nav { position: sticky; top: 0; z-index: 100; background: rgba(14,21,37,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .6rem 1.5rem; font-size: .85rem; }
+.top-nav .breadcrumb { color: var(--muted); }
+.top-nav .breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a { padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-links a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .75rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+
+/* LAYER STACK */
+.layer-stack { display: flex; flex-direction: column; gap: .5rem; }
+.layer {
+  padding: 1rem 1.25rem; border-radius: 8px; cursor: pointer;
+  transition: all .2s; border: 2px solid transparent; position: relative;
+}
+.layer:hover { transform: translateX(4px); }
+.layer.active { border-left-width: 4px; }
+.layer-label { font-weight: 700; font-size: .9rem; display: flex; align-items: center; gap: .5rem; }
+.layer-subtitle { font-size: .75rem; margin-top: .15rem; opacity: .7; }
+.layer-detail { display: none; margin-top: .75rem; font-size: .85rem; color: var(--muted); line-height: 1.6; }
+.layer-detail.show { display: block; }
+
+.layer-presentation { background: rgba(96,165,250,.12); border-color: rgba(96,165,250,.3); }
+.layer-presentation.active { border-color: #60a5fa; }
+.layer-business { background: rgba(129,140,248,.12); border-color: rgba(129,140,248,.3); }
+.layer-business.active { border-color: #818cf8; }
+.layer-data { background: rgba(52,211,153,.12); border-color: rgba(52,211,153,.3); }
+.layer-data.active { border-color: #34d399; }
+
+/* DEPENDENCY FLOW */
+.dep-flow { display: flex; flex-direction: column; gap: .3rem; align-items: center; }
+.dep-box { padding: .6rem 1.5rem; border-radius: 6px; font-size: .8rem; font-weight: 600; text-align: center; }
+.dep-arrow { color: var(--muted); font-size: 1.2rem; }
+.dep-ok { color: var(--success); }
+.dep-bad { color: var(--error); }
+
+/* CODE BLOCK */
+.code-block { background: #0a0f1e; border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; font-family: 'Courier New', monospace; font-size: .8rem; line-height: 1.7; overflow-x: auto; }
+.c-comment { color: #6b7280; } .c-class { color: #60a5fa; } .c-fn { color: #fbbf24; }
+.c-kw { color: #818cf8; } .c-str { color: #34d399; } .c-type { color: #f472b6; }
+
+/* VIOLATION TABLE */
+.violation-list { list-style: none; }
+.violation-list li { padding: .6rem 0; border-bottom: 1px solid rgba(42,58,85,.5); color: var(--muted); font-size: .85rem; display: flex; gap: .75rem; }
+.violation-list li:last-child { border: none; }
+
+.exercise-box { background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.3); border-radius: var(--radius); padding: 1.5rem; }
+.exercise-box h2 { color: var(--accent2); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(129,140,248,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent2); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem; }
+
+.takeaway { background: rgba(96,165,250,.08); border: 1px solid rgba(96,165,250,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--accent); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '✦'; color: var(--accent); }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(14,21,37,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 2 · Architecture · <span>06a — Layered Architecture</span></div>
+  <div class="nav-links">
+    <a href="../06-architecture.html">← Overview</a>
+    <a href="06b-clean-hex.html" class="next">Clean &amp; Hex →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">06a · Architecture</div>
+  <h1><em>Layered</em> Architecture</h1>
+  <p>Phân tầng code theo trách nhiệm: Presentation nhận request → Business xử lý logic → Data truy cập storage. Mỗi tầng chỉ nói chuyện với tầng liền kề.</p>
+</div>
+
+<div class="content">
+
+  <!-- INTERACTIVE LAYERS -->
+  <section>
+    <h2>3 Tầng — Bấm để khám phá</h2>
+    <div class="card">
+      <div class="layer-stack">
+        <div class="layer layer-presentation" onclick="showLayer('presentation', this)">
+          <div class="layer-label"><span>🎨</span> Presentation Layer (Controller)</div>
+          <div class="layer-subtitle">HTTP requests · Response formatting · Input validation · Auth check</div>
+          <div class="layer-detail" id="detail-presentation">
+            <strong style="color:#60a5fa">Trách nhiệm:</strong> Nhận HTTP request, parse params/body, validate format, gọi Service, format response.<br><br>
+            <strong>KHÔNG được:</strong> Chứa business logic, truy cập DB trực tiếp, biết cách data được lưu.<br><br>
+            <strong>Ví dụ NestJS:</strong> <code>@Controller()</code>, <code>@Get()</code>, <code>@Post()</code>, DTO validation via class-validator.<br><br>
+            <code style="font-size:.75rem;color:#34d399">class ProductController { getProduct(@Param('id') id) { return this.productService.findById(id); } }</code>
+          </div>
+        </div>
+        <div class="layer layer-business" onclick="showLayer('business', this)">
+          <div class="layer-label"><span>⚙️</span> Business Logic Layer (Service)</div>
+          <div class="layer-subtitle">Domain rules · Calculations · Orchestration · Validation logic</div>
+          <div class="layer-detail" id="detail-business">
+            <strong style="color:#818cf8">Trách nhiệm:</strong> Implement business rules, orchestrate multiple repositories, throw domain errors.<br><br>
+            <strong>KHÔNG được:</strong> Biết HTTP exists (không import express/fastify), format response, truy cập DB trực tiếp.<br><br>
+            <strong>Ví dụ:</strong> <code>ProductService.findById()</code> check exists, check permissions, log access, apply discount rules.<br><br>
+            <strong>Key insight:</strong> Service phải có thể được gọi từ Controller, từ Queue Worker, từ CRON job — vì nó không biết caller là ai.
+          </div>
+        </div>
+        <div class="layer layer-data" onclick="showLayer('data', this)">
+          <div class="layer-label"><span>🗄️</span> Data Access Layer (Repository)</div>
+          <div class="layer-subtitle">DB queries · ORM models · Cache · External APIs</div>
+          <div class="layer-detail" id="detail-data">
+            <strong style="color:#34d399">Trách nhiệm:</strong> Truy cập data sources (DB, Redis, external API), abstract query logic.<br><br>
+            <strong>KHÔNG được:</strong> Chứa business rules, biết format response.<br><br>
+            <strong>Lợi ích:</strong> Swap MongoDB → PostgreSQL? Chỉ đổi Repository, Service &amp; Controller không đổi.<br><br>
+            <strong>Ví dụ:</strong> <code>ProductRepository.findById(id)</code> → Mongoose <code>Product.findById(id)</code>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEPENDENCY RULE -->
+  <section>
+    <h2>Dependency Rule — Chỉ phụ thuộc xuống</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="card">
+        <p style="color:var(--success);font-weight:600;margin-bottom:.75rem">✅ Đúng — dependencies xuống</p>
+        <div class="dep-flow">
+          <div class="dep-box" style="background:rgba(96,165,250,.15);color:#60a5fa">Controller</div>
+          <div class="dep-arrow">↓ calls</div>
+          <div class="dep-box" style="background:rgba(129,140,248,.15);color:#818cf8">Service</div>
+          <div class="dep-arrow">↓ calls</div>
+          <div class="dep-box" style="background:rgba(52,211,153,.15);color:#34d399">Repository</div>
+        </div>
+      </div>
+      <div class="card">
+        <p style="color:var(--error);font-weight:600;margin-bottom:.75rem">❌ Sai — dependency ngược</p>
+        <div class="dep-flow">
+          <div class="dep-box" style="background:rgba(96,165,250,.15);color:#60a5fa">Controller</div>
+          <div class="dep-arrow" style="color:#ef4444">↓</div>
+          <div class="dep-box" style="background:rgba(129,140,248,.15);color:#818cf8">Service</div>
+          <div style="display:flex;gap:.5rem;align-items:center">
+            <div class="dep-arrow" style="color:#ef4444">↑ calls back!</div>
+          </div>
+          <div class="dep-box" style="background:rgba(239,68,68,.15);color:#ef4444;border:1px solid #ef4444">Controller 🔴</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CODE EXAMPLE -->
+  <section>
+    <h2>Code Example — NestJS 3 Layers</h2>
+    <div class="code-block">
+<span class="c-comment">// Layer 1: Controller (Presentation)</span>
+<span class="c-kw">@Controller</span>(<span class="c-str">'products'</span>)
+<span class="c-kw">export class</span> <span class="c-class">ProductController</span> {
+  <span class="c-fn">constructor</span>(<span class="c-kw">private</span> service: <span class="c-type">ProductService</span>) {}
+
+  <span class="c-kw">@Get</span>(<span class="c-str">':id'</span>)
+  <span class="c-fn">findOne</span>(<span class="c-kw">@Param</span>(<span class="c-str">'id'</span>) id: <span class="c-type">string</span>) {
+    <span class="c-kw">return</span> <span class="c-kw">this</span>.service.<span class="c-fn">findById</span>(id); <span class="c-comment">// không biết DB là gì</span>
+  }
+}
+
+<span class="c-comment">// Layer 2: Service (Business Logic)</span>
+<span class="c-kw">export class</span> <span class="c-class">ProductService</span> {
+  <span class="c-fn">constructor</span>(<span class="c-kw">private</span> repo: <span class="c-type">ProductRepository</span>) {}
+
+  <span class="c-kw">async</span> <span class="c-fn">findById</span>(id: <span class="c-type">string</span>) {
+    <span class="c-kw">const</span> product = <span class="c-kw">await</span> <span class="c-kw">this</span>.repo.<span class="c-fn">findById</span>(id);
+    <span class="c-kw">if</span> (!product) <span class="c-kw">throw new</span> <span class="c-class">NotFoundException</span>();
+    <span class="c-kw">return</span> <span class="c-kw">this</span>.<span class="c-fn">applyDiscountRules</span>(product); <span class="c-comment">// business logic</span>
+  }
+}
+
+<span class="c-comment">// Layer 3: Repository (Data Access)</span>
+<span class="c-kw">export class</span> <span class="c-class">ProductRepository</span> {
+  <span class="c-fn">findById</span>(id: <span class="c-type">string</span>) {
+    <span class="c-kw">return</span> <span class="c-class">ProductModel</span>.<span class="c-fn">findById</span>(id).<span class="c-fn">lean</span>(); <span class="c-comment">// chỉ biết Mongoose</span>
+  }
+}</div>
+  </section>
+
+  <!-- COMMON VIOLATIONS -->
+  <section>
+    <h2>Common Violations — Nhận biết để tránh</h2>
+    <div class="card">
+      <ul class="violation-list">
+        <li><span style="color:#ef4444">❌</span> Controller gọi trực tiếp <code>Product.findById()</code> (Mongoose) — bypass Service + Repository</li>
+        <li><span style="color:#ef4444">❌</span> Service import <code>Request, Response</code> từ express — Service không được biết HTTP exists</li>
+        <li><span style="color:#ef4444">❌</span> Repository chứa business logic như discount, permission check</li>
+        <li><span style="color:#ef4444">❌</span> Controller gọi 5-6 Services khác nhau và combine logic — Controller quá béo</li>
+        <li><span style="color:#ef4444">❌</span> Service gọi ngược lên Controller để "notify" — circular dependency</li>
+        <li><span style="color:#34d399">✅</span> Fix: mỗi tầng chỉ gọi tầng ngay dưới nó. Logic phức tạp = Service orchestrating Repositories.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- EXERCISE -->
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — Layer Audit</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Mở 1 controller bất kỳ. Đếm xem có bao nhiêu dòng "business logic" (if/else, calculation) không phải validation/formatting?</li>
+      <li><span class="step-num">2</span>Trace 1 API endpoint từ Controller → Service → Repository. Vẽ sơ đồ 3 tầng, ghi rõ trách nhiệm từng bước.</li>
+      <li><span class="step-num">3</span>Tìm 1 chỗ vi phạm trong code hiện tại (Controller gọi DB trực tiếp, hoặc Service biết HTTP). Refactor theo đúng layer.</li>
+      <li><span class="step-num">4</span>Viết 1 Service method có thể được gọi từ cả Controller lẫn CRON job mà không thay đổi logic.</li>
+    </ul>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>3 tầng: Presentation (Controller) → Business (Service) → Data (Repository).</li>
+      <li>Dependency rule: chỉ phụ thuộc xuống. Không circular, không skip tầng.</li>
+      <li>Service không biết HTTP exists — có thể được gọi từ Controller, Queue, CRON, test.</li>
+      <li>Repository abstraction = swap DB mà không thay đổi Service/Controller.</li>
+      <li>Fat controller = anti-pattern. Business logic thuộc về Service.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="../06-architecture.html">← Overview</a>
+  <div class="progress-dots">
+    <div class="dot active"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+  </div>
+  <a href="06b-clean-hex.html" class="next">Clean &amp; Hex →</a>
+</div>
+
+<script>
+let activeLayer = null;
+function showLayer(id, el) {
+  if (activeLayer === id) {
+    document.getElementById('detail-' + id).classList.remove('show');
+    el.classList.remove('active');
+    activeLayer = null;
+    return;
+  }
+  document.querySelectorAll('.layer-detail').forEach(d => d.classList.remove('show'));
+  document.querySelectorAll('.layer').forEach(l => l.classList.remove('active'));
+  document.getElementById('detail-' + id).classList.add('show');
+  el.classList.add('active');
+  activeLayer = id;
+}
+</script>
+</body>
+</html>

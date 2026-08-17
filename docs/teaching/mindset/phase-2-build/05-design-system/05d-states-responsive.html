@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>05d — States & Responsive | Phase 2</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #1a2235; --border: #2a3a55;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #f472b6; --accent2: #818cf8;
+  --success: #34d399; --warning: #fbbf24; --error: #ef4444;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+.top-nav { position: sticky; top: 0; z-index: 100; background: rgba(14,21,37,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .6rem 1.5rem; font-size: .85rem; }
+.top-nav .breadcrumb { color: var(--muted); }
+.top-nav .breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a { padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-links a.next { background: var(--accent2); color: #fff; border-color: var(--accent2); font-weight: 600; }
+
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .75rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+
+/* STATES GRID */
+.states-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: .75rem; }
+.state-card { border-radius: 8px; padding: .75rem; text-align: center; border: 2px solid transparent; }
+.state-label { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; margin-bottom: .5rem; }
+.state-demo-btn { padding: .4rem .9rem; border-radius: 6px; font-size: .8rem; font-weight: 600; border: none; width: 100%; }
+
+/* LOADING STATES */
+.skeleton { border-radius: 4px; background: linear-gradient(90deg, var(--border) 25%, #2a3a55 50%, var(--border) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+.skeleton-title { height: 20px; width: 70%; margin-bottom: .5rem; }
+.skeleton-text { height: 12px; width: 100%; margin-bottom: .3rem; }
+.skeleton-text.short { width: 60%; }
+
+.spinner { width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* RESPONSIVE VIEWPORT SIM */
+.viewport-controls { display: flex; gap: .5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.vp-btn { padding: .4rem .9rem; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: .8rem; transition: all .2s; }
+.vp-btn.active { background: var(--accent2); color: #fff; border-color: var(--accent2); }
+.viewport-frame { border: 2px solid var(--border); border-radius: 8px; overflow: hidden; transition: width .3s ease; margin: 0 auto; }
+.vp-nav { background: var(--surface); padding: .5rem .75rem; display: flex; gap: .5rem; align-items: center; }
+.vp-logo { font-size: .75rem; font-weight: 700; color: var(--accent); }
+.vp-links { display: flex; gap: .5rem; }
+.vp-link { font-size: .65rem; color: var(--muted); }
+.vp-hero { padding: 1rem; }
+.vp-grid { display: grid; gap: .5rem; }
+.vp-card { background: var(--surface); border-radius: 6px; padding: .5rem; }
+.vp-card-img { height: 50px; background: var(--border); border-radius: 4px; margin-bottom: .3rem; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+.vp-card-name { font-size: .65rem; color: var(--muted); }
+.vp-card-price { font-size: .7rem; font-weight: 700; color: var(--accent); }
+
+/* BREAKPOINT TABLE */
+.bp-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.bp-table th { text-align: left; padding: .5rem .75rem; color: var(--muted); border-bottom: 1px solid var(--border); }
+.bp-table td { padding: .5rem .75rem; border-bottom: 1px solid rgba(42,58,85,.5); }
+.bp-table tr:last-child td { border: none; }
+.bp-name { color: var(--accent); font-weight: 600; }
+
+/* TOUCH TARGETS */
+.touch-demo { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.touch-bad { width: 24px; height: 24px; background: rgba(239,68,68,.3); border: 1px solid #ef4444; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .6rem; color: #ef4444; }
+.touch-good { width: 44px; height: 44px; background: rgba(52,211,153,.15); border: 1px solid #34d399; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .8rem; color: #34d399; }
+
+.exercise-box { background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.3); border-radius: var(--radius); padding: 1.5rem; }
+.exercise-box h2 { color: var(--accent2); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(129,140,248,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent2); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem; }
+
+/* NEXT TOPIC BANNER */
+.next-topic { background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.3); border-radius: var(--radius); padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; }
+.next-topic h3 { color: var(--success); margin-bottom: .25rem; }
+.next-topic p { margin: 0; font-size: .85rem; }
+.next-topic a { background: var(--success); color: #000; padding: .5rem 1.25rem; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: .85rem; white-space: nowrap; }
+
+.takeaway { background: rgba(244,114,182,.08); border: 1px solid rgba(244,114,182,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--accent); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '✦'; color: var(--accent); }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(14,21,37,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--success); color: #000; border-color: var(--success); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 2 · Design System · <span>05d — States &amp; Responsive</span></div>
+  <div class="nav-links">
+    <a href="05c-components.html">← Components</a>
+    <a href="../06-architecture/06a-layered.html" class="next">06 Architecture →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">05d · Design System</div>
+  <h1>States &amp; <em>Responsive</em></h1>
+  <p>Component không tồn tại trong trạng thái tĩnh — chúng loading, error, empty, disabled. Responsive không phải "thu nhỏ", mà là thiết kế lại cho context.</p>
+</div>
+
+<div class="content">
+
+  <!-- COMPONENT STATES -->
+  <section>
+    <h2>7 States mọi Component cần</h2>
+    <p>Thiếu state = bug UX. Mỗi button/form/card phải handle đủ 7 trạng thái:</p>
+    <div class="states-grid">
+      <div class="state-card" style="background:rgba(255,255,255,.04);border-color:var(--border)">
+        <div class="state-label" style="color:var(--muted)">Default</div>
+        <button class="state-demo-btn" style="background:var(--accent);color:#000">Mua ngay</button>
+      </div>
+      <div class="state-card" style="background:rgba(244,114,182,.06);border-color:rgba(244,114,182,.4)">
+        <div class="state-label" style="color:var(--accent)">Hover</div>
+        <button class="state-demo-btn" style="background:#f9a8d4;color:#000;transform:translateY(-1px)">Mua ngay</button>
+      </div>
+      <div class="state-card" style="background:rgba(244,114,182,.12);border-color:var(--accent)">
+        <div class="state-label" style="color:var(--accent)">Focus</div>
+        <button class="state-demo-btn" style="background:var(--accent);color:#000;box-shadow:0 0 0 3px rgba(244,114,182,.4)">Mua ngay</button>
+      </div>
+      <div class="state-card" style="background:rgba(244,114,182,.18);border-color:var(--accent)">
+        <div class="state-label" style="color:var(--accent)">Active</div>
+        <button class="state-demo-btn" style="background:#be185d;color:#fff;transform:scale(.98)">Mua ngay</button>
+      </div>
+      <div class="state-card" style="background:rgba(255,255,255,.02);border-color:rgba(255,255,255,.1)">
+        <div class="state-label" style="color:var(--muted)">Disabled</div>
+        <button class="state-demo-btn" style="background:var(--border);color:var(--muted);cursor:not-allowed">Mua ngay</button>
+      </div>
+      <div class="state-card" style="background:rgba(52,211,153,.06);border-color:rgba(52,211,153,.3)">
+        <div class="state-label" style="color:var(--success)">Loading</div>
+        <button class="state-demo-btn" style="background:var(--accent);color:#000;display:flex;align-items:center;justify-content:center;gap:.4rem">
+          <div class="spinner" style="width:14px;height:14px;border-width:2px"></div> Đang xử lý
+        </button>
+      </div>
+      <div class="state-card" style="background:rgba(52,211,153,.08);border-color:var(--success)">
+        <div class="state-label" style="color:var(--success)">Success</div>
+        <button class="state-demo-btn" style="background:var(--success);color:#000">✅ Đặt hàng xong</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOADING STATES -->
+  <section>
+    <h2>Loading States — Skeleton vs Spinner</h2>
+    <p>Skeleton loader cho content dạng list/card — giữ layout, giảm layout shift. Spinner cho action ngắn (&lt;2s).</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="card">
+        <p style="font-size:.8rem;margin-bottom:.75rem;color:var(--accent2)">Skeleton (preferred for content)</p>
+        <div class="skeleton skeleton-title"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-text short"></div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;min-height:100px">
+        <p style="font-size:.8rem;color:var(--accent2)">Spinner (short actions)</p>
+        <div class="spinner"></div>
+        <span style="font-size:.75rem;color:var(--muted)">Đang xử lý đơn hàng...</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESPONSIVE VIEWPORT SIM -->
+  <section>
+    <h2>Responsive — Viewport Simulator</h2>
+    <p>Chọn viewport để thấy layout thay đổi. Mobile-first: design mobile trước, progressive enhance lên lớn hơn.</p>
+    <div class="viewport-controls">
+      <button class="vp-btn active" onclick="setVp(this,320,'📱 Mobile 320px')">📱 Mobile</button>
+      <button class="vp-btn" onclick="setVp(this,480,'📟 Mobile L 480px')">📟 Mobile L</button>
+      <button class="vp-btn" onclick="setVp(this,768,'📋 Tablet 768px')">📋 Tablet</button>
+      <button class="vp-btn" onclick="setVp(this,100,'🖥 Desktop')">🖥 Desktop</button>
+    </div>
+    <div class="viewport-frame" id="vpFrame" style="width:320px">
+      <div class="vp-nav">
+        <span class="vp-logo">AliShopping</span>
+        <div class="vp-links" id="vpLinks" style="display:none">
+          <span class="vp-link">Deals</span>
+          <span class="vp-link">Trending</span>
+          <span class="vp-link">Track</span>
+        </div>
+        <span id="vpHamburger" style="margin-left:auto;color:var(--muted);font-size:.8rem">☰</span>
+      </div>
+      <div class="vp-hero" style="padding:.75rem">
+        <div style="font-size:.8rem;font-weight:700;margin-bottom:.25rem">Tìm Deal Tốt Nhất</div>
+        <div style="font-size:.65rem;color:var(--muted);margin-bottom:.5rem">AI-powered price tracking</div>
+        <div class="vp-grid" id="vpGrid" style="grid-template-columns:1fr 1fr">
+          <div class="vp-card"><div class="vp-card-img">📱</div><div class="vp-card-name">Redmi Note 13</div><div class="vp-card-price">$189</div></div>
+          <div class="vp-card"><div class="vp-card-img">🎧</div><div class="vp-card-name">Sony WH-1000</div><div class="vp-card-price">$248</div></div>
+          <div class="vp-card" id="card3" style="display:none"><div class="vp-card-img">⌚</div><div class="vp-card-name">Apple Watch S9</div><div class="vp-card-price">$399</div></div>
+          <div class="vp-card" id="card4" style="display:none"><div class="vp-card-img">💻</div><div class="vp-card-name">MacBook Air M3</div><div class="vp-card-price">$1099</div></div>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:.75rem;color:var(--muted);margin-top:.5rem" id="vpLabel">📱 Mobile 320px — 2 cột, hamburger menu</p>
+  </section>
+
+  <!-- BREAKPOINTS -->
+  <section>
+    <h2>Breakpoints — Quyết định khi nào layout đổi</h2>
+    <div class="card">
+      <table class="bp-table">
+        <thead><tr><th>Breakpoint</th><th>Width</th><th>Target</th><th>Grid</th></tr></thead>
+        <tbody>
+          <tr><td class="bp-name">xs</td><td>&lt; 480px</td><td>Small mobile</td><td>1 col</td></tr>
+          <tr><td class="bp-name">sm</td><td>480px+</td><td>Mobile landscape</td><td>2 col</td></tr>
+          <tr><td class="bp-name">md</td><td>768px+</td><td>Tablet</td><td>3 col</td></tr>
+          <tr><td class="bp-name">lg</td><td>1024px+</td><td>Desktop</td><td>4 col</td></tr>
+          <tr><td class="bp-name">xl</td><td>1280px+</td><td>Wide desktop</td><td>4-5 col + sidebar</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:.75rem;font-size:.85rem">Rule: breakpoint khi content bị vỡ, không phải theo device size cứng. Mở browser → drag resize → stop khi thấy ugly.</p>
+  </section>
+
+  <!-- TOUCH TARGETS -->
+  <section>
+    <h2>Touch Targets — 44×44px Minimum</h2>
+    <p>Apple HIG và Material Design đều yêu cầu 44px (iOS) / 48dp (Android) touch target. Nhỏ hơn = miss-tap = frustrated users.</p>
+    <div class="card">
+      <div class="touch-demo">
+        <div>
+          <div style="font-size:.75rem;color:#ef4444;margin-bottom:.5rem">❌ Too small (24px)</div>
+          <div class="touch-bad">×</div>
+        </div>
+        <div>
+          <div style="font-size:.75rem;color:var(--success);margin-bottom:.5rem">✅ Correct (44px)</div>
+          <div class="touch-good">×</div>
+        </div>
+        <div style="font-size:.8rem;color:var(--muted);max-width:200px">
+          Icon button nhỏ? Dùng <code>padding</code> để enlarge hit area mà không thay đổi visual size.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXERCISE -->
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — States &amp; Responsive Audit</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Audit: Mở app, list tất cả buttons/forms. Check: có loading state không? Error state không? Disabled state không? Tạo checklist.</li>
+      <li><span class="step-num">2</span>Implement skeleton loader cho 1 list component. Dùng <code>animation: shimmer</code> CSS — không dùng thư viện.</li>
+      <li><span class="step-num">3</span>Resize browser từ 320px → 1280px. Ghi lại chính xác px khi layout bị vỡ → set breakpoints tại các điểm đó.</li>
+      <li><span class="step-num">4</span>Inspect tất cả icon buttons: có min-width/height 44px không? Nếu không, add <code>padding</code> để đạt 44px hit area.</li>
+      <li><span class="step-num">5</span>Test trên real device (hoặc Chrome DevTools Device Mode). List 3 điều trông khác trên mobile so với desktop simulator.</li>
+    </ul>
+  </section>
+
+  <!-- NEXT TOPIC -->
+  <section class="next-topic">
+    <div>
+      <h3>Tiếp theo: 06 — Architecture</h3>
+      <p>Bạn đã có Design System. Giờ code phía sau được tổ chức như thế nào?</p>
+    </div>
+    <a href="../06-architecture/06a-layered.html">06a: Layered Architecture →</a>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>7 states: default, hover, focus, active, disabled, loading, success/error — thiếu 1 là bug UX.</li>
+      <li>Skeleton loader cho content dạng list/card — giữ layout, giảm layout shift. Spinner cho action ngắn.</li>
+      <li>Mobile-first: design mobile trước → progressive enhance lên larger viewport.</li>
+      <li>Breakpoint khi content bị vỡ, không phải theo device size cứng.</li>
+      <li>Touch target minimum 44px × 44px — dùng padding để enlarge hit area mà không thay đổi visual.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="05c-components.html">← Components</a>
+  <div class="progress-dots">
+    <div class="dot"></div><div class="dot"></div>
+    <div class="dot"></div><div class="dot active"></div>
+  </div>
+  <a href="../06-architecture/06a-layered.html" class="next">06 Architecture →</a>
+</div>
+
+<script>
+function setVp(btn, w, label) {
+  document.querySelectorAll('.vp-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const frame = document.getElementById('vpFrame');
+  const isDesktop = w === 100;
+  frame.style.width = isDesktop ? '100%' : w + 'px';
+  document.getElementById('vpLabel').textContent = label;
+  const links = document.getElementById('vpLinks');
+  const ham = document.getElementById('vpHamburger');
+  const grid = document.getElementById('vpGrid');
+  const card3 = document.getElementById('card3');
+  const card4 = document.getElementById('card4');
+  if (w >= 768 || isDesktop) {
+    links.style.display = 'flex'; ham.style.display = 'none';
+    grid.style.gridTemplateColumns = isDesktop ? '1fr 1fr 1fr 1fr' : '1fr 1fr 1fr';
+    card3.style.display = ''; card4.style.display = isDesktop ? '' : 'none';
+  } else if (w >= 480) {
+    links.style.display = 'none'; ham.style.display = '';
+    grid.style.gridTemplateColumns = '1fr 1fr';
+    card3.style.display = ''; card4.style.display = 'none';
+  } else {
+    links.style.display = 'none'; ham.style.display = '';
+    grid.style.gridTemplateColumns = '1fr 1fr';
+    card3.style.display = 'none'; card4.style.display = 'none';
+  }
+}
+</script>
+</body>
+</html>

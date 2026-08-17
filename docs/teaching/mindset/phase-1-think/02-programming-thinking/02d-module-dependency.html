@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02d — Module & Dependency | Tư Duy Lập Trình</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #151d32; --surface2: #1c2744;
+  --border: #2a3a5c; --text: #eef1f8; --muted: #8899bb;
+  --accent: #a78bfa; --green: #2ecc71; --red: #e74c3c;
+  --blue: #5b8def; --orange: #ffb347; --teal: #00cec9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; }
+.top-nav { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; font-size: .85rem; }
+.top-nav a { color: var(--accent); text-decoration: none; padding: 4px 10px; border-radius: 6px; border: 1px solid transparent; transition: .2s; }
+.top-nav a:hover { border-color: var(--accent); background: #a78bfa18; }
+.nav-center { color: var(--muted); font-size: .8rem; }
+.hero { padding: 48px 24px 32px; max-width: 860px; margin: 0 auto; animation: fadeUp .5s ease; }
+.lesson-tag { display: inline-block; background: #a78bfa22; color: var(--accent); border: 1px solid #a78bfa44; border-radius: 20px; padding: 4px 14px; font-size: .8rem; margin-bottom: 16px; }
+h1 { font-size: 2rem; margin-bottom: 8px; }
+h1 span { color: var(--accent); }
+.subtitle { color: var(--muted); font-size: 1rem; margin-bottom: 32px; }
+.section { max-width: 860px; margin: 0 auto 40px; padding: 0 24px; }
+h2 { font-size: 1.2rem; color: var(--accent); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+h3 { font-size: 1rem; color: var(--orange); margin: 16px 0 8px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.card-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:600px){ .card-row { grid-template-columns: 1fr; } }
+pre { background: #0a0f1e; border: 1px solid var(--border); border-radius: 10px; padding: 20px; overflow-x: auto; font-size: .88rem; line-height: 1.7; }
+.kw { color: #79b8ff; } .fn { color: #b392f0; } .str { color: #9ecbff; }
+.num { color: var(--orange); } .cmt { color: #6a737d; font-style: italic; } .type { color: var(--teal); }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media(max-width:600px){ .compare { grid-template-columns: 1fr; } }
+.compare-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.compare-box.bad { border-top: 3px solid var(--red); }
+.compare-box.good { border-top: 3px solid var(--green); }
+.compare-label { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+.compare-box.bad .compare-label { color: var(--red); }
+.compare-box.good .compare-label { color: var(--green); }
+
+/* MODULE DIAGRAM */
+.module-diagram { display: flex; gap: 16px; flex-wrap: wrap; }
+.module-box { background: var(--surface); border: 2px solid var(--border); border-radius: 12px; padding: 16px; min-width: 150px; text-align: center; cursor: pointer; transition: .2s; }
+.module-box:hover, .module-box.active { border-color: var(--accent); background: #a78bfa08; }
+.module-box .icon { font-size: 1.5rem; margin-bottom: 6px; }
+.module-box .name { font-size: .85rem; font-weight: 600; }
+.module-box .exports { font-size: .75rem; color: var(--muted); margin-top: 4px; }
+.dep-arrow { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 1.2rem; padding: 0 8px; }
+
+/* LAYER STACK */
+.layer-stack { display: flex; flex-direction: column; gap: 4px; }
+.layer { padding: 12px 20px; border-radius: 8px; font-size: .9rem; font-weight: 500; transition: .2s; cursor: default; }
+.layer:hover { opacity: .8; transform: translateX(4px); }
+.layer.presentation { background: #a78bfa22; border: 1px solid #a78bfa44; color: var(--accent); }
+.layer.application { background: #5b8def22; border: 1px solid #5b8def44; color: var(--blue); }
+.layer.domain { background: #00cec922; border: 1px solid #00cec944; color: var(--teal); }
+.layer.infra { background: #2ecc7122; border: 1px solid #2ecc7144; color: var(--green); }
+.layer-label { font-size: .7rem; opacity: .7; font-weight: 400; margin-left: 8px; }
+
+.takeaway { background: linear-gradient(135deg, #a78bfa15, #5b8def10); border: 1px solid #a78bfa44; border-radius: 12px; padding: 20px 24px; margin: 32px auto; max-width: 860px; }
+.takeaway-label { font-size: .75rem; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
+.exercise { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--orange); border-radius: 10px; padding: 20px; margin-top: 16px; }
+.exercise-label { font-size: .75rem; color: var(--orange); font-weight: 700; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 10px; }
+.next-nav { max-width: 860px; margin: 0 auto 60px; padding: 0 24px; }
+.next-topic { display: flex; align-items: center; gap: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; text-decoration: none; color: var(--text); transition: .2s; }
+.next-topic:hover { border-color: var(--accent); background: #a78bfa08; }
+.next-icon { font-size: 2rem; }
+.next-text .label { font-size: .75rem; color: var(--muted); }
+.next-text .title { font-size: 1rem; font-weight: 600; color: var(--accent); }
+.next-arrow { margin-left: auto; font-size: 1.4rem; color: var(--accent); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="02c-function-design.html">← 02c Functions</a>
+  <span class="nav-center">Bài 02 · Module & Dependency · 02d / 06</span>
+  <a href="02e-interface-abstraction.html">02e Interface →</a>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">Bài 02d / 06 · Tư Duy Lập Trình</div>
+  <h1>📦 Module &amp; <span>Dependency</span></h1>
+  <p class="subtitle">Module là cách tổ chức code theo boundary rõ ràng. Dependency là cách các module nói chuyện với nhau. Kiến trúc tốt = low coupling, high cohesion.</p>
+</div>
+
+<!-- WHAT IS MODULE -->
+<div class="section">
+  <h2>📦 Module là gì?</h2>
+  <div class="card-row">
+    <div class="card">
+      <h3>High Cohesion</h3>
+      <p style="color:var(--muted);font-size:.9rem;">Các thứ liên quan đến nhau nằm cùng module. <code>OrderModule</code> chứa order controller, service, schema, DTO — không chứa user logic.</p>
+    </div>
+    <div class="card">
+      <h3>Low Coupling</h3>
+      <p style="color:var(--muted);font-size:.9rem;">Module nói chuyện với nhau qua interface/contract, không phụ thuộc implementation cụ thể. Thay đổi 1 module không làm vỡ module khác.</p>
+    </div>
+  </div>
+  <div class="module-diagram" style="margin-top:16px;align-items:center;">
+    <div class="module-box" onclick="this.classList.toggle('active')">
+      <div class="icon">👤</div>
+      <div class="name">UserModule</div>
+      <div class="exports">exports: UserService</div>
+    </div>
+    <div class="dep-arrow">→</div>
+    <div class="module-box" onclick="this.classList.toggle('active')">
+      <div class="icon">🛒</div>
+      <div class="name">OrderModule</div>
+      <div class="exports">imports: UserService<br>exports: OrderService</div>
+    </div>
+    <div class="dep-arrow">→</div>
+    <div class="module-box" onclick="this.classList.toggle('active')">
+      <div class="icon">💳</div>
+      <div class="name">PaymentModule</div>
+      <div class="exports">imports: OrderService</div>
+    </div>
+  </div>
+  <p style="color:var(--muted);font-size:.8rem;margin-top:10px;padding:0 4px;">Click vào module để highlight. Dependency flows một chiều: UserModule ← OrderModule ← PaymentModule</p>
+</div>
+
+<!-- NESTJS MODULE PATTERN -->
+<div class="section">
+  <h2>🏗️ NestJS Module Pattern</h2>
+  <pre style="font-size:.85rem;"><span class="cmt">// order.module.ts — module tự chứa mọi thứ cần</span>
+<span class="fn">@Module</span>({
+  imports: [
+    <span class="fn">MongooseModule</span>.<span class="fn">forFeature</span>([{ name: <span class="type">Order</span>.name, schema: <span class="type">OrderSchema</span> }]),
+    <span class="type">UserModule</span>,          <span class="cmt">// import UserService từ UserModule</span>
+    <span class="type">PaymentModule</span>,       <span class="cmt">// import PaymentService</span>
+  ],
+  controllers: [<span class="type">OrderController</span>],
+  providers: [<span class="type">OrderService</span>, <span class="type">OrderRepository</span>],
+  exports: [<span class="type">OrderService</span>],  <span class="cmt">// share ra ngoài nếu cần</span>
+})
+<span class="kw">export class</span> <span class="type">OrderModule</span> {}</pre>
+  <div class="card" style="margin-top:16px;">
+    <h3>Rule: Không circular dependency</h3>
+    <div class="compare">
+      <div style="">
+        <pre style="font-size:.82rem;"><span class="cmt">// ❌ Circular — BAD</span>
+<span class="cmt">// OrderModule imports UserModule</span>
+<span class="cmt">// UserModule imports OrderModule</span>
+<span class="cmt">// → NestJS sẽ fail hoặc undefined</span></pre>
+      </div>
+      <div>
+        <pre style="font-size:.82rem;"><span class="cmt">// ✅ Extract shared logic</span>
+<span class="cmt">// OrderModule imports SharedModule</span>
+<span class="cmt">// UserModule imports SharedModule</span>
+<span class="cmt">// → No circular!</span></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DEPENDENCY INJECTION -->
+<div class="section">
+  <h2>💉 Dependency Injection — Đừng new() Trực Tiếp</h2>
+  <div class="compare">
+    <div class="compare-box bad">
+      <div class="compare-label">❌ Hard-coded dependency</div>
+      <pre style="font-size:.82rem;"><span class="kw">class</span> <span class="type">OrderService</span> {
+  <span class="kw">private</span> mailer = <span class="kw">new</span> <span class="type">SendGridMailer</span>()
+  <span class="cmt">// Gắn chặt với SendGrid</span>
+  <span class="cmt">// Không thể test (sẽ gửi email thật)</span>
+  <span class="cmt">// Không thể swap provider</span>
+}</pre>
+    </div>
+    <div class="compare-box good">
+      <div class="compare-label">✅ Injected dependency</div>
+      <pre style="font-size:.82rem;"><span class="kw">class</span> <span class="type">OrderService</span> {
+  <span class="kw">constructor</span>(
+    <span class="kw">private readonly</span> mailer: <span class="type">IMailer</span>
+    <span class="cmt">// interface, không phải class cụ thể</span>
+  ) {}
+  <span class="cmt">// Test: inject MockMailer</span>
+  <span class="cmt">// Prod: inject SendGridMailer</span>
+}</pre>
+    </div>
+  </div>
+</div>
+
+<!-- LAYERED ARCHITECTURE -->
+<div class="section">
+  <h2>🏛️ Layered Architecture</h2>
+  <p style="color:var(--muted);font-size:.9rem;margin-bottom:16px;">Dependency chỉ đi từ trên xuống dưới. Layer trên phụ thuộc layer dưới — không bao giờ ngược lại.</p>
+  <div class="layer-stack">
+    <div class="layer presentation">🎮 Presentation Layer <span class="layer-label">Controller, Resolver, Guard, Pipe</span></div>
+    <div class="layer application">⚙️ Application Layer <span class="layer-label">Service, UseCase, DTO</span></div>
+    <div class="layer domain">🧠 Domain Layer <span class="layer-label">Entity, Value Object, Domain Service</span></div>
+    <div class="layer infra">🔧 Infrastructure Layer <span class="layer-label">Repository, Mailer, Queue, Cache</span></div>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <p style="color:var(--muted);font-size:.9rem;">
+      <strong style="color:var(--teal);">Quy tắc:</strong> Domain layer KHÔNG được import anything từ Infrastructure. Domain là pure business logic. Infrastructure biết Domain, không phải ngược lại. Đây là Dependency Inversion (DIP trong SOLID).
+    </p>
+  </div>
+</div>
+
+<!-- TAKEAWAY -->
+<div class="takeaway">
+  <div class="takeaway-label">💡 Key Takeaway</div>
+  <p>Module = boundary của trách nhiệm. Dependency Injection = đừng bao giờ <code>new()</code> một service trực tiếp — inject interface, nhận implementation từ bên ngoài. Dependency chỉ một chiều, không circular. Layer trên phụ thuộc layer dưới, không bao giờ ngược.</p>
+</div>
+
+<!-- EXERCISE -->
+<div class="section">
+  <h2>🏋️ Bài Tập</h2>
+  <div class="exercise">
+    <div class="exercise-label">Thiết kế module graph</div>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:10px;">Cho e-commerce có: User, Product, Cart, Order, Payment, Notification. Vẽ module graph với:</p>
+    <ul style="color:var(--muted);font-size:.9rem;padding-left:20px;">
+      <li>Mỗi module exports gì, imports gì</li>
+      <li>Không có circular dependency</li>
+      <li>Notification module nhận events từ Order/Payment — không import trực tiếp (gợi ý: dùng Event Emitter)</li>
+    </ul>
+  </div>
+</div>
+
+<div class="next-nav">
+  <a href="02e-interface-abstraction.html" class="next-topic">
+    <div class="next-icon">🔌</div>
+    <div class="next-text">
+      <div class="label">Bài tiếp theo · 02e / 06</div>
+      <div class="title">Interface & Abstraction — contract trước implementation</div>
+    </div>
+    <span class="next-arrow">→</span>
+  </a>
+</div>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>08c — Auth & JWT | Phase 2</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #1a2235; --border: #2a3a55;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #a78bfa; --accent2: #818cf8;
+  --success: #34d399; --warning: #fbbf24; --error: #ef4444;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+.top-nav { position: sticky; top: 0; z-index: 100; background: rgba(14,21,37,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .6rem 1.5rem; font-size: .85rem; }
+.top-nav .breadcrumb { color: var(--muted); } .top-nav .breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a { padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-links a.next { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .75rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+
+/* JWT ANATOMY */
+.jwt-display { display: flex; flex-direction: column; gap: .5rem; }
+.jwt-parts { display: flex; gap: 4px; flex-wrap: wrap; }
+.jwt-part { padding: .4rem .6rem; border-radius: 6px; font-family: monospace; font-size: .72rem; cursor: pointer; transition: all .2s; word-break: break-all; }
+.jwt-part:hover { filter: brightness(1.15); }
+.jwt-header-part { background: rgba(239,68,68,.2); color: #ef4444; }
+.jwt-payload-part { background: rgba(251,191,36,.2); color: #fbbf24; }
+.jwt-sig-part { background: rgba(96,165,250,.2); color: #60a5fa; }
+.jwt-dot { color: var(--muted); font-weight: 700; align-self: center; }
+.jwt-decoded { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: .75rem; font-size: .8rem; display: none; }
+.jwt-decoded.show { display: block; }
+.jdk { color: #a78bfa; } .jdv { color: #34d399; } .jds { color: #6b7280; }
+
+/* FLOW STEPS */
+.auth-flow { display: flex; flex-direction: column; gap: .4rem; }
+.auth-step { display: flex; gap: .75rem; padding: .5rem .75rem; border-radius: 6px; font-size: .82rem; }
+.as-num { background: var(--accent); color: #fff; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 700; flex-shrink: 0; }
+.as-dir { font-weight: 700; min-width: 60px; flex-shrink: 0; font-size: .75rem; }
+.as-text { flex: 1; color: var(--muted); }
+
+/* COMPARE */
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.compare-card { border-radius: 8px; padding: 1rem; }
+
+/* CODE BLOCK */
+.code-block { background: #0a0f1e; border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; font-family: 'Courier New', monospace; font-size: .78rem; line-height: 1.7; overflow-x: auto; }
+.c-comment { color: #6b7280; } .c-kw { color: #818cf8; } .c-str { color: #34d399; }
+.c-fn { color: #fbbf24; } .c-type { color: #f472b6; } .c-deco { color: #fbbf24; }
+
+.exercise-box { background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.3); border-radius: var(--radius); padding: 1.5rem; }
+.exercise-box h2 { color: var(--accent2); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(129,140,248,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent2); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem; }
+
+.takeaway { background: rgba(167,139,250,.08); border: 1px solid rgba(167,139,250,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--accent); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '✦'; color: var(--accent); }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(14,21,37,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 2 · API · <span>08c — Auth &amp; JWT</span></div>
+  <div class="nav-links">
+    <a href="08b-status-codes.html">← Status Codes</a>
+    <a href="08d-pagination-validation.html" class="next">Pagination →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">08c · API Fundamentals</div>
+  <h1>Auth &amp; <em>JWT</em></h1>
+  <p>Authentication = "Anh là ai?" — JWT. Authorization = "Anh được phép làm gì?" — RBAC/ABAC. Hiểu rõ sự khác biệt trước khi code bất kỳ feature bảo mật nào.</p>
+</div>
+
+<div class="content">
+
+  <!-- AUTHN vs AUTHZ -->
+  <section>
+    <h2>Authentication vs Authorization</h2>
+    <div class="compare-grid">
+      <div class="compare-card" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3)">
+        <h3 style="color:#a78bfa;margin-bottom:.5rem">🔐 Authentication (AuthN)</h3>
+        <p style="font-size:.85rem;margin-bottom:.5rem">Xác minh danh tính: "Bạn là ai?"</p>
+        <ul style="list-style:none;font-size:.82rem">
+          <li style="padding:.2rem 0;color:var(--muted)">• Login: email + password</li>
+          <li style="padding:.2rem 0;color:var(--muted)">• Token: JWT, session cookie</li>
+          <li style="padding:.2rem 0;color:var(--muted)">• MFA: OTP, biometric</li>
+          <li style="padding:.2rem 0;color:var(--muted)">• OAuth: "Login với Google"</li>
+        </ul>
+        <div style="margin-top:.75rem;font-size:.8rem;color:#a78bfa">Status: 401 Unauthorized khi fail</div>
+      </div>
+      <div class="compare-card" style="background:rgba(52,211,153,.06);border:1px solid rgba(52,211,153,.3)">
+        <h3 style="color:#34d399;margin-bottom:.5rem">🛡️ Authorization (AuthZ)</h3>
+        <p style="font-size:.85rem;margin-bottom:.5rem">Kiểm tra quyền: "Bạn được làm gì?"</p>
+        <ul style="list-style:none;font-size:.82rem">
+          <li style="padding:.2rem 0;color:var(--muted)">• RBAC: role-based (admin, user)</li>
+          <li style="padding:.2rem 0;color:var(--muted)">• ABAC: attribute-based</li>
+          <li style="padding:.2rem 0;color:var(--muted)">• Resource ownership check</li>
+          <li style="padding:.2rem 0;color:var(--muted)">• Feature flags, scopes</li>
+        </ul>
+        <div style="margin-top:.75rem;font-size:.8rem;color:#34d399">Status: 403 Forbidden khi fail</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- JWT ANATOMY -->
+  <section>
+    <h2>JWT — Bấm vào từng phần để decode</h2>
+    <p>JWT = 3 phần nối bằng dấu chấm: Header.Payload.Signature. Base64URL encoded — không phải encrypted (không lưu secret ở đây!):</p>
+    <div class="card">
+      <div class="jwt-parts">
+        <div class="jwt-part jwt-header-part" onclick="showDecoded('header')">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9</div>
+        <div class="jwt-dot">.</div>
+        <div class="jwt-part jwt-payload-part" onclick="showDecoded('payload')">eyJ1c2VySWQiOiJ1c3JfMTIzIiwiZW1haWwiOiJkb0Bhc3Rvb2xzLmFwcCIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzI0MDAwMDAwLCJleHAiOjE3MjQwODY0MDB9</div>
+        <div class="jwt-dot">.</div>
+        <div class="jwt-part jwt-sig-part" onclick="showDecoded('sig')">SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c</div>
+      </div>
+      <div class="jwt-decoded" id="decoded-header">
+        <div style="font-size:.75rem;color:#ef4444;margin-bottom:.5rem">📋 Header (algorithm + type)</div>
+        <span class="jds">{</span><br>
+        &nbsp;&nbsp;<span class="jdk">"alg"</span>: <span class="jdv">"HS256"</span>, <span class="jds">// HMAC SHA-256</span><br>
+        &nbsp;&nbsp;<span class="jdk">"typ"</span>: <span class="jdv">"JWT"</span><br>
+        <span class="jds">}</span>
+      </div>
+      <div class="jwt-decoded" id="decoded-payload">
+        <div style="font-size:.75rem;color:#fbbf24;margin-bottom:.5rem">📦 Payload (claims — đọc được, không secret!)</div>
+        <span class="jds">{</span><br>
+        &nbsp;&nbsp;<span class="jdk">"userId"</span>: <span class="jdv">"usr_123"</span>,<br>
+        &nbsp;&nbsp;<span class="jdk">"email"</span>: <span class="jdv">"do@astools.app"</span>,<br>
+        &nbsp;&nbsp;<span class="jdk">"role"</span>: <span class="jdv">"user"</span>,<br>
+        &nbsp;&nbsp;<span class="jdk">"iat"</span>: <span class="jdv">1724000000</span>, <span class="jds">// issued at</span><br>
+        &nbsp;&nbsp;<span class="jdk">"exp"</span>: <span class="jdv">1724086400</span> <span class="jds">// expires at (24h)</span><br>
+        <span class="jds">}</span>
+      </div>
+      <div class="jwt-decoded" id="decoded-sig">
+        <div style="font-size:.75rem;color:#60a5fa;margin-bottom:.5rem">🔏 Signature (không thể fake nếu không có secret)</div>
+        <code style="font-size:.78rem;color:var(--muted)">HMACSHA256(<br>&nbsp;&nbsp;base64(header) + "." + base64(payload),<br>&nbsp;&nbsp;SECRET_KEY  ← chỉ server biết<br>)</code><br><br>
+        <span style="font-size:.78rem;color:var(--muted)">Thay đổi payload → signature không match → token invalid. Không thể forge.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- AUTH FLOW -->
+  <section>
+    <h2>JWT Auth Flow — Login đến Protected Resource</h2>
+    <div class="card">
+      <div class="auth-flow">
+        <div class="auth-step" style="background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2)">
+          <span class="as-num">1</span>
+          <span class="as-dir" style="color:#a78bfa">→ Client</span>
+          <span class="as-text">POST /auth/login { email, password }</span>
+        </div>
+        <div class="auth-step" style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.2)">
+          <span class="as-num" style="background:#fbbf24">2</span>
+          <span class="as-dir" style="color:#fbbf24">⚙️ Server</span>
+          <span class="as-text">Verify password → hash compare. Generate JWT với userId, role. Sign với SECRET_KEY.</span>
+        </div>
+        <div class="auth-step" style="background:rgba(52,211,153,.05);border:1px solid rgba(52,211,153,.2)">
+          <span class="as-num" style="background:#34d399;color:#000">3</span>
+          <span class="as-dir" style="color:#34d399">← Response</span>
+          <span class="as-text">{ accessToken: "eyJ...", refreshToken: "..." }</span>
+        </div>
+        <div class="auth-step" style="background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2)">
+          <span class="as-num">4</span>
+          <span class="as-dir" style="color:#a78bfa">→ Client</span>
+          <span class="as-text">GET /api/orders — Authorization: Bearer eyJ...</span>
+        </div>
+        <div class="auth-step" style="background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.2)">
+          <span class="as-num" style="background:#fbbf24">5</span>
+          <span class="as-dir" style="color:#fbbf24">⚙️ Guard</span>
+          <span class="as-text">Verify signature với SECRET_KEY. Check exp. Extract payload → req.user.</span>
+        </div>
+        <div class="auth-step" style="background:rgba(52,211,153,.05);border:1px solid rgba(52,211,153,.2)">
+          <span class="as-num" style="background:#34d399;color:#000">6</span>
+          <span class="as-dir" style="color:#34d399">← Response</span>
+          <span class="as-text">200 + orders data (scoped to req.user.userId)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NESTJS CODE -->
+  <section>
+    <h2>JWT Guard — NestJS</h2>
+    <div class="code-block">
+<span class="c-comment">// auth.guard.ts</span>
+<span class="c-kw">@Injectable</span>()
+<span class="c-kw">export class</span> <span class="c-type">JwtAuthGuard</span> <span class="c-kw">extends</span> <span class="c-type">AuthGuard</span>(<span class="c-str">'jwt'</span>) {}
+
+<span class="c-comment">// JWT Strategy</span>
+<span class="c-kw">@Injectable</span>()
+<span class="c-kw">export class</span> <span class="c-type">JwtStrategy</span> <span class="c-kw">extends</span> <span class="c-type">PassportStrategy</span>(Strategy) {
+  <span class="c-fn">constructor</span>() {
+    <span class="c-kw">super</span>({ secretOrKey: process.env.JWT_SECRET, jwtFromRequest: ExtractJwt.<span class="c-fn">fromAuthHeaderAsBearerToken</span>() });
+  }
+  <span class="c-fn">validate</span>(payload: <span class="c-type">JwtPayload</span>) {
+    <span class="c-kw">return</span> { userId: payload.userId, role: payload.role };
+  }
+}
+
+<span class="c-comment">// Protected Controller</span>
+<span class="c-kw">@UseGuards</span>(<span class="c-type">JwtAuthGuard</span>)
+<span class="c-kw">@Get</span>(<span class="c-str">'profile'</span>)
+<span class="c-fn">getProfile</span>(<span class="c-kw">@CurrentUser</span>() user: <span class="c-type">User</span>) {
+  <span class="c-kw">return</span> <span class="c-kw">this</span>.service.<span class="c-fn">getProfile</span>(user.userId);
+}</div>
+  </section>
+
+  <!-- BEST PRACTICES -->
+  <section>
+    <h2>JWT Security Best Practices</h2>
+    <div class="card">
+      <div style="display:flex;flex-direction:column;gap:.5rem;font-size:.85rem">
+        <div style="padding:.5rem;background:rgba(52,211,153,.06);border-left:3px solid #34d399;border-radius:0 6px 6px 0">✅ <strong>Access token ngắn</strong> (15-60 phút) + Refresh token dài (7-30 ngày) để giảm exposure window</div>
+        <div style="padding:.5rem;background:rgba(52,211,153,.06);border-left:3px solid #34d399;border-radius:0 6px 6px 0">✅ <strong>Lưu token an toàn</strong>: HttpOnly cookie (web) hoặc SecureStorage (mobile). Không localStorage!</div>
+        <div style="padding:.5rem;background:rgba(52,211,153,.06);border-left:3px solid #34d399;border-radius:0 6px 6px 0">✅ <strong>JWT payload chỉ chứa non-sensitive data</strong>: userId, role. Không password, không PII.</div>
+        <div style="padding:.5rem;background:rgba(239,68,68,.06);border-left:3px solid #ef4444;border-radius:0 6px 6px 0">❌ <strong>Không để SECRET_KEY trong code</strong> — chỉ environment variable. Rotate định kỳ.</div>
+        <div style="padding:.5rem;background:rgba(239,68,68,.06);border-left:3px solid #ef4444;border-radius:0 6px 6px 0">❌ <strong>Không tin payload trước khi verify signature</strong> — attacker có thể modify payload nếu dùng algorithm=none.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXERCISE -->
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — Implement JWT Auth</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Cài <code>@nestjs/jwt, @nestjs/passport, passport-jwt</code>. Configure JwtModule với SECRET từ env.</li>
+      <li><span class="step-num">2</span>Implement login endpoint: verify password (bcrypt.compare) → sign JWT với {userId, role, exp: '1h'}.</li>
+      <li><span class="step-num">3</span>Tạo JwtAuthGuard và @CurrentUser() decorator. Apply guard lên 1 protected route.</li>
+      <li><span class="step-num">4</span>Test: gửi request với expired token → verify 401. Với valid token của user A để xem data user B → verify 403.</li>
+      <li><span class="step-num">5</span>Bonus: implement refresh token rotation. Khi access token expire → use refresh token để lấy access token mới.</li>
+    </ul>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>Authentication (401) = xác minh danh tính. Authorization (403) = kiểm tra quyền. Hai khái niệm độc lập.</li>
+      <li>JWT = Header.Payload.Signature. Payload đọc được (không secret), Signature đảm bảo integrity.</li>
+      <li>Access token ngắn (1h) + Refresh token dài (7d). Lưu trong HttpOnly cookie, không localStorage.</li>
+      <li>Payload chỉ chứa non-sensitive data — không password, không card numbers.</li>
+      <li>Verify signature TRƯỚC KHI trust payload. Không bao giờ dùng algorithm=none.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="08b-status-codes.html">← Status Codes</a>
+  <div class="progress-dots">
+    <div class="dot"></div><div class="dot"></div>
+    <div class="dot active"></div><div class="dot"></div>
+  </div>
+  <a href="08d-pagination-validation.html" class="next">Pagination →</a>
+</div>
+
+<script>
+function showDecoded(part) {
+  document.querySelectorAll('.jwt-decoded').forEach(d => d.classList.remove('show'));
+  document.getElementById('decoded-' + part).classList.add('show');
+}
+</script>
+</body>
+</html>

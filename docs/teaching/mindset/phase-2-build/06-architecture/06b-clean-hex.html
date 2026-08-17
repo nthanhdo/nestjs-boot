@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06b — Clean & Hexagonal Architecture | Phase 2</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #1a2235; --border: #2a3a55;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #60a5fa; --accent2: #818cf8;
+  --success: #34d399; --warning: #fbbf24; --error: #ef4444;
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+.top-nav { position: sticky; top: 0; z-index: 100; background: rgba(14,21,37,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .6rem 1.5rem; font-size: .85rem; }
+.top-nav .breadcrumb { color: var(--muted); } .top-nav .breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a { padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-links a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .75rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+
+/* CLEAN ARCH CIRCLES */
+.clean-arch { position: relative; width: 320px; height: 320px; margin: 0 auto; }
+.circle {
+  position: absolute; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+  cursor: pointer; transition: all .2s;
+  text-align: center; font-size: .75rem; font-weight: 600;
+}
+.circle:hover { filter: brightness(1.2); }
+.circle-entity { width: 120px; height: 120px; background: rgba(244,114,182,.2); border: 2px solid #f472b6; color: #f472b6; }
+.circle-usecase { width: 190px; height: 190px; background: rgba(96,165,250,.1); border: 2px solid #60a5fa; color: #60a5fa; }
+.circle-interface { width: 255px; height: 255px; background: rgba(129,140,248,.07); border: 2px solid #818cf8; color: #818cf8; }
+.circle-framework { width: 318px; height: 318px; background: rgba(52,211,153,.05); border: 2px solid #34d399; color: #34d399; }
+.circle-label { position: absolute; }
+.circle-entity .circle-label { top: 35%; }
+.circle-usecase .circle-label { top: 8%; }
+.circle-interface .circle-label { top: 6%; }
+.circle-framework .circle-label { top: 5%; }
+.circle-detail { font-size: .6rem; opacity: .7; font-weight: 400; display: block; margin-top: 2px; }
+
+/* HEX DIAGRAM */
+.hex-diagram { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .5rem; }
+.hex-center { background: rgba(244,114,182,.12); border: 2px solid #f472b6; border-radius: 8px; padding: .75rem; text-align: center; grid-column: 2; font-size: .8rem; color: #f472b6; font-weight: 700; }
+.hex-adapter { background: rgba(96,165,250,.1); border: 1px solid rgba(96,165,250,.4); border-radius: 8px; padding: .6rem; text-align: center; font-size: .72rem; color: #60a5fa; }
+.hex-arrow-row { display: flex; justify-content: center; gap: .5rem; align-items: center; }
+.hex-arrow { color: var(--muted); font-size: .9rem; }
+.hex-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: .5rem; align-items: center; margin: .25rem 0; }
+
+/* DEPENDENCY INVERSION */
+.di-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.di-card { border-radius: 8px; padding: 1rem; }
+.di-bad { background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.3); }
+.di-good { background: rgba(52,211,153,.08); border: 1px solid rgba(52,211,153,.3); }
+.di-title { font-size: .8rem; font-weight: 700; margin-bottom: .5rem; }
+.di-bad .di-title { color: #ef4444; }
+.di-good .di-title { color: #34d399; }
+
+.code-block { background: #0a0f1e; border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; font-family: 'Courier New', monospace; font-size: .78rem; line-height: 1.7; overflow-x: auto; }
+.c-comment { color: #6b7280; } .c-class { color: #60a5fa; } .c-fn { color: #fbbf24; }
+.c-kw { color: #818cf8; } .c-str { color: #34d399; } .c-type { color: #f472b6; }
+
+.exercise-box { background: rgba(129,140,248,.08); border: 1px solid rgba(129,140,248,.3); border-radius: var(--radius); padding: 1.5rem; }
+.exercise-box h2 { color: var(--accent2); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(129,140,248,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent2); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; margin-top: .1rem; }
+
+.takeaway { background: rgba(96,165,250,.08); border: 1px solid rgba(96,165,250,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--accent); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '✦'; color: var(--accent); }
+
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(14,21,37,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 2 · Architecture · <span>06b — Clean &amp; Hexagonal</span></div>
+  <div class="nav-links">
+    <a href="06a-layered.html">← Layered</a>
+    <a href="06c-monolith-vs-micro.html" class="next">Monolith vs Micro →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">06b · Architecture</div>
+  <h1>Clean &amp; <em>Hexagonal</em></h1>
+  <p>Clean Architecture của Robert Martin và Hexagonal (Ports &amp; Adapters) của Alistair Cockburn cùng một triết lý: domain logic hoàn toàn độc lập với framework, DB, UI.</p>
+</div>
+
+<div class="content">
+
+  <!-- CLEAN ARCH CIRCLES -->
+  <section>
+    <h2>Clean Architecture — Vòng tròn đồng tâm</h2>
+    <p>Dependency rule tuyệt đối: code ở vòng ngoài phụ thuộc vào vòng trong, <strong>không bao giờ ngược lại</strong>. Bấm vào từng vòng:</p>
+    <div class="card" style="overflow:hidden">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:center">
+        <div class="clean-arch">
+          <div class="circle circle-framework" onclick="showRing('framework')">
+            <div class="circle-label" style="top:5%">🌐 Frameworks &amp; Drivers<span class="circle-detail">Express, NestJS, MongoDB</span></div>
+          </div>
+          <div class="circle circle-interface" onclick="showRing('interface')">
+            <div class="circle-label" style="top:7%">🔌 Interface Adapters<span class="circle-detail">Controllers, Repositories</span></div>
+          </div>
+          <div class="circle circle-usecase" onclick="showRing('usecase')">
+            <div class="circle-label" style="top:10%">⚙️ Use Cases<span class="circle-detail">Application Logic</span></div>
+          </div>
+          <div class="circle circle-entity" onclick="showRing('entity')">
+            <div class="circle-label">🏛️ Entities<span class="circle-detail">Business Rules</span></div>
+          </div>
+        </div>
+        <div>
+          <div id="ring-desc" style="font-size:.85rem;color:var(--muted);line-height:1.7">
+            ← Bấm vào từng vòng để xem trách nhiệm.<br><br>
+            Quy tắc vàng: <strong style="color:var(--accent)">phụ thuộc chỉ đi vào trong</strong>. Entity không bao giờ import NestJS hay Mongoose.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HEXAGONAL -->
+  <section>
+    <h2>Hexagonal Architecture — Ports &amp; Adapters</h2>
+    <p>Core domain ở trung tâm, giao tiếp ra ngoài qua <strong>Ports</strong> (interfaces). Adapter implement Port — swap adapter mà không đụng core.</p>
+    <div class="card">
+      <div style="text-align:center;margin-bottom:1rem">
+        <div class="hex-row">
+          <div class="hex-adapter">🌐 HTTP Controller</div>
+          <div class="hex-arrow">→</div>
+          <div class="hex-adapter">📨 Message Queue</div>
+        </div>
+        <div style="display:flex;justify-content:center;align-items:center;gap:1rem;margin:.5rem 0">
+          <div style="font-size:.7rem;color:var(--muted)">Port (Interface)</div>
+          <div style="font-size:1.5rem;color:var(--muted)">⬇⬆</div>
+          <div style="font-size:.7rem;color:var(--muted)">Port (Interface)</div>
+        </div>
+        <div style="background:rgba(244,114,182,.12);border:2px solid #f472b6;border-radius:12px;padding:1rem;display:inline-block;min-width:180px">
+          <div style="color:#f472b6;font-weight:700;font-size:.9rem">🏛️ Core Domain</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.25rem">ProductService, OrderService<br>Business Rules, Entities</div>
+        </div>
+        <div style="display:flex;justify-content:center;align-items:center;gap:1rem;margin:.5rem 0">
+          <div style="font-size:1.5rem;color:var(--muted)">⬇⬆</div>
+          <div style="font-size:1.5rem;color:var(--muted)">⬇⬆</div>
+        </div>
+        <div class="hex-row">
+          <div class="hex-adapter">🗄️ MongoDB Adapter</div>
+          <div class="hex-arrow">←→</div>
+          <div class="hex-adapter">🔴 Redis Adapter</div>
+        </div>
+      </div>
+      <p style="font-size:.85rem">
+        <strong>Port</strong> = Interface định nghĩa contract. <strong>Adapter</strong> = Implementation cụ thể.<br>
+        Core chỉ biết Port — không biết MongoDB hay Redis cụ thể là gì.
+      </p>
+    </div>
+  </section>
+
+  <!-- DEPENDENCY INVERSION -->
+  <section>
+    <h2>Dependency Inversion Principle (DIP)</h2>
+    <p>High-level modules không phụ thuộc low-level modules — cả hai phụ thuộc vào <strong>abstractions</strong>.</p>
+    <div class="di-compare">
+      <div class="di-card di-bad">
+        <div class="di-title">❌ Service biết MongoProductRepo</div>
+        <div class="code-block" style="font-size:.72rem">
+<span class="c-kw">class</span> <span class="c-class">ProductService</span> {
+  <span class="c-fn">constructor</span>() {
+    <span class="c-comment">// hardcoded MongoDB!</span>
+    <span class="c-kw">this</span>.repo = <span class="c-kw">new</span> <span class="c-class">MongoProductRepo</span>();
+  }
+}</div>
+      </div>
+      <div class="di-card di-good">
+        <div class="di-title">✅ Service phụ thuộc Interface</div>
+        <div class="code-block" style="font-size:.72rem">
+<span class="c-kw">interface</span> <span class="c-type">IProductRepository</span> {
+  findById(id): <span class="c-type">Promise&lt;Product&gt;</span>;
+}
+
+<span class="c-kw">class</span> <span class="c-class">ProductService</span> {
+  <span class="c-fn">constructor</span>(
+    <span class="c-kw">private</span> repo: <span class="c-type">IProductRepository</span>
+  ) {} <span class="c-comment">// injected!</span>
+}</div>
+      </div>
+    </div>
+    <p style="margin-top:.75rem;font-size:.85rem">Kết quả: test dễ (inject MockRepo), production dùng MongoRepo. Swap PostgreSQL? Tạo <code>PgProductRepo implements IProductRepository</code>.</p>
+  </section>
+
+  <!-- WHEN TO USE -->
+  <section>
+    <h2>Khi nào dùng Clean / Hexagonal?</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="card" style="border-left:3px solid var(--success)">
+        <p style="color:var(--success);font-weight:600;margin-bottom:.5rem">✅ Nên dùng khi:</p>
+        <ul style="list-style:none;font-size:.85rem">
+          <li style="padding:.3rem 0;color:var(--muted)">• Domain phức tạp, nhiều business rules</li>
+          <li style="padding:.3rem 0;color:var(--muted)">• Team lớn, cần testability cao</li>
+          <li style="padding:.3rem 0;color:var(--muted)">• DB/framework có thể thay đổi</li>
+          <li style="padding:.3rem 0;color:var(--muted)">• Long-lived project (2+ năm)</li>
+        </ul>
+      </div>
+      <div class="card" style="border-left:3px solid var(--warning)">
+        <p style="color:var(--warning);font-weight:600;margin-bottom:.5rem">⚠️ Over-engineering khi:</p>
+        <ul style="list-style:none;font-size:.85rem">
+          <li style="padding:.3rem 0;color:var(--muted)">• MVP / prototype, deadline gấp</li>
+          <li style="padding:.3rem 0;color:var(--muted)">• Solo developer, đơn giản</li>
+          <li style="padding:.3rem 0;color:var(--muted)">• CRUD-heavy, ít business logic</li>
+          <li style="padding:.3rem 0;color:var(--muted)">• Short-lived (script, tools)</li>
+        </ul>
+      </div>
+    </div>
+    <p style="font-size:.85rem;margin-top:.75rem">Rule: start với Layered Architecture (06a). Migrate sang Clean/Hex khi domain phức tạp lên và team cần isolation.</p>
+  </section>
+
+  <!-- EXERCISE -->
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — Interface Abstraction</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Chọn 1 Service trong project. Tạo interface <code>IXxxRepository</code> với các methods cần thiết.</li>
+      <li><span class="step-num">2</span>Rename Repository hiện tại thành <code>MongoXxxRepository implements IXxxRepository</code>.</li>
+      <li><span class="step-num">3</span>Tạo <code>MockXxxRepository implements IXxxRepository</code> với data in-memory. Dùng cho unit test.</li>
+      <li><span class="step-num">4</span>Verify Service không import Mongoose trực tiếp — chỉ thấy Interface type.</li>
+      <li><span class="step-num">5</span>Câu hỏi tư duy: nếu phải switch từ MongoDB sang PostgreSQL, bao nhiêu file phải thay đổi với approach này vs approach cũ?</li>
+    </ul>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>Clean Arch: dependency đi vào trong — Entity không biết Framework. Không bao giờ ngược lại.</li>
+      <li>Hexagonal: Core domain giao tiếp qua Ports (Interfaces). Adapter implement Port từ bên ngoài.</li>
+      <li>DIP: High-level modules phụ thuộc abstractions, không phụ thuộc concrete implementations.</li>
+      <li>Lợi ích thực tế: testability, swappability, isolation. Chi phí: nhiều code hơn, learning curve cao.</li>
+      <li>Start đơn giản (Layered) → evolve khi cần. Don't over-engineer MVP.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="06a-layered.html">← Layered</a>
+  <div class="progress-dots">
+    <div class="dot"></div><div class="dot active"></div>
+    <div class="dot"></div><div class="dot"></div>
+  </div>
+  <a href="06c-monolith-vs-micro.html" class="next">Monolith vs Micro →</a>
+</div>
+
+<script>
+const ringData = {
+  entity: { color: '#f472b6', text: '<strong style="color:#f472b6">Entities</strong> — Business rules, domain objects. Không import gì ngoài pure TypeScript/Python. Ví dụ: Product, Order, User models với business logic thuần. Không biết HTTP, không biết DB.' },
+  usecase: { color: '#60a5fa', text: '<strong style="color:#60a5fa">Use Cases</strong> — Application-specific business logic. Orchestrate Entities. Ví dụ: PlaceOrderUseCase, GetProductUseCase. Biết Entities, không biết HTTP hay DB.' },
+  interface: { color: '#818cf8', text: '<strong style="color:#818cf8">Interface Adapters</strong> — Convert data giữa Use Cases và Frameworks. Controllers, Presenters, Repository implementations. Biết HTTP format, biết DB format.' },
+  framework: { color: '#34d399', text: '<strong style="color:#34d399">Frameworks & Drivers</strong> — Express, NestJS, MongoDB, Redis, UI frameworks. Tất cả "infrastructure details" ở đây. Swap được mà không đụng inner circles.' },
+};
+function showRing(id) {
+  const r = ringData[id];
+  document.getElementById('ring-desc').innerHTML = r.text;
+}
+</script>
+</body>
+</html>

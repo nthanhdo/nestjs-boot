@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03d — SOLID Principles | Clean Code</title>
+<style>
+:root{--bg:#0e1525;--surface:#151d32;--surface2:#1c2744;--border:#2a3a5c;--text:#eef1f8;--muted:#8899bb;--accent:#a78bfa;--green:#2ecc71;--red:#e74c3c;--blue:#5b8def;--orange:#ffb347;--teal:#00cec9;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.top-nav{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:10px 24px;font-size:.85rem;}
+.top-nav a{color:var(--accent);text-decoration:none;padding:4px 10px;border-radius:6px;border:1px solid transparent;transition:.2s;}
+.top-nav a:hover{border-color:var(--accent);background:#a78bfa18;}
+.nav-center{color:var(--muted);font-size:.8rem;}
+.hero{padding:48px 24px 32px;max-width:860px;margin:0 auto;animation:fadeUp .5s ease;}
+.lesson-tag{display:inline-block;background:#a78bfa22;color:var(--accent);border:1px solid #a78bfa44;border-radius:20px;padding:4px 14px;font-size:.8rem;margin-bottom:16px;}
+h1{font-size:2rem;margin-bottom:8px;}h1 span{color:var(--accent);}
+.subtitle{color:var(--muted);font-size:1rem;margin-bottom:32px;}
+.section{max-width:860px;margin:0 auto 40px;padding:0 24px;}
+h2{font-size:1.2rem;color:var(--accent);margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+pre{background:#0a0f1e;border:1px solid var(--border);border-radius:10px;padding:20px;overflow-x:auto;font-size:.88rem;line-height:1.7;}
+.kw{color:#79b8ff;}.fn{color:#b392f0;}.str{color:#9ecbff;}.num{color:var(--orange);}.cmt{color:#6a737d;font-style:italic;}.type{color:var(--teal);}
+
+/* SOLID CARDS */
+.solid-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;}
+@media(max-width:600px){.solid-grid{grid-template-columns:1fr;}}
+.solid-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:.3s;}
+.solid-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.solid-card.expanded{border-color:var(--accent);background:rgba(167,139,250,.06);}
+.solid-letter{font-size:2.5rem;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--blue));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.solid-name{font-size:.95rem;font-weight:700;color:var(--text);margin:4px 0;}
+.solid-short{font-size:.8rem;color:var(--muted);line-height:1.5;}
+.solid-detail{display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+.solid-card.expanded .solid-detail{display:block;}
+
+.takeaway{background:linear-gradient(135deg,#a78bfa15,#5b8def10);border:1px solid #a78bfa44;border-radius:12px;padding:20px 24px;margin:32px auto;max-width:860px;}
+.takeaway-label{font-size:.75rem;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;}
+.exercise{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:10px;padding:20px;margin-top:16px;}
+.exercise-label{font-size:.75rem;color:var(--orange);font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+.next-nav{max-width:860px;margin:0 auto 60px;padding:0 24px;}
+.next-topic{display:flex;align-items:center;gap:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;text-decoration:none;color:var(--text);transition:.2s;}
+.next-topic:hover{border-color:var(--accent);background:#a78bfa08;}
+.next-icon{font-size:2rem;}.next-text .label{font-size:.75rem;color:var(--muted);}.next-text .title{font-size:1rem;font-weight:600;color:var(--accent);}.next-arrow{margin-left:auto;font-size:1.4rem;color:var(--accent);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <a href="03c-dry-kiss-yagni.html">← 03c DRY/KISS/YAGNI</a>
+  <span class="nav-center">Bài 03 · SOLID · 03d / 07</span>
+  <a href="03e-code-smells.html">03e Code Smells →</a>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">Bài 03d / 07 · Clean Code</div>
+  <h1>🏛️ SOLID <span>Principles</span></h1>
+  <p class="subtitle">5 nguyên tắc OOP giúp code linh hoạt, dễ mở rộng, ít bug. Bắt đầu với S và D — 80% benefit từ 2 nguyên tắc này. Click từng card để xem chi tiết.</p>
+</div>
+
+<div class="section">
+  <h2>🎯 5 Nguyên Tắc SOLID</h2>
+  <div class="solid-grid">
+    <div class="solid-card" onclick="this.classList.toggle('expanded')">
+      <div class="solid-letter">S</div>
+      <div class="solid-name">Single Responsibility</div>
+      <div class="solid-short">Mỗi class chỉ có 1 lý do để thay đổi</div>
+      <div class="solid-detail">
+        <pre style="font-size:.8rem;"><span class="cmt">// ❌ UserService làm quá nhiều</span>
+<span class="kw">class</span> <span class="type">UserService</span> {
+  <span class="fn">getUser</span>() { ... }
+  <span class="fn">sendEmail</span>() { ... }    <span class="cmt">← sai chỗ</span>
+  <span class="fn">generatePDF</span>() { ... }  <span class="cmt">← sai chỗ</span>
+}
+<span class="cmt">// ✅ Mỗi service 1 việc</span>
+<span class="type">UserService</span>, <span class="type">MailService</span>, <span class="type">PdfService</span></pre>
+      </div>
+    </div>
+
+    <div class="solid-card" onclick="this.classList.toggle('expanded')">
+      <div class="solid-letter">O</div>
+      <div class="solid-name">Open/Closed</div>
+      <div class="solid-short">Mở để mở rộng, đóng để sửa đổi</div>
+      <div class="solid-detail">
+        <pre style="font-size:.8rem;"><span class="cmt">// Thêm shape mới không cần sửa code cũ</span>
+<span class="kw">interface</span> <span class="type">Shape</span> {
+  <span class="fn">area</span>(): <span class="type">number</span>
+}
+<span class="kw">class</span> <span class="type">Circle</span> <span class="kw">implements</span> <span class="type">Shape</span> {
+  <span class="fn">area</span>() { <span class="kw">return</span> Math.PI * <span class="kw">this</span>.r ** <span class="num">2</span> }
+}
+<span class="kw">class</span> <span class="type">Square</span> <span class="kw">implements</span> <span class="type">Shape</span> { ... }
+<span class="cmt">// Thêm Triangle: không sửa Circle/Square</span></pre>
+      </div>
+    </div>
+
+    <div class="solid-card" onclick="this.classList.toggle('expanded')">
+      <div class="solid-letter">L</div>
+      <div class="solid-name">Liskov Substitution</div>
+      <div class="solid-short">Subclass thay thế được parent class</div>
+      <div class="solid-detail">
+        <pre style="font-size:.8rem;"><span class="cmt">// Code dùng Bird phải hoạt động</span>
+<span class="cmt">// với mọi subclass của Bird</span>
+<span class="kw">function</span> <span class="fn">makeFly</span>(bird: <span class="type">Bird</span>) {
+  bird.<span class="fn">fly</span>() <span class="cmt">// phải work</span>
+}
+<span class="cmt">// ❌ Penguin extends Bird → fly() throws!</span>
+<span class="cmt">// Fix: Penguin extends NonFlyingBird</span>
+<span class="cmt">// hoặc dùng IFlyable interface</span></pre>
+      </div>
+    </div>
+
+    <div class="solid-card" onclick="this.classList.toggle('expanded')">
+      <div class="solid-letter">I</div>
+      <div class="solid-name">Interface Segregation</div>
+      <div class="solid-short">Nhiều interface nhỏ hơn 1 interface lớn</div>
+      <div class="solid-detail">
+        <pre style="font-size:.8rem;"><span class="cmt">// ❌ 1 interface quá rộng</span>
+<span class="kw">interface</span> <span class="type">Worker</span> {
+  <span class="fn">work</span>(): <span class="kw">void</span>
+  <span class="fn">eat</span>(): <span class="kw">void</span>
+  <span class="fn">sleep</span>(): <span class="kw">void</span>
+}
+<span class="cmt">// ✅ Tách nhỏ</span>
+<span class="kw">interface</span> <span class="type">Workable</span> { <span class="fn">work</span>(): <span class="kw">void</span> }
+<span class="kw">interface</span> <span class="type">Feedable</span> { <span class="fn">eat</span>(): <span class="kw">void</span> }
+<span class="cmt">// Robot implements Workable, không cần eat()</span></pre>
+      </div>
+    </div>
+
+    <div class="solid-card" onclick="this.classList.toggle('expanded')" style="grid-column:1/-1;">
+      <div class="solid-letter">D</div>
+      <div class="solid-name">Dependency Inversion</div>
+      <div class="solid-short">Depend on abstractions, not concretions. High-level không phụ thuộc low-level.</div>
+      <div class="solid-detail">
+        <pre style="font-size:.82rem;"><span class="cmt">// ❌ Tight coupling — gắn với MySQL</span>
+<span class="kw">class</span> <span class="type">OrderService</span> {
+  <span class="kw">private</span> db = <span class="kw">new</span> <span class="type">MySQLDatabase</span>()  <span class="cmt">← bad</span>
+}
+
+<span class="cmt">// ✅ Inject dependency — dùng interface</span>
+<span class="kw">class</span> <span class="type">OrderService</span> {
+  <span class="kw">constructor</span>(<span class="kw">private</span> db: <span class="type">IDatabase</span>) {}
+  <span class="cmt">// Test: inject MockDatabase ✓</span>
+  <span class="cmt">// Prod: inject MongoDatabase ✓</span>
+  <span class="cmt">// Swap DB: không sửa OrderService ✓</span>
+}</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRIORITY -->
+<div class="section">
+  <h2>⭐ Học Theo Thứ Tự Ưu Tiên</h2>
+  <div style="display:flex;flex-direction:column;gap:10px;">
+    <div style="display:flex;align-items:center;gap:12px;background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.3);border-radius:10px;padding:14px;">
+      <div style="font-size:1.5rem;font-weight:900;color:var(--green);">S + D</div>
+      <div>
+        <div style="font-size:.85rem;font-weight:600;">Bắt đầu từ đây — 80% benefit</div>
+        <div style="color:var(--muted);font-size:.82rem;">SRP: mỗi class 1 trách nhiệm. DIP: inject dependency qua interface.</div>
+      </div>
+      <div style="margin-left:auto;background:rgba(46,204,113,.2);color:var(--green);border-radius:6px;padding:3px 10px;font-size:.75rem;">P0</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:rgba(255,183,71,.06);border:1px solid rgba(255,183,71,.25);border-radius:10px;padding:14px;">
+      <div style="font-size:1.5rem;font-weight:900;color:var(--orange);">O + I</div>
+      <div>
+        <div style="font-size:.85rem;font-weight:600;">Khi hệ thống cần mở rộng</div>
+        <div style="color:var(--muted);font-size:.82rem;">OCP: plugin-style extension. ISP: interface nhỏ, focused.</div>
+      </div>
+      <div style="margin-left:auto;background:rgba(255,183,71,.2);color:var(--orange);border-radius:6px;padding:3px 10px;font-size:.75rem;">P1</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;">
+      <div style="font-size:1.5rem;font-weight:900;color:var(--muted);">L</div>
+      <div>
+        <div style="font-size:.85rem;font-weight:600;">Khi dùng inheritance</div>
+        <div style="color:var(--muted);font-size:.82rem;">LSP: subclass phải behave như parent. Ưu tiên composition over inheritance.</div>
+      </div>
+      <div style="margin-left:auto;background:var(--surface2);color:var(--muted);border-radius:6px;padding:3px 10px;font-size:.75rem;">P2</div>
+    </div>
+  </div>
+</div>
+
+<div class="takeaway">
+  <div class="takeaway-label">💡 Key Takeaway</div>
+  <p>SOLID không phải rules phải follow mọi lúc — đây là guidelines. Áp dụng khi thấy code khó test, khó thay đổi, hay break. Bắt đầu với S và D — 80% giá trị. Khi thấy <code>new MySQLDatabase()</code> trong service → DIP violation → inject interface thay thế.</p>
+</div>
+
+<div class="section">
+  <h2>🏋️ Bài Tập</h2>
+  <div class="exercise">
+    <div class="exercise-label">Áp dụng SRP cho UserService vi phạm</div>
+    <pre style="font-size:.82rem;"><span class="kw">class</span> <span class="type">UserService</span> {
+  <span class="fn">createUser</span>(data) { ... }    <span class="cmt">// DB operation</span>
+  <span class="fn">deleteUser</span>(id) { ... }      <span class="cmt">// DB operation</span>
+  <span class="fn">sendWelcomeEmail</span>(user) { ... } <span class="cmt">// Email</span>
+  <span class="fn">sendResetEmail</span>(email) { ... }  <span class="cmt">// Email</span>
+  <span class="fn">hashPassword</span>(pw) { ... }    <span class="cmt">// Security</span>
+  <span class="fn">generateToken</span>(user) { ... } <span class="cmt">// Auth</span>
+  <span class="fn">exportToPDF</span>(users) { ... }  <span class="cmt">// Report</span>
+}</pre>
+    <p style="color:var(--muted);font-size:.9rem;margin-top:10px;">Yêu cầu: (1) Phân nhóm theo responsibility, (2) Đặt tên các service mới, (3) Viết interface cho mỗi service.</p>
+  </div>
+</div>
+
+<div class="next-nav">
+  <a href="03e-code-smells.html" class="next-topic">
+    <div class="next-icon">🔍</div>
+    <div class="next-text">
+      <div class="label">Bài tiếp theo · 03e / 07</div>
+      <div class="title">Code Smells — nhận diện dấu hiệu cảnh báo</div>
+    </div>
+    <span class="next-arrow">→</span>
+  </a>
+</div>
+</body>
+</html>

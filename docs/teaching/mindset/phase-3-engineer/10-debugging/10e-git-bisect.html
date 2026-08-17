@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10e — Git Bisect | Phase 3</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--accent:#58a6ff;--success:#3fb950;--warning:#d29922;--error:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.progress-bar{position:fixed;top:0;left:0;width:100%;height:3px;background:var(--border);z-index:100;}
+.progress-fill{height:100%;background:var(--accent);width:0;transition:width .1s;}
+nav{position:sticky;top:3px;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:90;}
+nav .brand{font-weight:700;color:var(--accent);font-size:.9rem;}
+nav .links a{color:var(--muted);text-decoration:none;margin-left:1.2rem;font-size:.85rem;transition:color .2s;}
+nav .links a:hover{color:var(--text);}
+.container{max-width:860px;margin:0 auto;padding:2rem 1.5rem;}
+h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;}
+.subtitle{color:var(--muted);margin-bottom:2.5rem;font-size:1.05rem;}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:1rem;color:var(--accent);}
+.section{margin-bottom:3rem;opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
+.section.visible{opacity:1;transform:none;}
+.label{display:inline-block;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;margin-bottom:.5rem;}
+/* bisect animation */
+.bisect-vis{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1.5rem;margin-bottom:1rem;}
+.commit-row{display:flex;gap:4px;margin-bottom:1rem;flex-wrap:wrap;}
+.commit-dot{width:36px;height:36px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;transition:all .3s;cursor:default;position:relative;}
+.commit-dot.good{background:#1a3a1a;color:var(--success);border:1px solid var(--success);}
+.commit-dot.bad{background:#2a0808;color:var(--error);border:1px solid var(--error);}
+.commit-dot.unknown{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
+.commit-dot.testing{background:#1a2840;color:var(--accent);border:2px solid var(--accent);}
+.commit-dot.found{background:#2a1a40;color:#d2a8ff;border:2px solid #d2a8ff;}
+.bisect-status{font-size:.9rem;color:var(--muted);margin-bottom:1rem;min-height:1.5rem;}
+.bisect-status strong{color:var(--text);}
+.bisect-controls{display:flex;gap:.75rem;flex-wrap:wrap;}
+.btn{padding:.5rem 1.2rem;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s;}
+.btn:hover{border-color:var(--accent);color:var(--accent);}
+.btn.good-btn:hover{border-color:var(--success);color:var(--success);}
+.btn.bad-btn:hover{border-color:var(--error);color:var(--error);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.stats{font-size:.8rem;color:var(--muted);margin-top:.5rem;}
+/* code blocks */
+pre{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:1.2rem;overflow-x:auto;font-size:.83rem;line-height:1.7;margin-bottom:1rem;font-family:monospace;}
+pre .c{color:var(--muted);}
+pre .k{color:#ff7b72;}
+pre .s{color:#a5d6ff;}
+pre .cmd{color:var(--success);}
+/* math callout */
+.math{background:var(--surface);border-left:3px solid var(--accent);padding:1rem 1.2rem;border-radius:0 8px 8px 0;font-size:.9rem;color:var(--muted);margin-bottom:1rem;}
+.math strong{color:var(--text);}
+.exercise{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.exercise h3{color:var(--accent);margin-bottom:.8rem;font-size:1rem;}
+.exercise ol{padding-left:1.2rem;color:var(--muted);font-size:.9rem;line-height:1.8;}
+.takeaway{background:linear-gradient(135deg,#1a2235,#161b22);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.takeaway h3{color:var(--accent);margin-bottom:1rem;}
+.takeaway ul{padding-left:1.2rem;line-height:2;}
+.nav-links{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-links a{color:var(--accent);text-decoration:none;font-size:.9rem;padding:.5rem 1rem;border:1px solid var(--border);border-radius:6px;transition:border-color .2s;}
+.nav-links a:hover{border-color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav>
+  <span class="brand">Phase 3 — Engineer Mindset</span>
+  <div class="links">
+    <a href="10d-stack-trace.html">← Stack Trace</a>
+    <a href="../11-git/11a-mental-model.html">Git →</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="section" id="s0">
+    <div class="label">10e / 5</div>
+    <h1>Git Bisect</h1>
+    <p class="subtitle">Binary search your commit history to find the exact commit that introduced a regression — in O(log n) steps.</p>
+  </div>
+
+  <div class="section" id="s1">
+    <h2>Why Bisect?</h2>
+    <div class="math">
+      <strong>Problem:</strong> "This worked 3 months ago. Now it's broken. Which of the 200 commits broke it?"<br><br>
+      <strong>Naive approach:</strong> Check commits one by one → 200 steps<br>
+      <strong>Bisect:</strong> Binary search → <strong>⌈log₂(200)⌉ = 8 steps max</strong><br><br>
+      Git bisect automates this. You just say "good" or "bad" after each checkout.
+    </div>
+  </div>
+
+  <div class="section" id="s2">
+    <h2>Bisect Simulation</h2>
+    <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">16 commits. The bug is hidden somewhere. Mark "good" or "bad" to find it.</p>
+    <div class="bisect-vis">
+      <div class="commit-row" id="commit-row"></div>
+      <div class="bisect-status" id="bisect-status">Press "Start Bisect" to begin.</div>
+      <div class="bisect-controls">
+        <button class="btn" id="btn-start" onclick="startBisect()">Start Bisect</button>
+        <button class="btn good-btn" id="btn-good" onclick="markGood()" disabled>✓ Good</button>
+        <button class="btn bad-btn" id="btn-bad" onclick="markBad()" disabled>✗ Bad</button>
+        <button class="btn" id="btn-reset" onclick="resetBisect()">Reset</button>
+      </div>
+      <div class="stats" id="bisect-stats"></div>
+    </div>
+  </div>
+
+  <div class="section" id="s3">
+    <h2>Real Commands</h2>
+    <pre><span class="c"># Step 1: Start bisect session</span>
+<span class="cmd">git bisect start</span>
+
+<span class="c"># Step 2: Mark the current (broken) commit as bad</span>
+<span class="cmd">git bisect bad</span>         <span class="c"># or: git bisect bad HEAD</span>
+
+<span class="c"># Step 3: Mark a known-good commit (e.g. 3 months ago)</span>
+<span class="cmd">git bisect good v2.1.0</span>  <span class="c"># tag, branch, or hash</span>
+
+<span class="c"># Git checks out the midpoint automatically</span>
+<span class="c"># → Test it. Does the bug exist?</span>
+<span class="cmd">git bisect bad</span>   <span class="c"># bug exists in this commit</span>
+<span class="cmd">git bisect good</span>  <span class="c"># bug doesn't exist — it was introduced later</span>
+
+<span class="c"># After ~8 rounds, git tells you:</span>
+<span class="c"># "abc123def is the first bad commit"</span>
+<span class="c"># "commit abc123 — feat: refactor auth middleware"</span>
+
+<span class="c"># Step 4: End the session</span>
+<span class="cmd">git bisect reset</span>  <span class="c"># returns to your original HEAD</span></pre>
+
+    <pre><span class="c"># Automate with a test script</span>
+<span class="cmd">git bisect run npm test</span>
+
+<span class="c"># Git runs the test on each commit automatically</span>
+<span class="c"># Exit 0 = good, exit non-0 = bad</span>
+<span class="c"># Finds the bad commit with zero human interaction</span></pre>
+  </div>
+
+  <div class="section" id="s4">
+    <div class="exercise">
+      <h3>🔬 Exercise — Plan a Bisect</h3>
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:.8rem;">Scenario: Your <code>POST /products</code> endpoint suddenly returns 400 for valid payloads. Last known working version was tag <code>v3.0.0</code> from 3 weeks ago. There are 64 commits between then and now.</p>
+      <ol>
+        <li>How many bisect steps at most to find the bad commit?</li>
+        <li>Write the exact 3 commands to start the bisect session</li>
+        <li>What would you "test" at each midpoint to mark good/bad?</li>
+        <li>Write a one-liner test script for <code>git bisect run</code></li>
+        <li>After finding the commit — what do you do next?</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section" id="s5">
+    <div class="takeaway">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li>git bisect = binary search on commits — O(log n) not O(n)</li>
+        <li>200 commits → found in ≤8 steps, 1000 commits → ≤10 steps</li>
+        <li>Always end with <code>git bisect reset</code> or your HEAD is detached</li>
+        <li><code>git bisect run &lt;cmd&gt;</code> is fully automatic — use it with a test script</li>
+        <li>Once you find the bad commit, use <code>git show &lt;hash&gt;</code> to see exactly what changed</li>
+      </ul>
+    </div>
+    <div class="nav-links">
+      <a href="10d-stack-trace.html">← 10d: Stack Trace</a>
+      <a href="../11-git/11a-mental-model.html">11a: Git Mental Model →</a>
+    </div>
+  </div>
+</div>
+<script>
+const TOTAL = 16;
+const BUG_AT = 10; // commit 10+ are "bad"
+let lo, hi, mid, steps, state;
+
+function renderCommits(testing, found) {
+  const row = document.getElementById('commit-row');
+  row.innerHTML = '';
+  for (let i = 1; i <= TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'commit-dot';
+    if (found !== undefined && i === found) { d.className += ' found'; d.textContent = i; }
+    else if (state && i < lo) { d.className += ' good'; d.textContent = i; }
+    else if (state && i > hi) { d.className += ' bad'; d.textContent = i; }
+    else if (state && i === testing) { d.className += ' testing'; d.textContent = i; }
+    else { d.className += ' unknown'; d.textContent = i; }
+    row.appendChild(d);
+  }
+}
+
+function startBisect() {
+  lo = 1; hi = TOTAL; steps = 0; state = true;
+  mid = Math.floor((lo + hi) / 2);
+  renderCommits(mid);
+  document.getElementById('bisect-status').innerHTML = `Testing commit <strong>#${mid}</strong>. Does the bug exist?`;
+  document.getElementById('btn-good').disabled = false;
+  document.getElementById('btn-bad').disabled = false;
+  document.getElementById('btn-start').disabled = true;
+  document.getElementById('bisect-stats').textContent = `Step ${steps + 1} of ≤${Math.ceil(Math.log2(TOTAL))} max`;
+}
+
+function markGood() {
+  steps++;
+  lo = mid + 1;
+  if (lo > hi) { finish(); return; }
+  mid = Math.floor((lo + hi) / 2);
+  renderCommits(mid);
+  document.getElementById('bisect-status').innerHTML = `Commit #${mid - 1} was <span style="color:var(--success)">good</span>. Testing commit <strong>#${mid}</strong>.`;
+  document.getElementById('bisect-stats').textContent = `Step ${steps + 1} of ≤${Math.ceil(Math.log2(TOTAL))} max`;
+}
+
+function markBad() {
+  steps++;
+  hi = mid - 1;
+  if (lo > hi) { finish(); return; }
+  mid = Math.floor((lo + hi) / 2);
+  renderCommits(mid);
+  document.getElementById('bisect-status').innerHTML = `Commit #${mid + 1} was <span style="color:var(--error)">bad</span>. Testing commit <strong>#${mid}</strong>.`;
+  document.getElementById('bisect-stats').textContent = `Step ${steps + 1} of ≤${Math.ceil(Math.log2(TOTAL))} max`;
+}
+
+function finish() {
+  const found = lo;
+  renderCommits(null, found);
+  document.getElementById('bisect-status').innerHTML = `🔍 Found! Commit <strong>#${found}</strong> is the first bad commit. Found in <strong>${steps} steps</strong>.`;
+  document.getElementById('btn-good').disabled = true;
+  document.getElementById('btn-bad').disabled = true;
+  document.getElementById('bisect-stats').textContent = `Binary search complete. Run: git show <hash-of-commit-${found}>`;
+}
+
+function resetBisect() {
+  state = false;
+  renderCommits();
+  document.getElementById('bisect-status').textContent = 'Press "Start Bisect" to begin.';
+  document.getElementById('btn-good').disabled = true;
+  document.getElementById('btn-bad').disabled = true;
+  document.getElementById('btn-start').disabled = false;
+  document.getElementById('bisect-stats').textContent = '';
+}
+
+renderCommits();
+
+window.addEventListener('scroll', () => {
+  document.getElementById('pf').style.width = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100 + '%';
+});
+const obs = new IntersectionObserver(entries => { entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+document.querySelectorAll('.section').forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

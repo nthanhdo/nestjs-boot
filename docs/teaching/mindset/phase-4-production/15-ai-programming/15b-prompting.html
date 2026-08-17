@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>15b: Prompting — Good vs Bad Prompts for Code</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.7}
+  .container{max-width:900px;margin:0 auto;padding:40px 24px}
+  h1{font-size:2rem;color:#58a6ff;margin-bottom:8px}
+  h2{font-size:1.4rem;color:#79c0ff;margin:36px 0 14px;padding-left:12px;border-left:3px solid #58a6ff}
+  h3{font-size:1.05rem;color:#a5d6ff;margin:18px 0 8px}
+  p{color:#c9d1d9;margin-bottom:12px}
+  .subtitle{color:#8b949e;font-size:1rem;margin-bottom:36px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;margin-right:6px}
+  .badge-orange{background:#3b1e0d;color:#f0883e;border:1px solid #9e4f1e}
+  .badge-blue{background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e}
+  .card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin:20px 0}
+  .code-block{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px;font-family:'Fira Code','Cascadia Code',monospace;font-size:.85rem;overflow-x:auto;margin:12px 0;white-space:pre}
+  .cm{color:#8b949e}.kw{color:#ff7b72}.str{color:#a5d6ff}.fn{color:#d2a8ff}.var{color:#ffa657}
+  .tip{background:#0d2d1a;border:1px solid #238636;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .tip::before{content:'💡';position:absolute;left:14px;top:14px}
+  .section-divider{border:none;border-top:1px solid #21262d;margin:36px 0}
+  .nav-bar{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #30363d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .nav-links{display:flex;gap:8px;flex-wrap:wrap}
+  .nav-link{color:#8b949e;text-decoration:none;font-size:.8rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s;white-space:nowrap}
+  .nav-link:hover{color:#58a6ff;border-color:#58a6ff}
+  .nav-link.current{color:#58a6ff;border-color:#58a6ff;background:#0d1a2d}
+  .nav-center{font-size:.8rem;color:#484f58}
+  /* Prompt comparison */
+  .prompt-compare{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:20px 0}
+  .prompt-box{border-radius:10px;padding:20px}
+  .prompt-bad{background:#2d0d0d;border:1px solid #9e1e1e}
+  .prompt-good{background:#0d2d1a;border:1px solid #238636}
+  .prompt-label{font-size:.82rem;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .prompt-label.bad{color:#ff7b72}
+  .prompt-label.good{color:#3fb950}
+  .prompt-text{font-family:'Fira Code',monospace;font-size:.8rem;color:#c9d1d9;white-space:pre-wrap;line-height:1.5;background:#0d1117;padding:12px;border-radius:6px}
+  .prompt-result{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06);font-size:.78rem;color:#8b949e}
+  /* Context layers */
+  .context-layers{display:flex;flex-direction:column;gap:8px;margin:20px 0}
+  .ctx-layer{display:flex;align-items:center;gap:14px;padding:12px 16px;background:#161b22;border:1px solid #30363d;border-radius:8px;font-size:.88rem;transition:border-color .2s}
+  .ctx-layer:hover{border-color:#58a6ff}
+  .ctx-icon{font-size:1.3rem;width:32px;text-align:center;flex-shrink:0}
+  .ctx-label{font-weight:600;color:#c9d1d9;width:140px;flex-shrink:0}
+  .ctx-desc{color:#8b949e;flex:1}
+  .ctx-quality{font-size:.72rem;padding:2px 8px;border-radius:10px;white-space:nowrap}
+  .ctx-high{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .ctx-med{background:#3b1e0d;color:#f0883e;border:1px solid #9e4f1e}
+  /* Exercises */
+  .exercises{margin:48px 0}
+  .exercises-title{font-size:1.2rem;color:#79c0ff;margin-bottom:24px;padding-left:12px;border-left:3px solid #58a6ff}
+  .ex-card{border-radius:12px;padding:20px 24px;margin:16px 0}
+  .ex-green{background:#0a1f0a;border:1px solid #238636}
+  .ex-yellow{background:#1f1a0a;border:1px solid #9e6c1e}
+  .ex-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .ex-diff{font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:10px}
+  .diff-green{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .diff-yellow{background:#3b2a0d;color:#d4a843;border:1px solid #9e6c1e}
+  .ex-num{font-size:.8rem;font-weight:700;color:#8b949e}
+  .ex-title{font-size:.95rem;font-weight:700;color:#c9d1d9}
+  .ex-desc{font-size:.88rem;color:#8b949e;margin-top:4px}
+  .ex-sol-toggle{background:none;border:1px solid #30363d;color:#8b949e;border-radius:6px;padding:4px 12px;font-size:.75rem;cursor:pointer;margin-top:10px;transition:all .2s}
+  .ex-sol-toggle:hover{border-color:#58a6ff;color:#58a6ff}
+  .ex-sol-body{display:none;margin-top:10px;padding:12px;background:#0d1117;border-radius:8px;font-size:.83rem;color:#c9d1d9;line-height:1.6}
+  .ex-sol-body.open{display:block}
+  .takeaway{background:linear-gradient(135deg,#0d2d1a,#0d1a2d);border:2px solid #3fb950;border-radius:12px;padding:24px;margin:40px 0;text-align:center}
+  .takeaway h3{color:#3fb950;margin-bottom:12px}
+  @media(max-width:600px){.prompt-compare{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="nav-bar">
+  <div class="nav-links">
+    <a class="nav-link" href="15a-augmented-engineer.html">← 15a: AI = Tool</a>
+    <span class="nav-link current">15b: Prompting</span>
+    <a class="nav-link" href="15c-verification.html">15c: Verification →</a>
+  </div>
+  <div class="nav-center">Phase 4 — AI Programming · 15b / 15d</div>
+</nav>
+
+<div class="container">
+  <div style="margin-bottom:20px">
+    <span class="badge badge-orange">Phase 4</span>
+    <span class="badge badge-blue">15b</span>
+  </div>
+  <h1>Prompting for Code</h1>
+  <p class="subtitle">Chất lượng prompt = chất lượng output. Một prompt tốt tiết kiệm 80% thời gian review và fix. Một prompt tệ tạo ra code rác trông có vẻ đúng.</p>
+
+  <h2>1. Good vs Bad Prompts</h2>
+  <p>Cùng một task — prompt khác nhau → kết quả khác nhau hoàn toàn.</p>
+
+  <div class="prompt-compare">
+    <div class="prompt-box prompt-bad">
+      <div class="prompt-label bad">❌ Prompt tệ</div>
+      <div class="prompt-text">Write a function to handle users</div>
+      <div class="prompt-result">→ AI đoán mò về stack, naming, logic. Output generic, không fit codebase.</div>
+    </div>
+    <div class="prompt-box prompt-good">
+      <div class="prompt-label good">✓ Prompt tốt</div>
+      <div class="prompt-text">I'm using NestJS + Mongoose + MongoDB.
+
+Create UserService.createUser method:
+- Input: CreateUserDto { email, name, role }
+- Check email duplicate → throw ConflictException
+- Hash password with bcrypt (10 rounds)
+- Return UserEntity (exclude password field)
+- Add JSDoc comments
+- Follow existing pattern in OrderService</div>
+      <div class="prompt-result">→ AI có đủ context để tạo code fit stack, error handling đúng, naming match conventions.</div>
+    </div>
+  </div>
+
+  <div class="prompt-compare">
+    <div class="prompt-box prompt-bad">
+      <div class="prompt-label bad">❌ Prompt tệ — Fix bug</div>
+      <div class="prompt-text">Fix this bug</div>
+      <div class="prompt-result">→ AI không biết bug là gì, context gì.</div>
+    </div>
+    <div class="prompt-box prompt-good">
+      <div class="prompt-label good">✓ Prompt tốt — Fix bug</div>
+      <div class="prompt-text">NestJS + Mongoose. This code throws:
+"MongoError: E11000 duplicate key"
+when user tries to register with existing email.
+
+Current code:
+[paste OrderService.create here]
+
+Expected: throw ConflictException with message "Email already exists"
+Not expected: crash 500</div>
+      <div class="prompt-result">→ AI fix đúng loại lỗi, đúng exception type, không over-engineer.</div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <h2>2. Formula của Prompt Code Tốt</h2>
+  <p>5 layers context — critical first, helpful last.</p>
+
+  <div class="context-layers">
+    <div class="ctx-layer">
+      <div class="ctx-icon">🏗️</div>
+      <div class="ctx-label">Stack / Framework</div>
+      <div class="ctx-desc">NestJS, TypeScript, Mongoose, MongoDB. Version nếu quan trọng.</div>
+      <div class="ctx-quality ctx-high">Critical</div>
+    </div>
+    <div class="ctx-layer">
+      <div class="ctx-icon">📥</div>
+      <div class="ctx-label">Input / Output</div>
+      <div class="ctx-desc">Interface types cụ thể, return type, error scenarios.</div>
+      <div class="ctx-quality ctx-high">Critical</div>
+    </div>
+    <div class="ctx-layer">
+      <div class="ctx-icon">⚙️</div>
+      <div class="ctx-label">Constraints</div>
+      <div class="ctx-desc">Error handling expectations, performance requirements, security rules.</div>
+      <div class="ctx-quality ctx-high">Critical</div>
+    </div>
+    <div class="ctx-layer">
+      <div class="ctx-icon">🎨</div>
+      <div class="ctx-label">Style / Pattern</div>
+      <div class="ctx-desc">Naming conventions, code style. Reference existing code của codebase.</div>
+      <div class="ctx-quality ctx-med">Helpful</div>
+    </div>
+    <div class="ctx-layer">
+      <div class="ctx-icon">📝</div>
+      <div class="ctx-label">Examples</div>
+      <div class="ctx-desc">Paste existing code làm reference. AI sẽ copy style, pattern của bạn.</div>
+      <div class="ctx-quality ctx-med">Helpful</div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <h2>3. Context Engineering — Paste Code Cũ</h2>
+  <p>Pro tip: đừng chỉ mô tả bằng lời — paste code hiện có làm reference pattern.</p>
+
+  <div class="code-block"><span class="str">"I'm building a NestJS microservice.
+Existing code uses MongoDB + Mongoose, CQRS pattern, class-validator DTOs.
+
+Here's existing ProductService.create for reference:
+[paste ProductService.create here]
+
+Create OrderCommandService.createOrder(dto: CreateOrderDto):
+- Same patterns as ProductService.create above
+- Validate items array non-empty (throw BadRequestException)
+- Calculate total from items
+- Emit OrderCreatedEvent after save
+- Return OrderDocument"</span></div>
+
+  <div class="tip">
+    <strong>Pro technique:</strong> Paste đoạn code hiện có vào prompt làm reference — AI sẽ copy style, naming, error handling của bạn. Kết quả: code AI tạo ra trông như chính bạn viết.
+  </div>
+
+  <hr class="section-divider">
+
+  <h2>4. Iterative Prompting — Khi Output Chưa Đúng</h2>
+  <p>Không phải lúc nào prompt đầu tiên cũng đủ. Iterate conversation thay vì start-over.</p>
+
+  <div class="card">
+    <h3>Iterative pattern</h3>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
+      <div style="background:#0d1117;border:1px solid #1f4a9e;border-radius:8px;padding:12px;font-size:.84rem">
+        <div style="color:#58a6ff;font-weight:600;margin-bottom:4px">Round 1 prompt:</div>
+        <div style="color:#c9d1d9">Create UserService.updateProfile [basic context]</div>
+      </div>
+      <div style="background:#0d1117;border:1px solid #6e40c9;border-radius:8px;padding:12px;font-size:.84rem">
+        <div style="color:#bc8cff;font-weight:600;margin-bottom:4px">AI output — gần đúng nhưng thiếu:</div>
+        <div style="color:#8b949e">Thiếu validation cho phone number format, không log update event</div>
+      </div>
+      <div style="background:#0d1117;border:1px solid #238636;border-radius:8px;padding:12px;font-size:.84rem">
+        <div style="color:#3fb950;font-weight:600;margin-bottom:4px">Round 2 — refine:</div>
+        <div style="color:#c9d1d9">"Good start. Two additions: (1) validate phone with regex /^\+[1-9]\d{7,14}$/, throw BadRequestException if invalid. (2) After save, emit UserUpdatedEvent via EventEmitter2"</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <div class="exercises">
+    <div class="exercises-title">Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header">
+        <span class="ex-diff diff-green">Dễ</span>
+        <span class="ex-num">Bài 1</span>
+      </div>
+      <div class="ex-title">Viết 3 prompts tốt vs 3 prompts tệ cho cùng 1 task</div>
+      <div class="ex-desc">Chọn task "tạo endpoint reset password". Viết 3 prompt vague và 3 prompt đầy đủ context. So sánh chất lượng AI output và ghi lại sự khác biệt.</div>
+      <button class="ex-sol-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Ẩn gợi ý':'Xem gợi ý'">Xem gợi ý</button>
+      <div class="ex-sol-body">
+        <strong>Prompts tệ:</strong> "Add reset password", "Handle forgot password", "Email user"<br><br>
+        <strong>Prompt tốt mẫu:</strong><br>
+        "NestJS + Nodemailer. Create POST /auth/forgot-password:<br>
+        - Input: { email: string }<br>
+        - Find user by email → NotFoundException if not found<br>
+        - Generate 6-digit OTP<br>
+        - Store in Redis key=reset:${email}, TTL=15min<br>
+        - Send via nodemailer to email<br>
+        - Return { message: 'OTP sent' }"<br><br>
+        Kết quả: prompt tốt → code fit stack, ít sửa, naming match pattern codebase
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header">
+        <span class="ex-diff diff-yellow">Trung bình</span>
+        <span class="ex-num">Bài 2</span>
+      </div>
+      <div class="ex-title">Iterate prompt: từ generic output đến codebase-fit output</div>
+      <div class="ex-desc">Bắt đầu với prompt ngắn. Nhận output. Identify 3+ điểm không fit codebase (naming, error types, patterns). Viết round 2 prompt. Measure improvement.</div>
+      <button class="ex-sol-toggle" onclick="this.nextElementSibling.classList.toggle('open');this.textContent=this.nextElementSibling.classList.contains('open')?'Ẩn gợi ý':'Xem gợi ý'">Xem gợi ý</button>
+      <div class="ex-sol-body">
+        <strong>Điểm thường không fit:</strong><br>
+        1. Error types: generic Error() thay vì NotFoundException, ConflictException<br>
+        2. Naming: camelCase đôi khi nhất quán, snake_case xuất hiện<br>
+        3. Patterns: return raw data thay vì transformed DTO<br>
+        4. Missing: logging, event emission theo codebase pattern<br><br>
+        Round 2: "Good but fix: (1) use NotFoundException not Error, (2) rename x → y to match naming convention, (3) return via toResponseDto() like other methods"
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <h3>Key Takeaway — 15b</h3>
+    <p style="color:#c9d1d9;margin-top:8px">Prompt = communication skill. Stack + Input/Output + Constraints = minimum context. Paste existing code làm reference = AI copy style của bạn. Iterate, đừng start-over. Chất lượng output phụ thuộc 80% vào prompt quality, 20% vào AI model.</p>
+  </div>
+
+  <div style="text-align:center;margin-top:40px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">15b / Bài 15: AI Programming — Phase 4</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="15a-augmented-engineer.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← 15a: AI = Tool</a>
+      <a href="15c-verification.html" style="color:#58a6ff;text-decoration:none;font-size:.85rem">Tiếp theo: 15c — Verification →</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

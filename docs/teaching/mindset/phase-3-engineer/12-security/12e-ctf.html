@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12e — CTF Mindset | Phase 3</title>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--muted:#7d8590;--accent:#58a6ff;--success:#3fb950;--warning:#d29922;--error:#f85149;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;}
+.progress-bar{position:fixed;top:0;left:0;width:100%;height:3px;background:var(--border);z-index:100;}
+.progress-fill{height:100%;background:var(--accent);width:0;transition:width .1s;}
+nav{position:sticky;top:3px;background:var(--surface);border-bottom:1px solid var(--border);padding:.75rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:90;}
+nav .brand{font-weight:700;color:var(--accent);font-size:.9rem;}
+nav .links a{color:var(--muted);text-decoration:none;margin-left:1.2rem;font-size:.85rem;transition:color .2s;}
+nav .links a:hover{color:var(--text);}
+.container{max-width:860px;margin:0 auto;padding:2rem 1.5rem;}
+h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;}
+.subtitle{color:var(--muted);margin-bottom:2.5rem;font-size:1.05rem;}
+h2{font-size:1.3rem;font-weight:700;margin-bottom:1rem;color:var(--accent);}
+.section{margin-bottom:3rem;opacity:0;transform:translateY(20px);transition:opacity .5s,transform .5s;}
+.section.visible{opacity:1;transform:none;}
+.label{display:inline-block;background:var(--accent);color:#000;font-size:.7rem;font-weight:700;padding:.2rem .5rem;border-radius:4px;margin-bottom:.5rem;}
+/* CTF cycle */
+.cycle{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1rem;}
+.cycle-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;text-align:center;cursor:pointer;transition:all .2s;position:relative;}
+.cycle-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+.cycle-card.active{border-color:var(--accent);background:#1a2840;}
+.cycle-card .num{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#000;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto .5rem;}
+.cycle-card h4{font-size:.9rem;font-weight:700;margin-bottom:.2rem;}
+.cycle-card p{font-size:.8rem;color:var(--muted);}
+.cycle-detail{background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:1.2rem;margin-bottom:1rem;display:none;}
+.cycle-detail.show{display:block;}
+.cycle-detail h4{color:var(--accent);margin-bottom:.6rem;}
+.cycle-detail p{color:var(--muted);font-size:.88rem;line-height:1.7;}
+/* mindset principles */
+.principles{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem;}
+.principle{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:.9rem 1rem;display:flex;gap:.8rem;align-items:flex-start;}
+.principle .icon{flex-shrink:0;font-size:1.1rem;}
+.principle h4{font-size:.9rem;font-weight:700;margin-bottom:.2rem;}
+.principle p{font-size:.84rem;color:var(--muted);}
+/* resources */
+.resources{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.8rem;margin-bottom:1rem;}
+.resource{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;}
+.resource h4{font-size:.9rem;font-weight:700;margin-bottom:.3rem;color:var(--accent);}
+.resource p{font-size:.82rem;color:var(--muted);}
+.resource .tag{display:inline-block;font-size:.7rem;font-weight:700;padding:.15rem .4rem;border-radius:4px;margin-top:.4rem;background:#1a2840;color:var(--accent);}
+/* challenge */
+.challenge{background:#1a0808;border:2px dashed var(--error);border-radius:8px;padding:1.2rem;margin-bottom:1rem;}
+.challenge h4{color:var(--error);font-size:.95rem;font-weight:700;margin-bottom:.6rem;}
+.challenge p{font-size:.88rem;color:var(--muted);margin-bottom:.5rem;}
+.challenge code{background:#0d1117;border:1px solid var(--error);padding:.15rem .4rem;border-radius:4px;font-size:.83rem;color:var(--error);}
+.exercise{background:var(--surface);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.exercise h3{color:var(--accent);margin-bottom:.8rem;font-size:1rem;}
+.exercise ol{padding-left:1.2rem;color:var(--muted);font-size:.9rem;line-height:1.8;}
+.takeaway{background:linear-gradient(135deg,#1a2235,#161b22);border:1px solid var(--accent);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.takeaway h3{color:var(--accent);margin-bottom:1rem;}
+.takeaway ul{padding-left:1.2rem;line-height:2;}
+.nav-links{display:flex;justify-content:space-between;margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);}
+.nav-links a{color:var(--accent);text-decoration:none;font-size:.9rem;padding:.5rem 1rem;border:1px solid var(--border);border-radius:6px;transition:border-color .2s;}
+.nav-links a:hover{border-color:var(--accent);}
+@media(max-width:640px){.cycle{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav>
+  <span class="brand">Phase 3 — Engineer Mindset</span>
+  <div class="links">
+    <a href="12d-path-traversal.html">← Path Traversal</a>
+    <a href="../13-system-design/13a-process.html">System Design →</a>
+  </div>
+</nav>
+<div class="container">
+  <div class="section" id="s0">
+    <div class="label">12e / 5</div>
+    <h1>CTF Mindset</h1>
+    <p class="subtitle">Capture The Flag — the adversarial thinking framework that makes you a better defender. Think like an attacker to protect like a pro.</p>
+  </div>
+
+  <div class="section" id="s1">
+    <h2>The CTF Mindset Cycle</h2>
+    <div class="cycle">
+      <div class="cycle-card" id="cc0" onclick="showCycle(0)">
+        <div class="num">1</div>
+        <h4>Enumerate</h4>
+        <p>Map the attack surface</p>
+      </div>
+      <div class="cycle-card" id="cc1" onclick="showCycle(1)">
+        <div class="num">2</div>
+        <h4>Hypothesize</h4>
+        <p>Form attack theories</p>
+      </div>
+      <div class="cycle-card" id="cc2" onclick="showCycle(2)">
+        <div class="num">3</div>
+        <h4>Exploit</h4>
+        <p>Probe the weakness</p>
+      </div>
+      <div class="cycle-card" id="cc3" onclick="showCycle(3)">
+        <div class="num">4</div>
+        <h4>Escalate</h4>
+        <p>Expand from foothold</p>
+      </div>
+      <div class="cycle-card" id="cc4" onclick="showCycle(4)">
+        <div class="num">5</div>
+        <h4>Document</h4>
+        <p>Record + remediate</p>
+      </div>
+      <div class="cycle-card" id="cc5" onclick="showCycle(5)">
+        <div class="num">6</div>
+        <h4>Defend</h4>
+        <p>Patch before ship</p>
+      </div>
+    </div>
+    <div class="cycle-detail" id="cycle-detail"></div>
+  </div>
+
+  <div class="section" id="s2">
+    <h2>Defender's Mindset Principles</h2>
+    <div class="principles">
+      <div class="principle">
+        <span class="icon">👿</span>
+        <div>
+          <h4>Think like an attacker, act like a defender</h4>
+          <p>Before shipping any feature, ask: "How would I break this?" Enumerate inputs, bypass flows, find edge cases the happy path misses.</p>
+        </div>
+      </div>
+      <div class="principle">
+        <span class="icon">🔒</span>
+        <div>
+          <h4>Deny by default</h4>
+          <p>Every endpoint denied unless explicitly allowed. Every field rejected unless explicitly expected. Never "allow all and filter" — always "deny all and allowlist."</p>
+        </div>
+      </div>
+      <div class="principle">
+        <span class="icon">🧅</span>
+        <div>
+          <h4>Defense in depth</h4>
+          <p>One layer of security failing shouldn't mean total breach. Validation at HTTP layer + service layer + DB layer. If SQL injection bypasses input check, parameterized query still blocks it.</p>
+        </div>
+      </div>
+      <div class="principle">
+        <span class="icon">🧪</span>
+        <div>
+          <h4>Test the negative path first</h4>
+          <p>For any security control: verify it BLOCKS before verifying it allows. A guard that doesn't block is not a guard. Write a test with no token, bad token, wrong role — before the happy path.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="s3">
+    <h2>Practice Platforms</h2>
+    <div class="resources">
+      <div class="resource">
+        <h4>HackTheBox</h4>
+        <p>Real pentesting labs. Machines, web apps, challenges. Industry standard for red team practice.</p>
+        <span class="tag">hackthebox.com</span>
+      </div>
+      <div class="resource">
+        <h4>TryHackMe</h4>
+        <p>Beginner-friendly guided rooms. Great for learning OWASP Top 10 hands-on.</p>
+        <span class="tag">tryhackme.com</span>
+      </div>
+      <div class="resource">
+        <h4>PortSwigger Web Academy</h4>
+        <p>Free web security labs by Burp Suite creators. The best for SQL injection, XSS, SSRF.</p>
+        <span class="tag">portswigger.net</span>
+      </div>
+      <div class="resource">
+        <h4>OWASP WebGoat</h4>
+        <p>Intentionally vulnerable app. Run locally and exploit it yourself.</p>
+        <span class="tag">owasp.org/webgoat</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="s4">
+    <h2>Mini Challenge</h2>
+    <div class="challenge">
+      <h4>🚩 Find the Flag</h4>
+      <p>This is a JWT token. Something is wrong with it. Decode it, find the vulnerability, explain the exploit and the fix:</p>
+      <code>eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1c2VyXzEyMyIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNjkwMDAwMDAwfQ.</code>
+      <p style="margin-top:.7rem;">Hint: decode the header (first part before first dot) from base64. What does "alg" say?</p>
+    </div>
+  </div>
+
+  <div class="section" id="s5">
+    <div class="exercise">
+      <h3>🔬 Exercise — Security Review</h3>
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:.8rem;">Apply the CTF mindset to your last feature. For each question, write a specific answer:</p>
+      <ol>
+        <li>What are all the inputs this feature accepts? (URL params, body, headers, cookies)</li>
+        <li>What's the worst thing an attacker could do with malformed input?</li>
+        <li>What authorization checks are in place? Can you bypass them?</li>
+        <li>What does the error response reveal? (stack trace? DB errors?)</li>
+        <li>What rate limiting is in place? Can you brute-force it?</li>
+        <li>Write one failing test for each security concern you found</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="section" id="s6">
+    <div class="takeaway">
+      <h3>Key Takeaways</h3>
+      <ul>
+        <li>Attacker mindset = the best security tool — think "how would I break this?"</li>
+        <li>Deny by default — allowlist, not blocklist</li>
+        <li>Defense in depth — multiple layers so one failure isn't catastrophic</li>
+        <li>Test negative paths first — a guard you haven't verified blocking is not a guard</li>
+        <li>Practice on legal platforms (HTB, PortSwigger) — real skills, safe environment</li>
+      </ul>
+    </div>
+    <div class="nav-links">
+      <a href="12d-path-traversal.html">← 12d: Path Traversal</a>
+      <a href="../13-system-design/13a-process.html">13a: System Design →</a>
+    </div>
+  </div>
+</div>
+<script>
+const cycleContent = [
+  {title:'1. Enumerate — Map the Surface', body:'Before attacking, map everything. What endpoints exist? What parameters do they accept? What HTTP methods? What headers? What authentication? Run: curl, nmap, view-source, check robots.txt, /api/docs. Make a complete list before probing any single point.'},
+  {title:'2. Hypothesize — Form Attack Theories', body:'For each surface: what could go wrong? "This endpoint takes a filename — could I traverse directories?" "This login returns different messages for wrong user vs wrong password — timing attack possible?" Make specific, falsifiable theories.'},
+  {title:'3. Exploit — Probe the Weakness', body:'Test the hypothesis. Send the malicious input. ' + "Does ' OR '1'='1 change the response? Does ../../../etc/passwd return file contents? Does the same token with changed role claim work? Don't guess — test."},
+  {title:'4. Escalate — Expand from Foothold', body:'You read one file. Can you read all files? You\'re one user. Can you become another? You found an injection point. Can you dump the DB? Real attackers don\'t stop at the first weakness — they pivot.'},
+  {title:'5. Document — Record + Remediate', body:'Write down: what you found, how you found it, what the impact is, and what the fix is. Without documentation, the same bug will be introduced again. A vulnerability report without a fix recommendation is half-useful.'},
+  {title:'6. Defend — Patch Before Shipping', body:'Defenders use attacker mindset to find vulnerabilities before attackers do. Do this BEFORE shipping. After shipping, it\'s a race — and attackers may have already won. Security review is part of the PR checklist.'}
+];
+let activeCycle = null;
+function showCycle(i) {
+  activeCycle = activeCycle === i ? null : i;
+  document.querySelectorAll('.cycle-card').forEach((c,j) => c.classList.toggle('active', j === activeCycle));
+  const detail = document.getElementById('cycle-detail');
+  if (activeCycle === null) { detail.classList.remove('show'); return; }
+  const d = cycleContent[activeCycle];
+  detail.innerHTML = `<h4>${d.title}</h4><p>${d.body}</p>`;
+  detail.classList.add('show');
+}
+window.addEventListener('scroll', () => {
+  document.getElementById('pf').style.width = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100 + '%';
+});
+const obs = new IntersectionObserver(entries => { entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+document.querySelectorAll('.section').forEach(s => obs.observe(s));
+</script>
+</body>
+</html>

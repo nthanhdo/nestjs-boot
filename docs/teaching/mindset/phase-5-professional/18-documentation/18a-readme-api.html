@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>18a — README & API Docs | NestJS Boot</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.6;font-size:16px}
+nav{position:sticky;top:0;z-index:100;background:#161b22;border-bottom:1px solid #21262d;padding:10px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.nav-left,.nav-right{display:flex;align-items:center;gap:12px}
+.nav-link{color:#8b949e;text-decoration:none;font-size:.85rem;padding:4px 10px;border-radius:6px;border:1px solid #30363d;transition:all .2s}
+.nav-link:hover{color:#e6edf3;border-color:#bc8cff}
+.nav-title{color:#e6edf3;font-size:.9rem;font-weight:600}
+.phase-badge{background:#6e40c9;color:#fff;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.container{max-width:900px;margin:0 auto;padding:40px 24px}
+h1{font-size:2rem;font-weight:700;margin-bottom:8px}
+.subtitle{color:#8b949e;font-size:1rem;margin-bottom:32px}
+h2{font-size:1.3rem;font-weight:600;margin:40px 0 16px;color:#bc8cff;padding-left:12px;border-left:3px solid #6e40c9}
+h3{font-size:1.05rem;font-weight:600;margin-bottom:10px;color:#e6edf3}
+.card{background:#161b22;border:1px solid #21262d;border-radius:12px;padding:24px;margin-bottom:16px}
+.section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
+pre{background:#1c2128;border:1px solid #30363d;border-radius:8px;padding:16px;overflow-x:auto;font-family:'Fira Code',monospace;font-size:.82rem;line-height:1.6;color:#e6edf3;margin:8px 0}
+code{background:#1c2128;border:1px solid #30363d;border-radius:4px;padding:1px 6px;font-family:'Fira Code',monospace;font-size:.85rem;color:#f0883e}
+.tip{background:#132030;border:1px solid #1f6feb;border-radius:8px;padding:14px 18px;color:#79c0ff;font-size:.9rem;margin-top:16px}
+.warn{background:#1c1000;border:1px solid #d29922;border-radius:8px;padding:14px 18px;color:#d29922;font-size:.9rem;margin-top:12px}
+.readme-wrap{border:1px solid #30363d;border-radius:12px;overflow:hidden;margin:16px 0}
+.readme-file{background:#21262d;padding:10px 16px;font-size:.85rem;color:#c9d1d9;display:flex;align-items:center;gap:8px}
+.readme-section{display:flex;align-items:stretch;border-bottom:1px solid #21262d}
+.readme-section:last-child{border-bottom:none}
+.readme-bar{width:5px;flex-shrink:0}
+.bar-must{background:#238636}
+.bar-should{background:#9e6c1e}
+.bar-may{background:#30363d}
+.readme-body{padding:12px 16px;flex:1}
+.readme-title{font-size:.85rem;font-weight:600;color:#c9d1d9;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.readme-desc{font-size:.78rem;color:#8b949e}
+.readme-ex{font-size:.75rem;color:#484f58;margin-top:4px;font-family:monospace}
+.req-tag{font-size:.68rem;padding:1px 7px;border-radius:8px}
+.req-must{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+.req-should{background:#3b1e0d;color:#f0883e;border:1px solid #9e4f1e}
+.req-may{background:#21262d;color:#8b949e;border:1px solid #30363d}
+.swagger{border:1px solid #30363d;border-radius:10px;overflow:hidden;margin:16px 0}
+.sw-header{background:#21262d;padding:10px 16px;font-size:.85rem;color:#c9d1d9;display:flex;align-items:center;gap:8px}
+.sw-endpoint{display:flex;align-items:stretch;border-bottom:1px solid #21262d}
+.sw-endpoint:last-child{border-bottom:none}
+.sw-method{padding:12px 14px;font-weight:700;font-size:.78rem;width:65px;text-align:center;flex-shrink:0}
+.sw-get{background:#0d2d1a;color:#3fb950}
+.sw-post{background:#0d1a2d;color:#58a6ff}
+.sw-put{background:#2d1a0d;color:#f0883e}
+.sw-delete{background:#2d0d0d;color:#ff7b72}
+.sw-path{font-family:monospace;font-size:.82rem;color:#c9d1d9;padding:12px 14px;flex:1}
+.sw-desc{font-size:.78rem;color:#8b949e;padding:12px 14px;text-align:right;min-width:160px;flex-shrink:0}
+.exercises{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:24px;margin-top:32px}
+.exercises-title{font-size:1.1rem;font-weight:700;margin-bottom:20px;color:#e6edf3}
+.ex-card{border-radius:10px;padding:18px;margin-bottom:12px}
+.ex-green{background:#0d1a0d;border:1px solid #3fb95040}
+.ex-yellow{background:#1a1200;border:1px solid #d2992240}
+.ex-red{background:#1a0d0d;border:1px solid #f8514940}
+.ex-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.ex-diff{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:10px}
+.diff-green{background:#3fb95020;color:#3fb950}
+.diff-yellow{background:#d2992220;color:#d29922}
+.diff-red{background:#f8514920;color:#ff7b72}
+.ex-num{font-size:.8rem;color:#8b949e}
+.ex-title{font-weight:600;color:#e6edf3;margin-bottom:6px}
+.ex-desc{color:#8b949e;font-size:.88rem}
+.ex-solution{margin-top:12px}
+.ex-sol-toggle{background:#1c2128;border:1px solid #30363d;color:#8b949e;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.8rem}
+.ex-sol-body{display:none;margin-top:10px;background:#1c2128;border-radius:8px;padding:14px;color:#c9d1d9;font-size:.85rem;line-height:1.6}
+.ex-sol-body.open{display:block}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-left">
+    <span class="phase-badge">Phase 5</span>
+    <span class="nav-title">18a — README &amp; API Docs</span>
+  </div>
+  <div class="nav-right">
+    <a class="nav-link" href="../17-product/17c-metrics.html">← 17c Metrics</a>
+    <a class="nav-link" href="18b-diagrams.html" style="color:#bc8cff;border-color:#6e40c9">18b Diagrams →</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>📝 README &amp; API Documentation</h1>
+  <p class="subtitle">Doc tốt = explain cho engineer khác mà không cần ngồi cạnh. Không doc = technical debt không nhìn thấy được.</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:32px">
+    <div class="card" style="border-color:#f8514940">
+      <h3 style="color:#ff7b72;margin-bottom:8px">❌ Không có Doc</h3>
+      <ul style="color:#8b949e;padding-left:16px;font-size:.85rem">
+        <li style="margin:5px 0">Onboard member mới mất 2-3 tuần</li>
+        <li style="margin:5px 0">Debug phải đọc toàn bộ code</li>
+        <li style="margin:5px 0">PM không biết API có gì</li>
+        <li style="margin:5px 0">6 tháng sau chính mình không nhớ</li>
+      </ul>
+    </div>
+    <div class="card" style="border-color:#3fb95040">
+      <h3 style="color:#3fb950;margin-bottom:8px">✅ Có Doc tốt</h3>
+      <ul style="color:#c9d1d9;padding-left:16px;font-size:.85rem">
+        <li style="margin:5px 0">Onboard trong 2-3 ngày</li>
+        <li style="margin:5px 0">Debug bắt đầu từ troubleshooting guide</li>
+        <li style="margin:5px 0">PM tự query API docs khi cần</li>
+        <li style="margin:5px 0">6 tháng sau extend feature dễ dàng</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>📄 README Anatomy</h2>
+  <p style="color:#c9d1d9;font-size:.9rem;margin-bottom:16px">README là "front door" của project. Developer clone repo → cần biết ngay: đây là gì, cách chạy, cách contribute.</p>
+
+  <div class="readme-wrap">
+    <div class="readme-file">📄 README.md — Anatomy</div>
+    <div class="readme-section">
+      <div class="readme-bar bar-must"></div>
+      <div class="readme-body">
+        <div class="readme-title">🏷️ Project Title + One-liner <span class="req-tag req-must">MUST</span></div>
+        <div class="readme-desc">Tên và giải thích trong 1 câu. Ai đọc 10 giây biết đây là gì.</div>
+        <div class="readme-ex"># OrderService — REST API quản lý orders cho e-commerce platform</div>
+      </div>
+    </div>
+    <div class="readme-section">
+      <div class="readme-bar bar-must"></div>
+      <div class="readme-body">
+        <div class="readme-title">🚀 Quick Start <span class="req-tag req-must">MUST</span></div>
+        <div class="readme-desc">Copy-paste commands để chạy lần đầu. Không assume prior knowledge.</div>
+        <div class="readme-ex">git clone → npm install → cp .env.example .env → npm run dev</div>
+      </div>
+    </div>
+    <div class="readme-section">
+      <div class="readme-bar bar-must"></div>
+      <div class="readme-body">
+        <div class="readme-title">📋 Prerequisites <span class="req-tag req-must">MUST</span></div>
+        <div class="readme-desc">Node v20+, Docker 24+, MongoDB 7. Version cụ thể — không viết "latest".</div>
+      </div>
+    </div>
+    <div class="readme-section">
+      <div class="readme-bar bar-should"></div>
+      <div class="readme-body">
+        <div class="readme-title">🏗️ Architecture Overview <span class="req-tag req-should">SHOULD</span></div>
+        <div class="readme-desc">Diagram hoặc mô tả ngắn: folder layout, key modules, data flow.</div>
+      </div>
+    </div>
+    <div class="readme-section">
+      <div class="readme-bar bar-should"></div>
+      <div class="readme-body">
+        <div class="readme-title">📖 API Reference <span class="req-tag req-should">SHOULD</span></div>
+        <div class="readme-desc">Link tới Swagger UI hoặc Postman collection. Không viết inline — quá dài.</div>
+        <div class="readme-ex">Swagger: http://localhost:3000/api-docs</div>
+      </div>
+    </div>
+    <div class="readme-section">
+      <div class="readme-bar bar-should"></div>
+      <div class="readme-body">
+        <div class="readme-title">🧪 Running Tests <span class="req-tag req-should">SHOULD</span></div>
+        <div class="readme-desc"><code>npm test</code>, <code>npm run test:e2e</code>. Expected result là gì.</div>
+      </div>
+    </div>
+    <div class="readme-section">
+      <div class="readme-bar bar-may"></div>
+      <div class="readme-body">
+        <div class="readme-title">🤝 Contributing Guide <span class="req-tag req-may">MAY</span></div>
+        <div class="readme-desc">Branch naming, commit convention, PR process — cho OSS projects.</div>
+      </div>
+    </div>
+    <div class="readme-section">
+      <div class="readme-bar bar-may"></div>
+      <div class="readme-body">
+        <div class="readme-title">📄 License <span class="req-tag req-may">MAY</span></div>
+        <div class="readme-desc">MIT, Apache 2.0, proprietary — quan trọng cho open-source.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="warn"><strong>README anti-pattern:</strong> Viết README một lần rồi không update. README outdated = worse than no README (misleads people). Treat README như code — update khi thay đổi setup.</div>
+
+  <hr class="section-divider">
+  <h2>🔍 API Documentation — Swagger / OpenAPI</h2>
+  <p style="color:#c9d1d9;font-size:.9rem;margin-bottom:16px">Viết API docs bằng tay = luôn outdated. Code-first: decorators trong code → auto-generate docs.</p>
+
+  <div class="swagger">
+    <div class="sw-header"><span style="color:#3fb950">●</span> OrderService API — v1.0.0</div>
+    <div class="sw-endpoint">
+      <div class="sw-method sw-get">GET</div>
+      <div class="sw-path">/orders</div>
+      <div class="sw-desc">List orders với pagination + filter</div>
+    </div>
+    <div class="sw-endpoint">
+      <div class="sw-method sw-post">POST</div>
+      <div class="sw-path">/orders</div>
+      <div class="sw-desc">Create new order (authenticated)</div>
+    </div>
+    <div class="sw-endpoint">
+      <div class="sw-method sw-get">GET</div>
+      <div class="sw-path">/orders/:id</div>
+      <div class="sw-desc">Get order by ID + items detail</div>
+    </div>
+    <div class="sw-endpoint">
+      <div class="sw-method sw-put">PUT</div>
+      <div class="sw-path">/orders/:id/status</div>
+      <div class="sw-desc">Update status (admin only)</div>
+    </div>
+    <div class="sw-endpoint">
+      <div class="sw-method sw-delete">DELETE</div>
+      <div class="sw-path">/orders/:id</div>
+      <div class="sw-desc">Cancel order (owner only, &lt;24h)</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:12px">NestJS Swagger Setup</h3>
+<pre><span style="color:#8b949e">// main.ts</span>
+<span style="color:#ff7b72">import</span> { SwaggerModule, DocumentBuilder } <span style="color:#ff7b72">from</span> <span style="color:#a5d6ff">'@nestjs/swagger'</span>;
+
+<span style="color:#ff7b72">const</span> config = <span style="color:#ff7b72">new</span> DocumentBuilder()
+  .setTitle(<span style="color:#a5d6ff">'OrderService API'</span>)
+  .setVersion(<span style="color:#a5d6ff">'1.0'</span>)
+  .addBearerAuth()
+  .build();
+
+<span style="color:#ff7b72">const</span> document = SwaggerModule.createDocument(app, config);
+SwaggerModule.setup(<span style="color:#a5d6ff">'api-docs'</span>, app, document);
+
+<span style="color:#8b949e">// Controller</span>
+@<span style="color:#d2a8ff">ApiOperation</span>({ summary: <span style="color:#a5d6ff">'Create order'</span> })
+@<span style="color:#d2a8ff">ApiResponse</span>({ status: 201, type: OrderDto })
+@<span style="color:#d2a8ff">Post</span>()
+create(@<span style="color:#d2a8ff">Body</span>() dto: CreateOrderDto) { ... }</pre>
+  </div>
+
+  <div class="tip"><strong>Habit:</strong> Mỗi endpoint phải có: <code>@ApiOperation</code> (what it does), <code>@ApiResponse</code> (all possible responses including 400/401/404), <code>@ApiBody</code> (request schema). Run Swagger UI → verify mỗi endpoint hiện đúng.</div>
+
+  <!-- EXERCISES -->
+  <hr class="section-divider">
+  <div class="exercises">
+    <div class="exercises-title">🎯 Bài Tập Thực Hành</div>
+
+    <div class="ex-card ex-green">
+      <div class="ex-header"><span class="ex-diff diff-green">🟢 Dễ</span><span class="ex-num">Bài 1</span></div>
+      <div class="ex-title">Viết README cho một project đang có</div>
+      <div class="ex-desc">Chọn một NestJS project bất kỳ (hoặc tạo mới). Viết README hoàn chỉnh theo anatomy: Title, Quick Start, Prerequisites, Architecture Overview, API Reference link, Test instructions. Kiểm tra: fresh clone và follow README có chạy được không?</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">Test checklist cho README:<br>☐ Clone repo mới (không dùng setup đang có)<br>☐ Follow prerequisites section — có đủ không?<br>☐ Quick Start commands — copy-paste, không typing<br>☐ npm run dev — app start?<br>☐ API reference link accessible?<br>☐ npm test — pass?<br><br>Nếu có bất kỳ step nào cần "đoán" hay tìm thêm info → README chưa đủ, update lại<br><br>Pro tip: nhờ người chưa biết project follow README — họ sẽ tìm ra gaps bạn không thấy</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-yellow">
+      <div class="ex-header"><span class="ex-diff diff-yellow">🟡 Trung bình</span><span class="ex-num">Bài 2</span></div>
+      <div class="ex-title">Setup Swagger cho UserService — annotate 4 endpoints</div>
+      <div class="ex-desc">Implement UserService với 4 endpoints (GET /users, POST /users, GET /users/:id, DELETE /users/:id). Setup @nestjs/swagger trong main.ts. Annotate mỗi endpoint với ApiOperation, ApiResponse (200/201/400/401/404), ApiBody. Verify Swagger UI hiện đúng.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body">Checklist per endpoint:<br>✓ @ApiOperation({ summary: '...' }) — mô tả trong 1 dòng<br>✓ @ApiResponse({ status: 200, type: UserDto }) — success<br>✓ @ApiResponse({ status: 404, description: 'User not found' }) — not found<br>✓ @ApiResponse({ status: 401, description: 'Unauthorized' }) — khi cần auth<br>✓ @ApiBody({ type: CreateUserDto }) — cho POST/PUT<br>✓ @ApiParam({ name: 'id', type: String }) — cho :id params<br><br>Sau khi annotate: mở /api-docs, verify mỗi endpoint có thể "Try it out" thành công</div>
+      </div>
+    </div>
+
+    <div class="ex-card ex-red">
+      <div class="ex-header"><span class="ex-diff diff-red">🔴 Khó</span><span class="ex-num">Bài 3</span></div>
+      <div class="ex-title">Viết Troubleshooting Guide cho common errors</div>
+      <div class="ex-desc">Collect 5 common errors từ project của bạn (hoặc research online cho NestJS). Với mỗi error: symptom (log message), likely causes (3+), checklist verify, fix commands/code. Format: searchable document — developer có thể copy error và tìm thấy ngay.</div>
+      <div class="ex-solution"><button class="ex-sol-toggle" onclick="toggleSol(this)">Xem gợi ý</button>
+        <div class="ex-sol-body"><strong>Template mỗi error:</strong><br><strong>Symptom:</strong> `MongoNetworkError: connect ECONNREFUSED 127.0.0.1:27017`<br><strong>Causes:</strong><br>1. MongoDB không chạy locally<br>2. Wrong MONGODB_URI trong .env<br>3. Docker container chưa start<br><strong>Check:</strong><br>- `docker ps | grep mongo` — container running?<br>- `cat .env | grep MONGODB_URI` — correct URL?<br>- `telnet localhost 27017` — connection possible?<br><strong>Fix:</strong><br>- `docker compose up -d mongodb`<br>- Update .env với correct URI<br><br>Format này làm cho troubleshoot guide searchable và actionable</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <hr class="section-divider">
+  <div class="card">
+    <h3>📌 Tóm Tắt — README &amp; API Docs</h3>
+    <ul style="color:#c9d1d9;padding-left:20px;margin-top:8px">
+      <li style="margin:6px 0"><strong>README</strong> = front door. MUST: Title + Quick Start + Prerequisites. SHOULD: Architecture + API link + Tests</li>
+      <li style="margin:6px 0"><strong>Test README</strong> = fresh clone + follow steps. Nếu phải đoán → chưa xong</li>
+      <li style="margin:6px 0"><strong>Swagger</strong> = code-first. Decorators → auto-generate. Không viết tay</li>
+      <li style="margin:6px 0"><strong>Annotate mọi endpoint</strong> = ApiOperation + ApiResponse (tất cả cases) + ApiBody</li>
+      <li style="margin:6px 0"><strong>Update khi thay đổi</strong> — outdated doc = worse than no doc</li>
+    </ul>
+  </div>
+
+  <div style="text-align:center;margin-top:48px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">Bài 18a / Phase 5 — Professional</p>
+    <div style="margin-top:12px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="../17-product/17c-metrics.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← 17c: Metrics</a>
+      <a href="18b-diagrams.html" style="color:#bc8cff;text-decoration:none;font-size:.85rem">Tiếp theo: 18b — Diagrams →</a>
+    </div>
+  </div>
+</div>
+<script>
+function toggleSol(btn){const b=btn.nextElementSibling;const o=b.classList.toggle('open');btn.textContent=o?'Ẩn gợi ý':'Xem gợi ý';}
+</script>
+</body>
+</html>

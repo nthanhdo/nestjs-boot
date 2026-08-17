@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>09c — Unit Testing | Phase 3</title>
+<style>
+:root {
+  --bg: #0d1117; --surface: #161b22; --border: #30363d;
+  --text: #e6edf3; --muted: #7d8590; --accent: #58a6ff;
+  --success: #3fb950; --warning: #d29922; --error: #f85149; --radius: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+.top-nav { position: sticky; top: 0; z-index: 100; background: rgba(13,17,23,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .6rem 1.5rem; }
+.breadcrumb { font-size: .82rem; color: var(--muted); } .breadcrumb span { color: var(--accent); }
+.nav-links { display: flex; gap: .5rem; }
+.nav-links a { padding: .4rem .9rem; border-radius: 6px; text-decoration: none; font-size: .8rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.nav-links a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+.progress-bar { height: 2px; background: var(--border); position: fixed; top: 0; left: 0; right: 0; z-index: 200; }
+.progress-fill { height: 100%; background: var(--accent); width: 0; }
+.hero { padding: 3rem 1.5rem 2rem; max-width: 860px; margin: 0 auto; }
+.lesson-tag { font-size: .72rem; color: var(--accent); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .5rem; }
+.hero h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: .75rem; }
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: var(--muted); line-height: 1.7; max-width: 640px; }
+.content { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+section { margin-bottom: 2.5rem; }
+h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; }
+p { color: var(--muted); line-height: 1.7; margin-bottom: .75rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+.code-block { background: #010409; border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; font-family: 'Courier New', monospace; font-size: .78rem; line-height: 1.7; overflow-x: auto; }
+.c-comment { color: #6e7681; } .c-kw { color: #ff7b72; } .c-str { color: #a5d6ff; }
+.c-fn { color: #d2a8ff; } .c-num { color: #79c0ff; } .c-type { color: #79c0ff; }
+
+/* AAA */
+.aaa-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: .75rem; }
+.aaa-card { border-radius: 8px; padding: 1rem; text-align: center; }
+.aaa-letter { font-size: 2rem; font-weight: 900; display: block; margin-bottom: .35rem; }
+
+/* COVERAGE GAUGE */
+.gauge-container { display: flex; align-items: center; gap: 1.5rem; }
+.gauge { width: 120px; height: 120px; position: relative; }
+.gauge svg { transform: rotate(-90deg); }
+.gauge-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; }
+.gauge-pct { font-size: 1.3rem; font-weight: 800; }
+.gauge-info { flex: 1; }
+
+/* WHAT TO TEST */
+.what-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.what-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: .9rem; }
+.what-card h3 { font-size: .85rem; font-weight: 700; margin-bottom: .5rem; }
+.what-card ul { list-style: none; font-size: .8rem; }
+.what-card ul li { padding: .2rem 0; color: var(--muted); display: flex; gap: .4rem; }
+
+.exercise-box { background: rgba(88,166,255,.06); border: 1px solid rgba(88,166,255,.25); border-radius: var(--radius); padding: 1.5rem; }
+.exercise-box h2 { color: var(--accent); margin-bottom: 1rem; }
+.exercise-steps { list-style: none; }
+.exercise-steps li { padding: .6rem 0; border-bottom: 1px solid rgba(88,166,255,.15); color: var(--muted); display: flex; gap: .75rem; }
+.exercise-steps li:last-child { border: none; }
+.step-num { background: var(--accent); color: #000; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; flex-shrink: 0; }
+.takeaway { background: rgba(63,185,80,.06); border: 1px solid rgba(63,185,80,.3); border-radius: var(--radius); padding: 1.5rem; }
+.takeaway h2 { color: var(--success); margin-bottom: 1rem; }
+.takeaway ul { list-style: none; }
+.takeaway ul li { padding: .4rem 0; color: var(--muted); display: flex; gap: .5rem; }
+.takeaway ul li::before { content: '▸'; color: var(--success); }
+.bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(13,17,23,.97); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: .75rem 1.5rem; }
+.bottom-nav a { padding: .45rem 1.1rem; border-radius: 8px; text-decoration: none; font-size: .85rem; border: 1px solid var(--border); color: var(--muted); transition: all .2s; }
+.bottom-nav a.next { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+.progress-dots { display: flex; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); cursor: pointer; }
+.dot.active { background: var(--accent); }
+</style>
+</head>
+<body>
+<div class="progress-bar"><div class="progress-fill" id="pf"></div></div>
+<nav class="top-nav">
+  <div class="breadcrumb">Phase 3 · Testing · <span>09c — Unit Testing</span></div>
+  <div class="nav-links">
+    <a href="09b-test-pyramid.html">← Pyramid</a>
+    <a href="09d-tdd.html" class="next">TDD →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="lesson-tag">09c · Testing</div>
+  <h1><em>Unit Testing</em></h1>
+  <p>Unit test = test 1 unit logic trong isolation. AAA pattern: Arrange → Act → Assert. Test behavior, không phải implementation.</p>
+</div>
+
+<div class="content">
+
+  <!-- AAA -->
+  <section>
+    <h2>AAA Pattern — Cấu trúc mọi unit test</h2>
+    <div class="aaa-grid">
+      <div class="aaa-card" style="background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.3)">
+        <span class="aaa-letter" style="color:#58a6ff">A</span>
+        <div style="font-weight:700;color:#58a6ff;margin-bottom:.4rem">Arrange</div>
+        <p style="font-size:.8rem">Setup: tạo input data, mock dependencies, initialize SUT</p>
+      </div>
+      <div class="aaa-card" style="background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.3)">
+        <span class="aaa-letter" style="color:#d29922">A</span>
+        <div style="font-weight:700;color:#d29922;margin-bottom:.4rem">Act</div>
+        <p style="font-size:.8rem">Execute: gọi function/method cần test với prepared input</p>
+      </div>
+      <div class="aaa-card" style="background:rgba(63,185,80,.07);border:1px solid rgba(63,185,80,.3)">
+        <span class="aaa-letter" style="color:#3fb950">A</span>
+        <div style="font-weight:700;color:#3fb950;margin-bottom:.4rem">Assert</div>
+        <p style="font-size:.8rem">Verify: kết quả đúng với expectation? Error đúng type?</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPLETE EXAMPLE -->
+  <section>
+    <h2>Complete Unit Test — Service with Mock</h2>
+    <div class="code-block">
+<span class="c-comment">// product.service.spec.ts</span>
+<span class="c-kw">describe</span>(<span class="c-str">'ProductService'</span>, () => {
+  <span class="c-kw">let</span> service: <span class="c-type">ProductService</span>;
+  <span class="c-kw">let</span> mockRepo: jest.Mocked&lt;<span class="c-type">ProductRepository</span>&gt;;
+
+  beforeEach(<span class="c-kw">async</span> () => {
+    <span class="c-comment">// Arrange: setup module with mock repo</span>
+    <span class="c-kw">const</span> module = <span class="c-kw">await</span> Test.<span class="c-fn">createTestingModule</span>({
+      providers: [
+        <span class="c-type">ProductService</span>,
+        { provide: <span class="c-type">ProductRepository</span>, useValue: { <span class="c-fn">findById</span>: jest.fn() } }
+      ],
+    }).<span class="c-fn">compile</span>();
+
+    service = module.<span class="c-fn">get</span>(<span class="c-type">ProductService</span>);
+    mockRepo = module.<span class="c-fn">get</span>(<span class="c-type">ProductRepository</span>);
+  });
+
+  <span class="c-fn">describe</span>(<span class="c-str">'findById'</span>, () => {
+    <span class="c-kw">it</span>(<span class="c-str">'should return product when found'</span>, <span class="c-kw">async</span> () => {
+      <span class="c-comment">// Arrange</span>
+      <span class="c-kw">const</span> mockProduct = { id: <span class="c-str">'p1'</span>, name: <span class="c-str">'Laptop'</span>, price: <span class="c-num">500</span> };
+      mockRepo.findById.<span class="c-fn">mockResolvedValue</span>(mockProduct);
+
+      <span class="c-comment">// Act</span>
+      <span class="c-kw">const</span> result = <span class="c-kw">await</span> service.<span class="c-fn">findById</span>(<span class="c-str">'p1'</span>);
+
+      <span class="c-comment">// Assert</span>
+      expect(result).toEqual(mockProduct);
+      expect(mockRepo.findById).<span class="c-fn">toHaveBeenCalledWith</span>(<span class="c-str">'p1'</span>);
+    });
+
+    <span class="c-kw">it</span>(<span class="c-str">'should throw NotFoundException when not found'</span>, <span class="c-kw">async</span> () => {
+      mockRepo.findById.<span class="c-fn">mockResolvedValue</span>(<span class="c-kw">null</span>);
+      <span class="c-kw">await</span> expect(service.<span class="c-fn">findById</span>(<span class="c-str">'unknown'</span>))
+        .<span class="c-fn">rejects</span>.<span class="c-fn">toThrow</span>(<span class="c-type">NotFoundException</span>);
+    });
+  });
+});</div>
+  </section>
+
+  <!-- WHAT TO TEST -->
+  <section>
+    <h2>What to Test — và Không Test</h2>
+    <div class="what-grid">
+      <div class="what-card" style="border-left:3px solid var(--success)">
+        <h3 style="color:var(--success)">✅ Nên test</h3>
+        <ul>
+          <li>✓ Business logic, calculations</li>
+          <li>✓ Edge cases (null, 0, empty array)</li>
+          <li>✓ Error conditions (not found, unauthorized)</li>
+          <li>✓ Transformations/mappings</li>
+          <li>✓ Complex conditional logic</li>
+          <li>✓ Validation rules</li>
+        </ul>
+      </div>
+      <div class="what-card" style="border-left:3px solid var(--warning)">
+        <h3 style="color:var(--warning)">⚠️ Không cần test</h3>
+        <ul>
+          <li>✗ Getters/setters trivial</li>
+          <li>✗ Constructor chỉ assign fields</li>
+          <li>✗ Framework magic (decorators)</li>
+          <li>✗ Third-party library internals</li>
+          <li>✗ Implementation details (private)</li>
+          <li>✗ Type definitions</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- COVERAGE -->
+  <section>
+    <h2>Test Coverage — Mục tiêu thực tế</h2>
+    <div class="card">
+      <div class="gauge-container">
+        <div class="gauge">
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="var(--border)" stroke-width="10"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#3fb950" stroke-width="10" stroke-dasharray="314" stroke-dashoffset="78" stroke-linecap="round" id="coverArc"/>
+          </svg>
+          <div class="gauge-text">
+            <div class="gauge-pct" id="covPct" style="color:#3fb950">75%</div>
+            <div style="font-size:.65rem;color:var(--muted)">coverage</div>
+          </div>
+        </div>
+        <div class="gauge-info">
+          <div style="margin-bottom:.75rem">
+            <input type="range" min="0" max="100" value="75" oninput="updateCoverage(this.value)" style="width:100%;accent-color:var(--accent)">
+          </div>
+          <div id="covMsg" style="font-size:.85rem;color:var(--muted)">✅ Good coverage. Focus on critical paths.</div>
+          <div style="margin-top:.75rem;font-size:.8rem;color:var(--muted)">
+            Target: <strong style="color:#3fb950">80%</strong> cho business logic.<br>
+            100% = overkill. Test logic, không test code paths vô nghĩa.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="exercise-box">
+    <h2>🛠 Bài tập — Write Real Unit Tests</h2>
+    <ul class="exercise-steps">
+      <li><span class="step-num">1</span>Chọn OrderService.calculateTotal(). Viết tests: empty array → 0, 1 item, multiple items, negative price (should throw).</li>
+      <li><span class="step-num">2</span>Mock ProductRepository. Test Service.findById(): found case, not-found → NotFoundException, DB error → rethrow.</li>
+      <li><span class="step-num">3</span>Chạy <code>npx jest --coverage</code>. Xem report. List 3 uncovered paths quan trọng nhất → add tests.</li>
+      <li><span class="step-num">4</span>Refactor 1 test đang test implementation (checking internal state) → test behavior (checking output/exception).</li>
+    </ul>
+  </section>
+
+  <section class="takeaway">
+    <h2>Key Takeaways</h2>
+    <ul>
+      <li>AAA: Arrange (setup) → Act (execute) → Assert (verify). Mỗi test 1 thing.</li>
+      <li>Test behavior, không test implementation. Refactor implementation → tests vẫn xanh.</li>
+      <li>Mock dependencies (repo, external services) để isolate unit logic.</li>
+      <li>Target 80% coverage cho business logic. 100% = thường là over-testing.</li>
+      <li><code>expect(...).rejects.toThrow()</code> cho async error cases — đừng quên await.</li>
+    </ul>
+  </section>
+
+</div>
+
+<div class="bottom-nav">
+  <a href="09b-test-pyramid.html">← Pyramid</a>
+  <div class="progress-dots">
+    <div class="dot"></div><div class="dot"></div>
+    <div class="dot active"></div><div class="dot"></div>
+  </div>
+  <a href="09d-tdd.html" class="next">TDD →</a>
+</div>
+
+<script>
+window.addEventListener('scroll', () => {
+  document.getElementById('pf').style.width = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100 + '%';
+});
+function updateCoverage(val) {
+  const pct = parseInt(val);
+  document.getElementById('covPct').textContent = pct + '%';
+  const offset = 314 - (314 * pct / 100);
+  document.getElementById('coverArc').setAttribute('stroke-dashoffset', offset);
+  const color = pct >= 80 ? '#3fb950' : pct >= 60 ? '#d29922' : '#f85149';
+  document.getElementById('coverArc').setAttribute('stroke', color);
+  document.getElementById('covPct').style.color = color;
+  const msgs = {
+    high: '✅ Excellent coverage. Maintain it.',
+    good: '✅ Good coverage. Focus on critical paths.',
+    ok: '⚠️ Acceptable. Add tests for business logic.',
+    low: '❌ Too low. Many untested paths = risk.',
+  };
+  document.getElementById('covMsg').textContent = pct >= 90 ? msgs.high : pct >= 80 ? msgs.good : pct >= 60 ? msgs.ok : msgs.low;
+  document.getElementById('covMsg').style.color = color;
+}
+</script>
+</body>
+</html>

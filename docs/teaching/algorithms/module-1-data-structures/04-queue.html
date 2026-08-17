@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>04 — Hàng đợi (Queue) | Data Structures</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #1a1a2e; --panel-bg: #16213e; --code-bg: #0f0f23;
+    --accent: #10b981; --accent2: #ff6b6b; --accent3: #ffd93d;
+    --text: #e8e8f0; --text-dim: #888aaa; --border: #2a2a4a;
+    --node: #0a2818; --node-border: #059669; --node-active: #10b981;
+    --node-found: #34d399; --node-delete: #ff4757; --node-insert: #ffd93d;
+  }
+  body { background: var(--bg); color: var(--text); font-family: system-ui,-apple-system,sans-serif;
+    display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  header { background: var(--panel-bg); border-bottom: 1px solid var(--border);
+    padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+  header h1 { font-size: 1.1rem; color: var(--accent); }
+  .badge { background: var(--code-bg); border: 1px solid var(--border); padding: 2px 10px;
+    border-radius: 20px; font-size: 0.75rem; color: var(--text-dim); }
+  .main { display: flex; flex: 1; overflow: hidden; }
+  .viz { flex: 0 0 60%; display: flex; flex-direction: column; padding: 14px; gap: 10px; overflow: hidden; }
+  .ops-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .op-btn { background: var(--panel-bg); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; transition: all 0.2s; }
+  .op-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .op-btn.active { background: var(--accent); color: #000; font-weight: 600; }
+  .input-row { display: flex; gap: 8px; align-items: center; }
+  .input-row label { font-size: 0.8rem; color: var(--text-dim); }
+  .input-row input { background: var(--code-bg); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 10px; border-radius: 6px; width: 70px; font-size: 0.85rem; }
+  .run-btn { background: var(--accent); color: #000; border: none; padding: 6px 16px;
+    border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+
+  .canvas-area { flex: 1; background: var(--panel-bg); border: 1px solid var(--border);
+    border-radius: 12px; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 16px; gap: 16px; overflow: hidden; }
+
+  /* Linear Queue */
+  .queue-section { display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+  .queue-labels { display: flex; justify-content: space-between; width: 100%; max-width: 560px;
+    font-size: 0.72rem; color: var(--text-dim); }
+  .queue-label-rear { color: var(--accent3); font-weight: 700; }
+  .queue-label-front { color: var(--accent); font-weight: 700; }
+  .queue-track { display: flex; align-items: center; gap: 3px; min-height: 64px; }
+  .q-item { width: 56px; height: 54px; background: var(--node); border: 2px solid var(--node-border);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.95rem; transition: all 0.35s; flex-shrink: 0; }
+  .q-item.front { border-color: var(--node-active); color: var(--node-active);
+    background: rgba(16,185,129,0.15); box-shadow: 0 0 14px rgba(16,185,129,0.3); }
+  .q-item.rear  { border-color: var(--accent3); color: var(--accent3);
+    background: rgba(255,217,61,0.12); box-shadow: 0 0 14px rgba(255,217,61,0.3); }
+  .q-item.enqueuing { animation: slideIn 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  @keyframes slideIn { from{opacity:0;transform:translateX(40px) scale(0.7)} to{opacity:1;transform:translateX(0) scale(1)} }
+  .q-item.dequeuing { animation: slideOut 0.4s ease forwards; }
+  @keyframes slideOut { from{opacity:1;transform:translateX(0) scale(1)} to{opacity:0;transform:translateX(-40px) scale(0.7)} }
+  .q-empty { color: var(--text-dim); font-size: 0.85rem; padding: 20px; }
+
+  .fifo-banner { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);
+    border-radius: 8px; padding: 6px 16px; font-size: 0.78rem; text-align: center; }
+  .fifo-banner strong { color: var(--accent); }
+
+  /* Circular Queue */
+  .circle-section { display: none; flex-direction: column; align-items: center; gap: 10px; }
+  .circle-section.show { display: flex; }
+  .cq-canvas { position: relative; width: 220px; height: 220px; }
+  .cq-slot { position: absolute; width: 44px; height: 44px; border: 2px solid var(--border);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 600; background: var(--code-bg); transition: all 0.35s; }
+  .cq-slot.used { background: var(--node); border-color: var(--node-border); }
+  .cq-slot.front-slot { border-color: var(--node-active); color: var(--node-active);
+    background: rgba(16,185,129,0.15); }
+  .cq-slot.rear-slot  { border-color: var(--accent3); color: var(--accent3);
+    background: rgba(255,217,61,0.12); }
+  .cq-slot.active-slot { box-shadow: 0 0 14px rgba(16,185,129,0.5); }
+
+  /* Priority Queue */
+  .pq-section { display: none; flex-direction: column; align-items: center; gap: 10px; width: 100%; }
+  .pq-section.show { display: flex; }
+  .pq-track { display: flex; gap: 4px; align-items: flex-end; min-height: 80px; }
+  .pq-item { display: flex; flex-direction: column; align-items: center; gap: 2px; transition: all 0.4s; }
+  .pq-bar { width: 50px; background: var(--node); border: 2px solid var(--node-border);
+    border-radius: 6px 6px 0 0; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.85rem; transition: all 0.4s; }
+  .pq-priority { font-size: 0.62rem; color: var(--text-dim); }
+  .pq-item.highest .pq-bar { border-color: var(--node-active); background: rgba(16,185,129,0.2); color: var(--node-active); }
+
+  .complexity-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .complexity-badge { background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 5px 12px; text-align: center; }
+  .complexity-badge .label { font-size: 0.65rem; color: var(--text-dim); }
+  .complexity-badge .value { font-size: 0.9rem; font-weight: 700; margin-top: 1px; }
+  .green { color: #00ff88; } .yellow { color: var(--accent3); }
+  .complexity-badge.active-badge { border-color: var(--accent); }
+
+  .status-msg { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 14px; font-size: 0.82rem; color: var(--text-dim); text-align: center; min-width: 300px; }
+  .status-msg.info { border-color: var(--accent); color: var(--accent); }
+  .status-msg.success { border-color: var(--node-found); color: var(--node-found); }
+  .status-msg.error { border-color: var(--node-delete); color: var(--node-delete); }
+
+  .code-panel { flex: 0 0 40%; background: var(--code-bg); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden; }
+  .code-panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border);
+    font-size: 0.8rem; color: var(--text-dim); display: flex; gap: 8px; align-items: center; }
+  .code-panel-header span { color: var(--accent); font-weight: 600; font-size: 0.85rem; }
+  .code-body { flex: 1; overflow-y: auto; padding: 12px 0; font-family: 'Courier New',monospace; font-size: 0.82rem; }
+  .code-line { display: flex; padding: 3px 0; transition: background 0.2s; }
+  .code-line.highlight { background: rgba(16,185,129,0.12); border-left: 3px solid var(--accent); }
+  .ln { width: 36px; text-align: right; padding-right: 12px; color: #444; flex-shrink: 0; user-select: none; }
+  .code-text { color: #abb2bf; white-space: pre; }
+  .kw { color: #c678dd; } .fn { color: #61afef; } .cm { color: #5c6370; font-style: italic; }
+  .num { color: #d19a66; } .str { color: #98c379; }
+
+  .controls { background: var(--panel-bg); border-top: 1px solid var(--border);
+    padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+  .ctrl-btn { background: var(--code-bg); border: 1px solid var(--border); color: var(--text);
+    width: 36px; height: 36px; border-radius: 8px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; font-size: 1rem; transition: all 0.2s; }
+  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .speed-group { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-dim); }
+  input[type=range] { -webkit-appearance: none; width: 100px; height: 4px; background: var(--border);
+    border-radius: 2px; outline: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px;
+    background: var(--accent); border-radius: 50%; }
+  .step-info { font-size: 0.78rem; color: var(--text-dim); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🚶 Hàng đợi — Queue</h1>
+  <span class="badge">Module 1 · Cấu trúc dữ liệu</span>
+  <span class="badge">FIFO — First In, First Out</span>
+  <span class="badge">Enqueue/Dequeue: O(1)</span>
+</header>
+
+<div class="main">
+  <div class="viz">
+    <div class="ops-bar">
+      <button class="op-btn active" onclick="selectOp('enqueue',event)">⬅ Enqueue</button>
+      <button class="op-btn" onclick="selectOp('dequeue',event)">➡ Dequeue</button>
+      <button class="op-btn" onclick="selectOp('circular',event)">🔄 Circular Queue</button>
+      <button class="op-btn" onclick="selectOp('priority',event)">⭐ Priority Queue</button>
+    </div>
+    <div class="input-row">
+      <label id="lbl1">Giá trị:</label>
+      <input type="number" id="inp1" value="75" min="0" max="99">
+      <span id="lblPri" style="display:none"><label>Độ ưu tiên:</label>
+        <input type="number" id="inp2" value="3" min="1" max="9"></span>
+      <button class="run-btn" onclick="runOperation()">▶ Chạy</button>
+    </div>
+    <div class="canvas-area">
+      <!-- Linear Queue -->
+      <div class="queue-section" id="linearSection">
+        <div class="queue-labels">
+          <span class="queue-label-rear">REAR (vào đây)</span>
+          <span class="queue-label-front">FRONT (ra đây)</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:0.8rem;color:var(--accent3)">⟵ Enqueue</span>
+          <div class="queue-track" id="queueTrack"></div>
+          <span style="font-size:0.8rem;color:var(--accent)">Dequeue ⟶</span>
+        </div>
+        <div class="fifo-banner"><strong>FIFO</strong> — Vào trước, ra trước</div>
+        <div class="complexity-row">
+          <div class="complexity-badge active-badge" id="cb0"><div class="label">Enqueue</div><div class="value green">O(1)</div></div>
+          <div class="complexity-badge" id="cb1"><div class="label">Dequeue</div><div class="value green">O(1)</div></div>
+          <div class="complexity-badge" id="cb2"><div class="label">Peek</div><div class="value green">O(1)</div></div>
+        </div>
+      </div>
+
+      <!-- Circular Queue -->
+      <div class="circle-section" id="circularSection">
+        <div style="font-size:0.8rem;color:var(--text-dim)">Circular Queue — size 8</div>
+        <div class="cq-canvas" id="cqCanvas"></div>
+        <div style="font-size:0.75rem;color:var(--text-dim);text-align:center">
+          <span style="color:var(--accent)">● FRONT</span> &nbsp;
+          <span style="color:var(--accent3)">● REAR</span>
+        </div>
+      </div>
+
+      <!-- Priority Queue -->
+      <div class="pq-section" id="prioritySection">
+        <div style="font-size:0.8rem;color:var(--text-dim)">Priority Queue — cao nhất ra trước</div>
+        <div class="pq-track" id="pqTrack"></div>
+        <div style="font-size:0.75rem;color:var(--text-dim)">↑ Chiều cao = độ ưu tiên (cao = ra trước)</div>
+      </div>
+
+      <div class="status-msg" id="statusMsg">Chọn thao tác và nhấn ▶ Chạy</div>
+    </div>
+  </div>
+
+  <div class="code-panel">
+    <div class="code-panel-header">📄 Pseudocode — <span id="codeTitle">Queue Enqueue</span></div>
+    <div class="code-body" id="codeBody"></div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn" onclick="stepBack()">⏮</button>
+  <button class="ctrl-btn" id="btnPlay" onclick="togglePlay()">▶</button>
+  <button class="ctrl-btn" onclick="stepForward()">⏭</button>
+  <button class="ctrl-btn" onclick="resetAll()">🔄</button>
+  <div class="speed-group">🐢 <input type="range" id="speedSlider" min="1" max="5" value="3"> 🐇</div>
+  <div class="step-info" id="stepInfo">Bước 0 / 0</div>
+</div>
+
+<script>
+let queue = [34, 56, 78, 12]; // linear queue values
+let cqData = { arr: new Array(8).fill(null), front: 0, rear: 3, size: 4 };
+cqData.arr[0]=34; cqData.arr[1]=56; cqData.arr[2]=78; cqData.arr[3]=12;
+let pqData = [{val:42,pri:5},{val:18,pri:8},{val:73,pri:2},{val:55,pri:6}];
+let currentOp = 'enqueue';
+let steps = [], stepIdx = -1, playing = false, playTimer = null;
+const speedMap = { 1:1400, 2:1000, 3:650, 4:380, 5:200 };
+
+const codes = {
+  enqueue: {
+    title: 'Queue Enqueue — O(1)',
+    lines: [
+      ['cm','// Thêm phần tử vào cuối hàng đợi'],
+      ['kw','function ','fn','enqueue','(queue, value):'],
+      ['kw','  if ','','queue.isFull():'],
+      ['kw','    throw ','','QueueFullError'],
+      ['cm','  // Tăng rear và ghi giá trị'],
+      ['','  rear = (rear + 1) % capacity'],
+      ['','  queue[rear] = value'],
+      ['','  size++'],
+      ['kw','  return ','cm','"// O(1)!"'],
+    ]
+  },
+  dequeue: {
+    title: 'Queue Dequeue — O(1)',
+    lines: [
+      ['cm','// Lấy phần tử từ đầu hàng đợi'],
+      ['kw','function ','fn','dequeue','(queue):'],
+      ['kw','  if ','','queue.isEmpty():'],
+      ['kw','    throw ','','QueueEmptyError'],
+      ['cm','  // Lấy giá trị tại front'],
+      ['','  value = queue[front]'],
+      ['','  front = (front + 1) % capacity'],
+      ['','  size--'],
+      ['kw','  return ','','value ','cm','// O(1)!'],
+    ]
+  },
+  circular: {
+    title: 'Circular Queue — O(1)',
+    lines: [
+      ['cm','// Circular Queue — dùng modulo'],
+      ['cm','// Tránh lãng phí không gian'],
+      ['kw','function ','fn','enqueue','(value):'],
+      ['kw','  if ','','isFull(): ','kw','throw ','','Error'],
+      ['cm','  // Dùng modulo để "quay vòng"'],
+      ['','  rear = (rear + 1) % capacity'],
+      ['','  arr[rear] = value'],
+      ['','  size++'],
+      ['cm','// (rear+1)%N → quay về 0 khi đến N-1'],
+      ['cm','// Không bao giờ tràn nếu còn chỗ'],
+    ]
+  },
+  priority: {
+    title: 'Priority Queue — O(log n)',
+    lines: [
+      ['cm','// Priority Queue — cao nhất ra trước'],
+      ['cm','// Thường dùng Heap bên trong'],
+      ['kw','function ','fn','enqueue','(pq, val, pri):'],
+      ['','  pq.push({val, pri})'],
+      ['cm','  // Sắp xếp lại theo độ ưu tiên'],
+      ['','  heapifyUp(pq)   ','cm','// O(log n)'],
+      ['kw','function ','fn','dequeue','(pq):'],
+      ['cm','  // Luôn lấy phần tử có pri cao nhất'],
+      ['','  max = pq[0]'],
+      ['','  swap(pq[0], pq[last])'],
+      ['','  pq.pop(); heapifyDown(pq)'],
+      ['kw','  return ','','max'],
+    ]
+  }
+};
+
+function renderCode(op, hl=-1) {
+  const c = codes[op];
+  document.getElementById('codeTitle').textContent = c.title;
+  const body = document.getElementById('codeBody');
+  body.innerHTML = '';
+  c.lines.forEach((parts,i) => {
+    const div = document.createElement('div');
+    div.className = 'code-line'+(i===hl?' highlight':'');
+    const ln = document.createElement('span'); ln.className='ln'; ln.textContent=i+1;
+    const txt = document.createElement('span'); txt.className='code-text';
+    let html='';
+    for(let j=0;j<parts.length;j+=2){
+      const cls=parts[j],content=parts[j+1]||'';
+      html+=cls?`<span class="${cls}">${content}</span>`:content;
+    }
+    txt.innerHTML=html; div.appendChild(ln); div.appendChild(txt);
+    body.appendChild(div);
+    if(i===hl) div.scrollIntoView({block:'nearest'});
+  });
+}
+
+function renderLinearQueue(q, frontCls='', rearCls='', deqIdx=-1) {
+  const track = document.getElementById('queueTrack');
+  track.innerHTML = '';
+  if (q.length === 0) {
+    const e = document.createElement('div'); e.className='q-empty'; e.textContent='(hàng đợi rỗng)';
+    track.appendChild(e); return;
+  }
+  q.forEach((val, i) => {
+    const item = document.createElement('div'); item.className='q-item';
+    item.textContent = val;
+    if (i === q.length-1 && rearCls) item.classList.add(rearCls);
+    if (i === 0 && frontCls) item.classList.add(frontCls);
+    track.appendChild(item);
+  });
+}
+
+function renderCircularQueue(cq, hlSlot=-1) {
+  const canvas = document.getElementById('cqCanvas');
+  canvas.innerHTML = '';
+  const n = 8, R = 90, cx = 110, cy = 110;
+  for (let i = 0; i < n; i++) {
+    const angle = (i / n) * Math.PI * 2 - Math.PI / 2;
+    const x = cx + R * Math.cos(angle) - 22;
+    const y = cy + R * Math.sin(angle) - 22;
+    const slot = document.createElement('div'); slot.className='cq-slot';
+    slot.style.left = x + 'px'; slot.style.top = y + 'px';
+    if (cq.arr[i] !== null) {
+      slot.classList.add('used');
+      slot.textContent = cq.arr[i];
+    } else {
+      slot.textContent = '-';
+    }
+    if (i === cq.front) slot.classList.add('front-slot');
+    if (i === cq.rear)  slot.classList.add('rear-slot');
+    if (i === hlSlot)   slot.classList.add('active-slot');
+    canvas.appendChild(slot);
+  }
+  // labels in center
+  const center = document.createElement('div');
+  center.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;font-size:0.7rem;';
+  center.innerHTML = `<div style="color:var(--accent)">F:${cq.front}</div><div style="color:var(--accent3)">R:${cq.rear}</div><div style="color:var(--text-dim)">size:${cq.size}</div>`;
+  canvas.appendChild(center);
+}
+
+function renderPriorityQueue(pq, hlIdx=-1) {
+  const track = document.getElementById('pqTrack');
+  track.innerHTML = '';
+  const sorted = [...pq].sort((a,b) => b.pri - a.pri);
+  sorted.forEach((item, i) => {
+    const wrap = document.createElement('div'); wrap.className='pq-item';
+    if (i===0) wrap.classList.add('highest');
+    const bar = document.createElement('div'); bar.className='pq-bar';
+    bar.style.height = (item.pri * 8 + 20) + 'px';
+    bar.textContent = item.val;
+    const lbl = document.createElement('div'); lbl.className='pq-priority';
+    lbl.textContent = `pri=${item.pri}`;
+    wrap.appendChild(bar); wrap.appendChild(lbl);
+    track.appendChild(wrap);
+  });
+}
+
+function buildSteps(op, val, pri) {
+  steps = [];
+  if (op === 'enqueue') {
+    complexityFocus(0);
+    steps.push({ q:[...queue], code:-1, msg:`Enqueue ${val} vào cuối hàng đợi` });
+    steps.push({ q:[...queue], code:5, msg:`rear = (rear+1) — cập nhật vị trí rear` });
+    const nq = [...queue, val];
+    steps.push({ q:nq, rearCls:'rear', code:6, msg:`queue[rear] = ${val} — ghi vào` });
+    steps.push({ q:nq, rearCls:'rear', code:7, msg:`size++ — tăng kích thước` });
+    steps.push({ q:nq, rearCls:'rear', code:8, msg:`✓ Enqueue thành công — O(1)` });
+    queue = nq;
+  }
+  else if (op === 'dequeue') {
+    if (!queue.length) { alert('Hàng đợi rỗng!'); return; }
+    complexityFocus(1);
+    const dequeuedVal = queue[0];
+    steps.push({ q:[...queue], frontCls:'front', code:1, msg:`Chuẩn bị dequeue từ front` });
+    steps.push({ q:[...queue], frontCls:'found', code:5, msg:`Đọc queue[front] = ${dequeuedVal}` });
+    steps.push({ q:[...queue], frontCls:'dequeuing', code:6, msg:`front = (front+1) — dịch front` });
+    const nq = queue.slice(1);
+    steps.push({ q:nq, code:7, msg:`size-- — giảm kích thước` });
+    steps.push({ q:nq, code:8, msg:`✓ Dequeue thành công — trả về ${dequeuedVal}` });
+    queue = nq;
+  }
+  else if (op === 'circular') {
+    const cq = { arr: [...cqData.arr], front: cqData.front, rear: cqData.rear, size: cqData.size };
+    steps.push({ cq:{...cq,arr:[...cq.arr]}, hlSlot:-1, code:2, msg:`Circular Queue hiện tại — front:${cq.front}, rear:${cq.rear}` });
+    const newRear = (cq.rear + 1) % 8;
+    steps.push({ cq:{...cq,arr:[...cq.arr]}, hlSlot:newRear, code:5, msg:`rear = (${cq.rear}+1) % 8 = ${newRear}` });
+    const na = [...cq.arr]; na[newRear] = val;
+    const ncq = { arr: na, front: cq.front, rear: newRear, size: cq.size+1 };
+    steps.push({ cq:ncq, hlSlot:newRear, code:6, msg:`arr[${newRear}] = ${val} — quay vòng!` });
+    steps.push({ cq:ncq, hlSlot:-1, code:7, msg:`✓ Enqueue circular thành công` });
+    cqData = ncq;
+  }
+  else if (op === 'priority') {
+    steps.push({ pq:[...pqData], hl:-1, code:2, msg:`Priority Queue — enqueue(val=${val}, pri=${pri})` });
+    steps.push({ pq:[...pqData], hl:-1, code:3, msg:`Thêm {val:${val}, pri:${pri}} vào cuối` });
+    const npq = [...pqData, {val, pri}];
+    steps.push({ pq:npq, hl:npq.length-1, code:5, msg:`heapifyUp — sắp xếp lại theo độ ưu tiên` });
+    const sorted = [...npq].sort((a,b)=>b.pri-a.pri);
+    steps.push({ pq:sorted, hl:0, code:5, msg:`Phần tử pri cao nhất luôn ở đầu` });
+    steps.push({ pq:sorted, hl:-1, code:6, msg:`✓ Priority Queue cập nhật xong — O(log n)` });
+    pqData = sorted;
+  }
+}
+
+function complexityFocus(idx) {
+  ['cb0','cb1','cb2'].forEach((id,i)=>
+    document.getElementById(id)?.classList.toggle('active-badge',i===idx));
+}
+
+function showSection(op) {
+  document.getElementById('linearSection').style.display = (op==='enqueue'||op==='dequeue') ? '' : 'none';
+  document.getElementById('circularSection').className = 'circle-section' + (op==='circular'?' show':'');
+  document.getElementById('prioritySection').className = 'pq-section' + (op==='priority'?' show':'');
+}
+
+function applyStep(idx) {
+  if (idx<0||idx>=steps.length) return;
+  const s = steps[idx];
+  renderCode(currentOp, s.code);
+  const msg = document.getElementById('statusMsg');
+  msg.textContent = s.msg||'';
+  msg.className = 'status-msg'+(s.msg?.startsWith('✓')?' success':s.msg?.startsWith('✗')?' error':' info');
+  document.getElementById('stepInfo').textContent = `Bước ${idx+1} / ${steps.length}`;
+  if (s.q !== undefined) renderLinearQueue(s.q, s.frontCls||'', s.rearCls||'');
+  if (s.cq !== undefined) renderCircularQueue(s.cq, s.hlSlot??-1);
+  if (s.pq !== undefined) renderPriorityQueue(s.pq, s.hl??-1);
+}
+
+function stepForward() { if(stepIdx<steps.length-1){stepIdx++;applyStep(stepIdx);}else stopPlay(); }
+function stepBack()    { if(stepIdx>0){stepIdx--;applyStep(stepIdx);} }
+function togglePlay()  { playing?stopPlay():startPlay(); }
+function startPlay() {
+  playing=true; document.getElementById('btnPlay').textContent='⏸';
+  function tick() {
+    if(stepIdx<steps.length-1){stepIdx++;applyStep(stepIdx);
+      playTimer=setTimeout(tick,speedMap[document.getElementById('speedSlider').value]);
+    } else stopPlay();
+  }
+  tick();
+}
+function stopPlay() { playing=false;document.getElementById('btnPlay').textContent='▶';clearTimeout(playTimer); }
+
+function selectOp(op, e) {
+  currentOp=op;
+  document.querySelectorAll('.op-btn').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  document.getElementById('lbl1').textContent = (op==='priority')?'Giá trị:':'Giá trị:';
+  document.getElementById('lblPri').style.display = op==='priority'?'':'none';
+  showSection(op);
+  resetAll();
+}
+
+function runOperation() {
+  stopPlay();
+  queue=[34,56,78,12];
+  cqData={arr:[34,56,78,12,null,null,null,null],front:0,rear:3,size:4};
+  pqData=[{val:42,pri:5},{val:18,pri:8},{val:73,pri:2},{val:55,pri:6}];
+  const val=parseInt(document.getElementById('inp1').value)||75;
+  const pri=parseInt(document.getElementById('inp2').value)||3;
+  buildSteps(currentOp,val,pri);
+  stepIdx=-1;
+  if(currentOp==='enqueue'||currentOp==='dequeue') renderLinearQueue(queue,'front','rear');
+  if(currentOp==='circular') renderCircularQueue(cqData);
+  if(currentOp==='priority') renderPriorityQueue(pqData);
+  renderCode(currentOp,-1);
+  document.getElementById('statusMsg').textContent='Nhấn ⏭ để từng bước';
+  document.getElementById('statusMsg').className='status-msg';
+  document.getElementById('stepInfo').textContent=`Bước 0 / ${steps.length}`;
+}
+
+function resetAll() {
+  stopPlay();
+  queue=[34,56,78,12];
+  cqData={arr:[34,56,78,12,null,null,null,null],front:0,rear:3,size:4};
+  pqData=[{val:42,pri:5},{val:18,pri:8},{val:73,pri:2},{val:55,pri:6}];
+  steps=[]; stepIdx=-1;
+  if(currentOp==='enqueue'||currentOp==='dequeue') renderLinearQueue(queue,'front','rear');
+  if(currentOp==='circular') renderCircularQueue(cqData);
+  if(currentOp==='priority') renderPriorityQueue(pqData);
+  renderCode(currentOp,-1);
+  document.getElementById('statusMsg').textContent='Chọn thao tác và nhấn ▶ Chạy';
+  document.getElementById('statusMsg').className='status-msg';
+  document.getElementById('stepInfo').textContent='Bước 0 / 0';
+}
+
+showSection('enqueue');
+renderLinearQueue(queue,'front','rear');
+renderCircularQueue(cqData);
+renderPriorityQueue(pqData);
+renderCode('enqueue',-1);
+</script>
+</body>
+</html>

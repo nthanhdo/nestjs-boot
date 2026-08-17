@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02 — Danh sách liên kết (Linked List) | Data Structures</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #1a1a2e; --panel-bg: #16213e; --code-bg: #0f0f23;
+    --accent: #a78bfa; --accent2: #ff6b6b; --accent3: #ffd93d;
+    --text: #e8e8f0; --text-dim: #888aaa; --border: #2a2a4a;
+    --node-bg: #1e1e3f; --node-border: #5b4fcf; --node-active: #a78bfa;
+    --node-found: #00ff88; --node-delete: #ff4757; --node-insert: #ffd93d;
+  }
+  body { background: var(--bg); color: var(--text); font-family: system-ui,-apple-system,sans-serif;
+    display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+  header { background: var(--panel-bg); border-bottom: 1px solid var(--border);
+    padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+  header h1 { font-size: 1.1rem; color: var(--accent); }
+  .badge { background: var(--code-bg); border: 1px solid var(--border);
+    padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; color: var(--text-dim); }
+
+  .main { display: flex; flex: 1; overflow: hidden; }
+  .viz { flex: 0 0 60%; display: flex; flex-direction: column; padding: 16px; gap: 12px; overflow: hidden; }
+
+  .ops-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .op-btn { background: var(--panel-bg); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; transition: all 0.2s; }
+  .op-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .op-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+  .toggle-btn { background: var(--code-bg); border: 1px solid var(--border); color: var(--text-dim);
+    padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 0.78rem; margin-left: auto; }
+  .toggle-btn.on { border-color: var(--accent3); color: var(--accent3); }
+
+  .input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .input-row label { font-size: 0.8rem; color: var(--text-dim); }
+  .input-row input { background: var(--code-bg); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 10px; border-radius: 6px; width: 70px; font-size: 0.85rem; }
+  .run-btn { background: var(--accent); color: #000; border: none; padding: 6px 16px;
+    border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+
+  .canvas-area { flex: 1; background: var(--panel-bg); border: 1px solid var(--border);
+    border-radius: 12px; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 20px; gap: 20px; overflow: hidden; position: relative; }
+
+  .list-canvas { display: flex; align-items: center; flex-wrap: wrap; gap: 0; min-height: 90px;
+    justify-content: center; }
+
+  /* Linked List Node */
+  .ll-node { display: flex; align-items: stretch; transition: all 0.4s; }
+  .node-body { display: flex; border: 2px solid var(--node-border); border-radius: 8px;
+    overflow: hidden; transition: all 0.35s; min-width: 80px; }
+  .node-val { background: var(--node-bg); padding: 10px 12px; font-weight: 700;
+    font-size: 1rem; display: flex; align-items: center; justify-content: center; min-width: 44px; }
+  .node-ptr { background: #1a1a30; padding: 4px 8px; font-size: 0.65rem; color: #666;
+    display: flex; align-items: center; justify-content: center; border-left: 1px solid var(--border);
+    min-width: 36px; white-space: nowrap; }
+  .node-label { font-size: 0.65rem; color: var(--text-dim); text-align: center; margin-top: 4px; }
+
+  .ll-node.active .node-body { border-color: var(--node-active); box-shadow: 0 0 16px rgba(167,139,250,0.5); }
+  .ll-node.active .node-val { color: var(--node-active); background: rgba(167,139,250,0.15); }
+  .ll-node.found .node-body { border-color: var(--node-found); box-shadow: 0 0 16px rgba(0,255,136,0.4); }
+  .ll-node.found .node-val { color: var(--node-found); background: rgba(0,255,136,0.12); }
+  .ll-node.deleting .node-body { border-color: var(--node-delete); box-shadow: 0 0 16px rgba(255,71,87,0.4); }
+  .ll-node.deleting .node-val { color: var(--node-delete); background: rgba(255,71,87,0.12); }
+  .ll-node.inserting .node-body { border-color: var(--node-insert); box-shadow: 0 0 16px rgba(255,217,61,0.4); }
+  .ll-node.inserting .node-val { color: var(--node-insert); background: rgba(255,217,61,0.12); }
+
+  @keyframes nodeIn  { from{opacity:0;transform:scale(0.5) translateY(-20px)} to{opacity:1;transform:scale(1) translateY(0)} }
+  @keyframes nodeOut { from{opacity:1;transform:scale(1)} to{opacity:0;transform:scale(0.5) translateY(-20px)} }
+  .ll-node.entering { animation: nodeIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  .ll-node.exiting  { animation: nodeOut 0.3s ease forwards; }
+
+  .arrow { display: flex; align-items: center; color: var(--node-border); font-size: 1.2rem;
+    padding: 0 4px; transition: color 0.3s; }
+  .arrow.active { color: var(--node-active); }
+  .arrow.rewire { color: var(--node-insert); animation: pulse 0.6s ease infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .head-label, .tail-label, .null-label {
+    font-size: 0.7rem; padding: 4px 8px; border-radius: 4px; font-weight: 600; }
+  .head-label { background: rgba(167,139,250,0.2); color: var(--accent); border: 1px solid var(--accent); }
+  .null-label { background: rgba(255,71,87,0.15); color: var(--accent2); border: 1px solid var(--accent2); font-size: 0.75rem; }
+
+  .complexity-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .complexity-badge { background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 14px; text-align: center; }
+  .complexity-badge .label { font-size: 0.68rem; color: var(--text-dim); }
+  .complexity-badge .value { font-size: 0.95rem; font-weight: 700; margin-top: 2px; }
+  .green { color: #00ff88; } .yellow { color: var(--accent3); } .red { color: var(--accent2); }
+  .complexity-badge.active-badge { border-color: var(--accent); box-shadow: 0 0 10px rgba(167,139,250,0.3); }
+
+  .status-msg { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 16px; font-size: 0.85rem; color: var(--text-dim); text-align: center; min-width: 300px; }
+  .status-msg.info { border-color: var(--accent); color: var(--accent); }
+  .status-msg.success { border-color: var(--node-found); color: var(--node-found); }
+  .status-msg.error { border-color: var(--node-delete); color: var(--node-delete); }
+
+  .code-panel { flex: 0 0 40%; background: var(--code-bg); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden; }
+  .code-panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border);
+    font-size: 0.8rem; color: var(--text-dim); display: flex; gap: 8px; align-items: center; }
+  .code-panel-header span { color: var(--accent); font-weight: 600; font-size: 0.85rem; }
+  .code-body { flex: 1; overflow-y: auto; padding: 12px 0; font-family: 'Courier New',monospace; font-size: 0.82rem; }
+  .code-line { display: flex; padding: 3px 0; transition: background 0.2s; }
+  .code-line.highlight { background: rgba(167,139,250,0.12); border-left: 3px solid var(--accent); }
+  .ln { width: 36px; text-align: right; padding-right: 12px; color: #444; flex-shrink: 0; user-select: none; }
+  .code-text { color: #abb2bf; white-space: pre; }
+  .kw { color: #c678dd; } .fn { color: #61afef; } .cm { color: #5c6370; font-style: italic; }
+  .num { color: #d19a66; } .str { color: #98c379; }
+
+  .controls { background: var(--panel-bg); border-top: 1px solid var(--border);
+    padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; flex-wrap: wrap; }
+  .ctrl-btn { background: var(--code-bg); border: 1px solid var(--border); color: var(--text);
+    width: 36px; height: 36px; border-radius: 8px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; font-size: 1rem; transition: all 0.2s; }
+  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .speed-group { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-dim); }
+  input[type=range] { -webkit-appearance: none; width: 100px; height: 4px; background: var(--border);
+    border-radius: 2px; outline: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px;
+    background: var(--accent); border-radius: 50%; }
+  .step-info { font-size: 0.78rem; color: var(--text-dim); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🔗 Danh sách liên kết — Linked List</h1>
+  <span class="badge">Module 1 · Cấu trúc dữ liệu</span>
+  <span class="badge">Head + Next pointers · O(1) insert head · O(n) search</span>
+  <button class="toggle-btn" id="toggleMode" onclick="toggleListType()">Singly LL</button>
+</header>
+
+<div class="main">
+  <div class="viz">
+    <div class="ops-bar" id="opsBar">
+      <button class="op-btn active" onclick="selectOp('insertHead',event)">➕ Insert Head</button>
+      <button class="op-btn" onclick="selectOp('insertTail',event)">➕ Insert Tail</button>
+      <button class="op-btn" onclick="selectOp('insertMid',event)">➕ Insert At</button>
+      <button class="op-btn" onclick="selectOp('delete',event)">🗑 Delete</button>
+      <button class="op-btn" onclick="selectOp('traverse',event)">🔍 Traverse</button>
+    </div>
+    <div class="input-row">
+      <label id="lbl1">Giá trị:</label>
+      <input type="number" id="inp1" value="50" min="0" max="99">
+      <span id="extra2" style="display:none"><label>Sau node:</label>
+        <input type="number" id="inp2" value="1" min="0" max="9"></span>
+      <button class="run-btn" onclick="runOperation()">▶ Chạy</button>
+    </div>
+    <div class="canvas-area">
+      <div class="complexity-row">
+        <div class="complexity-badge" id="cb0"><div class="label">Insert Head</div><div class="value green">O(1)</div></div>
+        <div class="complexity-badge" id="cb1"><div class="label">Insert Tail</div><div class="value yellow">O(n)</div></div>
+        <div class="complexity-badge" id="cb2"><div class="label">Delete</div><div class="value yellow">O(n)</div></div>
+        <div class="complexity-badge" id="cb3"><div class="label">Traverse</div><div class="value red">O(n)</div></div>
+        <div class="complexity-badge" id="cb4"><div class="label">Access [i]</div><div class="value red">O(n)</div></div>
+      </div>
+      <div class="list-canvas" id="listCanvas"></div>
+      <div class="status-msg" id="statusMsg">Chọn thao tác và nhấn ▶ Chạy</div>
+    </div>
+  </div>
+
+  <div class="code-panel">
+    <div class="code-panel-header">📄 Pseudocode — <span id="codeTitle">Insert Head</span></div>
+    <div class="code-body" id="codeBody"></div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn" onclick="stepBack()">⏮</button>
+  <button class="ctrl-btn" id="btnPlay" onclick="togglePlay()">▶</button>
+  <button class="ctrl-btn" onclick="stepForward()">⏭</button>
+  <button class="ctrl-btn" onclick="resetAll()">🔄</button>
+  <div class="speed-group">🐢 <input type="range" id="speedSlider" min="1" max="5" value="3"> 🐇</div>
+  <div class="step-info" id="stepInfo">Bước 0 / 0</div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────
+let list = [12, 25, 37, 48, 61]; // values only (singly)
+let isDoubly = false;
+let currentOp = 'insertHead';
+let steps = [], stepIdx = -1, playing = false, playTimer = null;
+const speedMap = { 1:1400, 2:1000, 3:650, 4:380, 5:200 };
+
+// ── Code ──────────────────────────────────────────────────────────
+const codes = {
+  insertHead: {
+    title: 'Insert Head — O(1)',
+    lines: [
+      ['cm','// Chèn node mới vào đầu danh sách'],
+      ['kw','function ','fn','insertHead','(head, value):'],
+      ['','  newNode = ','kw','new ','','Node(value)'],
+      ['cm','  // Trỏ next của node mới về head cũ'],
+      ['','  newNode.next = head'],
+      ['cm','  // Cập nhật head về node mới'],
+      ['','  head = newNode'],
+      ['kw','  return ','','head'],
+      ['cm','// Chỉ cần 2 bước → O(1) !'],
+    ]
+  },
+  insertTail: {
+    title: 'Insert Tail — O(n)',
+    lines: [
+      ['cm','// Chèn node mới vào cuối danh sách'],
+      ['kw','function ','fn','insertTail','(head, value):'],
+      ['','  newNode = ','kw','new ','','Node(value)'],
+      ['kw','  if ','','head == null: ','kw','return ','','newNode'],
+      ['','  current = head   ','cm','// bắt đầu duyệt'],
+      ['kw','  while ','','current.next ≠ null:'],
+      ['','    current = current.next   ','cm','// tiến lên'],
+      ['cm','  // Đến được node cuối cùng'],
+      ['','  current.next = newNode'],
+      ['kw','  return ','','head'],
+      ['cm','// Phải duyệt đến cuối → O(n)'],
+    ]
+  },
+  insertMid: {
+    title: 'Insert After Node — O(n)',
+    lines: [
+      ['cm','// Chèn sau node tại vị trí pos'],
+      ['kw','function ','fn','insertAfter','(head, pos, val):'],
+      ['','  newNode = ','kw','new ','','Node(val)'],
+      ['','  current = head; i = 0'],
+      ['kw','  while ','','current ≠ null and i < pos:'],
+      ['','    current = current.next; i++'],
+      ['kw','  if ','','current == null: ','kw','return'],
+      ['cm','  // Rewire pointers'],
+      ['','  newNode.next = current.next'],
+      ['','  current.next = newNode'],
+      ['kw','  return ','','head'],
+    ]
+  },
+  delete: {
+    title: 'Delete by Value — O(n)',
+    lines: [
+      ['cm','// Xóa node có giá trị target'],
+      ['kw','function ','fn','deleteNode','(head, target):'],
+      ['kw','  if ','','head.val == target:'],
+      ['kw','    return ','','head.next ','cm','// xóa head'],
+      ['','  prev = head; curr = head.next'],
+      ['kw','  while ','','curr ≠ null:'],
+      ['','    ','kw','if ','','curr.val == target:'],
+      ['','      prev.next = curr.next ','cm','// bypass'],
+      ['kw','      return ','','head'],
+      ['','    prev = curr; curr = curr.next'],
+      ['kw','  return ','','head ','cm','// không tìm thấy'],
+    ]
+  },
+  traverse: {
+    title: 'Traverse — O(n)',
+    lines: [
+      ['cm','// Duyệt toàn bộ danh sách'],
+      ['kw','function ','fn','traverse','(head):'],
+      ['','  current = head'],
+      ['kw','  while ','','current ≠ null:'],
+      ['','    print(current.val)'],
+      ['','    current = current.next'],
+      ['kw','  return ','cm','"// Đã duyệt xong"'],
+      ['cm','// Thăm n node → O(n)'],
+    ]
+  }
+};
+
+function renderCode(op, hl = -1) {
+  const c = codes[op];
+  document.getElementById('codeTitle').textContent = c.title;
+  const body = document.getElementById('codeBody');
+  body.innerHTML = '';
+  c.lines.forEach((parts, i) => {
+    const div = document.createElement('div');
+    div.className = 'code-line' + (i === hl ? ' highlight' : '');
+    const ln = document.createElement('span'); ln.className = 'ln'; ln.textContent = i + 1;
+    const txt = document.createElement('span'); txt.className = 'code-text';
+    let html = '';
+    for (let j = 0; j < parts.length; j += 2) {
+      const cls = parts[j], content = parts[j+1] || '';
+      html += cls ? `<span class="${cls}">${content}</span>` : content;
+    }
+    txt.innerHTML = html; div.appendChild(ln); div.appendChild(txt);
+    body.appendChild(div);
+    if (i === hl) div.scrollIntoView({ block: 'nearest' });
+  });
+}
+
+// ── Render List ───────────────────────────────────────────────────
+function renderList(highlights = {}, insertedAt = -1, deletedAt = -1, highlightArrow = -1) {
+  const canvas = document.getElementById('listCanvas');
+  canvas.innerHTML = '';
+
+  // HEAD label
+  const headLbl = document.createElement('span');
+  headLbl.className = 'head-label'; headLbl.textContent = 'HEAD';
+  canvas.appendChild(headLbl);
+
+  const arr = document.createElement('div');
+  arr.className = 'arrow'; arr.textContent = ' →';
+  canvas.appendChild(arr);
+
+  if (list.length === 0) {
+    const nl = document.createElement('span'); nl.className = 'null-label'; nl.textContent = 'NULL';
+    canvas.appendChild(nl); return;
+  }
+
+  list.forEach((val, i) => {
+    const nodeWrap = document.createElement('div');
+    nodeWrap.className = 'll-node';
+    if (highlights[i]) nodeWrap.classList.add(highlights[i]);
+
+    const nodeBody = document.createElement('div'); nodeBody.className = 'node-body';
+    const valDiv = document.createElement('div'); valDiv.className = 'node-val'; valDiv.textContent = val;
+    const ptrDiv = document.createElement('div'); ptrDiv.className = 'node-ptr';
+    ptrDiv.textContent = isDoubly ? '⇆next' : 'next';
+    nodeBody.appendChild(valDiv); nodeBody.appendChild(ptrDiv);
+    nodeWrap.appendChild(nodeBody);
+    canvas.appendChild(nodeWrap);
+
+    if (i < list.length - 1) {
+      const arw = document.createElement('div');
+      arw.className = 'arrow' + (highlightArrow === i ? ' active' : '');
+      arw.textContent = isDoubly ? ' ⇄ ' : ' → ';
+      canvas.appendChild(arw);
+    } else {
+      const arw = document.createElement('div'); arw.className = 'arrow'; arw.textContent = ' → ';
+      canvas.appendChild(arw);
+      const nl = document.createElement('span'); nl.className = 'null-label'; nl.textContent = 'NULL';
+      canvas.appendChild(nl);
+    }
+  });
+}
+
+// ── Build Steps ───────────────────────────────────────────────────
+function buildSteps(op, val, pos) {
+  steps = [];
+  const n = list.length;
+
+  if (op === 'insertHead') {
+    steps.push({ list: [...list], highlights: {}, code: 1, msg: `Tạo node mới với giá trị ${val}` });
+    steps.push({ list: [...list], highlights: {0:'active'}, code: 4, msg: `Trỏ newNode.next → HEAD (node ${list[0]})` });
+    const newList = [val, ...list];
+    steps.push({ list: newList, highlights: {0:'inserting'}, code: 6, msg: `Cập nhật HEAD = node mới (${val})` });
+    steps.push({ list: newList, highlights: {0:'found'}, code: 7, msg: `✓ Đã chèn ${val} vào đầu — O(1)!` });
+    list = newList; complexityFocus(0);
+  }
+  else if (op === 'insertTail') {
+    complexityFocus(1);
+    steps.push({ list: [...list], highlights: {}, code: 1, msg: `Tạo node mới: ${val}, bắt đầu từ HEAD` });
+    steps.push({ list: [...list], highlights: {0:'active'}, code: 4, msg: `current = HEAD (${list[0]}), bắt đầu duyệt` });
+    for (let i = 0; i < n - 1; i++) {
+      steps.push({ list: [...list], highlights: {[i]:'active'}, arrow: i, code: 6, msg: `Kiểm tra node[${i}].next ≠ null → tiếp tục` });
+    }
+    const newList = [...list, val];
+    steps.push({ list: [...list], highlights: {[n-1]:'active'}, code: 8, msg: `Đến cuối: node[${n-1}].next == null` });
+    steps.push({ list: newList, highlights: {[n]:'inserting'}, code: 8, msg: `Gắn newNode(${val}) vào current.next` });
+    steps.push({ list: newList, highlights: {[n]:'found'}, code: 9, msg: `✓ Chèn tail xong — duyệt ${n} bước → O(n)` });
+    list = newList;
+  }
+  else if (op === 'insertMid') {
+    complexityFocus(1);
+    const safePos = Math.min(pos, n - 1);
+    steps.push({ list: [...list], highlights: {}, code: 1, msg: `Chèn ${val} sau node tại vị trí [${safePos}]` });
+    for (let i = 0; i <= safePos; i++) {
+      steps.push({ list: [...list], highlights: {[i]:'active'}, code: i < safePos ? 5 : 6, msg: i < safePos ? `Duyệt: node[${i}] = ${list[i]}, chưa đến [${safePos}]` : `Đến vị trí [${safePos}]: ${list[safePos]}` });
+    }
+    const newList = [...list.slice(0, safePos+1), val, ...list.slice(safePos+1)];
+    steps.push({ list: [...list], highlights: {[safePos]:'active'}, code: 8, msg: `newNode.next = node[${safePos}].next (${list[safePos+1]||'NULL'})` });
+    steps.push({ list: newList, highlights: {[safePos]:'active', [safePos+1]:'inserting'}, code: 9, msg: `node[${safePos}].next = newNode(${val})` });
+    steps.push({ list: newList, highlights: {[safePos+1]:'found'}, code: 10, msg: `✓ Đã chèn ${val} sau vị trí [${safePos}]` });
+    list = newList;
+  }
+  else if (op === 'delete') {
+    complexityFocus(2);
+    const target = val;
+    let found = -1;
+    for (let i = 0; i < n; i++) if (list[i] === target) { found = i; break; }
+    if (found === -1) {
+      steps.push({ list: [...list], highlights: {}, code: 1, msg: `Tìm kiếm ${target} để xóa...` });
+      for (let i = 0; i < n; i++)
+        steps.push({ list: [...list], highlights: {[i]:'active'}, code: 6, msg: `node[${i}]=${list[i]} ≠ ${target}` });
+      steps.push({ list: [...list], highlights: {}, code: 10, msg: `✗ Không tìm thấy ${target}` });
+      return;
+    }
+    steps.push({ list: [...list], highlights: {[found]:'active'}, code: 1, msg: `Tìm kiếm ${target} để xóa...` });
+    for (let i = 0; i < found; i++)
+      steps.push({ list: [...list], highlights: {[i]:'active'}, code: 6, msg: `node[${i}]=${list[i]} ≠ ${target}, tiếp tục` });
+    steps.push({ list: [...list], highlights: {[found]:'deleting'}, code: 7, msg: `Tìm thấy: node[${found}] = ${target}` });
+    const newList = list.filter((_, i) => i !== found);
+    steps.push({ list: newList, highlights: {}, code: 7, msg: `prev.next = curr.next — bỏ qua node bị xóa` });
+    steps.push({ list: newList, highlights: {}, code: 8, msg: `✓ Đã xóa ${target} khỏi danh sách` });
+    list = newList;
+  }
+  else if (op === 'traverse') {
+    complexityFocus(3);
+    steps.push({ list: [...list], highlights: {}, code: 2, msg: `Bắt đầu từ HEAD` });
+    for (let i = 0; i < n; i++)
+      steps.push({ list: [...list], highlights: {[i]:'found'}, arrow: i-1, code: 4, msg: `Thăm node[${i}] = ${list[i]}` });
+    steps.push({ list: [...list], highlights: {}, code: 6, msg: `✓ Hoàn tất duyệt ${n} phần tử — O(n)` });
+  }
+}
+
+function complexityFocus(idx) {
+  ['cb0','cb1','cb2','cb3','cb4'].forEach((id, i) =>
+    document.getElementById(id).classList.toggle('active-badge', i === idx));
+}
+
+// ── Step playback ─────────────────────────────────────────────────
+function applyStep(idx) {
+  if (idx < 0 || idx >= steps.length) return;
+  const s = steps[idx];
+  renderList(s.highlights || {}, -1, -1, s.arrow ?? -1);
+  if (s.list) { /* already applied in buildSteps */ }
+  renderCode(currentOp, s.code);
+  const msg = document.getElementById('statusMsg');
+  msg.textContent = s.msg || '';
+  msg.className = 'status-msg' + (s.msg?.startsWith('✓') ? ' success' : s.msg?.startsWith('✗') ? ' error' : ' info');
+  document.getElementById('stepInfo').textContent = `Bước ${idx+1} / ${steps.length}`;
+  // sync list to step
+  if (s.list) renderListFromState(s.list, s.highlights||{}, s.arrow??-1);
+}
+
+function renderListFromState(lst, highlights, arrow) {
+  const canvas = document.getElementById('listCanvas');
+  canvas.innerHTML = '';
+  const headLbl = document.createElement('span'); headLbl.className = 'head-label'; headLbl.textContent = 'HEAD';
+  canvas.appendChild(headLbl);
+  const a0 = document.createElement('div'); a0.className = 'arrow'; a0.textContent = ' →'; canvas.appendChild(a0);
+  if (lst.length === 0) {
+    const nl = document.createElement('span'); nl.className = 'null-label'; nl.textContent = 'NULL';
+    canvas.appendChild(nl); return;
+  }
+  lst.forEach((val, i) => {
+    const nw = document.createElement('div'); nw.className = 'll-node';
+    if (highlights[i]) nw.classList.add(highlights[i]);
+    const nb = document.createElement('div'); nb.className = 'node-body';
+    const vd = document.createElement('div'); vd.className = 'node-val'; vd.textContent = val;
+    const pd = document.createElement('div'); pd.className = 'node-ptr'; pd.textContent = isDoubly ? '⇆next' : 'next';
+    nb.appendChild(vd); nb.appendChild(pd); nw.appendChild(nb); canvas.appendChild(nw);
+    if (i < lst.length - 1) {
+      const ar = document.createElement('div');
+      ar.className = 'arrow' + (arrow === i ? ' active' : '');
+      ar.textContent = isDoubly ? ' ⇄ ' : ' → '; canvas.appendChild(ar);
+    } else {
+      const ar = document.createElement('div'); ar.className='arrow'; ar.textContent=' → '; canvas.appendChild(ar);
+      const nl = document.createElement('span'); nl.className='null-label'; nl.textContent='NULL'; canvas.appendChild(nl);
+    }
+  });
+}
+
+function stepForward() { if (stepIdx < steps.length-1) { stepIdx++; applyStep(stepIdx); } else stopPlay(); }
+function stepBack()    { if (stepIdx > 0) { stepIdx--; applyStep(stepIdx); } }
+function togglePlay()  { playing ? stopPlay() : startPlay(); }
+function startPlay() {
+  playing = true; document.getElementById('btnPlay').textContent = '⏸';
+  function tick() {
+    if (stepIdx < steps.length - 1) {
+      stepIdx++; applyStep(stepIdx);
+      playTimer = setTimeout(tick, speedMap[document.getElementById('speedSlider').value]);
+    } else stopPlay();
+  }
+  tick();
+}
+function stopPlay() { playing = false; document.getElementById('btnPlay').textContent = '▶'; clearTimeout(playTimer); }
+
+function toggleListType() {
+  isDoubly = !isDoubly;
+  const btn = document.getElementById('toggleMode');
+  btn.textContent = isDoubly ? 'Doubly LL' : 'Singly LL';
+  btn.classList.toggle('on', isDoubly);
+  resetAll();
+}
+
+function selectOp(op, e) {
+  currentOp = op;
+  document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  const lbl1 = document.getElementById('lbl1');
+  const extra2 = document.getElementById('extra2');
+  if (op === 'insertHead' || op === 'insertTail') { lbl1.textContent='Giá trị:'; extra2.style.display='none'; }
+  else if (op === 'insertMid') { lbl1.textContent='Giá trị:'; extra2.style.display=''; }
+  else if (op === 'delete') { lbl1.textContent='Giá trị cần xóa:'; extra2.style.display='none'; }
+  else if (op === 'traverse') { lbl1.textContent='(không cần)'; extra2.style.display='none'; }
+  resetAll();
+}
+
+function runOperation() {
+  stopPlay();
+  list = [12, 25, 37, 48, 61];
+  const val = parseInt(document.getElementById('inp1').value) || 50;
+  const pos = parseInt(document.getElementById('inp2').value) || 1;
+  buildSteps(currentOp, val, pos);
+  stepIdx = -1;
+  renderListFromState(list, {}, -1);
+  renderCode(currentOp, -1);
+  document.getElementById('statusMsg').textContent = 'Nhấn ⏭ để từng bước hoặc ▶ để tự động';
+  document.getElementById('statusMsg').className = 'status-msg';
+  document.getElementById('stepInfo').textContent = `Bước 0 / ${steps.length}`;
+}
+
+function resetAll() {
+  stopPlay();
+  list = [12, 25, 37, 48, 61]; steps = []; stepIdx = -1;
+  renderListFromState(list, {}, -1);
+  renderCode(currentOp, -1);
+  document.getElementById('statusMsg').textContent = 'Chọn thao tác và nhấn ▶ Chạy';
+  document.getElementById('statusMsg').className = 'status-msg';
+  document.getElementById('stepInfo').textContent = 'Bước 0 / 0';
+  complexityFocus(-1);
+}
+
+// init
+renderListFromState(list, {}, -1);
+renderCode('insertHead', -1);
+</script>
+</body>
+</html>

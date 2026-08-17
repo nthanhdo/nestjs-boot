@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Insertion Sort — Sắp xếp chèn</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#0f1117;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{background:#1a1d2e;padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #2d3148}
+header h1{font-size:1.1rem;color:#fb923c}
+.badge{background:#431407;color:#fdba74;padding:2px 8px;border-radius:4px;font-size:.75rem}
+.complexity{display:flex;gap:8px;margin-left:auto}
+.cx{background:#1e293b;border:1px solid #334155;border-radius:4px;padding:2px 8px;font-size:.75rem;color:#94a3b8}
+.cx span{color:#fbbf24}
+main{flex:1;display:flex;overflow:hidden}
+#viz{width:60%;background:#0d1117;display:flex;flex-direction:column}
+#bar-area{flex:1;position:relative;padding:10px 20px 0}
+#bars-container{position:absolute;bottom:0;left:20px;right:20px;top:10px;display:flex;align-items:flex-end;gap:2px}
+.bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1;transition:transform .3s ease}
+.bar{width:100%;border-radius:3px 3px 0 0;background:#4a90d9;transition:background .25s,transform .3s}
+.bar-val{font-size:10px;color:#94a3b8;margin-top:2px}
+.bar.sorted{background:#22c55e}
+.bar.key{background:#f97316;transform:scaleY(1.08);transform-origin:bottom}
+.bar.comparing{background:#ef4444}
+.bar.shifting{background:#8b5cf6}
+#boundary{position:absolute;bottom:0;top:10px;width:2px;background:#fb923c;opacity:.7;pointer-events:none;transition:left .3s}
+#boundary-label{position:absolute;top:0;font-size:.65rem;color:#fb923c;transform:translateX(-50%);white-space:nowrap}
+#legend{display:flex;gap:12px;padding:6px 20px;background:#111827;font-size:.72rem}
+.leg{display:flex;align-items:center;gap:5px}
+.leg-dot{width:10px;height:10px;border-radius:2px}
+#code-panel{width:40%;background:#1a1d2e;border-left:1px solid #2d3148;display:flex;flex-direction:column}
+.panel-title{padding:8px 14px;background:#12152a;font-size:.8rem;color:#8b92c4;border-bottom:1px solid #2d3148}
+#code{flex:1;overflow-y:auto;padding:10px 0;font-family:'Courier New',monospace;font-size:.82rem;line-height:1.8}
+.code-line{padding:1px 14px;color:#8b92c4;white-space:pre}
+.code-line.active{background:#2d2a12;color:#fde68a;border-left:3px solid #fbbf24}
+#explain{padding:10px 14px;background:#0f1117;border-top:1px solid #2d3148;font-size:.8rem;color:#94a3b8;min-height:56px;line-height:1.5}
+#controls{background:#111827;padding:8px 16px;display:flex;align-items:center;gap:10px;border-top:1px solid #1e293b;flex-wrap:wrap}
+button{background:#1d4ed8;color:#e2e8f0;border:none;border-radius:5px;padding:6px 14px;cursor:pointer;font-size:.82rem;transition:background .2s}
+button:hover{background:#2563eb}
+#btn-play{background:#b45309}#btn-play:hover{background:#d97706}
+#stats{display:flex;gap:12px;margin-left:auto;font-size:.8rem}
+.stat{background:#1e293b;padding:4px 10px;border-radius:4px}
+.stat span{color:#f59e0b}
+label{font-size:.78rem;color:#64748b}
+input[type=range]{accent-color:#fb923c;width:90px}
+select{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:4px 6px;font-size:.78rem}
+#round-info{background:#1e293b;padding:4px 10px;border-radius:4px;font-size:.8rem;color:#fb923c}
+.mode-btn{background:#1e3a5f!important;font-size:.72rem!important;padding:4px 10px!important}
+.mode-btn.active-mode{background:#1d4ed8!important}
+</style>
+</head>
+<body>
+<header>
+  <h1>🃏 Insertion Sort — Sắp xếp chèn</h1>
+  <span class="badge">Module 2</span>
+  <div class="complexity">
+    <div class="cx">Best: <span>O(n)</span></div>
+    <div class="cx">Avg: <span>O(n²)</span></div>
+    <div class="cx">Worst: <span>O(n²)</span></div>
+    <div class="cx">Space: <span>O(1)</span></div>
+    <div class="cx">Stable: <span>✓</span></div>
+  </div>
+</header>
+<main>
+  <div id="viz">
+    <div id="bar-area">
+      <div id="boundary"><span id="boundary-label">biên</span></div>
+      <div id="bars-container"></div>
+    </div>
+    <div id="legend">
+      <div class="leg"><div class="leg-dot" style="background:#22c55e"></div>Đã sắp xếp</div>
+      <div class="leg"><div class="leg-dot" style="background:#f97316"></div>Phần tử key (đang chèn)</div>
+      <div class="leg"><div class="leg-dot" style="background:#ef4444"></div>Đang so sánh</div>
+      <div class="leg"><div class="leg-dot" style="background:#8b5cf6"></div>Đang dịch chuyển sang phải</div>
+    </div>
+  </div>
+  <div id="code-panel">
+    <div class="panel-title">📄 Code — Insertion Sort</div>
+    <div id="code"></div>
+    <div id="explain">👋 Nhấn Play để bắt đầu!</div>
+  </div>
+</main>
+<div id="controls">
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-step">⏭ Step</button>
+  <button id="btn-reset">↺ Reset</button>
+  <button id="btn-new">🎲 Mảng mới</button>
+  <button class="mode-btn active-mode" id="btn-random">Ngẫu nhiên</button>
+  <button class="mode-btn" id="btn-nearly">Gần sắp xếp</button>
+  <button class="mode-btn" id="btn-reverse">Ngược chiều</button>
+  <label>Tốc độ: <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <label>Kích thước: <select id="size-sel">
+    <option value="10">10</option><option value="16" selected>16</option>
+    <option value="24">24</option><option value="32">32</option>
+  </select></label>
+  <div id="round-info">i: 0 / 0</div>
+  <div id="stats">
+    <div class="stat">So sánh: <span id="s-cmp">0</span></div>
+    <div class="stat">Dịch: <span id="s-shift">0</span></div>
+    <div class="stat">Truy cập: <span id="s-acc">0</span></div>
+  </div>
+</div>
+<script>
+const CODE=[
+  {t:'function insertionSort(arr) {'},
+  {t:'  const n = arr.length;'},
+  {t:'  for (let i = 1; i < n; i++) {'},
+  {t:'    // Lấy phần tử cần chèn'},
+  {t:'    const key = arr[i];'},
+  {t:'    let j = i - 1;'},
+  {t:'    // Dịch các phần tử lớn hơn key sang phải'},
+  {t:'    while (j >= 0 && arr[j] > key) {'},
+  {t:'      arr[j + 1] = arr[j];  // dịch phải'},
+  {t:'      j--;'},
+  {t:'    }'},
+  {t:'    // Chèn key vào đúng vị trí'},
+  {t:'    arr[j + 1] = key;'},
+  {t:'  }'},
+  {t:'  return arr;'},
+  {t:'}'},
+];
+
+let arr=[],steps=[],stepIdx=0,playing=false,timer=null,cmp=0,shift=0,acc=0,mode='random';
+
+function buildCode(){
+  document.getElementById('code').innerHTML=CODE.map((c,i)=>`<div class="code-line" data-i="${i}">${c.t}</div>`).join('');
+}
+function hl(i){document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));if(i>=0)document.querySelector(`[data-i="${i}"]`)?.classList.add('active');}
+
+function genArray(){
+  const n=+document.getElementById('size-sel').value;
+  if(mode==='random') arr=Array.from({length:n},()=>Math.floor(Math.random()*90)+10);
+  else if(mode==='nearly'){arr=Array.from({length:n},(_,i)=>i*3+10);for(let k=0;k<Math.ceil(n/5);k++){const a=Math.floor(Math.random()*n),b=Math.floor(Math.random()*n);[arr[a],arr[b]]=[arr[b],arr[a]];}}
+  else arr=Array.from({length:n},(_,i)=>Math.floor((n-i)*90/n)+10);
+}
+
+function buildSteps(){
+  steps=[];
+  const a=[...arr];const n=a.length;
+  steps.push({type:'init',arr:[...a]});
+  for(let i=1;i<n;i++){
+    const key=a[i];
+    steps.push({type:'pickKey',i,key,arr:[...a],line:4});
+    let j=i-1;
+    steps.push({type:'setJ',i,j,key,arr:[...a],line:5});
+    while(j>=0&&a[j]>key){
+      cmp++;acc+=2;
+      steps.push({type:'compare',i,j,key,arr:[...a],line:7});
+      shift++;acc++;
+      a[j+1]=a[j];
+      steps.push({type:'shift',i,j,key,arr:[...a],line:8});
+      j--;
+    }
+    if(j>=0){cmp++;acc++;steps.push({type:'compareStop',i,j,key,arr:[...a],line:7});}
+    acc++;
+    a[j+1]=key;
+    steps.push({type:'insert',i,j,key,insertAt:j+1,arr:[...a],line:12});
+  }
+  steps.push({type:'done',arr:[...a]});
+  cmp=0;shift=0;acc=0;
+}
+
+function setBoundary(i,total){
+  const con=document.getElementById('bars-container');
+  const barW=con.clientWidth/total;
+  const bnd=document.getElementById('boundary');
+  bnd.style.left=(i*barW+20)+'px';
+}
+
+function renderBars(state){
+  const con=document.getElementById('bars-container');
+  const a=state.arr||arr;const max=Math.max(...a);
+  con.innerHTML='';
+  const n=a.length;
+  a.forEach((v,idx)=>{
+    const wrap=document.createElement('div');wrap.className='bar-wrap';
+    const bar=document.createElement('div');bar.className='bar';
+    bar.style.height=Math.round(v/max*100)+'%';
+    const si=state.sortedUpto!==undefined?state.sortedUpto:-1;
+    if(state.type==='done'||si>=n-1) bar.classList.add('sorted');
+    else if(idx===state.keyIdx) bar.classList.add('key');
+    else if(idx===state.comparing) bar.classList.add('comparing');
+    else if(state.shifting&&state.shifting.includes(idx)) bar.classList.add('shifting');
+    else if(idx<(state.sortedBefore||0)) bar.classList.add('sorted');
+    const val=document.createElement('div');val.className='bar-val';val.textContent=v;
+    wrap.appendChild(bar);wrap.appendChild(val);con.appendChild(wrap);
+  });
+}
+
+let lastI=0;
+function applyStep(s){
+  if(!s)return;
+  hl(s.line>=0?s.line:-1);
+  if(s.i!==undefined){document.getElementById('round-info').textContent=`i: ${s.i} / ${(s.arr||arr).length-1}`;lastI=s.i;}
+  if(s.type==='init'){lastI=0;renderBars({arr:s.arr,sortedBefore:1});setBoundary(1,(s.arr||arr).length);document.getElementById('explain').innerHTML='Bắt đầu! Phần bên trái (i=0) đã sắp xếp. Thêm từng phần tử vào phần đã sắp xếp.';}
+  else if(s.type==='pickKey'){document.getElementById('explain').innerHTML=`🃏 Lấy <b>key = arr[${s.i}] = ${s.key}</b>. Cần chèn vào đúng vị trí trong phần đã sắp xếp.`;renderBars({...s,keyIdx:s.i,sortedBefore:s.i});setBoundary(s.i,(s.arr||arr).length);}
+  else if(s.type==='setJ'){document.getElementById('explain').innerHTML=`🔙 Bắt đầu từ j = i-1 = ${s.j}. Sẽ dịch sang trái để tìm chỗ chèn.`;renderBars({...s,keyIdx:s.i,sortedBefore:s.i});}
+  else if(s.type==='compare'){cmp++;document.getElementById('s-cmp').textContent=cmp;acc+=2;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`🔴 So sánh: arr[${s.j}]=${s.arr[s.j]} > key=${s.key}? → <b>Đúng</b>, dịch arr[${s.j}] sang phải.`;renderBars({...s,keyIdx:s.i,comparing:s.j,sortedBefore:s.i});}
+  else if(s.type==='compareStop'){cmp++;document.getElementById('s-cmp').textContent=cmp;acc++;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`✅ arr[${s.j}]=${s.arr[s.j]} ≤ key=${s.key}? → <b>Dừng</b>. Chèn key vào vị trí j+1=${s.j+1}.`;renderBars({...s,keyIdx:s.i,comparing:s.j,sortedBefore:s.i});}
+  else if(s.type==='shift'){shift++;document.getElementById('s-shift').textContent=shift;acc++;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`↔ Dịch arr[${s.j}] sang arr[${s.j+1}]. Tiếp tục dịch...`;renderBars({...s,keyIdx:s.i,shifting:[s.j+1],sortedBefore:s.i});}
+  else if(s.type==='insert'){acc++;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`📌 Chèn key=${s.key} vào vị trí ${s.insertAt}. <b>Phần đã sắp xếp mở rộng!</b>`;renderBars({...s,keyIdx:s.insertAt,sortedBefore:s.i+1});setBoundary(s.i+1,(s.arr||arr).length);}
+  else if(s.type==='done'){renderBars({arr:s.arr,sortedUpto:s.arr.length});document.getElementById('explain').textContent='🎉 Hoàn tất! Insertion Sort đặc biệt nhanh với mảng gần sắp xếp.';stopPlay();}
+}
+
+function getDelay(){return Math.round(1100-document.getElementById('speed').value*100);}
+function tick(){if(stepIdx>=steps.length){stopPlay();return;}applyStep(steps[stepIdx++]);if(playing)timer=setTimeout(tick,getDelay());}
+function startPlay(){if(stepIdx>=steps.length)reset();playing=true;document.getElementById('btn-play').textContent='⏸ Pause';tick();}
+function stopPlay(){playing=false;clearTimeout(timer);document.getElementById('btn-play').textContent='▶ Play';}
+function reset(){stopPlay();stepIdx=0;cmp=0;shift=0;acc=0;buildSteps();['s-cmp','s-shift','s-acc'].forEach(id=>document.getElementById(id).textContent=0);document.getElementById('round-info').textContent='i: 0 / 0';hl(-1);renderBars({arr,sortedBefore:1});setBoundary(1,arr.length);document.getElementById('explain').textContent='👋 Nhấn Play để bắt đầu!';}
+
+function setMode(m){mode=m;document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active-mode'));document.getElementById('btn-'+m).classList.add('active-mode');genArray();reset();}
+
+document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
+document.getElementById('btn-step').onclick=()=>{stopPlay();if(stepIdx<steps.length)applyStep(steps[stepIdx++]);};
+document.getElementById('btn-reset').onclick=reset;
+document.getElementById('btn-new').onclick=()=>{genArray();reset();};
+document.getElementById('btn-random').onclick=()=>setMode('random');
+document.getElementById('btn-nearly').onclick=()=>setMode('nearly');
+document.getElementById('btn-reverse').onclick=()=>setMode('reverse');
+document.getElementById('size-sel').onchange=()=>{genArray();reset();};
+
+buildCode();genArray();reset();
+</script>
+</body>
+</html>

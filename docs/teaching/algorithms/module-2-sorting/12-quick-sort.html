@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quick Sort — Sắp xếp nhanh</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#0f1117;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{background:#1a1d2e;padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #2d3148}
+header h1{font-size:1.1rem;color:#c084fc}
+.badge{background:#3b0764;color:#d8b4fe;padding:2px 8px;border-radius:4px;font-size:.75rem}
+.complexity{display:flex;gap:8px;margin-left:auto}
+.cx{background:#1e293b;border:1px solid #334155;border-radius:4px;padding:2px 8px;font-size:.75rem;color:#94a3b8}
+.cx span{color:#fbbf24}
+main{flex:1;display:flex;overflow:hidden}
+#viz{width:60%;background:#0d1117;display:flex;flex-direction:column}
+#bar-area{flex:1;position:relative;padding:10px 20px 0}
+#bars-container{position:absolute;bottom:0;left:20px;right:20px;top:10px;display:flex;align-items:flex-end;gap:2px}
+.bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1}
+.bar{width:100%;border-radius:3px 3px 0 0;background:#4a90d9;transition:background .25s}
+.bar-val{font-size:10px;color:#94a3b8;margin-top:2px}
+.bar.pivot{background:#a855f7;box-shadow:0 0 8px #a855f7}
+.bar.less-than{background:#38bdf8}
+.bar.greater-than{background:#f97316}
+.bar.comparing{background:#ef4444}
+.bar.swapping{background:#eab308}
+.bar.sorted{background:#22c55e}
+.bar.active-range{background:#4a5568}
+#legend{display:flex;gap:10px;padding:5px 20px;background:#111827;font-size:.72rem;flex-wrap:wrap}
+.leg{display:flex;align-items:center;gap:4px}
+.leg-dot{width:10px;height:10px;border-radius:2px}
+#code-panel{width:40%;background:#1a1d2e;border-left:1px solid #2d3148;display:flex;flex-direction:column}
+.panel-title{padding:8px 14px;background:#12152a;font-size:.8rem;color:#8b92c4;border-bottom:1px solid #2d3148}
+#code{flex:1;overflow-y:auto;padding:10px 0;font-family:'Courier New',monospace;font-size:.78rem;line-height:1.7}
+.code-line{padding:1px 14px;color:#8b92c4;white-space:pre}
+.code-line.active{background:#2d2a12;color:#fde68a;border-left:3px solid #fbbf24}
+#explain{padding:10px 14px;background:#0f1117;border-top:1px solid #2d3148;font-size:.8rem;color:#94a3b8;min-height:56px;line-height:1.5}
+#controls{background:#111827;padding:7px 14px;display:flex;align-items:center;gap:8px;border-top:1px solid #1e293b;flex-wrap:wrap}
+button{background:#1d4ed8;color:#e2e8f0;border:none;border-radius:5px;padding:5px 12px;cursor:pointer;font-size:.8rem;transition:background .2s}
+button:hover{background:#2563eb}
+#btn-play{background:#7e22ce}#btn-play:hover{background:#9333ea}
+#stats{display:flex;gap:10px;margin-left:auto;font-size:.78rem}
+.stat{background:#1e293b;padding:3px 8px;border-radius:4px}
+.stat span{color:#f59e0b}
+label{font-size:.75rem;color:#64748b}
+input[type=range]{accent-color:#c084fc;width:80px}
+select{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:3px 5px;font-size:.75rem}
+#depth-info{background:#1e293b;padding:3px 8px;border-radius:4px;font-size:.78rem;color:#c084fc}
+.strat-btn{background:#1e293b!important;font-size:.7rem!important;padding:3px 8px!important;border:1px solid #334155!important}
+.strat-btn.active-s{background:#6d28d9!important;border-color:#7c3aed!important}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚡ Quick Sort — Sắp xếp nhanh</h1>
+  <span class="badge">Module 2</span>
+  <div class="complexity">
+    <div class="cx">Best: <span>O(n log n)</span></div>
+    <div class="cx">Avg: <span>O(n log n)</span></div>
+    <div class="cx">Worst: <span>O(n²)</span></div>
+    <div class="cx">Space: <span>O(log n)</span></div>
+    <div class="cx">Stable: <span>✗</span></div>
+  </div>
+</header>
+<main>
+  <div id="viz">
+    <div id="bar-area"><div id="bars-container"></div></div>
+    <div id="legend">
+      <div class="leg"><div class="leg-dot" style="background:#a855f7"></div>Pivot</div>
+      <div class="leg"><div class="leg-dot" style="background:#38bdf8"></div>&lt; Pivot</div>
+      <div class="leg"><div class="leg-dot" style="background:#f97316"></div>&gt; Pivot</div>
+      <div class="leg"><div class="leg-dot" style="background:#ef4444"></div>Đang so sánh</div>
+      <div class="leg"><div class="leg-dot" style="background:#eab308"></div>Đang swap</div>
+      <div class="leg"><div class="leg-dot" style="background:#22c55e"></div>Đã sắp xếp</div>
+    </div>
+  </div>
+  <div id="code-panel">
+    <div class="panel-title">📄 Code — Quick Sort (Lomuto Partition)</div>
+    <div id="code"></div>
+    <div id="explain">👋 Nhấn Play để bắt đầu!</div>
+  </div>
+</main>
+<div id="controls">
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-step">⏭ Step</button>
+  <button id="btn-reset">↺ Reset</button>
+  <button id="btn-new">🎲 Mảng mới</button>
+  <span style="font-size:.72rem;color:#64748b">Pivot:</span>
+  <button class="strat-btn active-s" id="s-last">Last</button>
+  <button class="strat-btn" id="s-first">First</button>
+  <button class="strat-btn" id="s-random">Random</button>
+  <button class="strat-btn" id="s-mid3">Mid-of-3</button>
+  <label>Tốc độ: <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <label>Size: <select id="size-sel">
+    <option value="10">10</option><option value="16" selected>16</option>
+    <option value="24">24</option><option value="32">32</option>
+  </select></label>
+  <div id="depth-info">Depth: 0</div>
+  <div id="stats">
+    <div class="stat">So sánh: <span id="s-cmp">0</span></div>
+    <div class="stat">Swap: <span id="s-swap">0</span></div>
+    <div class="stat">Acc: <span id="s-acc">0</span></div>
+  </div>
+</div>
+<script>
+const CODE=[
+  {t:'function quickSort(arr, low, high) {'},
+  {t:'  if (low >= high) return;'},
+  {t:'  // Chọn pivot và phân hoạch'},
+  {t:'  const pivotIdx = partition(arr, low, high);'},
+  {t:'  quickSort(arr, low, pivotIdx - 1);  // trái'},
+  {t:'  quickSort(arr, pivotIdx + 1, high); // phải'},
+  {t:'}'},
+  {t:''},
+  {t:'function partition(arr, low, high) {'},
+  {t:'  const pivot = arr[high]; // Lomuto: last'},
+  {t:'  let i = low - 1;        // biên phần nhỏ'},
+  {t:'  for (let j = low; j < high; j++) {'},
+  {t:'    if (arr[j] <= pivot) {'},
+  {t:'      i++;'},
+  {t:'      // Swap arr[i] và arr[j]'},
+  {t:'      [arr[i], arr[j]] = [arr[j], arr[i]];'},
+  {t:'    }'},
+  {t:'  }'},
+  {t:'  // Đặt pivot vào đúng vị trí'},
+  {t:'  [arr[i+1], arr[high]] = [arr[high], arr[i+1]];'},
+  {t:'  return i + 1; // vị trí pivot cuối cùng'},
+  {t:'}'},
+];
+
+let arr=[],steps=[],stepIdx=0,playing=false,timer=null,cmp=0,swp=0,acc=0,strategy='last';
+let sortedSet=new Set();
+
+function buildCode(){document.getElementById('code').innerHTML=CODE.map((c,i)=>`<div class="code-line" data-i="${i}">${c.t||' '}</div>`).join('');}
+function hl(i){document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));if(i>=0)document.querySelector(`[data-i="${i}"]`)?.classList.add('active');}
+function genArray(){const n=+document.getElementById('size-sel').value;arr=Array.from({length:n},()=>Math.floor(Math.random()*85)+15);}
+
+function choosePivot(a,low,high){
+  if(strategy==='last') return high;
+  if(strategy==='first') return low;
+  if(strategy==='random') return low+Math.floor(Math.random()*(high-low+1));
+  // median of 3
+  const mid=Math.floor((low+high)/2);
+  const vals=[[a[low],low],[a[mid],mid],[a[high],high]].sort((x,y)=>x[0]-y[0]);
+  return vals[1][1];
+}
+
+function buildSteps(){
+  steps=[];sortedSet=new Set();
+  const a=[...arr];
+  steps.push({type:'init',arr:[...a],line:-1});
+  function qs(ar,low,high,depth){
+    if(low>=high){if(low===high)sortedSet.add(low);steps.push({type:'base',low,high,depth,arr:[...ar],line:1});return;}
+    const pivIdx=choosePivot(ar,low,high);
+    // move pivot to end if not already
+    if(pivIdx!==high){[ar[pivIdx],ar[high]]=[ar[high],ar[pivIdx]];steps.push({type:'pivotMove',pivIdx,high,arr:[...ar],depth,low,line:9});}
+    const pivot=ar[high];
+    steps.push({type:'partition_start',pivot,pivotAt:high,low,high,depth,arr:[...ar],line:9});
+    let i=low-1;
+    for(let j=low;j<high;j++){
+      cmp++;acc+=2;
+      steps.push({type:'compare',j,i,pivot,pivotAt:high,low,high,depth,arr:[...ar],line:12});
+      if(ar[j]<=pivot){
+        i++;
+        if(i!==j){swp++;acc+=2;[ar[i],ar[j]]=[ar[j],ar[i]];steps.push({type:'swap',i,j,pivotAt:high,low,high,depth,arr:[...ar],line:15});}
+        else steps.push({type:'inc_i',i,j,pivotAt:high,low,high,depth,arr:[...ar],line:13});
+      }else{
+        steps.push({type:'skip',j,i,pivotAt:high,low,high,depth,arr:[...ar],line:12});
+      }
+    }
+    swp++;acc+=2;[ar[i+1],ar[high]]=[ar[high],ar[i+1]];
+    const finalPivot=i+1;
+    sortedSet.add(finalPivot);
+    steps.push({type:'place_pivot',finalPivot,low,high,depth,arr:[...ar],line:19});
+    qs(ar,low,finalPivot-1,depth+1);
+    qs(ar,finalPivot+1,high,depth+1);
+  }
+  qs(a,0,a.length-1,0);
+  for(let k=0;k<a.length;k++)sortedSet.add(k);
+  steps.push({type:'done',arr:[...a]});
+  cmp=0;swp=0;acc=0;sortedSet=new Set();
+}
+
+function renderBars(state){
+  const con=document.getElementById('bars-container');
+  const a=state.arr||arr;const max=Math.max(...a);
+  con.innerHTML='';
+  const {low,high,pivotAt,i:iPtr,j:jPtr}=state;
+  a.forEach((v,idx)=>{
+    const wrap=document.createElement('div');wrap.className='bar-wrap';
+    const bar=document.createElement('div');bar.className='bar';
+    bar.style.height=Math.round(v/max*100)+'%';
+    if(state.type==='done') bar.classList.add('sorted');
+    else if(sortedSet.has(idx)) bar.classList.add('sorted');
+    else if(idx===pivotAt) bar.classList.add('pivot');
+    else if(state.swapping&&state.swapping.includes(idx)) bar.classList.add('swapping');
+    else if(idx===jPtr) bar.classList.add('comparing');
+    else if(low!==undefined&&high!==undefined&&idx>=low&&idx<=high){
+      if(iPtr!==undefined&&idx<=iPtr) bar.classList.add('less-than');
+      else bar.classList.add('active-range');
+    }
+    const val=document.createElement('div');val.className='bar-val';val.textContent=v;
+    wrap.appendChild(bar);wrap.appendChild(val);con.appendChild(wrap);
+  });
+}
+
+function applyStep(s){
+  if(!s)return;
+  hl(s.line>=0?s.line:-1);
+  if(s.depth!==undefined)document.getElementById('depth-info').textContent=`Depth: ${s.depth}`;
+  if(s.type==='init'){renderBars({arr:s.arr});document.getElementById('explain').textContent='Quick Sort: Chọn pivot, phân hoạch (nhỏ hơn sang trái, lớn hơn sang phải), đệ quy.';}
+  else if(s.type==='base'){renderBars(s);document.getElementById('explain').innerHTML=`📌 Base case: low=${s.low}≥high=${s.high} → đã sắp xếp!`;}
+  else if(s.type==='pivotMove'){document.getElementById('explain').innerHTML=`🔀 Di chuyển pivot từ vị trí ${s.pivIdx} → ${s.high} (cuối range).`;renderBars({...s,swapping:[s.pivIdx,s.high]});}
+  else if(s.type==='partition_start'){document.getElementById('explain').innerHTML=`🟣 <b>Pivot = ${s.pivot}</b> (tại vị trí ${s.pivotAt}). Bắt đầu phân hoạch [${s.low}..${s.high}].`;renderBars(s);}
+  else if(s.type==='compare'){cmp++;document.getElementById('s-cmp').textContent=cmp;acc+=2;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`🔴 arr[${s.j}]=${s.arr[s.j]} ≤ pivot=${s.pivot}? → <b>${s.arr[s.j]<=s.pivot?'Đúng, swap vào vùng ≤':'Sai, bỏ qua'}</b>`;renderBars(s);}
+  else if(s.type==='swap'){swp++;document.getElementById('s-swap').textContent=swp;acc+=2;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`🔄 Swap arr[${s.i}] ↔ arr[${s.j}]. i++ = ${s.i}`;renderBars({...s,swapping:[s.i,s.j]});}
+  else if(s.type==='inc_i'){document.getElementById('explain').innerHTML=`✅ arr[${s.j}]≤pivot, đã ở đúng vị trí. i++ = ${s.i}`;renderBars(s);}
+  else if(s.type==='skip'){document.getElementById('explain').innerHTML=`⏩ arr[${s.j}]=${s.arr[s.j]} > pivot=${s.pivot}, để nguyên vị trí phải.`;renderBars(s);}
+  else if(s.type==='place_pivot'){swp++;document.getElementById('s-swap').textContent=swp;acc+=2;document.getElementById('s-acc').textContent=acc;sortedSet.add(s.finalPivot);document.getElementById('explain').innerHTML=`📍 Đặt pivot vào vị trí <b>${s.finalPivot}</b>. Pivot đã ở đúng chỗ mãi mãi!`;renderBars({...s,swapping:[s.finalPivot,s.high],pivotAt:-1});}
+  else if(s.type==='done'){renderBars({type:'done',arr:s.arr});document.getElementById('explain').textContent='🎉 Quick Sort hoàn tất! In-place, cache-friendly, nhanh trong thực tế.';stopPlay();}
+}
+
+function getDelay(){return Math.round(1100-document.getElementById('speed').value*100);}
+function tick(){if(stepIdx>=steps.length){stopPlay();return;}applyStep(steps[stepIdx++]);if(playing)timer=setTimeout(tick,getDelay());}
+function startPlay(){if(stepIdx>=steps.length)reset();playing=true;document.getElementById('btn-play').textContent='⏸ Pause';tick();}
+function stopPlay(){playing=false;clearTimeout(timer);document.getElementById('btn-play').textContent='▶ Play';}
+function reset(){stopPlay();stepIdx=0;cmp=0;swp=0;acc=0;sortedSet=new Set();buildSteps();['s-cmp','s-swap','s-acc'].forEach(id=>document.getElementById(id).textContent=0);document.getElementById('depth-info').textContent='Depth: 0';hl(-1);renderBars({arr});document.getElementById('explain').textContent='👋 Nhấn Play để bắt đầu!';}
+
+function setStrategy(s){strategy=s;document.querySelectorAll('.strat-btn').forEach(b=>b.classList.remove('active-s'));document.getElementById('s-'+s).classList.add('active-s');genArray();reset();}
+
+document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
+document.getElementById('btn-step').onclick=()=>{stopPlay();if(stepIdx<steps.length)applyStep(steps[stepIdx++]);};
+document.getElementById('btn-reset').onclick=reset;
+document.getElementById('btn-new').onclick=()=>{genArray();reset();};
+['last','first','random','mid3'].forEach(s=>document.getElementById('s-'+s).onclick=()=>setStrategy(s));
+document.getElementById('size-sel').onchange=()=>{genArray();reset();};
+
+buildCode();genArray();reset();
+</script>
+</body>
+</html>

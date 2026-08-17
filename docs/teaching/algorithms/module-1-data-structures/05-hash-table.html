@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>05 — Bảng băm (Hash Table) | Data Structures</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #1a1a2e; --panel-bg: #16213e; --code-bg: #0f0f23;
+    --accent: #ec4899; --accent2: #ff6b6b; --accent3: #ffd93d;
+    --text: #e8e8f0; --text-dim: #888aaa; --border: #2a2a4a;
+    --node: #2d0a1e; --node-border: #9d174d; --node-active: #ec4899;
+    --node-found: #00ff88; --node-delete: #ff4757; --node-insert: #ffd93d;
+  }
+  body { background: var(--bg); color: var(--text); font-family: system-ui,-apple-system,sans-serif;
+    display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+  header { background: var(--panel-bg); border-bottom: 1px solid var(--border);
+    padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+  header h1 { font-size: 1.1rem; color: var(--accent); }
+  .badge { background: var(--code-bg); border: 1px solid var(--border); padding: 2px 10px;
+    border-radius: 20px; font-size: 0.75rem; color: var(--text-dim); }
+  .main { display: flex; flex: 1; overflow: hidden; }
+  .viz { flex: 0 0 60%; display: flex; flex-direction: column; padding: 14px; gap: 10px; overflow: hidden; }
+  .ops-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .op-btn { background: var(--panel-bg); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; transition: all 0.2s; }
+  .op-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .op-btn.active { background: var(--accent); color: #000; font-weight: 600; }
+  .input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .input-row label { font-size: 0.8rem; color: var(--text-dim); }
+  .input-row input[type=text] { background: var(--code-bg); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 10px; border-radius: 6px; width: 100px; font-size: 0.85rem; }
+  .input-row input[type=number] { background: var(--code-bg); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 10px; border-radius: 6px; width: 70px; font-size: 0.85rem; }
+  .run-btn { background: var(--accent); color: #000; border: none; padding: 6px 16px;
+    border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+  .mode-toggle { display: flex; gap: 6px; align-items: center; font-size: 0.78rem; color: var(--text-dim); }
+  .mode-btn { background: var(--code-bg); border: 1px solid var(--border); color: var(--text-dim);
+    padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; transition: all 0.2s; }
+  .mode-btn.active { border-color: var(--accent); color: var(--accent); }
+
+  .canvas-area { flex: 1; background: var(--panel-bg); border: 1px solid var(--border);
+    border-radius: 12px; display: flex; gap: 16px; padding: 16px; overflow: hidden; }
+
+  /* Hash calculation panel */
+  .hash-calc { width: 160px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; }
+  .hash-title { font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+  .hash-step { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px; font-family: 'Courier New',monospace; font-size: 0.75rem; transition: all 0.3s; }
+  .hash-step.active { border-color: var(--accent); background: rgba(236,72,153,0.08); }
+  .hash-step .hl { color: var(--accent3); font-weight: 700; }
+  .hash-step .result { color: var(--accent); font-weight: 700; font-size: 0.9rem; }
+  .hash-arrow { text-align: center; color: var(--text-dim); font-size: 1rem; }
+
+  /* Hash table buckets */
+  .table-section { flex: 1; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+  .table-title { font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; }
+  .bucket-row { display: flex; align-items: center; gap: 6px; }
+  .bucket-idx { width: 24px; text-align: right; font-size: 0.72rem; color: var(--text-dim); font-family: monospace; flex-shrink: 0; }
+  .bucket-cell { min-width: 60px; height: 32px; background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-size: 0.78rem; font-family: monospace; transition: all 0.35s; }
+  .bucket-cell.occupied { background: var(--node); border-color: var(--node-border); color: var(--text); }
+  .bucket-cell.active-cell { border-color: var(--node-active); background: rgba(236,72,153,0.15);
+    color: var(--node-active); box-shadow: 0 0 10px rgba(236,72,153,0.3); }
+  .bucket-cell.found-cell { border-color: var(--node-found); background: rgba(0,255,136,0.1);
+    color: var(--node-found); box-shadow: 0 0 10px rgba(0,255,136,0.3); }
+  .bucket-cell.collision { border-color: var(--accent3); background: rgba(255,217,61,0.1);
+    color: var(--accent3); }
+  .bucket-cell.deleted { background: rgba(255,71,87,0.1); border-color: var(--accent2);
+    color: var(--accent2); text-decoration: line-through; }
+  .chain-arrow { color: var(--node-border); font-size: 0.8rem; }
+  .null-cell { font-size: 0.7rem; color: #333; padding: 0 6px; }
+  @keyframes cellIn { from{opacity:0;transform:scale(0.6)} to{opacity:1;transform:scale(1)} }
+  .bucket-cell.entering { animation: cellIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+  .status-msg { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 14px; font-size: 0.82rem; color: var(--text-dim); text-align: center; }
+  .status-msg.info { border-color: var(--accent); color: var(--accent); }
+  .status-msg.success { border-color: var(--node-found); color: var(--node-found); }
+  .status-msg.error { border-color: var(--accent2); color: var(--accent2); }
+
+  .complexity-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .complexity-badge { background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 5px 12px; text-align: center; }
+  .complexity-badge .label { font-size: 0.65rem; color: var(--text-dim); }
+  .complexity-badge .value { font-size: 0.9rem; font-weight: 700; margin-top: 1px; }
+  .green { color: #00ff88; } .yellow { color: var(--accent3); } .red { color: var(--accent2); }
+  .complexity-badge.active-badge { border-color: var(--accent); }
+
+  .code-panel { flex: 0 0 40%; background: var(--code-bg); border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden; }
+  .code-panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border);
+    font-size: 0.8rem; color: var(--text-dim); display: flex; gap: 8px; align-items: center; }
+  .code-panel-header span { color: var(--accent); font-weight: 600; font-size: 0.85rem; }
+  .code-body { flex: 1; overflow-y: auto; padding: 12px 0; font-family: 'Courier New',monospace; font-size: 0.82rem; }
+  .code-line { display: flex; padding: 3px 0; transition: background 0.2s; }
+  .code-line.highlight { background: rgba(236,72,153,0.12); border-left: 3px solid var(--accent); }
+  .ln { width: 36px; text-align: right; padding-right: 12px; color: #444; flex-shrink: 0; user-select: none; }
+  .code-text { color: #abb2bf; white-space: pre; }
+  .kw { color: #c678dd; } .fn { color: #61afef; } .cm { color: #5c6370; font-style: italic; }
+  .num { color: #d19a66; } .str { color: #98c379; }
+
+  .controls { background: var(--panel-bg); border-top: 1px solid var(--border);
+    padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; flex-wrap: wrap; }
+  .ctrl-btn { background: var(--code-bg); border: 1px solid var(--border); color: var(--text);
+    width: 36px; height: 36px; border-radius: 8px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; font-size: 1rem; transition: all 0.2s; }
+  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .speed-group { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-dim); }
+  input[type=range] { -webkit-appearance: none; width: 100px; height: 4px; background: var(--border);
+    border-radius: 2px; outline: none; cursor: pointer; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px;
+    background: var(--accent); border-radius: 50%; }
+  .step-info { font-size: 0.78rem; color: var(--text-dim); }
+</style>
+</head>
+<body>
+<header>
+  <h1>#️⃣ Bảng băm — Hash Table</h1>
+  <span class="badge">Module 1 · Cấu trúc dữ liệu</span>
+  <span class="badge">O(1) average · Collision handling</span>
+</header>
+
+<div class="main">
+  <div class="viz">
+    <div class="ops-bar">
+      <button class="op-btn active" onclick="selectOp('insert',event)">➕ Insert</button>
+      <button class="op-btn" onclick="selectOp('search',event)">🔍 Search</button>
+      <button class="op-btn" onclick="selectOp('delete',event)">🗑 Delete</button>
+      <div class="mode-toggle">
+        Collision:
+        <button class="mode-btn active" id="modeChaining" onclick="setMode('chaining')">Chaining</button>
+        <button class="mode-btn" id="modeProbing" onclick="setMode('probing')">Linear Probing</button>
+      </div>
+    </div>
+    <div class="input-row">
+      <label>Key:</label>
+      <input type="text" id="inpKey" value="alice" maxlength="10">
+      <label>Value:</label>
+      <input type="number" id="inpVal" value="42">
+      <button class="run-btn" onclick="runOperation()">▶ Chạy</button>
+    </div>
+    <div class="canvas-area">
+      <!-- Hash calculation steps -->
+      <div class="hash-calc">
+        <div class="hash-title">Hash Function</div>
+        <div class="hash-step" id="hs0">
+          <div class="hl" id="hs0key">key = "?"</div>
+        </div>
+        <div class="hash-arrow">↓</div>
+        <div class="hash-step" id="hs1">
+          <div style="color:var(--text-dim);font-size:0.7rem">charCode sum:</div>
+          <div class="hl" id="hs1sum">?</div>
+        </div>
+        <div class="hash-arrow">↓</div>
+        <div class="hash-step" id="hs2">
+          <div style="color:var(--text-dim);font-size:0.7rem">% tableSize (7):</div>
+          <div class="result" id="hs2idx">index = ?</div>
+        </div>
+        <div style="height:12px"></div>
+        <div class="complexity-row" style="flex-direction:column;gap:6px;">
+          <div class="complexity-badge active-badge"><div class="label">Avg Case</div><div class="value green">O(1)</div></div>
+          <div class="complexity-badge"><div class="label">Worst (all collide)</div><div class="value red">O(n)</div></div>
+        </div>
+      </div>
+
+      <!-- Hash table display -->
+      <div class="table-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="table-title" id="tableTitle">Hash Table (Chaining)</div>
+        </div>
+        <div id="hashTableDisplay"></div>
+        <div class="status-msg" id="statusMsg">Nhập key/value và nhấn ▶ Chạy</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-panel">
+    <div class="code-panel-header">📄 Pseudocode — <span id="codeTitle">Hash Insert</span></div>
+    <div class="code-body" id="codeBody"></div>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn" onclick="stepBack()">⏮</button>
+  <button class="ctrl-btn" id="btnPlay" onclick="togglePlay()">▶</button>
+  <button class="ctrl-btn" onclick="stepForward()">⏭</button>
+  <button class="ctrl-btn" onclick="resetAll()">🔄</button>
+  <div class="speed-group">🐢 <input type="range" id="speedSlider" min="1" max="5" value="3"> 🐇</div>
+  <div class="step-info" id="stepInfo">Bước 0 / 0</div>
+</div>
+
+<script>
+const TABLE_SIZE = 7;
+let collisionMode = 'chaining'; // or 'probing'
+let currentOp = 'insert';
+let steps = [], stepIdx = -1, playing = false, playTimer = null;
+const speedMap = { 1:1400, 2:1000, 3:650, 4:380, 5:200 };
+
+// table storage: chaining = array of arrays; probing = flat array
+let chainingTable = Array.from({length:TABLE_SIZE},()=>[]);
+let probingTable  = new Array(TABLE_SIZE).fill(null); // null | {key,val} | 'DELETED'
+
+// Pre-populate
+function initTable() {
+  chainingTable = Array.from({length:TABLE_SIZE},()=>[]);
+  probingTable  = new Array(TABLE_SIZE).fill(null);
+  // seed data
+  const seeds = [['bob',10],['cat',20],['dog',30],['eve',40]];
+  seeds.forEach(([k,v]) => {
+    const h = hashKey(k);
+    if (collisionMode==='chaining') chainingTable[h].push({key:k,val:v});
+    else {
+      let idx = h;
+      while (probingTable[idx]!==null && probingTable[idx]!=='DELETED') idx=(idx+1)%TABLE_SIZE;
+      probingTable[idx]={key:k,val:v};
+    }
+  });
+}
+
+function hashKey(key) {
+  let sum = 0;
+  for (let i=0; i<key.length; i++) sum += key.charCodeAt(i);
+  return sum % TABLE_SIZE;
+}
+
+function hashSum(key) {
+  let sum = 0;
+  for (let i=0; i<key.length; i++) sum += key.charCodeAt(i);
+  return sum;
+}
+
+// ── Code ──────────────────────────────────────────────────────────
+const codes = {
+  insert_chaining: {
+    title: 'Insert (Chaining) — O(1) avg',
+    lines: [
+      ['cm','// Insert với Separate Chaining'],
+      ['kw','function ','fn','insert','(table, key, value):'],
+      ['cm','  // Tính hash index'],
+      ['','  index = hash(key) % tableSize'],
+      ['cm','  // Chèn vào đầu linked list của bucket'],
+      ['','  node = ','kw','new ','','Node(key, value)'],
+      ['','  table[index].prepend(node)'],
+      ['kw','  return ','cm','"// O(1) avg — O(n) worst"'],
+    ]
+  },
+  insert_probing: {
+    title: 'Insert (Linear Probing) — O(1) avg',
+    lines: [
+      ['cm','// Insert với Open Addressing'],
+      ['kw','function ','fn','insert','(table, key, value):'],
+      ['','  index = hash(key) % tableSize'],
+      ['','  start = index'],
+      ['kw','  while ','','table[index] ≠ null:'],
+      ['cm','    // Ô đã dùng → thử ô tiếp theo'],
+      ['','    index = (index + 1) % tableSize'],
+      ['','    ','kw','if ','','index == start: ','kw','throw ','str','"Full"'],
+      ['','  table[index] = {key, value}'],
+      ['kw','  return ','cm','"// O(1) avg"'],
+    ]
+  },
+  search_chaining: {
+    title: 'Search (Chaining) — O(1) avg',
+    lines: [
+      ['cm','// Search với Chaining'],
+      ['kw','function ','fn','search','(table, key):'],
+      ['','  index = hash(key) % tableSize'],
+      ['cm','  // Duyệt linked list tại bucket'],
+      ['kw','  for ','','node in table[index]:'],
+      ['','    ','kw','if ','','node.key == key:'],
+      ['kw','      return ','','node.value'],
+      ['kw','  return ','','null ','cm','// không thấy'],
+    ]
+  },
+  search_probing: {
+    title: 'Search (Linear Probing) — O(1) avg',
+    lines: [
+      ['cm','// Search với Open Addressing'],
+      ['kw','function ','fn','search','(table, key):'],
+      ['','  index = hash(key) % tableSize'],
+      ['kw','  while ','','table[index] ≠ null:'],
+      ['','    ','kw','if ','','table[index].key == key:'],
+      ['kw','      return ','','table[index].value'],
+      ['cm','    // Bỏ qua "DELETED" tombstone'],
+      ['','    index = (index + 1) % tableSize'],
+      ['kw','  return ','','null'],
+    ]
+  },
+  delete_chaining: {
+    title: 'Delete (Chaining) — O(1) avg',
+    lines: [
+      ['cm','// Delete với Chaining'],
+      ['kw','function ','fn','delete','(table, key):'],
+      ['','  index = hash(key) % tableSize'],
+      ['kw','  for ','','node in table[index]:'],
+      ['','    ','kw','if ','','node.key == key:'],
+      ['','      table[index].remove(node)'],
+      ['kw','      return ','','true'],
+      ['kw','  return ','','false'],
+    ]
+  },
+  delete_probing: {
+    title: 'Delete (Linear Probing) — tombstone',
+    lines: [
+      ['cm','// Delete với Probing — dùng tombstone'],
+      ['kw','function ','fn','delete','(table, key):'],
+      ['','  index = hash(key) % tableSize'],
+      ['kw','  while ','','table[index] ≠ null:'],
+      ['','    ','kw','if ','','table[index].key == key:'],
+      ['cm','      // Đánh dấu DELETED (tombstone)'],
+      ['','      table[index] = "DELETED"'],
+      ['kw','      return ','','true'],
+      ['','    index = (index + 1) % tableSize'],
+      ['kw','  return ','','false'],
+    ]
+  }
+};
+
+function renderCode(op, hl=-1) {
+  const key = op + '_' + collisionMode;
+  const c = codes[key] || codes[op+'_chaining'];
+  document.getElementById('codeTitle').textContent = c.title;
+  const body = document.getElementById('codeBody');
+  body.innerHTML = '';
+  c.lines.forEach((parts,i) => {
+    const div = document.createElement('div');
+    div.className = 'code-line'+(i===hl?' highlight':'');
+    const ln = document.createElement('span'); ln.className='ln'; ln.textContent=i+1;
+    const txt = document.createElement('span'); txt.className='code-text';
+    let html='';
+    for(let j=0;j<parts.length;j+=2){const cls=parts[j],cnt=parts[j+1]||''; html+=cls?`<span class="${cls}">${cnt}</span>`:cnt;}
+    txt.innerHTML=html; div.appendChild(ln); div.appendChild(txt);
+    body.appendChild(div);
+    if(i===hl) div.scrollIntoView({block:'nearest'});
+  });
+}
+
+// ── Render hash table ─────────────────────────────────────────────
+function renderHashTable(highlights={}) {
+  const container = document.getElementById('hashTableDisplay');
+  container.innerHTML = '';
+  document.getElementById('tableTitle').textContent = `Hash Table (${collisionMode==='chaining'?'Chaining':'Linear Probing'})`;
+
+  if (collisionMode === 'chaining') {
+    for (let i=0; i<TABLE_SIZE; i++) {
+      const row = document.createElement('div'); row.className='bucket-row';
+      const idx = document.createElement('div'); idx.className='bucket-idx'; idx.textContent=i;
+      row.appendChild(idx);
+      const hl = highlights[i] || '';
+      const bc = document.createElement('div'); bc.className='bucket-cell'+(chainingTable[i].length?' occupied':'');
+      if (hl==='active') bc.classList.add('active-cell');
+      if (hl==='found')  bc.classList.add('found-cell');
+      if (hl==='collision') bc.classList.add('collision');
+      bc.textContent = chainingTable[i].length ? `[${i}]` : 'empty';
+      row.appendChild(bc);
+      // chain nodes
+      chainingTable[i].forEach((node, ni) => {
+        const arr = document.createElement('span'); arr.className='chain-arrow'; arr.textContent=' →';
+        const nc = document.createElement('div'); nc.className='bucket-cell occupied';
+        const nodeHl = highlights[`${i}_${ni}`] || '';
+        if (nodeHl==='active') nc.classList.add('active-cell');
+        if (nodeHl==='found')  nc.classList.add('found-cell');
+        if (nodeHl==='deleted') nc.classList.add('deleted');
+        nc.textContent = `${node.key}:${node.val}`;
+        row.appendChild(arr); row.appendChild(nc);
+      });
+      const nl = document.createElement('span'); nl.className='null-cell'; nl.textContent='→ null';
+      row.appendChild(nl);
+      container.appendChild(row);
+    }
+  } else {
+    for (let i=0; i<TABLE_SIZE; i++) {
+      const row = document.createElement('div'); row.className='bucket-row';
+      const idx = document.createElement('div'); idx.className='bucket-idx'; idx.textContent=i;
+      row.appendChild(idx);
+      const cell = probingTable[i];
+      const hl = highlights[i] || '';
+      const bc = document.createElement('div'); bc.className='bucket-cell';
+      if (cell && cell!=='DELETED') { bc.classList.add('occupied'); bc.textContent=`${cell.key}:${cell.val}`; }
+      else if (cell==='DELETED') { bc.classList.add('deleted'); bc.textContent='DELETED'; }
+      else { bc.textContent='empty'; }
+      if (hl==='active') bc.classList.add('active-cell');
+      if (hl==='found')  bc.classList.add('found-cell');
+      if (hl==='collision') bc.classList.add('collision');
+      row.appendChild(bc);
+      container.appendChild(row);
+    }
+  }
+}
+
+function setHashCalc(key='?', sum='?', idx='?', activeStep=-1) {
+  document.getElementById('hs0key').textContent = `key = "${key}"`;
+  document.getElementById('hs1sum').textContent = sum==='?' ? '?' : `Σ charCode = ${sum}`;
+  document.getElementById('hs2idx').textContent = idx==='?' ? 'index = ?' : `index = ${sum} % 7 = ${idx}`;
+  ['hs0','hs1','hs2'].forEach((id,i)=>{
+    document.getElementById(id).classList.toggle('active', i===activeStep);
+  });
+}
+
+// ── Build steps ───────────────────────────────────────────────────
+function buildSteps(op, key, val) {
+  steps = [];
+  const sum = hashSum(key);
+  const idx = hashKey(key);
+
+  steps.push({ highlights:{}, calcStep:-1, calcKey:'?', calcSum:'?', calcIdx:'?', code:-1, msg:`Bắt đầu ${op} key="${key}"` });
+  steps.push({ highlights:{}, calcStep:0, calcKey:key, calcSum:'?', calcIdx:'?', code:2, msg:`Bước 1: Nhận key = "${key}"` });
+  steps.push({ highlights:{}, calcStep:1, calcKey:key, calcSum:sum, calcIdx:'?', code:3, msg:`Bước 2: Tính tổng charCode = ${sum}` });
+  steps.push({ highlights:{[idx]:'active'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:3, msg:`Bước 3: index = ${sum} % 7 = ${idx}` });
+
+  if (op === 'insert') {
+    if (collisionMode === 'chaining') {
+      const hasCollision = chainingTable[idx].length > 0;
+      if (hasCollision) {
+        steps.push({ highlights:{[idx]:'collision'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:5, msg:`⚠ Collision! bucket[${idx}] đã có ${chainingTable[idx].length} node — dùng chaining` });
+      }
+      const nc = chainingTable.map(b=>[...b]);
+      nc[idx] = [{key,val}, ...nc[idx]];
+      steps.push({ table:nc, highlights:{[idx]:'active',[`${idx}_0`]:'active'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:6, msg:`Thêm node "${key}:${val}" vào đầu linked list bucket[${idx}]` });
+      steps.push({ table:nc, highlights:{[idx]:'found',[`${idx}_0`]:'found'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:7, msg:`✓ Insert thành công — O(1) average` });
+      chainingTable = nc;
+    } else {
+      let probe = idx, probeCount = 0;
+      while (probingTable[probe] !== null && probingTable[probe] !== 'DELETED' && probeCount < TABLE_SIZE) {
+        steps.push({ highlights:{[probe]:'collision'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:5, msg:`⚠ Ô [${probe}] đã dùng! Linear probing → thử ô [${(probe+1)%TABLE_SIZE}]` });
+        probe = (probe + 1) % TABLE_SIZE; probeCount++;
+      }
+      const np = [...probingTable]; np[probe] = {key,val};
+      steps.push({ ptable:np, highlights:{[probe]:'active'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:8, msg:`Ô [${probe}] trống → ghi vào` });
+      steps.push({ ptable:np, highlights:{[probe]:'found'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:9, msg:`✓ Insert tại [${probe}] thành công` });
+      probingTable = np;
+    }
+  } else if (op === 'search') {
+    if (collisionMode === 'chaining') {
+      steps.push({ highlights:{[idx]:'active'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:3, msg:`Đến bucket[${idx}], duyệt linked list` });
+      let found = false;
+      chainingTable[idx].forEach((node,ni) => {
+        const h = {[idx]:'active',[`${idx}_${ni}`]:'active'};
+        if (node.key === key) {
+          steps.push({ highlights:{...h,[`${idx}_${ni}`]:'found'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:5, msg:`✓ Tìm thấy "${key}" = ${node.val}` });
+          found = true;
+        } else {
+          steps.push({ highlights:h, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:4, msg:`"${node.key}" ≠ "${key}", tiếp tục` });
+        }
+      });
+      if (!found) steps.push({ highlights:{}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:7, msg:`✗ Không tìm thấy "${key}"` });
+    } else {
+      let probe = idx, probeCount = 0;
+      while (probingTable[probe] !== null && probeCount < TABLE_SIZE) {
+        const cell = probingTable[probe];
+        if (cell !== 'DELETED' && cell.key === key) {
+          steps.push({ highlights:{[probe]:'found'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:5, msg:`✓ Tìm thấy "${key}" tại [${probe}] = ${cell.val}` });
+          break;
+        }
+        steps.push({ highlights:{[probe]:'active'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:3, msg:`[${probe}]: ${cell==='DELETED'?'DELETED':cell?.key||'empty'} ≠ "${key}", probe tiếp` });
+        probe = (probe+1)%TABLE_SIZE; probeCount++;
+      }
+    }
+  } else if (op === 'delete') {
+    if (collisionMode === 'chaining') {
+      let found = false;
+      chainingTable[idx].forEach((node,ni) => {
+        if (node.key === key) {
+          steps.push({ highlights:{[idx]:'active',[`${idx}_${ni}`]:'active'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:4, msg:`Tìm thấy "${key}" tại bucket[${idx}][${ni}]` });
+          const nc = chainingTable.map(b=>[...b]);
+          nc[idx].splice(ni,1);
+          steps.push({ table:nc, highlights:{[idx]:'active'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:5, msg:`✓ Xóa node "${key}" khỏi linked list` });
+          chainingTable = nc; found = true;
+        }
+      });
+      if (!found) steps.push({ highlights:{}, code:7, msg:`✗ Không tìm thấy "${key}" để xóa` });
+    } else {
+      let probe = idx, probeCount = 0, found = false;
+      while (probingTable[probe] !== null && probeCount < TABLE_SIZE) {
+        const cell = probingTable[probe];
+        if (cell !== 'DELETED' && cell.key === key) {
+          steps.push({ highlights:{[probe]:'active'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:5, msg:`Tìm thấy "${key}" tại [${probe}] — đánh dấu DELETED (tombstone)` });
+          const np = [...probingTable]; np[probe]='DELETED';
+          steps.push({ ptable:np, highlights:{[probe]:'active'}, calcStep:2, calcKey:key, calcSum:sum, calcIdx:idx, code:6, msg:`✓ [${probe}] = "DELETED" — search vẫn hoạt động đúng` });
+          probingTable = np; found = true; break;
+        }
+        probe=(probe+1)%TABLE_SIZE; probeCount++;
+      }
+      if (!found) steps.push({ highlights:{}, code:9, msg:`✗ Không tìm thấy "${key}"` });
+    }
+  }
+}
+
+function applyStep(idx) {
+  if (idx<0||idx>=steps.length) return;
+  const s = steps[idx];
+  if (s.table) chainingTable = s.table;
+  if (s.ptable) probingTable = s.ptable;
+  renderHashTable(s.highlights||{});
+  setHashCalc(s.calcKey||'?', s.calcSum||'?', s.calcIdx||'?', s.calcStep??-1);
+  renderCode(currentOp, s.code);
+  const msg = document.getElementById('statusMsg');
+  msg.textContent = s.msg||'';
+  msg.className = 'status-msg'+(s.msg?.startsWith('✓')?' success':s.msg?.startsWith('✗')?' error':' info');
+  document.getElementById('stepInfo').textContent = `Bước ${idx+1} / ${steps.length}`;
+}
+
+function stepForward() { if(stepIdx<steps.length-1){stepIdx++;applyStep(stepIdx);}else stopPlay(); }
+function stepBack()    { if(stepIdx>0){stepIdx--;applyStep(stepIdx);} }
+function togglePlay()  { playing?stopPlay():startPlay(); }
+function startPlay() {
+  playing=true; document.getElementById('btnPlay').textContent='⏸';
+  function tick() {
+    if(stepIdx<steps.length-1){stepIdx++;applyStep(stepIdx);
+      playTimer=setTimeout(tick,speedMap[document.getElementById('speedSlider').value]);
+    } else stopPlay();
+  }
+  tick();
+}
+function stopPlay() { playing=false;document.getElementById('btnPlay').textContent='▶';clearTimeout(playTimer); }
+
+function setMode(mode) {
+  collisionMode = mode;
+  document.getElementById('modeChaining').classList.toggle('active',mode==='chaining');
+  document.getElementById('modeProbing').classList.toggle('active',mode==='probing');
+  resetAll();
+}
+
+function selectOp(op, e) {
+  currentOp = op;
+  document.querySelectorAll('.op-btn').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  resetAll();
+}
+
+function runOperation() {
+  stopPlay();
+  initTable();
+  const key = document.getElementById('inpKey').value.trim() || 'test';
+  const val = parseInt(document.getElementById('inpVal').value) || 99;
+  buildSteps(currentOp, key, val);
+  stepIdx = -1;
+  renderHashTable({});
+  setHashCalc();
+  renderCode(currentOp,-1);
+  document.getElementById('statusMsg').textContent='Nhấn ⏭ để từng bước';
+  document.getElementById('statusMsg').className='status-msg';
+  document.getElementById('stepInfo').textContent=`Bước 0 / ${steps.length}`;
+}
+
+function resetAll() {
+  stopPlay();
+  initTable(); steps=[]; stepIdx=-1;
+  renderHashTable({});
+  setHashCalc();
+  renderCode(currentOp,-1);
+  document.getElementById('statusMsg').textContent='Nhập key/value và nhấn ▶ Chạy';
+  document.getElementById('statusMsg').className='status-msg';
+  document.getElementById('stepInfo').textContent='Bước 0 / 0';
+}
+
+initTable();
+renderHashTable({});
+renderCode('insert',-1);
+</script>
+</body>
+</html>

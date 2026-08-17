@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heap Sort — Sắp xếp đống</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#0f1117;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{background:#1a1d2e;padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #2d3148}
+header h1{font-size:1.1rem;color:#f87171}
+.badge{background:#450a0a;color:#fca5a5;padding:2px 8px;border-radius:4px;font-size:.75rem}
+.complexity{display:flex;gap:8px;margin-left:auto}
+.cx{background:#1e293b;border:1px solid #334155;border-radius:4px;padding:2px 8px;font-size:.75rem;color:#94a3b8}
+.cx span{color:#fbbf24}
+main{flex:1;display:flex;overflow:hidden;min-height:0}
+#viz{width:60%;background:#0d1117;display:flex;flex-direction:column;overflow:hidden}
+/* Bar area (top half of viz) */
+#bar-area{height:45%;position:relative;padding:6px 16px 0;border-bottom:1px solid #1e293b}
+#bars-container{position:absolute;bottom:0;left:16px;right:16px;top:6px;display:flex;align-items:flex-end;gap:2px}
+.bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1}
+.bar{width:100%;border-radius:3px 3px 0 0;background:#4a90d9;transition:background .25s}
+.bar-val{font-size:9px;color:#94a3b8;margin-top:1px}
+.bar.heap-node{background:#4a90d9}
+.bar.root{background:#f87171;box-shadow:0 0 8px #f87171}
+.bar.comparing{background:#ef4444}
+.bar.swapping{background:#f97316}
+.bar.sorted{background:#22c55e}
+.bar.heapify-path{background:#eab308}
+/* Tree area */
+#tree-area{flex:1;position:relative;overflow:hidden}
+#tree-canvas{width:100%;height:100%}
+#legend{display:flex;gap:10px;padding:4px 16px;background:#111827;font-size:.7rem;flex-wrap:wrap}
+.leg{display:flex;align-items:center;gap:4px}
+.leg-dot{width:9px;height:9px;border-radius:2px}
+#code-panel{width:40%;background:#1a1d2e;border-left:1px solid #2d3148;display:flex;flex-direction:column}
+.panel-title{padding:8px 14px;background:#12152a;font-size:.8rem;color:#8b92c4;border-bottom:1px solid #2d3148}
+#code{flex:1;overflow-y:auto;padding:8px 0;font-family:'Courier New',monospace;font-size:.76rem;line-height:1.65}
+.code-line{padding:1px 14px;color:#8b92c4;white-space:pre}
+.code-line.active{background:#2d2a12;color:#fde68a;border-left:3px solid #fbbf24}
+#explain{padding:8px 14px;background:#0f1117;border-top:1px solid #2d3148;font-size:.78rem;color:#94a3b8;min-height:52px;line-height:1.4}
+#controls{background:#111827;padding:7px 14px;display:flex;align-items:center;gap:8px;border-top:1px solid #1e293b;flex-wrap:wrap}
+button{background:#1d4ed8;color:#e2e8f0;border:none;border-radius:5px;padding:5px 12px;cursor:pointer;font-size:.8rem;transition:background .2s}
+button:hover{background:#2563eb}
+#btn-play{background:#991b1b}#btn-play:hover{background:#dc2626}
+#stats{display:flex;gap:10px;margin-left:auto;font-size:.78rem}
+.stat{background:#1e293b;padding:3px 8px;border-radius:4px}
+.stat span{color:#f59e0b}
+label{font-size:.75rem;color:#64748b}
+input[type=range]{accent-color:#f87171;width:80px}
+select{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:3px 5px;font-size:.75rem}
+#phase-info{background:#1e293b;padding:3px 8px;border-radius:4px;font-size:.78rem;color:#f87171}
+</style>
+</head>
+<body>
+<header>
+  <h1>🏔️ Heap Sort — Sắp xếp đống</h1>
+  <span class="badge">Module 2</span>
+  <div class="complexity">
+    <div class="cx">Best: <span>O(n log n)</span></div>
+    <div class="cx">Avg: <span>O(n log n)</span></div>
+    <div class="cx">Worst: <span>O(n log n)</span></div>
+    <div class="cx">Space: <span>O(1)</span></div>
+    <div class="cx">Stable: <span>✗</span></div>
+  </div>
+</header>
+<main>
+  <div id="viz">
+    <div id="bar-area"><div id="bars-container"></div></div>
+    <canvas id="tree-canvas"></canvas>
+    <div id="legend">
+      <div class="leg"><div class="leg-dot" style="background:#f87171"></div>Root (max)</div>
+      <div class="leg"><div class="leg-dot" style="background:#ef4444"></div>Đang so sánh</div>
+      <div class="leg"><div class="leg-dot" style="background:#eab308"></div>Heapify path</div>
+      <div class="leg"><div class="leg-dot" style="background:#f97316"></div>Đang swap</div>
+      <div class="leg"><div class="leg-dot" style="background:#22c55e"></div>Đã sắp xếp</div>
+    </div>
+  </div>
+  <div id="code-panel">
+    <div class="panel-title">📄 Code — Heap Sort (Max-Heap)</div>
+    <div id="code"></div>
+    <div id="explain">👋 Nhấn Play để bắt đầu!</div>
+  </div>
+</main>
+<div id="controls">
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-step">⏭ Step</button>
+  <button id="btn-reset">↺ Reset</button>
+  <button id="btn-new">🎲 Mảng mới</button>
+  <label>Tốc độ: <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <label>Size: <select id="size-sel">
+    <option value="7">7</option><option value="10">10</option>
+    <option value="15" selected>15</option><option value="20">20</option>
+  </select></label>
+  <div id="phase-info">Phase: —</div>
+  <div id="stats">
+    <div class="stat">So sánh: <span id="s-cmp">0</span></div>
+    <div class="stat">Swap: <span id="s-swap">0</span></div>
+    <div class="stat">Acc: <span id="s-acc">0</span></div>
+  </div>
+</div>
+<script>
+const CODE=[
+  {t:'function heapSort(arr) {'},
+  {t:'  const n = arr.length;'},
+  {t:'  // Bước 1: Xây dựng Max-Heap'},
+  {t:'  for (let i = Math.floor(n/2)-1; i>=0; i--)'},
+  {t:'    heapify(arr, n, i);'},
+  {t:'  // Bước 2: Lần lượt rút max về cuối'},
+  {t:'  for (let i = n-1; i > 0; i--) {'},
+  {t:'    // root (max) ↔ phần tử cuối heap'},
+  {t:'    [arr[0], arr[i]] = [arr[i], arr[0]];'},
+  {t:'    // Khôi phục heap property'},
+  {t:'    heapify(arr, i, 0);'},
+  {t:'  }'},
+  {t:'}'},
+  {t:''},
+  {t:'function heapify(arr, heapSize, i) {'},
+  {t:'  let largest = i;'},
+  {t:'  const l = 2*i+1, r = 2*i+2;'},
+  {t:'  if (l < heapSize && arr[l] > arr[largest])'},
+  {t:'    largest = l;'},
+  {t:'  if (r < heapSize && arr[r] > arr[largest])'},
+  {t:'    largest = r;'},
+  {t:'  if (largest !== i) {'},
+  {t:'    [arr[i], arr[largest]] = [arr[largest], arr[i]];'},
+  {t:'    heapify(arr, heapSize, largest);'},
+  {t:'  }'},
+  {t:'}'},
+];
+
+let arr=[],steps=[],stepIdx=0,playing=false,timer=null,cmp=0,swp=0,acc=0;
+let sortedFrom=Infinity,heapSize=0;
+let activeNodes=new Set(),swappingNodes=new Set();
+
+function buildCode(){document.getElementById('code').innerHTML=CODE.map((c,i)=>`<div class="code-line" data-i="${i}">${c.t||' '}</div>`).join('');}
+function hl(i){document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));if(i>=0)document.querySelector(`[data-i="${i}"]`)?.classList.add('active');}
+function genArray(){const n=+document.getElementById('size-sel').value;arr=Array.from({length:n},()=>Math.floor(Math.random()*85)+15);}
+
+function buildSteps(){
+  steps=[];
+  const a=[...arr];const n=a.length;
+  steps.push({type:'init',arr:[...a],heapSize:n,line:-1});
+
+  function heapify(ar,hs,i,depth=0){
+    let largest=i;
+    const l=2*i+1,r=2*i+2;
+    steps.push({type:'heapify_start',i,l,r,hs,arr:[...ar],line:15});
+    if(l<hs){cmp++;acc+=2;steps.push({type:'cmp_left',i,l,largest,hs,arr:[...ar],line:17});if(ar[l]>ar[largest])largest=l;}
+    if(r<hs){cmp++;acc+=2;steps.push({type:'cmp_right',i,r,largest,hs,arr:[...ar],line:19});if(ar[r]>ar[largest])largest=r;}
+    if(largest!==i){
+      swp++;acc+=2;
+      steps.push({type:'heapify_swap',i,largest,hs,arr:[...ar],line:22});
+      [ar[i],ar[largest]]=[ar[largest],ar[i]];
+      steps.push({type:'after_swap',i,largest,hs,arr:[...ar],line:23});
+      heapify(ar,hs,largest,depth+1);
+    }else{
+      steps.push({type:'heap_ok',i,hs,arr:[...ar],line:21});
+    }
+  }
+
+  // Build heap
+  steps.push({type:'phase_build',arr:[...a],heapSize:n,line:3});
+  for(let i=Math.floor(n/2)-1;i>=0;i--){
+    steps.push({type:'build_node',i,arr:[...a],heapSize:n,line:3});
+    heapify(a,n,i);
+  }
+  steps.push({type:'heap_built',arr:[...a],heapSize:n,line:5});
+
+  // Extract
+  steps.push({type:'phase_extract',arr:[...a],heapSize:n,line:6});
+  for(let i=n-1;i>0;i--){
+    steps.push({type:'extract',rootVal:a[0],i,heapSize:i+1,arr:[...a],line:8});
+    swp++;acc+=2;[a[0],a[i]]=[a[i],a[0]];
+    steps.push({type:'after_extract',i,heapSize:i,arr:[...a],line:8});
+    heapify(a,i,0);
+    steps.push({type:'extracted',i,heapSize:i,arr:[...a],line:10});
+  }
+  steps.push({type:'done',arr:[...a]});
+  cmp=0;swp=0;acc=0;
+}
+
+function drawTree(ar,hs,highlighted,swapping){
+  const canvas=document.getElementById('tree-canvas');
+  const ctx=canvas.getContext('2d');
+  canvas.width=canvas.clientWidth;canvas.height=canvas.clientHeight;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(!ar||ar.length===0)return;
+  const n=Math.min(hs,ar.length);
+  if(n===0)return;
+  const maxDepth=Math.floor(Math.log2(n));
+  const nodeR=Math.min(18,canvas.height/(2*(maxDepth+2)));
+  function getPos(idx){
+    const d=Math.floor(Math.log2(idx+1));
+    const pos=idx+1-Math.pow(2,d);
+    const total=Math.pow(2,d);
+    const x=canvas.width*(pos+0.5)/total;
+    const y=20+d*(canvas.height-40)/(maxDepth+1);
+    return[x,y];
+  }
+  // Draw edges
+  ctx.strokeStyle='#334155';ctx.lineWidth=1.5;
+  for(let i=1;i<n;i++){
+    const p=Math.floor((i-1)/2);
+    const[px,py]=getPos(p);const[cx2,cy]=getPos(i);
+    ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(cx2,cy);ctx.stroke();
+  }
+  // Draw nodes
+  for(let i=0;i<n;i++){
+    const[x,y]=getPos(i);
+    let col='#1e3a5f';
+    if(swapping&&swapping.includes(i)) col='#f97316';
+    else if(highlighted&&highlighted.includes(i)) col='#eab308';
+    else if(i===0) col='#991b1b';
+    ctx.beginPath();ctx.arc(x,y,nodeR,0,2*Math.PI);
+    ctx.fillStyle=col;ctx.fill();
+    ctx.strokeStyle='#475569';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle='#e2e8f0';ctx.font=`bold ${Math.max(9,nodeR*0.9)}px monospace`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(ar[i],x,y);
+  }
+  // Draw sorted nodes ghost
+  for(let i=n;i<ar.length;i++){
+    const[x,y]=getPos(i);
+    ctx.beginPath();ctx.arc(x,y,nodeR,0,2*Math.PI);
+    ctx.fillStyle='#22c55e';ctx.globalAlpha=0.5;ctx.fill();ctx.globalAlpha=1;
+    ctx.fillStyle='#e2e8f0';ctx.font=`bold ${Math.max(9,nodeR*0.9)}px monospace`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(ar[i],x,y);
+  }
+}
+
+function renderBars(a,hs,highlighted,swapping){
+  const con=document.getElementById('bars-container');
+  const max=Math.max(...a);
+  con.innerHTML='';
+  a.forEach((v,idx)=>{
+    const wrap=document.createElement('div');wrap.className='bar-wrap';
+    const bar=document.createElement('div');bar.className='bar';
+    bar.style.height=Math.round(v/max*100)+'%';
+    if(idx>=hs) bar.classList.add('sorted');
+    else if(swapping&&swapping.includes(idx)) bar.classList.add('swapping');
+    else if(highlighted&&highlighted.includes(idx)) bar.classList.add('heapify-path');
+    else if(idx===0&&hs>0) bar.classList.add('root');
+    else bar.classList.add('heap-node');
+    const val=document.createElement('div');val.className='bar-val';val.textContent=v;
+    wrap.appendChild(bar);wrap.appendChild(val);con.appendChild(wrap);
+  });
+}
+
+function applyStep(s){
+  if(!s)return;
+  hl(s.line>=0?s.line:-1);
+  const a=s.arr||arr;const hs=s.heapSize!==undefined?s.heapSize:arr.length;
+  if(s.type==='init'){renderBars(a,hs,[],[]);drawTree(a,hs,[],[]);document.getElementById('explain').textContent='Heap Sort: 2 bước — (1) Xây max-heap, (2) Lần lượt rút phần tử lớn nhất về cuối.';}
+  else if(s.type==='phase_build'){document.getElementById('phase-info').textContent='Phase: BUILD HEAP';document.getElementById('explain').textContent='🏗️ Bước 1: Xây dựng Max-Heap từ dưới lên (từ nút lá gần nhất đến root).';renderBars(a,hs,[],[]);drawTree(a,hs,[],[]);}
+  else if(s.type==='build_node'){document.getElementById('explain').innerHTML=`🔨 Heapify nút i=${s.i} (giá trị=${a[s.i]}). Đảm bảo nó lớn hơn con.`;renderBars(a,hs,[s.i],[]);drawTree(a,hs,[s.i],[]);}
+  else if(s.type==='heapify_start'){document.getElementById('explain').innerHTML=`🔍 Heapify(${s.i}): left=${s.l<hs?s.l:'—'}, right=${s.r<hs?s.r:'—'}`;renderBars(a,hs,[s.i],[]);drawTree(a,hs,[s.i],[]);}
+  else if(s.type==='cmp_left'||s.type==='cmp_right'){cmp++;document.getElementById('s-cmp').textContent=cmp;acc+=2;document.getElementById('s-acc').textContent=acc;const which=s.type==='cmp_left'?s.l:s.r;document.getElementById('explain').innerHTML=`🔴 So sánh arr[${which}]=${a[which]} vs largest arr[${s.largest}]=${a[s.largest]}`;renderBars(a,hs,[s.i,which],[]);drawTree(a,hs,[s.i,which],[]);}
+  else if(s.type==='heap_ok'){document.getElementById('explain').innerHTML=`✅ Nút ${s.i} đã thỏa heap property (lớn hơn cả hai con).`;renderBars(a,hs,[],[]);drawTree(a,hs,[],[]);}
+  else if(s.type==='heapify_swap'){swp++;document.getElementById('s-swap').textContent=swp;acc+=2;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`🔄 Swap arr[${s.i}]=${a[s.i]} ↔ arr[${s.largest}]=${a[s.largest]}. Tiếp tục heapify xuống...`;renderBars(a,hs,[],[s.i,s.largest]);drawTree(a,hs,[],[s.i,s.largest]);}
+  else if(s.type==='after_swap'){renderBars(a,hs,[s.largest],[]);drawTree(a,hs,[s.largest],[]);}
+  else if(s.type==='heap_built'){document.getElementById('phase-info').textContent='Phase: BUILD HEAP ✓';document.getElementById('explain').innerHTML=`✅ <b>Max-Heap đã xây xong!</b> Root = ${a[0]} (phần tử lớn nhất). Bắt đầu extract...`;renderBars(a,hs,[0],[]);drawTree(a,hs,[0],[]);}
+  else if(s.type==='phase_extract'){document.getElementById('phase-info').textContent='Phase: EXTRACT MAX';document.getElementById('explain').textContent='📤 Bước 2: Lấy root (max) ra, đặt vào cuối, giảm heap size, heapify lại.';renderBars(a,hs,[],[]);drawTree(a,hs,[],[]);}
+  else if(s.type==='extract'){swp++;document.getElementById('s-swap').textContent=swp;acc+=2;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`📤 <b>Extract max = ${s.rootVal}</b>. Swap root[0] ↔ arr[${s.i}]. Heap size: ${s.heapSize}→${s.heapSize-1}`;renderBars(a,s.heapSize,[],[0,s.i]);drawTree(a,s.heapSize,[],[0,s.i]);}
+  else if(s.type==='after_extract'){renderBars(a,hs,[0],[]);drawTree(a,hs,[0],[]);document.getElementById('explain').innerHTML=`🏔️ Heapify lại từ root (${a[0]}) để khôi phục max-heap. Heap size = ${hs}`;}
+  else if(s.type==='extracted'){renderBars(a,hs,[],[]);drawTree(a,hs,[],[]);}
+  else if(s.type==='done'){renderBars(a,0,[],[]);drawTree(a,0,[],[]);document.getElementById('explain').textContent='🎉 Hoàn tất! O(n log n) mọi trường hợp, in-place, không ổn định.';document.getElementById('phase-info').textContent='Phase: DONE ✓';stopPlay();}
+}
+
+function getDelay(){return Math.round(1100-document.getElementById('speed').value*100);}
+function tick(){if(stepIdx>=steps.length){stopPlay();return;}applyStep(steps[stepIdx++]);if(playing)timer=setTimeout(tick,getDelay());}
+function startPlay(){if(stepIdx>=steps.length)reset();playing=true;document.getElementById('btn-play').textContent='⏸ Pause';tick();}
+function stopPlay(){playing=false;clearTimeout(timer);document.getElementById('btn-play').textContent='▶ Play';}
+function reset(){stopPlay();stepIdx=0;cmp=0;swp=0;acc=0;buildSteps();['s-cmp','s-swap','s-acc'].forEach(id=>document.getElementById(id).textContent=0);document.getElementById('phase-info').textContent='Phase: —';hl(-1);renderBars(arr,arr.length,[],[]);drawTree(arr,arr.length,[],[]);document.getElementById('explain').textContent='👋 Nhấn Play để bắt đầu!';}
+
+document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
+document.getElementById('btn-step').onclick=()=>{stopPlay();if(stepIdx<steps.length)applyStep(steps[stepIdx++]);};
+document.getElementById('btn-reset').onclick=reset;
+document.getElementById('btn-new').onclick=()=>{genArray();reset();};
+document.getElementById('size-sel').onchange=()=>{genArray();reset();};
+window.addEventListener('resize',()=>{if(steps[stepIdx-1])applyStep(steps[stepIdx-1]);});
+
+buildCode();genArray();reset();
+</script>
+</body>
+</html>

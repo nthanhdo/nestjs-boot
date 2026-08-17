@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>19 - Hai Con Trỏ (Two Pointers)</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f0f1a; color: #e0e0f0; font-family: 'Segoe UI', monospace; min-height: 100vh; }
+  h1 { text-align: center; padding: 18px; background: linear-gradient(135deg, #1a1a2e, #16213e); font-size: 1.5rem; color: #38bdf8; border-bottom: 2px solid #0284c7; letter-spacing: 2px; }
+  .subtitle { text-align: center; font-size: 0.85rem; color: #94a3b8; padding: 6px; background: #16213e; }
+
+  .tabs { display: flex; gap: 4px; padding: 10px 16px; background: #12122a; border-bottom: 1px solid #2d2d4e; }
+  .tab { padding: 8px 18px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem; border: 1px solid #2d2d4e; border-bottom: none; transition: all 0.2s; color: #94a3b8; background: #1a1a2e; }
+  .tab.active { background: #0284c7; color: #fff; border-color: #0284c7; }
+
+  .main { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 110px); }
+  .viz-panel { padding: 16px; overflow-y: auto; background: #0f0f1a; }
+  .code-panel { background: #111128; border-left: 2px solid #2d2d4e; display: flex; flex-direction: column; }
+
+  .controls { display: flex; gap: 8px; align-items: center; padding: 10px 16px; background: #12122a; border-top: 1px solid #2d2d4e; flex-wrap: wrap; }
+  .btn { padding: 7px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.15s; }
+  .btn-play { background: #0284c7; color: #fff; }
+  .btn-play:hover { background: #0369a1; }
+  .btn-step { background: #0e7490; color: #fff; }
+  .btn-reset { background: #374151; color: #d1d5db; }
+  .speed-label { font-size: 0.78rem; color: #94a3b8; }
+  input[type=range] { width: 90px; accent-color: #0284c7; }
+
+  /* Array visualization */
+  .array-container { display: flex; align-items: flex-end; gap: 4px; padding: 20px 12px 40px; position: relative; overflow-x: auto; justify-content: center; min-height: 130px; }
+  .array-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all 0.3s ease; position: relative; }
+  .cell-box { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 1rem; font-weight: bold; border: 2px solid #374151; background: #1e293b; color: #e0e0f0; transition: all 0.3s ease; }
+  .cell-box.ptr-left { border-color: #3b82f6; background: #1e3a5f; box-shadow: 0 0 14px #3b82f699; transform: translateY(-4px); }
+  .cell-box.ptr-right { border-color: #ef4444; background: #3b0f0f; box-shadow: 0 0 14px #ef444499; transform: translateY(-4px); }
+  .cell-box.ptr-both { border-color: #a855f7; background: #3b1a4e; box-shadow: 0 0 14px #a855f799; }
+  .cell-box.selected { border-color: #22c55e; background: #052e16; }
+  .cell-box.removed { background: #7f1d1d33; border-color: #7f1d1d; opacity: 0.4; }
+  .cell-box.in-window { border-color: #f59e0b; background: #1c1209; }
+  .cell-idx { font-size: 0.65rem; color: #4b5563; }
+  .ptr-label { font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; }
+  .ptr-label.left { color: #3b82f6; }
+  .ptr-label.right { color: #ef4444; }
+
+  /* Pointer arrow below */
+  .ptr-arrow { position: absolute; bottom: 6px; font-size: 0.7rem; font-weight: bold; }
+  .ptr-arrow.l { color: #3b82f6; }
+  .ptr-arrow.r { color: #ef4444; }
+
+  /* Status cards */
+  .status-row { display: flex; gap: 10px; margin: 10px 0; }
+  .status-card { flex: 1; padding: 10px 14px; border-radius: 8px; background: #1a1a2e; border: 1px solid #2d2d4e; font-size: 0.82rem; }
+  .status-card .label { font-size: 0.7rem; color: #64748b; margin-bottom: 4px; }
+  .status-card .val { font-size: 1.1rem; font-weight: bold; color: #38bdf8; }
+
+  /* Complexity comparison */
+  .complexity-box { display: flex; gap: 10px; margin: 10px 0; }
+  .complexity-item { flex: 1; padding: 10px; border-radius: 8px; font-size: 0.8rem; text-align: center; }
+  .complexity-good { background: #052e16; border: 1px solid #22c55e; }
+  .complexity-bad { background: #7f1d1d22; border: 1px solid #ef4444; }
+  .complexity-title { font-weight: bold; margin-bottom: 4px; }
+  .complexity-good .complexity-title { color: #22c55e; }
+  .complexity-bad .complexity-title { color: #ef4444; }
+
+  /* Container water */
+  .water-viz { display: flex; align-items: flex-end; gap: 3px; padding: 10px 12px 30px; background: #0d0d1f; border-radius: 10px; border: 1px solid #2d2d4e; position: relative; min-height: 150px; overflow-x: auto; }
+  .water-bar { display: flex; flex-direction: column; align-items: center; gap: 2px; position: relative; }
+  .bar-fill { width: 34px; border-radius: 4px 4px 0 0; transition: all 0.3s; }
+  .bar-water { width: 34px; position: absolute; bottom: 0; border-radius: 0; transition: all 0.4s; opacity: 0.5; }
+  .bar-idx-w { font-size: 0.6rem; color: #4b5563; margin-top: 2px; }
+  .water-area { position: absolute; bottom: 30px; background: #1e40af44; border: 1px dashed #3b82f6; border-radius: 4px; transition: all 0.4s; }
+  .area-label { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 0.7rem; color: #60a5fa; white-space: nowrap; }
+
+  /* Concept */
+  .concept-row { display: flex; gap: 10px; margin: 10px 0; }
+  .concept-card { flex: 1; padding: 12px; border-radius: 8px; font-size: 0.8rem; }
+  .concept-blue { background: #1e3a5f; border: 1px solid #3b82f6; }
+  .concept-red { background: #3b0f0f; border: 1px solid #ef4444; }
+  .concept-title { font-weight: bold; margin-bottom: 4px; }
+  .concept-blue .concept-title { color: #60a5fa; }
+  .concept-red .concept-title { color: #f87171; }
+
+  /* Result */
+  .result-box { padding: 10px 14px; border-radius: 8px; background: #052e16; border: 1px solid #22c55e; font-size: 0.85rem; color: #86efac; margin: 8px 0; }
+  .result-box strong { color: #22c55e; font-size: 1rem; }
+
+  /* Step description */
+  .step-desc { padding: 10px 14px; border-radius: 8px; background: #1a1a2e; border-left: 3px solid #38bdf8; font-size: 0.82rem; color: #94a3b8; margin: 8px 0; min-height: 40px; }
+  .step-desc strong { color: #38bdf8; }
+
+  /* Code panel */
+  .code-header { padding: 10px 14px; background: #1a1a2e; border-bottom: 1px solid #2d2d4e; font-size: 0.78rem; color: #0284c7; font-weight: bold; }
+  .code-body { flex: 1; overflow-y: auto; padding: 12px; font-size: 0.75rem; font-family: 'Courier New', monospace; line-height: 1.7; }
+  .code-line { padding: 1px 8px; border-radius: 3px; transition: background 0.2s; white-space: pre; }
+  .code-line.hl { background: #0284c733; border-left: 3px solid #38bdf8; }
+  .kw { color: #c084fc; } .fn { color: #60a5fa; } .num { color: #fbbf24; } .cmt { color: #4b5563; font-style: italic; } .str { color: #34d399; }
+
+  .info-bar { padding: 8px 16px; background: #12122a; font-size: 0.78rem; color: #94a3b8; display: flex; gap: 16px; flex-wrap: wrap; }
+  .info-item strong { color: #38bdf8; }
+
+  section.prob { display: none; }
+  section.prob.active { display: block; }
+</style>
+</head>
+<body>
+
+<h1>👉👈 Hai Con Trỏ (Two Pointers)</h1>
+<div class="subtitle">Tư duy: Thay vì 2 vòng lặp O(n²) → dùng 2 con trỏ thông minh O(n)</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchProblem('twosum')">🎯 Two Sum</div>
+  <div class="tab" onclick="switchProblem('dedup')">🔁 Remove Duplicates</div>
+  <div class="tab" onclick="switchProblem('water')">💧 Container Water</div>
+</div>
+
+<div class="main">
+  <div class="viz-panel">
+
+    <!-- TWO SUM -->
+    <section class="prob active" id="prob-twosum">
+      <div class="concept-row">
+        <div class="concept-card concept-blue">
+          <div class="concept-title">👉 Left Pointer</div>
+          <div>Bắt đầu từ trái, tăng khi sum &lt; target</div>
+        </div>
+        <div class="concept-card concept-red">
+          <div class="concept-title">👈 Right Pointer</div>
+          <div>Bắt đầu từ phải, giảm khi sum &gt; target</div>
+        </div>
+      </div>
+      <p style="font-size:0.8rem;color:#64748b;margin:6px 0;">
+        Mảng đã sắp xếp: [2, 7, 11, 15, 18, 21] | Target = 22
+      </p>
+      <div class="array-container" id="twosum-array"></div>
+      <div class="step-desc" id="twosum-desc">Nhấn Play để bắt đầu</div>
+      <div class="status-row">
+        <div class="status-card">
+          <div class="label">👉 Left index</div>
+          <div class="val" id="ts-left">—</div>
+        </div>
+        <div class="status-card">
+          <div class="label">👈 Right index</div>
+          <div class="val" id="ts-right">—</div>
+        </div>
+        <div class="status-card">
+          <div class="label">Sum hiện tại</div>
+          <div class="val" id="ts-sum">—</div>
+        </div>
+      </div>
+      <div class="result-box" id="twosum-result" style="display:none">
+        ✅ Tìm thấy! <strong id="twosum-ans">—</strong>
+      </div>
+      <div class="complexity-box">
+        <div class="complexity-item complexity-good">
+          <div class="complexity-title">Two Pointers</div>
+          <div>O(n) time · O(1) space</div>
+        </div>
+        <div class="complexity-item complexity-bad">
+          <div class="complexity-title">Brute Force</div>
+          <div>O(n²) time · O(1) space</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- REMOVE DUPLICATES -->
+    <section class="prob" id="prob-dedup">
+      <div class="concept-row">
+        <div class="concept-card concept-blue">
+          <div class="concept-title">🐢 Slow Pointer</div>
+          <div>Vị trí để ghi phần tử unique tiếp theo</div>
+        </div>
+        <div class="concept-card concept-red">
+          <div class="concept-title">🐇 Fast Pointer</div>
+          <div>Quét tìm phần tử khác với slow</div>
+        </div>
+      </div>
+      <p style="font-size:0.8rem;color:#64748b;margin:6px 0;">
+        Mảng: [1, 1, 2, 2, 3, 4, 4, 5] — Xóa trùng in-place
+      </p>
+      <div class="array-container" id="dedup-array"></div>
+      <div class="step-desc" id="dedup-desc">Nhấn Play để bắt đầu</div>
+      <div class="status-row">
+        <div class="status-card">
+          <div class="label">🐢 Slow (ghi vào)</div>
+          <div class="val" id="dd-slow">—</div>
+        </div>
+        <div class="status-card">
+          <div class="label">🐇 Fast (quét)</div>
+          <div class="val" id="dd-fast">—</div>
+        </div>
+        <div class="status-card">
+          <div class="label">Unique count</div>
+          <div class="val" id="dd-count">—</div>
+        </div>
+      </div>
+      <div class="result-box" id="dedup-result" style="display:none">
+        ✅ Hoàn thành! <strong id="dedup-ans">—</strong>
+      </div>
+    </section>
+
+    <!-- CONTAINER WATER -->
+    <section class="prob" id="prob-water">
+      <div class="concept-row">
+        <div class="concept-card concept-blue">
+          <div class="concept-title">💡 Insight</div>
+          <div>Area = min(left, right) × width<br>Di chuyển cạnh NGẮN HƠN (tại sao?)</div>
+        </div>
+        <div class="concept-card concept-red">
+          <div class="concept-title">❓ Tại sao di cạnh ngắn?</div>
+          <div>Giữ nguyên cạnh ngắn → width giảm → không thể tốt hơn</div>
+        </div>
+      </div>
+      <p style="font-size:0.8rem;color:#64748b;margin:6px 0;">
+        Heights: [1, 8, 6, 2, 5, 4, 8, 3, 7] — Tìm max water
+      </p>
+      <div class="water-viz" id="water-viz"></div>
+      <div class="step-desc" id="water-desc">Nhấn Play để bắt đầu</div>
+      <div class="status-row">
+        <div class="status-card"><div class="label">👉 Left</div><div class="val" id="wt-left">—</div></div>
+        <div class="status-card"><div class="label">👈 Right</div><div class="val" id="wt-right">—</div></div>
+        <div class="status-card"><div class="label">Current Area</div><div class="val" id="wt-cur">—</div></div>
+        <div class="status-card"><div class="label">Max Area</div><div class="val" id="wt-max" style="color:#22c55e">—</div></div>
+      </div>
+      <div class="result-box" id="water-result" style="display:none">
+        ✅ Max water: <strong id="water-ans">—</strong>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="code-panel">
+    <div class="code-header">📄 Pseudocode</div>
+    <div class="code-body" id="code-body"></div>
+    <div class="info-bar" id="info-bar">
+      <div class="info-item"><strong>L:</strong> <span id="info-left">—</span></div>
+      <div class="info-item"><strong>R:</strong> <span id="info-right">—</span></div>
+      <div class="info-item"><strong>Step:</strong> <span id="info-step">0</span></div>
+    </div>
+    <div class="controls">
+      <button class="btn btn-play" id="btn-play" onclick="togglePlay()">▶ Play</button>
+      <button class="btn btn-step" onclick="stepOnce()">⏭ Step</button>
+      <button class="btn btn-reset" onclick="resetAll()">↺ Reset</button>
+      <span class="speed-label">Tốc độ:</span>
+      <input type="range" min="1" max="5" value="3" id="speed-slider">
+    </div>
+  </div>
+</div>
+
+<script>
+let currentProblem = 'twosum';
+let playing = false;
+let timer = null;
+let stepIndex = 0;
+let steps = [];
+
+const codes = {
+  twosum: [
+    '// Two Sum trên mảng đã sort',
+    'function twoSum(arr, target):',
+    '  left = 0',
+    '  right = arr.length - 1',
+    '',
+    '  while left < right:',
+    '    sum = arr[left] + arr[right]',
+    '    // Tìm thấy!',
+    '    if sum == target:',
+    '      return [left, right]',
+    '    // Sum quá nhỏ → tăng left',
+    '    elif sum < target:',
+    '      left++',
+    '    // Sum quá lớn → giảm right',
+    '    else:',
+    '      right--',
+    '',
+    '  return không tìm thấy',
+  ],
+  dedup: [
+    '// Xóa trùng in-place — O(n)',
+    'function removeDuplicates(arr):',
+    '  slow = 0  // vị trí ghi',
+    '  fast = 1  // vị trí quét',
+    '',
+    '  while fast < arr.length:',
+    '    // Phần tử mới (khác slow)',
+    '    if arr[fast] != arr[slow]:',
+    '      slow++',
+    '      arr[slow] = arr[fast]',
+    '    // Trùng → chỉ tăng fast',
+    '    fast++',
+    '',
+    '  return slow + 1  // độ dài mới',
+  ],
+  water: [
+    '// Container With Most Water',
+    'function maxWater(heights):',
+    '  left = 0',
+    '  right = heights.length - 1',
+    '  maxArea = 0',
+    '',
+    '  while left < right:',
+    '    h = min(heights[left], heights[right])',
+    '    area = h * (right - left)',
+    '    maxArea = max(maxArea, area)',
+    '',
+    '    // Di chuyển cạnh NGẮN hơn',
+    '    if heights[left] < heights[right]:',
+    '      left++',
+    '    else:',
+    '      right--',
+    '',
+    '  return maxArea',
+  ]
+};
+
+// ============================================================
+// STEP GENERATORS
+// ============================================================
+function genTwoSumSteps() {
+  const arr = [2, 7, 11, 15, 18, 21];
+  const target = 22;
+  let L = 0, R = arr.length - 1;
+  const steps = [];
+  steps.push({ L, R, arr: [...arr], desc: `Bắt đầu: L=0, R=${R}`, codeLine: 2, done: false });
+  while (L < R) {
+    const sum = arr[L] + arr[R];
+    if (sum === target) {
+      steps.push({ L, R, arr: [...arr], sum, desc: `✅ ${arr[L]} + ${arr[R]} = ${target} — TÌM THẤY!`, codeLine: 8, done: true, ans: `[${L}, ${R}] → (${arr[L]}, ${arr[R]})` });
+      break;
+    } else if (sum < target) {
+      steps.push({ L, R, arr: [...arr], sum, desc: `${arr[L]} + ${arr[R]} = ${sum} < ${target} → tăng L`, codeLine: 11 });
+      L++;
+    } else {
+      steps.push({ L, R, arr: [...arr], sum, desc: `${arr[L]} + ${arr[R]} = ${sum} > ${target} → giảm R`, codeLine: 14 });
+      R--;
+    }
+  }
+  return steps;
+}
+
+function genDedupSteps() {
+  const arr = [1, 1, 2, 2, 3, 4, 4, 5];
+  let work = [...arr];
+  let slow = 0, fast = 1;
+  const steps = [];
+  steps.push({ arr: [...work], slow, fast, desc: 'Bắt đầu: slow=0, fast=1', codeLine: 2 });
+  while (fast < work.length) {
+    if (work[fast] !== work[slow]) {
+      slow++;
+      work[slow] = work[fast];
+      steps.push({ arr: [...work], slow, fast, desc: `arr[${fast}]=${work[fast]} ≠ arr[${slow-1}]=${work[slow-1]} → ghi arr[${slow}]=${work[fast]}`, codeLine: 8, wrote: slow });
+    } else {
+      steps.push({ arr: [...work], slow, fast, desc: `arr[${fast}]=${work[fast]} == arr[${slow}]=${work[slow]} → bỏ qua (duplicate)`, codeLine: 7, dup: true });
+    }
+    fast++;
+  }
+  steps.push({ arr: [...work], slow, fast: work.length, desc: `Hoàn thành! ${slow + 1} phần tử unique`, codeLine: 13, done: true, ans: `${slow + 1} unique: [${work.slice(0, slow + 1).join(', ')}]` });
+  return steps;
+}
+
+function genWaterSteps() {
+  const h = [1, 8, 6, 2, 5, 4, 8, 3, 7];
+  let L = 0, R = h.length - 1, maxA = 0, maxL = 0, maxR = 0;
+  const steps = [];
+  steps.push({ L, R, h, area: 0, maxA, maxL, maxR, desc: `Bắt đầu: L=0, R=${R}`, codeLine: 2 });
+  while (L < R) {
+    const area = Math.min(h[L], h[R]) * (R - L);
+    const prev = maxA;
+    if (area > maxA) { maxA = area; maxL = L; maxR = R; }
+    const move = h[L] < h[R] ? 'L' : 'R';
+    steps.push({ L, R, h, area, maxA, maxL, maxR, desc: `Area = min(${h[L]},${h[R]}) × ${R - L} = ${area}${area > prev ? ' ← NEW MAX!' : ''} → di ${move}++`, codeLine: area > prev ? 9 : 12 });
+    if (h[L] < h[R]) L++; else R--;
+  }
+  steps.push({ L, R, h, area: 0, maxA, maxL, maxR, desc: `L≥R — hoàn thành! Max = ${maxA}`, codeLine: 17, done: true, ans: maxA });
+  return steps;
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function renderTwoSumArray(s) {
+  const el = document.getElementById('twosum-array');
+  el.innerHTML = s.arr.map((v, i) => {
+    let cls = '';
+    if (i === s.L && i === s.R) cls = 'ptr-both';
+    else if (i === s.L) cls = 'ptr-left';
+    else if (i === s.R) cls = 'ptr-right';
+    if (s.done && (i === s.L || i === s.R)) cls = 'selected';
+    return `<div class="array-cell">
+      <div class="cell-box ${cls}">${v}</div>
+      <div class="cell-idx">[${i}]</div>
+      ${i === s.L ? '<div class="ptr-label left">L</div>' : ''}
+      ${i === s.R && i !== s.L ? '<div class="ptr-label right">R</div>' : ''}
+      ${i === s.R && i === s.L ? '<div class="ptr-label left">L=R</div>' : ''}
+    </div>`;
+  }).join('');
+  document.getElementById('ts-left').textContent = `${s.L} (${s.arr[s.L]})`;
+  document.getElementById('ts-right').textContent = `${s.R} (${s.arr[s.R]})`;
+  document.getElementById('ts-sum').textContent = s.sum !== undefined ? s.sum : '—';
+  document.getElementById('twosum-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
+  if (s.ans) {
+    document.getElementById('twosum-result').style.display = 'block';
+    document.getElementById('twosum-ans').textContent = s.ans;
+  }
+}
+
+function renderDedupArray(s) {
+  const el = document.getElementById('dedup-array');
+  el.innerHTML = s.arr.map((v, i) => {
+    let cls = '';
+    if (i === s.slow) cls = 'ptr-left';
+    if (i === s.fast) cls = i === s.slow ? 'ptr-both' : 'ptr-right';
+    if (i > s.slow && s.done) cls = 'removed';
+    if (s.wrote === i) cls += ' selected';
+    return `<div class="array-cell">
+      <div class="cell-box ${cls}">${v}</div>
+      <div class="cell-idx">[${i}]</div>
+      ${i === s.slow ? '<div class="ptr-label left">slow</div>' : ''}
+      ${i === s.fast && i !== s.slow ? '<div class="ptr-label right">fast</div>' : ''}
+    </div>`;
+  }).join('');
+  document.getElementById('dd-slow').textContent = s.slow;
+  document.getElementById('dd-fast').textContent = s.fast < s.arr.length ? s.fast : 'end';
+  document.getElementById('dd-count').textContent = s.slow + 1;
+  document.getElementById('dedup-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
+  if (s.ans) {
+    document.getElementById('dedup-result').style.display = 'block';
+    document.getElementById('dedup-ans').textContent = s.ans;
+  }
+}
+
+function renderWater(s) {
+  const el = document.getElementById('water-viz');
+  const maxH = Math.max(...s.h);
+  el.innerHTML = s.h.map((v, i) => {
+    let border = '1px solid #374151';
+    let extraStyle = '';
+    if (i === s.L) border = '2px solid #3b82f6', extraStyle = 'box-shadow:0 0 10px #3b82f699';
+    if (i === s.R) border = '2px solid #ef4444', extraStyle = 'box-shadow:0 0 10px #ef444499';
+    const heightPx = Math.round((v / maxH) * 110);
+    return `<div class="water-bar">
+      <div class="bar-fill" style="height:${heightPx}px;background:#334155;border:${border};${extraStyle}">
+        <div style="font-size:0.65rem;color:#94a3b8;text-align:center;margin-top:2px;">${v}</div>
+      </div>
+      <div class="bar-idx-w">${i}${i === s.L ? '←L' : ''}${i === s.R ? '←R' : ''}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('wt-left').textContent = `${s.L} (h=${s.h[s.L]})`;
+  document.getElementById('wt-right').textContent = `${s.R} (h=${s.h[s.R]})`;
+  document.getElementById('wt-cur').textContent = s.area;
+  document.getElementById('wt-max').textContent = s.maxA;
+  document.getElementById('water-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
+  if (s.done) {
+    document.getElementById('water-result').style.display = 'block';
+    document.getElementById('water-ans').textContent = s.ans;
+  }
+}
+
+// ============================================================
+// PLAYBACK
+// ============================================================
+function highlightCode(line) {
+  document.querySelectorAll('.code-line').forEach((el, i) => el.classList.toggle('hl', i === line));
+}
+
+function applyStep(s) {
+  if (currentProblem === 'twosum') renderTwoSumArray(s);
+  else if (currentProblem === 'dedup') renderDedupArray(s);
+  else if (currentProblem === 'water') renderWater(s);
+  if (s.codeLine !== undefined) highlightCode(s.codeLine);
+  document.getElementById('info-step').textContent = stepIndex;
+  document.getElementById('info-left').textContent = s.L !== undefined ? s.L : (s.slow !== undefined ? s.slow : '—');
+  document.getElementById('info-right').textContent = s.R !== undefined ? s.R : (s.fast !== undefined ? s.fast : '—');
+}
+
+function getDelay() { return [900,650,450,280,150][parseInt(document.getElementById('speed-slider').value) - 1]; }
+
+function stepOnce() {
+  if (stepIndex >= steps.length) return;
+  applyStep(steps[stepIndex]);
+  stepIndex++;
+  if (stepIndex >= steps.length) stopPlay();
+}
+
+function togglePlay() {
+  if (playing) { stopPlay(); return; }
+  playing = true;
+  document.getElementById('btn-play').textContent = '⏸ Pause';
+  function tick() {
+    if (stepIndex >= steps.length) { stopPlay(); return; }
+    stepOnce();
+    timer = setTimeout(tick, getDelay());
+  }
+  tick();
+}
+
+function stopPlay() {
+  playing = false; clearTimeout(timer);
+  document.getElementById('btn-play').textContent = '▶ Play';
+}
+
+function resetAll() {
+  stopPlay(); stepIndex = 0;
+  document.getElementById('info-step').textContent = '0';
+  initProblem(currentProblem);
+}
+
+function renderCode(prob) {
+  const lines = codes[prob];
+  document.getElementById('code-body').innerHTML = lines.map((l, i) =>
+    `<div class="code-line" data-line="${i}">${l || '&nbsp;'}</div>`
+  ).join('');
+}
+
+function initProblem(prob) {
+  renderCode(prob);
+  if (prob === 'twosum') {
+    steps = genTwoSumSteps();
+    document.getElementById('twosum-result').style.display = 'none';
+    renderTwoSumArray(steps[0]);
+  } else if (prob === 'dedup') {
+    steps = genDedupSteps();
+    document.getElementById('dedup-result').style.display = 'none';
+    renderDedupArray(steps[0]);
+  } else if (prob === 'water') {
+    steps = genWaterSteps();
+    document.getElementById('water-result').style.display = 'none';
+    renderWater(steps[0]);
+  }
+}
+
+function switchProblem(prob) {
+  stopPlay(); currentProblem = prob; stepIndex = 0;
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['twosum', 'dedup', 'water'][i] === prob);
+  });
+  document.querySelectorAll('.prob').forEach(s => s.classList.remove('active'));
+  document.getElementById(`prob-${prob}`).classList.add('active');
+  initProblem(prob);
+}
+
+initProblem('twosum');
+</script>
+</body>
+</html>

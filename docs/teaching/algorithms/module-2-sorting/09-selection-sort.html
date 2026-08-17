@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Selection Sort — Sắp xếp chọn</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#0f1117;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{background:#1a1d2e;padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #2d3148}
+header h1{font-size:1.1rem;color:#34d399}
+.badge{background:#064e3b;color:#6ee7b7;padding:2px 8px;border-radius:4px;font-size:.75rem}
+.complexity{display:flex;gap:8px;margin-left:auto}
+.cx{background:#1e293b;border:1px solid #334155;border-radius:4px;padding:2px 8px;font-size:.75rem;color:#94a3b8}
+.cx span{color:#fbbf24}
+main{flex:1;display:flex;overflow:hidden}
+#viz{width:60%;background:#0d1117;display:flex;flex-direction:column}
+#bar-area{flex:1;position:relative;padding:10px 20px 0}
+#bars-container{position:absolute;bottom:0;left:20px;right:20px;top:10px;display:flex;align-items:flex-end;gap:2px}
+.bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1}
+.bar{width:100%;border-radius:3px 3px 0 0;background:#4a90d9;transition:background .25s}
+.bar-val{font-size:10px;color:#94a3b8;margin-top:2px}
+.bar.sorted{background:#22c55e}
+.bar.current-pos{background:#6366f1}
+.bar.scanning{background:#ef4444}
+.bar.current-min{background:#eab308}
+.bar.swapping{background:#f97316}
+#legend{display:flex;gap:12px;padding:6px 20px;background:#111827;font-size:.72rem}
+.leg{display:flex;align-items:center;gap:5px}
+.leg-dot{width:10px;height:10px;border-radius:2px}
+#code-panel{width:40%;background:#1a1d2e;border-left:1px solid #2d3148;display:flex;flex-direction:column}
+.panel-title{padding:8px 14px;background:#12152a;font-size:.8rem;color:#8b92c4;border-bottom:1px solid #2d3148}
+#code{flex:1;overflow-y:auto;padding:10px 0;font-family:'Courier New',monospace;font-size:.82rem;line-height:1.8}
+.code-line{padding:1px 14px;color:#8b92c4;white-space:pre}
+.code-line.active{background:#2d2a12;color:#fde68a;border-left:3px solid #fbbf24}
+#explain{padding:10px 14px;background:#0f1117;border-top:1px solid #2d3148;font-size:.8rem;color:#94a3b8;min-height:56px;line-height:1.5}
+#controls{background:#111827;padding:8px 16px;display:flex;align-items:center;gap:10px;border-top:1px solid #1e293b;flex-wrap:wrap}
+button{background:#1d4ed8;color:#e2e8f0;border:none;border-radius:5px;padding:6px 14px;cursor:pointer;font-size:.82rem;transition:background .2s}
+button:hover{background:#2563eb}
+#btn-play{background:#059669}#btn-play:hover{background:#047857}
+#stats{display:flex;gap:12px;margin-left:auto;font-size:.8rem}
+.stat{background:#1e293b;padding:4px 10px;border-radius:4px}
+.stat span{color:#f59e0b}
+label{font-size:.78rem;color:#64748b}
+input[type=range]{accent-color:#34d399;width:90px}
+select{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:4px 6px;font-size:.78rem}
+#round-info{background:#1e293b;padding:4px 10px;border-radius:4px;font-size:.8rem;color:#34d399}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎯 Selection Sort — Sắp xếp chọn</h1>
+  <span class="badge">Module 2</span>
+  <div class="complexity">
+    <div class="cx">Best: <span>O(n²)</span></div>
+    <div class="cx">Avg: <span>O(n²)</span></div>
+    <div class="cx">Worst: <span>O(n²)</span></div>
+    <div class="cx">Space: <span>O(1)</span></div>
+    <div class="cx">Stable: <span>✗</span></div>
+  </div>
+</header>
+<main>
+  <div id="viz">
+    <div id="bar-area"><div id="bars-container"></div></div>
+    <div id="legend">
+      <div class="leg"><div class="leg-dot" style="background:#22c55e"></div>Đã sắp xếp</div>
+      <div class="leg"><div class="leg-dot" style="background:#6366f1"></div>Vị trí hiện tại (i)</div>
+      <div class="leg"><div class="leg-dot" style="background:#eab308"></div>Min hiện tại</div>
+      <div class="leg"><div class="leg-dot" style="background:#ef4444"></div>Đang quét</div>
+      <div class="leg"><div class="leg-dot" style="background:#f97316"></div>Đang hoán đổi</div>
+    </div>
+  </div>
+  <div id="code-panel">
+    <div class="panel-title">📄 Code — Selection Sort</div>
+    <div id="code"></div>
+    <div id="explain">👋 Nhấn Play để bắt đầu!</div>
+  </div>
+</main>
+<div id="controls">
+  <button id="btn-play">▶ Play</button>
+  <button id="btn-step">⏭ Step</button>
+  <button id="btn-reset">↺ Reset</button>
+  <button id="btn-new">🎲 Mảng mới</button>
+  <label>Tốc độ: <input type="range" id="speed" min="1" max="10" value="5"></label>
+  <label>Kích thước: <select id="size-sel">
+    <option value="10">10</option><option value="16" selected>16</option>
+    <option value="24">24</option><option value="32">32</option><option value="40">40</option>
+  </select></label>
+  <div id="round-info">Round: 0 / 0</div>
+  <div id="stats">
+    <div class="stat">So sánh: <span id="s-cmp">0</span></div>
+    <div class="stat">Hoán đổi: <span id="s-swap">0</span></div>
+    <div class="stat">Truy cập: <span id="s-acc">0</span></div>
+  </div>
+</div>
+<script>
+const CODE=[
+  {t:'function selectionSort(arr) {'},
+  {t:'  const n = arr.length;'},
+  {t:'  for (let i = 0; i < n - 1; i++) {'},
+  {t:'    // Tìm phần tử nhỏ nhất trong arr[i..n-1]'},
+  {t:'    let minIdx = i;'},
+  {t:'    for (let j = i + 1; j < n; j++) {'},
+  {t:'      // So sánh với min hiện tại'},
+  {t:'      if (arr[j] < arr[minIdx]) {'},
+  {t:'        minIdx = j;  // Cập nhật min mới!'},
+  {t:'      }'},
+  {t:'    }'},
+  {t:'    // Hoán đổi min về đúng vị trí'},
+  {t:'    if (minIdx !== i) {'},
+  {t:'      [arr[i], arr[minIdx]] = [arr[minIdx], arr[i]];'},
+  {t:'    }'},
+  {t:'  }'},
+  {t:'  return arr;'},
+  {t:'}'},
+];
+
+let arr=[],steps=[],stepIdx=0,playing=false,timer=null,cmp=0,swap=0,acc=0;
+
+function buildCode(){
+  document.getElementById('code').innerHTML=CODE.map((c,i)=>`<div class="code-line" data-i="${i}">${c.t}</div>`).join('');
+}
+function hl(i){document.querySelectorAll('.code-line').forEach(e=>e.classList.remove('active'));if(i>=0)document.querySelector(`[data-i="${i}"]`)?.classList.add('active');}
+function genArray(){const n=+document.getElementById('size-sel').value;arr=Array.from({length:n},()=>Math.floor(Math.random()*90)+10);}
+
+function buildSteps(){
+  steps=[];
+  const a=[...arr];const n=a.length;
+  steps.push({type:'init',arr:[...a]});
+  for(let i=0;i<n-1;i++){
+    steps.push({type:'outer',i,arr:[...a],line:2});
+    steps.push({type:'setMin',i,minIdx:i,arr:[...a],line:4});
+    for(let j=i+1;j<n;j++){
+      steps.push({type:'scan',i,j,minIdx:i,arr:[...a],line:6});
+      if(a[j]<a[i]){/* will track minIdx properly */}
+    }
+    // redo with real minIdx tracking
+  }
+  // Rebuild properly
+  steps=[];
+  const b=[...arr];const m=b.length;
+  steps.push({type:'init',arr:[...b]});
+  for(let i=0;i<m-1;i++){
+    let minIdx=i;
+    steps.push({type:'outer',i,minIdx,arr:[...b],line:2});
+    steps.push({type:'setMin',i,minIdx,arr:[...b],line:4});
+    for(let j=i+1;j<m;j++){
+      steps.push({type:'scan',i,j,minIdx,arr:[...b],line:7});
+      if(b[j]<b[minIdx]){
+        minIdx=j;
+        steps.push({type:'newMin',i,j,minIdx,arr:[...b],line:8});
+      }
+    }
+    if(minIdx!==i){
+      steps.push({type:'swap',i,minIdx,arr:[...b],line:13});
+      [b[i],b[minIdx]]=[b[minIdx],b[i]];
+      steps.push({type:'afterswap',i,arr:[...b],line:13});
+    }else{
+      steps.push({type:'noswap',i,arr:[...b],line:12});
+    }
+    steps.push({type:'sorted',sortedUpto:i,arr:[...b],line:15});
+  }
+  steps.push({type:'done',arr:[...b]});
+}
+
+let sortedUpto=-1;
+function renderBars(state){
+  const con=document.getElementById('bars-container');
+  const a=state.arr||arr;const max=Math.max(...a);
+  con.innerHTML='';
+  a.forEach((v,idx)=>{
+    const wrap=document.createElement('div');wrap.className='bar-wrap';
+    const bar=document.createElement('div');bar.className='bar';
+    bar.style.height=Math.round(v/max*100)+'%';
+    if(idx<=sortedUpto) bar.classList.add('sorted');
+    else if(state.swapping&&state.swapping.includes(idx)) bar.classList.add('swapping');
+    else if(idx===state.minIdx) bar.classList.add('current-min');
+    else if(idx===state.scanning) bar.classList.add('scanning');
+    else if(idx===state.currentPos) bar.classList.add('current-pos');
+    const val=document.createElement('div');val.className='bar-val';val.textContent=v;
+    wrap.appendChild(bar);wrap.appendChild(val);con.appendChild(wrap);
+  });
+}
+
+function applyStep(s){
+  if(!s)return;
+  hl(s.line>=0?s.line:-1);
+  const n=(s.arr||arr).length;
+  if(s.type==='init'){sortedUpto=-1;renderBars({arr:s.arr});document.getElementById('explain').textContent='Bắt đầu! Mỗi vòng lặp sẽ tìm phần tử nhỏ nhất và đặt vào đầu phần chưa sắp xếp.';}
+  else if(s.type==='outer'){document.getElementById('round-info').textContent=`Round: ${s.i+1} / ${n-1}`;document.getElementById('explain').innerHTML=`🔄 Round <b>${s.i+1}</b>: Tìm phần tử nhỏ nhất từ vị trí <b>${s.i}</b> đến <b>${n-1}</b>.`;renderBars({arr:s.arr,currentPos:s.i,minIdx:s.i});}
+  else if(s.type==='setMin'){document.getElementById('explain').innerHTML=`🟡 Khởi tạo <code>minIdx = ${s.i}</code> (giá trị = <b>${s.arr[s.i]}</b>).`;renderBars({arr:s.arr,currentPos:s.i,minIdx:s.i});}
+  else if(s.type==='scan'){cmp++;document.getElementById('s-cmp').textContent=cmp;acc+=2;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`👁 Quét <b>j=${s.j}</b>: arr[${s.j}]=${s.arr[s.j]} vs min[${s.minIdx}]=${s.arr[s.minIdx]}`;renderBars({arr:s.arr,currentPos:s.i,minIdx:s.minIdx,scanning:s.j});}
+  else if(s.type==='newMin'){document.getElementById('explain').innerHTML=`⭐ Tìm được min mới! arr[${s.j}]=${s.arr[s.j]} < arr[${s.minIdx}]? Cập nhật <code>minIdx = ${s.j}</code>`;renderBars({arr:s.arr,currentPos:s.i,minIdx:s.minIdx});}
+  else if(s.type==='swap'){swap++;document.getElementById('s-swap').textContent=swap;acc+=2;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`🔄 Hoán đổi arr[${s.i}]=${s.arr[s.i]} ↔ arr[${s.minIdx}]=${s.arr[s.minIdx]}`;renderBars({arr:s.arr,currentPos:s.i,swapping:[s.i,s.minIdx]});}
+  else if(s.type==='afterswap'){renderBars({arr:s.arr,currentPos:s.i});}
+  else if(s.type==='noswap'){document.getElementById('explain').innerHTML=`✅ min đã ở đúng vị trí (i=${s.i}), không cần swap.`;renderBars({arr:s.arr,currentPos:s.i});}
+  else if(s.type==='sorted'){sortedUpto=s.sortedUpto;renderBars({arr:s.arr});}
+  else if(s.type==='done'){sortedUpto=s.arr.length-1;renderBars({arr:s.arr});document.getElementById('explain').textContent='🎉 Hoàn tất! Mảng đã được sắp xếp.';stopPlay();}
+}
+
+function getDelay(){return Math.round(1100-document.getElementById('speed').value*100);}
+function tick(){if(stepIdx>=steps.length){stopPlay();return;}applyStep(steps[stepIdx++]);if(playing)timer=setTimeout(tick,getDelay());}
+function startPlay(){if(stepIdx>=steps.length)reset();playing=true;document.getElementById('btn-play').textContent='⏸ Pause';tick();}
+function stopPlay(){playing=false;clearTimeout(timer);document.getElementById('btn-play').textContent='▶ Play';}
+function reset(){stopPlay();stepIdx=0;cmp=0;swap=0;acc=0;sortedUpto=-1;buildSteps();['s-cmp','s-swap','s-acc'].forEach(id=>document.getElementById(id).textContent=0);document.getElementById('round-info').textContent='Round: 0 / 0';hl(-1);renderBars({arr});document.getElementById('explain').textContent='👋 Nhấn Play để bắt đầu!';}
+
+document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
+document.getElementById('btn-step').onclick=()=>{stopPlay();if(stepIdx<steps.length)applyStep(steps[stepIdx++]);};
+document.getElementById('btn-reset').onclick=reset;
+document.getElementById('btn-new').onclick=()=>{genArray();reset();};
+document.getElementById('size-sel').onchange=()=>{genArray();reset();};
+
+buildCode();genArray();reset();
+</script>
+</body>
+</html>

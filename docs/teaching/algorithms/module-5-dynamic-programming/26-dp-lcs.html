@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DP #26 — Dãy con chung dài nhất (LCS)</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; min-height: 100vh; }
+header { background: linear-gradient(135deg, #1a1f35, #1f1a35); padding: 16px 24px; border-bottom: 2px solid #c678dd; display: flex; align-items: center; gap: 16px; }
+header h1 { font-size: 1.3rem; color: #e0a0ff; }
+header .badge { background: #3d1a5c; color: #e0a0ff; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
+.main { display: grid; grid-template-columns: 1fr 320px; height: calc(100vh - 60px); }
+.left-panel { padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.right-panel { background: #161b2e; border-left: 2px solid #2d1a40; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+
+/* String display */
+.string-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.string-label { font-size: 0.78rem; color: #8070a0; min-width: 24px; font-weight: bold; }
+.str-char { width: 36px; height: 36px; border-radius: 7px; border: 2px solid #2a2050; background: #1a1530; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: bold; transition: all 0.25s; color: #a090c0; position: relative; }
+.str-char .char-idx { position: absolute; top: 1px; right: 3px; font-size: 0.55rem; color: #6050a0; }
+.str-char.matched { background: #2a1050; border-color: #c678dd; color: #e0a0ff; box-shadow: 0 0 10px #c678dd66; }
+.str-char.lcs-char { background: #2a0d50; border-color: #ffd600; color: #ffd600; box-shadow: 0 0 14px #ffd60088; animation: char-pop 0.4s ease; }
+.str-char.current { border-color: #ffd600; background: #2d2800; }
+@keyframes char-pop { 0%{transform:scale(1)} 50%{transform:scale(1.25)} 100%{transform:scale(1)} }
+
+/* Input row */
+.input-group { display: flex; gap: 10px; align-items: center; background: #1a1530; padding: 10px 14px; border-radius: 10px; }
+.input-group label { font-size: 0.82rem; color: #8070a0; min-width: 24px; }
+.input-group input[type=text] { flex: 1; background: #0d1020; border: 1px solid #3a2060; border-radius: 6px; color: #e0a0ff; padding: 6px 10px; font-size: 0.9rem; font-family: 'Courier New', monospace; letter-spacing: 2px; }
+.input-group input[type=text]:focus { outline: none; border-color: #c678dd; }
+
+/* DP Table */
+.table-section { overflow: auto; }
+.dp-grid { display: grid; gap: 2px; width: fit-content; }
+.dp-cell { width: 40px; height: 40px; border-radius: 6px; border: 1.5px solid #2a2050; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.82rem; font-weight: bold; transition: all 0.25s; position: relative; }
+.dp-cell.header { background: #1a1540; color: #6050a0; font-size: 0.75rem; border: none; }
+.dp-cell.empty { background: #161b2e; color: #3a3060; }
+.dp-cell.computing { background: #3d3000; border-color: #ffd600; color: #ffd600; box-shadow: 0 0 10px #ffd60066; }
+.dp-cell.computed { background: #1a1840; border-color: #3a2060; color: #9080c0; }
+.dp-cell.match { background: #2a1050; border-color: #c678dd; color: #e0a0ff; }
+.dp-cell.backtrack { background: #2a2000; border-color: #ffd600; color: #ffd600; box-shadow: 0 0 12px #ffd60088; }
+.dp-cell.dep-diag { background: #1a3050; border-color: #4eff91 !important; color: #4eff91 !important; }
+.dp-cell.dep-top { background: #1a2050; border-color: #61afef !important; color: #61afef !important; }
+.dp-cell.dep-left { background: #1a2050; border-color: #e06060 !important; color: #e06060 !important; }
+.dp-cell .arrow-indicator { position: absolute; bottom: 1px; right: 2px; font-size: 0.55rem; color: #6050a0; }
+
+/* LCS result */
+.lcs-result { background: #1a1040; border: 2px solid #c678dd; border-radius: 12px; padding: 14px; }
+.lcs-title { font-size: 0.8rem; color: #9070c0; margin-bottom: 8px; }
+.lcs-chars { display: flex; gap: 6px; flex-wrap: wrap; }
+.lcs-char { width: 40px; height: 40px; border-radius: 8px; background: #2a1050; border: 2px solid #ffd600; color: #ffd600; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; animation: char-pop 0.4s ease; }
+.lcs-empty { color: #5050a0; font-size: 0.82rem; padding: 8px; }
+
+/* Controls */
+.controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
+.btn-primary { background: #c678dd; color: #1a0828; }
+.btn-primary:hover { background: #d890f0; }
+.btn-secondary { background: #2a2050; color: #9090c0; }
+.btn-secondary:hover { background: #362a60; }
+.btn-danger { background: #3a1030; color: #ff9090; }
+.btn-danger:hover { background: #5a1040; }
+select { background: #1a1540; color: #9090c0; border: 1px solid #3a2060; border-radius: 6px; padding: 6px 10px; font-size: 0.8rem; }
+
+/* Code */
+.code-panel { background: #0d1117; border-radius: 10px; padding: 12px; font-family: 'Courier New', monospace; font-size: 0.76rem; line-height: 1.7; border: 1px solid #2d1a40; }
+.code-line { padding: 1px 6px; border-radius: 4px; transition: background 0.2s; white-space: pre; color: #7060a0; }
+.code-line.highlight { background: #ffd60022; color: #ffd680; border-left: 3px solid #ffd600; }
+.code-line.active { background: #c678dd22; color: #e0a0ff; border-left: 3px solid #c678dd; }
+.kw { color: #c678dd; } .fn { color: #61afef; } .num { color: #d19a66; } .cm { color: #5c6370; font-style: italic; }
+
+/* Stats */
+.stats-row { display: flex; gap: 8px; }
+.stat-box { background: #1a1540; border-radius: 8px; padding: 8px 12px; flex: 1; }
+.stat-box .label { font-size: 0.68rem; color: #6050a0; text-transform: uppercase; }
+.stat-box .value { font-size: 1.2rem; font-weight: bold; color: #c678dd; }
+
+/* Explanation */
+.explanation { background: #1e1a30; border-radius: 8px; padding: 8px 14px; font-size: 0.82rem; color: #c0a0d8; min-height: 36px; border-left: 3px solid #c678dd; }
+
+/* Info */
+.info-box { background: #1a1540; border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; line-height: 1.5; color: #9080c0; border-left: 3px solid #c678dd; }
+.info-box strong { color: #e0a0ff; }
+
+.section-title { font-size: 0.78rem; font-weight: 700; color: #7050a0; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* Toggle */
+.toggle-row { display: flex; gap: 6px; }
+.toggle-btn { padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 0.82rem; font-weight: 600; border: 2px solid #2a2050; background: #1a1535; color: #7060a0; transition: all 0.2s; }
+.toggle-btn.active { background: #2a1050; border-color: #c678dd; color: #e0a0ff; }
+
+/* Legend */
+.legend { display: flex; gap: 10px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: #7060a0; }
+.legend-dot { width: 14px; height: 14px; border-radius: 3px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="badge">Module 5</div>
+  <h1>🔗 Dãy con chung dài nhất (LCS)</h1>
+  <div class="badge">#26</div>
+</header>
+
+<div class="main">
+  <div class="left-panel">
+    <!-- Mode toggle -->
+    <div class="toggle-row">
+      <div class="toggle-btn active" id="btn-fill" onclick="setMode('fill')">📊 Điền bảng DP</div>
+      <div class="toggle-btn" id="btn-back" onclick="setMode('backtrack')">🔍 Backtrack (tìm LCS)</div>
+    </div>
+
+    <!-- Input strings -->
+    <div class="input-group">
+      <label>X:</label>
+      <input type="text" id="strX" value="ABCBDAB" maxlength="10" oninput="onStrChange()">
+    </div>
+    <div class="input-group">
+      <label>Y:</label>
+      <input type="text" id="strY" value="BDCAB" maxlength="10" oninput="onStrChange()">
+    </div>
+
+    <!-- String visualization -->
+    <div>
+      <div class="section-title" style="margin-bottom:6px">📝 Chuỗi</div>
+      <div class="string-row" id="strXRow"></div>
+      <div style="height:6px"></div>
+      <div class="string-row" id="strYRow"></div>
+    </div>
+
+    <!-- DP Table -->
+    <div class="table-section">
+      <div class="section-title" style="margin-bottom:6px">📋 Bảng dp[i][j] — độ dài LCS của X[0..i-1] và Y[0..j-1]</div>
+      <div id="dpGrid" class="dp-grid"></div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#3d3000;border:1px solid #ffd600"></div>Đang tính</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1a3050;border:1px solid #4eff91"></div>Chéo ↖ (char match)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1a2050;border:1px solid #61afef"></div>Trên ↑</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#1a2050;border:1px solid #e06060"></div>Trái ←</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#2a1050;border:1px solid #c678dd"></div>Khớp ký tự</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#2a2000;border:1px solid #ffd600"></div>Đường backtrack</div>
+    </div>
+
+    <!-- LCS Result -->
+    <div class="lcs-result" id="lcsResult">
+      <div class="lcs-title">✨ LCS tìm được</div>
+      <div class="lcs-chars" id="lcsChars"><div class="lcs-empty">Chưa tính...</div></div>
+    </div>
+
+    <!-- Explanation -->
+    <div class="explanation" id="explanation">Nhấn ▶ Play để bắt đầu điền bảng DP.</div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-box"><div class="label">Bước</div><div class="value" id="statStep">0</div></div>
+      <div class="stat-box"><div class="label">Độ dài LCS</div><div class="value" id="statLen">—</div></div>
+      <div class="stat-box"><div class="label">LCS</div><div class="value" id="statLcs" style="font-size:0.9rem">—</div></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="btn btn-primary" id="btnPlay" onclick="togglePlay()">▶ Play</button>
+      <button class="btn btn-secondary" onclick="stepForward()">⏭ Step</button>
+      <button class="btn btn-danger" onclick="resetAnim()">↺ Reset</button>
+      <select id="speedSel">
+        <option value="1000">Chậm</option>
+        <option value="600" selected>Bình thường</option>
+        <option value="250">Nhanh</option>
+        <option value="80">Rất nhanh</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="section-title">💻 Code</div>
+    <div class="code-panel" id="codePanel">
+<div class="code-line"><span class="kw">function</span> <span class="fn">lcs</span>(X, Y):</div>
+<div class="code-line">  m, n = len(X), len(Y)</div>
+<div class="code-line">  dp = (m+1) × (n+1) zeros</div>
+<div class="code-line">  <span class="kw">for</span> i = 1 <span class="kw">to</span> m:</div>
+<div class="code-line">    <span class="kw">for</span> j = 1 <span class="kw">to</span> n:</div>
+<div class="code-line">      <span class="kw">if</span> X[i-1] == Y[j-1]:</div>
+<div class="code-line">        dp[i][j] = dp[i-1][j-1] + 1</div>
+<div class="code-line">      <span class="kw">else</span>:</div>
+<div class="code-line">        dp[i][j] = max(dp[i-1][j],</div>
+<div class="code-line">                       dp[i][j-1])</div>
+<div class="code-line">  <span class="kw">return</span> dp[m][n]</div>
+<div class="code-line"><span class="cm">// O(m×n) time, O(m×n) space</span></div>
+    </div>
+
+    <div class="section-title">🔍 Backtrack code</div>
+    <div class="code-panel" style="font-size:0.73rem">
+<div class="code-line">i, j = m, n; lcs = ""</div>
+<div class="code-line"><span class="kw">while</span> i > 0 <span class="kw">and</span> j > 0:</div>
+<div class="code-line">  <span class="kw">if</span> X[i-1] == Y[j-1]:</div>
+<div class="code-line">    lcs = X[i-1] + lcs  <span class="cm">// prepend</span></div>
+<div class="code-line">    i -= 1; j -= 1  <span class="cm">// ↖ diagonal</span></div>
+<div class="code-line">  <span class="kw">elif</span> dp[i-1][j] > dp[i][j-1]:</div>
+<div class="code-line">    i -= 1  <span class="cm">// ↑ move up</span></div>
+<div class="code-line">  <span class="kw">else</span>:</div>
+<div class="code-line">    j -= 1  <span class="cm">// ← move left</span></div>
+    </div>
+
+    <div class="info-box">
+      <strong>Công thức:</strong><br>
+      Nếu X[i-1] == Y[j-1]:<br>
+      &nbsp;&nbsp;dp[i][j] = dp[i-1][j-1] + 1 <strong>↖</strong><br>
+      Nếu không:<br>
+      &nbsp;&nbsp;dp[i][j] = max(dp[i-1][j], dp[i][j-1])<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<strong>↑</strong> hoặc <strong>←</strong><br><br>
+      <strong>Backtrack</strong> theo mũi tên để tìm chuỗi LCS thực tế.
+    </div>
+
+    <div class="section-title">📍 Cell hiện tại</div>
+    <div id="cellInfo" style="background:#1a1540;border-radius:8px;padding:10px;font-size:0.78rem;color:#9080c0;line-height:1.7">
+      Chưa có.
+    </div>
+  </div>
+</div>
+
+<script>
+let X = 'ABCBDAB', Y = 'BDCAB';
+let mode = 'fill';
+let steps = [], stepIdx = 0;
+let playing = false, playTimer = null;
+let dpFull = [];
+let lcsResult = '';
+
+const CHAR_COLORS = ['#c678dd','#4eff91','#61afef','#ffd600','#ff9966','#ff6b6b','#98c379','#e5c07b'];
+const charColorMap = {};
+function getCharColor(c) {
+  if (!charColorMap[c]) {
+    const keys = Object.keys(charColorMap).length;
+    charColorMap[c] = CHAR_COLORS[keys % CHAR_COLORS.length];
+  }
+  return charColorMap[c];
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-fill').classList.toggle('active', m === 'fill');
+  document.getElementById('btn-back').classList.toggle('active', m === 'backtrack');
+  resetAnim();
+}
+
+function onStrChange() {
+  X = document.getElementById('strX').value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 10);
+  Y = document.getElementById('strY').value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 10);
+  document.getElementById('strX').value = X;
+  document.getElementById('strY').value = Y;
+  Object.keys(charColorMap).forEach(k => delete charColorMap[k]);
+  resetAnim();
+}
+
+// ── Render string rows ─────────────────────────────────────────────────
+function renderStringRows(xHighlight, yHighlight, lcsChars) {
+  const xRow = document.getElementById('strXRow');
+  const yRow = document.getElementById('strYRow');
+  xRow.innerHTML = '<div class="string-label">X:</div>';
+  yRow.innerHTML = '<div class="string-label">Y:</div>';
+
+  X.split('').forEach((c, i) => {
+    const el = document.createElement('div');
+    el.className = 'str-char';
+    el.innerHTML = `${c}<div class="char-idx">${i}</div>`;
+    if (lcsChars && lcsChars.includes(i + '_x')) {
+      el.classList.add('lcs-char');
+    } else if (xHighlight === i) {
+      el.classList.add('matched');
+    }
+    el.style.borderColor = getCharColor(c) + '66';
+    el.style.color = getCharColor(c);
+    xRow.appendChild(el);
+  });
+  Y.split('').forEach((c, j) => {
+    const el = document.createElement('div');
+    el.className = 'str-char';
+    el.innerHTML = `${c}<div class="char-idx">${j}</div>`;
+    if (lcsChars && lcsChars.includes(j + '_y')) {
+      el.classList.add('lcs-char');
+    } else if (yHighlight === j) {
+      el.classList.add('matched');
+    }
+    el.style.borderColor = getCharColor(c) + '66';
+    el.style.color = getCharColor(c);
+    yRow.appendChild(el);
+  });
+}
+
+// ── Build fill steps ───────────────────────────────────────────────────
+function buildFillSteps() {
+  steps = [];
+  const m = X.length, n = Y.length;
+  const dp = Array.from({length: m+1}, () => new Array(n+1).fill(0));
+  const arrows = Array.from({length: m+1}, () => new Array(n+1).fill(''));
+
+  steps.push({ type: 'init', dp: JSON.parse(JSON.stringify(dp)), arrows: JSON.parse(JSON.stringify(arrows)),
+    hl: null, dep: null, xi: -1, yj: -1,
+    explanation: `Khởi tạo bảng dp[${m+1}][${n+1}] = 0. Hàng 0 và cột 0 = 0 (empty string).`, codeLine: 2 });
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const match = X[i-1] === Y[j-1];
+      steps.push({ type: 'computing', dp: JSON.parse(JSON.stringify(dp)), arrows: JSON.parse(JSON.stringify(arrows)),
+        hl: {r:i, c:j}, dep: match ? {diag: {r:i-1,c:j-1}} : {top:{r:i-1,c:j}, left:{r:i,c:j-1}},
+        xi: i-1, yj: j-1, match,
+        codeLine: match ? 5 : 7,
+        explanation: match
+          ? `X[${i-1}]='${X[i-1]}' == Y[${j-1}]='${Y[j-1]}' → KHỚP! dp[${i}][${j}] = dp[${i-1}][${j-1}] + 1`
+          : `X[${i-1}]='${X[i-1]}' ≠ Y[${j-1}]='${Y[j-1]}' → dp[${i}][${j}] = max(dp[${i-1}][${j}], dp[${i}][${j-1}])` });
+
+      if (match) {
+        dp[i][j] = dp[i-1][j-1] + 1;
+        arrows[i][j] = '↖';
+      } else {
+        dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]);
+        arrows[i][j] = dp[i-1][j] >= dp[i][j-1] ? '↑' : '←';
+      }
+      steps.push({ type: 'fill', dp: JSON.parse(JSON.stringify(dp)), arrows: JSON.parse(JSON.stringify(arrows)),
+        hl: {r:i, c:j}, dep: null, xi: i-1, yj: j-1, match,
+        codeLine: match ? 6 : 8,
+        explanation: match
+          ? `dp[${i}][${j}] = ${dp[i][j]} (↖ diagonal + 1)`
+          : `dp[${i}][${j}] = ${dp[i][j]} (${arrows[i][j] === '↑' ? '↑ từ trên' : '← từ trái'})` });
+    }
+  }
+  dpFull = JSON.parse(JSON.stringify(dp));
+  steps.push({ type: 'done', dp: dpFull, arrows: JSON.parse(JSON.stringify(arrows)),
+    hl: {r:m, c:n}, dep: null, xi: -1, yj: -1,
+    result: dp[m][n], codeLine: 10,
+    explanation: `✅ LCS length = dp[${m}][${n}] = ${dp[m][n]}. Nhấn "Backtrack" để tìm chuỗi LCS!` });
+}
+
+function buildBacktrackSteps() {
+  const m = X.length, n = Y.length;
+  // Fill first
+  const dp = Array.from({length: m+1}, () => new Array(n+1).fill(0));
+  const arrows = Array.from({length: m+1}, () => new Array(n+1).fill(''));
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (X[i-1] === Y[j-1]) { dp[i][j] = dp[i-1][j-1] + 1; arrows[i][j] = '↖'; }
+      else { dp[i][j] = Math.max(dp[i-1][j], dp[i][j-1]); arrows[i][j] = dp[i-1][j] >= dp[i][j-1] ? '↑' : '←'; }
+    }
+  }
+  dpFull = JSON.parse(JSON.stringify(dp));
+
+  steps = [];
+  let i = m, j = n;
+  let lcs = '';
+  const btPath = [];
+  const lcsXIdx = new Set(), lcsYIdx = new Set();
+
+  steps.push({ type: 'bt-start', dp: dpFull, arrows: JSON.parse(JSON.stringify(arrows)),
+    hl: {r:i, c:j}, btPath: [], lcsXIdx: new Set(), lcsYIdx: new Set(), lcsStr: '',
+    explanation: `Bắt đầu backtrack từ dp[${m}][${n}] = ${dp[m][n]}` });
+
+  while (i > 0 && j > 0) {
+    btPath.push({r:i, c:j});
+    if (X[i-1] === Y[j-1]) {
+      lcs = X[i-1] + lcs;
+      lcsXIdx.add(i-1); lcsYIdx.add(j-1);
+      steps.push({ type: 'bt-match', dp: dpFull, arrows: JSON.parse(JSON.stringify(arrows)),
+        hl: {r:i, c:j}, btPath: [...btPath], lcsStr: lcs,
+        lcsXIdx: new Set(lcsXIdx), lcsYIdx: new Set(lcsYIdx),
+        xi: i-1, yj: j-1,
+        explanation: `X[${i-1}]='${X[i-1]}' == Y[${j-1}]='${Y[j-1]}' → KHỚP! Thêm '${X[i-1]}' vào LCS → "${lcs}"` });
+      i--; j--;
+    } else if (dp[i-1][j] >= dp[i][j-1]) {
+      steps.push({ type: 'bt-up', dp: dpFull, arrows: JSON.parse(JSON.stringify(arrows)),
+        hl: {r:i, c:j}, btPath: [...btPath], lcsStr: lcs,
+        lcsXIdx: new Set(lcsXIdx), lcsYIdx: new Set(lcsYIdx),
+        explanation: `dp[${i-1}][${j}]=${dp[i-1][j]} ≥ dp[${i}][${j-1}]=${dp[i][j-1]} → ↑ lên trên` });
+      i--;
+    } else {
+      steps.push({ type: 'bt-left', dp: dpFull, arrows: JSON.parse(JSON.stringify(arrows)),
+        hl: {r:i, c:j}, btPath: [...btPath], lcsStr: lcs,
+        lcsXIdx: new Set(lcsXIdx), lcsYIdx: new Set(lcsYIdx),
+        explanation: `dp[${i}][${j-1}]=${dp[i][j-1]} > dp[${i-1}][${j}]=${dp[i-1][j]} → ← sang trái` });
+      j--;
+    }
+  }
+  lcsResult = lcs;
+  steps.push({ type: 'bt-done', dp: dpFull, arrows: JSON.parse(JSON.stringify(arrows)),
+    hl: null, btPath, lcsStr: lcs,
+    lcsXIdx: new Set(lcsXIdx), lcsYIdx: new Set(lcsYIdx),
+    result: dp[m][n],
+    explanation: `✅ LCS = "${lcs}" (độ dài ${lcs.length})` });
+}
+
+// ── Render DP grid ─────────────────────────────────────────────────────
+function renderGrid(dp, arrows, hl, dep, btPath) {
+  const grid = document.getElementById('dpGrid');
+  const m = X.length, n = Y.length;
+  const cols = n + 2;
+  grid.style.gridTemplateColumns = `repeat(${cols}, 40px)`;
+  grid.innerHTML = '';
+
+  // Corner header
+  const corner = document.createElement('div'); corner.className = 'dp-cell header'; corner.textContent = ''; grid.appendChild(corner);
+  // Column headers (Y chars)
+  const emptyH = document.createElement('div'); emptyH.className = 'dp-cell header'; emptyH.textContent = 'ε'; grid.appendChild(emptyH);
+  Y.split('').forEach((c, j) => {
+    const h = document.createElement('div'); h.className = 'dp-cell header';
+    h.textContent = c; h.style.color = getCharColor(c); grid.appendChild(h);
+  });
+
+  const btSet = new Set((btPath || []).map(p => `${p.r},${p.c}`));
+
+  for (let i = 0; i <= m; i++) {
+    // Row header (X chars)
+    const rh = document.createElement('div'); rh.className = 'dp-cell header';
+    rh.textContent = i === 0 ? 'ε' : X[i-1];
+    if (i > 0) rh.style.color = getCharColor(X[i-1]);
+    grid.appendChild(rh);
+
+    for (let j = 0; j <= n; j++) {
+      const cell = document.createElement('div');
+      cell.className = 'dp-cell';
+      const val = dp[i][j];
+      const key = `${i},${j}`;
+
+      if (hl && hl.r === i && hl.c === j) cell.classList.add('computing');
+      else if (btSet.has(key)) cell.classList.add('backtrack');
+      else if (dep) {
+        if (dep.diag && dep.diag.r === i && dep.diag.c === j) cell.classList.add('dep-diag');
+        else if (dep.top && dep.top.r === i && dep.top.c === j) cell.classList.add('dep-top');
+        else if (dep.left && dep.left.r === i && dep.left.c === j) cell.classList.add('dep-left');
+        else cell.classList.add(val > 0 ? (arrows && arrows[i][j] === '↖' ? 'match' : 'computed') : 'empty');
+      } else {
+        cell.classList.add(val > 0 ? (arrows && arrows[i][j] === '↖' ? 'match' : 'computed') : 'empty');
+      }
+
+      cell.textContent = val;
+      if (arrows && arrows[i][j]) {
+        const arr = document.createElement('div');
+        arr.className = 'arrow-indicator';
+        arr.textContent = arrows[i][j];
+        cell.appendChild(arr);
+      }
+      cell.title = `dp[${i}][${j}] = ${val} ${arrows && arrows[i][j] ? arrows[i][j] : ''}`;
+      grid.appendChild(cell);
+    }
+  }
+}
+
+// ── Apply step ─────────────────────────────────────────────────────────
+function applyStep(idx) {
+  if (idx >= steps.length) { stopPlay(); return; }
+  const s = steps[idx];
+  document.getElementById('explanation').textContent = s.explanation || '';
+  document.getElementById('statStep').textContent = idx + 1;
+  if (s.result !== undefined) document.getElementById('statLen').textContent = s.result;
+
+  const lcsXArr = s.lcsXIdx ? Array.from(s.lcsXIdx).map(i => i + '_x') : [];
+  const lcsYArr = s.lcsYIdx ? Array.from(s.lcsYIdx).map(j => j + '_y') : [];
+  renderStringRows(s.xi, s.yj, [...lcsXArr, ...lcsYArr]);
+
+  renderGrid(s.dp, s.arrows, s.hl, s.dep, s.btPath);
+  highlightCode(s.codeLine);
+
+  // LCS display
+  if (s.lcsStr !== undefined) {
+    document.getElementById('statLcs').textContent = s.lcsStr || '(trống)';
+    const lcsCharsEl = document.getElementById('lcsChars');
+    if (s.lcsStr) {
+      lcsCharsEl.innerHTML = s.lcsStr.split('').map(c =>
+        `<div class="lcs-char" style="color:${getCharColor(c)};border-color:${getCharColor(c)}">${c}</div>`
+      ).join('');
+    } else {
+      lcsCharsEl.innerHTML = '<div class="lcs-empty">Đang tính...</div>';
+    }
+  }
+
+  // Cell info
+  if (s.hl) {
+    const i = s.hl.r, j = s.hl.c;
+    document.getElementById('cellInfo').innerHTML =
+      `<b style="color:#e0a0ff">dp[${i}][${j}]</b> = ${s.dp[i]?.[j] ?? '?'}<br>` +
+      (i > 0 ? `X[${i-1}] = '${X[i-1]}'<br>` : '') +
+      (j > 0 ? `Y[${j-1}] = '${Y[j-1]}'<br>` : '') +
+      (s.match !== undefined ? `Khớp: ${s.match ? '✅ Có' : '❌ Không'}` : '');
+  }
+}
+
+function highlightCode(line) {
+  document.querySelectorAll('#codePanel .code-line').forEach((l, i) => {
+    l.classList.remove('highlight', 'active');
+    if (i === line) l.classList.add('highlight');
+  });
+}
+
+function togglePlay() {
+  if (playing) stopPlay(); else startPlay();
+}
+function startPlay() {
+  playing = true;
+  document.getElementById('btnPlay').textContent = '⏸ Pause';
+  tick();
+}
+function stopPlay() {
+  playing = false;
+  document.getElementById('btnPlay').textContent = '▶ Play';
+  clearTimeout(playTimer);
+}
+function tick() {
+  if (!playing) return;
+  if (stepIdx >= steps.length) { stopPlay(); return; }
+  applyStep(stepIdx++);
+  playTimer = setTimeout(tick, parseInt(document.getElementById('speedSel').value));
+}
+function stepForward() {
+  stopPlay();
+  if (stepIdx < steps.length) applyStep(stepIdx++);
+}
+function resetAnim() {
+  stopPlay(); stepIdx = 0;
+  document.getElementById('statStep').textContent = '0';
+  document.getElementById('statLen').textContent = '—';
+  document.getElementById('statLcs').textContent = '—';
+  document.getElementById('lcsChars').innerHTML = '<div class="lcs-empty">Chưa tính...</div>';
+  document.getElementById('explanation').textContent = 'Nhấn ▶ Play để bắt đầu.';
+  document.getElementById('cellInfo').textContent = 'Chưa có.';
+
+  if (mode === 'fill') buildFillSteps(); else buildBacktrackSteps();
+
+  const m = X.length, n = Y.length;
+  const emptyDp = Array.from({length: m+1}, () => new Array(n+1).fill(0));
+  const emptyArrows = Array.from({length: m+1}, () => new Array(n+1).fill(''));
+  renderGrid(emptyDp, emptyArrows, null, null, null);
+  renderStringRows(-1, -1, []);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+resetAnim();
+</script>
+</body>
+</html>

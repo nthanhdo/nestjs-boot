@@ -6,46 +6,76 @@
 <title>Bubble Sort — Sắp xếp nổi bọt</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',sans-serif;background:#0f1117;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-header{background:#1a1d2e;padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #2d3148}
-header h1{font-size:1.1rem;color:#a78bfa}
+body{font-family:'Segoe UI',sans-serif;background:#080c14;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* Grid background */
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(99,102,241,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,.04) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;z-index:0}
+
+header{background:linear-gradient(135deg,#0f1525,#1a1d2e);padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #2d3148;position:relative;z-index:1}
+header h1{font-size:1.1rem;color:#a78bfa;text-shadow:0 0 20px rgba(167,139,250,.4)}
 .badge{background:#312e81;color:#c4b5fd;padding:2px 8px;border-radius:4px;font-size:.75rem}
 .complexity{display:flex;gap:8px;margin-left:auto}
 .cx{background:#1e293b;border:1px solid #334155;border-radius:4px;padding:2px 8px;font-size:.75rem;color:#94a3b8}
 .cx span{color:#fbbf24}
-main{flex:1;display:flex;overflow:hidden}
-#viz{width:60%;background:#0d1117;position:relative;display:flex;flex-direction:column}
+
+main{flex:1;display:flex;overflow:hidden;position:relative;z-index:1}
+#viz{width:60%;background:transparent;position:relative;display:flex;flex-direction:column}
 #bar-area{flex:1;position:relative;padding:10px 20px 0}
-#bars-container{position:absolute;bottom:0;left:20px;right:20px;top:10px;display:flex;align-items:flex-end;gap:2px}
-.bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1;transition:transform .3s ease}
-.bar{width:100%;border-radius:3px 3px 0 0;background:#4a90d9;transition:background .2s,height .3s}
-.bar-val{font-size:10px;color:#94a3b8;margin-top:2px;line-height:1}
-.bar.comparing{background:#ef4444}
-.bar.swapping{background:#f97316}
-.bar.sorted{background:#22c55e}
-.bar.min-mark{background:#eab308}
-#legend{display:flex;gap:12px;padding:6px 20px;background:#111827;font-size:.72rem}
+#bars-container{position:absolute;bottom:0;left:20px;right:20px;top:10px;display:flex;align-items:flex-end;gap:3px}
+
+/* Bar wraps are positioned, so transform translateX works for sliding */
+.bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;cursor:default}
+.bar{width:100%;border-radius:4px 4px 0 0;background:linear-gradient(to top,#1d4ed8,#60a5fa);transition:background .2s,box-shadow .2s;position:relative;overflow:hidden}
+
+/* Shimmer overlay on bar */
+.bar::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.15) 50%,transparent 60%);background-size:200% 100%;opacity:0}
+
+.bar-val{font-size:10px;color:#94a3b8;margin-top:3px;line-height:1;font-weight:600;transition:color .2s}
+
+.bar.comparing{background:linear-gradient(to top,#991b1b,#ef4444);box-shadow:0 0 16px rgba(239,68,68,.6),0 0 4px rgba(239,68,68,.8);animation:pulse .5s ease-in-out infinite}
+.bar.comparing+.bar-val,.bar-wrap:has(.bar.comparing) .bar-val{color:#fca5a5}
+.bar.swapping{background:linear-gradient(to top,#c2410c,#f97316);box-shadow:0 0 20px rgba(249,115,22,.7)}
+.bar.sorted{background:linear-gradient(to top,#065f46,#34d399);box-shadow:0 0 8px rgba(52,211,153,.2)}
+.bar.sorted::after{animation:shimmer 2s linear infinite;opacity:1}
+
+/* Pass progress bar */
+#pass-progress-wrap{height:3px;background:#1e293b;position:relative;overflow:hidden}
+#pass-progress{height:100%;background:linear-gradient(90deg,#6366f1,#a78bfa);width:0%;transition:width .3s ease;box-shadow:0 0 8px rgba(99,102,241,.5)}
+
+#legend{display:flex;gap:12px;padding:6px 20px;background:rgba(17,24,39,.8);font-size:.72rem;backdrop-filter:blur(4px)}
 .leg{display:flex;align-items:center;gap:5px}
 .leg-dot{width:10px;height:10px;border-radius:2px}
-#code-panel{width:40%;background:#1a1d2e;border-left:1px solid #2d3148;display:flex;flex-direction:column}
-.panel-title{padding:8px 14px;background:#12152a;font-size:.8rem;color:#8b92c4;border-bottom:1px solid #2d3148}
+.leg-dot.comparing{background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,.6)}
+.leg-dot.sorted{background:#34d399}
+
+#code-panel{width:40%;background:#0f1525;border-left:1px solid #2d3148;display:flex;flex-direction:column}
+.panel-title{padding:8px 14px;background:#0a0f1e;font-size:.8rem;color:#8b92c4;border-bottom:1px solid #2d3148}
 #code{flex:1;overflow-y:auto;padding:10px 0;font-family:'Courier New',monospace;font-size:.82rem;line-height:1.8}
-.code-line{padding:1px 14px;color:#8b92c4;white-space:pre;cursor:default}
-.code-line.active{background:#2d2a12;color:#fde68a;border-left:3px solid #fbbf24}
-.code-line.comment{color:#4b5563}
-#explain{padding:10px 14px;background:#0f1117;border-top:1px solid #2d3148;font-size:.8rem;color:#94a3b8;min-height:56px;line-height:1.5}
-#controls{background:#111827;padding:8px 16px;display:flex;align-items:center;gap:10px;border-top:1px solid #1e293b;flex-wrap:wrap}
-button{background:#3730a3;color:#e2e8f0;border:none;border-radius:5px;padding:6px 14px;cursor:pointer;font-size:.82rem;transition:background .2s}
-button:hover{background:#4338ca}
-button:disabled{background:#1e293b;color:#4b5563;cursor:not-allowed}
-#btn-play{background:#059669}#btn-play:hover{background:#047857}
-#stats{display:flex;gap:16px;margin-left:auto;font-size:.8rem}
-.stat{background:#1e293b;padding:4px 10px;border-radius:4px}
-.stat span{color:#f59e0b}
+.code-line{padding:2px 14px;color:#8b92c4;white-space:pre;cursor:default;transition:background .2s,color .2s;border-left:3px solid transparent}
+.code-line.active{background:linear-gradient(90deg,rgba(251,191,36,.12),transparent);color:#fde68a;border-left-color:#fbbf24}
+.code-line.comment{color:#3d4a5c}
+#explain{padding:10px 14px;background:#080c14;border-top:1px solid #2d3148;font-size:.8rem;color:#94a3b8;min-height:56px;line-height:1.5}
+
+#controls{background:linear-gradient(135deg,#0f1525,#111827);padding:8px 16px;display:flex;align-items:center;gap:10px;border-top:1px solid #1e293b;flex-wrap:wrap;position:relative;z-index:1}
+button{background:#3730a3;color:#e2e8f0;border:1px solid #4338ca;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:.82rem;transition:all .2s}
+button:hover{background:#4338ca;box-shadow:0 0 12px rgba(99,102,241,.3)}
+button:disabled{background:#1e293b;color:#4b5563;cursor:not-allowed;border-color:#2d3748;box-shadow:none}
+#btn-play{background:#065f46;border-color:#059669}
+#btn-play:hover{background:#059669;box-shadow:0 0 12px rgba(5,150,105,.4)}
+#stats{display:flex;gap:12px;margin-left:auto;font-size:.8rem}
+.stat{background:#1e293b;padding:4px 10px;border-radius:6px;border:1px solid #2d3748}
+.stat span{color:#f59e0b;font-weight:700;font-variant-numeric:tabular-nums}
 label{font-size:.78rem;color:#64748b}
 input[type=range]{accent-color:#6366f1;width:90px}
 select{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:4px 6px;font-size:.78rem}
-#pass-info{background:#1e293b;padding:4px 10px;border-radius:4px;font-size:.8rem;color:#a78bfa}
+#pass-info{background:#1e293b;padding:4px 10px;border-radius:6px;font-size:.8rem;color:#a78bfa;border:1px solid #3730a3}
+
+@keyframes pulse{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.08);transform-origin:bottom}}
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes glow{0%,100%{box-shadow:0 0 5px rgba(239,68,68,.3)}50%{box-shadow:0 0 20px rgba(239,68,68,.8)}}
+@keyframes dropIn{0%{transform:translateY(-30px);opacity:0}100%{transform:translateY(0);opacity:1}}
+@keyframes bubbleFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes counterTick{0%{transform:scale(1)}50%{transform:scale(1.3);color:#f59e0b}100%{transform:scale(1)}}
 </style>
 </head>
 <body>
@@ -65,11 +95,12 @@ select{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:4
     <div id="bar-area">
       <div id="bars-container"></div>
     </div>
+    <div id="pass-progress-wrap"><div id="pass-progress"></div></div>
     <div id="legend">
-      <div class="leg"><div class="leg-dot" style="background:#4a90d9"></div>Chưa sắp xếp</div>
-      <div class="leg"><div class="leg-dot" style="background:#ef4444"></div>Đang so sánh</div>
+      <div class="leg"><div class="leg-dot" style="background:linear-gradient(to top,#1d4ed8,#60a5fa)"></div>Chưa sắp xếp</div>
+      <div class="leg"><div class="leg-dot comparing"></div>Đang so sánh (glow)</div>
       <div class="leg"><div class="leg-dot" style="background:#f97316"></div>Đang hoán đổi</div>
-      <div class="leg"><div class="leg-dot" style="background:#22c55e"></div>Đã sắp xếp</div>
+      <div class="leg"><div class="leg-dot sorted"></div>Đã sắp xếp</div>
     </div>
   </div>
   <div id="code-panel">
@@ -119,19 +150,21 @@ const CODE = [
 
 const EXPLAINS = {
   2:`🔄 Vòng lặp ngoài (pass <b id="pi"></b>): mỗi pass đẩy phần tử lớn nhất về cuối.`,
-  3:`🚩 Khởi tạo cờ <code>swapped = false</code>. Nếu không có swap nào trong pass này → mảng đã sắp xếp!`,
+  3:`🚩 Khởi tạo cờ <code>swapped = false</code>. Nếu không có swap nào → mảng đã sắp xếp!`,
   4:`👁 Vòng lặp trong: duyệt từ đầu đến vị trí chưa sắp xếp.`,
   6:`🔴 So sánh <b>arr[j]</b> và <b>arr[j+1]</b>. Nếu sai thứ tự → hoán đổi.`,
-  8:`🔄 Hoán đổi! Phần tử lớn hơn <b>nổi bọt</b> sang phải.`,
+  8:`🫧 Hoán đổi! Phần tử lớn hơn <b>nổi bọt</b> sang phải.`,
   13:`✅ <b>Early termination!</b> Không có hoán đổi → mảng đã sắp xếp. Dừng sớm!`,
 };
 
 let arr=[], steps=[], stepIdx=0, playing=false, timer=null;
 let cmp=0, swap=0, acc=0;
+// Track the actual array state for DOM-based animation
+let currentArr=[];
 
 function buildCode(){
   const el=document.getElementById('code');
-  el.innerHTML=CODE.map((c,i)=>`<div class="code-line${c.t.trim().startsWith('//')||c.t.trim().startsWith('// ')?' comment':''}" data-i="${i}">${c.t}</div>`).join('');
+  el.innerHTML=CODE.map((c,i)=>`<div class="code-line${c.t.trim().startsWith('//')?' comment':''}" data-i="${i}">${c.t}</div>`).join('');
 }
 
 function highlightLine(i){
@@ -140,8 +173,7 @@ function highlightLine(i){
 }
 
 function setExplain(key,extra=''){
-  const t=EXPLAINS[key]||'';
-  document.getElementById('explain').innerHTML=t+extra;
+  document.getElementById('explain').innerHTML=(EXPLAINS[key]||'')+extra;
 }
 
 function genArray(){
@@ -155,16 +187,13 @@ function buildSteps(){
   const n=a.length;
   steps.push({type:'init',arr:[...a]});
   for(let i=0;i<n-1;i++){
-    steps.push({type:'pass',pass:i,line:2});
-    steps.push({type:'flag',line:3});
+    steps.push({type:'pass',pass:i,line:2,arr:[...a]});
+    steps.push({type:'flag',line:3,arr:[...a]});
     let swapped=false;
     for(let j=0;j<n-1-i;j++){
-      acc+=2;
-      steps.push({type:'compare',j,sortedFrom:n-1-i+1,line:6,pass:i});
-      cmp++;
+      steps.push({type:'compare',j,sortedFrom:n-1-i+1,line:6,pass:i,arr:[...a]});
       if(a[j]>a[j+1]){
-        swap++;acc+=2;
-        steps.push({type:'swap',j,line:8});
+        steps.push({type:'swap',j,line:8,arr:[...a]});
         [a[j],a[j+1]]=[a[j+1],a[j]];
         steps.push({type:'afterswap',j,arr:[...a],line:9});
         swapped=true;
@@ -176,25 +205,23 @@ function buildSteps(){
     steps.push({type:'sorted_right',from:n-1-i,arr:[...a],line:13});
   }
   steps.push({type:'done',arr:[...a]});
-  cmp=0;swap=0;acc=0;
 }
 
-function renderBars(state){
+// Build bars DOM once, update via class + style changes
+function buildBarsDOM(a){
   const con=document.getElementById('bars-container');
-  const a=state.arr||arr;
-  const n=a.length;
-  const max=Math.max(...a);
   con.innerHTML='';
+  currentArr=[...a];
+  const max=Math.max(...a);
   a.forEach((v,i)=>{
     const wrap=document.createElement('div');
     wrap.className='bar-wrap';
+    wrap.dataset.idx=i;
     const bar=document.createElement('div');
     bar.className='bar';
-    const pct=Math.round((v/max)*100);
-    bar.style.height=pct+'%';
-    if(state.sorted&&state.sorted.has(i)) bar.classList.add('sorted');
-    else if(state.comparing&&state.comparing.includes(i)) bar.classList.add('comparing');
-    else if(state.swapping&&state.swapping.includes(i)) bar.classList.add('swapping');
+    bar.style.height=Math.round((v/max)*100)+'%';
+    bar.style.animation='dropIn .4s ease both';
+    bar.style.animationDelay=(i*0.02)+'s';
     const val=document.createElement('div');
     val.className='bar-val';
     val.textContent=v;
@@ -204,53 +231,133 @@ function renderBars(state){
   });
 }
 
-let sortedSet=new Set();
+function updateBarClasses(compareIdxs, swapIdxs, sortedFrom){
+  const wraps=document.querySelectorAll('.bar-wrap');
+  const n=wraps.length;
+  wraps.forEach((wrap,i)=>{
+    const bar=wrap.querySelector('.bar');
+    bar.className='bar';
+    if(sortedFrom!==undefined && i>=sortedFrom) bar.classList.add('sorted');
+    else if(swapIdxs&&swapIdxs.includes(i)) bar.classList.add('swapping');
+    else if(compareIdxs&&compareIdxs.includes(i)) bar.classList.add('comparing');
+  });
+}
+
+// Animate DOM swap of two adjacent bar-wraps using translateX
+function animateSwap(j, callback){
+  const wraps=document.querySelectorAll('.bar-wrap');
+  const bar1=wraps[j], bar2=wraps[j+1];
+  if(!bar1||!bar2){callback&&callback();return;}
+  const gap=bar2.offsetLeft - bar1.offsetLeft;
+  const dur=Math.max(120, 420 - document.getElementById('speed').value*30);
+  const ease='cubic-bezier(0.4,0,0.2,1)';
+  bar1.style.transition=`transform ${dur}ms ${ease}`;
+  bar2.style.transition=`transform ${dur}ms ${ease}`;
+  bar1.style.transform=`translateX(${gap}px)`;
+  bar2.style.transform=`translateX(${-gap}px)`;
+  bar1.style.zIndex=2;
+  bar2.style.zIndex=1;
+
+  setTimeout(()=>{
+    bar1.style.transition='none';
+    bar2.style.transition='none';
+    bar1.style.transform='';
+    bar2.style.transform='';
+    bar1.style.zIndex='';
+    bar2.style.zIndex='';
+    // Swap DOM position
+    const parent=bar1.parentNode;
+    // bar1 is at j, bar2 at j+1. Move bar1 after bar2.
+    parent.insertBefore(bar2,bar1);
+    callback&&callback();
+  }, dur+20);
+}
+
+let sortedFrom=Infinity;
+let pendingSwapCallback=null;
+let awaitingSwap=false;
+
 function applyStep(s){
   if(!s) return;
-  const a=s.arr||(steps[stepIdx-1]||{}).arr||arr;
+  const a=s.arr;
   highlightLine(s.line>=0?s.line:-1);
-  document.getElementById('pass-info').textContent=`Pass: ${s.pass!==undefined?s.pass+1:'-'}`;
+  if(s.pass!==undefined){
+    document.getElementById('pass-info').textContent=`Pass: ${s.pass+1}`;
+    const n=arr.length;
+    document.getElementById('pass-progress').style.width=((s.pass/(n-1))*100)+'%';
+  }
 
-  if(s.type==='init'){sortedSet=new Set();renderBars({arr:a});}
-  else if(s.type==='pass'){setExplain(2);renderBars({arr:a,sorted:sortedSet});}
+  if(s.type==='init'){
+    sortedFrom=Infinity;
+    buildBarsDOM(a);
+  }
+  else if(s.type==='pass'){
+    setExplain(2);
+    updateBarClasses(null,null,sortedFrom<Infinity?sortedFrom:undefined);
+  }
   else if(s.type==='flag'){setExplain(3);}
   else if(s.type==='compare'){
     cmp++;
     document.getElementById('s-cmp').textContent=cmp;
     setExplain(6);
-    renderBars({arr:a,comparing:[s.j,s.j+1],sorted:sortedSet});
+    updateBarClasses([s.j,s.j+1],null,sortedFrom<Infinity?sortedFrom:undefined);
   }
   else if(s.type==='swap'){
     swap++;acc+=2;
     document.getElementById('s-swap').textContent=swap;
     document.getElementById('s-acc').textContent=acc;
     setExplain(8);
-    renderBars({arr:a,swapping:[s.j,s.j+1],sorted:sortedSet});
+    // Animate physical swap
+    awaitingSwap=true;
+    if(playing) stopPlay();
+    updateBarClasses(null,[s.j,s.j+1],sortedFrom<Infinity?sortedFrom:undefined);
+    animateSwap(s.j,()=>{
+      awaitingSwap=false;
+      // resume from afterswap step
+      if(stepIdx<steps.length&&steps[stepIdx].type==='afterswap'){
+        applyStep(steps[stepIdx++]);
+      }
+      if(playing) continuePlay();
+    });
+    return; // don't advance yet
   }
-  else if(s.type==='afterswap'||s.type==='noswap'){renderBars({arr:a,sorted:sortedSet});}
+  else if(s.type==='afterswap'){
+    updateBarClasses(null,null,sortedFrom<Infinity?sortedFrom:undefined);
+  }
+  else if(s.type==='noswap'){
+    updateBarClasses(null,null,sortedFrom<Infinity?sortedFrom:undefined);
+  }
   else if(s.type==='sorted_right'){
-    for(let k=s.from;k<(s.arr||arr).length;k++) sortedSet.add(k);
-    renderBars({arr:a,sorted:sortedSet});
+    sortedFrom=s.from;
+    updateBarClasses(null,null,sortedFrom);
   }
   else if(s.type==='early'){
     setExplain(13);
-    for(let k=0;k<a.length;k++) sortedSet.add(k);
-    renderBars({arr:a,sorted:sortedSet});
+    sortedFrom=0;
+    updateBarClasses(null,null,0);
   }
   else if(s.type==='done'){
-    for(let k=0;k<a.length;k++) sortedSet.add(k);
-    renderBars({arr:a,sorted:sortedSet});
+    sortedFrom=0;
+    updateBarClasses(null,null,0);
     document.getElementById('explain').textContent='🎉 Sắp xếp hoàn tất!';
+    document.getElementById('pass-progress').style.width='100%';
     stopPlay();
   }
 }
 
 function getDelay(){return Math.round(1100-document.getElementById('speed').value*100);}
 
+function continuePlay(){
+  playing=true;
+  document.getElementById('btn-play').textContent='⏸ Pause';
+  tick();
+}
+
 function tick(){
+  if(awaitingSwap) return;
   if(stepIdx>=steps.length){stopPlay();return;}
   applyStep(steps[stepIdx++]);
-  if(playing) timer=setTimeout(tick,getDelay());
+  if(playing&&!awaitingSwap) timer=setTimeout(tick,getDelay());
 }
 
 function startPlay(){
@@ -265,19 +372,31 @@ function stopPlay(){
   document.getElementById('btn-play').textContent='▶ Play';
 }
 function reset(){
-  stopPlay();stepIdx=0;cmp=0;swap=0;acc=0;sortedSet=new Set();
+  stopPlay();awaitingSwap=false;stepIdx=0;cmp=0;swap=0;acc=0;sortedFrom=Infinity;
   buildSteps();
   document.getElementById('s-cmp').textContent=0;
   document.getElementById('s-swap').textContent=0;
   document.getElementById('s-acc').textContent=0;
   document.getElementById('pass-info').textContent='Pass: 0';
+  document.getElementById('pass-progress').style.width='0%';
   highlightLine(-1);
-  renderBars({arr});
+  buildBarsDOM(arr);
   document.getElementById('explain').textContent='👋 Nhấn Play để bắt đầu!';
 }
 
+function animateStat(id){
+  const el=document.getElementById(id);
+  el.style.animation='none';
+  el.offsetHeight;
+  el.style.animation='counterTick .3s ease';
+}
+
 document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
-document.getElementById('btn-step').onclick=()=>{stopPlay();if(stepIdx<steps.length)applyStep(steps[stepIdx++]);};
+document.getElementById('btn-step').onclick=()=>{
+  stopPlay();
+  if(awaitingSwap) return;
+  if(stepIdx<steps.length) applyStep(steps[stepIdx++]);
+};
 document.getElementById('btn-reset').onclick=reset;
 document.getElementById('btn-new').onclick=()=>{genArray();reset();};
 document.getElementById('size-sel').onchange=()=>{genArray();reset();};

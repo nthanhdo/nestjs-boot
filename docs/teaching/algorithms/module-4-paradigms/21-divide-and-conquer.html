@@ -6,84 +6,112 @@
 <title>21 - Chia Để Trị (Divide & Conquer)</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0f0f1a; color: #e0e0f0; font-family: 'Segoe UI', monospace; min-height: 100vh; }
-  h1 { text-align: center; padding: 18px; background: linear-gradient(135deg, #1a1a2e, #16213e); font-size: 1.5rem; color: #34d399; border-bottom: 2px solid #059669; letter-spacing: 2px; }
-  .subtitle { text-align: center; font-size: 0.85rem; color: #94a3b8; padding: 6px; background: #16213e; }
+  body { background: #0a0a1a; color: #e0e0f0; font-family: 'Segoe UI', monospace; min-height: 100vh;
+    background-image: radial-gradient(ellipse at 50% 0%, rgba(52,211,153,0.07) 0%, transparent 60%); }
+  h1 { text-align: center; padding: 18px; background: linear-gradient(135deg, #0a1a10, #0d2218);
+    font-size: 1.5rem; color: #34d399; border-bottom: 2px solid #059669; letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(52,211,153,0.5); }
+  .subtitle { text-align: center; font-size: 0.85rem; color: #94a3b8; padding: 6px; background: #0a1510; }
 
-  .tabs { display: flex; gap: 4px; padding: 10px 16px; background: #12122a; border-bottom: 1px solid #2d2d4e; }
-  .tab { padding: 8px 18px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem; border: 1px solid #2d2d4e; border-bottom: none; transition: all 0.2s; color: #94a3b8; background: #1a1a2e; }
-  .tab.active { background: #059669; color: #fff; border-color: #059669; }
+  @keyframes fadeScale { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  @keyframes splitLeft { 0% { transform: translateX(0); opacity: 1; } 100% { transform: translateX(-12px); opacity: 1; } }
+  @keyframes splitRight { 0% { transform: translateX(0); opacity: 1; } 100% { transform: translateX(12px); opacity: 1; } }
+  @keyframes mergeIn { 0% { transform: translateY(-8px) scale(0.9); opacity: 0; }
+    70% { transform: translateY(2px) scale(1.02); } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+  @keyframes cascadeIn { 0% { transform: translateY(-10px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+  @keyframes nodeActivate { 0% { opacity: 0; transform: scale(0.5); } 60% { transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+  @keyframes glowPulse { 0%,100% { filter: drop-shadow(0 0 4px currentColor); }
+    50% { filter: drop-shadow(0 0 12px currentColor) drop-shadow(0 0 20px currentColor); } }
+  @keyframes countTick { 0% { transform: translateY(5px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+
+  .tabs { display: flex; gap: 4px; padding: 10px 16px; background: #0a1510; border-bottom: 1px solid #1a3a25; }
+  .tab { padding: 8px 18px; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.85rem;
+    border: 1px solid #1a3a25; border-bottom: none; transition: all 0.25s; color: #4a7060; background: #0d1a12; }
+  .tab.active { background: linear-gradient(135deg, #059669, #047857); color: #fff; border-color: #059669;
+    box-shadow: 0 -4px 15px rgba(5,150,105,0.4); }
 
   .main { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 110px); }
-  .viz-panel { padding: 16px; overflow-y: auto; background: #0f0f1a; }
-  .code-panel { background: #111128; border-left: 2px solid #2d2d4e; display: flex; flex-direction: column; }
+  .viz-panel { padding: 16px; overflow-y: auto; background: #0a0a1a; }
+  .code-panel { background: #0a1208; border-left: 2px solid #1a3a25; display: flex; flex-direction: column; }
 
-  .controls { display: flex; gap: 8px; align-items: center; padding: 10px 16px; background: #12122a; border-top: 1px solid #2d2d4e; flex-wrap: wrap; }
-  .btn { padding: 7px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.15s; }
-  .btn-play { background: #059669; color: #fff; }
-  .btn-play:hover { background: #047857; }
+  /* 3-step banner */
+  .dc-steps { display: flex; gap: 6px; margin: 10px 0; }
+  .dc-step { flex: 1; padding: 10px; border-radius: 10px; text-align: center; font-size: 0.82rem;
+    font-weight: bold; border: 2px solid; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .dc-step.divide { border-color: #3b82f6; color: #60a5fa; background: rgba(59,130,246,0.05); }
+  .dc-step.divide.active { background: linear-gradient(135deg, #1e3a5f, #1a3060);
+    box-shadow: 0 0 20px rgba(59,130,246,0.4), 0 0 40px rgba(59,130,246,0.1); transform: translateY(-3px); }
+  .dc-step.conquer { border-color: #f59e0b; color: #fbbf24; background: rgba(245,158,11,0.05); }
+  .dc-step.conquer.active { background: linear-gradient(135deg, #1c1209, #2a1a06);
+    box-shadow: 0 0 20px rgba(245,158,11,0.4); transform: translateY(-3px); }
+  .dc-step.combine { border-color: #34d399; color: #34d399; background: rgba(52,211,153,0.05); }
+  .dc-step.combine.active { background: linear-gradient(135deg, #052e16, #064e20);
+    box-shadow: 0 0 20px rgba(52,211,153,0.4); transform: translateY(-3px); }
+  .dc-step .arrow { font-size: 1.2rem; display: block; margin-top: 4px; }
+
+  .tree-container { overflow-x: auto; background: linear-gradient(180deg, #0a0a1a, #0a1510);
+    border-radius: 12px; border: 1px solid #1a3a25; padding: 8px; }
+  .tree-svg { display: block; }
+
+  /* Merge sort blocks */
+  .merge-level { margin: 8px 0; animation: cascadeIn 0.4s ease; }
+  .merge-level-label { font-size: 0.7rem; color: #4a7060; margin-bottom: 4px; letter-spacing: 1px; }
+  .merge-blocks { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .merge-block { display: flex; gap: 3px; padding: 6px 8px; border-radius: 8px; border: 2px solid #1a3a25;
+    background: linear-gradient(135deg, #0d1a12, #0a1208); transition: all 0.35s; }
+  .merge-block.active-block { border-color: #34d399; background: linear-gradient(135deg, #052e16, #064e20);
+    box-shadow: 0 0 15px rgba(52,211,153,0.3); animation: mergeIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .merge-block.merging { border-color: #f59e0b; background: linear-gradient(135deg, #1c1209, #2a1a06);
+    box-shadow: 0 0 12px rgba(245,158,11,0.3); }
+  .mb-cell { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+    border-radius: 5px; font-size: 0.8rem; font-weight: bold;
+    background: linear-gradient(135deg, #1e293b, #162030); color: #e0e0f0; transition: all 0.3s; }
+  .mb-cell.sorted { background: linear-gradient(135deg, #052e16, #064e20); color: #34d399; }
+  .mb-cell.merging-active { background: linear-gradient(135deg, #1c1209, #2a1a06); color: #fbbf24; }
+
+  /* Status */
+  .status-row { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+  .status-card { flex: 1; min-width: 90px; padding: 9px 12px; border-radius: 10px;
+    background: linear-gradient(135deg, #0d1a12, #0a1208); border: 1px solid #1a3a25; font-size: 0.8rem; }
+  .status-card .label { font-size: 0.68rem; color: #4a7060; margin-bottom: 3px; }
+  .status-card .val { font-size: 1.05rem; font-weight: bold; color: #34d399; animation: countTick 0.3s ease; }
+
+  .step-desc { padding: 10px 14px; border-radius: 8px;
+    background: linear-gradient(90deg, #0d1a12, #0a1208); border-left: 3px solid #34d399;
+    font-size: 0.82rem; color: #94a3b8; margin: 8px 0; min-height: 40px; }
+  .step-desc strong { color: #34d399; }
+
+  .result-box { padding: 12px 16px; border-radius: 10px; background: linear-gradient(135deg, #052e16, #064e20);
+    border: 2px solid #22c55e; font-size: 0.85rem; color: #86efac; margin: 8px 0;
+    animation: fadeScale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .result-box strong { color: #22c55e; font-size: 1rem; text-shadow: 0 0 10px rgba(34,197,94,0.6); }
+
+  .code-header { padding: 10px 14px; background: #0a1510; border-bottom: 1px solid #1a3a25;
+    font-size: 0.78rem; color: #059669; font-weight: bold; }
+  .code-body { flex: 1; overflow-y: auto; padding: 12px; font-size: 0.75rem;
+    font-family: 'Courier New', monospace; line-height: 1.7; }
+  .code-line { padding: 2px 8px; border-radius: 4px; transition: all 0.25s; white-space: pre; color: #3a5040; }
+  .code-line.hl { background: linear-gradient(90deg, #05996933, transparent);
+    border-left: 3px solid #34d399; color: #a0f0d0; }
+  .kw { color: #c084fc; } .fn { color: #60a5fa; } .num { color: #fbbf24; }
+  .cmt { color: #2a4030; font-style: italic; } .str { color: #34d399; }
+
+  .controls { display: flex; gap: 8px; align-items: center; padding: 10px 16px;
+    background: #0a1510; border-top: 1px solid #1a3a25; flex-wrap: wrap; }
+  .btn { padding: 7px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
+  .btn-play { background: linear-gradient(135deg, #059669, #047857); color: #fff; }
+  .btn-play:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(5,150,105,0.4); }
   .btn-step { background: #0e7490; color: #fff; }
   .btn-reset { background: #374151; color: #d1d5db; }
   .speed-label { font-size: 0.78rem; color: #94a3b8; }
   input[type=range] { width: 90px; accent-color: #059669; }
 
-  /* 3-step banner */
-  .dc-steps { display: flex; gap: 6px; margin: 10px 0; }
-  .dc-step { flex: 1; padding: 10px; border-radius: 8px; text-align: center; font-size: 0.82rem; font-weight: bold; border: 2px solid; transition: all 0.3s; }
-  .dc-step.divide { border-color: #3b82f6; color: #60a5fa; background: #1e3a5f22; }
-  .dc-step.divide.active { background: #1e3a5f; box-shadow: 0 0 14px #3b82f655; }
-  .dc-step.conquer { border-color: #f59e0b; color: #fbbf24; background: #1c120922; }
-  .dc-step.conquer.active { background: #1c1209; box-shadow: 0 0 14px #f59e0b55; }
-  .dc-step.combine { border-color: #34d399; color: #34d399; background: #052e1622; }
-  .dc-step.combine.active { background: #052e16; box-shadow: 0 0 14px #34d39955; }
-  .dc-step .arrow { font-size: 1.2rem; display: block; margin-top: 4px; }
-
-  /* Tree visualization */
-  .tree-container { overflow-x: auto; background: #0d0d1f; border-radius: 10px; border: 1px solid #2d2d4e; padding: 8px; }
-  .tree-svg { display: block; }
-
-  /* Array segments */
-  .segment-row { display: flex; gap: 3px; justify-content: center; margin: 6px 0; flex-wrap: wrap; }
-  .seg-cell { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 5px; font-size: 0.85rem; font-weight: bold; border: 2px solid #374151; background: #1e293b; transition: all 0.3s; }
-  .seg-cell.active-seg { border-color: #34d399; background: #052e16; box-shadow: 0 0 10px #34d39944; }
-  .seg-cell.left-half { border-color: #3b82f6; background: #1e3a5f; }
-  .seg-cell.right-half { border-color: #f59e0b; background: #1c1209; }
-  .seg-cell.max-sub { border-color: #a855f7; background: #3b1a4e; box-shadow: 0 0 10px #a855f744; }
-
-  /* Status */
-  .status-row { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
-  .status-card { flex: 1; min-width: 90px; padding: 9px 12px; border-radius: 8px; background: #1a1a2e; border: 1px solid #2d2d4e; font-size: 0.8rem; }
-  .status-card .label { font-size: 0.68rem; color: #64748b; margin-bottom: 3px; }
-  .status-card .val { font-size: 1rem; font-weight: bold; color: #34d399; }
-
-  .step-desc { padding: 10px 14px; border-radius: 8px; background: #1a1a2e; border-left: 3px solid #34d399; font-size: 0.82rem; color: #94a3b8; margin: 8px 0; min-height: 38px; }
-  .step-desc strong { color: #34d399; }
-
-  .result-box { padding: 10px 14px; border-radius: 8px; background: #052e16; border: 1px solid #22c55e; font-size: 0.85rem; color: #86efac; margin: 8px 0; }
-  .result-box strong { color: #22c55e; font-size: 1rem; }
-
-  /* Code panel */
-  .code-header { padding: 10px 14px; background: #1a1a2e; border-bottom: 1px solid #2d2d4e; font-size: 0.78rem; color: #059669; font-weight: bold; }
-  .code-body { flex: 1; overflow-y: auto; padding: 12px; font-size: 0.75rem; font-family: 'Courier New', monospace; line-height: 1.7; }
-  .code-line { padding: 1px 8px; border-radius: 3px; transition: background 0.2s; white-space: pre; }
-  .code-line.hl { background: #05996933; border-left: 3px solid #34d399; }
-  .kw { color: #c084fc; } .fn { color: #60a5fa; } .num { color: #fbbf24; } .cmt { color: #4b5563; font-style: italic; } .str { color: #34d399; }
-
-  .info-bar { padding: 8px 16px; background: #12122a; font-size: 0.78rem; color: #94a3b8; display: flex; gap: 16px; flex-wrap: wrap; }
+  .info-bar { padding: 8px 16px; background: #0a1510; font-size: 0.78rem; color: #94a3b8;
+    display: flex; gap: 16px; flex-wrap: wrap; }
   .info-item strong { color: #34d399; }
 
   section.prob { display: none; }
   section.prob.active { display: block; }
-
-  /* Merge sort vis */
-  .merge-level { margin: 6px 0; }
-  .merge-level-label { font-size: 0.7rem; color: #4b5563; margin-bottom: 3px; }
-  .merge-blocks { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-  .merge-block { display: flex; gap: 2px; padding: 4px 6px; border-radius: 5px; border: 1px solid #374151; background: #1a1a2e; transition: all 0.3s; }
-  .merge-block.active-block { border-color: #34d399; background: #052e16; box-shadow: 0 0 10px #34d39944; }
-  .merge-block.merging { border-color: #f59e0b; background: #1c1209; }
-  .mb-cell { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 0.78rem; font-weight: bold; background: #1e293b; color: #e0e0f0; }
-  .mb-cell.hl { background: #a855f722; color: #c084fc; }
 </style>
 </head>
 <body>
@@ -99,69 +127,48 @@
 <div class="main">
   <div class="viz-panel">
 
-    <!-- MAX SUBARRAY D&C -->
     <section class="prob active" id="prob-maxsub">
       <div class="dc-steps">
-        <div class="dc-step divide" id="step-divide">
-          DIVIDE
-          <span class="arrow">✂️</span>
-          <small style="font-weight:normal;font-size:0.72rem;">Chia đôi mảng</small>
-        </div>
-        <div style="display:flex;align-items:center;color:#4b5563;font-size:1.2rem;">→</div>
-        <div class="dc-step conquer" id="step-conquer">
-          CONQUER
-          <span class="arrow">🔍</span>
-          <small style="font-weight:normal;font-size:0.72rem;">Giải từng nửa đệ quy</small>
-        </div>
-        <div style="display:flex;align-items:center;color:#4b5563;font-size:1.2rem;">→</div>
-        <div class="dc-step combine" id="step-combine">
-          COMBINE
-          <span class="arrow">🔗</span>
-          <small style="font-weight:normal;font-size:0.72rem;">Max cross + max(left, right)</small>
-        </div>
+        <div class="dc-step divide" id="step-divide">DIVIDE<span class="arrow">✂️</span><small style="font-weight:normal;font-size:0.72rem;">Chia đôi mảng</small></div>
+        <div style="display:flex;align-items:center;color:#2d4a35;font-size:1.2rem;">→</div>
+        <div class="dc-step conquer" id="step-conquer">CONQUER<span class="arrow">🔍</span><small style="font-weight:normal;font-size:0.72rem;">Giải từng nửa đệ quy</small></div>
+        <div style="display:flex;align-items:center;color:#2d4a35;font-size:1.2rem;">→</div>
+        <div class="dc-step combine" id="step-combine">COMBINE<span class="arrow">🔗</span><small style="font-weight:normal;font-size:0.72rem;">Max cross + max(left, right)</small></div>
       </div>
-
-      <p style="font-size:0.8rem;color:#64748b;margin:4px 0 8px;">
+      <p style="font-size:0.8rem;color:#3a5040;margin:4px 0 8px;">
         Mảng: [-2, 1, -3, 4, -1, 2, 1, -5, 4] — Tìm subarray có tổng lớn nhất
       </p>
-
       <div class="tree-container">
         <svg class="tree-svg" id="dc-svg" width="660" height="300"></svg>
       </div>
-
-      <div class="segment-row" id="array-segments"></div>
-
       <div class="step-desc" id="maxsub-desc">Nhấn Play để xem cây chia</div>
-
       <div class="status-row">
         <div class="status-card"><div class="label">Đang xử lý</div><div class="val" id="ms-range">—</div></div>
         <div class="status-card"><div class="label">Left max</div><div class="val" id="ms-left">—</div></div>
         <div class="status-card"><div class="label">Right max</div><div class="val" id="ms-right">—</div></div>
         <div class="status-card"><div class="label">Global max</div><div class="val" id="ms-max" style="color:#a855f7">—</div></div>
       </div>
-
       <div class="result-box" id="maxsub-result" style="display:none">
         ✅ Max Subarray Sum: <strong id="maxsub-ans">—</strong>
       </div>
     </section>
 
-    <!-- MERGE SORT -->
     <section class="prob" id="prob-mergesort">
       <div class="dc-steps">
         <div class="dc-step divide" id="ms-step-divide">DIVIDE<span class="arrow">✂️</span><small style="font-weight:normal;font-size:0.72rem;">Chia đôi liên tục</small></div>
-        <div style="display:flex;align-items:center;color:#4b5563;font-size:1.2rem;">→</div>
+        <div style="display:flex;align-items:center;color:#2d4a35;font-size:1.2rem;">→</div>
         <div class="dc-step conquer" id="ms-step-conquer">CONQUER<span class="arrow">1️⃣</span><small style="font-weight:normal;font-size:0.72rem;">Mảng 1 phần tử = sorted</small></div>
-        <div style="display:flex;align-items:center;color:#4b5563;font-size:1.2rem;">→</div>
+        <div style="display:flex;align-items:center;color:#2d4a35;font-size:1.2rem;">→</div>
         <div class="dc-step combine" id="ms-step-combine">COMBINE<span class="arrow">🔗</span><small style="font-weight:normal;font-size:0.72rem;">Merge 2 mảng sorted</small></div>
       </div>
-      <p style="font-size:0.8rem;color:#64748b;margin:4px 0 8px;">
+      <p style="font-size:0.8rem;color:#3a5040;margin:4px 0 8px;">
         Mảng: [38, 27, 43, 3, 9, 82, 10] — Sắp xếp bằng Merge Sort
       </p>
       <div id="merge-levels"></div>
       <div class="step-desc" id="mergesort-desc">Nhấn Play để bắt đầu</div>
       <div class="status-row">
         <div class="status-card"><div class="label">Giai đoạn</div><div class="val" id="mst-phase">—</div></div>
-        <div class="status-card"><div class="label">So sánh</div><div class="val" id="mst-cmp">—</div></div>
+        <div class="status-card"><div class="label">Blocks</div><div class="val" id="mst-cmp">—</div></div>
         <div class="status-card"><div class="label">Đã sắp xếp</div><div class="val" id="mst-done">—</div></div>
       </div>
       <div class="result-box" id="mergesort-result" style="display:none">
@@ -252,12 +259,8 @@ const codes = {
   ]
 };
 
-// ============================================================
-// MAX SUBARRAY D&C TREE
-// ============================================================
 const arr = [-2, 1, -3, 4, -1, 2, 1, -5, 4];
-const dcNodes = [];
-const dcEdges = [];
+const dcNodes = [], dcEdges = [];
 
 function maxCrossing(lo, mid, hi) {
   let ls = 0, cur = 0;
@@ -283,32 +286,26 @@ function genMaxSubSteps() {
   buildDCTree(0, arr.length - 1, 330, 30, 130, null);
   const steps = [];
   const resultMap = {};
-
   function process(nodeId) {
     const node = dcNodes[nodeId];
-    steps.push({ nodeId, phase: 'divide', desc: `DIVIDE [${node.lo},${node.hi}] → chia tại mid=${node.mid}`, codeLine: 7 });
-
+    steps.push({ nodeId, phase: 'divide', desc: `DIVIDE [${node.lo},${node.hi}] → mid=${node.mid}`, codeLine: 7 });
     if (node.lo < node.hi) {
-      const leftChild = dcEdges.find(e => e.from === nodeId && dcNodes[e.to].lo === node.lo);
-      const rightChild = dcEdges.find(e => e.from === nodeId && dcNodes[e.to].hi === node.hi && dcNodes[e.to].lo === node.mid + 1);
-      if (leftChild) process(leftChild.to);
-      if (rightChild) process(rightChild.to);
-
+      const leftE = dcEdges.find(e => e.from === nodeId && dcNodes[e.to].lo === node.lo);
+      const rightE = dcEdges.find(e => e.from === nodeId && dcNodes[e.to].hi === node.hi && dcNodes[e.to].lo === node.mid + 1);
+      if (leftE) process(leftE.to);
+      if (rightE) process(rightE.to);
       const lRes = resultMap[dcEdges.find(e => e.from === nodeId)?.to] ?? 0;
       const rRes = resultMap[dcEdges.filter(e => e.from === nodeId)[1]?.to] ?? 0;
       const cross = maxCrossing(node.lo, node.mid, node.hi);
       const res = Math.max(lRes, rRes, cross);
-      resultMap[nodeId] = res;
-      node.result = res;
+      resultMap[nodeId] = res; node.result = res;
       steps.push({ nodeId, phase: 'combine', result: res, desc: `COMBINE [${node.lo},${node.hi}]: max(${lRes}, ${rRes}, cross=${cross}) = ${res}`, codeLine: 15 });
     } else {
       const res = arr[node.lo];
-      resultMap[nodeId] = res;
-      node.result = res;
+      resultMap[nodeId] = res; node.result = res;
       steps.push({ nodeId, phase: 'conquer', result: res, desc: `Base case [${node.lo}]: arr[${node.lo}] = ${res}`, codeLine: 3 });
     }
   }
-
   process(0);
   steps.push({ done: true, desc: `Hoàn thành! Max Subarray Sum = ${resultMap[0]}`, ans: resultMap[0] });
   return steps;
@@ -317,30 +314,47 @@ function genMaxSubSteps() {
 function renderDCTree(activeId, phase) {
   const svg = document.getElementById('dc-svg');
   svg.innerHTML = '';
+
+  // Defs
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  ['blue','green','amber','purple'].forEach((name, i) => {
+    const colors = ['59,130,246','52,211,153','245,158,11','168,85,247'];
+    defs.innerHTML += `<filter id="glow-${name}"><feGaussianBlur stdDeviation="4" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 ${i===0?0.2:0} 0 1 0 0 ${i===1?0.8:0} 0 0 1 0 ${i===2?0:0} 0 0 0 2 0"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  });
+  svg.appendChild(defs);
+
   dcEdges.forEach(e => {
     const from = dcNodes[e.from], to = dcNodes[e.to];
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', from.x); line.setAttribute('y1', from.y + 18);
-    line.setAttribute('x2', to.x); line.setAttribute('y2', to.y - 18);
-    line.setAttribute('stroke', '#2d2d4e'); line.setAttribute('stroke-width', '1.5');
+    line.setAttribute('x1', from.x); line.setAttribute('y1', from.y + 20);
+    line.setAttribute('x2', to.x); line.setAttribute('y2', to.y - 20);
+    const bothDone = from.result !== null && to.result !== null;
+    line.setAttribute('stroke', bothDone ? '#1a4a2a' : '#1e293b');
+    line.setAttribute('stroke-width', bothDone ? '2' : '1.5');
     svg.appendChild(line);
   });
+
   dcNodes.forEach(node => {
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     const isActive = node.id === activeId;
-    const color = isActive ? (phase === 'divide' ? '#3b82f6' : phase === 'combine' ? '#34d399' : '#f59e0b') :
-      node.result !== null ? '#1e3a5f' : '#1e293b';
-    const strokeColor = isActive ? (phase === 'divide' ? '#60a5fa' : phase === 'combine' ? '#6ee7b7' : '#fbbf24') : '#374151';
+    const phaseColor = phase === 'divide' ? '#3b82f6' : phase === 'combine' ? '#34d399' : '#f59e0b';
+    const fill = isActive ? phaseColor + '55' :
+      node.result !== null ? '#1a3a2a' : '#1e293b';
+    const stroke = isActive ? phaseColor : node.result !== null ? '#059669' : '#374151';
+    const strokeW = isActive ? 3 : 2;
 
     const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    rect.setAttribute('x', node.x - 32); rect.setAttribute('y', node.y - 16);
-    rect.setAttribute('width', 64); rect.setAttribute('height', 32);
-    rect.setAttribute('rx', 6); rect.setAttribute('fill', color);
-    rect.setAttribute('stroke', strokeColor); rect.setAttribute('stroke-width', isActive ? '2' : '1');
+    rect.setAttribute('x', node.x - 32); rect.setAttribute('y', node.y - 18);
+    rect.setAttribute('width', 64); rect.setAttribute('height', 36); rect.setAttribute('rx', 8);
+    rect.setAttribute('fill', fill); rect.setAttribute('stroke', stroke);
+    rect.setAttribute('stroke-width', strokeW);
+    if (isActive) rect.setAttribute('filter', `url(#glow-${phase === 'divide' ? 'blue' : phase === 'combine' ? 'green' : 'amber'})`);
 
     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    text.setAttribute('x', node.x); text.setAttribute('y', node.y - 3);
-    text.setAttribute('text-anchor', 'middle'); text.setAttribute('fill', '#e0e0f0');
+    text.setAttribute('x', node.x); text.setAttribute('y', node.y - 4);
+    text.setAttribute('text-anchor', 'middle'); text.setAttribute('fill', '#a0c0b0');
     text.setAttribute('font-size', '10'); text.setAttribute('font-family', 'monospace');
     text.textContent = `[${node.lo},${node.hi}]`;
 
@@ -348,44 +362,36 @@ function renderDCTree(activeId, phase) {
     text2.setAttribute('x', node.x); text2.setAttribute('y', node.y + 10);
     text2.setAttribute('text-anchor', 'middle');
     text2.setAttribute('fill', node.result !== null ? '#34d399' : '#4b5563');
-    text2.setAttribute('font-size', '10'); text2.setAttribute('font-family', 'monospace');
-    text2.textContent = node.result !== null ? `=${node.result}` : '?';
+    text2.setAttribute('font-size', '11'); text2.setAttribute('font-family', 'monospace');
+    text2.setAttribute('font-weight', 'bold');
+    text2.textContent = node.result !== null ? `${node.result}` : '?';
 
     g.appendChild(rect); g.appendChild(text); g.appendChild(text2);
     svg.appendChild(g);
   });
 }
 
-// ============================================================
-// MERGE SORT
-// ============================================================
 function genMergeSortSteps() {
   const orig = [38, 27, 43, 3, 9, 82, 10];
   const work = [...orig];
   const steps = [];
-
-  // Pre-build all divide levels
   const levels = [];
   let cur = [work];
   while (cur.some(a => a.length > 1)) {
     levels.push(cur.map(a => [...a]));
     const next = [];
     cur.forEach(a => {
-      if (a.length > 1) {
-        const mid = Math.floor(a.length / 2);
-        next.push(a.slice(0, mid), a.slice(mid));
-      } else { next.push([...a]); }
+      if (a.length > 1) { const mid = Math.floor(a.length / 2); next.push(a.slice(0, mid), a.slice(mid)); }
+      else next.push([...a]);
     });
     cur = next;
   }
-  levels.push(cur.map(a => [...a])); // base level
-
-  // Add divide steps
+  levels.push(cur.map(a => [...a]));
   for (let i = 0; i < levels.length; i++) {
-    steps.push({ phase: 'divide', levels: levels.slice(0, i + 1).map(l => l.map(a => [...a])), desc: `DIVIDE: chia thành ${levels[i].length} đoạn`, codeLine: i === levels.length - 1 ? 3 : 6, cmpDesc: `Level ${i}` });
+    steps.push({ phase: 'divide', levels: levels.slice(0, i+1).map(l => l.map(a => [...a])),
+      desc: `DIVIDE: chia thành ${levels[i].length} đoạn`, codeLine: i === levels.length-1 ? 3 : 6,
+      cmpDesc: `${levels[i].length} blocks` });
   }
-
-  // Merge back up
   let merging = cur.map(a => [...a]);
   const mergeLevels = [merging.map(a => [...a])];
   while (merging.length > 1) {
@@ -394,19 +400,17 @@ function genMergeSortSteps() {
       if (i + 1 < merging.length) {
         const merged = [];
         let li = 0, ri = 0;
-        const L = merging[i], R = merging[i + 1];
-        while (li < L.length && ri < R.length) {
-          if (L[li] <= R[ri]) merged.push(L[li++]);
-          else merged.push(R[ri++]);
-        }
+        const L = merging[i], R = merging[i+1];
+        while (li < L.length && ri < R.length) { if (L[li] <= R[ri]) merged.push(L[li++]); else merged.push(R[ri++]); }
         while (li < L.length) merged.push(L[li++]);
         while (ri < R.length) merged.push(R[ri++]);
         next.push(merged);
-      } else { next.push(merging[i]); }
+      } else next.push(merging[i]);
     }
     merging = next;
     mergeLevels.push(merging.map(a => [...a]));
-    steps.push({ phase: 'combine', mergeLevels: mergeLevels.map(l => l.map(a => [...a])), desc: `COMBINE: merge → ${merging.length} đoạn`, codeLine: 11, cmpDesc: `Merging` });
+    steps.push({ phase: 'combine', mergeLevels: mergeLevels.map(l => l.map(a => [...a])),
+      desc: `COMBINE: merge → ${merging.length} block(s)`, codeLine: 11, cmpDesc: `${merging.length} blocks` });
   }
   steps.push({ phase: 'done', mergeLevels, done: true, desc: `Hoàn thành! [${merging[0].join(', ')}]`, ans: merging[0].join(', ') });
   return steps;
@@ -415,44 +419,37 @@ function genMergeSortSteps() {
 function renderMergeSort(s) {
   const el = document.getElementById('merge-levels');
   el.innerHTML = '';
-  const dataToShow = s.mergeLevels || s.levels || [];
-  dataToShow.forEach((level, li) => {
+  const data = s.mergeLevels || s.levels || [];
+  data.forEach((level, li) => {
     const row = document.createElement('div');
     row.className = 'merge-level';
+    row.style.animationDelay = (li * 0.05) + 's';
     const label = document.createElement('div');
     label.className = 'merge-level-label';
-    label.textContent = s.phase === 'divide' ? `Level ${li} (÷)` : `Merge ${li}`;
+    label.textContent = s.phase === 'divide' ? `Level ${li} (DIVIDE)` : `Merge ${li} (COMBINE)`;
     const blocks = document.createElement('div');
     blocks.className = 'merge-blocks';
-    level.forEach((block, bi) => {
+    level.forEach(block => {
       const bd = document.createElement('div');
-      bd.className = `merge-block ${li === dataToShow.length - 1 ? 'active-block' : ''}`;
+      bd.className = `merge-block ${li === data.length-1 ? (s.phase === 'combine' ? 'active-block' : 'active-block') : ''}`;
       block.forEach(v => {
         const cell = document.createElement('div');
-        cell.className = 'mb-cell';
+        cell.className = 'mb-cell' + (s.phase !== 'divide' && li === data.length-1 ? ' sorted' : '');
         cell.textContent = v;
         bd.appendChild(cell);
       });
       blocks.appendChild(bd);
     });
-    row.appendChild(label);
-    row.appendChild(blocks);
+    row.appendChild(label); row.appendChild(blocks);
     el.appendChild(row);
   });
-
   document.getElementById('mst-phase').textContent = s.phase || '—';
   document.getElementById('mst-cmp').textContent = s.cmpDesc || '—';
   document.getElementById('mst-done').textContent = s.done ? 'Yes' : 'No';
   document.getElementById('mergesort-desc').innerHTML = `<strong>Step:</strong> ${s.desc}`;
-  if (s.done) {
-    document.getElementById('mergesort-result').style.display = 'block';
-    document.getElementById('mergesort-ans').textContent = s.ans;
-  }
+  if (s.done) { document.getElementById('mergesort-result').style.display = 'block'; document.getElementById('mergesort-ans').textContent = s.ans; }
 }
 
-// ============================================================
-// PLAYBACK
-// ============================================================
 function highlightCode(line) {
   document.querySelectorAll('.code-line').forEach((el, i) => el.classList.toggle('hl', i === line));
 }
@@ -483,7 +480,7 @@ function applyStep(s) {
   document.getElementById('info-step').textContent = stepIndex;
 }
 
-function getDelay() { return [900,650,450,280,150][parseInt(document.getElementById('speed-slider').value) - 1]; }
+function getDelay() { return [900,650,450,280,150][parseInt(document.getElementById('speed-slider').value)-1]; }
 
 function stepOnce() {
   if (stepIndex >= steps.length) return;
@@ -498,21 +495,16 @@ function togglePlay() {
   document.getElementById('btn-play').textContent = '⏸ Pause';
   function tick() {
     if (stepIndex >= steps.length) { stopPlay(); return; }
-    stepOnce();
-    timer = setTimeout(tick, getDelay());
+    stepOnce(); timer = setTimeout(tick, getDelay());
   }
   tick();
 }
 
-function stopPlay() {
-  playing = false; clearTimeout(timer);
-  document.getElementById('btn-play').textContent = '▶ Play';
-}
+function stopPlay() { playing = false; clearTimeout(timer); document.getElementById('btn-play').textContent = '▶ Play'; }
 
 function resetAll() {
   stopPlay(); stepIndex = 0;
-  document.getElementById('maxsub-result') && (document.getElementById('maxsub-result').style.display = 'none');
-  document.getElementById('mergesort-result') && (document.getElementById('mergesort-result').style.display = 'none');
+  ['maxsub-result','mergesort-result'].forEach(id => { const el = document.getElementById(id); if(el) el.style.display='none'; });
   initProblem(currentProblem);
 }
 
@@ -529,7 +521,7 @@ function initProblem(prob) {
     document.getElementById('maxsub-desc').textContent = 'Nhấn Play để xem cây chia';
   } else if (prob === 'mergesort') {
     steps = genMergeSortSteps();
-    document.getElementById('merge-levels').innerHTML = '<div style="color:#4b5563;padding:20px;text-align:center;">Nhấn Play...</div>';
+    document.getElementById('merge-levels').innerHTML = '<div style="color:#3a5040;padding:20px;text-align:center;">Nhấn Play...</div>';
     document.getElementById('mergesort-desc').textContent = 'Nhấn Play để bắt đầu';
   }
 }

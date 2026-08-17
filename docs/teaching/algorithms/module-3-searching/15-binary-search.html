@@ -6,106 +6,170 @@
 <title>15 - Tìm Kiếm Nhị Phân (Binary Search)</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; min-height: 100vh; }
-  h1 { text-align: center; padding: 20px; font-size: 1.6rem; color: #80cbc4; letter-spacing: 1px; }
-  .subtitle { text-align: center; color: #90a4ae; margin-bottom: 20px; font-size: 0.95rem; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0a0c14; color: #e0e0e0; min-height: 100vh; }
+
+  @keyframes nodeGlow {
+    0%,100% { box-shadow: 0 0 10px rgba(249,168,37,0.6), inset 0 0 10px rgba(249,168,37,0.15); }
+    50% { box-shadow: 0 0 32px rgba(249,168,37,1), inset 0 0 18px rgba(249,168,37,0.35); }
+  }
+  @keyframes foundGlow {
+    0%,100% { box-shadow: 0 0 14px rgba(102,187,106,0.7), inset 0 0 12px rgba(102,187,106,0.2); }
+    50% { box-shadow: 0 0 40px rgba(102,187,106,1), inset 0 0 22px rgba(102,187,106,0.45); }
+  }
+  @keyframes foundBounce {
+    0% { transform: translateY(0) scale(1); }
+    25% { transform: translateY(-22px) scale(1.12); }
+    50% { transform: translateY(-12px) scale(1.06); }
+    75% { transform: translateY(-20px) scale(1.09); }
+    100% { transform: translateY(-12px) scale(1); }
+  }
+  @keyframes elimFade {
+    from { opacity: 1; filter: grayscale(0); }
+    to { opacity: 0.15; filter: grayscale(100%); }
+  }
+  @keyframes calcBlink {
+    0%,100% { background: linear-gradient(145deg, #f57f17, #f9a825); }
+    50% { background: linear-gradient(145deg, #ff8f00, #ffca28); box-shadow: 0 0 20px rgba(255,213,79,0.8); }
+  }
+  @keyframes calcPop {
+    0% { transform: translateY(-8px) scale(0.8); opacity: 0; }
+    60% { transform: translateY(-14px) scale(1.1); opacity: 1; }
+    100% { transform: translateY(-12px) scale(1); opacity: 1; }
+  }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes sparkle {
+    0% { opacity: 0; transform: scale(0) translateY(0); }
+    50% { opacity: 1; transform: scale(1) translateY(-22px); }
+    100% { opacity: 0; transform: scale(0.4) translateY(-38px); }
+  }
+
+  h1 { text-align: center; padding: 20px; font-size: 1.6rem; background: linear-gradient(135deg, #80cbc4, #26a69a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; }
+  .subtitle { text-align: center; color: #607d8b; margin-bottom: 20px; font-size: 0.95rem; }
 
   .layout { display: grid; grid-template-columns: 1fr 340px; gap: 20px; padding: 0 20px 20px; max-width: 1200px; margin: 0 auto; }
-
   .left-panel { display: flex; flex-direction: column; gap: 16px; }
-  .card { background: #1a1d27; border-radius: 12px; padding: 20px; border: 1px solid #2a2d3e; }
+
+  .card { background: linear-gradient(145deg, #1a1d27, #151821); border-radius: 14px; padding: 20px; border: 1px solid #252836; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
   .card-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: #80cbc4; margin-bottom: 14px; }
 
   .input-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  .input-row input { background: #252836; border: 1px solid #3a3d4e; color: #e0e0e0; padding: 8px 12px; border-radius: 8px; font-size: 0.95rem; width: 200px; }
-  .input-row input:focus { outline: none; border-color: #80cbc4; }
-  .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; }
-  .btn-teal { background: #00695c; color: #fff; } .btn-teal:hover { background: #00796b; }
-  .btn-green { background: #2e7d32; color: #fff; } .btn-green:hover { background: #388e3c; }
-  .btn-gray { background: #37474f; color: #e0e0e0; } .btn-gray:hover { background: #455a64; }
+  .input-row input { background: #1e2130; border: 1px solid #2e3347; color: #e0e0e0; padding: 8px 12px; border-radius: 8px; font-size: 0.95rem; width: 200px; transition: border-color 0.2s; }
+  .input-row input:focus { outline: none; border-color: #80cbc4; box-shadow: 0 0 0 3px rgba(128,203,196,0.15); }
+  .btn { padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; }
+  .btn-teal { background: linear-gradient(135deg, #00695c, #00796b); color: #fff; box-shadow: 0 2px 10px rgba(0,105,92,0.4); }
+  .btn-teal:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,105,92,0.6); }
+  .btn-green { background: linear-gradient(135deg, #2e7d32, #388e3c); color: #fff; }
+  .btn-green:hover { transform: translateY(-1px); }
+  .btn-gray { background: #252836; color: #b0bec5; border: 1px solid #2e3347; }
+  .btn-gray:hover { background: #2e3347; }
 
   /* ARRAY VIZ */
-  .array-wrapper { overflow-x: auto; padding-bottom: 30px; }
+  .array-scene { overflow-x: auto; padding: 8px 0 56px; position: relative; }
   .array-outer { display: flex; flex-direction: column; gap: 0; }
-  .pointer-labels { display: flex; gap: 8px; padding: 0 10px; min-width: max-content; height: 24px; position: relative; }
-  .ptr-label { position: absolute; font-size: 0.72rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; transition: left 0.4s ease; white-space: nowrap; }
-  .ptr-label.low { background: #1565c0; color: #fff; }
-  .ptr-label.mid { background: #f9a825; color: #000; }
-  .ptr-label.high { background: #c62828; color: #fff; }
-  .array-container { display: flex; gap: 8px; min-width: max-content; padding: 6px 10px 8px; }
-  .array-box {
-    width: 60px; height: 60px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem; font-weight: 700; border: 2px solid #3a3d4e; background: #252836; position: relative;
-    transition: background 0.35s, border-color 0.35s, opacity 0.35s, transform 0.3s;
+
+  /* Pointer labels ABOVE array */
+  .ptr-label-row { position: relative; height: 34px; min-width: max-content; padding: 0 10px; }
+  .ptr-label {
+    position: absolute; font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;
+    transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+    white-space: nowrap; top: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   }
-  .array-box .idx { position: absolute; bottom: -20px; font-size: 0.68rem; color: #607d8b; }
+  .ptr-label.low { background: linear-gradient(135deg, #1565c0, #1976d2); color: #fff; }
+  .ptr-label.mid { background: linear-gradient(135deg, #f57f17, #f9a825); color: #000; }
+  .ptr-label.high { background: linear-gradient(135deg, #b71c1c, #c62828); color: #fff; }
+
+  .array-container { display: flex; gap: 10px; min-width: max-content; padding: 4px 10px 8px; }
+  .array-box {
+    width: 64px; height: 64px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; font-weight: 700; border: 2px solid #252836;
+    background: linear-gradient(145deg, #1e2130, #181c28);
+    position: relative; transition: all 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .array-box .idx { position: absolute; bottom: -22px; font-size: 0.68rem; color: #546e7a; }
+
+  .array-box.eliminated {
+    opacity: 0.15 !important; filter: grayscale(100%) !important;
+    background: linear-gradient(145deg, #141720, #111420) !important;
+    border-color: #1e2130 !important;
+    animation: elimFade 0.5s ease forwards;
+  }
+  .array-box.active-range {
+    background: linear-gradient(145deg, #1a2744, #152038) !important;
+    border-color: #1565c0 !important;
+  }
+  .array-box.mid-box {
+    background: linear-gradient(145deg, #f57f17, #f9a825) !important;
+    border-color: #ffd54f !important; color: #000;
+    transform: translateY(-12px);
+    animation: calcBlink 0.5s ease 2, calcPop 0.4s cubic-bezier(0.4,0,0.2,1) forwards;
+  }
   .array-box.low-marker { border-color: #1976d2 !important; }
   .array-box.high-marker { border-color: #c62828 !important; }
-  .array-box.mid-box { background: #f9a825 !important; border-color: #f9a825 !important; color: #000; transform: translateY(-8px); }
-  .array-box.eliminated { opacity: 0.2; background: #1a1d27 !important; border-color: #2a2d3e !important; }
-  .array-box.found { background: #2e7d32 !important; border-color: #66bb6a !important; color: #fff !important; transform: translateY(-10px); animation: found-bounce 0.5s ease; }
-  @keyframes found-bounce { 0%,100%{transform:translateY(-10px)} 50%{transform:translateY(-18px)} }
-  .array-box.active-range { background: #1a2744; border-color: #1565c0; }
+  .array-box.found {
+    background: linear-gradient(145deg, #1b5e20, #2e7d32) !important;
+    border-color: #66bb6a !important; color: #fff !important;
+    animation: foundBounce 0.9s cubic-bezier(0.4,0,0.2,1) forwards, foundGlow 1s ease-in-out infinite 0.9s;
+  }
+
+  /* CALCULATOR popup for mid */
+  .calc-popup {
+    position: absolute; top: -46px; left: 50%; transform: translateX(-50%);
+    background: #1a1d27; border: 1px solid #f9a825; border-radius: 8px;
+    padding: 4px 10px; font-size: 0.68rem; color: #ffd54f; white-space: nowrap;
+    animation: calcPop 0.4s ease forwards;
+    box-shadow: 0 0 12px rgba(249,168,37,0.4);
+    pointer-events: none;
+  }
 
   /* DECISION TREE */
   .tree-section { overflow-x: auto; }
   #decisionTree { width: 100%; min-height: 180px; }
-  .tree-node circle { stroke-width: 2; fill: #252836; stroke: #3a3d4e; transition: fill 0.3s; }
+  .tree-node circle { stroke-width: 2; fill: #1e2130; stroke: #2e3347; transition: fill 0.4s, stroke 0.4s, r 0.3s; }
   .tree-node circle.visited { fill: #1565c0; stroke: #42a5f5; }
-  .tree-node circle.current { fill: #f9a825; stroke: #ffd54f; }
-  .tree-node circle.found-node { fill: #2e7d32; stroke: #66bb6a; }
+  .tree-node circle.current { fill: #f9a825; stroke: #ffd54f; filter: drop-shadow(0 0 8px rgba(249,168,37,0.8)); }
+  .tree-node circle.found-node { fill: #2e7d32; stroke: #66bb6a; filter: drop-shadow(0 0 10px rgba(102,187,106,0.8)); }
   .tree-node text { fill: #e0e0e0; font-size: 11px; text-anchor: middle; dominant-baseline: central; }
-  .tree-edge { stroke: #3a3d4e; stroke-width: 1.5; fill: none; }
+  .tree-edge { stroke: #2e3347; stroke-width: 1.5; fill: none; transition: stroke 0.4s; }
   .tree-edge.active { stroke: #42a5f5; stroke-width: 2.5; }
-  .tree-label { font-size: 9px; fill: #607d8b; }
 
-  /* STATS */
   .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  .stat-box { background: #252836; border-radius: 10px; padding: 12px; text-align: center; border: 1px solid #2a2d3e; }
-  .stat-num { font-size: 1.6rem; font-weight: 700; color: #80cbc4; }
-  .stat-label { font-size: 0.7rem; color: #90a4ae; margin-top: 3px; }
+  .stat-box { background: #1e2130; border-radius: 12px; padding: 12px; text-align: center; border: 1px solid #252836; }
+  .stat-num { font-size: 1.6rem; font-weight: 700; background: linear-gradient(135deg, #80cbc4, #26a69a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .stat-label { font-size: 0.7rem; color: #607d8b; margin-top: 3px; }
 
-  /* COMPLEXITY */
   .complexity-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .comp-item { background: #252836; border-radius: 8px; padding: 12px; border-left: 3px solid; }
-  .comp-item.best { border-color: #66bb6a; }
-  .comp-item.worst { border-color: #ef5350; }
-  .comp-item.avg { border-color: #ffd54f; }
-  .comp-item.space { border-color: #ce93d8; }
-  .comp-label { font-size: 0.72rem; color: #90a4ae; }
+  .comp-item { background: #1e2130; border-radius: 10px; padding: 12px; border-left: 3px solid; }
+  .comp-item.best { border-color: #66bb6a; } .comp-item.worst { border-color: #ef5350; }
+  .comp-item.avg { border-color: #ffd54f; } .comp-item.space { border-color: #ce93d8; }
+  .comp-label { font-size: 0.72rem; color: #78909c; }
   .comp-val { font-size: 1.1rem; font-weight: 700; margin-top: 4px; font-family: monospace; }
-  .comp-item.best .comp-val { color: #66bb6a; }
-  .comp-item.worst .comp-val { color: #ef5350; }
-  .comp-item.avg .comp-val { color: #ffd54f; }
-  .comp-item.space .comp-val { color: #ce93d8; }
+  .comp-item.best .comp-val { color: #66bb6a; } .comp-item.worst .comp-val { color: #ef5350; }
+  .comp-item.avg .comp-val { color: #ffd54f; } .comp-item.space .comp-val { color: #ce93d8; }
 
-  .explanation-box { background: #252836; border-radius: 10px; padding: 14px; min-height: 60px; border-left: 3px solid #80cbc4; font-size: 0.9rem; line-height: 1.6; }
+  .explanation-box { background: #1e2130; border-radius: 12px; padding: 16px; min-height: 64px; border-left: 3px solid #80cbc4; font-size: 0.9rem; line-height: 1.7; }
 
   .controls { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   .speed-row { display: flex; align-items: center; gap: 10px; margin-left: auto; }
-  .speed-row label { font-size: 0.8rem; color: #90a4ae; }
+  .speed-row label { font-size: 0.8rem; color: #78909c; }
   input[type=range] { accent-color: #80cbc4; width: 100px; }
 
   .right-panel { display: flex; flex-direction: column; gap: 16px; }
+  .code-panel { background: linear-gradient(145deg, #141720, #111420); border-radius: 14px; padding: 20px; border: 1px solid #1e2130; font-family: 'Courier New', monospace; font-size: 0.82rem; }
+  .code-line { padding: 4px 10px; border-radius: 6px; line-height: 1.8; white-space: pre; transition: background 0.25s, transform 0.2s; }
+  .code-line.active { background: linear-gradient(135deg, #00695c, #004d40); color: #fff; transform: translateX(4px); box-shadow: 0 0 12px rgba(0,105,92,0.4); }
+  .kw { color: #ce93d8; } .fn { color: #80cbc4; } .cm { color: #455a64; } .num { color: #ffcc02; }
 
-  .code-panel { background: #1a1d27; border-radius: 12px; padding: 20px; border: 1px solid #2a2d3e; font-family: 'Courier New', monospace; font-size: 0.82rem; }
-  .code-line { padding: 3px 8px; border-radius: 4px; line-height: 1.7; white-space: pre; transition: background 0.2s; }
-  .code-line.active { background: #00695c; color: #fff; }
-  .kw { color: #ce93d8; }
-  .fn { color: #80cbc4; }
-  .cm { color: #546e7a; }
-  .num { color: #ffcc02; }
-
-  .trace-log { background: #1a1d27; border-radius: 12px; padding: 14px; border: 1px solid #2a2d3e; max-height: 220px; overflow-y: auto; }
+  .trace-log { background: #141720; border-radius: 12px; padding: 14px; border: 1px solid #1e2130; max-height: 230px; overflow-y: auto; }
   .trace-log::-webkit-scrollbar { width: 5px; }
-  .trace-log::-webkit-scrollbar-thumb { background: #37474f; border-radius: 3px; }
-  .trace-entry { font-size: 0.79rem; padding: 4px 0; border-bottom: 1px solid #2a2d3e; color: #90a4ae; }
+  .trace-log::-webkit-scrollbar-thumb { background: #2e3347; border-radius: 3px; }
+  .trace-entry { font-size: 0.79rem; padding: 5px 0; border-bottom: 1px solid #1e2130; color: #78909c; animation: slideDown 0.2s ease; }
   .trace-entry.found { color: #66bb6a; font-weight: 600; }
   .trace-entry.nf { color: #ef5350; }
 
   .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #90a4ae; }
-  .legend-dot { width: 14px; height: 14px; border-radius: 4px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #78909c; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 5px; }
 </style>
 </head>
 <body>
@@ -115,7 +179,6 @@
 <div class="layout">
   <div class="left-panel">
 
-    <!-- INPUT -->
     <div class="card">
       <div class="card-title">⚙ Cấu hình</div>
       <div class="input-row">
@@ -126,31 +189,28 @@
       </div>
     </div>
 
-    <!-- ARRAY VIZ -->
     <div class="card">
-      <div class="card-title">📊 Mảng đã sắp xếp & Con trỏ Low / Mid / High</div>
-      <div class="array-wrapper">
+      <div class="card-title">📊 Mảng đã sắp xếp & Pointer Low / Mid / High</div>
+      <div class="array-scene">
         <div class="array-outer">
-          <div style="position:relative;height:28px" id="ptrLabelRow"></div>
+          <div class="ptr-label-row" id="ptrLabelRow"></div>
           <div class="array-container" id="arrayContainer"></div>
         </div>
       </div>
       <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#1565c0"></div> Low</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#f9a825"></div> Mid (đang so sánh)</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#c62828"></div> High</div>
-        <div class="legend-item"><div class="legend-dot" style="opacity:0.2;background:#252836;border:1px solid #3a3d4e"></div> Đã loại</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#2e7d32"></div> Tìm thấy</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#1565c0"></div>Low</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f9a825"></div>Mid (đang so sánh)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#c62828"></div>High</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#1e2130;border:1px solid #2e3347;opacity:0.3"></div>Đã loại</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#2e7d32"></div>Tìm thấy</div>
       </div>
     </div>
 
-    <!-- DECISION TREE -->
     <div class="card tree-section">
       <div class="card-title">🌲 Cây quyết định (Decision Tree)</div>
       <svg id="decisionTree"></svg>
     </div>
 
-    <!-- CONTROLS -->
     <div class="card">
       <div class="card-title">🎮 Điều khiển</div>
       <div class="controls">
@@ -165,7 +225,6 @@
       </div>
     </div>
 
-    <!-- STATS -->
     <div class="card">
       <div class="card-title">📈 Thống kê</div>
       <div class="stats-grid">
@@ -176,22 +235,20 @@
       </div>
     </div>
 
-    <!-- COMPLEXITY -->
     <div class="card">
-      <div class="card-title">⏱ Độ phức tạp Big-O — So sánh với Linear Search</div>
+      <div class="card-title">⏱ Độ phức tạp Big-O</div>
       <div class="complexity-grid">
-        <div class="comp-item best"><div class="comp-label">Tốt nhất</div><div class="comp-val">O(1)</div><div style="font-size:0.73rem;color:#90a4ae;margin-top:4px">Target ở chính giữa mảng ngay lần đầu</div></div>
-        <div class="comp-item worst"><div class="comp-label">Xấu nhất</div><div class="comp-val">O(log n)</div><div style="font-size:0.73rem;color:#90a4ae;margin-top:4px">n=1024 → tối đa 10 bước! (log₂1024=10)</div></div>
-        <div class="comp-item avg"><div class="comp-label">Trung bình</div><div class="comp-val">O(log n)</div><div style="font-size:0.73rem;color:#90a4ae;margin-top:4px">Giảm nửa không gian tìm mỗi bước</div></div>
-        <div class="comp-item space"><div class="comp-label">Không gian</div><div class="comp-val">O(1)</div><div style="font-size:0.73rem;color:#90a4ae;margin-top:4px">Chỉ cần 3 biến: low, mid, high</div></div>
+        <div class="comp-item best"><div class="comp-label">Tốt nhất</div><div class="comp-val">O(1)</div><div style="font-size:0.73rem;color:#78909c;margin-top:4px">Target ở chính giữa ngay lần đầu</div></div>
+        <div class="comp-item worst"><div class="comp-label">Xấu nhất</div><div class="comp-val">O(log n)</div><div style="font-size:0.73rem;color:#78909c;margin-top:4px">n=1024 → tối đa 10 bước!</div></div>
+        <div class="comp-item avg"><div class="comp-label">Trung bình</div><div class="comp-val">O(log n)</div><div style="font-size:0.73rem;color:#78909c;margin-top:4px">Giảm nửa không gian tìm mỗi bước</div></div>
+        <div class="comp-item space"><div class="comp-label">Không gian</div><div class="comp-val">O(1)</div><div style="font-size:0.73rem;color:#78909c;margin-top:4px">Chỉ cần 3 biến: low, mid, high</div></div>
       </div>
-      <div style="background:#252836;border-radius:8px;padding:12px;margin-top:10px;font-size:0.82rem;color:#b0bec5">
-        <strong style="color:#80cbc4">Ví dụ sức mạnh logarithm:</strong><br>
+      <div style="background:#1e2130;border-radius:10px;padding:12px;margin-top:10px;font-size:0.82rem;color:#b0bec5">
+        <strong style="color:#80cbc4">Sức mạnh logarithm:</strong><br>
         n=1,000 → max <strong style="color:#66bb6a">10</strong> bước | n=1,000,000 → max <strong style="color:#66bb6a">20</strong> bước | n=1 tỷ → max <strong style="color:#66bb6a">30</strong> bước
       </div>
     </div>
 
-    <!-- EXPLANATION -->
     <div class="card">
       <div class="card-title">💬 Giải thích bước hiện tại</div>
       <div class="explanation-box" id="explanation">Nhập mảng đã sắp xếp và giá trị cần tìm, sau đó nhấn "Bắt đầu".</div>
@@ -199,9 +256,7 @@
 
   </div>
 
-  <!-- RIGHT PANEL -->
   <div class="right-panel">
-
     <div class="code-panel">
       <div class="card-title" style="margin-bottom:12px">📝 Mã nguồn</div>
       <div class="code-line" id="cl0"><span class="kw">function</span> <span class="fn">binarySearch</span>(arr, target) {</div>
@@ -215,9 +270,9 @@
       <div class="code-line" id="cl8">    <span class="kw">if</span> (arr[mid] === target) {</div>
       <div class="code-line" id="cl9">      <span class="kw">return</span> mid; <span class="cm">// Tìm thấy!</span></div>
       <div class="code-line" id="cl10">    } <span class="kw">else if</span> (arr[mid] &lt; target) {</div>
-      <div class="code-line" id="cl11">      low = mid + <span class="num">1</span>; <span class="cm">// Tìm nửa phải</span></div>
+      <div class="code-line" id="cl11">      low = mid + <span class="num">1</span>; <span class="cm">// Nửa phải</span></div>
       <div class="code-line" id="cl12">    } <span class="kw">else</span> {</div>
-      <div class="code-line" id="cl13">      high = mid - <span class="num">1</span>; <span class="cm">// Tìm nửa trái</span></div>
+      <div class="code-line" id="cl13">      high = mid - <span class="num">1</span>; <span class="cm">// Nửa trái</span></div>
       <div class="code-line" id="cl14">    }</div>
       <div class="code-line" id="cl15">  }</div>
       <div class="code-line" id="cl16">  <span class="kw">return</span> -<span class="num">1</span>; <span class="cm">// Không tìm thấy</span></div>
@@ -234,13 +289,12 @@
       <div style="font-size:0.82rem;line-height:1.9;color:#b0bec5">
         <div>✅ Mảng <strong style="color:#80cbc4">đã sắp xếp</strong> → Binary Search</div>
         <div>✅ Tập dữ liệu <strong style="color:#80cbc4">lớn</strong> → Binary nhanh hơn rất nhiều</div>
-        <div>✅ <strong style="color:#80cbc4">Database index, dictionary</strong> dùng kỹ thuật này</div>
-        <div>❌ Mảng chưa sắp xếp → phải sort trước (O(n log n))</div>
-        <div>❌ Linked list → không dùng được (O(1) random access cần)</div>
-        <div style="margin-top:8px;color:#ffd54f">⚡ Phải dùng <code>(high-low)/2</code> không dùng <code>(low+high)/2</code> để tránh integer overflow!</div>
+        <div>✅ <strong style="color:#80cbc4">Database index, dictionary</strong></div>
+        <div>❌ Mảng chưa sắp xếp → phải sort trước</div>
+        <div>❌ Linked list → không dùng được</div>
+        <div style="margin-top:8px;color:#ffd54f">⚡ Dùng <code>(high-low)/2</code> không phải <code>(low+high)/2</code> để tránh overflow!</div>
       </div>
     </div>
-
   </div>
 </div>
 
@@ -249,11 +303,12 @@ let arr = [], target = 0;
 let steps = [], stepIdx = 0;
 let playing = false, timer = null;
 let treeNodes = [];
+const BOX_W = 74;
 
 function getSpeed() {
   const v = parseInt(document.getElementById('speedSlider').value);
   document.getElementById('speedLabel').textContent = v + 'x';
-  return [1400, 1000, 650, 350, 150][v - 1];
+  return [1500, 1050, 650, 340, 140][v - 1];
 }
 document.getElementById('speedSlider').addEventListener('input', getSpeed);
 
@@ -273,7 +328,7 @@ function initSearch() {
   target = parseInt(document.getElementById('targetInput').value);
   if (!arr.length || isNaN(target)) return;
   buildSteps();
-  buildDecisionTree();
+  buildTreeLayout(0, arr.length - 1, null, null);
   stepIdx = 0;
   renderStep(steps[0]);
   document.getElementById('traceLog').innerHTML = '';
@@ -300,27 +355,6 @@ function buildSteps() {
   steps.push({ low, high: -1, mid: -1, phase: 'notfound', code: 16 });
 }
 
-function buildDecisionTree() {
-  treeNodes = [];
-  let low = 0, high = arr.length - 1, depth = 0;
-  const buildNode = (l, h, px, py, side) => {
-    if (l > h) return null;
-    const mid = l + Math.floor((h - l) / 2);
-    const id = treeNodes.length;
-    const x = px !== null ? (side === 'left' ? px - 80 / (depth + 1) : px + 80 / (depth + 1)) : 50;
-    const y = py !== null ? py + 50 : 30;
-    treeNodes.push({ id, val: arr[mid], mid, l, h, x, y, parentId: px !== null ? treeNodes.length - 1 - 0 : null, visited: false, current: false });
-    depth++;
-    buildNode(l, mid - 1, x, y, 'left');
-    buildNode(mid + 1, h, x, y, 'right');
-    depth--;
-    return id;
-  };
-  renderDecisionTree(-1, -1);
-  buildTreeLayout(0, arr.length - 1, null, null);
-  renderDecisionTree(-1, -1);
-}
-
 function buildTreeLayout(l, h, parentNode, side) {
   if (l > h) return null;
   const mid = l + Math.floor((h - l) / 2);
@@ -339,7 +373,7 @@ function buildTreeLayout(l, h, parentNode, side) {
   return node;
 }
 
-function renderDecisionTree(currentMid, stepPhase) {
+function renderDecisionTree() {
   const svg = document.getElementById('decisionTree');
   if (!treeNodes.length) { svg.innerHTML = ''; return; }
   const W = svg.parentElement.clientWidth || 600;
@@ -349,7 +383,6 @@ function renderDecisionTree(currentMid, stepPhase) {
   svg.setAttribute('height', H);
   svg.innerHTML = '';
 
-  // Normalize x positions
   const xs = treeNodes.map(n => n.x);
   const minX = Math.min(...xs), maxX = Math.max(...xs);
   const scaleX = n => ((n.x - minX) / (maxX - minX || 1)) * 88 + 6;
@@ -357,23 +390,19 @@ function renderDecisionTree(currentMid, stepPhase) {
   const minY = Math.min(...ys), maxY = Math.max(...ys);
   const scaleY = n => ((n.y - minY) / (maxY - minY || 1)) * (H / (W / 100) - 12) + 8;
 
-  // Draw edges
   treeNodes.forEach(node => {
     if (node.parentId !== null) {
       const parent = treeNodes[node.parentId];
       if (parent) {
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', scaleX(parent));
-        line.setAttribute('y1', scaleY(parent));
-        line.setAttribute('x2', scaleX(node));
-        line.setAttribute('y2', scaleY(node));
+        line.setAttribute('x1', scaleX(parent)); line.setAttribute('y1', scaleY(parent));
+        line.setAttribute('x2', scaleX(node)); line.setAttribute('y2', scaleY(node));
         line.setAttribute('class', node.visited && parent.visited ? 'tree-edge active' : 'tree-edge');
         svg.appendChild(line);
       }
     }
   });
 
-  // Draw nodes
   treeNodes.forEach(node => {
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     g.setAttribute('class', 'tree-node');
@@ -388,7 +417,6 @@ function renderDecisionTree(currentMid, stepPhase) {
     g.appendChild(circ);
     const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     txt.setAttribute('x', cx); txt.setAttribute('y', cy);
-    txt.setAttribute('class', 'tree-node text');
     txt.setAttribute('style', 'fill:#e0e0e0;font-size:4px;text-anchor:middle;dominant-baseline:central');
     txt.textContent = node.val;
     g.appendChild(txt);
@@ -398,14 +426,13 @@ function renderDecisionTree(currentMid, stepPhase) {
 
 function renderStep(step) {
   if (!step) return;
+
   for (let k = 0; k <= 17; k++) document.getElementById('cl' + k).classList.remove('active');
   document.getElementById('cl' + step.code).classList.add('active');
 
   // Render array
   const container = document.getElementById('arrayContainer');
   container.innerHTML = '';
-  const ptrRow = document.getElementById('ptrLabelRow');
-  ptrRow.innerHTML = '';
   arr.forEach((val, idx) => {
     const box = document.createElement('div');
     box.className = 'array-box';
@@ -416,29 +443,44 @@ function renderStep(step) {
     box.appendChild(idxLabel);
 
     if (step.phase !== 'init' && step.phase !== 'notfound') {
-      if (idx < step.low || idx > step.high) box.classList.add('eliminated');
-      else if (idx === step.mid) {
-        if (step.phase === 'found') box.classList.add('found');
-        else box.classList.add('mid-box');
-      } else box.classList.add('active-range');
+      if (idx < step.low || idx > step.high) {
+        box.classList.add('eliminated');
+      } else if (idx === step.mid) {
+        if (step.phase === 'found') {
+          box.classList.add('found');
+          // Calculator popup
+          const popup = document.createElement('div');
+          popup.className = 'calc-popup';
+          popup.textContent = `mid=${step.mid} ✓`;
+          box.appendChild(popup);
+        } else {
+          box.classList.add('mid-box');
+          // Calculator popup
+          const popup = document.createElement('div');
+          popup.className = 'calc-popup';
+          popup.textContent = `${step.low}+⌊(${step.high}-${step.low})/2⌋=${step.mid}`;
+          box.appendChild(popup);
+        }
+      } else {
+        box.classList.add('active-range');
+      }
       if (idx === step.low) box.classList.add('low-marker');
       if (idx === step.high) box.classList.add('high-marker');
     }
     container.appendChild(box);
   });
 
-  // Pointer labels
-  const BOX_W = 68; // 60 + 8 gap
+  // Pointer labels (smoothly sliding)
+  const ptrRow = document.getElementById('ptrLabelRow');
+  ptrRow.innerHTML = '';
   const offset = 10;
   if (step.phase !== 'init' && step.mid >= 0) {
-    ['low', 'mid', 'high'].forEach(type => {
-      const i = type === 'low' ? step.low : type === 'high' ? step.high : step.mid;
+    [['low', step.low], ['mid', step.mid], ['high', step.high]].forEach(([type, i]) => {
       if (i < 0 || i >= arr.length) return;
       const lbl = document.createElement('div');
       lbl.className = 'ptr-label ' + type;
       lbl.textContent = type.toUpperCase() + '=' + i;
       lbl.style.left = (offset + i * BOX_W) + 'px';
-      lbl.style.top = '2px';
       ptrRow.appendChild(lbl);
     });
   }
@@ -450,7 +492,7 @@ function renderStep(step) {
   const comps = steps.slice(0, stepIdx + 1).filter(s => s.phase === 'calc-mid').length;
   document.getElementById('statComp').textContent = comps;
 
-  // Update decision tree
+  // Tree update
   treeNodes.forEach(n => { n.current = false; n.found = false; });
   if (step.mid >= 0) {
     const tn = treeNodes.find(n => n.mid === step.mid && n.l === step.low && n.h === step.high);
@@ -459,22 +501,21 @@ function renderStep(step) {
       tn.current = step.phase !== 'found';
       tn.found = step.phase === 'found';
     }
-    // Mark ancestors visited
     steps.slice(0, stepIdx).filter(s => s.mid >= 0).forEach(s => {
       const node = treeNodes.find(n => n.mid === s.mid);
       if (node) node.visited = true;
     });
   }
-  renderDecisionTree(step.mid, step.phase);
+  renderDecisionTree();
 
   // Explanation
   const expls = {
-    init: `🚀 Khởi tạo: <strong style="color:#1976d2">low=0</strong>, <strong style="color:#c62828">high=${arr.length - 1}</strong>. Mảng đã sắp xếp tăng dần. Target cần tìm: <strong style="color:#ffd54f">${target}</strong>.`,
+    init: `🚀 Khởi tạo: <strong style="color:#1976d2">low=0</strong>, <strong style="color:#c62828">high=${arr.length - 1}</strong>. Mảng đã sắp xếp tăng dần. Target: <strong style="color:#ffd54f">${target}</strong>.`,
     'calc-mid': `🔢 Tính mid = ${step.low} + ⌊(${step.high}-${step.low})/2⌋ = <strong style="color:#f9a825">${step.mid}</strong>. arr[${step.mid}] = <strong style="color:#f9a825">${arr[step.mid]}</strong>. So sánh với target = <strong style="color:#ffd54f">${target}</strong>...`,
-    'go-right': `➡ arr[${step.mid}]=${arr[step.mid]} < ${target}. Target ở <strong style="color:#80cbc4">nửa phải</strong>. Loại bỏ tất cả phần tử ≤ mid. Đặt <strong style="color:#1976d2">low = ${step.mid + 1}</strong>.`,
-    'go-left': `⬅ arr[${step.mid}]=${arr[step.mid]} > ${target}. Target ở <strong style="color:#80cbc4">nửa trái</strong>. Loại bỏ tất cả phần tử ≥ mid. Đặt <strong style="color:#c62828">high = ${step.mid - 1}</strong>.`,
-    found: `✅ <strong style="color:#66bb6a">TÌM THẤY!</strong> arr[${step.mid}] = ${arr[step.mid]} = target. Trả về chỉ số <strong style="color:#66bb6a">${step.mid}</strong>. Tổng số lần so sánh: <strong>${steps.slice(0, stepIdx + 1).filter(s => s.phase === 'calc-mid').length}</strong>. Nếu Linear Search cần tối đa ${arr.length} bước.`,
-    notfound: `🔚 <strong style="color:#ef5350">Không tìm thấy</strong> ${target}. low > high → không gian tìm kiếm rỗng. Trả về -1. Đã thực hiện ${steps.filter(s => s.phase === 'calc-mid').length} lần so sánh cho ${arr.length} phần tử.`
+    'go-right': `➡ arr[${step.mid}]=${arr[step.mid]} < ${target}. Target ở <strong style="color:#80cbc4">nửa phải</strong>. Đặt <strong style="color:#1976d2">low = ${step.mid + 1}</strong>. Loại bỏ ${step.mid + 1} phần tử bên trái.`,
+    'go-left': `⬅ arr[${step.mid}]=${arr[step.mid]} > ${target}. Target ở <strong style="color:#80cbc4">nửa trái</strong>. Đặt <strong style="color:#c62828">high = ${step.mid - 1}</strong>. Loại bỏ ${arr.length - step.mid} phần tử bên phải.`,
+    found: `✅ <strong style="color:#66bb6a">TÌM THẤY!</strong> arr[${step.mid}] = ${arr[step.mid]} = target. Chỉ số: <strong style="color:#66bb6a">${step.mid}</strong>. Chỉ ${comps} lần so sánh thay vì tối đa ${arr.length} (linear search)!`,
+    notfound: `🔚 <strong style="color:#ef5350">Không tìm thấy</strong> ${target}. low > high → không gian tìm kiếm rỗng. Chỉ ${steps.filter(s => s.phase === 'calc-mid').length} lần so sánh.`
   };
   document.getElementById('explanation').innerHTML = expls[step.phase] || '';
 
@@ -485,8 +526,8 @@ function renderStep(step) {
     entry.className = 'trace-entry' + (step.phase === 'found' ? ' found' : step.phase === 'notfound' ? ' nf' : '');
     const msgs = {
       'calc-mid': `[B${comps}] low=${step.low} high=${step.high} → mid=${step.mid} arr[mid]=${arr[step.mid]}`,
-      'go-right': `    → ${arr[step.mid]} < ${target}: tìm nửa PHẢI, low→${step.mid + 1}`,
-      'go-left': `    → ${arr[step.mid]} > ${target}: tìm nửa TRÁI, high→${step.mid - 1}`,
+      'go-right': `    → ${arr[step.mid]} < ${target}: nửa PHẢI, low→${step.mid + 1}`,
+      'go-left': `    → ${arr[step.mid]} > ${target}: nửa TRÁI, high→${step.mid - 1}`,
       found: `✓ arr[${step.mid}]=${arr[step.mid]} == ${target} → TÌM THẤY index ${step.mid}`,
       notfound: `✗ Không tìm thấy ${target}, return -1`
     };
@@ -502,9 +543,7 @@ function stepForward() {
   if (stepIdx >= steps.length - 1) stopPlaying();
 }
 
-function togglePlayPause() {
-  playing ? stopPlaying() : startPlaying();
-}
+function togglePlayPause() { playing ? stopPlaying() : startPlaying(); }
 function startPlaying() {
   if (stepIdx >= steps.length - 1) return;
   playing = true;
@@ -523,7 +562,7 @@ function resetSearch() {
 }
 
 window.onload = () => { initSearch(); };
-window.addEventListener('resize', () => renderDecisionTree(-1, -1));
+window.addEventListener('resize', () => renderDecisionTree());
 </script>
 </body>
 </html>

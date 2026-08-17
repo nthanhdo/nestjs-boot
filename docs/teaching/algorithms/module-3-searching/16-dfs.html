@@ -6,102 +6,132 @@
 <title>16 - Tìm Kiếm Theo Chiều Sâu (DFS)</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; min-height: 100vh; }
-  h1 { text-align: center; padding: 18px; font-size: 1.5rem; color: #ce93d8; }
-  .subtitle { text-align: center; color: #90a4ae; margin-bottom: 16px; font-size: 0.9rem; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0a0c14; color: #e0e0e0; min-height: 100vh; }
+
+  @keyframes nodeGlow {
+    0%,100% { filter: drop-shadow(0 0 6px rgba(249,168,37,0.5)); }
+    50% { filter: drop-shadow(0 0 22px rgba(249,168,37,1)); }
+  }
+  @keyframes rippleOut {
+    0% { r: 22; opacity: 0.8; }
+    100% { r: 42; opacity: 0; }
+  }
+  @keyframes edgeDraw {
+    from { stroke-dashoffset: 200; }
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes stackSlideIn {
+    from { opacity: 0; transform: translateY(-12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes stackSlideOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(12px) scale(0.9); }
+  }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes finishPulse {
+    0% { filter: drop-shadow(0 0 4px rgba(66,165,245,0.4)); }
+    50% { filter: drop-shadow(0 0 16px rgba(66,165,245,0.9)); }
+    100% { filter: drop-shadow(0 0 6px rgba(66,165,245,0.5)); }
+  }
+
+  h1 { text-align: center; padding: 18px; font-size: 1.5rem; background: linear-gradient(135deg, #ce93d8, #ab47bc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { text-align: center; color: #607d8b; margin-bottom: 16px; font-size: 0.9rem; }
 
   .layout { display: grid; grid-template-columns: 1fr 320px; gap: 16px; padding: 0 16px 20px; max-width: 1200px; margin: 0 auto; }
 
-  .card { background: #1a1d27; border-radius: 12px; padding: 16px; border: 1px solid #2a2d3e; }
+  .card { background: linear-gradient(145deg, #1a1d27, #151821); border-radius: 14px; padding: 16px; border: 1px solid #252836; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
   .card-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 2px; color: #ce93d8; margin-bottom: 12px; }
 
   .btn { padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s; }
-  .btn-purple { background: #6a1b9a; color: #fff; } .btn-purple:hover { background: #7b1fa2; }
-  .btn-green { background: #2e7d32; color: #fff; } .btn-green:hover { background: #388e3c; }
-  .btn-gray { background: #37474f; color: #e0e0e0; } .btn-gray:hover { background: #455a64; }
-  .btn-sm { padding: 5px 10px; font-size: 0.8rem; }
+  .btn-purple { background: linear-gradient(135deg, #6a1b9a, #7b1fa2); color: #fff; box-shadow: 0 2px 10px rgba(106,27,154,0.4); }
+  .btn-purple:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(106,27,154,0.6); }
+  .btn-green { background: linear-gradient(135deg, #2e7d32, #388e3c); color: #fff; }
+  .btn-green:hover { transform: translateY(-1px); }
+  .btn-gray { background: #1e2130; color: #b0bec5; border: 1px solid #252836; }
+  .btn-gray:hover { background: #252836; }
+  .btn-sm { padding: 5px 10px; font-size: 0.79rem; }
 
   .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .speed-row { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-  .speed-row label { font-size: 0.78rem; color: #90a4ae; }
+  .speed-row label { font-size: 0.78rem; color: #78909c; }
   input[type=range] { accent-color: #ce93d8; width: 90px; }
 
   /* GRAPH SVG */
-  #graphSvg { width: 100%; background: #12151f; border-radius: 10px; border: 1px solid #2a2d3e; cursor: pointer; }
-  .graph-node { cursor: pointer; }
-  .graph-node circle { stroke-width: 2.5; transition: fill 0.3s, stroke 0.3s; }
-  .graph-node text { font-size: 13px; font-weight: 700; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
-  .graph-edge { stroke: #3a3d4e; stroke-width: 2; transition: stroke 0.3s; fill: none; }
-  .graph-edge.tree-edge { stroke: #42a5f5; stroke-width: 3; }
-  .graph-edge.back-edge { stroke: #ef5350; stroke-width: 2.5; stroke-dasharray: 6,3; }
-  .graph-edge.fwd-edge { stroke: #ffd54f; stroke-width: 2; stroke-dasharray: 4,2; }
-  .graph-edge.cross-edge { stroke: #ce93d8; stroke-width: 2; stroke-dasharray: 3,3; }
+  #graphSvg { width: 100%; background: #0d1018; border-radius: 12px; border: 1px solid #1e2130; cursor: pointer; }
 
-  /* Node states */
-  .n-unvisited circle { fill: #252836; stroke: #546e7a; }
-  .n-unvisited text { fill: #90a4ae; }
-  .n-visiting circle { fill: #f9a825; stroke: #ffd54f; }
-  .n-visiting text { fill: #000; }
-  .n-visited circle { fill: #1565c0; stroke: #42a5f5; }
-  .n-visited text { fill: #fff; }
-  .n-start circle { fill: #6a1b9a; stroke: #ce93d8; }
-  .n-start text { fill: #fff; }
-  .n-found circle { fill: #2e7d32; stroke: #66bb6a; }
-  .n-found text { fill: #fff; }
-  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.18)} }
-  .n-visiting .node-g { animation: pulse 0.6s ease infinite; }
+  /* Node states via JS-applied classes */
+  .gnode-unvisited circle { fill: url(#gradUnvisited); stroke: #37474f; stroke-width: 2.5; }
+  .gnode-unvisited text { fill: #78909c; }
+  .gnode-visiting circle { fill: url(#gradVisiting); stroke: #ffd54f; stroke-width: 3; filter: drop-shadow(0 0 14px rgba(249,168,37,0.8)); }
+  .gnode-visiting text { fill: #000; font-weight: 900; }
+  .gnode-visited circle { fill: url(#gradVisited); stroke: #42a5f5; stroke-width: 2.5; }
+  .gnode-visited text { fill: #fff; }
+  .gnode-start circle { fill: url(#gradStart); stroke: #ce93d8; stroke-width: 3; }
+  .gnode-start text { fill: #fff; }
+  .gnode-done circle { fill: url(#gradDone); stroke: #42a5f5; stroke-width: 2.5; animation: finishPulse 2s ease-in-out; }
+  .gnode-done text { fill: #fff; }
+
+  .gedge { stroke: #2e3347; stroke-width: 2; fill: none; transition: stroke 0.35s, stroke-width 0.35s; }
+  .gedge-tree { stroke: #42a5f5; stroke-width: 3.5; stroke-dasharray: 200; stroke-dashoffset: 0; animation: edgeDraw 0.5s ease-out forwards; }
+  .gedge-back { stroke: #ef5350; stroke-width: 3; stroke-dasharray: 7,4; }
+  .gedge-fwd { stroke: #ffd54f; stroke-width: 2.5; stroke-dasharray: 4,3; }
+  .gedge-cross { stroke: #ce93d8; stroke-width: 2; stroke-dasharray: 3,3; }
 
   /* STACK VIZ */
-  .stack-container { display: flex; flex-direction: column-reverse; gap: 4px; min-height: 40px; }
+  .stack-wrapper { min-height: 60px; display: flex; flex-direction: column; gap: 4px; }
   .stack-item {
-    background: #252836; border: 1px solid #ce93d8; border-radius: 6px; padding: 6px 12px;
+    background: linear-gradient(135deg, #1e2130, #252836);
+    border: 1px solid #ce93d8; border-radius: 8px; padding: 7px 14px;
     font-size: 0.85rem; font-weight: 700; text-align: center; color: #ce93d8;
-    transition: all 0.3s; animation: slideIn 0.2s ease;
+    animation: stackSlideIn 0.25s ease;
+    transition: all 0.25s;
   }
-  @keyframes slideIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-  .stack-item.top { background: #4a148c; border-color: #ce93d8; color: #fff; }
-  .stack-empty { color: #546e7a; font-size: 0.8rem; text-align: center; padding: 8px; }
+  .stack-item.top {
+    background: linear-gradient(135deg, #4a148c, #6a1b9a);
+    border-color: #ce93d8; color: #fff;
+    box-shadow: 0 0 14px rgba(206,147,216,0.4);
+  }
+  .stack-empty { color: #37474f; font-size: 0.8rem; text-align: center; padding: 8px; }
 
   /* ORDER DISPLAY */
   .order-box { display: flex; flex-wrap: wrap; gap: 6px; }
-  .order-badge { background: #252836; border: 1px solid #3a3d4e; border-radius: 6px; padding: 3px 10px; font-size: 0.82rem; }
-  .order-badge.pre { border-color: #ce93d8; color: #ce93d8; }
-  .order-badge.post { border-color: #42a5f5; color: #42a5f5; }
+  .order-badge { border-radius: 8px; padding: 3px 10px; font-size: 0.82rem; animation: stackSlideIn 0.2s ease; }
+  .order-badge.pre { background: #2a1040; border: 1px solid #ce93d8; color: #ce93d8; }
+  .order-badge.post { background: #0d2a3e; border: 1px solid #42a5f5; color: #42a5f5; }
 
   /* EDGE LEGEND */
   .edge-legend { display: flex; flex-wrap: wrap; gap: 8px; }
-  .edge-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #90a4ae; }
-  .edge-line { width: 20px; height: 3px; border-radius: 2px; }
+  .edge-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #78909c; }
+  .edge-line { width: 22px; height: 3px; border-radius: 2px; }
 
   /* COMPLEXITY */
   .comp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .comp-item { background: #252836; border-radius: 8px; padding: 10px; border-left: 3px solid; }
-  .comp-item.tc { border-color: #ef5350; }
-  .comp-item.sc { border-color: #ce93d8; }
-  .comp-label { font-size: 0.7rem; color: #90a4ae; }
+  .comp-item { background: #1e2130; border-radius: 10px; padding: 10px; border-left: 3px solid; }
+  .comp-item.tc { border-color: #ef5350; } .comp-item.sc { border-color: #ce93d8; }
+  .comp-label { font-size: 0.7rem; color: #78909c; }
   .comp-val { font-size: 1rem; font-weight: 700; margin-top: 3px; font-family: monospace; }
-  .comp-item.tc .comp-val { color: #ef5350; }
-  .comp-item.sc .comp-val { color: #ce93d8; }
+  .comp-item.tc .comp-val { color: #ef5350; } .comp-item.sc .comp-val { color: #ce93d8; }
 
-  .explanation-box { background: #252836; border-radius: 10px; padding: 12px; min-height: 52px; border-left: 3px solid #ce93d8; font-size: 0.87rem; line-height: 1.6; }
+  .explanation-box { background: #1e2130; border-radius: 12px; padding: 12px; min-height: 52px; border-left: 3px solid #ce93d8; font-size: 0.87rem; line-height: 1.7; }
 
   .right-panel { display: flex; flex-direction: column; gap: 12px; }
-  .code-panel { background: #1a1d27; border-radius: 12px; padding: 16px; border: 1px solid #2a2d3e; font-family: 'Courier New', monospace; font-size: 0.79rem; }
-  .code-line { padding: 2px 8px; border-radius: 4px; line-height: 1.65; white-space: pre; transition: background 0.2s; }
-  .code-line.active { background: #4a148c; color: #fff; }
-  .kw { color: #ce93d8; } .fn { color: #80cbc4; } .cm { color: #546e7a; } .num { color: #ffcc02; }
+  .code-panel { background: #141720; border-radius: 14px; padding: 16px; border: 1px solid #1e2130; font-family: 'Courier New', monospace; font-size: 0.79rem; }
+  .code-line { padding: 3px 10px; border-radius: 6px; line-height: 1.7; white-space: pre; transition: background 0.25s, transform 0.2s; }
+  .code-line.active { background: linear-gradient(135deg, #4a148c, #38006b); color: #fff; transform: translateX(4px); box-shadow: 0 0 12px rgba(74,20,140,0.5); }
+  .kw { color: #ce93d8; } .fn { color: #80cbc4; } .cm { color: #37474f; } .num { color: #ffcc02; }
 
-  .trace-log { max-height: 160px; overflow-y: auto; }
+  .trace-log { max-height: 170px; overflow-y: auto; }
   .trace-log::-webkit-scrollbar { width: 4px; }
-  .trace-log::-webkit-scrollbar-thumb { background: #37474f; border-radius: 2px; }
-  .trace-entry { font-size: 0.77rem; padding: 3px 0; border-bottom: 1px solid #2a2d3e; color: #90a4ae; }
+  .trace-log::-webkit-scrollbar-thumb { background: #2e3347; border-radius: 2px; }
+  .trace-entry { font-size: 0.77rem; padding: 4px 0; border-bottom: 1px solid #1e2130; color: #78909c; animation: slideDown 0.2s ease; }
   .trace-entry.push { color: #ce93d8; }
   .trace-entry.pop { color: #42a5f5; }
   .trace-entry.found { color: #66bb6a; font-weight: 600; }
 
   .left-panel { display: flex; flex-direction: column; gap: 12px; }
   .graph-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  select { background: #252836; border: 1px solid #3a3d4e; color: #e0e0e0; padding: 6px 10px; border-radius: 8px; font-size: 0.85rem; }
+  select { background: #1e2130; border: 1px solid #2e3347; color: #e0e0e0; padding: 6px 10px; border-radius: 8px; font-size: 0.85rem; }
 </style>
 </head>
 <body>
@@ -111,7 +141,6 @@
 <div class="layout">
   <div class="left-panel">
 
-    <!-- CONTROLS -->
     <div class="card">
       <div class="card-title">⚙ Cấu hình</div>
       <div class="graph-controls">
@@ -122,23 +151,44 @@
           <option value="3">Đồ thị tuyến tính</option>
         </select>
         <button class="btn btn-gray btn-sm" onclick="generateRandom()">🎲 Ngẫu nhiên</button>
-        <span style="font-size:0.78rem;color:#90a4ae">Click đỉnh để đặt điểm bắt đầu</span>
+        <span style="font-size:0.78rem;color:#78909c">Click đỉnh để đặt Start</span>
       </div>
     </div>
 
-    <!-- GRAPH -->
     <div class="card" style="padding:12px">
-      <div class="card-title">📊 Đồ thị (Kéo để di chuyển đỉnh)</div>
-      <svg id="graphSvg" height="320"></svg>
+      <div class="card-title">📊 Đồ thị</div>
+      <svg id="graphSvg" height="320">
+        <defs>
+          <radialGradient id="gradUnvisited" cx="40%" cy="35%">
+            <stop offset="0%" stop-color="#2a2e40"/>
+            <stop offset="100%" stop-color="#1a1d27"/>
+          </radialGradient>
+          <radialGradient id="gradVisiting" cx="40%" cy="35%">
+            <stop offset="0%" stop-color="#ffca28"/>
+            <stop offset="100%" stop-color="#f57f17"/>
+          </radialGradient>
+          <radialGradient id="gradVisited" cx="40%" cy="35%">
+            <stop offset="0%" stop-color="#1976d2"/>
+            <stop offset="100%" stop-color="#0d47a1"/>
+          </radialGradient>
+          <radialGradient id="gradStart" cx="40%" cy="35%">
+            <stop offset="0%" stop-color="#9c27b0"/>
+            <stop offset="100%" stop-color="#6a1b9a"/>
+          </radialGradient>
+          <radialGradient id="gradDone" cx="40%" cy="35%">
+            <stop offset="0%" stop-color="#1565c0"/>
+            <stop offset="100%" stop-color="#0a2e6e"/>
+          </radialGradient>
+        </defs>
+      </svg>
       <div class="edge-legend" style="margin-top:10px">
-        <div class="edge-item"><div class="edge-line" style="background:#42a5f5"></div> Tree edge</div>
-        <div class="edge-item"><div class="edge-line" style="background:#ef5350;background:repeating-linear-gradient(90deg,#ef5350 0,#ef5350 6px,transparent 6px,transparent 9px)"></div> Back edge (chu trình)</div>
-        <div class="edge-item"><div class="edge-line" style="background:#ffd54f"></div> Forward edge</div>
-        <div class="edge-item"><div class="edge-line" style="background:#ce93d8"></div> Cross edge</div>
+        <div class="edge-item"><div class="edge-line" style="background:#42a5f5"></div>Tree edge</div>
+        <div class="edge-item"><div class="edge-line" style="background:#ef5350"></div>Back edge (chu trình)</div>
+        <div class="edge-item"><div class="edge-line" style="background:#ffd54f"></div>Forward edge</div>
+        <div class="edge-item"><div class="edge-line" style="background:#ce93d8"></div>Cross edge</div>
       </div>
     </div>
 
-    <!-- PLAYBACK -->
     <div class="card">
       <div class="card-title">🎮 Điều khiển</div>
       <div class="controls">
@@ -153,7 +203,6 @@
       </div>
     </div>
 
-    <!-- PRE/POST ORDER -->
     <div class="card">
       <div class="card-title">🔢 Thứ tự duyệt</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -168,33 +217,30 @@
       </div>
     </div>
 
-    <!-- COMPLEXITY -->
     <div class="card">
       <div class="card-title">⏱ Độ phức tạp</div>
       <div class="comp-row">
-        <div class="comp-item tc"><div class="comp-label">Thời gian (Time)</div><div class="comp-val">O(V + E)</div><div style="font-size:0.72rem;color:#90a4ae;margin-top:3px">V=đỉnh, E=cạnh</div></div>
-        <div class="comp-item sc"><div class="comp-label">Không gian (Space)</div><div class="comp-val">O(V)</div><div style="font-size:0.72rem;color:#90a4ae;margin-top:3px">Stack recursion sâu nhất V</div></div>
+        <div class="comp-item tc"><div class="comp-label">Thời gian</div><div class="comp-val">O(V + E)</div><div style="font-size:0.7rem;color:#78909c;margin-top:3px">V đỉnh, E cạnh</div></div>
+        <div class="comp-item sc"><div class="comp-label">Không gian</div><div class="comp-val">O(V)</div><div style="font-size:0.7rem;color:#78909c;margin-top:3px">Stack sâu tối đa V</div></div>
       </div>
     </div>
 
-    <!-- EXPLANATION -->
     <div class="card">
       <div class="card-title">💬 Giải thích</div>
-      <div class="explanation-box" id="explanation">Chọn đồ thị và nhấn "Chạy" để bắt đầu DFS. Click vào đỉnh để đặt điểm bắt đầu.</div>
+      <div class="explanation-box" id="explanation">Chọn đồ thị và nhấn "Chạy". Click đỉnh để đặt điểm bắt đầu.</div>
     </div>
 
   </div>
 
-  <!-- RIGHT PANEL -->
   <div class="right-panel">
 
-    <!-- STACK VIZ -->
     <div class="card">
-      <div class="card-title">📦 Stack (Ngăn xếp) — Đỉnh stack = đang xét</div>
-      <div class="stack-container" id="stackViz"></div>
+      <div class="card-title">📦 Stack (Ngăn xếp) — top = đang xét</div>
+      <div class="stack-wrapper" id="stackViz">
+        <div class="stack-empty">[ Stack rỗng ]</div>
+      </div>
     </div>
 
-    <!-- CODE -->
     <div class="code-panel">
       <div class="card-title" style="margin-bottom:10px">📝 Mã nguồn DFS</div>
       <div class="code-line" id="cl0"><span class="kw">function</span> <span class="fn">dfs</span>(graph, start) {</div>
@@ -219,21 +265,19 @@
       <div class="code-line" id="cl19">}</div>
     </div>
 
-    <!-- TRACE -->
     <div class="card">
       <div class="card-title">📋 Nhật ký</div>
       <div class="trace-log" id="traceLog"></div>
     </div>
 
-    <!-- INFO -->
     <div class="card">
       <div class="card-title">💡 DFS Ứng dụng</div>
       <div style="font-size:0.8rem;line-height:1.85;color:#b0bec5">
         <div>✅ <strong style="color:#ce93d8">Phát hiện chu trình</strong> (back edge)</div>
         <div>✅ <strong style="color:#ce93d8">Topological Sort</strong> (DAG)</div>
-        <div>✅ <strong style="color:#ce93d8">Tìm thành phần liên thông mạnh</strong></div>
-        <div>✅ <strong style="color:#ce93d8">Giải mê cung</strong> (maze solving)</div>
-        <div>✅ <strong style="color:#ce93d8">Cây khung</strong> (spanning tree)</div>
+        <div>✅ <strong style="color:#ce93d8">Thành phần liên thông mạnh</strong></div>
+        <div>✅ <strong style="color:#ce93d8">Giải mê cung</strong></div>
+        <div>✅ <strong style="color:#ce93d8">Cây khung</strong></div>
         <div>❌ Đường đi ngắn nhất → dùng BFS</div>
       </div>
     </div>
@@ -242,36 +286,11 @@
 </div>
 
 <script>
-// Graph data
 const PRESETS = [
-  {
-    nodes: [
-      {id:0,label:'A',x:300,y:60},{id:1,label:'B',x:150,y:150},{id:2,label:'C',x:450,y:150},
-      {id:3,label:'D',x:80,y:260},{id:4,label:'E',x:240,y:260},{id:5,label:'F',x:380,y:260},{id:6,label:'G',x:500,y:260}
-    ],
-    edges: [[0,1],[0,2],[1,3],[1,4],[2,5],[2,6],[3,4]]
-  },
-  {
-    nodes: [
-      {id:0,label:'A',x:280,y:50},{id:1,label:'B',x:120,y:140},{id:2,label:'C',x:440,y:140},
-      {id:3,label:'D',x:60,y:240},{id:4,label:'E',x:200,y:240},{id:5,label:'F',x:360,y:240},{id:6,label:'G',x:480,y:240},{id:7,label:'H',x:300,y:300}
-    ],
-    edges: [[0,1],[0,2],[1,3],[1,4],[2,5],[2,6],[4,7],[5,7],[6,3]]
-  },
-  {
-    nodes: [
-      {id:0,label:'1',x:280,y:40},{id:1,label:'2',x:150,y:120},{id:2,label:'3',x:410,y:120},
-      {id:3,label:'4',x:80,y:210},{id:4,label:'5',x:220,y:210},{id:5,label:'6',x:340,y:210},{id:6,label:'7',x:480,y:210}
-    ],
-    edges: [[0,1],[0,2],[1,3],[1,4],[2,5],[2,6]]
-  },
-  {
-    nodes: [
-      {id:0,label:'A',x:60,y:160},{id:1,label:'B',x:160,y:160},{id:2,label:'C',x:260,y:160},
-      {id:3,label:'D',x:360,y:160},{id:4,label:'E',x:460,y:160}
-    ],
-    edges: [[0,1],[1,2],[2,3],[3,4]]
-  }
+  { nodes: [{id:0,label:'A',x:300,y:60},{id:1,label:'B',x:150,y:155},{id:2,label:'C',x:450,y:155},{id:3,label:'D',x:80,y:265},{id:4,label:'E',x:240,y:265},{id:5,label:'F',x:380,y:265},{id:6,label:'G',x:505,y:265}], edges: [[0,1],[0,2],[1,3],[1,4],[2,5],[2,6],[3,4]] },
+  { nodes: [{id:0,label:'A',x:280,y:50},{id:1,label:'B',x:120,y:145},{id:2,label:'C',x:440,y:145},{id:3,label:'D',x:60,y:245},{id:4,label:'E',x:200,y:245},{id:5,label:'F',x:360,y:245},{id:6,label:'G',x:480,y:245},{id:7,label:'H',x:300,y:300}], edges: [[0,1],[0,2],[1,3],[1,4],[2,5],[2,6],[4,7],[5,7],[6,3]] },
+  { nodes: [{id:0,label:'1',x:280,y:40},{id:1,label:'2',x:150,y:120},{id:2,label:'3',x:410,y:120},{id:3,label:'4',x:80,y:215},{id:4,label:'5',x:220,y:215},{id:5,label:'6',x:340,y:215},{id:6,label:'7',x:480,y:215}], edges: [[0,1],[0,2],[1,3],[1,4],[2,5],[2,6]] },
+  { nodes: [{id:0,label:'A',x:60,y:160},{id:1,label:'B',x:165,y:160},{id:2,label:'C',x:270,y:160},{id:3,label:'D',x:375,y:160},{id:4,label:'E',x:480,y:160}], edges: [[0,1],[1,2],[2,3],[3,4]] }
 ];
 
 let nodes = [], edges = [], adj = {};
@@ -280,12 +299,11 @@ let steps = [], stepIdx = 0;
 let playing = false, timer = null;
 let dragging = null, dragOffX = 0, dragOffY = 0;
 let preOrderList = [], postOrderList = [];
-let nodeStates = {}, edgeStates = {};
 
 function getSpeed() {
   const v = parseInt(document.getElementById('speedSlider').value);
   document.getElementById('speedLabel').textContent = v + 'x';
-  return [1400, 950, 600, 300, 120][v - 1];
+  return [1400, 950, 600, 280, 110][v - 1];
 }
 document.getElementById('speedSlider').addEventListener('input', getSpeed);
 
@@ -294,10 +312,7 @@ function loadPreset() {
   const p = PRESETS[idx];
   nodes = JSON.parse(JSON.stringify(p.nodes));
   edges = JSON.parse(JSON.stringify(p.edges));
-  buildAdj();
-  startNode = 0;
-  initDFS();
-  renderGraph();
+  buildAdj(); startNode = 0; initDFS();
 }
 
 function buildAdj() {
@@ -315,54 +330,50 @@ function generateRandom() {
     nodes.push({ id: i, label: String.fromCharCode(65 + i), x: Math.round(cx + r * Math.cos(angle)), y: Math.round(cy + r * Math.sin(angle)) });
   }
   edges = [];
-  // Ensure connected
   for (let i = 1; i < n; i++) edges.push([Math.floor(Math.random() * i), i]);
-  // Add extra edges
   for (let i = 0; i < n; i++) for (let j = i + 2; j < n; j++) if (Math.random() < 0.25) edges.push([i, j]);
-  buildAdj(); startNode = 0; initDFS(); renderGraph();
+  buildAdj(); startNode = 0; initDFS();
 }
 
 function buildSteps() {
   steps = [];
-  const visited = new Set();
-  const discovery = {}, finish = {}, color = {};
+  const color = {};
   nodes.forEach(n => { color[n.id] = 'white'; });
   preOrderList = []; postOrderList = [];
-  let timer = 0;
   const edgeClass = {};
+  const discovery = {};
+  let timer = 0;
 
   function dfsRec(u) {
     color[u] = 'gray';
     discovery[u] = ++timer;
-    steps.push({ type: 'visit', node: u, stack: Object.entries(color).filter(([,v]) => v === 'gray').map(([k]) => parseInt(k)), code: 9, preOrder: [...preOrderList], postOrder: [...postOrderList], edgeClass: { ...edgeClass } });
+    steps.push({ type: 'visit', node: u, stack: Object.entries(color).filter(([,v]) => v === 'gray').map(([k]) => parseInt(k)), code: 9, preOrder: [...preOrderList], postOrder: [...postOrderList], edgeClass: { ...edgeClass }, color: { ...color } });
     preOrderList.push(u);
-    steps.push({ type: 'preorder', node: u, stack: Object.entries(color).filter(([,v]) => v === 'gray').map(([k]) => parseInt(k)), code: 10, preOrder: [...preOrderList], postOrder: [...postOrderList], edgeClass: { ...edgeClass } });
+    steps.push({ type: 'preorder', node: u, stack: Object.entries(color).filter(([,v]) => v === 'gray').map(([k]) => parseInt(k)), code: 10, preOrder: [...preOrderList], postOrder: [...postOrderList], edgeClass: { ...edgeClass }, color: { ...color } });
 
     for (const v of adj[u]) {
       const eKey = Math.min(u, v) + '-' + Math.max(u, v);
       if (color[v] === 'white') {
         edgeClass[eKey] = 'tree';
-        steps.push({ type: 'push', node: v, from: u, stack: Object.entries(color).filter(([,v]) => v === 'gray').map(([k]) => parseInt(k)), code: 15, preOrder: [...preOrderList], postOrder: [...postOrderList], edgeClass: { ...edgeClass } });
+        steps.push({ type: 'push', node: v, from: u, stack: Object.entries(color).filter(([,v2]) => v2 === 'gray').map(([k]) => parseInt(k)), code: 15, preOrder: [...preOrderList], postOrder: [...postOrderList], edgeClass: { ...edgeClass }, color: { ...color } });
         dfsRec(v);
       } else if (color[v] === 'gray') {
         edgeClass[eKey] = 'back';
-        steps.push({ type: 'back-edge', node: v, from: u, stack: Object.entries(color).filter(([,v]) => v === 'gray').map(([k]) => parseInt(k)), code: 13, preOrder: [...preOrderList], postOrder: [...postOrderList], edgeClass: { ...edgeClass } });
+        steps.push({ type: 'back-edge', node: v, from: u, stack: Object.entries(color).filter(([,v2]) => v2 === 'gray').map(([k]) => parseInt(k)), code: 13, preOrder: [...preOrderList], postOrder: [...postOrderList], edgeClass: { ...edgeClass }, color: { ...color } });
       } else {
         edgeClass[eKey] = discovery[u] < discovery[v] ? 'fwd' : 'cross';
-        steps.push({ type: 'cross-edge', node: v, from: u, code: 13, stack: Object.entries(color).filter(([,v]) => v === 'gray').map(([k]) => parseInt(k)), preOrder: [...preOrderList], postOrder: [...postOrderList], edgeClass: { ...edgeClass } });
+        steps.push({ type: 'cross-edge', node: v, from: u, code: 13, stack: Object.entries(color).filter(([,v2]) => v2 === 'gray').map(([k]) => parseInt(k)), preOrder: [...preOrderList], postOrder: [...postOrderList], edgeClass: { ...edgeClass }, color: { ...color } });
       }
     }
     color[u] = 'black';
-    finish[u] = ++timer;
     postOrderList.push(u);
-    steps.push({ type: 'done', node: u, stack: Object.entries(color).filter(([,v]) => v === 'gray').map(([k]) => parseInt(k)), code: 18, preOrder: [...preOrderList], postOrder: [...postOrderList], edgeClass: { ...edgeClass } });
+    steps.push({ type: 'done', node: u, stack: Object.entries(color).filter(([,v]) => v === 'gray').map(([k]) => parseInt(k)), code: 18, preOrder: [...preOrderList], postOrder: [...postOrderList], edgeClass: { ...edgeClass }, color: { ...color } });
   }
 
-  steps.push({ type: 'init', node: startNode, stack: [startNode], code: 2, preOrder: [], postOrder: [], edgeClass: {} });
+  steps.push({ type: 'init', node: startNode, stack: [startNode], code: 2, preOrder: [], postOrder: [], edgeClass: {}, color: { ...color } });
   dfsRec(startNode);
-  // Handle disconnected
   nodes.forEach(n => { if (color[n.id] === 'white') dfsRec(n.id); });
-  steps.push({ type: 'end', stack: [], code: 19, preOrder: [...preOrderList], postOrder: [...postOrderList], edgeClass: { ...edgeClass } });
+  steps.push({ type: 'end', stack: [], code: 19, preOrder: [...preOrderList], postOrder: [...postOrderList], edgeClass: { ...edgeClass }, color: { ...color } });
 }
 
 function initDFS() {
@@ -370,28 +381,47 @@ function initDFS() {
   stepIdx = 0;
   renderStep(steps[0]);
   document.getElementById('traceLog').innerHTML = '';
+  renderGraph(steps[0]);
 }
 
-function renderGraph() {
+function getNodeState(nodeId, step) {
+  const c = step.color || {};
+  if (!step.color) return nodeId === startNode ? 'gnode-start' : 'gnode-unvisited';
+  if (nodeId === startNode && step.type === 'init') return 'gnode-start';
+  if (c[nodeId] === 'gray') {
+    return step.node === nodeId && (step.type === 'visit' || step.type === 'preorder') ? 'gnode-visiting' : 'gnode-visiting';
+  }
+  if (c[nodeId] === 'black') return 'gnode-done';
+  if (nodeId === startNode) return 'gnode-start';
+  return 'gnode-unvisited';
+}
+
+function renderGraph(step) {
   const svg = document.getElementById('graphSvg');
   const W = svg.parentElement.clientWidth || 580;
   svg.setAttribute('width', W);
+  // Keep defs
+  const existingDefs = svg.querySelector('defs');
   svg.innerHTML = '';
+  if (existingDefs) svg.appendChild(existingDefs);
 
-  // Defs for arrowhead
-  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-  svg.appendChild(defs);
+  const ec = (step && step.edgeClass) ? step.edgeClass : {};
 
   // Edges
   edges.forEach(([a, b]) => {
     const na = nodes[a], nb = nodes[b];
     const eKey = Math.min(a, b) + '-' + Math.max(a, b);
-    const ec = (steps[stepIdx] && steps[stepIdx].edgeClass) ? steps[stepIdx].edgeClass : {};
-    let cls = 'graph-edge';
-    if (ec[eKey] === 'tree') cls += ' tree-edge';
-    else if (ec[eKey] === 'back') cls += ' back-edge';
-    else if (ec[eKey] === 'fwd') cls += ' fwd-edge';
-    else if (ec[eKey] === 'cross') cls += ' cross-edge';
+    let cls = 'gedge';
+    if (ec[eKey] === 'tree') cls = 'gedge-tree';
+    else if (ec[eKey] === 'back') cls = 'gedge-back';
+    else if (ec[eKey] === 'fwd') cls = 'gedge-fwd';
+    else if (ec[eKey] === 'cross') cls = 'gedge-cross';
+
+    // Ripple circle for newly drawn tree edge
+    if (ec[eKey] === 'tree' && step && (step.type === 'push') && step.from === a || step && step.from === b) {
+      // just style
+    }
+
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     line.setAttribute('x1', na.x); line.setAttribute('y1', na.y);
     line.setAttribute('x2', nb.x); line.setAttribute('y2', nb.y);
@@ -400,76 +430,58 @@ function renderGraph() {
   });
 
   // Nodes
-  const step = steps[stepIdx] || {};
-  const ec = step.edgeClass || {};
   nodes.forEach(node => {
+    const state = step ? getNodeState(node.id, step) : 'gnode-unvisited';
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.setAttribute('class', 'graph-node');
+    g.setAttribute('class', 'graph-node ' + state);
     g.setAttribute('data-id', node.id);
+    g.style.cursor = 'pointer';
 
-    const ig = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    ig.setAttribute('class', 'node-g');
-    ig.setAttribute('style', `transform-origin:${node.x}px ${node.y}px`);
+    // Ripple ring for visiting
+    if (state === 'gnode-visiting') {
+      const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      ring.setAttribute('cx', node.x); ring.setAttribute('cy', node.y); ring.setAttribute('r', 22);
+      ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', 'rgba(255,213,79,0.6)'); ring.setAttribute('stroke-width', '2');
+      ring.style.animation = 'rippleOut 1s ease-out infinite';
+      svg.appendChild(ring);
+    }
 
     const circ = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     circ.setAttribute('cx', node.x); circ.setAttribute('cy', node.y); circ.setAttribute('r', 22);
+    g.appendChild(circ);
 
-    let state = 'n-unvisited';
-    if (step.type) {
-      if (step.preOrder && step.preOrder.includes(node.id)) {
-        if (step.postOrder && step.postOrder.includes(node.id)) state = 'n-visited';
-        else if (node.id === step.node && step.type === 'visit') state = 'n-visiting';
-        else state = step.node === node.id ? 'n-visiting' : (step.postOrder && step.postOrder.includes(node.id) ? 'n-visited' : 'n-visiting');
-      }
-    }
-    if (node.id === startNode && step.type === 'init') state = 'n-start';
-    if (step.type === 'done' && step.postOrder && step.postOrder.includes(node.id)) state = 'n-visited';
-    if (step.type === 'visit' && node.id === step.node) state = 'n-visiting';
-    if (node.id === startNode) { /* keep start style until visited */ }
-
-    g.setAttribute('class', 'graph-node ' + state);
-    if (state === 'n-visiting') ig.setAttribute('style', `transform-origin:${node.x}px ${node.y}px;animation:pulse 0.6s ease infinite`);
-
-    ig.appendChild(circ);
     const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     txt.setAttribute('x', node.x); txt.setAttribute('y', node.y);
-    txt.setAttribute('class', 'graph-node text');
+    txt.setAttribute('style', 'font-size:13px;font-weight:700;text-anchor:middle;dominant-baseline:central;pointer-events:none');
     txt.textContent = node.label;
-    ig.appendChild(txt);
+    g.appendChild(txt);
 
-    // Discovery/finish time badge
-    if (step.preOrder && step.preOrder.includes(node.id)) {
+    // Pre-order badge
+    if (step && step.preOrder && step.preOrder.includes(node.id)) {
       const ti = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      ti.setAttribute('x', node.x + 16); ti.setAttribute('y', node.y - 16);
+      ti.setAttribute('x', node.x + 18); ti.setAttribute('y', node.y - 18);
       ti.setAttribute('style', 'font-size:9px;fill:#ffd54f;font-weight:700');
       ti.textContent = step.preOrder.indexOf(node.id) + 1;
-      ig.appendChild(ti);
+      g.appendChild(ti);
     }
 
-    g.appendChild(ig);
-
-    // Drag
     g.addEventListener('mousedown', e => startDrag(e, node.id));
     g.addEventListener('click', e => { if (!dragging) setStart(node.id); });
     svg.appendChild(g);
   });
 
-  // Start label
+  // START label
   const sn = nodes[startNode];
   if (sn) {
     const lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    lbl.setAttribute('x', sn.x); lbl.setAttribute('y', sn.y - 28);
+    lbl.setAttribute('x', sn.x); lbl.setAttribute('y', sn.y - 32);
     lbl.setAttribute('style', 'font-size:10px;fill:#ce93d8;text-anchor:middle;font-weight:700');
     lbl.textContent = 'START';
     svg.appendChild(lbl);
   }
 }
 
-function setStart(id) {
-  startNode = id;
-  initDFS();
-  renderGraph();
-}
+function setStart(id) { startNode = id; initDFS(); }
 
 function startDrag(e, id) {
   e.preventDefault();
@@ -485,7 +497,7 @@ document.addEventListener('mousemove', e => {
   const rect = svg.getBoundingClientRect();
   nodes[dragging].x = Math.max(25, Math.min(rect.width - 25, e.clientX - rect.left - dragOffX));
   nodes[dragging].y = Math.max(25, Math.min(rect.height - 25, e.clientY - rect.top - dragOffY));
-  renderGraph();
+  renderGraph(steps[stepIdx]);
 });
 document.addEventListener('mouseup', () => { dragging = null; });
 
@@ -495,7 +507,7 @@ function renderStep(step) {
   const el = document.getElementById('cl' + step.code);
   if (el) el.classList.add('active');
 
-  renderGraph();
+  renderGraph(step);
 
   // Stack viz
   const sv = document.getElementById('stackViz');
@@ -503,9 +515,10 @@ function renderStep(step) {
   if (!step.stack || step.stack.length === 0) {
     sv.innerHTML = '<div class="stack-empty">[ Stack rỗng ]</div>';
   } else {
-    step.stack.forEach((nid, i) => {
+    // Render from bottom to top
+    [...step.stack].reverse().forEach((nid, i) => {
       const item = document.createElement('div');
-      item.className = 'stack-item' + (i === step.stack.length - 1 ? ' top' : '');
+      item.className = 'stack-item' + (i === 0 ? ' top' : '');
       const n = nodes[nid];
       item.textContent = n ? `${n.label} (${nid})` : nid;
       sv.appendChild(item);
@@ -530,17 +543,16 @@ function renderStep(step) {
     postEl.appendChild(b);
   });
 
-  // Explanation
   const nl = n => nodes[n] ? nodes[n].label : n;
   const expls = {
     init: `🚀 Khởi tạo DFS từ đỉnh <strong style="color:#ce93d8">${nl(step.node)}</strong>. Push đỉnh bắt đầu vào stack.`,
-    visit: `🔍 Pop đỉnh <strong style="color:#f9a825">${nl(step.node)}</strong> từ stack. Đánh dấu là đang thăm (màu vàng). Ghi pre-order: ${step.preOrder.length}.`,
-    preorder: `📝 Xử lý đỉnh <strong style="color:#f9a825">${nl(step.node)}</strong> (pre-order #${(step.preOrder || []).indexOf(step.node) + 1}). Bắt đầu khám phá hàng xóm.`,
-    push: `⬇ Phát hiện hàng xóm chưa thăm <strong style="color:#ce93d8">${nl(step.node)}</strong> từ đỉnh ${nl(step.from)}. Push vào stack để thăm sau.`,
-    'back-edge': `🔄 <strong style="color:#ef5350">Back edge!</strong> Đỉnh ${nl(step.node)} đang trong stack (màu xám) → phát hiện <strong>chu trình</strong>!`,
+    visit: `🔍 Pop đỉnh <strong style="color:#f9a825">${nl(step.node)}</strong> từ stack. Đánh dấu <em>đang thăm</em> (vàng — glow pulse).`,
+    preorder: `📝 Xử lý đỉnh <strong style="color:#f9a825">${nl(step.node)}</strong> pre-order #${(step.preOrder || []).indexOf(step.node) + 1}. Duyệt hàng xóm.`,
+    push: `⬇ Phát hiện hàng xóm chưa thăm <strong style="color:#ce93d8">${nl(step.node)}</strong> từ ${nl(step.from)}. Push → cạnh màu xanh (tree edge).`,
+    'back-edge': `🔄 <strong style="color:#ef5350">Back edge!</strong> ${nl(step.from)} → ${nl(step.node)} đang trong stack → <strong>CÓ CHU TRÌNH!</strong>`,
     'cross-edge': `↔ Cross/Forward edge: ${nl(step.from)} → ${nl(step.node)} (đỉnh đã hoàn thành).`,
-    done: `✅ Hoàn thành đỉnh <strong style="color:#42a5f5">${nl(step.node)}</strong> (post-order #${(step.postOrder || []).length}). Tất cả hàng xóm đã thăm.`,
-    end: `🏁 DFS hoàn tất! Pre-order: [${(step.preOrder || []).map(nl).join('→')}]. Post-order: [${(step.postOrder || []).map(nl).join('→')}].`
+    done: `✅ Hoàn thành <strong style="color:#42a5f5">${nl(step.node)}</strong> post-order #${(step.postOrder || []).length}. Tất cả nhánh đã khám phá.`,
+    end: `🏁 DFS hoàn tất! Pre: [${(step.preOrder || []).map(nl).join('→')}]. Post: [${(step.postOrder || []).map(nl).join('→')}].`
   };
   document.getElementById('explanation').innerHTML = expls[step.type] || '';
 
@@ -548,14 +560,14 @@ function renderStep(step) {
   const log = document.getElementById('traceLog');
   const entry = document.createElement('div');
   const tmsgs = {
-    init: `[INIT] DFS bắt đầu từ ${nl(step.node)}, push ${nl(step.node)} vào stack`,
-    visit: `[POP]  Pop ${nl(step.node)} - đánh dấu đã thăm`,
-    preorder: `[PRE]  Pre-order #${(step.preOrder||[]).length}: ${nl(step.node)}`,
-    push: `[PUSH] ${nl(step.from)} → ${nl(step.node)}: push ${nl(step.node)}`,
-    'back-edge': `[BACK] ${nl(step.from)}→${nl(step.node)}: BACK EDGE (chu trình!)`,
-    'cross-edge': `[CROSS] ${nl(step.from)}→${nl(step.node)}: cross/forward edge`,
-    done: `[POST] Post-order #${(step.postOrder||[]).length}: ${nl(step.node)}`,
-    end: `[END]  DFS hoàn tất.`
+    init: `[INIT] DFS từ ${nl(step.node)}`,
+    visit: `[POP]  Pop ${nl(step.node)} - bắt đầu thăm`,
+    preorder: `[PRE]  #${(step.preOrder||[]).length}: ${nl(step.node)}`,
+    push: `[PUSH] ${nl(step.from)}→${nl(step.node)}: tree edge`,
+    'back-edge': `[BACK] ${nl(step.from)}→${nl(step.node)}: BACK EDGE!`,
+    'cross-edge': `[CROSS] ${nl(step.from)}→${nl(step.node)}`,
+    done: `[POST] #${(step.postOrder||[]).length}: ${nl(step.node)}`,
+    end: `[END]  DFS hoàn tất`
   };
   entry.className = 'trace-entry' + (step.type === 'push' ? ' push' : step.type === 'done' ? ' pop' : step.type === 'back-edge' ? ' found' : '');
   entry.textContent = tmsgs[step.type] || '';
@@ -575,10 +587,16 @@ function startPlaying() {
   timer = setInterval(() => { stepForward(); if (stepIdx >= steps.length - 1) stopPlaying(); }, getSpeed());
 }
 function stopPlaying() { playing = false; clearInterval(timer); document.getElementById('playPauseBtn').textContent = '▶ Chạy'; }
-function resetDFS() { stopPlaying(); stepIdx = 0; renderStep(steps[0]); document.getElementById('traceLog').innerHTML = ''; document.getElementById('preOrder').innerHTML = ''; document.getElementById('postOrder').innerHTML = ''; }
+function resetDFS() {
+  stopPlaying(); stepIdx = 0;
+  renderStep(steps[0]);
+  document.getElementById('traceLog').innerHTML = '';
+  document.getElementById('preOrder').innerHTML = '';
+  document.getElementById('postOrder').innerHTML = '';
+}
 
 window.onload = () => { loadPreset(); };
-window.addEventListener('resize', renderGraph);
+window.addEventListener('resize', () => renderGraph(steps[stepIdx]));
 </script>
 </body>
 </html>

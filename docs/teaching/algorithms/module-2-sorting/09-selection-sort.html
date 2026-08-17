@@ -6,45 +6,68 @@
 <title>Selection Sort — Sắp xếp chọn</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',sans-serif;background:#0f1117;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-header{background:#1a1d2e;padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #2d3148}
-header h1{font-size:1.1rem;color:#34d399}
+body{font-family:'Segoe UI',sans-serif;background:#080c14;color:#e2e8f0;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(52,211,153,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(52,211,153,.04) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;z-index:0}
+
+header{background:linear-gradient(135deg,#0a1a12,#0f2018);padding:10px 20px;display:flex;align-items:center;gap:16px;border-bottom:1px solid #1a3a28;position:relative;z-index:1}
+header h1{font-size:1.1rem;color:#34d399;text-shadow:0 0 20px rgba(52,211,153,.4)}
 .badge{background:#064e3b;color:#6ee7b7;padding:2px 8px;border-radius:4px;font-size:.75rem}
 .complexity{display:flex;gap:8px;margin-left:auto}
 .cx{background:#1e293b;border:1px solid #334155;border-radius:4px;padding:2px 8px;font-size:.75rem;color:#94a3b8}
 .cx span{color:#fbbf24}
-main{flex:1;display:flex;overflow:hidden}
-#viz{width:60%;background:#0d1117;display:flex;flex-direction:column}
-#bar-area{flex:1;position:relative;padding:10px 20px 0}
-#bars-container{position:absolute;bottom:0;left:20px;right:20px;top:10px;display:flex;align-items:flex-end;gap:2px}
-.bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1}
-.bar{width:100%;border-radius:3px 3px 0 0;background:#4a90d9;transition:background .25s}
-.bar-val{font-size:10px;color:#94a3b8;margin-top:2px}
-.bar.sorted{background:#22c55e}
-.bar.current-pos{background:#6366f1}
-.bar.scanning{background:#ef4444}
-.bar.current-min{background:#eab308}
-.bar.swapping{background:#f97316}
-#legend{display:flex;gap:12px;padding:6px 20px;background:#111827;font-size:.72rem}
+
+main{flex:1;display:flex;overflow:hidden;position:relative;z-index:1}
+#viz{width:60%;background:transparent;display:flex;flex-direction:column}
+#bar-area{flex:1;position:relative;padding:10px 20px 0;overflow:hidden}
+#bars-container{position:absolute;bottom:0;left:20px;right:20px;top:10px;display:flex;align-items:flex-end;gap:3px}
+
+/* Scanning beam overlay */
+#scan-beam{position:absolute;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,transparent,rgba(239,68,68,.6),rgba(239,68,68,.9),rgba(239,68,68,.6),transparent);box-shadow:0 0 12px rgba(239,68,68,.5);pointer-events:none;transition:left .15s ease;opacity:0}
+
+.bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1;position:relative}
+.bar{width:100%;border-radius:4px 4px 0 0;background:linear-gradient(to top,#1d4ed8,#60a5fa);transition:background .2s,box-shadow .2s}
+.bar::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.15) 50%,transparent 60%);background-size:200% 100%;opacity:0}
+.bar-val{font-size:10px;color:#94a3b8;margin-top:3px;line-height:1;font-weight:600}
+
+.bar.sorted{background:linear-gradient(to top,#065f46,#34d399);box-shadow:0 0 8px rgba(52,211,153,.25)}
+.bar.sorted::after{animation:shimmer 2s linear infinite;opacity:1}
+.bar.current-pos{background:linear-gradient(to top,#3730a3,#818cf8);box-shadow:0 0 12px rgba(129,140,248,.5)}
+.bar.scanning{background:linear-gradient(to top,#991b1b,#ef4444);box-shadow:0 0 10px rgba(239,68,68,.5);animation:pulseBar .4s ease-in-out infinite}
+.bar.current-min{background:linear-gradient(to top,#92400e,#fbbf24);box-shadow:0 0 18px rgba(251,191,36,.7),0 0 6px rgba(251,191,36,1);animation:goldGlow .6s ease-in-out infinite}
+.bar.swapping{background:linear-gradient(to top,#c2410c,#f97316);box-shadow:0 0 20px rgba(249,115,22,.7)}
+
+/* Round progress */
+#round-progress-wrap{height:3px;background:#1e293b}
+#round-progress{height:100%;background:linear-gradient(90deg,#059669,#34d399);width:0%;transition:width .3s ease;box-shadow:0 0 8px rgba(52,211,153,.5)}
+
+#legend{display:flex;gap:12px;padding:6px 20px;background:rgba(17,24,39,.8);font-size:.72rem}
 .leg{display:flex;align-items:center;gap:5px}
 .leg-dot{width:10px;height:10px;border-radius:2px}
-#code-panel{width:40%;background:#1a1d2e;border-left:1px solid #2d3148;display:flex;flex-direction:column}
-.panel-title{padding:8px 14px;background:#12152a;font-size:.8rem;color:#8b92c4;border-bottom:1px solid #2d3148}
+
+#code-panel{width:40%;background:#0a1410;border-left:1px solid #1a3a28;display:flex;flex-direction:column}
+.panel-title{padding:8px 14px;background:#060e0a;font-size:.8rem;color:#8b92c4;border-bottom:1px solid #1a3a28}
 #code{flex:1;overflow-y:auto;padding:10px 0;font-family:'Courier New',monospace;font-size:.82rem;line-height:1.8}
-.code-line{padding:1px 14px;color:#8b92c4;white-space:pre}
-.code-line.active{background:#2d2a12;color:#fde68a;border-left:3px solid #fbbf24}
-#explain{padding:10px 14px;background:#0f1117;border-top:1px solid #2d3148;font-size:.8rem;color:#94a3b8;min-height:56px;line-height:1.5}
-#controls{background:#111827;padding:8px 16px;display:flex;align-items:center;gap:10px;border-top:1px solid #1e293b;flex-wrap:wrap}
-button{background:#1d4ed8;color:#e2e8f0;border:none;border-radius:5px;padding:6px 14px;cursor:pointer;font-size:.82rem;transition:background .2s}
-button:hover{background:#2563eb}
-#btn-play{background:#059669}#btn-play:hover{background:#047857}
+.code-line{padding:2px 14px;color:#8b92c4;white-space:pre;border-left:3px solid transparent;transition:all .2s}
+.code-line.active{background:linear-gradient(90deg,rgba(251,191,36,.12),transparent);color:#fde68a;border-left-color:#fbbf24}
+#explain{padding:10px 14px;background:#080c14;border-top:1px solid #1a3a28;font-size:.8rem;color:#94a3b8;min-height:56px;line-height:1.5}
+
+#controls{background:linear-gradient(135deg,#0a1410,#111827);padding:8px 16px;display:flex;align-items:center;gap:10px;border-top:1px solid #1e293b;flex-wrap:wrap;position:relative;z-index:1}
+button{background:#1d4ed8;color:#e2e8f0;border:1px solid #2563eb;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:.82rem;transition:all .2s}
+button:hover{background:#2563eb;box-shadow:0 0 12px rgba(37,99,235,.3)}
+#btn-play{background:#065f46;border-color:#059669}
+#btn-play:hover{background:#059669;box-shadow:0 0 12px rgba(5,150,105,.4)}
 #stats{display:flex;gap:12px;margin-left:auto;font-size:.8rem}
-.stat{background:#1e293b;padding:4px 10px;border-radius:4px}
-.stat span{color:#f59e0b}
+.stat{background:#1e293b;padding:4px 10px;border-radius:6px;border:1px solid #2d3748}
+.stat span{color:#f59e0b;font-weight:700}
 label{font-size:.78rem;color:#64748b}
 input[type=range]{accent-color:#34d399;width:90px}
 select{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:4px 6px;font-size:.78rem}
-#round-info{background:#1e293b;padding:4px 10px;border-radius:4px;font-size:.8rem;color:#34d399}
+#round-info{background:#1e293b;padding:4px 10px;border-radius:6px;font-size:.8rem;color:#34d399;border:1px solid #065f46}
+
+@keyframes shimmer{0%{background-position:-200% center}100%{background-position:200% center}}
+@keyframes pulseBar{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.06);transform-origin:bottom}}
+@keyframes goldGlow{0%,100%{box-shadow:0 0 10px rgba(251,191,36,.5)}50%{box-shadow:0 0 24px rgba(251,191,36,.9),0 0 8px #fbbf24}}
+@keyframes dropIn{0%{transform:translateY(-30px);opacity:0}100%{transform:translateY(0);opacity:1}}
 </style>
 </head>
 <body>
@@ -61,11 +84,15 @@ select{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:4
 </header>
 <main>
   <div id="viz">
-    <div id="bar-area"><div id="bars-container"></div></div>
+    <div id="bar-area">
+      <div id="scan-beam"></div>
+      <div id="bars-container"></div>
+    </div>
+    <div id="round-progress-wrap"><div id="round-progress"></div></div>
     <div id="legend">
-      <div class="leg"><div class="leg-dot" style="background:#22c55e"></div>Đã sắp xếp</div>
-      <div class="leg"><div class="leg-dot" style="background:#6366f1"></div>Vị trí hiện tại (i)</div>
-      <div class="leg"><div class="leg-dot" style="background:#eab308"></div>Min hiện tại</div>
+      <div class="leg"><div class="leg-dot" style="background:#34d399"></div>Đã sắp xếp</div>
+      <div class="leg"><div class="leg-dot" style="background:#818cf8"></div>Vị trí hiện tại (i)</div>
+      <div class="leg"><div class="leg-dot" style="background:#fbbf24"></div>Min hiện tại (gold glow)</div>
       <div class="leg"><div class="leg-dot" style="background:#ef4444"></div>Đang quét</div>
       <div class="leg"><div class="leg-dot" style="background:#f97316"></div>Đang hoán đổi</div>
     </div>
@@ -116,6 +143,7 @@ const CODE=[
 ];
 
 let arr=[],steps=[],stepIdx=0,playing=false,timer=null,cmp=0,swap=0,acc=0;
+let awaitingSwap=false;
 
 function buildCode(){
   document.getElementById('code').innerHTML=CODE.map((c,i)=>`<div class="code-line" data-i="${i}">${c.t}</div>`).join('');
@@ -124,19 +152,6 @@ function hl(i){document.querySelectorAll('.code-line').forEach(e=>e.classList.re
 function genArray(){const n=+document.getElementById('size-sel').value;arr=Array.from({length:n},()=>Math.floor(Math.random()*90)+10);}
 
 function buildSteps(){
-  steps=[];
-  const a=[...arr];const n=a.length;
-  steps.push({type:'init',arr:[...a]});
-  for(let i=0;i<n-1;i++){
-    steps.push({type:'outer',i,arr:[...a],line:2});
-    steps.push({type:'setMin',i,minIdx:i,arr:[...a],line:4});
-    for(let j=i+1;j<n;j++){
-      steps.push({type:'scan',i,j,minIdx:i,arr:[...a],line:6});
-      if(a[j]<a[i]){/* will track minIdx properly */}
-    }
-    // redo with real minIdx tracking
-  }
-  // Rebuild properly
   steps=[];
   const b=[...arr];const m=b.length;
   steps.push({type:'init',arr:[...b]});
@@ -164,48 +179,159 @@ function buildSteps(){
 }
 
 let sortedUpto=-1;
-function renderBars(state){
+
+function buildBarsDOM(a){
   const con=document.getElementById('bars-container');
-  const a=state.arr||arr;const max=Math.max(...a);
   con.innerHTML='';
-  a.forEach((v,idx)=>{
-    const wrap=document.createElement('div');wrap.className='bar-wrap';
+  const max=Math.max(...a);
+  a.forEach((v,i)=>{
+    const wrap=document.createElement('div');wrap.className='bar-wrap';wrap.dataset.idx=i;
     const bar=document.createElement('div');bar.className='bar';
-    bar.style.height=Math.round(v/max*100)+'%';
-    if(idx<=sortedUpto) bar.classList.add('sorted');
-    else if(state.swapping&&state.swapping.includes(idx)) bar.classList.add('swapping');
-    else if(idx===state.minIdx) bar.classList.add('current-min');
-    else if(idx===state.scanning) bar.classList.add('scanning');
-    else if(idx===state.currentPos) bar.classList.add('current-pos');
+    bar.style.height=Math.round((v/max)*100)+'%';
+    bar.style.animation='dropIn .4s ease both';
+    bar.style.animationDelay=(i*0.02)+'s';
     const val=document.createElement('div');val.className='bar-val';val.textContent=v;
     wrap.appendChild(bar);wrap.appendChild(val);con.appendChild(wrap);
   });
+}
+
+function updateBars(state){
+  const wraps=document.querySelectorAll('.bar-wrap');
+  const beam=document.getElementById('scan-beam');
+  let beamVisible=false;
+  wraps.forEach((wrap,idx)=>{
+    const bar=wrap.querySelector('.bar');
+    bar.className='bar';
+    if(idx<=sortedUpto) bar.classList.add('sorted');
+    else if(state.swapping&&state.swapping.includes(idx)) bar.classList.add('swapping');
+    else if(idx===state.minIdx&&idx!==state.scanning) bar.classList.add('current-min');
+    else if(idx===state.scanning){
+      bar.classList.add('scanning');
+      // move beam
+      const barW=document.getElementById('bars-container').clientWidth/wraps.length;
+      const leftPx=idx*barW + barW/2 + 20; // +20 for padding
+      beam.style.left=leftPx+'px';
+      beam.style.opacity='1';
+      beamVisible=true;
+    }
+    else if(idx===state.currentPos) bar.classList.add('current-pos');
+  });
+  if(!beamVisible) beam.style.opacity='0';
+}
+
+function animateSwap(i1,i2,callback){
+  const wraps=document.querySelectorAll('.bar-wrap');
+  const bar1=wraps[i1],bar2=wraps[i2];
+  if(!bar1||!bar2){callback&&callback();return;}
+  const dx=bar2.offsetLeft-bar1.offsetLeft;
+  const dur=Math.max(150,450-document.getElementById('speed').value*35);
+  bar1.style.transition=`transform ${dur}ms cubic-bezier(0.4,0,0.2,1)`;
+  bar2.style.transition=`transform ${dur}ms cubic-bezier(0.4,0,0.2,1)`;
+  bar1.style.transform=`translateX(${dx}px)`;
+  bar2.style.transform=`translateX(${-dx}px)`;
+  bar1.style.zIndex=2;bar2.style.zIndex=1;
+  setTimeout(()=>{
+    bar1.style.transition='none';bar2.style.transition='none';
+    bar1.style.transform='';bar2.style.transform='';
+    bar1.style.zIndex='';bar2.style.zIndex='';
+    // swap DOM: put bar2 before bar1 if i1<i2
+    const parent=bar1.parentNode;
+    if(i1<i2){
+      parent.insertBefore(bar2,bar1);
+    } else {
+      parent.insertBefore(bar1,bar2.nextSibling);
+    }
+    callback&&callback();
+  },dur+20);
 }
 
 function applyStep(s){
   if(!s)return;
   hl(s.line>=0?s.line:-1);
   const n=(s.arr||arr).length;
-  if(s.type==='init'){sortedUpto=-1;renderBars({arr:s.arr});document.getElementById('explain').textContent='Bắt đầu! Mỗi vòng lặp sẽ tìm phần tử nhỏ nhất và đặt vào đầu phần chưa sắp xếp.';}
-  else if(s.type==='outer'){document.getElementById('round-info').textContent=`Round: ${s.i+1} / ${n-1}`;document.getElementById('explain').innerHTML=`🔄 Round <b>${s.i+1}</b>: Tìm phần tử nhỏ nhất từ vị trí <b>${s.i}</b> đến <b>${n-1}</b>.`;renderBars({arr:s.arr,currentPos:s.i,minIdx:s.i});}
-  else if(s.type==='setMin'){document.getElementById('explain').innerHTML=`🟡 Khởi tạo <code>minIdx = ${s.i}</code> (giá trị = <b>${s.arr[s.i]}</b>).`;renderBars({arr:s.arr,currentPos:s.i,minIdx:s.i});}
-  else if(s.type==='scan'){cmp++;document.getElementById('s-cmp').textContent=cmp;acc+=2;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`👁 Quét <b>j=${s.j}</b>: arr[${s.j}]=${s.arr[s.j]} vs min[${s.minIdx}]=${s.arr[s.minIdx]}`;renderBars({arr:s.arr,currentPos:s.i,minIdx:s.minIdx,scanning:s.j});}
-  else if(s.type==='newMin'){document.getElementById('explain').innerHTML=`⭐ Tìm được min mới! arr[${s.j}]=${s.arr[s.j]} < arr[${s.minIdx}]? Cập nhật <code>minIdx = ${s.j}</code>`;renderBars({arr:s.arr,currentPos:s.i,minIdx:s.minIdx});}
-  else if(s.type==='swap'){swap++;document.getElementById('s-swap').textContent=swap;acc+=2;document.getElementById('s-acc').textContent=acc;document.getElementById('explain').innerHTML=`🔄 Hoán đổi arr[${s.i}]=${s.arr[s.i]} ↔ arr[${s.minIdx}]=${s.arr[s.minIdx]}`;renderBars({arr:s.arr,currentPos:s.i,swapping:[s.i,s.minIdx]});}
-  else if(s.type==='afterswap'){renderBars({arr:s.arr,currentPos:s.i});}
-  else if(s.type==='noswap'){document.getElementById('explain').innerHTML=`✅ min đã ở đúng vị trí (i=${s.i}), không cần swap.`;renderBars({arr:s.arr,currentPos:s.i});}
-  else if(s.type==='sorted'){sortedUpto=s.sortedUpto;renderBars({arr:s.arr});}
-  else if(s.type==='done'){sortedUpto=s.arr.length-1;renderBars({arr:s.arr});document.getElementById('explain').textContent='🎉 Hoàn tất! Mảng đã được sắp xếp.';stopPlay();}
+
+  if(s.type==='init'){
+    sortedUpto=-1;
+    buildBarsDOM(s.arr);
+    document.getElementById('explain').textContent='Bắt đầu! Mỗi vòng lặp tìm phần tử nhỏ nhất và đặt vào đầu phần chưa sắp xếp.';
+    document.getElementById('scan-beam').style.opacity='0';
+  }
+  else if(s.type==='outer'){
+    document.getElementById('round-info').textContent=`Round: ${s.i+1} / ${n-1}`;
+    document.getElementById('round-progress').style.width=((s.i/(n-2))*100)+'%';
+    document.getElementById('explain').innerHTML=`🔄 Round <b>${s.i+1}</b>: Tìm phần tử nhỏ nhất từ vị trí <b>${s.i}</b> đến <b>${n-1}</b>.`;
+    updateBars({currentPos:s.i,minIdx:s.minIdx});
+  }
+  else if(s.type==='setMin'){
+    document.getElementById('explain').innerHTML=`🟡 Khởi tạo <code>minIdx = ${s.i}</code> (giá trị = <b>${s.arr[s.i]}</b>).`;
+    updateBars({currentPos:s.i,minIdx:s.minIdx});
+  }
+  else if(s.type==='scan'){
+    cmp++;document.getElementById('s-cmp').textContent=cmp;
+    acc+=2;document.getElementById('s-acc').textContent=acc;
+    document.getElementById('explain').innerHTML=`👁 Quét <b>j=${s.j}</b>: arr[${s.j}]=${s.arr[s.j]} vs min[${s.minIdx}]=${s.arr[s.minIdx]}`;
+    updateBars({currentPos:s.i,minIdx:s.minIdx,scanning:s.j});
+  }
+  else if(s.type==='newMin'){
+    document.getElementById('explain').innerHTML=`⭐ Min mới! arr[${s.j}]=${s.arr[s.j]} < ${s.arr[s.minIdx]}. <code>minIdx = ${s.j}</code>`;
+    updateBars({currentPos:s.i,minIdx:s.minIdx});
+  }
+  else if(s.type==='swap'){
+    swap++;document.getElementById('s-swap').textContent=swap;
+    acc+=2;document.getElementById('s-acc').textContent=acc;
+    document.getElementById('explain').innerHTML=`🔄 Hoán đổi arr[${s.i}]=${s.arr[s.i]} ↔ arr[${s.minIdx}]=${s.arr[s.minIdx]}`;
+    awaitingSwap=true;
+    if(playing) stopPlay();
+    updateBars({swapping:[s.i,s.minIdx]});
+    document.getElementById('scan-beam').style.opacity='0';
+    animateSwap(s.i,s.minIdx,()=>{
+      awaitingSwap=false;
+      if(stepIdx<steps.length&&steps[stepIdx].type==='afterswap'){
+        applyStep(steps[stepIdx++]);
+      }
+      if(playing) continuePlay();
+    });
+    return;
+  }
+  else if(s.type==='afterswap'){updateBars({currentPos:s.i});}
+  else if(s.type==='noswap'){
+    document.getElementById('explain').innerHTML=`✅ min đã ở đúng vị trí (i=${s.i}), không cần swap.`;
+    updateBars({currentPos:s.i});
+    document.getElementById('scan-beam').style.opacity='0';
+  }
+  else if(s.type==='sorted'){
+    sortedUpto=s.sortedUpto;
+    updateBars({});
+    document.getElementById('scan-beam').style.opacity='0';
+  }
+  else if(s.type==='done'){
+    sortedUpto=s.arr.length-1;
+    updateBars({});
+    document.getElementById('scan-beam').style.opacity='0';
+    document.getElementById('explain').textContent='🎉 Hoàn tất! Mảng đã được sắp xếp.';
+    document.getElementById('round-progress').style.width='100%';
+    stopPlay();
+  }
 }
 
 function getDelay(){return Math.round(1100-document.getElementById('speed').value*100);}
-function tick(){if(stepIdx>=steps.length){stopPlay();return;}applyStep(steps[stepIdx++]);if(playing)timer=setTimeout(tick,getDelay());}
+function continuePlay(){playing=true;document.getElementById('btn-play').textContent='⏸ Pause';tick();}
+function tick(){if(awaitingSwap)return;if(stepIdx>=steps.length){stopPlay();return;}applyStep(steps[stepIdx++]);if(playing&&!awaitingSwap)timer=setTimeout(tick,getDelay());}
 function startPlay(){if(stepIdx>=steps.length)reset();playing=true;document.getElementById('btn-play').textContent='⏸ Pause';tick();}
 function stopPlay(){playing=false;clearTimeout(timer);document.getElementById('btn-play').textContent='▶ Play';}
-function reset(){stopPlay();stepIdx=0;cmp=0;swap=0;acc=0;sortedUpto=-1;buildSteps();['s-cmp','s-swap','s-acc'].forEach(id=>document.getElementById(id).textContent=0);document.getElementById('round-info').textContent='Round: 0 / 0';hl(-1);renderBars({arr});document.getElementById('explain').textContent='👋 Nhấn Play để bắt đầu!';}
+function reset(){
+  stopPlay();awaitingSwap=false;stepIdx=0;cmp=0;swap=0;acc=0;sortedUpto=-1;
+  buildSteps();
+  ['s-cmp','s-swap','s-acc'].forEach(id=>document.getElementById(id).textContent=0);
+  document.getElementById('round-info').textContent='Round: 0 / 0';
+  document.getElementById('round-progress').style.width='0%';
+  document.getElementById('scan-beam').style.opacity='0';
+  hl(-1);buildBarsDOM(arr);
+  document.getElementById('explain').textContent='👋 Nhấn Play để bắt đầu!';
+}
 
 document.getElementById('btn-play').onclick=()=>playing?stopPlay():startPlay();
-document.getElementById('btn-step').onclick=()=>{stopPlay();if(stepIdx<steps.length)applyStep(steps[stepIdx++]);};
+document.getElementById('btn-step').onclick=()=>{stopPlay();if(!awaitingSwap&&stepIdx<steps.length)applyStep(steps[stepIdx++]);};
 document.getElementById('btn-reset').onclick=reset;
 document.getElementById('btn-new').onclick=()=>{genArray();reset();};
 document.getElementById('size-sel').onchange=()=>{genArray();reset();};

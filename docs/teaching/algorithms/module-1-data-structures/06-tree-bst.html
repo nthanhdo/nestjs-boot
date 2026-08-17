@@ -7,107 +7,149 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #1a1a2e; --panel-bg: #16213e; --code-bg: #0f0f23;
-    --accent: #06b6d4; --accent2: #ff6b6b; --accent3: #ffd93d;
-    --text: #e8e8f0; --text-dim: #888aaa; --border: #2a2a4a;
-    --node-bg: #0a2d35; --node-border: #0891b2; --node-active: #06b6d4;
-    --node-found: #00ff88; --node-delete: #ff4757; --node-insert: #ffd93d;
+    --bg: #0d0d1a; --panel-bg: #111128; --code-bg: #080816;
+    --accent: #06b6d4; --accent2: #ff4d6d; --accent3: #ffd60a; --accent4: #00ff88;
+    --text: #e8e8f0; --text-dim: #6b6d8a; --border: #1e1e3a;
+    --node-bg: #041820; --node-border: #0891b2; --node-active: #06b6d4;
+    --node-found: #00ff88; --node-delete: #ff4d6d; --node-insert: #ffd60a;
+    --glow-cyan: rgba(6,182,212,0.6); --glow-green: rgba(0,255,136,0.5);
+    --glow-red: rgba(255,77,109,0.5); --glow-yellow: rgba(255,214,10,0.5);
   }
   body { background: var(--bg); color: var(--text); font-family: system-ui,-apple-system,sans-serif;
     display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-  header { background: var(--panel-bg); border-bottom: 1px solid var(--border);
-    padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
-  header h1 { font-size: 1.1rem; color: var(--accent); }
-  .badge { background: var(--code-bg); border: 1px solid var(--border); padding: 2px 10px;
-    border-radius: 20px; font-size: 0.75rem; color: var(--text-dim); }
+  body::before { content:''; position:fixed; inset:0; pointer-events:none;
+    background: radial-gradient(ellipse at 40% 40%, rgba(6,182,212,0.04) 0%, transparent 60%); }
+
+  header { background: linear-gradient(90deg, #111128, #0d0d1a);
+    border-bottom: 1px solid var(--border); padding: 10px 20px;
+    display: flex; align-items: center; gap: 16px; flex-shrink: 0; box-shadow: 0 2px 20px rgba(0,0,0,0.5); }
+  header h1 { font-size: 1.1rem; color: var(--accent); text-shadow: 0 0 20px rgba(6,182,212,0.4); }
+  .badge { background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    backdrop-filter: blur(10px); padding: 2px 10px; border-radius: 20px;
+    font-size: 0.75rem; color: var(--text-dim); }
+
   .main { display: flex; flex: 1; overflow: hidden; }
   .viz { flex: 0 0 60%; display: flex; flex-direction: column; padding: 14px; gap: 10px; overflow: hidden; }
   .ops-bar { display: flex; gap: 8px; flex-wrap: wrap; }
-  .op-btn { background: var(--panel-bg); border: 1px solid var(--border); color: var(--text);
-    padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; transition: all 0.2s; }
-  .op-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .op-btn.active { background: var(--accent); color: #000; font-weight: 600; }
+  .op-btn { background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text-dim);
+    padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 0.82rem; transition: all 0.25s; }
+  .op-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 14px rgba(6,182,212,0.2); }
+  .op-btn.active { background: linear-gradient(135deg, rgba(6,182,212,0.2), rgba(6,182,212,0.06));
+    color: var(--accent); border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(6,182,212,0.25); font-weight: 600; }
   .input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .input-row label { font-size: 0.8rem; color: var(--text-dim); }
-  .input-row input { background: var(--code-bg); border: 1px solid var(--border); color: var(--text);
-    padding: 6px 10px; border-radius: 6px; width: 70px; font-size: 0.85rem; }
-  .run-btn { background: var(--accent); color: #000; border: none; padding: 6px 16px;
-    border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+  .input-row input { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 10px; border-radius: 8px; width: 70px; font-size: 0.85rem; transition: border-color 0.2s; }
+  .input-row input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 12px rgba(6,182,212,0.2); }
+  .run-btn { background: linear-gradient(135deg, var(--accent), rgba(4,140,160,0.8));
+    color: #000; border: none; padding: 6px 18px; border-radius: 8px;
+    cursor: pointer; font-weight: 700; font-size: 0.85rem;
+    transition: all 0.2s; box-shadow: 0 0 16px rgba(6,182,212,0.3); }
+  .run-btn:hover { transform: translateY(-1px); box-shadow: 0 0 24px rgba(6,182,212,0.5); }
 
-  .canvas-area { flex: 1; background: var(--panel-bg); border: 1px solid var(--border);
-    border-radius: 12px; display: flex; flex-direction: column; align-items: center;
-    padding: 12px; gap: 10px; overflow: hidden; }
+  .canvas-area { flex: 1; background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+    backdrop-filter: blur(10px); border-radius: 16px; display: flex; flex-direction: column;
+    align-items: center; padding: 12px; gap: 10px; overflow: hidden; position: relative; }
+  .canvas-area::before { content:''; position:absolute; inset:0; border-radius:16px;
+    background: linear-gradient(135deg, rgba(6,182,212,0.02) 0%, transparent 50%); pointer-events:none; }
 
   /* SVG tree */
   #treeSvg { flex: 1; width: 100%; }
-  .tree-node circle { fill: var(--node-bg); stroke: var(--node-border); stroke-width: 2;
-    transition: all 0.4s; }
-  .tree-node text { fill: var(--text); font-size: 13px; font-weight: 700; text-anchor: middle;
-    dominant-baseline: central; pointer-events: none; }
-  .tree-node.active circle { fill: rgba(6,182,212,0.2); stroke: var(--node-active);
-    filter: drop-shadow(0 0 8px rgba(6,182,212,0.6)); }
+
+  /* Node states via CSS filter on SVG elements */
+  .tree-node circle {
+    fill: var(--node-bg); stroke: var(--node-border); stroke-width: 2.5;
+    transition: all 0.4s cubic-bezier(0.4,0,0.2,1); }
+  .tree-node text { fill: var(--text); font-size: 13px; font-weight: 700;
+    text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+
+  .tree-node.active circle { fill: rgba(6,182,212,0.25); stroke: var(--node-active); stroke-width: 3;
+    filter: drop-shadow(0 0 10px rgba(6,182,212,0.7)) drop-shadow(0 0 20px rgba(6,182,212,0.4)); }
   .tree-node.active text { fill: var(--node-active); }
-  .tree-node.found circle { fill: rgba(0,255,136,0.2); stroke: var(--node-found);
-    filter: drop-shadow(0 0 8px rgba(0,255,136,0.6)); }
+  .tree-node.found circle { fill: rgba(0,255,136,0.22); stroke: var(--node-found); stroke-width: 3;
+    filter: drop-shadow(0 0 10px rgba(0,255,136,0.7)); }
   .tree-node.found text { fill: var(--node-found); }
-  .tree-node.deleting circle { fill: rgba(255,71,87,0.2); stroke: var(--node-delete);
-    filter: drop-shadow(0 0 8px rgba(255,71,87,0.6)); }
+  .tree-node.deleting circle { fill: rgba(255,77,109,0.22); stroke: var(--node-delete); stroke-width: 3;
+    filter: drop-shadow(0 0 10px rgba(255,77,109,0.7)); }
   .tree-node.deleting text { fill: var(--node-delete); }
-  .tree-node.inserting circle { fill: rgba(255,217,61,0.2); stroke: var(--node-insert);
-    filter: drop-shadow(0 0 8px rgba(255,217,61,0.5)); }
+  .tree-node.inserting circle { fill: rgba(255,214,10,0.22); stroke: var(--node-insert); stroke-width: 3;
+    filter: drop-shadow(0 0 10px rgba(255,214,10,0.6)); }
   .tree-node.inserting text { fill: var(--node-insert); }
-  .tree-node.visited circle { fill: rgba(6,182,212,0.08); stroke: var(--node-border); opacity:0.5; }
-  .tree-edge { stroke: var(--node-border); stroke-width: 1.5; fill: none; transition: stroke 0.3s; }
-  .tree-edge.active { stroke: var(--node-active); stroke-width: 2.5; }
+  .tree-node.visited circle { fill: rgba(6,182,212,0.06); stroke: var(--node-border); opacity: 0.5; }
+  .tree-node.visited text { fill: var(--text-dim); }
 
-  /* Traversal order */
+  /* Edge animations */
+  .tree-edge { stroke: rgba(8,145,178,0.4); stroke-width: 1.8; fill: none; transition: stroke 0.35s, stroke-width 0.35s; }
+  .tree-edge.active { stroke: var(--node-active); stroke-width: 3;
+    filter: drop-shadow(0 0 4px rgba(6,182,212,0.6)); }
+  /* Animated stroke-dashoffset for drawing edges */
+  .tree-edge-new { stroke-dasharray: 200; stroke-dashoffset: 200;
+    animation: drawEdge 0.6s ease forwards; }
+  @keyframes drawEdge { to { stroke-dashoffset: 0; } }
+
+  /* Node enter animation */
+  .tree-node-new { animation: nodeDropIn 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  @keyframes nodeDropIn {
+    0% { opacity:0; transform-origin: center; transform:scale(0.3) translateY(-20px); }
+    60% { opacity:1; transform:scale(1.12) translateY(4px); }
+    100% { opacity:1; transform:scale(1) translateY(0); } }
+
+  /* Traversal row */
   .traversal-order { display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
-    min-height: 36px; width: 100%; padding: 0 8px; }
+    min-height: 40px; width: 100%; padding: 0 8px; }
   .traversal-order .label { font-size: 0.72rem; color: var(--text-dim); margin-right: 4px; }
-  .tnode { width: 32px; height: 32px; border: 1.5px solid var(--border); border-radius: 6px;
-    display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;
-    background: var(--code-bg); transition: all 0.3s; }
-  .tnode.lit { border-color: var(--node-found); background: rgba(0,255,136,0.12);
-    color: var(--node-found); transform: scale(1.15); }
-  .tnode.num-label { font-size: 0.6rem; color: var(--text-dim); }
+  .tnode { width: 34px; height: 34px; border: 1.5px solid var(--border); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 600; background: rgba(255,255,255,0.03);
+    transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1); }
+  .tnode.lit { border-color: var(--node-found); background: rgba(0,255,136,0.15);
+    color: var(--node-found); transform: scale(1.18);
+    box-shadow: 0 0 14px rgba(0,255,136,0.4); }
+  .tnode.num-label { font-size: 0.58rem; color: var(--text-dim); width:auto; height:auto;
+    border:none; background:none; }
 
-  .status-msg { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
-    padding: 7px 14px; font-size: 0.82rem; color: var(--text-dim); text-align: center; width: 100%; }
-  .status-msg.info { border-color: var(--accent); color: var(--accent); }
-  .status-msg.success { border-color: var(--node-found); color: var(--node-found); }
-  .status-msg.error { border-color: var(--node-delete); color: var(--node-delete); }
+  .status-msg { background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    backdrop-filter: blur(8px); border-radius: 10px;
+    padding: 7px 14px; font-size: 0.82rem; color: var(--text-dim); text-align: center; width: 100%;
+    transition: all 0.3s; }
+  .status-msg.info { border-color: var(--accent); color: var(--accent); background: rgba(6,182,212,0.06); }
+  .status-msg.success { border-color: var(--node-found); color: var(--node-found); background: rgba(0,255,136,0.06); }
+  .status-msg.error { border-color: var(--node-delete); color: var(--node-delete); background: rgba(255,77,109,0.06); }
 
   .complexity-row { display: flex; gap: 8px; flex-wrap: wrap; }
-  .complexity-badge { background: var(--code-bg); border: 1px solid var(--border);
-    border-radius: 8px; padding: 5px 12px; text-align: center; }
+  .complexity-badge { background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    backdrop-filter: blur(8px); border-radius: 10px; padding: 5px 12px; text-align: center; }
   .complexity-badge .label { font-size: 0.65rem; color: var(--text-dim); }
   .complexity-badge .value { font-size: 0.9rem; font-weight: 700; margin-top: 1px; }
   .green { color: #00ff88; } .yellow { color: var(--accent3); } .red { color: var(--accent2); }
-  .complexity-badge.active-badge { border-color: var(--accent); }
+  .complexity-badge.active-badge { border-color: var(--accent); box-shadow: 0 0 12px rgba(6,182,212,0.25); }
 
   .code-panel { flex: 0 0 40%; background: var(--code-bg); border-left: 1px solid var(--border);
     display: flex; flex-direction: column; overflow: hidden; }
   .code-panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border);
-    font-size: 0.8rem; color: var(--text-dim); display: flex; gap: 8px; align-items: center; }
+    font-size: 0.8rem; color: var(--text-dim); display: flex; gap: 8px; align-items: center;
+    background: linear-gradient(90deg, rgba(6,182,212,0.04), transparent); }
   .code-panel-header span { color: var(--accent); font-weight: 600; font-size: 0.85rem; }
   .code-body { flex: 1; overflow-y: auto; padding: 12px 0; font-family: 'Courier New',monospace; font-size: 0.82rem; }
-  .code-line { display: flex; padding: 3px 0; transition: background 0.2s; }
-  .code-line.highlight { background: rgba(6,182,212,0.12); border-left: 3px solid var(--accent); }
-  .ln { width: 36px; text-align: right; padding-right: 12px; color: #444; flex-shrink: 0; user-select: none; }
+  .code-line { display: flex; padding: 3px 0; transition: background 0.25s; }
+  .code-line.highlight { background: rgba(6,182,212,0.1); border-left: 3px solid var(--accent); }
+  .ln { width: 36px; text-align: right; padding-right: 12px; color: #333; flex-shrink: 0; user-select: none; }
   .code-text { color: #abb2bf; white-space: pre; }
-  .kw { color: #c678dd; } .fn { color: #61afef; } .cm { color: #5c6370; font-style: italic; }
+  .kw { color: #c678dd; } .fn { color: #61afef; } .cm { color: #4a4f60; font-style: italic; }
 
-  .controls { background: var(--panel-bg); border-top: 1px solid var(--border);
-    padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; flex-wrap: wrap; }
-  .ctrl-btn { background: var(--code-bg); border: 1px solid var(--border); color: var(--text);
-    width: 36px; height: 36px; border-radius: 8px; cursor: pointer; display: flex;
-    align-items: center; justify-content: center; font-size: 1rem; transition: all 0.2s; }
-  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .controls { background: linear-gradient(90deg, var(--panel-bg), var(--bg));
+    border-top: 1px solid var(--border); padding: 10px 20px;
+    display: flex; align-items: center; gap: 16px; flex-shrink: 0; flex-wrap: wrap; }
+  .ctrl-btn { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text);
+    width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: all 0.2s; }
+  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 12px rgba(6,182,212,0.2); }
   .speed-group { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-dim); }
-  input[type=range] { -webkit-appearance: none; width: 100px; height: 4px; background: var(--border);
-    border-radius: 2px; outline: none; cursor: pointer; }
+  input[type=range] { -webkit-appearance: none; width: 100px; height: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--border)); border-radius: 2px; outline: none; cursor: pointer; }
   input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px;
-    background: var(--accent); border-radius: 50%; }
+    background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--glow-cyan); }
   .step-info { font-size: 0.78rem; color: var(--text-dim); }
 </style>
 </head>
@@ -115,7 +157,7 @@
 <header>
   <h1>🌳 Cây nhị phân tìm kiếm — BST</h1>
   <span class="badge">Module 1 · Cấu trúc dữ liệu</span>
-  <span class="badge">Left < Root < Right</span>
+  <span class="badge">Left &lt; Root &lt; Right</span>
   <span class="badge">O(log n) avg · O(n) worst</span>
 </header>
 
@@ -146,7 +188,6 @@
       <div class="status-msg" id="statusMsg">Chọn thao tác và nhấn ▶ Chạy</div>
     </div>
   </div>
-
   <div class="code-panel">
     <div class="code-panel-header">📄 Pseudocode — <span id="codeTitle">BST Insert</span></div>
     <div class="code-body" id="codeBody"></div>
@@ -163,7 +204,6 @@
 </div>
 
 <script>
-// ── BST Node ──────────────────────────────────────────────────────
 class BSTNode {
   constructor(val) { this.val=val; this.left=null; this.right=null; }
 }
@@ -198,7 +238,6 @@ function cloneTree(node) {
   return n;
 }
 
-// initial tree
 let root = null;
 const initVals = [50, 30, 70, 20, 40, 60, 80];
 initVals.forEach(v => root = bstInsert(root, v));
@@ -207,58 +246,59 @@ let currentOp = 'insert';
 let steps = [], stepIdx = -1, playing = false, playTimer = null;
 const speedMap = { 1:1200, 2:900, 3:600, 4:350, 5:180 };
 
-// ── Layout ─────────────────────────────────────────────────────────
 function layoutTree(node, x, y, spread) {
   if (!node) return {};
   const positions = {};
   positions[node.val] = {x, y};
-  Object.assign(positions, layoutTree(node.left, x-spread, y+60, spread/2));
-  Object.assign(positions, layoutTree(node.right, x+spread, y+60, spread/2));
+  Object.assign(positions, layoutTree(node.left, x-spread, y+64, spread/2));
+  Object.assign(positions, layoutTree(node.right, x+spread, y+64, spread/2));
   return positions;
 }
 
 function collectEdges(node, positions) {
   if (!node) return [];
   const edges = [];
-  if (node.left) {
-    edges.push({from:node.val, to:node.left.val});
-    edges.push(...collectEdges(node.left, positions));
-  }
-  if (node.right) {
-    edges.push({from:node.val, to:node.right.val});
-    edges.push(...collectEdges(node.right, positions));
-  }
+  if (node.left) { edges.push({from:node.val, to:node.left.val}); edges.push(...collectEdges(node.left, positions)); }
+  if (node.right) { edges.push({from:node.val, to:node.right.val}); edges.push(...collectEdges(node.right, positions)); }
   return edges;
 }
 
-function renderTree(treeRoot, highlights={}, activeEdges=[]) {
+function renderTree(treeRoot, highlights={}, activeEdges=[], newNode=null) {
   const svg = document.getElementById('treeSvg');
-  const W = svg.clientWidth || 500;
+  const W = svg.clientWidth || 520;
   svg.innerHTML = '';
   if (!treeRoot) return;
-  const positions = layoutTree(treeRoot, W/2, 32, W/4);
+  const positions = layoutTree(treeRoot, W/2, 28, W/4);
   const edges = collectEdges(treeRoot, positions);
 
-  // Draw edges first
+  // Edges
   edges.forEach(e => {
     const p1 = positions[e.from], p2 = positions[e.to];
     if (!p1||!p2) return;
     const line = document.createElementNS('http://www.w3.org/2000/svg','line');
     line.setAttribute('x1',p1.x); line.setAttribute('y1',p1.y);
     line.setAttribute('x2',p2.x); line.setAttribute('y2',p2.y);
-    line.setAttribute('class','tree-edge'+(activeEdges.includes(`${e.from}-${e.to}`)?' active':''));
+    const isActive = activeEdges.includes(`${e.from}-${e.to}`);
+    let cls = 'tree-edge' + (isActive ? ' active' : '');
+    if (e.to === newNode) cls += ' tree-edge-new';
+    line.setAttribute('class', cls);
     svg.appendChild(line);
   });
 
-  // Draw nodes
+  // Nodes
   function drawNode(node) {
     if (!node) return;
     const pos = positions[node.val];
     if (!pos) return;
     const g = document.createElementNS('http://www.w3.org/2000/svg','g');
-    g.setAttribute('class','tree-node'+(highlights[node.val]?' '+highlights[node.val]:''));
+    let cls = 'tree-node';
+    if (highlights[node.val]) cls += ' ' + highlights[node.val];
+    if (node.val === newNode) cls += ' tree-node-new';
+    g.setAttribute('class', cls);
     const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    c.setAttribute('cx',pos.x); c.setAttribute('cy',pos.y); c.setAttribute('r',20);
+    c.setAttribute('cx',pos.x); c.setAttribute('cy',pos.y); c.setAttribute('r',22);
+    // Gradient fill via inline style
+    c.setAttribute('style', node.val === newNode ? 'fill:rgba(255,214,10,0.2)' : '');
     const t = document.createElementNS('http://www.w3.org/2000/svg','text');
     t.setAttribute('x',pos.x); t.setAttribute('y',pos.y); t.textContent=node.val;
     g.appendChild(c); g.appendChild(t);
@@ -268,7 +308,6 @@ function renderTree(treeRoot, highlights={}, activeEdges=[]) {
   drawNode(treeRoot);
 }
 
-// ── Code ──────────────────────────────────────────────────────────
 const codes = {
   insert: { title:'BST Insert — O(log n) avg', lines:[
     ['cm','// Chèn giá trị vào BST'],
@@ -356,7 +395,6 @@ function renderCode(op, hl=-1) {
   });
 }
 
-// ── Traversal orders ──────────────────────────────────────────────
 function inOrder(node, out=[]) { if(!node) return out; inOrder(node.left,out); out.push(node.val); inOrder(node.right,out); return out; }
 function preOrder(node, out=[]) { if(!node) return out; out.push(node.val); preOrder(node.left,out); preOrder(node.right,out); return out; }
 function postOrder(node, out=[]) { if(!node) return out; postOrder(node.left,out); postOrder(node.right,out); out.push(node.val); return out; }
@@ -364,77 +402,53 @@ function postOrder(node, out=[]) { if(!node) return out; postOrder(node.left,out
 function renderTraversalRow(order, litUpTo=-1) {
   const row = document.getElementById('traversalRow');
   row.style.display = 'flex';
-  row.innerHTML = `<span class="label" id="travLabel">Thứ tự:</span>`;
+  row.innerHTML = `<span class="label">Thứ tự:</span>`;
   order.forEach((val,i) => {
-    const t = document.createElement('div'); t.className='tnode'+(i<=litUpTo?' lit':'');
+    const t = document.createElement('div');
+    t.className='tnode'+(i<=litUpTo?' lit':'');
     t.textContent=val; row.appendChild(t);
-    if(i<=litUpTo) {
-      const n = document.createElement('div'); n.className='tnode num-label'; n.textContent=i+1;
-      row.appendChild(n);
-    }
   });
 }
 
-// ── Build steps ───────────────────────────────────────────────────
 function buildSteps(op, val) {
   steps = [];
-  const labels = {insert:'Chèn vào BST',search:'Tìm kiếm',delete:'Xóa node'};
   if (['inorder','preorder','postorder'].includes(op)) {
     const fn = op==='inorder'?inOrder:op==='preorder'?preOrder:postOrder;
     const order = fn(root);
-    const travMap = {inorder:'In-order (L→R→Root)',preorder:'Pre-order (R→L→R)',postorder:'Post-order (L→R→R)'};
-    steps.push({ highlights:{}, trav:order, travLit:-1, code:-1, msg:`${travMap[op]} — ${order.length} node` });
-    const inOrderResult = inOrder(root);
-    // collect path for each traversal
-    if (op==='inorder') {
-      const path=[]; function ioPath(n){if(!n)return;ioPath(n.left);path.push(n.val);ioPath(n.right);}
-      ioPath(root);
-      path.forEach((v,i)=>{
-        const h={[v]:'found'};
-        steps.push({ highlights:h, trav:order, travLit:i, code:5, msg:`Thăm node ${v} (vị trí ${i+1}/${path.length})` });
-      });
-    } else if (op==='preorder') {
-      const path=[]; function prePath(n){if(!n)return;path.push(n.val);prePath(n.left);prePath(n.right);}
-      prePath(root);
-      path.forEach((v,i)=>{
-        const h={[v]:'found'};
-        steps.push({ highlights:h, trav:order, travLit:i, code:4, msg:`Thăm node ${v} (vị trí ${i+1}/${path.length})` });
-      });
-    } else {
-      const path=[]; function poPath(n){if(!n)return;poPath(n.left);poPath(n.right);path.push(n.val);}
-      poPath(root);
-      path.forEach((v,i)=>{
-        const h={[v]:'found'};
-        steps.push({ highlights:h, trav:order, travLit:i, code:6, msg:`Thăm node ${v} (vị trí ${i+1}/${path.length})` });
-      });
-    }
-    steps.push({ highlights:{}, trav:order, travLit:order.length-1, code:7, msg:`✓ Hoàn tất duyệt — kết quả: [${order.join(', ')}]` });
+    steps.push({ highlights:{}, trav:order, travLit:-1, code:-1, msg:`${op} — ${order.length} node` });
+    const path=[]; function collect(n){if(!n)return;
+      if(op==='inorder'){collect(n.left);path.push(n.val);collect(n.right);}
+      else if(op==='preorder'){path.push(n.val);collect(n.left);collect(n.right);}
+      else{collect(n.left);collect(n.right);path.push(n.val);}
+    } collect(root);
+    path.forEach((v,i)=>{
+      steps.push({ highlights:{[v]:'found'}, trav:order, travLit:i,
+        code:op==='inorder'?5:op==='preorder'?4:6, msg:`Thăm node ${v} (${i+1}/${path.length})` });
+    });
+    steps.push({ highlights:{}, trav:order, travLit:order.length-1, code:7,
+      msg:`✓ Xong — kết quả: [${order.join(', ')}]` });
     return;
   }
 
   if (op === 'insert') {
-    let cur = root, path = [], edges = [];
+    let cur = root, edges = [];
     steps.push({ highlights:{}, edges:[], code:-1, msg:`Chèn ${val} vào BST` });
     while (cur) {
-      path.push(cur.val);
       if (val === cur.val) {
         steps.push({ highlights:{[cur.val]:'found'}, code:8, msg:`${val} đã tồn tại trong cây` });
         return;
       }
       const cmpCode = val < cur.val ? 4 : 6;
-      steps.push({ highlights:{[cur.val]:'active'}, edges, code:cmpCode,
+      steps.push({ highlights:{[cur.val]:'active'}, edges:[...edges], code:cmpCode,
         msg: val < cur.val ? `${val} < ${cur.val} → đi sang TRÁI` : `${val} > ${cur.val} → đi sang PHẢI` });
       const next = val < cur.val ? cur.left : cur.right;
       if (next) edges = [...edges, `${cur.val}-${next.val}`];
       cur = next;
     }
-    const newRoot = cloneTree(root); bstInsert(newRoot, val);
-    const nr2 = cloneTree(root); const nr2built = bstInsert(nr2, val);
-    root = nr2built;
-    steps.push({ highlights:{[val]:'inserting'}, edges, code:3, msg:`Chèn node mới: ${val}` });
+    root = bstInsert(root, val);
+    steps.push({ highlights:{[val]:'inserting'}, edges, code:3, newNode:val, msg:`Chèn node mới: ${val} — thả xuống!` });
     steps.push({ highlights:{[val]:'found'}, edges, code:7, msg:`✓ Đã thêm ${val} vào BST — O(log n)` });
-  }
-  else if (op === 'search') {
+  } else if (op === 'search') {
     let cur = root; const edges = [];
     steps.push({ highlights:{}, edges:[], code:-1, msg:`Tìm kiếm ${val} trong BST` });
     while (cur) {
@@ -444,14 +458,13 @@ function buildSteps(op, val) {
       }
       const cmpCode = val < cur.val ? 4 : 6;
       steps.push({ highlights:{[cur.val]:'visited'}, edges:[...edges], code:cmpCode,
-        msg: val < cur.val ? `${val} < ${cur.val} → tìm trong cây TRÁI` : `${val} > ${cur.val} → tìm trong cây PHẢI` });
+        msg: val < cur.val ? `${val} < ${cur.val} → tìm cây TRÁI` : `${val} > ${cur.val} → tìm cây PHẢI` });
       const next = val < cur.val ? cur.left : cur.right;
       if (next) edges.push(`${cur.val}-${next.val}`);
       cur = next;
     }
     steps.push({ highlights:{}, edges:[], code:2, msg:`✗ Không tìm thấy ${val}` });
-  }
-  else if (op === 'delete') {
+  } else if (op === 'delete') {
     let cur = root;
     steps.push({ highlights:{}, code:-1, msg:`Xóa ${val} khỏi BST` });
     while (cur) {
@@ -464,7 +477,6 @@ function buildSteps(op, val) {
       cur = val < cur.val ? cur.left : cur.right;
     }
     if (!cur) { steps.push({ highlights:{}, code:1, msg:`✗ ${val} không có trong cây` }); return; }
-
     const hasLeft=!!cur.left, hasRight=!!cur.right;
     if (!hasLeft && !hasRight) {
       steps.push({ highlights:{[cur.val]:'deleting'}, code:7, msg:`Trường hợp 1: Leaf node — xóa trực tiếp` });
@@ -489,7 +501,7 @@ function buildSteps(op, val) {
 function applyStep(idx) {
   if (idx<0||idx>=steps.length) return;
   const s = steps[idx];
-  renderTree(root, s.highlights||{}, s.edges||[]);
+  renderTree(root, s.highlights||{}, s.edges||[], s.newNode||null);
   if (s.trav !== undefined) renderTraversalRow(s.trav, s.travLit??-1);
   else document.getElementById('traversalRow').style.display='none';
   renderCode(currentOp, s.code);

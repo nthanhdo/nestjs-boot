@@ -6,124 +6,147 @@
 <title>17 - Tìm Kiếm Theo Chiều Rộng (BFS)</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; min-height: 100vh; }
-  h1 { text-align: center; padding: 18px; font-size: 1.5rem; color: #80cbc4; }
-  .subtitle { text-align: center; color: #90a4ae; margin-bottom: 16px; font-size: 0.9rem; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0a0c14; color: #e0e0e0; min-height: 100vh; }
+
+  @keyframes wavePulse {
+    0%   { r: 22; opacity: 0.9; stroke-width: 3; }
+    100% { r: 44; opacity: 0; stroke-width: 1; }
+  }
+  @keyframes edgeDraw {
+    from { stroke-dashoffset: 300; }
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes nodeGlow {
+    0%,100% { filter: drop-shadow(0 0 6px rgba(249,168,37,0.5)); }
+    50% { filter: drop-shadow(0 0 22px rgba(249,168,37,1)); }
+  }
+  @keyframes queueSlideIn {
+    from { opacity: 0; transform: translateX(18px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes queueSlideOut {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(-18px) scale(0.9); }
+  }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes waveDelay {
+    0%,100% { filter: drop-shadow(0 0 4px rgba(128,203,196,0.3)); }
+    50% { filter: drop-shadow(0 0 16px rgba(128,203,196,0.9)); }
+  }
+  @keyframes pathGlow {
+    0%,100% { stroke-width: 4; filter: drop-shadow(0 0 4px rgba(255,213,79,0.6)); }
+    50% { stroke-width: 6; filter: drop-shadow(0 0 14px rgba(255,213,79,1)); }
+  }
+
+  h1 { text-align: center; padding: 18px; font-size: 1.5rem; background: linear-gradient(135deg, #80cbc4, #26a69a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { text-align: center; color: #607d8b; margin-bottom: 16px; font-size: 0.9rem; }
 
   .layout { display: grid; grid-template-columns: 1fr 320px; gap: 16px; padding: 0 16px 20px; max-width: 1200px; margin: 0 auto; }
   .left-panel { display: flex; flex-direction: column; gap: 12px; }
 
-  .card { background: #1a1d27; border-radius: 12px; padding: 16px; border: 1px solid #2a2d3e; }
+  .card { background: linear-gradient(145deg, #1a1d27, #151821); border-radius: 14px; padding: 16px; border: 1px solid #252836; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
   .card-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 2px; color: #80cbc4; margin-bottom: 12px; }
 
   .btn { padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s; }
-  .btn-teal { background: #00695c; color: #fff; } .btn-teal:hover { background: #00796b; }
-  .btn-green { background: #2e7d32; color: #fff; } .btn-green:hover { background: #388e3c; }
-  .btn-gray { background: #37474f; color: #e0e0e0; } .btn-gray:hover { background: #455a64; }
-  .btn-orange { background: #e65100; color: #fff; } .btn-orange:hover { background: #ef6c00; }
-  .btn-sm { padding: 5px 10px; font-size: 0.8rem; }
+  .btn-teal { background: linear-gradient(135deg, #00695c, #00796b); color: #fff; box-shadow: 0 2px 10px rgba(0,105,92,0.4); }
+  .btn-teal:hover { transform: translateY(-1px); }
+  .btn-green { background: linear-gradient(135deg, #2e7d32, #388e3c); color: #fff; }
+  .btn-green:hover { transform: translateY(-1px); }
+  .btn-gray { background: #1e2130; color: #b0bec5; border: 1px solid #252836; }
+  .btn-gray:hover { background: #252836; }
+  .btn-orange { background: linear-gradient(135deg, #bf360c, #e64a19); color: #fff; }
+  .btn-sm { padding: 5px 10px; font-size: 0.79rem; }
 
   .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .speed-row { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-  .speed-row label { font-size: 0.78rem; color: #90a4ae; }
+  .speed-row label { font-size: 0.78rem; color: #78909c; }
   input[type=range] { accent-color: #80cbc4; width: 90px; }
 
-  /* MODE TABS */
   .mode-tabs { display: flex; gap: 4px; margin-bottom: 12px; }
-  .mode-tab { padding: 6px 16px; border-radius: 8px; border: 1px solid #3a3d4e; background: #252836; color: #90a4ae; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
-  .mode-tab.active { background: #00695c; border-color: #80cbc4; color: #fff; }
+  .mode-tab { padding: 6px 16px; border-radius: 8px; border: 1px solid #2e3347; background: #1e2130; color: #78909c; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
+  .mode-tab.active { background: linear-gradient(135deg, #00695c, #00796b); border-color: #80cbc4; color: #fff; box-shadow: 0 0 12px rgba(0,105,92,0.4); }
 
-  /* GRAPH SVG */
-  #graphSvg { width: 100%; background: #12151f; border-radius: 10px; border: 1px solid #2a2d3e; cursor: pointer; }
-  .graph-node { cursor: pointer; }
-  .graph-node circle { stroke-width: 2.5; transition: fill 0.35s, stroke 0.35s; }
-  .graph-node text { font-size: 12px; font-weight: 700; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
-  .graph-edge { stroke: #3a3d4e; stroke-width: 2; transition: stroke 0.3s; fill: none; }
-  .graph-edge.bfs-tree { stroke: #80cbc4; stroke-width: 3; }
-  .graph-edge.shortest { stroke: #ffd54f; stroke-width: 4; }
+  /* GRAPH */
+  #graphSvg { width: 100%; background: #0d1018; border-radius: 12px; border: 1px solid #1e2130; cursor: pointer; }
+  .gnode-unvisited circle { fill: url(#bfsGradUn); stroke: #37474f; stroke-width: 2.5; }
+  .gnode-unvisited text { fill: #78909c; }
+  .gnode-inqueue circle { fill: url(#bfsGradQ); stroke: #ffd54f; stroke-width: 3; }
+  .gnode-inqueue text { fill: #000; font-weight: 900; }
+  .gnode-visited circle { fill: url(#bfsGradVis); stroke: #42a5f5; stroke-width: 2.5; }
+  .gnode-visited text { fill: #fff; }
+  .gnode-start circle { fill: url(#bfsGradStart); stroke: #80cbc4; stroke-width: 3; }
+  .gnode-start text { fill: #fff; }
+  .gnode-target circle { fill: url(#bfsGradTarget); stroke: #ef5350; stroke-width: 3; }
+  .gnode-target text { fill: #fff; }
+  .gnode-path circle { fill: url(#bfsGradPath); stroke: #ffd54f; stroke-width: 3; }
+  .gnode-path text { fill: #000; font-weight: 900; }
 
-  .n-unvisited circle { fill: #252836; stroke: #546e7a; }
-  .n-unvisited text { fill: #90a4ae; }
-  .n-inqueue circle { fill: #f9a825; stroke: #ffd54f; }
-  .n-inqueue text { fill: #000; }
-  .n-visited circle { fill: #1565c0; stroke: #42a5f5; }
-  .n-visited text { fill: #fff; }
-  .n-start circle { fill: #00695c; stroke: #80cbc4; }
-  .n-start text { fill: #fff; }
-  .n-target circle { fill: #c62828; stroke: #ef5350; }
-  .n-target text { fill: #fff; }
-  .n-path circle { fill: #f9a825; stroke: #ffd54f; }
-  .n-path text { fill: #000; }
+  .gedge { stroke: #2e3347; stroke-width: 2; fill: none; transition: stroke 0.35s, stroke-width 0.35s; }
+  .gedge-tree { stroke: #80cbc4; stroke-width: 3; stroke-dasharray: 300; animation: edgeDraw 0.5s ease-out forwards; }
+  .gedge-path { stroke: #ffd54f; stroke-width: 5; animation: pathGlow 1.2s ease-in-out infinite; }
 
-  @keyframes wave-pulse { 0%,100%{r:22} 50%{r:27} }
-  .n-inqueue .wave-circle { animation: wave-pulse 0.7s ease infinite; }
-
-  /* GRID MODE */
-  #gridCanvas { border-radius: 10px; border: 1px solid #2a2d3e; display: block; cursor: crosshair; }
+  /* GRID */
+  #gridCanvas { border-radius: 10px; border: 1px solid #1e2130; display: block; cursor: crosshair; }
 
   /* QUEUE VIZ */
   .queue-outer { overflow-x: auto; padding: 4px 0; }
   .queue-container { display: flex; gap: 5px; min-width: max-content; }
   .queue-item {
-    background: #252836; border: 1px solid #80cbc4; border-radius: 6px; padding: 5px 12px;
-    font-size: 0.84rem; font-weight: 700; color: #80cbc4; transition: all 0.3s;
-    animation: queueIn 0.2s ease;
+    background: #1e2130; border: 1px solid #80cbc4; border-radius: 8px; padding: 5px 12px;
+    font-size: 0.84rem; font-weight: 700; color: #80cbc4;
+    animation: queueSlideIn 0.25s ease;
+    transition: all 0.3s;
   }
-  @keyframes queueIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
-  .queue-item.front { background: #00695c; border-color: #80cbc4; color: #fff; }
-  .queue-item.label { background: transparent; border: none; color: #546e7a; font-size: 0.75rem; padding: 5px 4px; animation: none; }
-  .queue-empty { color: #546e7a; font-size: 0.8rem; padding: 8px; }
+  .queue-item.front { background: linear-gradient(135deg, #00695c, #00796b); border-color: #80cbc4; color: #fff; box-shadow: 0 0 12px rgba(0,105,92,0.5); }
+  .queue-item.label { background: transparent; border: none; color: #37474f; font-size: 0.74rem; padding: 5px 4px; animation: none; }
+  .queue-empty { color: #37474f; font-size: 0.8rem; padding: 8px; }
 
   /* LEVEL ORDER */
   .levels-container { display: flex; flex-direction: column; gap: 6px; }
   .level-row { display: flex; align-items: center; gap: 8px; }
   .level-label { font-size: 0.72rem; color: #80cbc4; width: 60px; }
   .level-nodes { display: flex; gap: 5px; }
-  .level-badge { background: #252836; border: 1px solid #42a5f5; border-radius: 5px; padding: 2px 10px; font-size: 0.8rem; color: #42a5f5; }
-  .level-badge.current-level { background: #1565c0; border-color: #80cbc4; color: #fff; animation: queueIn 0.2s ease; }
+  .level-badge { background: #1e2130; border: 1px solid #42a5f5; border-radius: 6px; padding: 2px 10px; font-size: 0.8rem; color: #42a5f5; }
+  .level-badge.current-level { background: linear-gradient(135deg, #1565c0, #0d47a1); border-color: #80cbc4; color: #fff; animation: waveDelay 0.8s ease-in-out; }
 
-  .dist-badge { background: #1565c0; border-radius: 4px; padding: 0 5px; font-size: 0.7rem; color: #fff; margin-left: 2px; }
-
-  /* COMPLEXITY */
   .comp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .comp-item { background: #252836; border-radius: 8px; padding: 10px; border-left: 3px solid; }
+  .comp-item { background: #1e2130; border-radius: 10px; padding: 10px; border-left: 3px solid; }
   .comp-item.tc { border-color: #ef5350; } .comp-item.sc { border-color: #80cbc4; }
-  .comp-label { font-size: 0.7rem; color: #90a4ae; }
+  .comp-label { font-size: 0.7rem; color: #78909c; }
   .comp-val { font-size: 1rem; font-weight: 700; margin-top: 3px; font-family: monospace; }
   .comp-item.tc .comp-val { color: #ef5350; } .comp-item.sc .comp-val { color: #80cbc4; }
 
-  .explanation-box { background: #252836; border-radius: 10px; padding: 12px; min-height: 52px; border-left: 3px solid #80cbc4; font-size: 0.87rem; line-height: 1.6; }
+  .explanation-box { background: #1e2130; border-radius: 12px; padding: 12px; min-height: 52px; border-left: 3px solid #80cbc4; font-size: 0.87rem; line-height: 1.7; }
 
   .right-panel { display: flex; flex-direction: column; gap: 12px; }
-  .code-panel { background: #1a1d27; border-radius: 12px; padding: 16px; border: 1px solid #2a2d3e; font-family: 'Courier New', monospace; font-size: 0.79rem; }
-  .code-line { padding: 2px 8px; border-radius: 4px; line-height: 1.65; white-space: pre; transition: background 0.2s; }
-  .code-line.active { background: #00695c; color: #fff; }
-  .kw { color: #ce93d8; } .fn { color: #80cbc4; } .cm { color: #546e7a; } .num { color: #ffcc02; }
+  .code-panel { background: #141720; border-radius: 14px; padding: 16px; border: 1px solid #1e2130; font-family: 'Courier New', monospace; font-size: 0.79rem; }
+  .code-line { padding: 3px 10px; border-radius: 6px; line-height: 1.7; white-space: pre; transition: background 0.25s, transform 0.2s; }
+  .code-line.active { background: linear-gradient(135deg, #00695c, #004d40); color: #fff; transform: translateX(4px); box-shadow: 0 0 12px rgba(0,105,92,0.4); }
+  .kw { color: #ce93d8; } .fn { color: #80cbc4; } .cm { color: #37474f; } .num { color: #ffcc02; }
 
-  .trace-log { max-height: 155px; overflow-y: auto; }
+  .trace-log { max-height: 160px; overflow-y: auto; }
   .trace-log::-webkit-scrollbar { width: 4px; }
-  .trace-log::-webkit-scrollbar-thumb { background: #37474f; border-radius: 2px; }
-  .trace-entry { font-size: 0.77rem; padding: 3px 0; border-bottom: 1px solid #2a2d3e; color: #90a4ae; }
+  .trace-log::-webkit-scrollbar-thumb { background: #2e3347; border-radius: 2px; }
+  .trace-entry { font-size: 0.77rem; padding: 4px 0; border-bottom: 1px solid #1e2130; color: #78909c; animation: slideDown 0.2s ease; }
   .trace-entry.enq { color: #80cbc4; }
   .trace-entry.deq { color: #42a5f5; }
   .trace-entry.path { color: #ffd54f; font-weight: 600; }
 
-  select { background: #252836; border: 1px solid #3a3d4e; color: #e0e0e0; padding: 6px 10px; border-radius: 8px; font-size: 0.85rem; }
+  select { background: #1e2130; border: 1px solid #2e3347; color: #e0e0e0; padding: 6px 10px; border-radius: 8px; font-size: 0.85rem; }
   .graph-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
   .legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: #90a4ae; }
-  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.75rem; color: #78909c; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 4px; }
 </style>
 </head>
 <body>
 <h1>🌊 Tìm Kiếm Theo Chiều Rộng — BFS (Breadth-First Search)</h1>
-<p class="subtitle">Khám phá theo từng "lớp" (level) — Queue — Đảm bảo đường đi ngắn nhất (unweighted)</p>
+<p class="subtitle">Khám phá theo từng "lớp" (level) — Queue — Đảm bảo đường đi ngắn nhất</p>
 
 <div class="layout">
   <div class="left-panel">
 
-    <!-- CONFIG -->
     <div class="card">
       <div class="card-title">⚙ Cấu hình</div>
       <div class="mode-tabs">
@@ -139,26 +162,34 @@
         </select>
         <button class="btn btn-gray btn-sm" onclick="generateRandom()">🎲 Ngẫu nhiên</button>
         <button class="btn btn-orange btn-sm" onclick="setTargetMode()">🎯 Chọn Target</button>
-        <span id="modeHint" style="font-size:0.75rem;color:#90a4ae">Click đỉnh để đặt Start</span>
+        <span id="modeHint" style="font-size:0.75rem;color:#78909c">Click đỉnh để đặt Start</span>
       </div>
       <div id="gridConfig" style="display:none">
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <span style="font-size:0.78rem;color:#90a4ae">Click: </span>
-          <button class="btn btn-green btn-sm" onclick="gridMode='start'" id="gmStart">🚀 Start</button>
-          <button class="btn btn-orange btn-sm" onclick="gridMode='end'" id="gmEnd">🎯 End</button>
-          <button class="btn btn-gray btn-sm" onclick="gridMode='wall'" id="gmWall">🧱 Wall</button>
+          <span style="font-size:0.78rem;color:#78909c">Click: </span>
+          <button class="btn btn-green btn-sm" onclick="gridMode='start'">🚀 Start</button>
+          <button class="btn btn-orange btn-sm" onclick="gridMode='end'">🎯 End</button>
+          <button class="btn btn-gray btn-sm" onclick="gridMode='wall'">🧱 Wall</button>
           <button class="btn btn-gray btn-sm" onclick="clearGrid()">🗑 Clear</button>
           <button class="btn btn-teal btn-sm" onclick="generateMaze()">🎲 Mê cung</button>
         </div>
       </div>
     </div>
 
-    <!-- GRAPH / GRID DISPLAY -->
     <div class="card" id="graphCard" style="padding:12px">
-      <div class="card-title">📊 Đồ thị (Kéo để di chuyển đỉnh)</div>
-      <svg id="graphSvg" height="300"></svg>
+      <div class="card-title">📊 Đồ thị — wavefront đồng tâm BFS</div>
+      <svg id="graphSvg" height="300">
+        <defs>
+          <radialGradient id="bfsGradUn" cx="40%" cy="35%"><stop offset="0%" stop-color="#2a2e40"/><stop offset="100%" stop-color="#1a1d27"/></radialGradient>
+          <radialGradient id="bfsGradQ" cx="40%" cy="35%"><stop offset="0%" stop-color="#ffca28"/><stop offset="100%" stop-color="#f57f17"/></radialGradient>
+          <radialGradient id="bfsGradVis" cx="40%" cy="35%"><stop offset="0%" stop-color="#1976d2"/><stop offset="100%" stop-color="#0d47a1"/></radialGradient>
+          <radialGradient id="bfsGradStart" cx="40%" cy="35%"><stop offset="0%" stop-color="#00897b"/><stop offset="100%" stop-color="#00695c"/></radialGradient>
+          <radialGradient id="bfsGradTarget" cx="40%" cy="35%"><stop offset="0%" stop-color="#e53935"/><stop offset="100%" stop-color="#b71c1c"/></radialGradient>
+          <radialGradient id="bfsGradPath" cx="40%" cy="35%"><stop offset="0%" stop-color="#ffca28"/><stop offset="100%" stop-color="#f57f17"/></radialGradient>
+        </defs>
+      </svg>
       <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#252836;border:1px solid #546e7a"></div>Chưa thăm</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#1e2130;border:1px solid #37474f"></div>Chưa thăm</div>
         <div class="legend-item"><div class="legend-dot" style="background:#f9a825"></div>Trong queue</div>
         <div class="legend-item"><div class="legend-dot" style="background:#1565c0"></div>Đã thăm</div>
         <div class="legend-item"><div class="legend-dot" style="background:#ffd54f;border:2px solid #ffd54f"></div>Đường ngắn nhất</div>
@@ -172,14 +203,12 @@
       <div class="legend" style="margin-top:8px">
         <div class="legend-item"><div class="legend-dot" style="background:#00695c"></div>Start</div>
         <div class="legend-item"><div class="legend-dot" style="background:#c62828"></div>End</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#252836;border:1px solid #3a3d4e"></div>Trống</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#37474f"></div>Tường</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#455a64"></div>Tường</div>
         <div class="legend-item"><div class="legend-dot" style="background:#1565c0"></div>Đã thăm</div>
         <div class="legend-item"><div class="legend-dot" style="background:#ffd54f"></div>Đường đi</div>
       </div>
     </div>
 
-    <!-- CONTROLS -->
     <div class="card">
       <div class="card-title">🎮 Điều khiển</div>
       <div class="controls">
@@ -194,50 +223,44 @@
       </div>
     </div>
 
-    <!-- LEVEL ORDER -->
     <div class="card">
       <div class="card-title">🔢 Level-order (Theo từng tầng)</div>
       <div class="levels-container" id="levelsContainer"></div>
     </div>
 
-    <!-- COMPLEXITY -->
     <div class="card">
       <div class="card-title">⏱ Độ phức tạp</div>
       <div class="comp-row">
-        <div class="comp-item tc"><div class="comp-label">Thời gian</div><div class="comp-val">O(V + E)</div><div style="font-size:0.7rem;color:#90a4ae;margin-top:2px">V đỉnh, E cạnh</div></div>
-        <div class="comp-item sc"><div class="comp-label">Không gian</div><div class="comp-val">O(V)</div><div style="font-size:0.7rem;color:#90a4ae;margin-top:2px">Queue chứa tối đa V đỉnh</div></div>
+        <div class="comp-item tc"><div class="comp-label">Thời gian</div><div class="comp-val">O(V + E)</div><div style="font-size:0.7rem;color:#78909c;margin-top:2px">V đỉnh, E cạnh</div></div>
+        <div class="comp-item sc"><div class="comp-label">Không gian</div><div class="comp-val">O(V)</div><div style="font-size:0.7rem;color:#78909c;margin-top:2px">Queue chứa tối đa V đỉnh</div></div>
       </div>
-      <div style="background:#252836;border-radius:8px;padding:10px;margin-top:8px;font-size:0.8rem;color:#b0bec5">
+      <div style="background:#1e2130;border-radius:10px;padding:10px;margin-top:8px;font-size:0.8rem;color:#b0bec5">
         <strong style="color:#80cbc4">BFS vs DFS đường đi ngắn nhất:</strong><br>
-        BFS <strong style="color:#66bb6a">đảm bảo ngắn nhất</strong> (unweighted) vì khám phá theo từng layer.<br>
-        DFS <strong style="color:#ef5350">không đảm bảo</strong> — có thể tìm đường dài hơn trước.
+        BFS <strong style="color:#66bb6a">đảm bảo ngắn nhất</strong> vì khám phá theo layer.<br>
+        DFS <strong style="color:#ef5350">không đảm bảo</strong> — tìm đường dài hơn trước.
       </div>
     </div>
 
-    <!-- EXPLANATION -->
     <div class="card">
       <div class="card-title">💬 Giải thích</div>
-      <div class="explanation-box" id="explanation">Chọn đồ thị hoặc chế độ Grid, sau đó nhấn "Chạy" để xem BFS hoạt động.</div>
+      <div class="explanation-box" id="explanation">Chọn đồ thị hoặc Grid rồi nhấn "Chạy".</div>
     </div>
 
   </div>
 
-  <!-- RIGHT PANEL -->
   <div class="right-panel">
 
-    <!-- QUEUE VIZ -->
     <div class="card">
-      <div class="card-title">📬 Queue (Hàng đợi) — Dequeue từ FRONT, Enqueue vào BACK</div>
+      <div class="card-title">📬 Queue — FIFO, Dequeue FRONT, Enqueue BACK</div>
       <div class="queue-outer">
-        <div class="queue-container" id="queueViz"></div>
+        <div class="queue-container" id="queueViz"><div class="queue-empty">[ Queue rỗng ]</div></div>
       </div>
-      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:0.72rem;color:#546e7a">
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:0.72rem;color:#37474f">
         <span>← DEQUEUE (Front)</span>
         <span>ENQUEUE (Back) →</span>
       </div>
     </div>
 
-    <!-- CODE -->
     <div class="code-panel">
       <div class="card-title" style="margin-bottom:10px">📝 Mã nguồn BFS</div>
       <div class="code-line" id="cl0"><span class="kw">function</span> <span class="fn">bfs</span>(graph, start) {</div>
@@ -262,23 +285,19 @@
       <div class="code-line" id="cl19">}</div>
     </div>
 
-    <!-- TRACE -->
     <div class="card">
       <div class="card-title">📋 Nhật ký</div>
       <div class="trace-log" id="traceLog"></div>
     </div>
 
-    <!-- INFO -->
     <div class="card">
       <div class="card-title">💡 BFS vs DFS</div>
       <div style="font-size:0.8rem;line-height:1.85;color:#b0bec5">
-        <div>✅ <strong style="color:#80cbc4">Đường đi ngắn nhất</strong> (unweighted graph)</div>
-        <div>✅ <strong style="color:#80cbc4">Khoảng cách nhỏ nhất</strong> trong số bước</div>
+        <div>✅ <strong style="color:#80cbc4">Đường đi ngắn nhất</strong> (unweighted)</div>
         <div>✅ <strong style="color:#80cbc4">Peer-to-peer networks</strong> (6 degrees)</div>
         <div>✅ <strong style="color:#80cbc4">Level-order traversal</strong> cây</div>
         <div>✅ <strong style="color:#80cbc4">Tìm đỉnh gần nhất</strong></div>
-        <div>❌ DFS dùng ít memory hơn khi cây rất sâu</div>
-        <div>❌ Weighted graph → Dijkstra thay vì BFS</div>
+        <div>❌ Weighted graph → Dijkstra</div>
       </div>
     </div>
 
@@ -286,37 +305,23 @@
 </div>
 
 <script>
-// ==================== GRAPH MODE ====================
 const PRESETS = [
-  {
-    nodes:[{id:0,label:'A',x:300,y:55},{id:1,label:'B',x:150,y:145},{id:2,label:'C',x:450,y:145},{id:3,label:'D',x:80,y:250},{id:4,label:'E',x:240,y:250},{id:5,label:'F',x:380,y:250},{id:6,label:'G',x:500,y:250}],
-    edges:[[0,1],[0,2],[1,3],[1,4],[2,5],[2,6],[3,4]]
-  },
-  {
-    nodes:[{id:0,label:'A',x:280,y:45},{id:1,label:'B',x:120,y:135},{id:2,label:'C',x:440,y:135},{id:3,label:'D',x:60,y:235},{id:4,label:'E',x:200,y:235},{id:5,label:'F',x:360,y:235},{id:6,label:'G',x:480,y:235},{id:7,label:'H',x:300,y:290}],
-    edges:[[0,1],[0,2],[1,3],[1,4],[2,5],[2,6],[4,7],[5,7],[6,3]]
-  },
-  {
-    nodes:[{id:0,label:'1',x:280,y:38},{id:1,label:'2',x:150,y:118},{id:2,label:'3',x:410,y:118},{id:3,label:'4',x:80,y:205},{id:4,label:'5',x:220,y:205},{id:5,label:'6',x:340,y:205},{id:6,label:'7',x:480,y:205}],
-    edges:[[0,1],[0,2],[1,3],[1,4],[2,5],[2,6]]
-  },
-  {
-    nodes:[{id:0,label:'A',x:60,y:155},{id:1,label:'B',x:160,y:155},{id:2,label:'C',x:260,y:155},{id:3,label:'D',x:360,y:155},{id:4,label:'E',x:460,y:155}],
-    edges:[[0,1],[1,2],[2,3],[3,4]]
-  }
+  { nodes:[{id:0,label:'A',x:300,y:55},{id:1,label:'B',x:150,y:145},{id:2,label:'C',x:450,y:145},{id:3,label:'D',x:80,y:250},{id:4,label:'E',x:240,y:250},{id:5,label:'F',x:380,y:250},{id:6,label:'G',x:500,y:250}], edges:[[0,1],[0,2],[1,3],[1,4],[2,5],[2,6],[3,4]] },
+  { nodes:[{id:0,label:'A',x:280,y:45},{id:1,label:'B',x:120,y:135},{id:2,label:'C',x:440,y:135},{id:3,label:'D',x:60,y:235},{id:4,label:'E',x:200,y:235},{id:5,label:'F',x:360,y:235},{id:6,label:'G',x:480,y:235},{id:7,label:'H',x:300,y:290}], edges:[[0,1],[0,2],[1,3],[1,4],[2,5],[2,6],[4,7],[5,7],[6,3]] },
+  { nodes:[{id:0,label:'1',x:280,y:38},{id:1,label:'2',x:150,y:118},{id:2,label:'3',x:410,y:118},{id:3,label:'4',x:80,y:205},{id:4,label:'5',x:220,y:205},{id:5,label:'6',x:340,y:205},{id:6,label:'7',x:480,y:205}], edges:[[0,1],[0,2],[1,3],[1,4],[2,5],[2,6]] },
+  { nodes:[{id:0,label:'A',x:60,y:155},{id:1,label:'B',x:160,y:155},{id:2,label:'C',x:260,y:155},{id:3,label:'D',x:360,y:155},{id:4,label:'E',x:460,y:155}], edges:[[0,1],[1,2],[2,3],[3,4]] }
 ];
 
-let mode = 'graph'; // 'graph' | 'grid'
+let mode = 'graph';
 let nodes = [], edges = [], adj = {};
 let startNode = 0, targetNode = -1, selectingTarget = false;
 let steps = [], stepIdx = 0;
 let playing = false, timer = null;
 let dragging = null, dragOffX = 0, dragOffY = 0;
 
-// GRID
-const GCOLS = 20, GROWS = 10;
-let grid = [], gridStart = null, gridEnd = null;
-let gridMode = 'wall';
+const GCOLS = 20, GROWS = 10, CELL = 28;
+let grid = [], gridStart = null, gridEnd = null, gridMode = 'wall';
+let gridSteps = [], gridStepIdx = 0;
 
 function getSpeed() {
   const v = parseInt(document.getElementById('speedSlider').value);
@@ -332,11 +337,10 @@ function setMode(m) {
   document.getElementById('gridCard').style.display = m === 'grid' ? '' : 'none';
   document.getElementById('graphConfig').style.display = m === 'graph' ? '' : 'none';
   document.getElementById('gridConfig').style.display = m === 'grid' ? '' : 'none';
-  if (m === 'grid') { initGrid(); resetBFS(); }
+  if (m === 'grid') { initGrid(); }
   else { loadPreset(); }
 }
 
-// ==================== GRAPH ====================
 function loadPreset() {
   const idx = parseInt(document.getElementById('graphSelect').value);
   const p = PRESETS[idx];
@@ -370,7 +374,7 @@ function generateRandom() {
 function setTargetMode() {
   selectingTarget = !selectingTarget;
   document.getElementById('modeHint').textContent = selectingTarget ? 'Click đỉnh để đặt TARGET' : 'Click đỉnh để đặt Start';
-  document.getElementById('modeHint').style.color = selectingTarget ? '#ef5350' : '#90a4ae';
+  document.getElementById('modeHint').style.color = selectingTarget ? '#ef5350' : '#78909c';
 }
 
 function buildGraphSteps() {
@@ -389,7 +393,6 @@ function buildGraphSteps() {
     steps.push({ type: 'dequeue', node, queue: [...queue], visited: new Set(visited), dist: { ...dist }, treeEdges: new Set(treeEdges), levelMap: { ...levelMap }, code: 7 });
 
     if (node === targetNode) {
-      // Reconstruct path
       const path = [];
       let cur = node;
       while (cur !== null) { path.unshift(cur); cur = prev[cur]; }
@@ -421,7 +424,6 @@ function initBFS() {
   renderGraphStep(steps[0]);
   document.getElementById('traceLog').innerHTML = '';
   document.getElementById('levelsContainer').innerHTML = '';
-  document.getElementById('queueViz').innerHTML = '';
 }
 
 function renderGraph(step) {
@@ -429,17 +431,23 @@ function renderGraph(step) {
   const svg = document.getElementById('graphSvg');
   const W = svg.parentElement.clientWidth || 580;
   svg.setAttribute('width', W);
+  const defs = svg.querySelector('defs');
   svg.innerHTML = '';
+  if (defs) svg.appendChild(defs);
 
   const te = step.treeEdges || new Set();
   const path = step.path || [];
+  const pathEdges = new Set();
+  for (let i = 0; i < path.length - 1; i++) {
+    pathEdges.add(Math.min(path[i], path[i+1]) + '-' + Math.max(path[i], path[i+1]));
+  }
 
   edges.forEach(([a, b]) => {
     const na = nodes[a], nb = nodes[b];
     const eKey = Math.min(a, b) + '-' + Math.max(a, b);
-    let cls = 'graph-edge';
-    if (path.length > 1 && path.includes(a) && path.includes(b) && Math.abs(path.indexOf(a) - path.indexOf(b)) === 1) cls += ' shortest';
-    else if (te.has(eKey)) cls += ' bfs-tree';
+    let cls = 'gedge';
+    if (pathEdges.has(eKey)) cls = 'gedge-path';
+    else if (te.has(eKey)) cls = 'gedge-tree';
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     line.setAttribute('x1', na.x); line.setAttribute('y1', na.y);
     line.setAttribute('x2', nb.x); line.setAttribute('y2', nb.y);
@@ -453,64 +461,81 @@ function renderGraph(step) {
   const pathSet = new Set(path);
 
   nodes.forEach(node => {
+    let state = 'gnode-unvisited';
+    if (node.id === startNode) state = 'gnode-start';
+    if (node.id === targetNode) state = 'gnode-target';
+    if (vis.has(node.id) && node.id !== startNode && node.id !== targetNode) state = 'gnode-visited';
+    if (q.has(node.id) && node.id !== startNode && node.id !== targetNode) state = 'gnode-inqueue';
+    if (path.length > 1 && pathSet.has(node.id) && node.id !== startNode && node.id !== targetNode) state = 'gnode-path';
+    if (step.type === 'dequeue' && step.node === node.id) state = 'gnode-inqueue';
+
+    // BFS wavefront ring for in-queue nodes
+    if (state === 'gnode-inqueue') {
+      const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      ring.setAttribute('cx', node.x); ring.setAttribute('cy', node.y); ring.setAttribute('r', 22);
+      ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', 'rgba(255,213,79,0.7)'); ring.setAttribute('stroke-width', '2');
+      ring.style.animation = 'wavePulse 1s ease-out infinite';
+      svg.appendChild(ring);
+    }
+
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.setAttribute('class', 'graph-node');
-
-    let state = 'n-unvisited';
-    if (node.id === startNode) state = 'n-start';
-    if (node.id === targetNode) state = 'n-target';
-    if (vis.has(node.id) && node.id !== startNode && node.id !== targetNode) state = 'n-visited';
-    if (q.has(node.id) && node.id !== startNode && node.id !== targetNode) state = 'n-inqueue';
-    if (path.length > 1 && pathSet.has(node.id) && node.id !== startNode && node.id !== targetNode) state = 'n-path';
-    if (step.type === 'dequeue' && step.node === node.id) state = 'n-inqueue';
     g.setAttribute('class', 'graph-node ' + state);
-
-    const ig = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    ig.setAttribute('class', 'node-g');
-    if (state === 'n-inqueue') ig.setAttribute('style', `transform-origin:${node.x}px ${node.y}px;animation:wave-pulse 0.7s ease infinite;transform-box:fill-box`);
-
     const circ = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     circ.setAttribute('cx', node.x); circ.setAttribute('cy', node.y); circ.setAttribute('r', 22);
-    circ.setAttribute('class', 'wave-circle');
-    ig.appendChild(circ);
+    g.appendChild(circ);
 
     const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     txt.setAttribute('x', node.x); txt.setAttribute('y', node.y);
-    txt.setAttribute('class', 'graph-node text');
+    txt.setAttribute('style', 'font-size:12px;font-weight:700;text-anchor:middle;dominant-baseline:central;pointer-events:none');
     txt.textContent = node.label;
-    ig.appendChild(txt);
+    g.appendChild(txt);
 
     if (dist[node.id] !== undefined) {
       const dtxt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      dtxt.setAttribute('x', node.x + 16); dtxt.setAttribute('y', node.y - 16);
-      dtxt.setAttribute('style', 'font-size:9px;fill:#ffd54f;font-weight:700;');
+      dtxt.setAttribute('x', node.x + 18); dtxt.setAttribute('y', node.y - 18);
+      dtxt.setAttribute('style', 'font-size:9px;fill:#ffd54f;font-weight:700');
       dtxt.textContent = 'd=' + dist[node.id];
-      ig.appendChild(dtxt);
+      g.appendChild(dtxt);
     }
 
-    g.appendChild(ig);
     g.addEventListener('mousedown', e => startDrag(e, node.id));
     g.addEventListener('click', e => {
       if (dragging !== null) return;
-      if (selectingTarget) { targetNode = node.id; selectingTarget = false; document.getElementById('modeHint').textContent = 'Click đỉnh để đặt Start'; document.getElementById('modeHint').style.color = '#90a4ae'; initBFS(); }
-      else { startNode = node.id; initBFS(); }
+      if (selectingTarget) { targetNode = node.id; selectingTarget = false; document.getElementById('modeHint').textContent = 'Click đỉnh để đặt Start'; document.getElementById('modeHint').style.color = '#78909c'; initBFS(); }
+      else { startNode = node.id; initBFS(); renderGraph(); }
     });
     svg.appendChild(g);
   });
 
   // Labels
-  ['START', targetNode >= 0 ? 'TARGET' : null].forEach((lbl, li) => {
-    if (!lbl) return;
-    const nid = li === 0 ? startNode : targetNode;
-    const sn = nodes[nid];
-    if (!sn) return;
+  const labelData = [['START', startNode, '#80cbc4']];
+  if (targetNode >= 0) labelData.push(['TARGET', targetNode, '#ef5350']);
+  labelData.forEach(([lbl, nid, color]) => {
+    const sn = nodes[nid]; if (!sn) return;
     const ltxt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    ltxt.setAttribute('x', sn.x); ltxt.setAttribute('y', sn.y - 30);
-    ltxt.setAttribute('style', `font-size:9px;fill:${li === 0 ? '#80cbc4' : '#ef5350'};text-anchor:middle;font-weight:700`);
+    ltxt.setAttribute('x', sn.x); ltxt.setAttribute('y', sn.y - 32);
+    ltxt.setAttribute('style', `font-size:9px;fill:${color};text-anchor:middle;font-weight:700`);
     ltxt.textContent = lbl;
     svg.appendChild(ltxt);
   });
 }
+
+function startDrag(e, id) {
+  e.preventDefault(); dragging = id;
+  const svg = document.getElementById('graphSvg');
+  const rect = svg.getBoundingClientRect();
+  dragOffX = e.clientX - rect.left - nodes[id].x;
+  dragOffY = e.clientY - rect.top - nodes[id].y;
+}
+document.addEventListener('mousemove', e => {
+  if (dragging === null || mode !== 'graph') return;
+  const svg = document.getElementById('graphSvg');
+  const rect = svg.getBoundingClientRect();
+  nodes[dragging].x = Math.max(25, Math.min(rect.width - 25, e.clientX - rect.left - dragOffX));
+  nodes[dragging].y = Math.max(25, Math.min(rect.height - 25, e.clientY - rect.top - dragOffY));
+  renderGraph(steps[stepIdx]);
+});
+document.addEventListener('mouseup', () => { dragging = null; });
 
 function renderGraphStep(step) {
   if (!step) return;
@@ -542,79 +567,59 @@ function renderGraphStep(step) {
   const lm = step.levelMap || {};
   const byLevel = {};
   Object.entries(lm).forEach(([nid, lv]) => { if (!byLevel[lv]) byLevel[lv] = []; byLevel[lv].push(parseInt(nid)); });
-  const maxLv = step.type !== 'init' ? Math.max(...Object.values(lm), 0) : 0;
+  const maxLv = Object.values(lm).length > 0 ? Math.max(...Object.values(lm)) : 0;
   Object.keys(byLevel).sort((a, b) => a - b).forEach(lv => {
     const row = document.createElement('div'); row.className = 'level-row';
     const ll = document.createElement('div'); ll.className = 'level-label'; ll.textContent = `Level ${lv}:`; row.appendChild(ll);
     const ln = document.createElement('div'); ln.className = 'level-nodes';
     byLevel[lv].forEach(nid => {
       const b = document.createElement('div');
-      const isCurrent = parseInt(lv) === maxLv && step.type !== 'end';
+      const isCurrent = parseInt(lv) === maxLv && step.type !== 'end' && step.type !== 'init';
       b.className = 'level-badge' + (isCurrent ? ' current-level' : '');
-      b.textContent = (nodes[nid] ? nodes[nid].label : nid);
+      b.textContent = nodes[nid] ? nodes[nid].label : nid;
       ln.appendChild(b);
     });
     row.appendChild(ln); lc.appendChild(row);
   });
 
-  // Explanation
   const nl = n => nodes[n] ? nodes[n].label : n;
   const dist = step.dist || {};
   const expls = {
-    init: `🚀 BFS bắt đầu từ <strong style="color:#80cbc4">${nl(startNode)}</strong>. Enqueue đỉnh start, đánh dấu đã thăm. Khoảng cách d[${nl(startNode)}]=0.`,
-    dequeue: `📤 Dequeue <strong style="color:#f9a825">${nl(step.node)}</strong> từ FRONT queue. Khoảng cách từ start: d=${dist[step.node] ?? '?'}. Bắt đầu xét hàng xóm.`,
-    process: `⚙ Xử lý đỉnh <strong style="color:#f9a825">${nl(step.node)}</strong> (level-order). Duyệt các cạnh kề.`,
-    enqueue: `📥 Phát hiện đỉnh chưa thăm <strong style="color:#80cbc4">${nl(step.node)}</strong> từ ${nl(step.from)}. Enqueue, d[${nl(step.node)}]=${dist[step.node]}.`,
-    'found-target': `🎯 <strong style="color:#ffd54f">TÌM THẤY TARGET ${nl(step.node)}!</strong> Đường ngắn nhất: [${(step.path || []).map(nl).join(' → ')}], độ dài ${(step.path || []).length - 1} bước.`,
-    end: `🏁 BFS hoàn tất! Đã thăm ${Object.keys(dist).length}/${nodes.length} đỉnh. Khoảng cách ngắn nhất từ ${nl(startNode)}: ${Object.entries(dist).map(([k, v]) => `${nl(parseInt(k))}=${v}`).join(', ')}.`
+    init: `🚀 BFS từ <strong style="color:#80cbc4">${nl(startNode)}</strong>. Enqueue đỉnh start, đánh dấu đã thăm. d[${nl(startNode)}]=0.`,
+    dequeue: `📤 Dequeue <strong style="color:#f9a825">${nl(step.node)}</strong> từ FRONT. Khoảng cách: d=${dist[step.node] ?? '?'}. Xét hàng xóm.`,
+    process: `⚙ Xử lý <strong style="color:#f9a825">${nl(step.node)}</strong> (level-order). Duyệt các cạnh kề.`,
+    enqueue: `📥 Phát hiện <strong style="color:#80cbc4">${nl(step.node)}</strong> từ ${nl(step.from)}. Enqueue, d[${nl(step.node)}]=${dist[step.node]}. Wavefront mở rộng!`,
+    'found-target': `🎯 <strong style="color:#ffd54f">TÌM THẤY TARGET!</strong> Đường ngắn nhất: [${(step.path || []).map(nl).join(' → ')}], ${(step.path||[]).length-1} bước.`,
+    end: `🏁 BFS hoàn tất! ${Object.keys(dist).length}/${nodes.length} đỉnh đã thăm.`
   };
   document.getElementById('explanation').innerHTML = expls[step.type] || '';
 
-  // Trace
   const log = document.getElementById('traceLog');
   const entry = document.createElement('div');
   const tmsgs = {
-    init: `[INIT] Start=${nl(startNode)}, enqueue ${nl(startNode)}, d=0`,
-    dequeue: `[POP ] Dequeue ${nl(step.node)} (d=${dist[step.node]})`,
-    process: `[PROC] Xử lý ${nl(step.node)}`,
-    enqueue: `[ENQ ] ${nl(step.from)}→${nl(step.node)}: enqueue ${nl(step.node)}, d=${dist[step.node]}`,
-    'found-target': `[FOUND] Target ${nl(step.node)}! Path: ${(step.path||[]).map(nl).join('→')}`,
-    end: `[END ] BFS hoàn tất, ${Object.keys(dist).length} đỉnh được thăm`
+    init: `[INIT] Start=${nl(startNode)}, d=0`,
+    dequeue: `[DEQ ] Dequeue ${nl(step.node)} (d=${dist[step.node]})`,
+    process: `[PROC] ${nl(step.node)}`,
+    enqueue: `[ENQ ] ${nl(step.from)}→${nl(step.node)}: d=${dist[step.node]}`,
+    'found-target': `[FOUND] ${nl(step.node)}! Path: ${(step.path||[]).map(nl).join('→')}`,
+    end: `[END ] ${Object.keys(dist).length} đỉnh thăm`
   };
   entry.className = 'trace-entry' + (step.type === 'enqueue' ? ' enq' : step.type === 'dequeue' ? ' deq' : step.type === 'found-target' ? ' path' : '');
   entry.textContent = tmsgs[step.type] || '';
   if (entry.textContent) { log.appendChild(entry); log.scrollTop = log.scrollHeight; }
 }
 
-function startDrag(e, id) {
-  e.preventDefault();
-  dragging = id;
-  const svg = document.getElementById('graphSvg');
-  const rect = svg.getBoundingClientRect();
-  dragOffX = e.clientX - rect.left - nodes[id].x;
-  dragOffY = e.clientY - rect.top - nodes[id].y;
-}
-document.addEventListener('mousemove', e => {
-  if (dragging === null || mode !== 'graph') return;
-  const svg = document.getElementById('graphSvg');
-  const rect = svg.getBoundingClientRect();
-  nodes[dragging].x = Math.max(25, Math.min(rect.width - 25, e.clientX - rect.left - dragOffX));
-  nodes[dragging].y = Math.max(25, Math.min(rect.height - 25, e.clientY - rect.top - dragOffY));
-  renderGraph(steps[stepIdx]);
-});
-document.addEventListener('mouseup', () => { dragging = null; });
-
-// ==================== GRID MODE ====================
-const CELL = 28;
+// ===== GRID =====
 function initGrid() {
-  grid = Array.from({ length: GROWS }, () => Array(GCOLS).fill(0)); // 0=empty,1=wall,2=start,3=end
+  grid = Array.from({ length: GROWS }, () => Array(GCOLS).fill(0));
   gridStart = { r: 4, c: 2 }; gridEnd = { r: 4, c: GCOLS - 3 };
   grid[gridStart.r][gridStart.c] = 2;
   grid[gridEnd.r][gridEnd.c] = 3;
   renderGridCanvas();
+  initGridBFS();
 }
 
-function renderGridCanvas(visitedSet, pathSet, currentSet) {
+function renderGridCanvas(visitedMap, pathSet, currentSet) {
   const canvas = document.getElementById('gridCanvas');
   const ctx = canvas.getContext('2d');
   const W = GCOLS * CELL, H = GROWS * CELL;
@@ -624,20 +629,49 @@ function renderGridCanvas(visitedSet, pathSet, currentSet) {
     for (let c = 0; c < GCOLS; c++) {
       const x = c * CELL, y = r * CELL;
       const key = r + ',' + c;
-      let color = '#1a1d27';
-      if (grid[r][c] === 1) color = '#455a64';
-      else if (grid[r][c] === 2) color = '#00695c';
+      const dist = visitedMap ? visitedMap[key] : undefined;
+      let color = '#141720';
+      if (grid[r][c] === 1) {
+        // Wall with inset shadow
+        ctx.fillStyle = '#37474f';
+        ctx.fillRect(x + 1, y + 1, CELL - 2, CELL - 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.fillRect(x + 1, y + 1, CELL - 2, 3);
+        ctx.fillRect(x + 1, y + 1, 3, CELL - 2);
+        continue;
+      } else if (grid[r][c] === 2) color = '#00695c';
       else if (grid[r][c] === 3) color = '#c62828';
-      else if (pathSet && pathSet.has(key)) color = '#f9a825';
-      else if (currentSet && currentSet.has(key)) color = '#f9a825';
-      else if (visitedSet && visitedSet.has(key)) color = '#1565c0';
+      else if (pathSet && pathSet.has(key)) {
+        // Path gradient
+        const grad = ctx.createLinearGradient(x, y, x + CELL, y + CELL);
+        grad.addColorStop(0, '#f57f17');
+        grad.addColorStop(1, '#ffd54f');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.roundRect(x + 1, y + 1, CELL - 2, CELL - 2, 4);
+        ctx.fill();
+        continue;
+      } else if (currentSet && currentSet.has(key)) color = '#f9a825';
+      else if (dist !== undefined) {
+        // Blue gradient based on distance
+        const maxDist = 40;
+        const ratio = Math.min(dist / maxDist, 1);
+        const r1 = Math.round(21 + ratio * 10);
+        const g1 = Math.round(101 - ratio * 30);
+        const b1 = Math.round(192 - ratio * 50);
+        color = `rgb(${r1},${g1},${b1})`;
+      }
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.roundRect(x + 1, y + 1, CELL - 2, CELL - 2, 4);
       ctx.fill();
-      // Distance label
-      if (visitedSet && visitedSet.has(key) && grid[r][c] === 0) {
-        // skip for clarity
+      // Distance number
+      if (dist !== undefined && grid[r][c] === 0 && dist > 0 && CELL >= 24) {
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = `${Math.round(CELL * 0.35)}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(dist, x + CELL / 2, y + CELL / 2);
       }
     }
   }
@@ -652,15 +686,12 @@ function handleGridClick(e) {
   if (mode !== 'grid') return;
   const canvas = document.getElementById('gridCanvas');
   const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  const c = Math.floor((e.clientX - rect.left) * scaleX / CELL);
-  const r = Math.floor((e.clientY - rect.top) * scaleY / CELL);
+  const c = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width) / CELL);
+  const r = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height) / CELL);
   if (r < 0 || r >= GROWS || c < 0 || c >= GCOLS) return;
   if (gridMode === 'start') { if (gridStart) grid[gridStart.r][gridStart.c] = 0; gridStart = { r, c }; grid[r][c] = 2; }
   else if (gridMode === 'end') { if (gridEnd) grid[gridEnd.r][gridEnd.c] = 0; gridEnd = { r, c }; grid[r][c] = 3; }
-  else if (gridMode === 'wall' && grid[r][c] === 0) grid[r][c] = 1;
-  else if (gridMode === 'wall' && grid[r][c] === 1) grid[r][c] = 0;
+  else if (gridMode === 'wall') { grid[r][c] = grid[r][c] === 1 ? 0 : 1; }
   renderGridCanvas();
 }
 
@@ -684,44 +715,46 @@ function generateMaze() {
   gridStart = { r: 1, c: 1 }; gridEnd = { r: GROWS - 2, c: GCOLS - 2 };
   grid[gridStart.r][gridStart.c] = 2; grid[gridEnd.r][gridEnd.c] = 3;
   renderGridCanvas();
+  initGridBFS();
 }
 
-let gridSteps = [], gridStepIdx = 0;
 function initGridBFS() {
   if (!gridStart || !gridEnd) return;
   gridSteps = [];
   const visited = new Set();
+  const distMap = {};
   const queue = [[gridStart.r, gridStart.c]];
   visited.add(gridStart.r + ',' + gridStart.c);
+  distMap[gridStart.r + ',' + gridStart.c] = 0;
   const prev = {};
   const dirs = [[0,1],[1,0],[0,-1],[-1,0]];
 
-  gridSteps.push({ type: 'init', visited: new Set(visited), queue: [[gridStart.r, gridStart.c]], current: new Set(), path: null });
+  gridSteps.push({ type: 'init', visitedMap: { ...distMap }, queue: [[gridStart.r, gridStart.c]], current: new Set(), path: null });
 
   let found = false;
   while (queue.length > 0 && !found) {
     const [r, c] = queue.shift();
     const current = new Set([r + ',' + c]);
-    gridSteps.push({ type: 'dequeue', visited: new Set(visited), queue: [...queue], current, path: null });
     if (r === gridEnd.r && c === gridEnd.c) {
-      // reconstruct path
       const path = new Set();
       let cur = r + ',' + c;
       while (cur) { path.add(cur); cur = prev[cur]; }
-      gridSteps.push({ type: 'found', visited: new Set(visited), queue: [], current: new Set(), path });
+      gridSteps.push({ type: 'found', visitedMap: { ...distMap }, queue: [], current: new Set(), path });
       found = true; break;
     }
     for (const [dr, dc] of dirs) {
       const nr = r + dr, nc = c + dc;
-      if (nr >= 0 && nr < GROWS && nc >= 0 && nc < GCOLS && grid[nr][nc] !== 1 && !visited.has(nr + ',' + nc)) {
-        visited.add(nr + ',' + nc);
+      const key = nr + ',' + nc;
+      if (nr >= 0 && nr < GROWS && nc >= 0 && nc < GCOLS && grid[nr][nc] !== 1 && !visited.has(key)) {
+        visited.add(key);
+        distMap[key] = distMap[r + ',' + c] + 1;
         queue.push([nr, nc]);
-        prev[nr + ',' + nc] = r + ',' + c;
+        prev[key] = r + ',' + c;
       }
     }
-    gridSteps.push({ type: 'expand', visited: new Set(visited), queue: [...queue], current, path: null });
+    gridSteps.push({ type: 'expand', visitedMap: { ...distMap }, queue: [...queue], current, path: null });
   }
-  if (!found) gridSteps.push({ type: 'notfound', visited: new Set(visited), queue: [], current: new Set(), path: null });
+  if (!found) gridSteps.push({ type: 'notfound', visitedMap: { ...distMap }, queue: [], current: new Set(), path: null });
 
   gridStepIdx = 0;
   renderGridStep(gridSteps[0]);
@@ -730,17 +763,15 @@ function initGridBFS() {
 
 function renderGridStep(step) {
   if (!step) return;
-  renderGridCanvas(step.visited, step.path, step.current);
+  renderGridCanvas(step.visitedMap, step.path, step.current);
   const expls = {
-    init: `🚀 BFS Grid: bắt đầu từ ô (${gridStart.r},${gridStart.c}). Wavefront sẽ lan ra 4 hướng.`,
-    dequeue: `📤 Đang xét ô trong queue. Kiểm tra 4 hướng lân cận.`,
-    expand: `🌊 Lan rộng: thêm ${step.queue.length} ô vào queue. BFS đảm bảo tìm đường ngắn nhất.`,
-    found: `🎯 <strong style="color:#ffd54f">Tìm thấy đích!</strong> Đường ngắn nhất được highlight màu vàng.`,
+    init: `🚀 BFS Grid: bắt đầu từ ô (${gridStart.r},${gridStart.c}). Wavefront lan ra 4 hướng.`,
+    expand: `🌊 Wavefront mở rộng: ${step.queue ? step.queue.length : 0} ô trong queue. Distance gradient màu xanh đậm dần.`,
+    found: `🎯 <strong style="color:#ffd54f">Tìm thấy đích!</strong> Đường ngắn nhất highlight vàng. BFS luôn đảm bảo tối ưu!`,
     notfound: `❌ <strong style="color:#ef5350">Không có đường đi</strong> từ Start đến End!`
   };
   document.getElementById('explanation').innerHTML = expls[step.type] || '';
 
-  // Queue viz for grid (show count)
   const qv = document.getElementById('queueViz');
   qv.innerHTML = '';
   if (step.queue && step.queue.length > 0) {
@@ -752,16 +783,15 @@ function renderGridStep(step) {
     qv.innerHTML = '<div class="queue-empty">[ Queue rỗng ]</div>';
   }
 
-  // Trace
   const log = document.getElementById('traceLog');
   const entry = document.createElement('div');
   entry.className = 'trace-entry' + (step.type === 'found' ? ' path' : step.type === 'notfound' ? ' deq' : '');
-  const msgs = { init: '[INIT] BFS grid bắt đầu', dequeue: `[POP ] Xét ô tiếp`, expand: `[EXP ] Queue: ${step.queue ? step.queue.length : 0} ô`, found: '[FOUND] Tìm thấy đích! Đường ngắn nhất highlighted.', notfound: '[NF] Không có đường đi!' };
+  const msgs = { init: '[INIT] BFS grid bắt đầu', expand: `[EXP ] Queue: ${step.queue ? step.queue.length : 0} ô`, found: '[FOUND] Đường ngắn nhất!', notfound: '[NF] Không có đường đi!' };
   entry.textContent = msgs[step.type] || '';
   if (entry.textContent) { log.appendChild(entry); log.scrollTop = log.scrollHeight; }
 }
 
-// ==================== SHARED CONTROLS ====================
+// ===== SHARED CONTROLS =====
 function stepForward() {
   if (mode === 'grid') {
     if (gridStepIdx >= gridSteps.length - 1) { stopPlaying(); return; }
@@ -791,7 +821,6 @@ function resetBFS() {
   else { stepIdx = 0; if (steps.length) renderGraphStep(steps[0]); }
   document.getElementById('traceLog').innerHTML = '';
   document.getElementById('levelsContainer').innerHTML = '';
-  document.getElementById('queueViz').innerHTML = '';
 }
 
 window.onload = () => { loadPreset(); };

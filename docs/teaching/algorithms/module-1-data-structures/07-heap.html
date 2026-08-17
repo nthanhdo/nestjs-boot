@@ -7,122 +7,165 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #1a1a2e; --panel-bg: #16213e; --code-bg: #0f0f23;
-    --accent: #8b5cf6; --accent2: #ff6b6b; --accent3: #ffd93d;
-    --text: #e8e8f0; --text-dim: #888aaa; --border: #2a2a4a;
-    --node-bg: #1e0a35; --node-border: #6d28d9; --node-active: #8b5cf6;
-    --node-found: #00ff88; --node-delete: #ff4757; --node-insert: #ffd93d;
+    --bg: #0d0d1a; --panel-bg: #111128; --code-bg: #080816;
+    --accent: #8b5cf6; --accent2: #ff4d6d; --accent3: #ffd60a; --accent4: #00ff88;
+    --text: #e8e8f0; --text-dim: #6b6d8a; --border: #1e1e3a;
+    --node-bg: #100620; --node-border: #6d28d9; --node-active: #8b5cf6;
+    --node-found: #00ff88; --node-delete: #ff4d6d; --node-insert: #ffd60a;
     --node-swap: #f97316;
+    --glow-purple: rgba(139,92,246,0.6); --glow-green: rgba(0,255,136,0.5);
+    --glow-orange: rgba(249,115,22,0.6); --glow-yellow: rgba(255,214,10,0.5);
   }
   body { background: var(--bg); color: var(--text); font-family: system-ui,-apple-system,sans-serif;
     display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-  header { background: var(--panel-bg); border-bottom: 1px solid var(--border);
-    padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
-  header h1 { font-size: 1.1rem; color: var(--accent); }
-  .badge { background: var(--code-bg); border: 1px solid var(--border); padding: 2px 10px;
-    border-radius: 20px; font-size: 0.75rem; color: var(--text-dim); }
+  body::before { content:''; position:fixed; inset:0; pointer-events:none;
+    background: radial-gradient(ellipse at 60% 30%, rgba(139,92,246,0.05) 0%, transparent 60%),
+                radial-gradient(ellipse at 20% 80%, rgba(249,115,22,0.03) 0%, transparent 50%); }
+
+  header { background: linear-gradient(90deg, #111128, #0d0d1a);
+    border-bottom: 1px solid var(--border); padding: 10px 20px;
+    display: flex; align-items: center; gap: 16px; flex-shrink: 0; box-shadow: 0 2px 20px rgba(0,0,0,0.5); }
+  header h1 { font-size: 1.1rem; color: var(--accent); text-shadow: 0 0 20px rgba(139,92,246,0.4); }
+  .badge { background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    backdrop-filter: blur(10px); padding: 2px 10px; border-radius: 20px;
+    font-size: 0.75rem; color: var(--text-dim); }
+  .mode-btn { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text-dim);
+    padding: 4px 12px; border-radius: 8px; cursor: pointer; font-size: 0.78rem; transition: all 0.2s; }
+  .mode-btn.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(139,92,246,0.2); }
+
   .main { display: flex; flex: 1; overflow: hidden; }
   .viz { flex: 0 0 60%; display: flex; flex-direction: column; padding: 14px; gap: 10px; overflow: hidden; }
   .ops-bar { display: flex; gap: 8px; flex-wrap: wrap; }
-  .op-btn { background: var(--panel-bg); border: 1px solid var(--border); color: var(--text);
-    padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; transition: all 0.2s; }
-  .op-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .op-btn.active { background: var(--accent); color: #000; font-weight: 600; }
-  .mode-btn { background: var(--code-bg); border: 1px solid var(--border); color: var(--text-dim);
-    padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; transition: all 0.2s; }
-  .mode-btn.active { border-color: var(--accent); color: var(--accent); }
+  .op-btn { background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--text-dim);
+    padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 0.82rem; transition: all 0.25s; }
+  .op-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 14px rgba(139,92,246,0.2); }
+  .op-btn.active { background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(139,92,246,0.06));
+    color: var(--accent); border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(139,92,246,0.25); font-weight: 600; }
   .input-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .input-row label { font-size: 0.8rem; color: var(--text-dim); }
-  .input-row input { background: var(--code-bg); border: 1px solid var(--border); color: var(--text);
-    padding: 6px 10px; border-radius: 6px; width: 70px; font-size: 0.85rem; }
-  .run-btn { background: var(--accent); color: #000; border: none; padding: 6px 16px;
-    border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+  .input-row input { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 10px; border-radius: 8px; width: 70px; font-size: 0.85rem; transition: border-color 0.2s; }
+  .input-row input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 12px rgba(139,92,246,0.2); }
+  .run-btn { background: linear-gradient(135deg, var(--accent), rgba(100,50,200,0.8));
+    color: #fff; border: none; padding: 6px 18px; border-radius: 8px;
+    cursor: pointer; font-weight: 700; font-size: 0.85rem;
+    transition: all 0.2s; box-shadow: 0 0 16px rgba(139,92,246,0.3); }
+  .run-btn:hover { transform: translateY(-1px); box-shadow: 0 0 24px rgba(139,92,246,0.5); }
 
-  .canvas-area { flex: 1; background: var(--panel-bg); border: 1px solid var(--border);
-    border-radius: 12px; display: flex; flex-direction: column; padding: 12px; gap: 10px; overflow: hidden; }
+  .canvas-area { flex: 1; background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+    backdrop-filter: blur(10px); border-radius: 16px;
+    display: flex; flex-direction: column; padding: 12px; gap: 10px; overflow: hidden; position: relative; }
+  .canvas-area::before { content:''; position:absolute; inset:0; border-radius:16px;
+    background: linear-gradient(135deg, rgba(139,92,246,0.02) 0%, transparent 50%); pointer-events:none; }
 
-  /* Array representation */
-  .array-repr { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
-  .array-title { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; }
-  .array-cells { display: flex; gap: 3px; flex-wrap: wrap; }
+  /* Array view */
+  .array-repr { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; z-index:1; }
+  .array-title { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+  .array-cells { display: flex; gap: 4px; flex-wrap: wrap; }
   .arr-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .arr-box { width: 40px; height: 36px; background: var(--node-bg); border: 1.5px solid var(--node-border);
-    border-radius: 6px; display: flex; align-items: center; justify-content: center;
-    font-size: 0.85rem; font-weight: 600; transition: all 0.35s; }
-  .arr-idx { font-size: 0.58rem; color: var(--text-dim); }
-  .arr-cell.active .arr-box { border-color: var(--node-active); background: rgba(139,92,246,0.2);
-    color: var(--node-active); box-shadow: 0 0 10px rgba(139,92,246,0.4); }
-  .arr-cell.swap1 .arr-box, .arr-cell.swap2 .arr-box { border-color: var(--node-swap);
-    background: rgba(249,115,22,0.2); color: var(--node-swap); animation: swapPulse 0.6s ease; }
-  .arr-cell.found .arr-box { border-color: var(--node-found); background: rgba(0,255,136,0.15);
-    color: var(--node-found); }
-  .arr-cell.root-cell .arr-box { border-color: var(--accent3); background: rgba(255,217,61,0.15);
-    color: var(--accent3); }
-  @keyframes swapPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
+  .arr-box { width: 42px; height: 38px;
+    background: linear-gradient(145deg, var(--node-bg), #0a0414);
+    border: 1.5px solid var(--node-border); border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 600; transition: all 0.35s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+  .arr-idx { font-size: 0.58rem; color: var(--text-dim); font-family: monospace; }
 
-  /* Formula hint */
-  .formula-bar { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px;
-    padding: 5px 12px; font-size: 0.73rem; color: var(--text-dim); font-family: monospace;
-    display: flex; gap: 16px; flex-shrink: 0; flex-wrap: wrap; }
+  .arr-cell.active .arr-box { border-color: var(--node-active);
+    background: linear-gradient(145deg, rgba(139,92,246,0.25), rgba(100,50,200,0.08));
+    color: var(--node-active); box-shadow: 0 0 16px var(--glow-purple); }
+  .arr-cell.swap1 .arr-box, .arr-cell.swap2 .arr-box { border-color: var(--node-swap);
+    background: linear-gradient(145deg, rgba(249,115,22,0.25), rgba(200,80,10,0.08));
+    color: var(--node-swap); box-shadow: 0 0 16px var(--glow-orange);
+    animation: swapBounce 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes swapBounce { 0%{transform:scale(1)} 40%{transform:scale(1.2)} 70%{transform:scale(0.95)} 100%{transform:scale(1)} }
+  .arr-cell.found .arr-box { border-color: var(--node-found);
+    background: linear-gradient(145deg, rgba(0,255,136,0.2), rgba(0,200,100,0.06));
+    color: var(--node-found); box-shadow: 0 0 16px var(--glow-green); }
+  .arr-cell.root-cell .arr-box { border-color: var(--accent3);
+    background: linear-gradient(145deg, rgba(255,214,10,0.2), rgba(200,160,0,0.06));
+    color: var(--accent3); box-shadow: 0 0 14px var(--glow-yellow); }
+
+  /* Formula */
+  .formula-bar { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px;
+    padding: 5px 14px; font-size: 0.72rem; color: var(--text-dim); font-family: monospace;
+    display: flex; gap: 16px; flex-shrink: 0; flex-wrap: wrap; z-index:1; }
   .formula-bar span { color: var(--accent3); }
 
-  /* Tree SVG */
-  #heapSvg { flex: 1; width: 100%; min-height: 0; }
-  .heap-node circle { fill: var(--node-bg); stroke: var(--node-border); stroke-width: 2; transition: all 0.4s; }
-  .heap-node text { fill: var(--text); font-size: 12px; font-weight: 700; text-anchor: middle;
-    dominant-baseline: central; pointer-events: none; }
-  .heap-node.active circle { fill: rgba(139,92,246,0.25); stroke: var(--node-active);
-    filter: drop-shadow(0 0 8px rgba(139,92,246,0.7)); }
-  .heap-node.active text { fill: var(--node-active); }
-  .heap-node.swap1 circle, .heap-node.swap2 circle { fill: rgba(249,115,22,0.25); stroke: var(--node-swap);
-    filter: drop-shadow(0 0 8px rgba(249,115,22,0.6)); }
-  .heap-node.swap1 text, .heap-node.swap2 text { fill: var(--node-swap); }
-  .heap-node.found circle { fill: rgba(0,255,136,0.2); stroke: var(--node-found);
-    filter: drop-shadow(0 0 8px rgba(0,255,136,0.5)); }
-  .heap-node.found text { fill: var(--node-found); }
-  .heap-node.root-hl circle { fill: rgba(255,217,61,0.2); stroke: var(--accent3);
-    filter: drop-shadow(0 0 8px rgba(255,217,61,0.5)); }
-  .heap-node.root-hl text { fill: var(--accent3); }
-  .heap-edge { stroke: var(--node-border); stroke-width: 1.5; fill: none; transition: stroke 0.3s; }
-  .heap-edge.swap-edge { stroke: var(--node-swap); stroke-width: 3; }
+  /* Heap tree SVG */
+  #heapSvg { flex: 1; width: 100%; min-height: 0; z-index:1; }
 
-  .status-msg { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
-    padding: 7px 14px; font-size: 0.82rem; color: var(--text-dim); text-align: center; flex-shrink: 0; }
-  .status-msg.info { border-color: var(--accent); color: var(--accent); }
-  .status-msg.success { border-color: var(--node-found); color: var(--node-found); }
-  .status-msg.error { border-color: var(--accent2); color: var(--accent2); }
+  .heap-node circle { fill: var(--node-bg); stroke: var(--node-border); stroke-width: 2.5;
+    transition: all 0.4s cubic-bezier(0.4,0,0.2,1); }
+  .heap-node text { fill: var(--text); font-size: 12px; font-weight: 700;
+    text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+
+  .heap-node.active circle { fill: rgba(139,92,246,0.28); stroke: var(--node-active); stroke-width: 3;
+    filter: drop-shadow(0 0 10px rgba(139,92,246,0.8)) drop-shadow(0 0 20px rgba(139,92,246,0.4)); }
+  .heap-node.active text { fill: var(--node-active); }
+  .heap-node.swap1 circle, .heap-node.swap2 circle { fill: rgba(249,115,22,0.28); stroke: var(--node-swap); stroke-width: 3.5;
+    filter: drop-shadow(0 0 12px rgba(249,115,22,0.8)); }
+  .heap-node.swap1 text, .heap-node.swap2 text { fill: var(--node-swap); }
+  .heap-node.found circle { fill: rgba(0,255,136,0.22); stroke: var(--node-found); stroke-width: 3;
+    filter: drop-shadow(0 0 10px rgba(0,255,136,0.7)); }
+  .heap-node.found text { fill: var(--node-found); }
+  .heap-node.root-hl circle { fill: rgba(255,214,10,0.2); stroke: var(--accent3); stroke-width: 3;
+    filter: drop-shadow(0 0 10px rgba(255,214,10,0.6)); }
+  .heap-node.root-hl text { fill: var(--accent3); }
+
+  /* Swap path arc */
+  .heap-edge { stroke: rgba(109,40,217,0.4); stroke-width: 1.8; fill: none; transition: stroke 0.35s; }
+  .heap-edge.swap-edge { stroke: var(--node-swap); stroke-width: 3;
+    filter: drop-shadow(0 0 4px rgba(249,115,22,0.6)); }
+
+  /* Animated node for swap motion */
+  .heap-node.swap1 { animation: swapNodeUp 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+  .heap-node.swap2 { animation: swapNodeDown 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+  @keyframes swapNodeUp { 0%{transform:translateY(0)} 50%{transform:translateY(-12px)} 100%{transform:translateY(0)} }
+  @keyframes swapNodeDown { 0%{transform:translateY(0)} 50%{transform:translateY(12px)} 100%{transform:translateY(0)} }
+
+  .status-msg { background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    backdrop-filter: blur(8px); border-radius: 10px;
+    padding: 7px 14px; font-size: 0.82rem; color: var(--text-dim); text-align: center; flex-shrink: 0;
+    transition: all 0.3s; z-index:1; }
+  .status-msg.info { border-color: var(--accent); color: var(--accent); background: rgba(139,92,246,0.06); }
+  .status-msg.success { border-color: var(--node-found); color: var(--node-found); background: rgba(0,255,136,0.06); }
+  .status-msg.error { border-color: var(--accent2); color: var(--accent2); background: rgba(255,77,109,0.06); }
 
   .complexity-row { display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
-  .complexity-badge { background: var(--code-bg); border: 1px solid var(--border);
-    border-radius: 8px; padding: 5px 12px; text-align: center; }
+  .complexity-badge { background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    backdrop-filter: blur(8px); border-radius: 10px; padding: 5px 12px; text-align: center; }
   .complexity-badge .label { font-size: 0.65rem; color: var(--text-dim); }
   .complexity-badge .value { font-size: 0.9rem; font-weight: 700; margin-top: 1px; }
   .green { color: #00ff88; } .yellow { color: var(--accent3); } .red { color: var(--accent2); }
-  .complexity-badge.active-badge { border-color: var(--accent); }
+  .complexity-badge.active-badge { border-color: var(--accent); box-shadow: 0 0 12px rgba(139,92,246,0.25); }
 
   .code-panel { flex: 0 0 40%; background: var(--code-bg); border-left: 1px solid var(--border);
     display: flex; flex-direction: column; overflow: hidden; }
   .code-panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border);
-    font-size: 0.8rem; color: var(--text-dim); display: flex; gap: 8px; align-items: center; }
+    font-size: 0.8rem; color: var(--text-dim); display: flex; gap: 8px; align-items: center;
+    background: linear-gradient(90deg, rgba(139,92,246,0.04), transparent); }
   .code-panel-header span { color: var(--accent); font-weight: 600; font-size: 0.85rem; }
   .code-body { flex: 1; overflow-y: auto; padding: 12px 0; font-family: 'Courier New',monospace; font-size: 0.82rem; }
-  .code-line { display: flex; padding: 3px 0; transition: background 0.2s; }
-  .code-line.highlight { background: rgba(139,92,246,0.12); border-left: 3px solid var(--accent); }
-  .ln { width: 36px; text-align: right; padding-right: 12px; color: #444; flex-shrink: 0; user-select: none; }
+  .code-line { display: flex; padding: 3px 0; transition: background 0.25s; }
+  .code-line.highlight { background: rgba(139,92,246,0.1); border-left: 3px solid var(--accent); }
+  .ln { width: 36px; text-align: right; padding-right: 12px; color: #333; flex-shrink: 0; user-select: none; }
   .code-text { color: #abb2bf; white-space: pre; }
-  .kw { color: #c678dd; } .fn { color: #61afef; } .cm { color: #5c6370; font-style: italic; }
+  .kw { color: #c678dd; } .fn { color: #61afef; } .cm { color: #4a4f60; font-style: italic; }
 
-  .controls { background: var(--panel-bg); border-top: 1px solid var(--border);
-    padding: 10px 20px; display: flex; align-items: center; gap: 16px; flex-shrink: 0; flex-wrap: wrap; }
-  .ctrl-btn { background: var(--code-bg); border: 1px solid var(--border); color: var(--text);
-    width: 36px; height: 36px; border-radius: 8px; cursor: pointer; display: flex;
-    align-items: center; justify-content: center; font-size: 1rem; transition: all 0.2s; }
-  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .controls { background: linear-gradient(90deg, var(--panel-bg), var(--bg));
+    border-top: 1px solid var(--border); padding: 10px 20px;
+    display: flex; align-items: center; gap: 16px; flex-shrink: 0; flex-wrap: wrap; }
+  .ctrl-btn { background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--text);
+    width: 36px; height: 36px; border-radius: 8px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: all 0.2s; }
+  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 12px rgba(139,92,246,0.2); }
   .speed-group { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text-dim); }
-  input[type=range] { -webkit-appearance: none; width: 100px; height: 4px; background: var(--border);
-    border-radius: 2px; outline: none; cursor: pointer; }
+  input[type=range] { -webkit-appearance: none; width: 100px; height: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--border)); border-radius: 2px; outline: none; cursor: pointer; }
   input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px;
-    background: var(--accent); border-radius: 50%; }
+    background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--glow-purple); }
   .step-info { font-size: 0.78rem; color: var(--text-dim); }
 </style>
 </head>
@@ -154,21 +197,17 @@
       </div>
     </div>
     <div class="canvas-area">
-      <!-- Array representation -->
       <div class="array-repr">
         <div class="array-title">Biểu diễn mảng (Array Representation)</div>
         <div class="array-cells" id="arrayCells"></div>
       </div>
-      <!-- Formula -->
       <div class="formula-bar">
         Parent(i) = <span>⌊(i-1)/2⌋</span> &nbsp;|&nbsp;
         Left(i) = <span>2i+1</span> &nbsp;|&nbsp;
         Right(i) = <span>2i+2</span> &nbsp;|&nbsp;
         Root = <span>arr[0]</span>
       </div>
-      <!-- Tree -->
       <svg id="heapSvg"></svg>
-      <!-- Status -->
       <div class="status-msg" id="statusMsg">Chọn thao tác và nhấn ▶ Chạy</div>
     </div>
   </div>
@@ -189,8 +228,7 @@
 </div>
 
 <script>
-// ── Heap state ─────────────────────────────────────────────────────
-let heapMode = 'min'; // 'min' | 'max'
+let heapMode = 'min';
 let heap = [3, 9, 15, 17, 22, 30, 45];
 let currentOp = 'insert';
 let steps = [], stepIdx = -1, playing = false, playTimer = null;
@@ -227,7 +265,6 @@ function heapExtract(arr) {
   return a;
 }
 
-// ── Render ────────────────────────────────────────────────────────
 function renderArrayCells(arr, highlights={}) {
   const container = document.getElementById('arrayCells');
   container.innerHTML = '';
@@ -242,14 +279,12 @@ function renderArrayCells(arr, highlights={}) {
 }
 
 function heapLayout(arr) {
-  // Position nodes in a complete binary tree
   const positions = {};
   const svg = document.getElementById('heapSvg');
   const W = svg.clientWidth || 480;
-  // level widths
   function getPos(i, level, lo, hi) {
     if (i >= arr.length) return;
-    const x = (lo+hi)/2, y = 28 + level*60;
+    const x = (lo+hi)/2, y = 26 + level*62;
     positions[i] = {x,y};
     getPos(2*i+1, level+1, lo, (lo+hi)/2);
     getPos(2*i+2, level+1, (lo+hi)/2, hi);
@@ -264,7 +299,7 @@ function renderHeapTree(arr, highlights={}, swapPair=[]) {
   if (!arr.length) return;
   const pos = heapLayout(arr);
 
-  // Edges
+  // Edges first
   arr.forEach((_,i) => {
     const l=left(i), r=right(i);
     [l,r].forEach(child => {
@@ -289,7 +324,7 @@ function renderHeapTree(arr, highlights={}, swapPair=[]) {
     else if (i===0) cls += ' root-hl';
     g.setAttribute('class', cls);
     const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    c.setAttribute('cx',pos[i].x); c.setAttribute('cy',pos[i].y); c.setAttribute('r',20);
+    c.setAttribute('cx',pos[i].x); c.setAttribute('cy',pos[i].y); c.setAttribute('r',21);
     const t = document.createElementNS('http://www.w3.org/2000/svg','text');
     t.setAttribute('x',pos[i].x); t.setAttribute('y',pos[i].y); t.textContent=val;
     g.appendChild(c); g.appendChild(t);
@@ -297,7 +332,6 @@ function renderHeapTree(arr, highlights={}, swapPair=[]) {
   });
 }
 
-// ── Code ──────────────────────────────────────────────────────────
 const codes = {
   insert: { title:'Heap Insert (Bubble Up) — O(log n)', lines:[
     ['cm','// Thêm vào cuối, rồi bubble up'],
@@ -364,7 +398,6 @@ function renderCode(op, hl=-1) {
   });
 }
 
-// ── Build steps ───────────────────────────────────────────────────
 function buildSteps(op, val) {
   steps = [];
   const label = heapMode==='min' ? 'Min-Heap' : 'Max-Heap';
@@ -372,28 +405,29 @@ function buildSteps(op, val) {
   if (op === 'insert') {
     steps.push({ arr:[...heap], highlights:{}, swap:[], code:-1, msg:`Thêm ${val} vào ${label}` });
     let a = [...heap]; a.push(val);
-    steps.push({ arr:[...a], highlights:{[a.length-1]:'active'}, swap:[], code:2, msg:`Thêm ${val} vào cuối (index ${a.length-1})` });
+    steps.push({ arr:[...a], highlights:{[a.length-1]:'active'}, swap:[], code:2,
+      msg:`Thêm ${val} vào cuối (index ${a.length-1}) — bounce in!` });
     let i = a.length-1;
     let swapCount = 0;
     while (i>0 && cmp(a[i], a[parent(i)])) {
       const p = parent(i);
-      steps.push({ arr:[...a], highlights:{}, swap:[i,p], code:6, msg:`swap(arr[${i}]=${a[i]}, arr[${p}]=${a[p]}) — bubble up` });
+      steps.push({ arr:[...a], highlights:{}, swap:[i,p], code:6,
+        msg:`Bubble up: swap(arr[${i}]=${a[i]}, arr[${p}]=${a[p]}) — chuyển lên!` });
       [a[i],a[p]] = [a[p],a[i]];
       i = p; swapCount++;
       steps.push({ arr:[...a], highlights:{[i]:'active'}, swap:[], code:7, msg:`Sau swap — i=${i}, kiểm tra tiếp` });
     }
-    steps.push({ arr:[...a], highlights:{[0]:'found',[i]:'found'}, swap:[], code:8,
+    steps.push({ arr:[...a], highlights:{0:'found',[i]:'found'}, swap:[], code:8,
       msg:`✓ Insert xong sau ${swapCount} swap — heap hợp lệ` });
     heap = a;
-  }
-  else if (op === 'extract') {
+  } else if (op === 'extract') {
     if (!heap.length) return;
     const rootVal = heap[0];
     steps.push({ arr:[...heap], highlights:{0:'found'}, swap:[], code:1, msg:`${label}: root = ${rootVal} sẽ bị extract` });
     let a = [...heap];
     const lastIdx = a.length-1;
     steps.push({ arr:[...a], highlights:{0:'active',[lastIdx]:'active'}, swap:[0,lastIdx], code:3,
-      msg:`Đổi root với phần tử cuối [${lastIdx}]=${a[lastIdx]}` });
+      msg:`Đổi root với phần tử cuối [${lastIdx}]=${a[lastIdx]} — đổi chỗ!` });
     [a[0],a[lastIdx]] = [a[lastIdx],a[0]];
     steps.push({ arr:[...a], highlights:{[lastIdx]:'found'}, swap:[], code:4, msg:`Pop phần tử cuối (${rootVal}) ra` });
     a.pop();
@@ -405,15 +439,14 @@ function buildSteps(op, val) {
       if(r<a.length && cmp(a[r],a[best])) best=r;
       if(best===i) break;
       steps.push({ arr:[...a], highlights:{}, swap:[i,best], code:10,
-        msg:`swap(arr[${i}]=${a[i]}, arr[${best}]=${a[best]}) — bubble down` });
+        msg:`Bubble down: swap(arr[${i}]=${a[i]}, arr[${best}]=${a[best]}) — xuống!` });
       [a[i],a[best]]=[a[best],a[i]]; i=best;
       steps.push({ arr:[...a], highlights:{[i]:'active'}, swap:[], code:11, msg:`Sau swap — i=${i}` });
     }
     steps.push({ arr:[...a], highlights:{0:'found'}, swap:[], code:12, msg:`✓ Extract = ${rootVal} — heap hợp lệ` });
     heap = a;
-  }
-  else if (op === 'heapify') {
-    const raw = [45, 17, 30, 9, 22, 3, 15]; // unsorted
+  } else if (op === 'heapify') {
+    const raw = [45, 17, 30, 9, 22, 3, 15];
     steps.push({ arr:[...raw], highlights:{}, swap:[], code:0, msg:`Heapify mảng [${raw.join(',')}] thành ${label}` });
     let a = [...raw];
     const start = Math.floor((a.length-2)/2);
@@ -432,8 +465,7 @@ function buildSteps(op, val) {
     }
     steps.push({ arr:[...a], highlights:{0:'found'}, swap:[], code:6, msg:`✓ ${label} xây xong — O(n)` });
     heap = a;
-  }
-  else if (op === 'peek') {
+  } else if (op === 'peek') {
     steps.push({ arr:[...heap], highlights:{0:'found'}, swap:[], code:4, msg:`Peek: root = heap[0] = ${heap[0]} — O(1)` });
     steps.push({ arr:[...heap], highlights:{0:'found'}, swap:[], code:5, msg:`✓ ${heapMode==='min'?'Minimum':'Maximum'} = ${heap[0]}` });
   }
@@ -469,9 +501,7 @@ function setHeapMode(mode) {
   heapMode = mode;
   document.getElementById('modeMin').classList.toggle('active',mode==='min');
   document.getElementById('modeMax').classList.toggle('active',mode==='max');
-  // Rebuild heap for new mode
-  heap = [3,9,15,17,22,30,45];
-  if (mode==='max') { heap=[45,30,15,17,22,9,3]; }
+  heap = mode==='min' ? [3,9,15,17,22,30,45] : [45,30,15,17,22,9,3];
   resetAll();
 }
 

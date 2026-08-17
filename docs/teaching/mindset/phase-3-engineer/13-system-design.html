@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>13 — System Design | Phase 3: Engineer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d1117; --bg2: #161b22; --bg3: #21262d;
+    --border: #30363d; --text: #e6edf3; --muted: #8b949e;
+    --green: #3fb950; --red: #f85149; --yellow: #d29922;
+    --blue: #58a6ff; --purple: #bc8cff; --orange: #ffa657; --cyan: #39d353;
+  }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; }
+  .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+  h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; }
+  h2 { font-size: 1.5rem; font-weight: 600; margin: 2.5rem 0 1rem; color: var(--blue); }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 1.2rem 0 0.4rem; color: var(--purple); }
+  p { color: var(--muted); margin-bottom: 0.8rem; }
+  pre { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; font-size: 0.82rem; line-height: 1.7; margin: 0.8rem 0; }
+  code { font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace; font-size: 0.85em; background: var(--bg3); padding: 0.1em 0.3em; border-radius: 3px; }
+  .cm { color: var(--muted); }
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin: 1rem 0; }
+  .reveal { opacity: 0; transform: translateY(20px); transition: all 0.5s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .divider { height: 1px; background: var(--border); margin: 3rem 0; }
+  .progress-bar { height: 6px; background: var(--bg3); border-radius: 3px; margin: 2rem 0; }
+  .progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--purple), var(--blue)); width: 0; transition: width 0.3s; }
+  .header-meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
+  .takeaway { background: linear-gradient(135deg, rgba(57,211,83,0.08), rgba(13,17,23,0)); border: 1px solid rgba(57,211,83,0.3); border-radius: 12px; padding: 1.5rem; margin: 2rem 0; }
+
+  /* Scale compare */
+  .scale-visual { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1.5rem 0; }
+  .scale-box { text-align: center; padding: 1.5rem; border-radius: 12px; cursor: pointer; transition: all 0.3s; }
+  .scale-box:hover { transform: scale(1.02); }
+
+  /* Design process stepper */
+  .design-steps { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.5rem 0; }
+  .ds { padding: 0.5rem 0.9rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.3s; border: 1px solid var(--border); color: var(--muted); }
+  .ds:hover { border-color: var(--blue); color: var(--blue); }
+  .ds.active { background: rgba(88,166,255,0.15); border-color: var(--blue); color: var(--blue); }
+  .ds-content { min-height: 80px; padding: 1rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin-top: 0.5rem; transition: all 0.3s; }
+
+  /* URL shortener walkthrough */
+  .url-steps { counter-reset: url-counter; }
+  .url-step { display: flex; gap: 1rem; margin-bottom: 1.5rem; cursor: pointer; }
+  .url-step-num { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0; }
+  .url-step-body { flex: 1; }
+  .url-step-title { font-weight: 600; margin-bottom: 0.3rem; }
+  .url-step-detail { display: none; margin-top: 0.5rem; padding: 0.8rem; background: var(--bg3); border-radius: 8px; font-size: 0.85rem; color: var(--muted); }
+  .url-step.open .url-step-detail { display: block; }
+
+  /* Load balancer animation */
+  .lb-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin: 1rem 0; position: relative; overflow: hidden; }
+  .lb-canvas { position: relative; height: 180px; }
+  .lb-client { position: absolute; left: 0; top: 50%; transform: translateY(-50%); }
+  .lb-box { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+  .lb-servers { position: absolute; right: 0; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-around; }
+  .lb-node { padding: 0.5rem 0.8rem; border-radius: 8px; text-align: center; font-size: 0.8rem; font-weight: 600; min-width: 90px; transition: all 0.3s; }
+  .req-dot { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: var(--blue); top: 50%; transform: translateY(-50%); pointer-events: none; transition: all 0.6s cubic-bezier(0.4,0,0.2,1); }
+
+  /* Cache layers */
+  .cache-layers { display: flex; flex-direction: column; gap: 0.5rem; margin: 1.5rem 0; }
+  .cache-layer { display: flex; align-items: center; gap: 1rem; padding: 0.8rem 1.2rem; border-radius: 10px; cursor: pointer; transition: all 0.3s; }
+  .cache-layer:hover { filter: brightness(1.15); }
+  .cache-speed { font-size: 0.75rem; color: var(--muted); white-space: nowrap; }
+  .cache-bar { height: 6px; border-radius: 3px; flex: 1; }
+  .cache-label { font-weight: 600; min-width: 120px; }
+  .cache-detail { display: none; margin-top: 0.5rem; padding: 0.8rem; background: var(--bg3); border-radius: 8px; font-size: 0.82rem; }
+  .cache-layer.open .cache-detail { display: block; }
+
+  /* Queue */
+  .queue-vis { display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0; flex-wrap: wrap; }
+  .q-producer { padding: 1rem; background: rgba(63,185,80,0.1); border: 2px solid rgba(63,185,80,0.4); border-radius: 10px; text-align: center; }
+  .q-box { display: flex; gap: 0.3rem; align-items: center; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 0.8rem; }
+  .q-msg { padding: 0.4rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
+  .q-consumer { padding: 1rem; background: rgba(88,166,255,0.1); border: 2px solid rgba(88,166,255,0.4); border-radius: 10px; text-align: center; }
+  .q-arrow { color: var(--muted); font-size: 1.5rem; }
+
+  /* DB Scaling */
+  .db-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1rem 0; }
+  .db-box { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 1.2rem; }
+
+  /* Circuit breaker */
+  .cb-states { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; margin: 1.5rem 0; }
+  .cb-state { width: 130px; height: 130px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.4s; font-weight: 700; font-size: 0.85rem; text-align: center; padding: 0.5rem; }
+  .cb-state.active { transform: scale(1.12); box-shadow: 0 0 25px currentColor; }
+  .cb-closed { background: rgba(63,185,80,0.15); border: 3px solid var(--green); color: var(--green); }
+  .cb-open { background: rgba(248,81,73,0.15); border: 3px solid var(--red); color: var(--red); }
+  .cb-half { background: rgba(210,153,34,0.15); border: 3px solid var(--yellow); color: var(--yellow); }
+  .cb-arrow { color: var(--muted); align-self: center; font-size: 1.8rem; }
+
+  /* CAP Triangle */
+  .cap { display: flex; justify-content: center; margin: 2rem 0; }
+  .cap-tri { position: relative; width: 320px; height: 280px; }
+  .cap-vertex { position: absolute; text-align: center; cursor: pointer; transition: all 0.3s; }
+  .cap-vertex:hover { filter: brightness(1.3); }
+  .cap-v-top { top: 0; left: 50%; transform: translateX(-50%); }
+  .cap-v-bl { bottom: 0; left: 0; }
+  .cap-v-br { bottom: 0; right: 0; }
+  .cap-label { display: inline-block; padding: 0.5rem 0.8rem; border-radius: 8px; font-weight: 700; font-size: 0.9rem; }
+  .cap-center { position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%); text-align: center; font-size: 0.75rem; color: var(--muted); }
+  .cap-pick { margin-top: 0.3rem; font-size: 0.75rem; }
+  .cap-line { position: absolute; pointer-events: none; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes moveReq { 0% { left: 5%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header-meta">Phase 3: Engineer · Bài 13</div>
+  <h1>🏗️ System Design</h1>
+  <p style="font-size:1.1rem; color: var(--text);">Thiết kế cho 1 user khác với 1 triệu user. Hiểu trade-offs để đưa ra quyết định đúng.</p>
+
+  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+  <!-- Why -->
+  <h2>🤔 Tại sao System Design quan trọng?</h2>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin:1.5rem 0;" class="reveal">
+    <div class="card" style="border-left:3px solid var(--green); cursor:pointer;" onclick="animateScale(this, 1)">
+      <div style="font-size:3rem; text-align:center; padding:1rem;">🧑‍💻</div>
+      <h3 style="text-align:center; color:var(--green); margin-top:0;">1 User</h3>
+      <ul style="list-style:none; font-size:0.85rem; color:var(--muted);">
+        <li>✓ SQLite đủ dùng</li>
+        <li>✓ Monolith on 1 server</li>
+        <li>✓ No cache needed</li>
+        <li>✓ Sync operations OK</li>
+        <li>✓ 1ms latency irrelevant</li>
+      </ul>
+    </div>
+    <div class="card" style="border-left:3px solid var(--red); cursor:pointer;" onclick="animateScale(this, 1000000)">
+      <div style="font-size:3rem; text-align:center; padding:1rem;">🌐</div>
+      <h3 style="text-align:center; color:var(--red); margin-top:0;">1,000,000 Users</h3>
+      <ul style="list-style:none; font-size:0.85rem; color:var(--muted);">
+        <li>⚡ Distributed DB required</li>
+        <li>⚡ Multiple servers + LB</li>
+        <li>⚡ Multi-layer caching</li>
+        <li>⚡ Async + queues</li>
+        <li>⚡ 1ms latency = $millions lost</li>
+      </ul>
+    </div>
+  </div>
+  <div id="scale-info" class="card" style="display:none; text-align:center;"></div>
+
+  <!-- Design Process -->
+  <h2>📐 Design Process — 10 bước</h2>
+  <p>Trong interview và thực tế, follow process này để không bỏ sót.</p>
+
+  <div class="reveal">
+    <div class="design-steps" id="design-steps"></div>
+    <div class="ds-content" id="ds-content">Click từng bước để xem detail...</div>
+  </div>
+
+  <!-- URL Shortener -->
+  <h2>🔗 Case Study: URL Shortener Design</h2>
+  <p>Level 1 system design — walkthrough từng bước. Click mỗi bước để expand.</p>
+
+  <div class="url-steps reveal">
+    <div class="url-step" onclick="this.classList.toggle('open')">
+      <div class="url-step-num" style="background:rgba(88,166,255,0.2); color:var(--blue);">1</div>
+      <div class="url-step-body">
+        <div class="url-step-title" style="color:var(--blue);">Requirements</div>
+        <div class="url-step-detail">
+          <strong>Functional:</strong> Nhập URL dài → nhận URL ngắn. Click URL ngắn → redirect đến URL gốc.<br><br>
+          <strong>Non-functional:</strong> 100M URLs/day. Latency &lt; 10ms redirect. 99.9% availability. URLs không expire (mặc định).<br><br>
+          <strong>Scope out:</strong> Analytics, custom slug, account management (scope for v2).
+        </div>
+      </div>
+    </div>
+    <div class="url-step" onclick="this.classList.toggle('open')">
+      <div class="url-step-num" style="background:rgba(188,140,255,0.2); color:var(--purple);">2</div>
+      <div class="url-step-body">
+        <div class="url-step-title" style="color:var(--purple);">Estimation</div>
+        <div class="url-step-detail">
+          100M writes/day = 1,160 writes/sec<br>
+          Read:Write ratio = 100:1 → 116,000 reads/sec<br>
+          Storage: 100M × 500 bytes × 5 years = 182TB<br>
+          Bandwidth write: 1,160 × 1KB = 1.16 MB/s<br>
+          Cache: 20% hot URLs cover 80% traffic (Pareto)
+        </div>
+      </div>
+    </div>
+    <div class="url-step" onclick="this.classList.toggle('open')">
+      <div class="url-step-num" style="background:rgba(63,185,80,0.2); color:var(--green);">3</div>
+      <div class="url-step-body">
+        <div class="url-step-title" style="color:var(--green);">API Design</div>
+        <div class="url-step-detail">
+          <code>POST /api/urls</code> → body: { longUrl } → response: { shortCode }<br>
+          <code>GET /{shortCode}</code> → 301/302 redirect → longUrl<br><br>
+          301 = permanent (browser cache) — ít server load<br>
+          302 = temporary (always hit server) — dùng nếu cần analytics
+        </div>
+      </div>
+    </div>
+    <div class="url-step" onclick="this.classList.toggle('open')">
+      <div class="url-step-num" style="background:rgba(255,166,87,0.2); color:var(--orange);">4</div>
+      <div class="url-step-body">
+        <div class="url-step-title" style="color:var(--orange);">Data Model</div>
+        <div class="url-step-detail">
+          <code>URLs table: shortCode (PK), longUrl, createdAt, userId?</code><br><br>
+          shortCode: 7 ký tự, base62 [a-z A-Z 0-9] → 62^7 = 3.5 tỷ combinations<br>
+          Generate: hash(longUrl + timestamp) → take first 7 chars<br>
+          Collision: check DB, regenerate nếu exists
+        </div>
+      </div>
+    </div>
+    <div class="url-step" onclick="this.classList.toggle('open')">
+      <div class="url-step-num" style="background:rgba(248,81,73,0.2); color:var(--red);">5</div>
+      <div class="url-step-body">
+        <div class="url-step-title" style="color:var(--red);">Architecture + Scaling</div>
+        <div class="url-step-detail">
+          Client → CDN → Load Balancer → App Servers (x N) → Cache (Redis) → DB (PostgreSQL)<br><br>
+          Read path: App → Redis → PostgreSQL (cache miss only)<br>
+          Write path: App → PostgreSQL → invalidate cache<br>
+          DB: Primary-Replica (write → primary, read → replicas)
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scaling -->
+  <h2>📈 Scaling: Vertical vs Horizontal</h2>
+
+  <div class="scale-visual reveal">
+    <div class="scale-box" style="background:rgba(88,166,255,0.08); border:2px solid rgba(88,166,255,0.3);" onclick="showScaling('vertical')">
+      <div style="font-size:3rem;">🖥️⬆️</div>
+      <h3 style="color:var(--blue);">Vertical Scaling</h3>
+      <p style="font-size:0.85rem;">"Scale Up" — máy to hơn, CPU nhiều hơn, RAM nhiều hơn</p>
+      <div style="margin-top:0.8rem; display:flex; gap:0.3rem; justify-content:center;">
+        <div style="width:40px; height:60px; background:rgba(88,166,255,0.2); border:1px solid rgba(88,166,255,0.5); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; color:var(--blue);">S</div>
+        <div style="color:var(--muted); align-self:center;">→</div>
+        <div style="width:40px; height:100px; background:rgba(88,166,255,0.3); border:1px solid rgba(88,166,255,0.5); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; color:var(--blue);">L</div>
+        <div style="color:var(--muted); align-self:center;">→</div>
+        <div style="width:40px; height:140px; background:rgba(88,166,255,0.4); border:1px solid rgba(88,166,255,0.5); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; color:var(--blue);">XL</div>
+      </div>
+    </div>
+    <div class="scale-box" style="background:rgba(63,185,80,0.08); border:2px solid rgba(63,185,80,0.3);" onclick="showScaling('horizontal')">
+      <div style="font-size:3rem;">🖥️➡️🖥️🖥️</div>
+      <h3 style="color:var(--green);">Horizontal Scaling</h3>
+      <p style="font-size:0.85rem;">"Scale Out" — nhiều máy nhỏ hơn, phân tán load</p>
+      <div style="margin-top:0.8rem; display:flex; gap:0.3rem; justify-content:center; flex-wrap:wrap;">
+        <div style="width:40px; height:50px; background:rgba(63,185,80,0.2); border:1px solid rgba(63,185,80,0.5); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:0.65rem; color:var(--green);">srv1</div>
+        <div style="width:40px; height:50px; background:rgba(63,185,80,0.2); border:1px solid rgba(63,185,80,0.5); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:0.65rem; color:var(--green);">srv2</div>
+        <div style="width:40px; height:50px; background:rgba(63,185,80,0.2); border:1px solid rgba(63,185,80,0.5); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:0.65rem; color:var(--green);">srv3</div>
+        <div style="width:40px; height:50px; background:rgba(63,185,80,0.3); border:2px solid rgba(63,185,80,0.6); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:0.65rem; color:var(--green);">+new</div>
+      </div>
+    </div>
+  </div>
+  <div id="scale-detail" class="card" style="display:none;"></div>
+
+  <!-- Load Balancer -->
+  <h2>⚖️ Load Balancer</h2>
+  <p>Phân phối requests đến nhiều servers. Một server down → traffic tự route sang server khác.</p>
+
+  <div class="lb-wrap reveal">
+    <div class="lb-canvas" id="lb-canvas">
+      <div class="lb-client" style="left:10px;">
+        <div style="font-size:2rem;">👤</div>
+        <div style="font-size:0.7rem; color:var(--muted); text-align:center;">Client</div>
+      </div>
+      <div class="lb-box" style="left:37%; top:50%; transform:translate(-50%,-50%);">
+        <div style="padding:0.8rem 1rem; background:rgba(210,153,34,0.15); border:2px solid rgba(210,153,34,0.5); border-radius:10px; text-align:center; font-weight:700; font-size:0.85rem; color:var(--yellow);">
+          ⚖️ Load<br>Balancer
+        </div>
+      </div>
+      <div class="lb-servers" style="right:10px; width:120px;">
+        <div class="lb-node" style="background:rgba(63,185,80,0.15); border:1px solid rgba(63,185,80,0.4); color:var(--green);" id="srv1">🖥 Server 1</div>
+        <div class="lb-node" style="background:rgba(63,185,80,0.15); border:1px solid rgba(63,185,80,0.4); color:var(--green);" id="srv2">🖥 Server 2</div>
+        <div class="lb-node" style="background:rgba(63,185,80,0.15); border:1px solid rgba(63,185,80,0.4); color:var(--green);" id="srv3">🖥 Server 3</div>
+      </div>
+    </div>
+    <div style="text-align:center; margin-top:0.5rem;">
+      <button onclick="sendRequests()" style="padding:0.5rem 1.2rem; background:rgba(88,166,255,0.15); border:1px solid var(--blue); border-radius:8px; color:var(--blue); cursor:pointer;">▶️ Send Requests</button>
+      <button onclick="toggleServer()" style="padding:0.5rem 1.2rem; background:rgba(248,81,73,0.15); border:1px solid var(--red); border-radius:8px; color:var(--red); cursor:pointer; margin-left:0.5rem;" id="fail-btn">💀 Kill Server 2</button>
+    </div>
+    <div id="lb-status" style="text-align:center; min-height:24px; margin-top:0.5rem; font-size:0.85rem; color:var(--muted);"></div>
+  </div>
+
+  <!-- Caching -->
+  <h2>⚡ Caching Layers</h2>
+  <p>Cache gần user nhất = nhanh nhất. Click từng layer để xem chi tiết.</p>
+
+  <div class="cache-layers reveal">
+    <div class="cache-layer" style="background:rgba(57,211,83,0.08); border:1px solid rgba(57,211,83,0.3);" onclick="this.classList.toggle('open')">
+      <div class="cache-label" style="color:var(--cyan);">🌐 Browser Cache</div>
+      <div class="cache-bar" style="background:var(--cyan); width:100%;"></div>
+      <div class="cache-speed">~0ms</div>
+      <div class="cache-detail">Cache-Control headers, Service Worker, localStorage. Không cần hit server. Nhất: static assets (JS, CSS, images). Cache-Control: max-age=31536000</div>
+    </div>
+    <div class="cache-layer" style="background:rgba(63,185,80,0.08); border:1px solid rgba(63,185,80,0.3);" onclick="this.classList.toggle('open')">
+      <div class="cache-label" style="color:var(--green);">🌍 CDN Cache</div>
+      <div class="cache-bar" style="background:var(--green); width:80%;"></div>
+      <div class="cache-speed">~5ms</div>
+      <div class="cache-detail">Cloudflare, CloudFront. Serve từ edge node gần user nhất. Tốt cho: HTML tĩnh, images, videos. Cache invalidation: purge API.</div>
+    </div>
+    <div class="cache-layer" style="background:rgba(88,166,255,0.08); border:1px solid rgba(88,166,255,0.3);" onclick="this.classList.toggle('open')">
+      <div class="cache-label" style="color:var(--blue);">🚀 App Cache (Redis)</div>
+      <div class="cache-bar" style="background:var(--blue); width:55%;"></div>
+      <div class="cache-speed">~1ms</div>
+      <div class="cache-detail">In-memory key-value. Tốt cho: session, computed results, rate limiting, leaderboard. TTL-based expiry. Cần handle cache invalidation strategy.</div>
+    </div>
+    <div class="cache-layer" style="background:rgba(210,153,34,0.08); border:1px solid rgba(210,153,34,0.3);" onclick="this.classList.toggle('open')">
+      <div class="cache-label" style="color:var(--yellow);">🗄️ DB Cache (Query)</div>
+      <div class="cache-bar" style="background:var(--yellow); width:30%;"></div>
+      <div class="cache-speed">~10ms</div>
+      <div class="cache-detail">PostgreSQL buffer pool, query plan cache. Tự động — nhưng index đúng chỗ giúp query plan cache hiệu quả. EXPLAIN ANALYZE để kiểm tra.</div>
+    </div>
+    <div class="cache-layer" style="background:rgba(248,81,73,0.08); border:1px solid rgba(248,81,73,0.3);" onclick="this.classList.toggle('open')">
+      <div class="cache-label" style="color:var(--red);">💾 Disk (DB)</div>
+      <div class="cache-bar" style="background:var(--red); width:10%;"></div>
+      <div class="cache-speed">~100ms+</div>
+      <div class="cache-detail">Chậm nhất. Mọi cache trên đều cố tránh hit DB. Nếu phải hit → đảm bảo query có index đúng chỗ, tránh N+1 query, limit result size.</div>
+    </div>
+  </div>
+
+  <!-- Message Queue -->
+  <h2>📨 Message Queue</h2>
+  <p>Decoupling: Producer không cần biết Consumer. Async xử lý heavy tasks.</p>
+
+  <div class="queue-vis reveal">
+    <div class="q-producer">
+      <div style="font-size:1.5rem;">📱</div>
+      <div style="font-weight:700; color:var(--green); font-size:0.85rem;">Producer</div>
+      <div style="font-size:0.75rem; color:var(--muted);">API Server</div>
+    </div>
+    <div class="q-arrow">→</div>
+    <div class="q-box">
+      <div style="font-size:0.75rem; color:var(--muted); position:absolute; top:-1.2rem; left:0;">Queue (RabbitMQ / Kafka / BullMQ)</div>
+      <div class="q-msg" style="background:rgba(255,166,87,0.2); color:var(--orange);">msg3</div>
+      <div class="q-msg" style="background:rgba(88,166,255,0.2); color:var(--blue);">msg2</div>
+      <div class="q-msg" style="background:rgba(63,185,80,0.2); color:var(--green);">msg1</div>
+    </div>
+    <div class="q-arrow">→</div>
+    <div style="display:flex; flex-direction:column; gap:0.5rem;">
+      <div class="q-consumer">
+        <div style="font-size:1rem;">⚙️</div>
+        <div style="font-weight:700; color:var(--blue); font-size:0.85rem;">Worker 1</div>
+      </div>
+      <div class="q-consumer">
+        <div style="font-size:1rem;">⚙️</div>
+        <div style="font-weight:700; color:var(--blue); font-size:0.85rem;">Worker 2</div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="border-left:3px solid var(--orange);">
+    <strong style="color:var(--orange);">Khi nào dùng Queue?</strong>
+    <ul style="margin:0.5rem 0 0 1rem; color:var(--muted); font-size:0.85rem;">
+      <li>📧 Send email (user không cần chờ)</li>
+      <li>🖼️ Resize/process images sau khi upload</li>
+      <li>📊 Generate heavy reports</li>
+      <li>🔔 Fan-out notifications đến nhiều users</li>
+      <li>⚡ Smooth traffic spikes — queue absorbs burst</li>
+    </ul>
+  </div>
+
+  <!-- Circuit Breaker -->
+  <h2>🔌 Circuit Breaker — Failure Handling</h2>
+  <p>Khi service downstream bị quá tải → circuit breaker "ngắt mạch" để tránh cascade failure.</p>
+
+  <div class="cb-states reveal">
+    <div class="cb-state cb-closed active" id="cb-closed" onclick="showCB('closed')">
+      <span style="font-size:1.5rem;">✅</span>
+      <span>CLOSED</span>
+      <small style="font-size:0.7rem; margin-top:0.3rem;">Requests flow normally</small>
+    </div>
+    <div class="cb-arrow">→</div>
+    <div class="cb-state cb-open" id="cb-open" onclick="showCB('open')">
+      <span style="font-size:1.5rem;">🚫</span>
+      <span>OPEN</span>
+      <small style="font-size:0.7rem; margin-top:0.3rem;">All requests fail fast</small>
+    </div>
+    <div class="cb-arrow">→</div>
+    <div class="cb-state cb-half" id="cb-half" onclick="showCB('half')">
+      <span style="font-size:1.5rem;">🔄</span>
+      <span>HALF-OPEN</span>
+      <small style="font-size:0.7rem; margin-top:0.3rem;">Test if service recovered</small>
+    </div>
+  </div>
+  <div id="cb-info" class="card" style="min-height:50px;"></div>
+
+  <!-- CAP Theorem -->
+  <h2>🔺 CAP Theorem</h2>
+  <p>Trong distributed system, bạn chỉ có thể đảm bảo <strong>2 trong 3</strong>. Click từng góc để xem ví dụ.</p>
+
+  <div class="cap reveal">
+    <div class="cap-tri">
+      <svg style="position:absolute; top:0; left:0; width:100%; height:100%;" viewBox="0 0 320 280">
+        <polygon points="160,20 20,260 300,260" fill="rgba(88,166,255,0.05)" stroke="rgba(88,166,255,0.2)" stroke-width="2"/>
+      </svg>
+      <div class="cap-vertex cap-v-top" onclick="showCAP('cp')">
+        <div class="cap-label" style="background:rgba(88,166,255,0.15); border:2px solid rgba(88,166,255,0.4); color:var(--blue);">C — Consistency</div>
+        <div class="cap-pick" style="color:var(--blue);">Mọi node thấy data giống nhau</div>
+      </div>
+      <div class="cap-vertex cap-v-bl" onclick="showCAP('ca')">
+        <div class="cap-label" style="background:rgba(63,185,80,0.15); border:2px solid rgba(63,185,80,0.4); color:var(--green);">A — Availability</div>
+        <div class="cap-pick" style="color:var(--green);">Mọi request đều nhận response</div>
+      </div>
+      <div class="cap-vertex cap-v-br" onclick="showCAP('ap')">
+        <div class="cap-label" style="background:rgba(248,81,73,0.15); border:2px solid rgba(248,81,73,0.4); color:var(--red);">P — Partition Tolerance</div>
+        <div class="cap-pick" style="color:var(--red);">System hoạt động dù mạng bị đứt</div>
+      </div>
+      <div class="cap-center">
+        <div>Pick 2</div>
+        <div>↓</div>
+      </div>
+    </div>
+  </div>
+  <div id="cap-info" class="card" style="min-height:40px;"></div>
+
+  <div class="divider"></div>
+
+  <div class="takeaway reveal">
+    <h3 style="color:var(--green); margin-top:0;">🎯 Key Takeaways</h3>
+    <ul style="list-style:none;">
+      <li style="padding:0.3rem 0;">✅ System design = requirements → constraints → trade-offs. Không có "perfect" solution</li>
+      <li style="padding:0.3rem 0;">✅ Vertical scale có giới hạn. Horizontal scale phức tạp hơn nhưng unlimited</li>
+      <li style="padding:0.3rem 0;">✅ Cache aggressively — CDN → Redis → DB. Cache miss = latency spike</li>
+      <li style="padding:0.3rem 0;">✅ Queue = async heavy work. User không cần chờ email gửi xong</li>
+      <li style="padding:0.3rem 0;">✅ Circuit breaker ngăn cascade failure — fail fast tốt hơn fail slow</li>
+      <li style="padding:0.3rem 0;">✅ CAP: network partition luôn xảy ra → chọn CP hoặc AP. Hiểu DB của bạn đang chọn gì</li>
+      <li style="padding:0.3rem 0;">✅ Đừng over-engineer sớm — profile first, scale where bottleneck is</li>
+    </ul>
+  </div>
+
+</div>
+
+<script>
+// Design steps
+const dsData = [
+  { label: '1. Requirements', info: '<strong>Functional:</strong> system làm gì? <strong>Non-functional:</strong> scale bao nhiêu? Latency? Availability? Nên spend 10 phút đây trước khi code bất cứ thứ gì.' },
+  { label: '2. Constraints', info: 'Traffic: reads/writes per second. Data volume. SLA uptime. Budget. Team size. Deadline. Constraints định nghĩa solution space.' },
+  { label: '3. API Design', info: 'Endpoints, request/response schema, auth mechanism. API là contract — thay đổi sẽ impact consumers. Design carefully.' },
+  { label: '4. Data Model', info: 'Tables/collections, relationships, indexes. SQL vs NoSQL tradeoffs. Data access patterns định nghĩa schema.' },
+  { label: '5. Architecture', info: 'Monolith vs microservices. Components và communication giữa chúng. Draw diagram trước khi code.' },
+  { label: '6. Scaling', info: 'Horizontal vs vertical. Stateless services để scale out dễ. Session storage ra ngoài (Redis).' },
+  { label: '7. Caching', info: 'Cache gì? Invalidation strategy? TTL? Cache stampede prevention. CDN cho static, Redis cho dynamic.' },
+  { label: '8. Queue', info: 'Async processing cho heavy tasks. Retry logic, dead letter queue, idempotency. BullMQ/Kafka/RabbitMQ.' },
+  { label: '9. Failures', info: 'Timeout, retry, circuit breaker. Graceful degradation. Single point of failure analysis.' },
+  { label: '10. Monitoring', info: 'Metrics, alerts, tracing, logging. "If you can\'t measure it, you can\'t improve it." Prometheus + Grafana.' },
+];
+const dsContainer = document.getElementById('design-steps');
+let activeDS = null;
+dsData.forEach((d, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'ds';
+  btn.textContent = d.label;
+  btn.onclick = () => {
+    document.querySelectorAll('.ds').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('ds-content').innerHTML = `<p style="color:var(--text)">${d.info}</p>`;
+  };
+  dsContainer.appendChild(btn);
+});
+
+// Scale info
+function animateScale(el, users) {
+  const info = document.getElementById('scale-info');
+  info.style.display = 'block';
+  if (users === 1) {
+    info.innerHTML = '<p style="color:var(--green)">✅ Simple stack works: 1 VPS + PostgreSQL + Node.js. Don\'t over-engineer. YAGNI (You Aren\'t Gonna Need It).</p>';
+  } else {
+    info.innerHTML = '<p style="color:var(--red)">⚡ Need: LB + multiple app servers + Redis cluster + DB read replicas + CDN + message queue + monitoring. Each layer added for specific bottleneck.</p>';
+  }
+}
+
+// Scaling
+function showScaling(type) {
+  const el = document.getElementById('scale-detail');
+  el.style.display = 'block';
+  if (type === 'vertical') {
+    el.innerHTML = '<strong style="color:var(--blue)">Vertical Scaling:</strong><p style="margin-top:0.5rem">✅ Simple — không cần thay đổi code. ❌ Có hardware limit. ❌ Single point of failure. ❌ Downtime khi upgrade. Tốt cho: DB (stateful, khó scale horizontal).</p>';
+  } else {
+    el.innerHTML = '<strong style="color:var(--green)">Horizontal Scaling:</strong><p style="margin-top:0.5rem">✅ Unlimited scale — add more servers. ✅ High availability — một server down, còn lại tiếp tục. ❌ App phải stateless. ❌ Distributed system complexity. Tốt cho: stateless app servers.</p>';
+  }
+}
+
+// Load Balancer
+let srv2Down = false;
+let reqCount = 0;
+const srvIds = ['srv1', 'srv2', 'srv3'];
+
+function sendRequests() {
+  const available = srv2Down ? ['srv1', 'srv3'] : ['srv1', 'srv2', 'srv3'];
+  let i = 0;
+  const interval = setInterval(() => {
+    if (i >= 6) { clearInterval(interval); return; }
+    const srvId = available[i % available.length];
+    highlightServer(srvId);
+    i++;
+  }, 400);
+  document.getElementById('lb-status').textContent = `Distributing ${6} requests across ${available.length} active servers...`;
+}
+
+function highlightServer(srvId) {
+  const srv = document.getElementById(srvId);
+  srv.style.background = 'rgba(88,166,255,0.3)';
+  srv.style.borderColor = 'var(--blue)';
+  setTimeout(() => {
+    srv.style.background = srv2Down && srvId === 'srv2' ? 'rgba(248,81,73,0.2)' : 'rgba(63,185,80,0.15)';
+    srv.style.borderColor = srv2Down && srvId === 'srv2' ? 'rgba(248,81,73,0.4)' : 'rgba(63,185,80,0.4)';
+  }, 350);
+}
+
+function toggleServer() {
+  srv2Down = !srv2Down;
+  const srv2 = document.getElementById('srv2');
+  const btn = document.getElementById('fail-btn');
+  if (srv2Down) {
+    srv2.style.background = 'rgba(248,81,73,0.2)';
+    srv2.style.borderColor = 'rgba(248,81,73,0.4)';
+    srv2.style.color = 'var(--red)';
+    srv2.textContent = '💀 Server 2 (DOWN)';
+    btn.textContent = '💚 Restart Server 2';
+    document.getElementById('lb-status').textContent = '⚠️ Server 2 down — LB đang route traffic sang Server 1 và 3. No downtime!';
+  } else {
+    srv2.style.background = 'rgba(63,185,80,0.15)';
+    srv2.style.borderColor = 'rgba(63,185,80,0.4)';
+    srv2.style.color = 'var(--green)';
+    srv2.textContent = '🖥 Server 2';
+    btn.textContent = '💀 Kill Server 2';
+    document.getElementById('lb-status').textContent = '✅ Server 2 recovered — All 3 servers active.';
+  }
+}
+
+// Circuit Breaker
+const cbInfo = {
+  closed: '<strong style="color:var(--green)">CLOSED — Normal state:</strong><p style="margin-top:0.3rem">Requests flow through. Monitoring error rate. Nếu error rate vượt threshold (e.g., 50% trong 60s) → chuyển sang OPEN.</p>',
+  open: '<strong style="color:var(--red)">OPEN — Failing state:</strong><p style="margin-top:0.3rem">Tất cả requests fail ngay lập tức (no wait). Return cached response hoặc error. Sau timeout (e.g., 30s) → chuyển sang HALF-OPEN để test.</p>',
+  half: '<strong style="color:var(--yellow)">HALF-OPEN — Testing state:</strong><p style="margin-top:0.3rem">Cho một số request nhỏ đi qua. Nếu OK → chuyển về CLOSED. Nếu fail → quay lại OPEN. Pattern: test recovery mà không đè nặng service đang hồi phục.</p>'
+};
+function showCB(state) {
+  document.querySelectorAll('.cb-state').forEach(s => s.classList.remove('active'));
+  document.getElementById('cb-' + state).classList.add('active');
+  document.getElementById('cb-info').innerHTML = cbInfo[state];
+}
+showCB('closed');
+
+// CAP
+const capInfo = {
+  cp: '<strong style="color:var(--blue)">CP — Consistency + Partition Tolerance:</strong><p style="margin-top:0.5rem">Sacrifice Availability. Nếu không đồng bộ được → refuse request thay vì trả stale data. <strong>Ví dụ:</strong> HBase, MongoDB (strong mode), ZooKeeper. Tốt cho: banking, inventory, bất kỳ thứ gì "số phải đúng".</p>',
+  ap: '<strong style="color:var(--red)">AP — Availability + Partition Tolerance:</strong><p style="margin-top:0.5rem">Sacrifice Consistency. Vẫn trả response dù data có thể stale. Eventually consistent. <strong>Ví dụ:</strong> DynamoDB, Cassandra, CouchDB. Tốt cho: social feeds, shopping cart, DNS.</p>',
+  ca: '<strong style="color:var(--green)">CA — Consistency + Availability:</strong><p style="margin-top:0.5rem">⚠️ Chỉ hoạt động khi không có network partition — không thực tế trong distributed system. Single-node PostgreSQL là CA. Khi add replication → phải chọn CP hoặc AP.</p>'
+};
+function showCAP(pick) {
+  document.getElementById('cap-info').innerHTML = capInfo[pick];
+}
+
+// Progress
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  document.getElementById('progress').style.width = pct + '%';
+});
+
+// Reveal
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

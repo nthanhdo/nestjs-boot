@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bài 16: Engineering Workflow — Từ Requirement đến Deploy</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.7}
+  .container{max-width:900px;margin:0 auto;padding:40px 24px}
+  h1{font-size:2.2rem;color:#58a6ff;margin-bottom:8px}
+  h2{font-size:1.5rem;color:#79c0ff;margin:40px 0 16px;padding-left:12px;border-left:3px solid #58a6ff}
+  h3{font-size:1.1rem;color:#a5d6ff;margin:20px 0 10px}
+  p{color:#c9d1d9;margin-bottom:12px}
+  .subtitle{color:#8b949e;font-size:1rem;margin-bottom:40px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;margin-right:6px}
+  .badge-blue{background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e}
+  .badge-green{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .badge-purple{background:#2d1b6b;color:#bc8cff;border:1px solid #6e40c9}
+  .card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin:20px 0}
+  .code-block{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px;font-family:'Fira Code','Cascadia Code',monospace;font-size:.85rem;overflow-x:auto;margin:12px 0;white-space:pre}
+  .cm{color:#8b949e} .kw{color:#ff7b72} .str{color:#a5d6ff} .fn{color:#d2a8ff} .var{color:#ffa657}
+  .tip{background:#0d2d1a;border:1px solid #238636;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .tip::before{content:'💡';position:absolute;left:14px;top:14px}
+  .warning{background:#2d1a0d;border:1px solid #9e4f1e;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .warning::before{content:'⚠️';position:absolute;left:14px;top:14px}
+  .section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
+  .exercise{background:#0d1a2d;border:1px solid #1f4a9e;border-radius:12px;padding:24px;margin:32px 0}
+  .checklist{list-style:none;padding:0}
+  .checklist li{padding:8px 0;color:#c9d1d9;display:flex;align-items:flex-start;gap:10px;border-bottom:1px solid #21262d;font-size:.9rem}
+  .checklist li:last-child{border-bottom:none}
+
+  /* Full Cycle */
+  .cycle-wrap{overflow-x:auto;margin:24px 0;padding:10px 0}
+  .cycle{display:flex;gap:0;align-items:stretch;min-width:700px}
+  .cycle-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;position:relative;cursor:pointer}
+  .cycle-step:not(:last-child)::after{content:'→';position:absolute;right:-12px;top:24px;color:#58a6ff;font-size:1.2rem;z-index:1}
+  .cycle-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;transition:transform .2s,box-shadow .2s;border:2px solid transparent}
+  .cycle-step:hover .cycle-icon{transform:scale(1.15);box-shadow:0 0 16px rgba(88,166,255,.4)}
+  .cycle-label{font-size:.68rem;color:#8b949e;text-align:center;line-height:1.3}
+  .cycle-tooltip{display:none;position:absolute;top:70px;left:50%;transform:translateX(-50%);background:#21262d;border:1px solid #30363d;border-radius:8px;padding:10px 14px;width:160px;font-size:.75rem;color:#c9d1d9;z-index:10;text-align:left}
+  .cycle-step:hover .cycle-tooltip{display:block}
+
+  /* Task Decomposition */
+  .decomp{margin:20px 0}
+  .big-task{background:#0d1a2d;border:2px solid #1f4a9e;border-radius:10px;padding:16px 20px;text-align:center;color:#58a6ff;font-weight:600;font-size:1rem;margin-bottom:16px;position:relative}
+  .big-task::after{content:'↓';position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);color:#58a6ff;font-size:1.3rem}
+  .small-tasks{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+  .small-task{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px;font-size:.8rem;text-align:center;transition:border-color .2s}
+  .small-task:hover{border-color:#58a6ff}
+  .small-task .st-size{font-size:.7rem;padding:2px 6px;border-radius:10px;margin-top:6px;display:inline-block}
+  .sz-xs{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .sz-s{background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e}
+  .sz-m{background:#2d1a0d;color:#f0883e;border:1px solid #9e4f1e}
+
+  /* T-shirt sizing */
+  .tshirt-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:20px 0}
+  .tshirt{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px 10px;text-align:center;transition:transform .2s,border-color .2s;cursor:default}
+  .tshirt:hover{transform:translateY(-4px);border-color:#58a6ff}
+  .ts-size{font-size:1.4rem;font-weight:700;margin-bottom:6px}
+  .ts-xs{color:#3fb950} .ts-s{color:#58a6ff} .ts-m{color:#f0883e} .ts-l{color:#ff7b72} .ts-xl{color:#bc8cff}
+  .ts-hours{font-size:.72rem;color:#8b949e}
+  .ts-desc{font-size:.7rem;color:#484f58;margin-top:4px}
+
+  /* Scrum Sprint */
+  .sprint{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin:20px 0}
+  .sprint-box{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;text-align:center;position:relative}
+  .sprint-box::before{font-size:1.5rem;display:block;margin-bottom:8px}
+  .sp-plan::before{content:'📋'}
+  .sp-daily::before{content:'☕'}
+  .sp-review::before{content:'🎯'}
+  .sp-retro::before{content:'🔄'}
+  .sprint-title{font-size:.85rem;font-weight:600;color:#c9d1d9}
+  .sprint-sub{font-size:.72rem;color:#8b949e;margin-top:4px}
+
+  /* Code review table */
+  .review-table{width:100%;border-collapse:collapse;margin:20px 0}
+  .review-table th{background:#21262d;color:#c9d1d9;padding:10px 14px;text-align:left;font-size:.85rem}
+  .review-table td{padding:10px 14px;border-bottom:1px solid #21262d;font-size:.85rem;vertical-align:top}
+  .review-table tr:hover td{background:#161b22}
+  .review-aspect{color:#58a6ff;font-weight:600}
+  .review-good{color:#3fb950}
+  .review-bad{color:#ff7b72}
+
+  /* RFC template */
+  .rfc{border:1px solid #30363d;border-radius:10px;overflow:hidden;margin:20px 0}
+  .rfc-header{background:#21262d;padding:12px 16px;display:flex;align-items:center;gap:10px}
+  .rfc-title{font-weight:600;color:#c9d1d9;font-size:.9rem}
+  .rfc-badge{font-size:.72rem;padding:2px 8px;border-radius:10px;background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e}
+  .rfc-body{padding:16px}
+  .rfc-section{margin:10px 0}
+  .rfc-section-title{font-size:.8rem;font-weight:700;color:#79c0ff;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+  .rfc-content{font-size:.85rem;color:#c9d1d9}
+
+  /* Communication levels */
+  .comm-compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+  .comm-box{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px}
+  .comm-label{font-size:.85rem;font-weight:600;margin-bottom:10px}
+  .comm-label.junior{color:#f0883e}
+  .comm-label.senior{color:#3fb950}
+  .comm-text{font-size:.85rem;color:#c9d1d9;font-style:italic;line-height:1.6}
+
+  @media(max-width:600px){
+    .small-tasks{grid-template-columns:1fr 1fr}
+    .tshirt-grid{grid-template-columns:repeat(3,1fr)}
+    .sprint{grid-template-columns:1fr 1fr}
+    .comm-compare{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div style="margin-bottom:20px">
+    <span class="badge badge-purple">Phase 5</span>
+    <span class="badge badge-blue">Bài 16</span>
+    <span class="badge badge-green">Professional</span>
+  </div>
+  <h1>Engineering Workflow</h1>
+  <p class="subtitle">Từ Requirement đến Deploy — quy trình làm việc của một Professional Engineer trong môi trường team thực tế.</p>
+
+  <!-- FULL CYCLE -->
+  <h2>1. Full Engineering Cycle</h2>
+  <p>Một engineer không chỉ "viết code" — mà đi qua một cycle đầy đủ với mỗi task. Hiểu cycle = không bị lost trong project thực tế.</p>
+
+  <div class="cycle-wrap">
+    <div class="cycle">
+      <div class="cycle-step">
+        <div class="cycle-icon" style="background:#0d2d1a;border-color:#238636">📋</div>
+        <div class="cycle-label">Require-ment</div>
+        <div class="cycle-tooltip">Đọc spec kỹ. Identify ambiguities. List câu hỏi cần hỏi.</div>
+      </div>
+      <div class="cycle-step">
+        <div class="cycle-icon" style="background:#0d1a2d;border-color:#1f4a9e">🧠</div>
+        <div class="cycle-label">Under-stand</div>
+        <div class="cycle-tooltip">Hiểu "tại sao" feature này tồn tại, không chỉ "cái gì".</div>
+      </div>
+      <div class="cycle-step">
+        <div class="cycle-icon" style="background:#2d1a0d;border-color:#9e6c1e">❓</div>
+        <div class="cycle-label">Ask</div>
+        <div class="cycle-tooltip">Hỏi trước khi implement. "Better to ask stupid question than code stupid thing."</div>
+      </div>
+      <div class="cycle-step">
+        <div class="cycle-icon" style="background:#1a0d2d;border-color:#6e40c9">🏗️</div>
+        <div class="cycle-label">Design</div>
+        <div class="cycle-tooltip">Schema, API contract, architecture. Viết ra trước khi code.</div>
+      </div>
+      <div class="cycle-step">
+        <div class="cycle-icon" style="background:#2d0d1a;border-color:#9e1e1e">⏱️</div>
+        <div class="cycle-label">Estimate</div>
+        <div class="cycle-tooltip">T-shirt sizing: XS/S/M/L/XL. Buffer 30-50% cho unknown.</div>
+      </div>
+      <div class="cycle-step">
+        <div class="cycle-icon" style="background:#0d3b1f;border-color:#238636">⌨️</div>
+        <div class="cycle-label">Implement</div>
+        <div class="cycle-tooltip">Small commits. Feature branches. Follow conventions.</div>
+      </div>
+      <div class="cycle-step">
+        <div class="cycle-icon" style="background:#2d0d0d;border-color:#9e1e1e">🧪</div>
+        <div class="cycle-label">Test</div>
+        <div class="cycle-tooltip">Unit + integration + manual. Test edge cases trước khi PR.</div>
+      </div>
+      <div class="cycle-step">
+        <div class="cycle-icon" style="background:#0d2d2d;border-color:#1e9e9e">👀</div>
+        <div class="cycle-label">Review</div>
+        <div class="cycle-tooltip">Tự review trước. Gửi PR với description đầy đủ.</div>
+      </div>
+      <div class="cycle-step">
+        <div class="cycle-icon" style="background:#1a0d0d;border-color:#9e1e1e">🚀</div>
+        <div class="cycle-label">Deploy</div>
+        <div class="cycle-tooltip">CI/CD green → deploy staging → verify → production.</div>
+      </div>
+      <div class="cycle-step">
+        <div class="cycle-icon" style="background:#2d1a0d;border-color:#9e6c1e">📊</div>
+        <div class="cycle-label">Monitor</div>
+        <div class="cycle-tooltip">Check logs, metrics 24h sau deploy. Không rời đi ngay.</div>
+      </div>
+    </div>
+  </div>
+  <p style="text-align:center;font-size:.8rem;color:#484f58">Hover vào từng bước để xem chi tiết</p>
+
+  <hr class="section-divider">
+
+  <!-- REQUIREMENT READING -->
+  <h2>2. Requirement Reading — Đọc Spec Đúng Cách</h2>
+  <p>Đọc spec không phải "scan qua" — mà là <em>active reading</em> với checklist câu hỏi.</p>
+
+  <div class="card">
+    <h3>Checklist khi đọc một ticket/spec</h3>
+    <ul class="checklist">
+      <li><span style="color:#58a6ff">①</span><strong>"Tại sao?"</strong> — Business value là gì? User problem thực sự là gì?</li>
+      <li><span style="color:#3fb950">②</span><strong>"Ai dùng?"</strong> — User role nào? Permissions cần gì?</li>
+      <li><span style="color:#f0883e">③</span><strong>"Edge cases?"</strong> — Empty state, error state, boundary values</li>
+      <li><span style="color:#bc8cff">④</span><strong>"Dependencies?"</strong> — Cần API nào? Cần data gì từ đâu?</li>
+      <li><span style="color:#a5d6ff">⑤</span><strong>"Definition of Done?"</strong> — Khi nào thì task này được coi là xong?</li>
+      <li><span style="color:#ffa657">⑥</span><strong>"Non-functional?"</strong> — Performance, security, logging requirements?</li>
+    </ul>
+  </div>
+
+  <div class="warning">
+    <strong>Rule của Senior Engineer:</strong> Không bao giờ bắt đầu code khi còn câu hỏi chưa được trả lời. "Hỏi trước mất 5 phút. Implement sai mất 2 ngày."
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- TASK BREAKDOWN -->
+  <h2>3. Task Breakdown — Chia Nhỏ Vấn Đề</h2>
+  <p>Kỹ năng chia task nhỏ = kỹ năng tư duy của engineer. Task nhỏ = dễ estimate, dễ track, dễ review.</p>
+
+  <div class="decomp">
+    <div class="big-task">User Authentication System (L)</div>
+    <div class="small-tasks">
+      <div class="small-task">
+        JWT Strategy + Guards<br>
+        <span class="st-size sz-m">M — 4h</span>
+      </div>
+      <div class="small-task">
+        Register endpoint + validation<br>
+        <span class="st-size sz-s">S — 2h</span>
+      </div>
+      <div class="small-task">
+        Login endpoint + bcrypt<br>
+        <span class="st-size sz-s">S — 2h</span>
+      </div>
+      <div class="small-task">
+        Refresh token logic<br>
+        <span class="st-size sz-m">M — 3h</span>
+      </div>
+      <div class="small-task">
+        Forgot password flow<br>
+        <span class="st-size sz-m">M — 4h</span>
+      </div>
+      <div class="small-task">
+        Unit tests cho auth<br>
+        <span class="st-size sz-s">S — 2h</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <strong>Rule:</strong> Nếu một task mất > 1 ngày → chia nhỏ hơn. Task tốt nhất = hoàn thành trong 2-4h và có thể describe trong 1 câu.
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- ESTIMATION -->
+  <h2>4. Estimation — T-shirt Sizing</h2>
+  <p>Không ai estimate chính xác 100%. Mục tiêu = đủ để plan sprint và detect khi vượt scope.</p>
+
+  <div class="tshirt-grid">
+    <div class="tshirt">
+      <div class="ts-size ts-xs">XS</div>
+      <div class="ts-hours">&lt; 2 giờ</div>
+      <div class="ts-desc">Config thay đổi, typo fix, comment update</div>
+    </div>
+    <div class="tshirt">
+      <div class="ts-size ts-s">S</div>
+      <div class="ts-hours">2–4 giờ</div>
+      <div class="ts-desc">Simple endpoint, single field validation</div>
+    </div>
+    <div class="tshirt">
+      <div class="ts-size ts-m">M</div>
+      <div class="ts-hours">1–2 ngày</div>
+      <div class="ts-desc">Feature với logic + test, simple integration</div>
+    </div>
+    <div class="tshirt">
+      <div class="ts-size ts-l">L</div>
+      <div class="ts-hours">3–5 ngày</div>
+      <div class="ts-desc">Complex feature, nhiều services, cần design</div>
+    </div>
+    <div class="tshirt">
+      <div class="ts-size ts-xl">XL</div>
+      <div class="ts-hours">&gt; 1 tuần</div>
+      <div class="ts-desc">System redesign → nên chia thành L tasks</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Estimation formula</h3>
+    <div class="code-block"><span class="cm">// Estimate = Optimistic + Buffer + Risk</span>
+
+<span class="var">base</span>    = thời gian nếu mọi thứ suôn sẻ (4h)
+<span class="var">buffer</span>  = unknown/integration issues (+50%)  (2h)
+<span class="var">risk</span>    = dependency / unclear spec (+20%)    (1h)
+─────────────────────────────────────────────
+<span class="var">total</span>   = 7h  →  estimate "1 ngày" (working day)</div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- AGILE/SCRUM -->
+  <h2>5. Agile / Scrum Basics</h2>
+  <p>Sprint = chu kỳ 2 tuần. Team commit vào một set of tasks, deliver vào cuối sprint.</p>
+
+  <div class="sprint">
+    <div class="sprint-box sp-plan">
+      <div class="sprint-title">Sprint Planning</div>
+      <div class="sprint-sub">Chọn tasks từ backlog vào sprint. Estimate + commit.</div>
+    </div>
+    <div class="sprint-box sp-daily">
+      <div class="sprint-title">Daily Standup</div>
+      <div class="sprint-sub">15 phút. 3 câu: làm gì hôm qua? hôm nay? blocked gì?</div>
+    </div>
+    <div class="sprint-box sp-review">
+      <div class="sprint-title">Sprint Review</div>
+      <div class="sprint-sub">Demo những gì hoàn thành. Stakeholder feedback.</div>
+    </div>
+    <div class="sprint-box sp-retro">
+      <div class="sprint-title">Retrospective</div>
+      <div class="sprint-sub">Làm tốt gì? Cải thiện gì? Action items cụ thể.</div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- CODE REVIEW -->
+  <h2>6. Code Review — Nhìn Gì, Nói Gì</h2>
+  <p>Code review không phải "tìm lỗi" — mà là <em>collaborative quality check</em> và knowledge transfer.</p>
+
+  <table class="review-table">
+    <thead>
+      <tr><th>Khía cạnh</th><th>Reviewer nhìn gì</th><th>Comment constructive</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="review-aspect">Correctness</span></td>
+        <td>Logic đúng không? Edge case handle không?</td>
+        <td><span class="review-good">"What happens when userId is null here?"</span></td>
+      </tr>
+      <tr>
+        <td><span class="review-aspect">Security</span></td>
+        <td>Input validated? Auth checked? Injection possible?</td>
+        <td><span class="review-good">"This query should use parameterized form to prevent injection."</span></td>
+      </tr>
+      <tr>
+        <td><span class="review-aspect">Readability</span></td>
+        <td>Code tự giải thích không? Naming clear?</td>
+        <td><span class="review-good">"Could we rename 'x' to 'userCount' for clarity?"</span></td>
+      </tr>
+      <tr>
+        <td><span class="review-aspect">Performance</span></td>
+        <td>N+1 query? Missing index? Unnecessary loop?</td>
+        <td><span class="review-good">"This calls DB inside loop — consider batch query."</span></td>
+      </tr>
+      <tr>
+        <td><span class="review-aspect">Tests</span></td>
+        <td>Test cases đủ không? Edge case có test?</td>
+        <td><span class="review-good">"Missing test for empty array input."</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="warning">
+    <strong>Tránh:</strong> <span class="review-bad">"This is wrong."</span> | <span class="review-bad">"Bad code."</span> | <span class="review-bad">"This is ugly."</span><br>
+    <strong>Thay bằng:</strong> Explain tại sao, suggest alternative, dùng "nit:" prefix cho minor issues.
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- RFC / ADR -->
+  <h2>7. Technical Discussion — RFC Format</h2>
+  <p>Khi propose một technical change lớn → viết RFC (Request for Comments) để team review trước khi implement.</p>
+
+  <div class="rfc">
+    <div class="rfc-header">
+      <span style="font-size:1.1rem">📄</span>
+      <div class="rfc-title">RFC: Switch từ REST sang GraphQL cho Public API</div>
+      <div class="rfc-badge">DRAFT</div>
+    </div>
+    <div class="rfc-body">
+      <div class="rfc-section">
+        <div class="rfc-section-title">Context</div>
+        <div class="rfc-content">Mobile client hiện tại over-fetching data → performance issues. 3 endpoints khác nhau cho cùng user data.</div>
+      </div>
+      <div class="rfc-section">
+        <div class="rfc-section-title">Proposal</div>
+        <div class="rfc-content">Migrate public API sang GraphQL. Keep REST cho internal services. Sử dụng Apollo Server + code-first approach.</div>
+      </div>
+      <div class="rfc-section">
+        <div class="rfc-section-title">Trade-offs</div>
+        <div class="rfc-content" style="color:#f0883e">Pros: flexible queries, type safety, single endpoint.<br>Cons: learning curve, N+1 problem nếu không có DataLoader, caching phức tạp hơn.</div>
+      </div>
+      <div class="rfc-section">
+        <div class="rfc-section-title">Alternatives Considered</div>
+        <div class="rfc-content">1. BFF pattern với REST — giữ REST nhưng thêm Backend-for-Frontend layer.<br>2. OpenAPI với sparse fieldsets — simpler nhưng ít flexible.</div>
+      </div>
+      <div class="rfc-section">
+        <div class="rfc-section-title">Decision needed by</div>
+        <div class="rfc-content" style="color:#58a6ff">2026-08-20. Request: feedback on trade-off #3 (caching strategy).</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- COMMUNICATION -->
+  <h2>8. Communication — Explain to the Right Audience</h2>
+
+  <div class="comm-compare">
+    <div class="comm-box">
+      <div class="comm-label junior">💬 Giải thích cho non-technical (PM, Designer)</div>
+      <div class="comm-text">"Feature này cần lưu thêm thông tin về lịch sử đơn hàng. Khi user nhìn vào profile, họ thấy được mọi order từ trước đến nay. Mất khoảng 2 ngày để xây."</div>
+    </div>
+    <div class="comm-box">
+      <div class="comm-label senior">💬 Giải thích cho Senior Engineer (Design Review)</div>
+      <div class="comm-text">"Sẽ thêm OrderHistory collection trong MongoDB với TTL index 90 ngày. API GET /users/:id/orders với cursor-based pagination, limit 20. Event-driven: OrderPlaced → append to history. Estimate 2 days bao gồm integration tests."</div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <strong>Skill quan trọng:</strong> Đọc audience → calibrate technical depth → luôn kết thúc với "action item" hoặc "decision needed". Không để meeting end với ambiguity.
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- EXERCISE -->
+  <div class="exercise">
+    <h3>🎯 Exercise: Feature Breakdown + Estimate</h3>
+    <p style="color:#8b949e;margin-bottom:16px;font-size:.9rem">
+      <strong>Feature request:</strong> "Thêm hệ thống notification — user nhận được email khi có order mới, order shipped, và order delivered. Admin có thể toggle từng loại notification."
+    </p>
+    <ul class="checklist">
+      <li><span style="color:#58a6ff">①</span>Đọc spec → list 5+ câu hỏi cần hỏi trước khi code</li>
+      <li><span style="color:#3fb950">②</span>Chia thành sub-tasks với T-shirt size cho từng task</li>
+      <li><span style="color:#f0883e">③</span>Identify dependencies — task nào phải xong trước?</li>
+      <li><span style="color:#bc8cff">④</span>Tính total estimate với buffer</li>
+      <li><span style="color:#a5d6ff">⑤</span>Viết 1 RFC ngắn: approach, trade-offs, alternatives</li>
+      <li><span style="color:#ffa657">⑥</span>Practice: giải thích feature cho "PM" (bạn cùng nhóm) trong 2 phút</li>
+    </ul>
+  </div>
+
+  <div class="tip">
+    <strong>Key Takeaway:</strong> Engineer giỏi dành 40% thời gian <em>trước</em> khi code: đọc, hỏi, design, estimate. Code nhanh không phải là engineer giỏi — <em>deliver đúng</em> mới là engineer giỏi.
+  </div>
+
+  <div style="text-align:center;margin-top:48px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">Bài 16 / Phase 5 — Professional</p>
+    <p style="margin-top:8px"><a href="17-product-thinking.html" style="color:#58a6ff;text-decoration:none">Tiếp theo: Bài 17 — Product Thinking →</a></p>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tư Duy Tính Toán — Phase 1: Think</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+  --text: #eef1f8; --muted: #8899bb;
+  --accent: #a78bfa; --yellow: #ffd43b; --green: #2ecc71; --red: #e74c3c;
+  --blue: #5b8def; --orange: #ffb347; --pink: #ff5e7a; --teal: #00cec9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 20% 20%, rgba(167,139,250,0.06) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(91,141,239,0.05) 0%, transparent 50%); pointer-events:none; z-index:0; }
+
+/* HEADER */
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; position: sticky; top: 0; z-index: 100; }
+.header-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.phase-badge { background: linear-gradient(135deg,#7c5ce7,#a78bfa); color:#fff; padding: 3px 12px; border-radius: 20px; font-size: .7rem; font-weight: 700; letter-spacing: .5px; }
+header h1 { font-size: 1.3rem; font-weight: 800; background: linear-gradient(135deg,#a78bfa,#5b8def); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.header-sub { color: var(--muted); font-size: .85rem; margin-left: auto; }
+.progress-bar { width: 100%; height: 3px; background: var(--border); border-radius: 2px; margin-top: 10px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg,#7c5ce7,#5b8def); border-radius: 2px; transition: width .4s; }
+
+/* MAIN */
+main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: relative; z-index: 1; }
+
+/* SECTION CARDS */
+.section { display: none; animation: fadeUp .5s ease; }
+.section.active { display: block; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: .75rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+.section-title { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg,#fff,var(--accent)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom: 10px; }
+.section-desc { color: var(--muted); font-size: 1rem; line-height: 1.7; }
+
+/* CARDS */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+.card-title { font-size: 1rem; font-weight: 700; color: var(--accent); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.card-body { color: var(--text); font-size: .95rem; line-height: 1.75; }
+
+/* HIGHLIGHT BOX */
+.highlight { background: linear-gradient(135deg,rgba(167,139,250,0.1),rgba(91,141,239,0.08)); border: 1px solid rgba(167,139,250,0.3); border-radius: 12px; padding: 20px 24px; margin: 20px 0; }
+.highlight-label { font-size: .7rem; font-weight: 700; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.highlight-text { color: var(--text); font-size: .95rem; line-height: 1.7; }
+
+/* DECOMPOSITION DIAGRAM */
+.decomp-tree { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 24px 0; }
+.decomp-root { background: linear-gradient(135deg,#7c5ce7,#a78bfa); color:#fff; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 1rem; text-align: center; box-shadow: 0 4px 20px rgba(124,92,231,0.4); }
+.decomp-arrow-down { width: 2px; height: 32px; background: var(--border); margin: 0 auto; }
+.decomp-branches { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.decomp-branch { display: flex; flex-direction: column; align-items: center; gap: 0; }
+.decomp-node { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; font-size: .85rem; text-align: center; color: var(--text); min-width: 110px; }
+.decomp-node.level2 { background: linear-gradient(135deg,rgba(91,141,239,0.15),rgba(91,141,239,0.05)); border-color: rgba(91,141,239,0.3); color: var(--blue); font-weight: 600; }
+.decomp-node.level3 { background: linear-gradient(135deg,rgba(46,204,113,0.12),rgba(46,204,113,0.04)); border-color: rgba(46,204,113,0.3); color: var(--green); font-size: .8rem; }
+.h-line { height: 2px; width: 100%; background: var(--border); }
+.branch-line { display: flex; align-items: flex-start; justify-content: center; width: 100%; gap: 0; }
+.connector { display: flex; flex-direction: column; align-items: center; }
+.connector-v { width: 2px; height: 20px; background: var(--border); margin: 0 auto; }
+
+/* ABSTRACTION MAP */
+.map-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+.map-side { border-radius: 12px; padding: 20px; text-align: center; }
+.map-side.real { background: linear-gradient(135deg,rgba(255,183,71,0.1),rgba(255,183,71,0.05)); border: 1px solid rgba(255,183,71,0.3); }
+.map-side.abstract { background: linear-gradient(135deg,rgba(167,139,250,0.1),rgba(167,139,250,0.05)); border: 1px solid rgba(167,139,250,0.3); }
+.map-label { font-size: .7rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px; }
+.map-side.real .map-label { color: var(--orange); }
+.map-side.abstract .map-label { color: var(--accent); }
+.city-grid { display: grid; grid-template-columns: repeat(5,1fr); gap: 3px; margin: 10px auto; max-width: 120px; }
+.city-block { width: 20px; height: 20px; border-radius: 2px; }
+.city-block.building { background: #3d5a80; }
+.city-block.road { background: #4a4e69; }
+.city-block.park { background: #2d6a4f; }
+.map-dots { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 10px auto; max-width: 100px; }
+.map-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); margin: auto; }
+.map-dot-line { height: 2px; background: rgba(167,139,250,0.4); margin: 4px 0; }
+
+/* PATTERN RECOGNITION */
+.pattern-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin: 20px 0; }
+.pattern-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; cursor: pointer; transition: all .3s; }
+.pattern-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.pattern-card.matched { border-color: var(--green); background: rgba(46,204,113,0.08); }
+.pattern-icon { font-size: 2rem; margin-bottom: 8px; }
+.pattern-name { font-size: .8rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.pattern-sub { font-size: .72rem; color: var(--muted); }
+.pattern-match { margin-top: 16px; background: linear-gradient(135deg,rgba(46,204,113,0.1),rgba(46,204,113,0.05)); border: 1px solid rgba(46,204,113,0.3); border-radius: 10px; padding: 12px; color: var(--green); font-size: .85rem; display: none; }
+.pattern-match.show { display: block; animation: fadeUp .3s; }
+
+/* FLOWCHART */
+.flow { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 24px 0; }
+.flow-node { padding: 12px 24px; border-radius: 10px; font-size: .9rem; font-weight: 600; text-align: center; min-width: 180px; }
+.flow-node.io { background: linear-gradient(135deg,rgba(0,206,201,0.15),rgba(0,206,201,0.05)); border: 2px solid var(--teal); color: var(--teal); border-radius: 30px; }
+.flow-node.process { background: linear-gradient(135deg,rgba(91,141,239,0.15),rgba(91,141,239,0.05)); border: 2px solid var(--blue); color: var(--blue); }
+.flow-node.decision { background: linear-gradient(135deg,rgba(255,183,71,0.15),rgba(255,183,71,0.05)); border: 2px solid var(--orange); color: var(--orange); clip-path: polygon(50% 0%,100% 50%,50% 100%,0% 50%); padding: 20px 40px; }
+.flow-node.output { background: linear-gradient(135deg,rgba(46,204,113,0.15),rgba(46,204,113,0.05)); border: 2px solid var(--green); color: var(--green); border-radius: 30px; }
+.flow-arrow { display: flex; flex-direction: column; align-items: center; gap: 2px; margin: 4px 0; }
+.flow-line { width: 2px; height: 24px; background: var(--border); }
+.flow-tip { color: var(--muted); font-size: 1rem; line-height: 1; }
+.flow-step { font-size: .72rem; color: var(--muted); }
+.flow-node.hidden { opacity: 0; transform: translateY(-10px); transition: all .4s; }
+.flow-node.visible { opacity: 1; transform: translateY(0); }
+.flow-arrow.hidden { opacity: 0; }
+.flow-arrow.visible { opacity: 1; transition: opacity .4s; }
+
+/* EDGE CASES */
+.edge-list { list-style: none; margin: 16px 0; }
+.edge-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: var(--surface2); border-radius: 10px; margin-bottom: 8px; border-left: 3px solid var(--red); }
+.edge-bullet { color: var(--red); font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+.edge-text { font-size: .9rem; color: var(--text); line-height: 1.5; }
+.edge-tag { display: inline-block; background: rgba(231,76,60,0.15); color: var(--red); padding: 1px 7px; border-radius: 4px; font-size: .7rem; font-weight: 700; margin-left: 6px; }
+
+/* TRADE-OFF SCALE */
+.scale-container { display: flex; flex-direction: column; align-items: center; margin: 24px 0; }
+.scale-beam { position: relative; width: 300px; height: 4px; background: var(--border); border-radius: 2px; margin: 20px 0; transition: transform .6s cubic-bezier(.34,1.56,.64,1); }
+.scale-pivot { position: absolute; bottom: -12px; left: 50%; transform: translateX(-50%); width: 4px; height: 24px; background: var(--muted); border-radius: 2px; }
+.scale-left, .scale-right { position: absolute; top: -40px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.scale-left { left: 0; }
+.scale-right { right: 0; }
+.scale-pan { width: 80px; height: 6px; background: var(--muted); border-radius: 3px; }
+.scale-weight { background: linear-gradient(135deg,var(--blue),#2c5aa0); color:#fff; border-radius: 8px; padding: 8px 12px; font-size: .8rem; font-weight: 600; text-align: center; min-width: 80px; }
+.scale-label { color: var(--muted); font-size: .72rem; text-align: center; }
+.scale-row { display: flex; gap: 40px; align-items: center; }
+.scale-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: .85rem; transition: all .2s; }
+.scale-btn:hover { background: var(--surface); border-color: var(--accent); }
+.scale-btn.active { background: rgba(167,139,250,0.15); border-color: var(--accent); color: var(--accent); }
+
+/* SCIENTIFIC METHOD */
+.sci-steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin: 20px 0; }
+.sci-step { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
+.sci-num { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg,#7c5ce7,#a78bfa); color:#fff; font-weight: 800; font-size: .9rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
+.sci-name { font-size: .85rem; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+.sci-desc { font-size: .78rem; color: var(--muted); line-height: 1.5; }
+
+/* EXERCISE */
+.exercise { background: linear-gradient(135deg,rgba(255,183,71,0.08),rgba(255,183,71,0.03)); border: 1px solid rgba(255,183,71,0.25); border-radius: 16px; padding: 28px; }
+.exercise-title { color: var(--orange); font-weight: 700; font-size: 1rem; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.ex-problem { background: var(--surface); border-radius: 10px; padding: 16px; margin-bottom: 16px; color: var(--text); font-size: .95rem; line-height: 1.7; }
+.ex-steps { counter-reset: step; }
+.ex-step { counter-increment: step; display: flex; gap: 12px; margin-bottom: 12px; padding: 12px 16px; background: var(--surface2); border-radius: 10px; }
+.ex-step::before { content: counter(step); flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg,var(--orange),#e67e22); color:#fff; font-weight: 700; font-size: .8rem; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+.ex-step-text { font-size: .9rem; color: var(--text); line-height: 1.6; }
+
+/* TAKEAWAY */
+.takeaway { background: linear-gradient(135deg,rgba(46,204,113,0.1),rgba(46,204,113,0.04)); border: 1px solid rgba(46,204,113,0.3); border-radius: 14px; padding: 24px; margin-top: 28px; }
+.takeaway-title { color: var(--green); font-weight: 700; font-size: .9rem; letter-spacing: .5px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.takeaway-list { list-style: none; }
+.takeaway-list li { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; font-size: .9rem; color: var(--text); line-height: 1.6; }
+.takeaway-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+
+/* NAVIGATION */
+.nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 14px 24px; display: flex; justify-content: center; gap: 12px; z-index: 100; }
+.nav-inner { display: flex; align-items: center; gap: 12px; max-width: 900px; width: 100%; }
+.btn { padding: 10px 24px; border-radius: 10px; font-size: .9rem; font-weight: 600; cursor: pointer; border: none; transition: all .2s; }
+.btn-prev { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-prev:hover:not(:disabled) { color: var(--text); border-color: var(--accent); }
+.btn-prev:disabled { opacity: .4; cursor: default; }
+.btn-next { background: linear-gradient(135deg,#7c5ce7,#a78bfa); color:#fff; flex: 1; max-width: 200px; box-shadow: 0 4px 16px rgba(124,92,231,0.4); }
+.btn-next:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,92,231,0.5); }
+.section-dots { display: flex; gap: 6px; margin: 0 auto; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: all .3s; cursor: pointer; }
+.dot.active { background: var(--accent); transform: scale(1.3); }
+.dot.done { background: rgba(167,139,250,0.4); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span class="phase-badge">PHASE 1 · THINK</span>
+    <h1>🧠 Tư Duy Tính Toán</h1>
+    <span class="header-sub">Bài 01 / 04</span>
+    <div class="progress-bar" style="width:100%">
+      <div class="progress-fill" id="progressFill" style="width:12.5%"></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- SECTION 1: Decomposition -->
+<div class="section active" id="sec-0">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 01</div>
+    <div class="section-title">Phân Rã Vấn Đề</div>
+    <div class="section-desc">Mọi bài toán lớn đều có thể chia thành các bài toán nhỏ hơn. Đây là kỹ năng cơ bản nhất của lập trình viên.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">💡 Nguyên tắc Divide & Conquer</div>
+    <div class="card-body">Khi gặp bài toán phức tạp, não người không thể xử lý tất cả cùng lúc. Phân rã vấn đề giúp ta tập trung vào từng phần nhỏ, dễ giải quyết.</div>
+  </div>
+
+  <div class="decomp-tree">
+    <div class="decomp-node level2" style="font-size:1rem;padding:14px 28px;background:linear-gradient(135deg,rgba(124,92,231,0.2),rgba(124,92,231,0.08));border-color:rgba(124,92,231,0.5);color:var(--accent);">🏦 Xây dựng App Banking</div>
+    <div class="decomp-arrow-down"></div>
+    <div class="decomp-branches">
+      <div class="decomp-branch">
+        <div class="decomp-node level2">👤 Quản lý User</div>
+        <div class="connector"><div class="connector-v"></div></div>
+        <div class="decomp-node level3">Đăng ký</div>
+        <div class="connector"><div class="connector-v" style="height:8px"></div></div>
+        <div class="decomp-node level3">Đăng nhập</div>
+        <div class="connector"><div class="connector-v" style="height:8px"></div></div>
+        <div class="decomp-node level3">Xác thực 2FA</div>
+      </div>
+      <div class="decomp-branch">
+        <div class="decomp-node level2">💰 Giao dịch</div>
+        <div class="connector"><div class="connector-v"></div></div>
+        <div class="decomp-node level3">Chuyển tiền</div>
+        <div class="connector"><div class="connector-v" style="height:8px"></div></div>
+        <div class="decomp-node level3">Lịch sử giao dịch</div>
+        <div class="connector"><div class="connector-v" style="height:8px"></div></div>
+        <div class="decomp-node level3">Số dư</div>
+      </div>
+      <div class="decomp-branch">
+        <div class="decomp-node level2">🔔 Thông báo</div>
+        <div class="connector"><div class="connector-v"></div></div>
+        <div class="decomp-node level3">Email</div>
+        <div class="connector"><div class="connector-v" style="height:8px"></div></div>
+        <div class="decomp-node level3">SMS</div>
+        <div class="connector"><div class="connector-v" style="height:8px"></div></div>
+        <div class="decomp-node level3">Push notification</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight">
+    <div class="highlight-label">Quy tắc phân rã</div>
+    <div class="highlight-text">Mỗi phần sau khi phân rã phải <strong>độc lập</strong> và <strong>có thể kiểm tra riêng lẻ</strong>. Nếu không, hãy phân rã tiếp.</div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Bài toán lớn = nhiều bài toán nhỏ ghép lại</li>
+      <li>Giải từng phần nhỏ → ghép lại = giải bài toán lớn</li>
+      <li>Phân rã tốt giúp cả team làm việc song song</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SECTION 2: Abstraction -->
+<div class="section" id="sec-1">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 02</div>
+    <div class="section-title">Trừu Tượng Hóa</div>
+    <div class="section-desc">Bỏ đi những chi tiết không cần thiết, giữ lại những gì quan trọng cho bài toán hiện tại.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🗺️ Ví dụ: Bản đồ vs Thực tế</div>
+    <div class="card-body">Google Maps không hiện từng viên gạch, mỗi tòa nhà. Nó chỉ hiện những gì bạn cần để điều hướng.</div>
+  </div>
+
+  <div class="map-compare">
+    <div class="map-side real">
+      <div class="map-label">🌆 Thực tế</div>
+      <div class="city-grid">
+        <div class="city-block building"></div><div class="city-block road"></div><div class="city-block building"></div><div class="city-block building"></div><div class="city-block road"></div>
+        <div class="city-block road"></div><div class="city-block road"></div><div class="city-block road"></div><div class="city-block road"></div><div class="city-block road"></div>
+        <div class="city-block park"></div><div class="city-block road"></div><div class="city-block building"></div><div class="city-block road"></div><div class="city-block building"></div>
+        <div class="city-block building"></div><div class="city-block road"></div><div class="city-block road"></div><div class="city-block road"></div><div class="city-block building"></div>
+        <div class="city-block road"></div><div class="city-block road"></div><div class="city-block park"></div><div class="city-block road"></div><div class="city-block road"></div>
+      </div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:8px;">Màu sắc, vật liệu, kiến trúc...</div>
+    </div>
+    <div class="map-side abstract">
+      <div class="map-label">🗺️ Trừu tượng hóa</div>
+      <div class="map-dots">
+        <div class="map-dot"></div><div class="map-dot" style="background:var(--teal)"></div><div class="map-dot"></div>
+        <div class="map-dot-line" style="grid-column:1/-1;height:2px;background:rgba(91,141,239,0.4)"></div>
+        <div class="map-dot" style="background:var(--green)"></div><div class="map-dot"></div><div class="map-dot" style="background:var(--orange)"></div>
+      </div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:8px;">Chỉ: đường + địa điểm + khoảng cách</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">💻 Trong lập trình</div>
+    <div class="card-body">
+      Khi viết hàm <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent)">sendEmail(to, subject, body)</code>, người dùng không cần biết SMTP, TCP/IP handshake, hay email server hoạt động thế nào. Đó là <strong>abstraction</strong>.
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0;">
+    <div style="background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.25);border-radius:12px;padding:16px;">
+      <div style="color:var(--red);font-weight:700;font-size:.8rem;margin-bottom:10px;">❌ Không abstraction</div>
+      <pre style="font-family:monospace;font-size:.78rem;color:var(--muted);line-height:1.6">openSocket(host, 587)
+auth(user, pass)
+helo(domain)
+rcptTo(email)
+data(content)
+quit()</pre>
+    </div>
+    <div style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.25);border-radius:12px;padding:16px;">
+      <div style="color:var(--green);font-weight:700;font-size:.8rem;margin-bottom:10px;">✅ Có abstraction</div>
+      <pre style="font-family:monospace;font-size:.78rem;color:#a8d8a8;line-height:1.6">sendEmail({
+  to: 'user@mail.com',
+  subject: 'Hello',
+  body: 'Welcome!'
+})</pre>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Ẩn đi chi tiết phức tạp, chỉ lộ giao diện cần thiết</li>
+      <li>Abstraction giúp code dễ đọc, dễ dùng, dễ thay thế</li>
+      <li>Câu hỏi hay: "Người dùng hàm này có cần biết điều này không?"</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SECTION 3: Pattern Recognition -->
+<div class="section" id="sec-2">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 03</div>
+    <div class="section-title">Nhận Diện Pattern</div>
+    <div class="section-desc">Ba bài toán trông khác nhau nhưng thực ra có cùng cấu trúc — giải một là giải được tất cả.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔍 Click vào từng bài toán để khám phá pattern</div>
+    <div class="card-body" style="margin-bottom:16px;">Nhìn vào 3 bài toán sau, chúng trông rất khác nhau nhưng đều có cùng pattern.</div>
+    <div class="pattern-grid">
+      <div class="pattern-card" id="pc1" onclick="matchPattern(1)">
+        <div class="pattern-icon">📬</div>
+        <div class="pattern-name">Hàng đợi Bưu điện</div>
+        <div class="pattern-sub">Người đến trước được phục vụ trước</div>
+      </div>
+      <div class="pattern-card" id="pc2" onclick="matchPattern(2)">
+        <div class="pattern-icon">🖨️</div>
+        <div class="pattern-name">In tài liệu</div>
+        <div class="pattern-sub">Lệnh in đầu tiên được xử lý đầu tiên</div>
+      </div>
+      <div class="pattern-card" id="pc3" onclick="matchPattern(3)">
+        <div class="pattern-icon">🌐</div>
+        <div class="pattern-name">HTTP Request</div>
+        <div class="pattern-sub">Request đến trước được server xử lý trước</div>
+      </div>
+    </div>
+    <div class="pattern-match" id="pm">
+      <strong style="color:var(--green)">✓ Cùng Pattern: QUEUE (FIFO)</strong><br>
+      Cả 3 bài toán đều là <strong>First In, First Out</strong>. Chỉ cần implement Queue một lần, dùng được cho tất cả!
+    </div>
+  </div>
+
+  <div class="highlight">
+    <div class="highlight-label">Tại sao Pattern Recognition quan trọng?</div>
+    <div class="highlight-text">Khi bạn nhận ra "à, bài này giống Stack/Queue/Graph tôi từng làm", bạn không cần giải lại từ đầu. Đây là cách các senior engineer làm việc nhanh hơn junior.</div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Luyện nhận diện pattern qua nhiều bài toán khác nhau</li>
+      <li>Data Structures = patterns lưu trữ, Algorithms = patterns xử lý</li>
+      <li>Pattern mới = pattern cũ + biến thể nhỏ</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SECTION 4: Algorithmic Thinking -->
+<div class="section" id="sec-3">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 04</div>
+    <div class="section-title">Tư Duy Thuật Toán</div>
+    <div class="section-desc">Mọi giải pháp đều có thể diễn đạt thành: Input → Xử lý → Output. Hãy luyện cách nghĩ có hệ thống.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔄 Bấm để reveal từng bước của thuật toán</div>
+    <div class="card-body" style="margin-bottom:20px;">Bài toán: Tìm phần tử lớn nhất trong mảng</div>
+    <div class="flow" id="algoFlow">
+      <div class="flow-node io visible">📥 Input: mảng [3, 7, 1, 9, 4]</div>
+      <div class="flow-arrow visible"><div class="flow-line"></div><div class="flow-tip">↓</div></div>
+      <div class="flow-node process hidden" id="fn1">max = arr[0] = 3</div>
+      <div class="flow-arrow hidden" id="fa1"><div class="flow-line"></div><div class="flow-tip">↓</div><div class="flow-step">lặp qua từng phần tử</div></div>
+      <div class="flow-node decision hidden" id="fn2" style="font-size:.8rem;">arr[i] > max?</div>
+      <div class="flow-arrow hidden" id="fa2"><div class="flow-line"></div><div class="flow-tip">↓</div><div class="flow-step">Có → cập nhật max</div></div>
+      <div class="flow-node process hidden" id="fn3">max = arr[i]</div>
+      <div class="flow-arrow hidden" id="fa3"><div class="flow-line"></div><div class="flow-tip">↓</div><div class="flow-step">hết mảng</div></div>
+      <div class="flow-node output hidden" id="fn4">📤 Output: max = 9</div>
+    </div>
+    <button class="btn btn-next" style="max-width:100%;margin-top:16px;" onclick="nextFlowStep()">Bước tiếp theo →</button>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Viết pseudocode trước khi code — ngôn ngữ không quan trọng</li>
+      <li>Xác định rõ Input / Output trước khi nghĩ đến Process</li>
+      <li>Thuật toán tốt = đúng + nhanh + dễ đọc</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SECTION 5: Edge Cases -->
+<div class="section" id="sec-4">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 05</div>
+    <div class="section-title">Edge Cases — Góc Tối</div>
+    <div class="section-desc">Code chạy đúng với dữ liệu bình thường chưa đủ. Phải test với những trường hợp bất thường.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⚠️ Bài toán: Tính điểm trung bình</div>
+    <div class="card-body" style="margin-bottom:16px;">Với hàm <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent)">average(scores)</code>, những gì có thể xảy ra?</div>
+    <ul class="edge-list">
+      <li class="edge-item"><span class="edge-bullet">⚡</span><div class="edge-text">Mảng rỗng <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.8rem">[]</code> → chia cho 0 → <strong>NaN / Exception</strong><span class="edge-tag">CRASH</span></div></li>
+      <li class="edge-item"><span class="edge-bullet">⚡</span><div class="edge-text">Có giá trị <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.8rem">null</code> hoặc <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.8rem">undefined</code> trong mảng<span class="edge-tag">WRONG</span></div></li>
+      <li class="edge-item"><span class="edge-bullet">⚡</span><div class="edge-text">Số âm hoặc số rất lớn (overflow)<span class="edge-tag">OVERFLOW</span></div></li>
+      <li class="edge-item"><span class="edge-bullet">⚡</span><div class="edge-text">Chỉ 1 phần tử — kết quả có đúng không?<span class="edge-tag">CHECK</span></div></li>
+      <li class="edge-item"><span class="edge-bullet">⚡</span><div class="edge-text">Dữ liệu string thay vì number: <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;font-size:.8rem">["a", "b"]</code><span class="edge-tag">TYPE ERROR</span></div></li>
+    </ul>
+  </div>
+
+  <div class="highlight">
+    <div class="highlight-label">Checklist Edge Case</div>
+    <div class="highlight-text">
+      <strong>EMPTY</strong> (rỗng) · <strong>ONE</strong> (1 phần tử) · <strong>MANY</strong> (số lượng lớn) · <strong>NULL</strong> (giá trị null/undefined) · <strong>NEGATIVE</strong> (số âm) · <strong>BOUNDARY</strong> (giá trị biên) · <strong>OVERFLOW</strong> (quá lớn)
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Bug trong production thường đến từ edge cases bị bỏ qua</li>
+      <li>Hỏi: "Điều gì xảy ra nếu input là... rỗng? null? cực lớn?"</li>
+      <li>Viết unit test cho edge cases — không chỉ happy path</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SECTION 6: Trade-off -->
+<div class="section" id="sec-5">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 06</div>
+    <div class="section-title">Trade-off Thinking</div>
+    <div class="section-desc">Không có giải pháp hoàn hảo. Mọi quyết định đều là sự đánh đổi.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⚖️ Chọn trade-off để xem cán cân nghiêng</div>
+    <div class="card-body" style="margin-bottom:20px;">Click vào một trade-off:</div>
+    <div class="scale-row" style="justify-content:center;flex-wrap:wrap;gap:8px;margin-bottom:24px;">
+      <button class="scale-btn" onclick="showTradeoff(0)">Speed vs Memory</button>
+      <button class="scale-btn" onclick="showTradeoff(1)">Simplicity vs Features</button>
+      <button class="scale-btn" onclick="showTradeoff(2)">Consistency vs Availability</button>
+    </div>
+    <div class="scale-container" id="scaleViz" style="display:none">
+      <div style="display:flex;gap:60px;align-items:flex-end;margin-bottom:8px;">
+        <div style="text-align:center">
+          <div class="scale-weight" id="sw-left">Speed</div>
+        </div>
+        <div style="text-align:center">
+          <div class="scale-weight" id="sw-right" style="background:linear-gradient(135deg,var(--pink),#c0143c)">Memory</div>
+        </div>
+      </div>
+      <div style="position:relative;width:300px;display:flex;align-items:center;justify-content:center">
+        <div class="scale-beam" id="scaleBeam">
+          <div class="scale-pivot"></div>
+        </div>
+      </div>
+      <div style="color:var(--muted);font-size:.85rem;margin-top:28px;text-align:center;max-width:400px;" id="tradeoffDesc">Khi dùng cache để tăng tốc → tốn thêm RAM. Đây là trade-off cơ bản nhất.</div>
+    </div>
+  </div>
+
+  <div class="highlight">
+    <div class="highlight-label">Cách đưa ra quyết định</div>
+    <div class="highlight-text">Đặt câu hỏi: <strong>"Bài toán của tôi ưu tiên điều gì?"</strong> Rồi chọn giải pháp phù hợp với ngữ cảnh, không phải giải pháp "tốt nhất trên lý thuyết".</div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Không có "đúng" hay "sai" — chỉ có "phù hợp" hay "không phù hợp"</li>
+      <li>Document lý do chọn trade-off để team hiểu sau này</li>
+      <li>Trade-off thay đổi khi ngữ cảnh thay đổi (scale, budget, team)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SECTION 7: Debugging Mindset -->
+<div class="section" id="sec-6">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 07</div>
+    <div class="section-title">Debugging Mindset</div>
+    <div class="section-desc">Debug không phải may rủi. Đó là phương pháp khoa học áp dụng cho code.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔬 Scientific Method cho Code</div>
+    <div class="sci-steps">
+      <div class="sci-step">
+        <div class="sci-num">1</div>
+        <div class="sci-name">Quan sát</div>
+        <div class="sci-desc">Bug xảy ra khi nào? Input gì? Error message gì?</div>
+      </div>
+      <div class="sci-step">
+        <div class="sci-num">2</div>
+        <div class="sci-name">Giả thuyết</div>
+        <div class="sci-desc">"Có lẽ vì... Tôi nghĩ nguyên nhân là..."</div>
+      </div>
+      <div class="sci-step">
+        <div class="sci-num">3</div>
+        <div class="sci-name">Thí nghiệm</div>
+        <div class="sci-desc">Thêm log, viết test, reproduce bug</div>
+      </div>
+      <div class="sci-step">
+        <div class="sci-num">4</div>
+        <div class="sci-name">Kết quả</div>
+        <div class="sci-desc">Bug xác nhận? Giả thuyết đúng/sai?</div>
+      </div>
+      <div class="sci-step">
+        <div class="sci-num">5</div>
+        <div class="sci-name">Sửa</div>
+        <div class="sci-desc">Fix nguyên nhân gốc, không phải triệu chứng</div>
+      </div>
+      <div class="sci-step">
+        <div class="sci-num">6</div>
+        <div class="sci-name">Confirm</div>
+        <div class="sci-desc">Test lại, đảm bảo không break gì khác</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.25);border-radius:12px;padding:16px;margin:16px 0;">
+    <div style="color:var(--red);font-weight:700;font-size:.85rem;margin-bottom:8px;">❌ Anti-pattern: Debug mò</div>
+    <div style="color:var(--muted);font-size:.9rem;line-height:1.6">"Thử thay cái này xem... không được. Thử cái kia... cũng không. Thêm console.log ở đây... ở đó..." — Không có phương pháp = mất hàng giờ cho lỗi đơn giản.</div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Reproduce bug trước — nếu không reproduce được, chưa debug được</li>
+      <li>Thay đổi một biến mỗi lần — không thay nhiều thứ cùng lúc</li>
+      <li>Đọc error message KỸ — thường có câu trả lời ngay trong đó</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SECTION 8: Exercise -->
+<div class="section" id="sec-7">
+  <div class="section-header">
+    <div class="section-num">Bài Tập Thực Hành</div>
+    <div class="section-title">Phân Rã Bài Toán Thực Tế</div>
+    <div class="section-desc">Áp dụng tư duy tính toán vào bài toán quen thuộc.</div>
+  </div>
+
+  <div class="exercise">
+    <div class="exercise-title">📚 Bài toán: Tổ chức lịch thi cho trường đại học</div>
+    <div class="ex-problem">
+      Trường có 500 sinh viên, 50 môn học, 20 phòng thi. Không sinh viên nào bị trùng lịch 2 môn cùng lúc. Phòng không được vượt quá sức chứa. Giám thị phải được phân công.
+    </div>
+    <div class="ex-steps">
+      <div class="ex-step"><div class="ex-step-text"><strong>Decomposition:</strong> Chia thành: quản lý sinh viên, quản lý phòng, quản lý môn học, phân công giám thị, generate lịch, kiểm tra xung đột</div></div>
+      <div class="ex-step"><div class="ex-step-text"><strong>Abstraction:</strong> Mô hình hóa: sinh viên ↔ môn học (enrollment), phòng ↔ slot thời gian, môn ↔ slot (assignment)</div></div>
+      <div class="ex-step"><div class="ex-step-text"><strong>Pattern:</strong> Đây là bài toán <em>Graph Coloring</em> — môn học là node, xung đột là edge, màu là time slot</div></div>
+      <div class="ex-step"><div class="ex-step-text"><strong>Algorithm:</strong> 1. Build conflict graph → 2. Color graph (greedy) → 3. Assign rooms by capacity → 4. Assign supervisors</div></div>
+      <div class="ex-step"><div class="ex-step-text"><strong>Edge Cases:</strong> Môn có 500 sinh viên (phải thi nhiều phòng), giám thị nghỉ ốm, phòng bảo trì, môn online</div></div>
+    </div>
+  </div>
+
+  <div class="highlight" style="margin-top:24px;">
+    <div class="highlight-label">Insight</div>
+    <div class="highlight-text">Bài toán "tổ chức lịch thi" và bài toán "tô màu bản đồ" nhìn bề ngoài rất khác nhau nhưng <strong>cùng một pattern</strong>. Đây là sức mạnh của Computational Thinking.</div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🏆 Tổng kết Phase 1.1</div>
+    <ul class="takeaway-list">
+      <li><strong>Decomposition</strong> — chia nhỏ bài toán</li>
+      <li><strong>Abstraction</strong> — bỏ chi tiết không cần</li>
+      <li><strong>Pattern Recognition</strong> — nhận ra điểm chung</li>
+      <li><strong>Algorithmic Thinking</strong> — Input → Process → Output</li>
+      <li><strong>Edge Cases</strong> — luôn hỏi "điều gì có thể sai?"</li>
+      <li><strong>Trade-off</strong> — không có hoàn hảo, chỉ có phù hợp</li>
+      <li><strong>Debug</strong> — phương pháp khoa học, không phải may rủi</li>
+    </ul>
+  </div>
+</div>
+
+</main>
+
+<div class="nav-bar">
+  <div class="nav-inner">
+    <button class="btn btn-prev" id="btnPrev" onclick="navigate(-1)" disabled>← Trước</button>
+    <div class="section-dots" id="dots"></div>
+    <button class="btn btn-next" id="btnNext" onclick="navigate(1)">Tiếp theo →</button>
+  </div>
+</div>
+
+<script>
+const SECTIONS = ['sec-0','sec-1','sec-2','sec-3','sec-4','sec-5','sec-6','sec-7'];
+const TITLES = ['Phân rã vấn đề','Trừu tượng hóa','Nhận diện Pattern','Tư duy thuật toán','Edge Cases','Trade-off','Debug Mindset','Bài tập'];
+let current = 0;
+let flowStep = 0;
+
+// Build dots
+const dotsEl = document.getElementById('dots');
+SECTIONS.forEach((_,i) => {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i===0?' active':'');
+  d.onclick = () => goTo(i);
+  dotsEl.appendChild(d);
+});
+
+function goTo(n) {
+  document.getElementById(SECTIONS[current]).classList.remove('active');
+  current = n;
+  document.getElementById(SECTIONS[current]).classList.add('active');
+  document.getElementById('btnPrev').disabled = current === 0;
+  document.getElementById('btnNext').textContent = current === SECTIONS.length-1 ? '🏁 Hoàn thành' : 'Tiếp theo →';
+  document.querySelectorAll('.dot').forEach((d,i) => {
+    d.className = 'dot' + (i===current?' active':(i<current?' done':''));
+  });
+  document.getElementById('progressFill').style.width = ((current+1)/SECTIONS.length*100)+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+  flowStep = 0;
+}
+
+function navigate(dir) { if(current+dir>=0 && current+dir<SECTIONS.length) goTo(current+dir); }
+
+// Pattern matching
+let matchCount = 0;
+function matchPattern(n) {
+  const el = document.getElementById('pc'+n);
+  if(!el.classList.contains('matched')) {
+    el.classList.add('matched');
+    matchCount++;
+    if(matchCount===3) document.getElementById('pm').classList.add('show');
+  }
+}
+
+// Flow steps
+const flowNodes = ['fn1','fn2','fn3','fn4'];
+const flowArrows = ['fa1','fa2','fa3'];
+function nextFlowStep() {
+  if(flowStep < flowNodes.length) {
+    document.getElementById(flowNodes[flowStep]).classList.remove('hidden');
+    document.getElementById(flowNodes[flowStep]).classList.add('visible');
+    if(flowStep < flowArrows.length) {
+      document.getElementById(flowArrows[flowStep]).classList.remove('hidden');
+      document.getElementById(flowArrows[flowStep]).classList.add('visible');
+    }
+    flowStep++;
+  }
+}
+
+// Trade-off
+const tradeoffs = [
+  { l:'⚡ Speed', r:'💾 Memory', desc:'Khi dùng cache để tăng tốc → tốn thêm RAM. Đây là trade-off cơ bản nhất.', tilt:-8 },
+  { l:'🎯 Simplicity', r:'✨ Features', desc:'Thêm tính năng → code phức tạp hơn, khó maintain hơn. Hỏi: tính năng này có thực sự cần không?', tilt:8 },
+  { l:'🔒 Consistency', r:'⚡ Availability', desc:'CAP Theorem: trong distributed systems, không thể có cả 3. Phải chọn 2.', tilt:-5 },
+];
+function showTradeoff(i) {
+  const t = tradeoffs[i];
+  document.getElementById('scaleViz').style.display='flex';
+  document.getElementById('sw-left').textContent = t.l;
+  document.getElementById('sw-right').textContent = t.r;
+  document.getElementById('scaleBeam').style.transform = `rotate(${t.tilt}deg)`;
+  document.getElementById('tradeoffDesc').textContent = t.desc;
+  document.querySelectorAll('.scale-btn').forEach((b,j) => b.classList.toggle('active', j===i));
+}
+</script>
+</body>
+</html>

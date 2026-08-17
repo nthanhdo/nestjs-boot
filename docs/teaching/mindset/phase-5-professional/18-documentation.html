@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bài 18: Documentation — Viết Tài Liệu Như Engineer</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.7}
+  .container{max-width:900px;margin:0 auto;padding:40px 24px}
+  h1{font-size:2.2rem;color:#58a6ff;margin-bottom:8px}
+  h2{font-size:1.5rem;color:#79c0ff;margin:40px 0 16px;padding-left:12px;border-left:3px solid #58a6ff}
+  h3{font-size:1.1rem;color:#a5d6ff;margin:20px 0 10px}
+  p{color:#c9d1d9;margin-bottom:12px}
+  .subtitle{color:#8b949e;font-size:1rem;margin-bottom:40px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;margin-right:6px}
+  .badge-blue{background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e}
+  .badge-green{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .badge-purple{background:#2d1b6b;color:#bc8cff;border:1px solid #6e40c9}
+  .card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin:20px 0}
+  .code-block{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px;font-family:'Fira Code','Cascadia Code',monospace;font-size:.83rem;overflow-x:auto;margin:12px 0;white-space:pre}
+  .cm{color:#8b949e} .kw{color:#ff7b72} .str{color:#a5d6ff} .fn{color:#d2a8ff} .var{color:#ffa657} .tag{color:#7ee787}
+  .tip{background:#0d2d1a;border:1px solid #238636;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .tip::before{content:'💡';position:absolute;left:14px;top:14px}
+  .warning{background:#2d1a0d;border:1px solid #9e4f1e;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .warning::before{content:'⚠️';position:absolute;left:14px;top:14px}
+  .section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
+  .exercise{background:#0d1a2d;border:1px solid #1f4a9e;border-radius:12px;padding:24px;margin:32px 0}
+  .checklist{list-style:none;padding:0}
+  .checklist li{padding:8px 0;color:#c9d1d9;display:flex;align-items:flex-start;gap:10px;border-bottom:1px solid #21262d;font-size:.9rem}
+  .checklist li:last-child{border-bottom:none}
+
+  /* README anatomy */
+  .readme-wrap{border:1px solid #30363d;border-radius:12px;overflow:hidden;margin:20px 0}
+  .readme-file{background:#21262d;padding:10px 16px;display:flex;align-items:center;gap:8px;font-size:.85rem;color:#c9d1d9}
+  .readme-content{padding:0}
+  .readme-section{display:flex;align-items:stretch;border-bottom:1px solid #21262d;transition:background .2s;cursor:default}
+  .readme-section:last-child{border-bottom:none}
+  .readme-section:hover{background:#0d1117}
+  .readme-status{width:6px;flex-shrink:0}
+  .rs-required{background:#238636}
+  .rs-recommended{background:#9e6c1e}
+  .rs-optional{background:#30363d}
+  .readme-body{padding:14px 18px;flex:1}
+  .readme-title{font-size:.85rem;font-weight:600;color:#c9d1d9;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+  .readme-desc{font-size:.78rem;color:#8b949e}
+  .readme-example{font-size:.75rem;color:#484f58;margin-top:4px;font-family:monospace}
+  .req-tag{font-size:.68rem;padding:1px 7px;border-radius:8px}
+  .req-must{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .req-should{background:#3b1e0d;color:#f0883e;border:1px solid #9e4f1e}
+  .req-may{background:#21262d;color:#8b949e;border:1px solid #30363d}
+
+  /* Swagger demo */
+  .swagger{border:1px solid #30363d;border-radius:10px;overflow:hidden;margin:20px 0}
+  .sw-header{background:#21262d;padding:10px 16px;font-size:.85rem;color:#c9d1d9;display:flex;align-items:center;gap:8px}
+  .sw-endpoint{display:flex;align-items:stretch;border-bottom:1px solid #21262d}
+  .sw-endpoint:last-child{border-bottom:none}
+  .sw-method{padding:14px 16px;font-weight:700;font-size:.8rem;width:70px;text-align:center;flex-shrink:0}
+  .sw-get{background:#0d2d1a;color:#3fb950}
+  .sw-post{background:#0d1a2d;color:#58a6ff}
+  .sw-put{background:#2d1a0d;color:#f0883e}
+  .sw-delete{background:#2d0d0d;color:#ff7b72}
+  .sw-path{font-family:monospace;font-size:.82rem;color:#c9d1d9;padding:14px 16px;flex:1}
+  .sw-desc{font-size:.78rem;color:#8b949e;padding:14px 16px;text-align:right;width:200px;flex-shrink:0}
+
+  /* C4 Model */
+  .c4-levels{display:flex;flex-direction:column;gap:12px;margin:20px 0;counter-reset:c4}
+  .c4-level{display:flex;align-items:flex-start;gap:16px;padding:16px;background:#161b22;border:1px solid #30363d;border-radius:10px;transition:border-color .2s;counter-increment:c4}
+  .c4-level:hover{border-color:#58a6ff}
+  .c4-num{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;flex-shrink:0}
+  .c4-1{background:#0d2d6b;border:2px solid #1f4a9e;color:#58a6ff}
+  .c4-2{background:#1a0d2d;border:2px solid #6e40c9;color:#bc8cff}
+  .c4-3{background:#0d2d1a;border:2px solid #238636;color:#3fb950}
+  .c4-4{background:#2d1a0d;border:2px solid #9e6c1e;color:#f0883e}
+  .c4-name{font-weight:600;color:#c9d1d9;margin-bottom:4px}
+  .c4-desc{font-size:.85rem;color:#8b949e}
+  .c4-example{font-size:.78rem;color:#484f58;font-family:monospace;margin-top:4px}
+
+  /* Sequence diagram */
+  .seq-wrap{overflow-x:auto;margin:20px 0}
+  .seq-svg{min-width:600px;width:100%}
+
+  /* ERD */
+  .erd-wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:20px 0}
+  .erd-table{background:#161b22;border:1px solid #30363d;border-radius:10px;overflow:hidden}
+  .erd-header{background:#0d2d6b;padding:10px 14px;font-size:.85rem;font-weight:600;color:#58a6ff}
+  .erd-field{padding:8px 14px;border-bottom:1px solid #21262d;font-size:.78rem;font-family:monospace;display:flex;gap:8px}
+  .erd-field:last-child{border-bottom:none}
+  .erd-pk{color:#f0883e;font-weight:700}
+  .erd-fk{color:#bc8cff}
+  .erd-col{color:#c9d1d9}
+  .erd-type{color:#8b949e;margin-left:auto}
+  .erd-tag{font-size:.65rem;padding:1px 5px;border-radius:4px;background:#2d1a0d;color:#f0883e;border:1px solid #9e4f1e}
+  .erd-relation{display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#8b949e;gap:8px}
+
+  /* ADR template */
+  .adr{border:1px solid #30363d;border-radius:10px;overflow:hidden;margin:20px 0}
+  .adr-header{background:#21262d;padding:12px 16px;display:flex;align-items:center;gap:12px}
+  .adr-num{font-family:monospace;font-size:.8rem;color:#8b949e}
+  .adr-title{font-weight:600;color:#c9d1d9;font-size:.9rem}
+  .adr-status{font-size:.72rem;padding:2px 8px;border-radius:10px}
+  .adr-accepted{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .adr-body{padding:0}
+  .adr-section{padding:12px 16px;border-bottom:1px solid #21262d}
+  .adr-section:last-child{border-bottom:none}
+  .adr-section-title{font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;color:#58a6ff;font-weight:700;margin-bottom:6px}
+  .adr-content{font-size:.85rem;color:#c9d1d9}
+
+  /* Troubleshooting */
+  .trouble{display:flex;flex-direction:column;gap:8px;margin:20px 0}
+  .tr-item{background:#161b22;border:1px solid #30363d;border-radius:8px;overflow:hidden}
+  .tr-header{padding:12px 16px;display:flex;align-items:center;gap:10px;cursor:pointer}
+  .tr-symptom{font-size:.85rem;font-weight:600;color:#ff7b72;flex:1}
+  .tr-arrow{color:#58a6ff;transition:transform .3s;font-size:.9rem}
+  .tr-body{padding:12px 16px;border-top:1px solid #21262d;display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:.82rem}
+  .tr-check{color:#f0883e}
+  .tr-check-title{font-weight:600;margin-bottom:6px}
+  .tr-check li{margin:4px 0;color:#c9d1d9}
+  .tr-fix{color:#3fb950}
+  .tr-fix-title{font-weight:600;margin-bottom:6px}
+  .tr-fix li{margin:4px 0;color:#c9d1d9}
+
+  @media(max-width:600px){
+    .erd-wrap{grid-template-columns:1fr}
+    .tr-body{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div style="margin-bottom:20px">
+    <span class="badge badge-purple">Phase 5</span>
+    <span class="badge badge-blue">Bài 18</span>
+    <span class="badge badge-green">Professional</span>
+  </div>
+  <h1>Documentation</h1>
+  <p class="subtitle">Doc tốt = explain cho engineer khác mà không cần ngồi cạnh. Không doc = technical debt không nhìn thấy được.</p>
+
+  <!-- WHY DOCS -->
+  <h2>1. Tại Sao Docs Quan Trọng?</h2>
+  <div class="card">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div>
+        <h3 style="color:#ff7b72">❌ Không có Doc</h3>
+        <ul style="color:#c9d1d9;padding-left:18px;margin-top:8px">
+          <li style="margin:6px 0">Onboard member mới mất 2-3 tuần</li>
+          <li style="margin:6px 0">Mỗi lần debug phải đọc toàn bộ code</li>
+          <li style="margin:6px 0">PM không biết API có gì để plan feature</li>
+          <li style="margin:6px 0">"Chỉ mình tôi biết phần này" → knowledge silo</li>
+          <li style="margin:6px 0">6 tháng sau chính mình không nhớ code viết gì</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="color:#3fb950">✅ Có Doc tốt</h3>
+        <ul style="color:#c9d1d9;padding-left:18px;margin-top:8px">
+          <li style="margin:6px 0">Onboard trong 2-3 ngày</li>
+          <li style="margin:6px 0">Debug bắt đầu từ troubleshooting guide</li>
+          <li style="margin:6px 0">PM tự query API docs khi cần</li>
+          <li style="margin:6px 0">Team member thay thế được nhau</li>
+          <li style="margin:6px 0">6 tháng sau extend feature dễ dàng</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- README -->
+  <h2>2. README Anatomy</h2>
+  <p>README là "front door" của project. Bất kỳ developer nào clone repo cần biết ngay: đây là gì, cách chạy, cách contribute.</p>
+
+  <div class="readme-wrap">
+    <div class="readme-file">📄 README.md — Anatomy of a Good README</div>
+    <div class="readme-section">
+      <div class="readme-status rs-required"></div>
+      <div class="readme-body">
+        <div class="readme-title">🏷️ Project Title + One-liner <span class="req-tag req-must">MUST</span></div>
+        <div class="readme-desc">Tên project và giải thích trong 1 câu. Ai đọc 10 giây biết đây là gì.</div>
+        <div class="readme-example"># OrderService — REST API quản lý orders cho e-commerce platform</div>
+      </div>
+    </div>
+    <div class="readme-section">
+      <div class="readme-status rs-required"></div>
+      <div class="readme-body">
+        <div class="readme-title">🚀 Quick Start <span class="req-tag req-must">MUST</span></div>
+        <div class="readme-desc">Copy-paste commands để chạy project lần đầu. Không assume prior knowledge.</div>
+        <div class="readme-example">git clone → npm install → cp .env.example .env → npm run dev</div>
+      </div>
+    </div>
+    <div class="readme-section">
+      <div class="readme-status rs-required"></div>
+      <div class="readme-body">
+        <div class="readme-title">📋 Prerequisites <span class="req-tag req-must">MUST</span></div>
+        <div class="readme-desc">Node v20+, Docker, MongoDB. Version cụ thể, không viết "latest".</div>
+      </div>
+    </div>
+    <div class="readme-section">
+      <div class="readme-status rs-recommended"></div>
+      <div class="readme-body">
+        <div class="readme-title">🏗️ Architecture Overview <span class="req-tag req-should">SHOULD</span></div>
+        <div class="readme-desc">Diagram hoặc mô tả ngắn về structure: folder layout, key modules, data flow.</div>
+      </div>
+    </div>
+    <div class="readme-section">
+      <div class="readme-status rs-recommended"></div>
+      <div class="readme-body">
+        <div class="readme-title">📖 API Reference (link) <span class="req-tag req-should">SHOULD</span></div>
+        <div class="readme-desc">Link tới Swagger UI hoặc Postman collection. Không viết inline — quá dài.</div>
+      </div>
+    </div>
+    <div class="readme-section">
+      <div class="readme-status rs-recommended"></div>
+      <div class="readme-body">
+        <div class="readme-title">🧪 Running Tests <span class="req-tag req-should">SHOULD</span></div>
+        <div class="readme-desc">npm test, npm run test:e2e. Kết quả expected là gì.</div>
+      </div>
+    </div>
+    <div class="readme-section">
+      <div class="readme-status rs-optional"></div>
+      <div class="readme-body">
+        <div class="readme-title">🤝 Contributing Guide <span class="req-tag req-may">MAY</span></div>
+        <div class="readme-desc">Branch naming, commit convention, PR process cho open-source projects.</div>
+      </div>
+    </div>
+    <div class="readme-section">
+      <div class="readme-status rs-optional"></div>
+      <div class="readme-body">
+        <div class="readme-title">📄 License <span class="req-tag req-may">MAY</span></div>
+        <div class="readme-desc">MIT, Apache 2.0, proprietary — quan trọng cho open-source.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- API DOCS -->
+  <h2>3. API Documentation — Swagger / OpenAPI</h2>
+  <p>Viết API docs bằng tay = error-prone và luôn outdated. Dùng code-first approach: decorators trong code → auto-generate docs.</p>
+
+  <div class="swagger">
+    <div class="sw-header">
+      <span style="color:#3fb950">●</span>
+      <span>OrderService API — v1.0.0 | Swagger UI</span>
+    </div>
+    <div class="sw-endpoint">
+      <div class="sw-method sw-get">GET</div>
+      <div class="sw-path">/orders</div>
+      <div class="sw-desc">List all orders (paginated)</div>
+    </div>
+    <div class="sw-endpoint">
+      <div class="sw-method sw-post">POST</div>
+      <div class="sw-path">/orders</div>
+      <div class="sw-desc">Create a new order</div>
+    </div>
+    <div class="sw-endpoint">
+      <div class="sw-method sw-get">GET</div>
+      <div class="sw-path">/orders/:id</div>
+      <div class="sw-desc">Get order by ID</div>
+    </div>
+    <div class="sw-endpoint">
+      <div class="sw-method sw-put">PUT</div>
+      <div class="sw-path">/orders/:id</div>
+      <div class="sw-desc">Update order status</div>
+    </div>
+    <div class="sw-endpoint">
+      <div class="sw-method sw-delete">DELETE</div>
+      <div class="sw-path">/orders/:id</div>
+      <div class="sw-desc">Cancel order</div>
+    </div>
+  </div>
+
+  <div class="code-block"><span class="cm">// NestJS — Swagger decorators trong code → auto-generate</span>
+<span class="fn">@ApiOperation</span>({ <span class="var">summary</span>: <span class="str">'Create a new order'</span> })
+<span class="fn">@ApiBody</span>({ <span class="var">type</span>: CreateOrderDto })
+<span class="fn">@ApiResponse</span>({ <span class="var">status</span>: <span class="num">201</span>, <span class="var">type</span>: OrderResponseDto })
+<span class="fn">@ApiResponse</span>({ <span class="var">status</span>: <span class="num">400</span>, <span class="var">description</span>: <span class="str">'Invalid input'</span> })
+<span class="fn">@Post</span>()
+<span class="kw">async</span> <span class="fn">createOrder</span>(<span class="fn">@Body</span>() dto: CreateOrderDto) {
+  <span class="kw">return</span> <span class="kw">this</span>.ordersService.<span class="fn">create</span>(dto);
+}
+
+<span class="cm">// → /api/docs shows this automatically ✨</span></div>
+
+  <hr class="section-divider">
+
+  <!-- C4 MODEL -->
+  <h2>4. Architecture Diagrams — C4 Model</h2>
+  <p>C4 Model cung cấp 4 levels of abstraction — từ high-level (business) đến low-level (code). Mỗi audience cần một level khác nhau.</p>
+
+  <div class="c4-levels">
+    <div class="c4-level">
+      <div class="c4-num c4-1">C1</div>
+      <div>
+        <div class="c4-name">Context — "System trong ecosystem"</div>
+        <div class="c4-desc">System của bạn + external users + external systems. PM, stakeholder xem level này.</div>
+        <div class="c4-example">User → [E-commerce App] → [Payment Gateway] + [Email Service]</div>
+      </div>
+    </div>
+    <div class="c4-level">
+      <div class="c4-num c4-2">C2</div>
+      <div>
+        <div class="c4-name">Container — "Technical components"</div>
+        <div class="c4-desc">Các container chạy được: web app, API, database, message queue. Tech Lead xem level này.</div>
+        <div class="c4-example">[Web App] → [API Server] → [MongoDB] + [Redis]</div>
+      </div>
+    </div>
+    <div class="c4-level">
+      <div class="c4-num c4-3">C3</div>
+      <div>
+        <div class="c4-name">Component — "Modules inside container"</div>
+        <div class="c4-desc">Modules/services bên trong một container. Developer xem level này khi onboard.</div>
+        <div class="c4-example">API Server: [AuthModule] [OrderModule] [NotificationModule]</div>
+      </div>
+    </div>
+    <div class="c4-level">
+      <div class="c4-num c4-4">C4</div>
+      <div>
+        <div class="c4-name">Code — "Class/function level"</div>
+        <div class="c4-desc">UML class diagram. Thường auto-generated, chỉ dùng khi cần explain complex logic.</div>
+        <div class="c4-example">OrderService → OrderRepository → MongooseModel</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- SEQUENCE DIAGRAM -->
+  <h2>5. Sequence Diagrams</h2>
+  <p>Sequence diagram show <em>luồng thời gian</em> — ai gọi ai, theo thứ tự nào. Tốt hơn viết bằng lời khi explain async flow.</p>
+
+  <div class="seq-wrap">
+    <svg class="seq-svg" viewBox="0 0 650 300" fill="none">
+      <!-- Actors -->
+      <rect x="30" y="20" width="80" height="30" rx="6" fill="#0d2d6b" stroke="#1f4a9e"/>
+      <text x="70" y="40" fill="#58a6ff" font-size="11" text-anchor="middle" font-family="sans-serif" font-weight="600">User</text>
+      <rect x="180" y="20" width="80" height="30" rx="6" fill="#1a0d2d" stroke="#6e40c9"/>
+      <text x="220" y="40" fill="#bc8cff" font-size="11" text-anchor="middle" font-family="sans-serif" font-weight="600">Frontend</text>
+      <rect x="330" y="20" width="80" height="30" rx="6" fill="#0d2d1a" stroke="#238636"/>
+      <text x="370" y="40" fill="#3fb950" font-size="11" text-anchor="middle" font-family="sans-serif" font-weight="600">Backend API</text>
+      <rect x="490" y="20" width="80" height="30" rx="6" fill="#2d1a0d" stroke="#9e6c1e"/>
+      <text x="530" y="40" fill="#f0883e" font-size="11" text-anchor="middle" font-family="sans-serif" font-weight="600">Database</text>
+      <!-- Lifelines -->
+      <line x1="70" y1="50" x2="70" y2="290" stroke="#30363d" stroke-width="1" stroke-dasharray="4 4"/>
+      <line x1="220" y1="50" x2="220" y2="290" stroke="#30363d" stroke-width="1" stroke-dasharray="4 4"/>
+      <line x1="370" y1="50" x2="370" y2="290" stroke="#30363d" stroke-width="1" stroke-dasharray="4 4"/>
+      <line x1="530" y1="50" x2="530" y2="290" stroke="#30363d" stroke-width="1" stroke-dasharray="4 4"/>
+      <!-- Arrows -->
+      <!-- 1: User → Frontend -->
+      <line x1="70" y1="85" x2="215" y2="85" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#sarrow)"/>
+      <text x="140" y="78" fill="#8b949e" font-size="9" text-anchor="middle" font-family="sans-serif">POST /login {email, pass}</text>
+      <!-- 2: Frontend → Backend -->
+      <line x1="220" y1="110" x2="365" y2="110" stroke="#bc8cff" stroke-width="1.5" marker-end="url(#sarrow2)"/>
+      <text x="292" y="103" fill="#8b949e" font-size="9" text-anchor="middle" font-family="sans-serif">API: POST /auth/login</text>
+      <!-- 3: Backend → DB -->
+      <line x1="370" y1="135" x2="525" y2="135" stroke="#3fb950" stroke-width="1.5" marker-end="url(#sarrow3)"/>
+      <text x="447" y="128" fill="#8b949e" font-size="9" text-anchor="middle" font-family="sans-serif">findUser({email})</text>
+      <!-- 4: DB → Backend (return) -->
+      <line x1="525" y1="160" x2="375" y2="160" stroke="#f0883e" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#sarrow4)"/>
+      <text x="447" y="153" fill="#8b949e" font-size="9" text-anchor="middle" font-family="sans-serif">UserDocument</text>
+      <!-- 5: Backend note -->
+      <rect x="275" y="170" width="180" height="24" rx="4" fill="#21262d" stroke="#30363d"/>
+      <text x="365" y="186" fill="#c9d1d9" font-size="9" text-anchor="middle" font-family="sans-serif">verify password + generate JWT</text>
+      <!-- 6: Backend → Frontend (return) -->
+      <line x1="365" y1="210" x2="225" y2="210" stroke="#3fb950" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#sarrow5)"/>
+      <text x="292" y="203" fill="#8b949e" font-size="9" text-anchor="middle" font-family="sans-serif">{ accessToken, user }</text>
+      <!-- 7: Frontend → User -->
+      <line x1="215" y1="240" x2="75" y2="240" stroke="#bc8cff" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#sarrow6)"/>
+      <text x="140" y="233" fill="#8b949e" font-size="9" text-anchor="middle" font-family="sans-serif">Redirect to dashboard</text>
+      <!-- Arrow markers -->
+      <defs>
+        <marker id="sarrow" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#58a6ff"/></marker>
+        <marker id="sarrow2" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#bc8cff"/></marker>
+        <marker id="sarrow3" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#3fb950"/></marker>
+        <marker id="sarrow4" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#f0883e"/></marker>
+        <marker id="sarrow5" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#3fb950"/></marker>
+        <marker id="sarrow6" markerWidth="7" markerHeight="7" refX="3.5" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#bc8cff"/></marker>
+      </defs>
+    </svg>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- ERD -->
+  <h2>6. ERD — Entity Relationship Diagram</h2>
+  <p>ERD describe schema của database — entities, fields, và relationships giữa chúng.</p>
+
+  <div class="erd-wrap">
+    <div class="erd-table">
+      <div class="erd-header">👤 Users</div>
+      <div class="erd-field"><span class="erd-pk">PK</span><span class="erd-col">_id</span><span class="erd-type">ObjectId</span></div>
+      <div class="erd-field"><span class="erd-col" style="width:20px"></span><span class="erd-col">email</span><span class="erd-type">String <span class="erd-tag">unique</span></span></div>
+      <div class="erd-field"><span class="erd-col" style="width:20px"></span><span class="erd-col">name</span><span class="erd-type">String</span></div>
+      <div class="erd-field"><span class="erd-col" style="width:20px"></span><span class="erd-col">role</span><span class="erd-type">Enum</span></div>
+      <div class="erd-field"><span class="erd-col" style="width:20px"></span><span class="erd-col">createdAt</span><span class="erd-type">Date</span></div>
+    </div>
+    <div>
+      <div class="erd-table">
+        <div class="erd-header">📦 Orders</div>
+        <div class="erd-field"><span class="erd-pk">PK</span><span class="erd-col">_id</span><span class="erd-type">ObjectId</span></div>
+        <div class="erd-field"><span class="erd-fk">FK</span><span class="erd-col">userId</span><span class="erd-type">ObjectId</span></div>
+        <div class="erd-field"><span class="erd-col" style="width:20px"></span><span class="erd-col">status</span><span class="erd-type">Enum</span></div>
+        <div class="erd-field"><span class="erd-col" style="width:20px"></span><span class="erd-col">total</span><span class="erd-type">Number</span></div>
+        <div class="erd-field"><span class="erd-col" style="width:20px"></span><span class="erd-col">createdAt</span><span class="erd-type">Date</span></div>
+      </div>
+      <div class="erd-relation" style="margin:8px 0">1 User : N Orders</div>
+    </div>
+    <div class="erd-table">
+      <div class="erd-header">🛍️ OrderItems</div>
+      <div class="erd-field"><span class="erd-pk">PK</span><span class="erd-col">_id</span><span class="erd-type">ObjectId</span></div>
+      <div class="erd-field"><span class="erd-fk">FK</span><span class="erd-col">orderId</span><span class="erd-type">ObjectId</span></div>
+      <div class="erd-field"><span class="erd-fk">FK</span><span class="erd-col">productId</span><span class="erd-type">ObjectId</span></div>
+      <div class="erd-field"><span class="erd-col" style="width:20px"></span><span class="erd-col">quantity</span><span class="erd-type">Number</span></div>
+      <div class="erd-field"><span class="erd-col" style="width:20px"></span><span class="erd-col">price</span><span class="erd-type">Number</span></div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- ADR -->
+  <h2>7. ADR — Architecture Decision Records</h2>
+  <p>ADR document <em>tại sao</em> một quyết định kỹ thuật được đưa ra. 6 tháng sau, không ai nhớ context — ADR giải quyết điều đó.</p>
+
+  <div class="adr">
+    <div class="adr-header">
+      <div class="adr-num">ADR-001</div>
+      <div class="adr-title">Sử dụng MongoDB thay vì PostgreSQL</div>
+      <div class="adr-status adr-accepted">Accepted</div>
+    </div>
+    <div class="adr-body">
+      <div class="adr-section">
+        <div class="adr-section-title">Context</div>
+        <div class="adr-content">Product catalog có flexible schema — mỗi category có attributes khác nhau. Team quen NoSQL hơn SQL. Scale read-heavy.</div>
+      </div>
+      <div class="adr-section">
+        <div class="adr-section-title">Decision</div>
+        <div class="adr-content">Dùng MongoDB với Mongoose. Collection per entity. Indexes trên frequently-queried fields.</div>
+      </div>
+      <div class="adr-section">
+        <div class="adr-section-title">Consequences</div>
+        <div class="adr-content" style="color:#f0883e">✓ Flexible schema cho product attributes<br>✓ Team ramp-up nhanh hơn<br>✗ No ACID transactions → cần xử lý manually với sessions<br>✗ Complex joins phải handle ở application layer</div>
+      </div>
+      <div class="adr-section">
+        <div class="adr-section-title">Date & Author</div>
+        <div class="adr-content" style="color:#8b949e">2026-08-14 — Nguyen Van A (Tech Lead)</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- TROUBLESHOOTING -->
+  <h2>8. Troubleshooting Guide</h2>
+  <p>Format: "Nếu X xảy ra → check Y → fix Z". Engineer mới có thể tự debug mà không cần hỏi senior.</p>
+
+  <div class="trouble">
+    <div class="tr-item">
+      <div class="tr-header">
+        <div class="tr-symptom">🔴 App crash với "MongoServerError: Authentication failed"</div>
+        <div class="tr-arrow">↓</div>
+      </div>
+      <div class="tr-body">
+        <div class="tr-check">
+          <div class="tr-check-title">🔍 Check</div>
+          <ul>
+            <li>MONGO_URI trong .env đúng không?</li>
+            <li>MongoDB đang chạy? (docker ps)</li>
+            <li>Username/password match DB config</li>
+          </ul>
+        </div>
+        <div class="tr-fix">
+          <div class="tr-fix-title">🔧 Fix</div>
+          <ul>
+            <li>cp .env.example .env → điền lại</li>
+            <li>docker-compose up -d mongo</li>
+            <li>Check docker logs mongo</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="tr-item">
+      <div class="tr-header">
+        <div class="tr-symptom">🔴 API trả về 401 mặc dù đã login</div>
+        <div class="tr-arrow">↓</div>
+      </div>
+      <div class="tr-body">
+        <div class="tr-check">
+          <div class="tr-check-title">🔍 Check</div>
+          <ul>
+            <li>Header: Authorization: Bearer {token}</li>
+            <li>Token đã expire? (check exp claim)</li>
+            <li>JWT_SECRET match giữa env và code</li>
+          </ul>
+        </div>
+        <div class="tr-fix">
+          <div class="tr-fix-title">🔧 Fix</div>
+          <ul>
+            <li>Login lại để get fresh token</li>
+            <li>Verify JWT_SECRET env variable</li>
+            <li>Check token ở jwt.io</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- EXERCISE -->
+  <div class="exercise">
+    <h3>🎯 Exercise: Write Real Documentation</h3>
+    <p style="color:#8b949e;margin-bottom:16px;font-size:.9rem">Cho project NestJS simple (User + Auth + Orders)</p>
+    <ul class="checklist">
+      <li><span style="color:#58a6ff">①</span>Viết README đầy đủ với Quick Start, Prerequisites, và Architecture</li>
+      <li><span style="color:#3fb950">②</span>Add Swagger decorators vào 3 endpoints — verify tại <code>/api/docs</code></li>
+      <li><span style="color:#f0883e">③</span>Vẽ ERD cho Users + Orders + Products (dùng draw.io hoặc text-based)</li>
+      <li><span style="color:#bc8cff">④</span>Viết 1 ADR cho một decision bạn đã đưa ra trong project</li>
+      <li><span style="color:#a5d6ff">⑤</span>Vẽ Sequence Diagram cho flow login (User → FE → BE → DB)</li>
+      <li><span style="color:#ffa657">⑥</span>Viết Troubleshooting Guide cho 3 common errors trong project</li>
+    </ul>
+  </div>
+
+  <div class="tip">
+    <strong>Key Takeaway:</strong> Documentation không phải "việc cuối cùng sau khi xong feature". Viết README trước khi code (README-Driven Development), viết ADR khi đưa ra decision, update docs khi thay đổi API. Docs outdated còn tệ hơn không có docs.
+  </div>
+
+  <div style="text-align:center;margin-top:48px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">Bài 18 / Phase 5 — Professional</p>
+    <p style="margin-top:8px"><a href="19-capstone-overview.html" style="color:#58a6ff;text-decoration:none">Tiếp theo: Bài 19 — Capstone & Career →</a></p>
+  </div>
+</div>
+</body>
+</html>

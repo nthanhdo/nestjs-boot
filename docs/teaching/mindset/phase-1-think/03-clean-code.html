@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clean Code — Phase 1: Think</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+  --text: #eef1f8; --muted: #8899bb;
+  --accent: #a78bfa; --yellow: #ffd43b; --green: #2ecc71; --red: #e74c3c;
+  --blue: #5b8def; --orange: #ffb347; --pink: #ff5e7a; --teal: #00cec9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 20% 30%, rgba(46,204,113,0.05) 0%, transparent 50%), radial-gradient(ellipse at 80% 70%, rgba(255,183,71,0.04) 0%, transparent 50%); pointer-events:none; z-index:0; }
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; position: sticky; top: 0; z-index: 100; }
+.header-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.phase-badge { background: linear-gradient(135deg,#00b894,#2ecc71); color:#fff; padding: 3px 12px; border-radius: 20px; font-size: .7rem; font-weight: 700; }
+header h1 { font-size: 1.3rem; font-weight: 800; background: linear-gradient(135deg,#2ecc71,#00b894); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.header-sub { color: var(--muted); font-size: .85rem; margin-left: auto; }
+.progress-bar { width: 100%; height: 3px; background: var(--border); border-radius: 2px; margin-top: 10px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg,#00b894,#2ecc71); border-radius: 2px; transition: width .4s; }
+main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: relative; z-index: 1; }
+.section { display: none; animation: fadeUp .5s ease; }
+.section.active { display: block; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: .75rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+.section-title { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg,#fff,var(--green)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom: 10px; }
+.section-desc { color: var(--muted); font-size: 1rem; line-height: 1.7; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+.card-title { font-size: 1rem; font-weight: 700; color: var(--green); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.highlight { background: linear-gradient(135deg,rgba(46,204,113,0.08),rgba(46,204,113,0.04)); border: 1px solid rgba(46,204,113,0.25); border-radius: 12px; padding: 20px 24px; margin: 20px 0; }
+.highlight-label { font-size: .7rem; font-weight: 700; color: var(--green); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.highlight-text { color: var(--text); font-size: .95rem; line-height: 1.7; }
+.takeaway { background: linear-gradient(135deg,rgba(46,204,113,0.1),rgba(46,204,113,0.04)); border: 1px solid rgba(46,204,113,0.3); border-radius: 14px; padding: 24px; margin-top: 28px; }
+.takeaway-title { color: var(--green); font-weight: 700; font-size: .9rem; letter-spacing: .5px; margin-bottom: 14px; }
+.takeaway-list { list-style: none; }
+.takeaway-list li { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; font-size: .9rem; color: var(--text); line-height: 1.6; }
+.takeaway-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 14px 24px; display: flex; justify-content: center; z-index: 100; }
+.nav-inner { display: flex; align-items: center; gap: 12px; max-width: 900px; width: 100%; }
+.btn { padding: 10px 24px; border-radius: 10px; font-size: .9rem; font-weight: 600; cursor: pointer; border: none; transition: all .2s; }
+.btn-prev { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-prev:hover:not(:disabled) { color: var(--text); border-color: var(--green); }
+.btn-prev:disabled { opacity:.4; cursor:default; }
+.btn-next { background: linear-gradient(135deg,#00b894,#2ecc71); color:#fff; flex:1; max-width:200px; box-shadow:0 4px 16px rgba(0,184,148,0.4); }
+.btn-next:hover { transform:translateY(-1px); }
+.section-dots { display:flex; gap:6px; margin:0 auto; }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--border); transition:all .3s; cursor:pointer; }
+.dot.active { background:var(--green); transform:scale(1.3); }
+.dot.done { background:rgba(46,204,113,0.4); }
+
+/* CODE COMPARE */
+.compare { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:20px 0; }
+.compare-side { border-radius:12px; overflow:hidden; }
+.compare-header { padding:10px 16px; font-size:.75rem; font-weight:700; letter-spacing:1px; }
+.compare-side.bad .compare-header { background:rgba(231,76,60,0.15); color:var(--red); }
+.compare-side.good .compare-header { background:rgba(46,204,113,0.15); color:var(--green); }
+.compare-code { background:var(--surface2); padding:16px; font-family:monospace; font-size:.82rem; line-height:1.85; }
+.kw { color:#ff9f7f; }
+.fn { color:#7ec8e3; }
+.str { color:#a8d8a8; }
+.num { color:#ffd43b; }
+.cmt { color:#5a7a6a; }
+.bad-name { color:var(--red); text-decoration:underline; text-decoration-style:wavy; }
+.good-name { color:var(--green); }
+
+/* FUNCTION BREAK */
+.fn-break { margin:20px 0; }
+.fn-big { background:rgba(231,76,60,0.06); border:1px solid rgba(231,76,60,0.25); border-radius:12px; padding:20px; margin-bottom:16px; }
+.fn-big-label { color:var(--red); font-size:.75rem;font-weight:700;margin-bottom:10px; }
+.fn-counter { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.fn-lines { display:flex; flex-wrap:wrap; gap:3px; margin:10px 0; }
+.fn-line { width:18px; height:8px; border-radius:2px; background:rgba(231,76,60,0.4); }
+.fn-line.refactored { background:rgba(46,204,113,0.4); width:14px; }
+.fn-small-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+.fn-small { background:rgba(46,204,113,0.06); border:1px solid rgba(46,204,113,0.25); border-radius:8px; padding:10px; text-align:center; font-size:.75rem; color:var(--green); }
+.fn-small-lines { display:flex; flex-wrap:wrap; gap:2px; margin-top:6px; justify-content:center; }
+.fn-small-line { width:12px; height:5px; border-radius:1px; background:rgba(46,204,113,0.3); }
+
+/* SRP ANIM */
+.srp-boxes { display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap; margin:20px 0; }
+.srp-mono { background:rgba(231,76,60,0.06); border:2px solid rgba(231,76,60,0.3); border-radius:12px; padding:16px 24px; text-align:center; cursor:pointer; transition:all .3s; }
+.srp-mono:hover { border-color:var(--red); }
+.srp-arrow { color:var(--muted); font-size:1.5rem; }
+.srp-sep { display:flex; flex-direction:column; gap:8px; opacity:0; transition:all .4s; }
+.srp-sep.show { opacity:1; }
+.srp-single { background:rgba(46,204,113,0.06); border:1px solid rgba(46,204,113,0.3); border-radius:8px; padding:8px 14px; text-align:center; font-size:.8rem; color:var(--green); }
+
+/* SOLID CARDS */
+.solid-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:20px 0; }
+.solid-card { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:18px; cursor:pointer; transition:all .3s; }
+.solid-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+.solid-card.expanded { border-color:var(--accent); background:rgba(167,139,250,0.06); }
+.solid-letter { font-size:2rem; font-weight:900; background:linear-gradient(135deg,var(--accent),var(--blue)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.solid-name { font-size:.9rem; font-weight:700; color:var(--text); margin:4px 0; }
+.solid-short { font-size:.78rem; color:var(--muted); line-height:1.5; }
+.solid-detail { display:none; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); }
+.solid-card.expanded .solid-detail { display:block; }
+.solid-code { font-family:monospace; font-size:.78rem; line-height:1.7; color:var(--muted); }
+
+/* CODE SMELL */
+.smell-game { margin:20px 0; }
+.smell-code { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:16px; font-family:monospace; font-size:.85rem; line-height:1.9; position:relative; }
+.smell-highlight { background:rgba(255,183,71,0.15); border-radius:3px; cursor:pointer; position:relative; }
+.smell-highlight:hover { background:rgba(255,183,71,0.3); }
+.smell-answers { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.smell-ans { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:8px 14px; font-size:.82rem; cursor:pointer; transition:all .2s; }
+.smell-ans:hover { border-color:var(--orange); }
+.smell-ans.correct { border-color:var(--green); background:rgba(46,204,113,0.08); color:var(--green); }
+.smell-ans.wrong { border-color:var(--red); background:rgba(231,76,60,0.08); color:var(--red); }
+
+/* TECH DEBT GRAPH */
+.td-graph { height:160px; background:var(--surface2); border-radius:12px; border:1px solid var(--border); position:relative; overflow:hidden; margin:20px 0; }
+.td-path { stroke-width:3; fill:none; }
+.td-label { font-size:.75rem; font-family:-apple-system,sans-serif; }
+
+/* REFACTOR STEPS */
+.refactor-steps { margin:20px 0; }
+.refactor-step { display:none; }
+.refactor-step.show { display:block; animation:fadeUp .4s; }
+.refactor-nav { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+.ref-btn { background:var(--surface2); border:1px solid var(--border); color:var(--muted); padding:6px 14px; border-radius:8px; cursor:pointer; font-size:.8rem; transition:all .2s; }
+.ref-btn.active { background:rgba(46,204,113,0.1); border-color:var(--green); color:var(--green); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span class="phase-badge">PHASE 1 · THINK</span>
+    <h1>✨ Clean Code</h1>
+    <span class="header-sub">Bài 03 / 04</span>
+    <div class="progress-bar" style="width:100%">
+      <div class="progress-fill" id="progressFill" style="width:12.5%"></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- SEC 0: Naming -->
+<div class="section active" id="sec-0">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 01</div>
+    <div class="section-title">Đặt Tên Có Ý Nghĩa</div>
+    <div class="section-desc">"Code được đọc nhiều hơn viết." Tên biến, hàm, class phải tự giải thích mà không cần comment.</div>
+  </div>
+
+  <div class="compare">
+    <div class="compare-side bad">
+      <div class="compare-header">❌ Tên xấu</div>
+      <div class="compare-code">
+        <span class="kw">let</span> <span class="bad-name">d</span> = <span class="num">86400</span><br>
+        <span class="kw">let</span> <span class="bad-name">tmp</span> = <span class="fn">getList</span>()<br>
+        <span class="kw">function</span> <span class="bad-name">proc</span>(<span class="bad-name">l</span>) {<br>
+        &nbsp;&nbsp;<span class="kw">return</span> <span class="bad-name">l</span>.filter(<span class="bad-name">i</span> =><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="bad-name">i</span>.<span class="bad-name">f</span> === <span class="num">1</span>)<br>
+        }
+      </div>
+    </div>
+    <div class="compare-side good">
+      <div class="compare-header">✅ Tên tốt</div>
+      <div class="compare-code">
+        <span class="kw">const</span> <span class="good-name">SECONDS_PER_DAY</span> = <span class="num">86400</span><br>
+        <span class="kw">const</span> <span class="good-name">activeUsers</span> = <span class="fn">getUsers</span>()<br>
+        <span class="kw">function</span> <span class="good-name">filterActive</span>(<span class="good-name">users</span>) {<br>
+        &nbsp;&nbsp;<span class="kw">return</span> <span class="good-name">users</span>.filter(<span class="good-name">user</span> =><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="good-name">user</span>.<span class="good-name">isActive</span> === <span class="num">true</span>)<br>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📋 Quy tắc đặt tên</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:var(--surface2);border-radius:10px;padding:14px">
+        <div style="color:var(--green);font-size:.78rem;font-weight:700;margin-bottom:8px;">✅ BIẾN — noun phrase</div>
+        <div style="font-family:monospace;font-size:.8rem;color:var(--muted);line-height:1.8">elapsedTimeInDays<br>userAccountBalance<br>isEmailVerified<br>MAX_RETRY_COUNT</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px">
+        <div style="color:var(--blue);font-size:.78rem;font-weight:700;margin-bottom:8px;">✅ HÀM — verb phrase</div>
+        <div style="font-family:monospace;font-size:.8rem;color:var(--muted);line-height:1.8">getUserById()<br>sendWelcomeEmail()<br>calculateMonthlyFee()<br>isValidEmail()</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Nếu cần comment để giải thích tên → tên đó cần đổi</li>
+      <li>Tránh: d, tmp, data, info, manager, processor (quá mơ hồ)</li>
+      <li>Boolean: is/has/can prefix (isActive, hasPermission, canEdit)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 1: Small Functions -->
+<div class="section" id="sec-1">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 02</div>
+    <div class="section-title">Hàm Nhỏ</div>
+    <div class="section-desc">Hàm lý tưởng đủ nhỏ để thấy toàn bộ trên màn hình. Khi hàm làm nhiều việc → tách ra.</div>
+  </div>
+
+  <div class="fn-break">
+    <div class="fn-big">
+      <div class="fn-big-label">❌ processUserRegistration() — 100 dòng</div>
+      <div class="fn-lines" id="bigLines"></div>
+      <div style="color:var(--red);font-size:.8rem;margin-top:10px;">Validate input + Hash password + Save DB + Send email + Create session + Log event + Notify admin...</div>
+    </div>
+
+    <div style="text-align:center;margin:12px 0">
+      <button onclick="showRefactored()" style="background:linear-gradient(135deg,#00b894,#2ecc71);color:#fff;border:none;padding:10px 24px;border-radius:10px;cursor:pointer;font-size:.9rem;font-weight:600">→ Tách thành hàm nhỏ</button>
+    </div>
+
+    <div id="smallFns" style="display:none;animation:fadeUp .4s">
+      <div style="color:var(--green);font-size:.78rem;font-weight:700;margin-bottom:10px;">✅ 5 hàm nhỏ, mỗi hàm 15-20 dòng</div>
+      <div class="fn-small-grid">
+        <div class="fn-small">validateInput()<div class="fn-small-lines" id="sl1"></div></div>
+        <div class="fn-small">hashPassword()<div class="fn-small-lines" id="sl2"></div></div>
+        <div class="fn-small">saveUser()<div class="fn-small-lines" id="sl3"></div></div>
+        <div class="fn-small">sendEmail()<div class="fn-small-lines" id="sl4"></div></div>
+        <div class="fn-small">createSession()<div class="fn-small-lines" id="sl5"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight">
+    <div class="highlight-label">Rule of Thumb</div>
+    <div class="highlight-text">Nếu bạn cần scroll để đọc hết 1 hàm → hàm đó quá dài. Nếu bạn cần comment "// Step 1:", "// Step 2:" trong 1 hàm → đó là dấu hiệu cần tách hàm.</div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Hàm nhỏ → dễ đọc, dễ test, dễ tái sử dụng, dễ debug</li>
+      <li>Mỗi hàm chỉ làm 1 việc ở 1 level abstraction</li>
+      <li>Extract method là refactoring an toàn nhất để học</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 2: DRY/KISS/YAGNI -->
+<div class="section" id="sec-2">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 03</div>
+    <div class="section-title">DRY · KISS · YAGNI</div>
+    <div class="section-desc">Ba nguyên tắc cốt lõi giúp code không bị "thối" theo thời gian.</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr;gap:16px;margin:20px 0;">
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title">🔁 DRY — Don't Repeat Yourself</div>
+      <div class="compare">
+        <div class="compare-side bad">
+          <div class="compare-header">❌ Lặp code</div>
+          <div class="compare-code" style="font-size:.78rem">
+            <span class="cmt">// Ở User service</span><br>
+            email = email.trim()<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.toLowerCase()<br><br>
+            <span class="cmt">// Ở Auth service</span><br>
+            email = email.trim()<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.toLowerCase()
+          </div>
+        </div>
+        <div class="compare-side good">
+          <div class="compare-header">✅ Extract</div>
+          <div class="compare-code" style="font-size:.78rem">
+            <span class="kw">function</span> <span class="fn">normalizeEmail</span>(e) {<br>
+            &nbsp;&nbsp;<span class="kw">return</span> e.trim().toLowerCase()<br>
+            }<br><br>
+            <span class="cmt">// Dùng ở mọi nơi</span><br>
+            <span class="fn">normalizeEmail</span>(email)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title">💎 KISS — Keep It Simple, Stupid</div>
+      <div class="compare">
+        <div class="compare-side bad">
+          <div class="compare-header">❌ Over-engineered</div>
+          <div class="compare-code" style="font-size:.78rem">
+            <span class="kw">class</span> <span class="fn">AbstractUserFactory</span><br>
+            <span class="kw">extends</span> <span class="fn">BaseEntityBuilder</span><br>
+            <span class="kw">implements</span> <span class="fn">ICreatable</span> {<br>
+            &nbsp;&nbsp;<span class="fn">createFromStrategy</span>()<br>
+            &nbsp;&nbsp;...<br>
+            }
+          </div>
+        </div>
+        <div class="compare-side good">
+          <div class="compare-header">✅ Đủ đơn giản</div>
+          <div class="compare-code" style="font-size:.78rem">
+            <span class="kw">function</span> <span class="fn">createUser</span>(data) {<br>
+            &nbsp;&nbsp;<span class="kw">return</span> { ...data,<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;id: <span class="fn">uuid</span>(),<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;createdAt: <span class="kw">new</span> <span class="fn">Date</span>()<br>
+            &nbsp;&nbsp;}<br>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:0">
+      <div class="card-title">🚫 YAGNI — You Aren't Gonna Need It</div>
+      <div style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:16px;margin-bottom:12px;">
+        <div style="color:var(--red);font-size:.8rem;font-weight:700;margin-bottom:8px;">❌ Anti-pattern</div>
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7">"Tôi sẽ thêm multi-tenancy ngay từ đầu... thêm caching layer... thêm plugin system... thêm A/B testing framework..."<br>→ Tốn 3 tuần cho tính năng mà <strong>chưa ai cần</strong>.</div>
+      </div>
+      <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.25);border-radius:10px;padding:16px;">
+        <div style="color:var(--green);font-size:.8rem;font-weight:700;margin-bottom:8px;">✅ Build when needed</div>
+        <div style="color:var(--muted);font-size:.88rem;line-height:1.7">Ship MVP → nhận feedback → refactor → thêm tính năng thực sự được yêu cầu.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>DRY: mỗi piece of knowledge có 1 nơi duy nhất trong hệ thống</li>
+      <li>KISS: simple code làm đúng > clever code làm sai</li>
+      <li>YAGNI: đừng viết code cho tương lai tưởng tượng</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 3: SOLID -->
+<div class="section" id="sec-3">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 04</div>
+    <div class="section-title">SOLID Principles</div>
+    <div class="section-desc">5 nguyên tắc OOP giúp code linh hoạt, dễ mở rộng, ít bug. Click vào từng card để xem chi tiết.</div>
+  </div>
+
+  <div class="solid-grid">
+    <div class="solid-card" onclick="toggleSolid(this)">
+      <div class="solid-letter">S</div>
+      <div class="solid-name">Single Responsibility</div>
+      <div class="solid-short">Mỗi class chỉ có 1 lý do để thay đổi</div>
+      <div class="solid-detail">
+        <div class="solid-code">
+          <span class="cmt">// ❌ UserService làm quá nhiều</span><br>
+          class UserService {<br>
+          &nbsp;&nbsp;getUser() { ... }<br>
+          &nbsp;&nbsp;sendEmail() { ... } ← sai chỗ<br>
+          &nbsp;&nbsp;generatePDF() { ... } ← sai chỗ<br>
+          }<br><br>
+          <span class="cmt">// ✅ Mỗi service 1 việc</span><br>
+          UserService, MailService, PdfService
+        </div>
+      </div>
+    </div>
+    <div class="solid-card" onclick="toggleSolid(this)">
+      <div class="solid-letter">O</div>
+      <div class="solid-name">Open/Closed</div>
+      <div class="solid-short">Mở để mở rộng, đóng để sửa đổi</div>
+      <div class="solid-detail">
+        <div class="solid-code">
+          <span class="cmt">// Thêm shape mới không cần</span><br>
+          <span class="cmt">// sửa code cũ</span><br>
+          interface Shape {<br>
+          &nbsp;&nbsp;area(): number<br>
+          }<br>
+          class Circle implements Shape { }<br>
+          class Square implements Shape { }
+        </div>
+      </div>
+    </div>
+    <div class="solid-card" onclick="toggleSolid(this)">
+      <div class="solid-letter">L</div>
+      <div class="solid-name">Liskov Substitution</div>
+      <div class="solid-short">Subclass thay thế được parent class</div>
+      <div class="solid-detail">
+        <div class="solid-code">
+          <span class="cmt">// Code dùng Bird phải hoạt động</span><br>
+          <span class="cmt">// với mọi subclass của Bird</span><br>
+          function makeFly(bird: Bird) {<br>
+          &nbsp;&nbsp;bird.fly() ← phải work<br>
+          }<br>
+          <span class="cmt">// Penguin extends Bird ← sai!</span><br>
+          <span class="cmt">// Penguin không bay được</span>
+        </div>
+      </div>
+    </div>
+    <div class="solid-card" onclick="toggleSolid(this)">
+      <div class="solid-letter">I</div>
+      <div class="solid-name">Interface Segregation</div>
+      <div class="solid-short">Nhiều interface nhỏ hơn 1 interface lớn</div>
+      <div class="solid-detail">
+        <div class="solid-code">
+          <span class="cmt">// ❌ 1 interface quá rộng</span><br>
+          interface Worker { work(); eat(); sleep() }<br><br>
+          <span class="cmt">// ✅ Tách nhỏ</span><br>
+          interface Workable { work() }<br>
+          interface Feedable { eat() }
+        </div>
+      </div>
+    </div>
+    <div class="solid-card" onclick="toggleSolid(this)" style="grid-column:1/-1;">
+      <div class="solid-letter">D</div>
+      <div class="solid-name">Dependency Inversion</div>
+      <div class="solid-short">Depend on abstractions, not concretions. High-level không phụ thuộc low-level.</div>
+      <div class="solid-detail">
+        <div class="solid-code">
+          <span class="cmt">// ❌ Tight coupling</span><br>
+          class OrderService {<br>
+          &nbsp;&nbsp;private db = new MySQLDatabase() ← bad<br>
+          }<br><br>
+          <span class="cmt">// ✅ Inject dependency</span><br>
+          class OrderService {<br>
+          &nbsp;&nbsp;constructor(private db: IDatabase) {} ← good<br>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>SOLID không phải rules phải follow mọi lúc — đây là guidelines</li>
+      <li>Áp dụng khi thấy code khó test, khó thay đổi, hay break</li>
+      <li>Bắt đầu với S và D — 80% benefit từ 2 nguyên tắc này</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 4: Code Smells -->
+<div class="section" id="sec-4">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 05</div>
+    <div class="section-title">Code Smells</div>
+    <div class="section-desc">Code smells là dấu hiệu cảnh báo — code có thể chạy đúng nhưng có vấn đề về thiết kế. Click vào từng smell để nhận diện.</div>
+  </div>
+
+  <div class="smell-game">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+      <div style="color:var(--yellow);font-size:.78rem;font-weight:700;margin-bottom:12px;">🔍 Tìm code smells trong đoạn code sau:</div>
+      <div class="smell-code">
+<span class="kw">function</span> <span class="fn">doThings</span>(<span class="smell-highlight" id="sh1" title="Long Parameter List">a, b, c, d, e, f</span>) {<br>
+&nbsp;&nbsp;<span class="kw">if</span> (a === <span class="num">1</span>) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (b === <span class="num">2</span>) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (c === <span class="num">3</span>) { <span class="cmt smell-highlight" id="sh2">// Arrow code!</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (d === <span class="num">4</span>) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;result = <span class="fn">process</span>(e, f)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="kw">const</span> <span class="smell-highlight" id="sh3" title="Magic Number">x = a * 0.1728</span><br>
+&nbsp;&nbsp;<span class="kw">return</span> x<br>
+}
+      </div>
+      <div class="smell-answers" id="smellAnswers">
+        <div class="smell-ans" onclick="checkSmell(this,'correct')">📦 Long Parameter List (6 params)</div>
+        <div class="smell-ans" onclick="checkSmell(this,'correct')">🏹 Arrow Code / Deeply Nested</div>
+        <div class="smell-ans" onclick="checkSmell(this,'correct')">🔮 Magic Number (0.1728)</div>
+        <div class="smell-ans" onclick="checkSmell(this,'wrong')">🔁 Duplicate Code</div>
+        <div class="smell-ans" onclick="checkSmell(this,'wrong')">💀 Dead Code</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🗒️ Danh sách Code Smells phổ biến</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.82rem;"><span style="color:var(--orange)">Long Method</span> — hàm > 30 dòng</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.82rem;"><span style="color:var(--orange)">God Class</span> — class biết quá nhiều</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.82rem;"><span style="color:var(--orange)">Shotgun Surgery</span> — 1 change → sửa nhiều nơi</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.82rem;"><span style="color:var(--orange)">Feature Envy</span> — method dùng data class khác nhiều</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.82rem;"><span style="color:var(--orange)">Data Clumps</span> — nhóm biến luôn đi cùng nhau</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.82rem;"><span style="color:var(--orange)">Comments</span> — comment giải thích code xấu</div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Code smell ≠ bug, nhưng là tiền thân của bug</li>
+      <li>Khi thấy smell → không phải lúc nào cũng refactor ngay, nhưng ghi chú lại</li>
+      <li>Boy Scout Rule: "Leave the code cleaner than you found it"</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 5: Refactoring -->
+<div class="section" id="sec-5">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 06</div>
+    <div class="section-title">Refactoring từng bước</div>
+    <div class="section-desc">Refactoring = thay đổi cấu trúc code mà không thay đổi behavior. Click để xem từng bước.</div>
+  </div>
+
+  <div class="refactor-steps">
+    <div class="refactor-nav" id="refNav">
+      <button class="ref-btn active" onclick="showRef(0)">Bước 0: Original</button>
+      <button class="ref-btn" onclick="showRef(1)">Bước 1: Extract</button>
+      <button class="ref-btn" onclick="showRef(2)">Bước 2: Rename</button>
+      <button class="ref-btn" onclick="showRef(3)">Bước 3: Final</button>
+    </div>
+
+    <div class="refactor-step show" id="ref-0">
+      <div style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.25);border-radius:12px;padding:20px">
+        <div style="color:var(--red);font-size:.78rem;font-weight:700;margin-bottom:12px;">❌ Code gốc — messy</div>
+        <div class="compare-code" style="font-size:.82rem;line-height:1.85">
+          <span class="kw">function</span> <span class="fn">a</span>(u) {<br>
+          &nbsp;&nbsp;<span class="kw">if</span> (!u.email || !u.email.includes(<span class="str">'@'</span>)) <span class="kw">return</span> <span class="kw">false</span><br>
+          &nbsp;&nbsp;<span class="kw">if</span> (!u.password || u.password.length &lt; <span class="num">8</span>) <span class="kw">return</span> <span class="kw">false</span><br>
+          &nbsp;&nbsp;db.save({ email: u.email.trim().toLowerCase(), password: <span class="fn">hash</span>(u.password), createdAt: <span class="kw">new</span> <span class="fn">Date</span>() })<br>
+          &nbsp;&nbsp;<span class="fn">mail</span>(u.email, <span class="str">'Welcome!'</span>, <span class="str">'...'</span>)<br>
+          &nbsp;&nbsp;<span class="kw">return true</span><br>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="refactor-step" id="ref-1">
+      <div style="background:rgba(255,183,71,0.06);border:1px solid rgba(255,183,71,0.25);border-radius:12px;padding:20px">
+        <div style="color:var(--orange);font-size:.78rem;font-weight:700;margin-bottom:12px;">🔧 Bước 1: Extract method</div>
+        <div class="compare-code" style="font-size:.82rem;line-height:1.85">
+          <span class="kw">function</span> <span class="fn">isValidEmail</span>(email) {<br>
+          &nbsp;&nbsp;<span class="kw">return</span> !!email && email.includes(<span class="str">'@'</span>)<br>
+          }<br>
+          <span class="kw">function</span> <span class="fn">isValidPassword</span>(pw) {<br>
+          &nbsp;&nbsp;<span class="kw">return</span> !!pw && pw.length >= <span class="num">8</span><br>
+          }<br>
+          <span class="kw">function</span> <span class="fn">a</span>(u) {<br>
+          &nbsp;&nbsp;<span class="kw">if</span> (!<span class="fn">isValidEmail</span>(u.email)) <span class="kw">return</span> <span class="kw">false</span><br>
+          &nbsp;&nbsp;<span class="kw">if</span> (!<span class="fn">isValidPassword</span>(u.password)) <span class="kw">return</span> <span class="kw">false</span><br>
+          &nbsp;&nbsp;...<br>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="refactor-step" id="ref-2">
+      <div style="background:rgba(91,141,239,0.06);border:1px solid rgba(91,141,239,0.25);border-radius:12px;padding:20px">
+        <div style="color:var(--blue);font-size:.78rem;font-weight:700;margin-bottom:12px;">🏷️ Bước 2: Rename + Separate concerns</div>
+        <div class="compare-code" style="font-size:.82rem;line-height:1.85">
+          <span class="kw">function</span> <span class="fn">registerUser</span>(userData) {<br>
+          &nbsp;&nbsp;<span class="kw">if</span> (!<span class="fn">isValidEmail</span>(userData.email)) <span class="kw">return false</span><br>
+          &nbsp;&nbsp;<span class="kw">if</span> (!<span class="fn">isValidPassword</span>(userData.password)) <span class="kw">return false</span><br>
+          &nbsp;&nbsp;<span class="kw">const</span> user = <span class="fn">buildUser</span>(userData)<br>
+          &nbsp;&nbsp;db.<span class="fn">save</span>(user)<br>
+          &nbsp;&nbsp;<span class="fn">sendWelcomeEmail</span>(user.email)<br>
+          &nbsp;&nbsp;<span class="kw">return true</span><br>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="refactor-step" id="ref-3">
+      <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.25);border-radius:12px;padding:20px">
+        <div style="color:var(--green);font-size:.78rem;font-weight:700;margin-bottom:12px;">✅ Final: Clean, readable, testable</div>
+        <div class="compare-code" style="font-size:.82rem;line-height:1.85">
+          <span class="cmt">// Mỗi hàm 1 việc, tên rõ ràng</span><br>
+          <span class="kw">async function</span> <span class="fn">registerUser</span>(userData: <span class="fn">CreateUserDto</span>) {<br>
+          &nbsp;&nbsp;<span class="fn">validateRegistrationData</span>(userData)<br>
+          &nbsp;&nbsp;<span class="kw">const</span> user = <span class="kw">await</span> userService.<span class="fn">create</span>(userData)<br>
+          &nbsp;&nbsp;<span class="kw">await</span> mailService.<span class="fn">sendWelcome</span>(user)<br>
+          &nbsp;&nbsp;<span class="kw">return</span> user<br>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Refactor thành từng bước nhỏ, test sau mỗi bước</li>
+      <li>Không refactor và thêm feature cùng lúc — nguy hiểm</li>
+      <li>Có test coverage trước khi refactor — safety net</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 6: Technical Debt -->
+<div class="section" id="sec-6">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 07</div>
+    <div class="section-title">Technical Debt</div>
+    <div class="section-desc">Nợ kỹ thuật tích lũy theo thời gian. Giống như lãi suất ngân hàng — càng để lâu, càng tốn kém.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📉 Velocity giảm theo thời gian khi không refactor</div>
+    <svg class="td-graph" style="width:100%;height:160px" viewBox="0 0 800 160" preserveAspectRatio="none">
+      <!-- Grid lines -->
+      <line x1="0" y1="40" x2="800" y2="40" stroke="#2a3a5c" stroke-width="1"/>
+      <line x1="0" y1="80" x2="800" y2="80" stroke="#2a3a5c" stroke-width="1"/>
+      <line x1="0" y1="120" x2="800" y2="120" stroke="#2a3a5c" stroke-width="1"/>
+      <!-- With refactoring (good) -->
+      <path d="M 0,20 C 200,18 400,22 800,25" stroke="#2ecc71" class="td-path" stroke-dasharray="8,4"/>
+      <!-- Without refactoring (bad) -->
+      <path d="M 0,20 C 100,30 300,70 500,110 C 600,130 700,145 800,152" stroke="#e74c3c" class="td-path"/>
+      <!-- Labels -->
+      <text x="660" y="18" class="td-label" fill="#2ecc71" font-size="11">với refactoring</text>
+      <text x="560" y="138" class="td-label" fill="#e74c3c" font-size="11">không refactor</text>
+      <text x="10" y="155" class="td-label" fill="#8899bb" font-size="11">Tháng 1</text>
+      <text x="370" y="155" class="td-label" fill="#8899bb" font-size="11">Tháng 6</text>
+      <text x="730" y="155" class="td-label" fill="#8899bb" font-size="11">Tháng 12</text>
+      <text x="4" y="42" class="td-label" fill="#8899bb" font-size="10">High</text>
+      <text x="4" y="122" class="td-label" fill="#8899bb" font-size="10">Low</text>
+      <text x="370" y="90" class="td-label" fill="#ffd43b" font-size="10">VELOCITY</text>
+    </svg>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0;">
+    <div class="card" style="margin-bottom:0">
+      <div style="color:var(--orange);font-weight:700;font-size:.85rem;margin-bottom:10px;">💸 Deliberate Debt</div>
+      <div style="color:var(--muted);font-size:.88rem;line-height:1.6">Cố tình "nợ" để ship nhanh. Chấp nhận được nếu có kế hoạch trả nợ rõ ràng. "Cần ship trong 2 ngày, sau đó refactor sprint sau."</div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div style="color:var(--red);font-weight:700;font-size:.85rem;margin-bottom:10px;">☠️ Reckless Debt</div>
+      <div style="color:var(--muted);font-size:.88rem;line-height:1.6">Không biết mình đang nợ. Không có kế hoạch. Accumulate mãi đến khi team không dám đụng vào code nữa.</div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Tech debt không phải xấu — là công cụ nếu quản lý có ý thức</li>
+      <li>Track tech debt: ghi vào backlog, schedule refactoring sprints</li>
+      <li>20% thời gian sprint cho tech debt — đây là investment, không phải waste</li>
+    </ul>
+  </div>
+</div>
+
+</main>
+
+<div class="nav-bar">
+  <div class="nav-inner">
+    <button class="btn btn-prev" id="btnPrev" onclick="navigate(-1)" disabled>← Trước</button>
+    <div class="section-dots" id="dots"></div>
+    <button class="btn btn-next" id="btnNext" onclick="navigate(1)">Tiếp theo →</button>
+  </div>
+</div>
+
+<script>
+const SECTIONS = ['sec-0','sec-1','sec-2','sec-3','sec-4','sec-5','sec-6'];
+let current = 0;
+
+const dotsEl = document.getElementById('dots');
+SECTIONS.forEach((_,i) => {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i===0?' active':'');
+  d.onclick = () => goTo(i);
+  dotsEl.appendChild(d);
+});
+
+function goTo(n) {
+  document.getElementById(SECTIONS[current]).classList.remove('active');
+  current = n;
+  document.getElementById(SECTIONS[current]).classList.add('active');
+  document.getElementById('btnPrev').disabled = current === 0;
+  document.getElementById('btnNext').textContent = current === SECTIONS.length-1 ? '🏁 Hoàn thành' : 'Tiếp theo →';
+  document.querySelectorAll('.dot').forEach((d,i) => {
+    d.className = 'dot' + (i===current?' active':(i<current?' done':''));
+  });
+  document.getElementById('progressFill').style.width = ((current+1)/SECTIONS.length*100)+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function navigate(dir) { if(current+dir>=0 && current+dir<SECTIONS.length) goTo(current+dir); }
+
+// Big function lines
+const bl = document.getElementById('bigLines');
+for(let i=0;i<100;i++) { const d=document.createElement('div'); d.className='fn-line'; bl.appendChild(d); }
+
+function showRefactored() {
+  document.getElementById('smallFns').style.display='grid';
+  [1,2,3,4,5].forEach(n => {
+    const c = document.getElementById('sl'+n);
+    const count = [18,12,15,10,14][n-1];
+    for(let i=0;i<count;i++) { const d=document.createElement('div'); d.className='fn-small-line'; c.appendChild(d); }
+  });
+}
+
+function toggleSolid(el) { el.classList.toggle('expanded'); }
+
+function checkSmell(el, type) {
+  el.classList.add(type);
+  setTimeout(() => el.classList.remove(type), 1000);
+}
+
+function showRef(n) {
+  document.querySelectorAll('.refactor-step').forEach((s,i) => { s.classList.toggle('show', i===n); });
+  document.querySelectorAll('.ref-btn').forEach((b,i) => { b.classList.toggle('active', i===n); });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bài 19: Capstone & Career — Production-Ready và Con Đường Phía Trước</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.7}
+  .container{max-width:900px;margin:0 auto;padding:40px 24px}
+  h1{font-size:2.2rem;color:#58a6ff;margin-bottom:8px}
+  h2{font-size:1.5rem;color:#79c0ff;margin:40px 0 16px;padding-left:12px;border-left:3px solid #58a6ff}
+  h3{font-size:1.1rem;color:#a5d6ff;margin:20px 0 10px}
+  p{color:#c9d1d9;margin-bottom:12px}
+  .subtitle{color:#8b949e;font-size:1rem;margin-bottom:40px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;margin-right:6px}
+  .badge-blue{background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e}
+  .badge-green{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .badge-purple{background:#2d1b6b;color:#bc8cff;border:1px solid #6e40c9}
+  .badge-gold{background:#2d200d;color:#d4b833;border:1px solid #9e8c1e}
+  .card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin:20px 0}
+  .code-block{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px;font-family:'Fira Code','Cascadia Code',monospace;font-size:.83rem;overflow-x:auto;margin:12px 0;white-space:pre}
+  .cm{color:#8b949e} .kw{color:#ff7b72} .str{color:#a5d6ff} .fn{color:#d2a8ff} .var{color:#ffa657}
+  .tip{background:#0d2d1a;border:1px solid #238636;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .tip::before{content:'💡';position:absolute;left:14px;top:14px}
+  .section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
+
+  /* Project cards */
+  .project-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+  .project-card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;transition:border-color .2s,transform .2s;cursor:default}
+  .project-card:hover{border-color:#58a6ff;transform:translateY(-2px)}
+  .proj-icon{font-size:2rem;margin-bottom:10px}
+  .proj-title{font-weight:700;color:#c9d1d9;margin-bottom:6px}
+  .proj-desc{font-size:.8rem;color:#8b949e;margin-bottom:10px}
+  .proj-stack{display:flex;flex-wrap:wrap;gap:4px}
+  .proj-tech{font-size:.7rem;padding:2px 7px;border-radius:8px;background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e}
+
+  /* Engineering checklist animated */
+  .eng-checklist{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0;counter-reset:eng}
+  .eng-item{display:flex;align-items:flex-start;gap:10px;padding:12px;background:#161b22;border:1px solid #30363d;border-radius:8px;font-size:.85rem;transition:all .3s;counter-increment:eng;cursor:default}
+  .eng-item:hover{border-color:#3fb950;background:#0d2d1a}
+  .eng-item:hover .eng-check{background:#238636;color:#3fb950}
+  .eng-check{width:24px;height:24px;border-radius:50%;background:#21262d;border:1px solid #30363d;color:#484f58;display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0;transition:all .3s;font-weight:700}
+  .eng-label{color:#c9d1d9;line-height:1.4}
+  .eng-sub{font-size:.75rem;color:#8b949e;margin-top:2px}
+
+  /* Scoring rubric */
+  .rubric{margin:20px 0}
+  .rubric-item{margin:10px 0}
+  .rubric-header{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+  .rubric-label{font-size:.85rem;font-weight:600;color:#c9d1d9;width:180px;flex-shrink:0}
+  .rubric-pct{font-size:.85rem;font-weight:700;width:40px;text-align:right;flex-shrink:0}
+  .rubric-bar-wrap{flex:1;background:#21262d;border-radius:4px;height:8px;overflow:hidden}
+  .rubric-bar{height:100%;border-radius:4px;transition:width 1s ease;width:0}
+  .rb-40{background:linear-gradient(90deg,#238636,#3fb950)}
+  .rb-20{background:linear-gradient(90deg,#1f4a9e,#58a6ff)}
+  .rb-15{background:linear-gradient(90deg,#6e40c9,#bc8cff)}
+  .rb-10{background:linear-gradient(90deg,#9e6c1e,#f0883e)}
+  .rb-10b{background:linear-gradient(90deg,#9e4f1e,#f0883e)}
+  .rb-5{background:linear-gradient(90deg,#8b949e,#c9d1d9)}
+
+  /* CV comparison */
+  .cv-compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+  .cv-box{border-radius:10px;padding:18px;font-size:.83rem}
+  .cv-bad{background:#2d0d0d;border:1px solid #9e1e1e}
+  .cv-good{background:#0d2d1a;border:1px solid #238636}
+  .cv-label{font-weight:700;margin-bottom:12px;font-size:.85rem}
+  .cv-label.bad{color:#ff7b72}
+  .cv-label.good{color:#3fb950}
+  .cv-line{padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);color:#c9d1d9}
+  .cv-line:last-child{border-bottom:none}
+  .cv-strike{text-decoration:line-through;color:#484f58}
+  .cv-highlight{color:#3fb950;font-weight:600}
+
+  /* RESHADED */
+  .reshaded{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:20px 0}
+  .rs-item{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;text-align:center;transition:border-color .2s}
+  .rs-item:hover{border-color:#58a6ff}
+  .rs-letter{font-size:1.6rem;font-weight:800;color:#58a6ff;font-family:monospace}
+  .rs-word{font-size:.75rem;font-weight:600;color:#c9d1d9;margin:4px 0}
+  .rs-desc{font-size:.7rem;color:#8b949e}
+
+  /* OSS flow */
+  .oss-flow{display:flex;align-items:center;gap:0;margin:20px 0;overflow-x:auto}
+  .oss-step{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:90px}
+  .oss-icon{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:transform .2s}
+  .oss-icon:hover{transform:scale(1.15)}
+  .oss-label{font-size:.68rem;color:#8b949e;text-align:center}
+  .oss-arrow{color:#58a6ff;font-size:1.4rem;padding:0 4px;margin-bottom:20px}
+
+  /* Roadmap */
+  .roadmap{display:flex;flex-direction:column;gap:0;margin:20px 0}
+  .road-level{display:flex;gap:16px;align-items:stretch;padding:14px 0;border-left:2px solid #30363d;padding-left:20px;position:relative}
+  .road-level::before{content:'';position:absolute;left:-5px;top:22px;width:8px;height:8px;border-radius:50%;background:#30363d}
+  .road-level.active::before{background:#3fb950;box-shadow:0 0 8px rgba(63,185,80,.4)}
+  .road-level.next::before{background:#58a6ff}
+  .road-label{font-size:.8rem;font-weight:700;color:#8b949e;width:80px;flex-shrink:0;padding-top:2px}
+  .road-items{display:flex;flex-wrap:wrap;gap:6px;flex:1}
+  .road-tag{padding:4px 10px;border-radius:8px;font-size:.78rem}
+  .rt-done{background:#0d2d1a;color:#3fb950;border:1px solid #238636}
+  .rt-next{background:#0d1a2d;color:#58a6ff;border:1px solid #1f4a9e}
+  .rt-later{background:#1a1a1a;color:#484f58;border:1px solid #21262d}
+
+  /* Core mindset transformation */
+  .mindset-transforms{display:flex;flex-direction:column;gap:16px;margin:24px 0}
+  .mt-item{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:10px;background:#161b22;border:1px solid #30363d;transition:transform .2s}
+  .mt-item:hover{transform:translateX(4px)}
+  .mt-before{font-size:.88rem;color:#8b949e;font-style:italic;flex:1}
+  .mt-arrow-icon{font-size:1.2rem;color:#58a6ff;flex-shrink:0}
+  .mt-after{font-size:.88rem;font-weight:600;color:#3fb950;flex:1;text-align:right}
+
+  /* Demo tips */
+  .demo-tips{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:20px 0}
+  .demo-tip{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;text-align:center}
+  .demo-tip-icon{font-size:1.5rem;margin-bottom:8px}
+  .demo-tip-text{font-size:.8rem;color:#c9d1d9}
+
+  @media(max-width:600px){
+    .project-grid,.cv-compare,.demo-tips,.reshaded{grid-template-columns:1fr}
+    .eng-checklist{grid-template-columns:1fr}
+    .oss-flow{flex-direction:column;align-items:flex-start}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div style="margin-bottom:20px">
+    <span class="badge badge-purple">Phase 5</span>
+    <span class="badge badge-blue">Bài 19</span>
+    <span class="badge badge-gold">Capstone</span>
+  </div>
+  <h1>Capstone & Career</h1>
+  <p class="subtitle">Final project, demo day, và con đường phía trước — từ "biết code" đến "giải quyết vấn đề bằng software."</p>
+
+  <!-- PRODUCTION READY -->
+  <h2>1. "Production-Ready" Nghĩa Là Gì?</h2>
+  <p>Không phải "code chạy được". Production-ready = code có thể deploy, maintain, và scale trong môi trường thực tế với real users.</p>
+
+  <div class="card">
+    <h3>16 Engineering Requirements — Hover để check</h3>
+    <div class="eng-checklist" id="engChecklist">
+      <div class="eng-item"><div class="eng-check">①</div><div><div class="eng-label">Architecture Diagram</div><div class="eng-sub">C4 Level 1+2, services + flows</div></div></div>
+      <div class="eng-item"><div class="eng-check">②</div><div><div class="eng-label">ERD</div><div class="eng-sub">All entities, relationships, indexes</div></div></div>
+      <div class="eng-item"><div class="eng-check">③</div><div><div class="eng-label">API Documentation</div><div class="eng-sub">Swagger UI đầy đủ, request + response</div></div></div>
+      <div class="eng-item"><div class="eng-check">④</div><div><div class="eng-label">Git History</div><div class="eng-sub">Conventional commits, meaningful messages</div></div></div>
+      <div class="eng-item"><div class="eng-check">⑤</div><div><div class="eng-label">Pull Requests</div><div class="eng-sub">Feature branches, PR descriptions</div></div></div>
+      <div class="eng-item"><div class="eng-check">⑥</div><div><div class="eng-label">Code Review</div><div class="eng-sub">Bằng chứng đã review + comments</div></div></div>
+      <div class="eng-item"><div class="eng-check">⑦</div><div><div class="eng-label">Unit Tests</div><div class="eng-sub">≥70% coverage, services + controllers</div></div></div>
+      <div class="eng-item"><div class="eng-check">⑧</div><div><div class="eng-label">Integration Tests</div><div class="eng-sub">API endpoints với test DB</div></div></div>
+      <div class="eng-item"><div class="eng-check">⑨</div><div><div class="eng-label">E2E Tests</div><div class="eng-sub">Critical user flows</div></div></div>
+      <div class="eng-item"><div class="eng-check">⑩</div><div><div class="eng-label">Docker</div><div class="eng-sub">Dockerfile + docker-compose với multi-service</div></div></div>
+      <div class="eng-item"><div class="eng-check">⑪</div><div><div class="eng-label">CI/CD Pipeline</div><div class="eng-sub">GitHub Actions: lint → test → build → deploy</div></div></div>
+      <div class="eng-item"><div class="eng-check">⑫</div><div><div class="eng-label">Deployed</div><div class="eng-sub">Live URL, không chỉ localhost</div></div></div>
+      <div class="eng-item"><div class="eng-check">⑬</div><div><div class="eng-label">Logging</div><div class="eng-sub">Structured logs, error tracking</div></div></div>
+      <div class="eng-item"><div class="eng-check">⑭</div><div><div class="eng-label">Monitoring</div><div class="eng-sub">Health check endpoint, uptime monitoring</div></div></div>
+      <div class="eng-item"><div class="eng-check">⑮</div><div><div class="eng-label">Security Review</div><div class="eng-sub">Auth, input validation, no secrets in code</div></div></div>
+      <div class="eng-item"><div class="eng-check">⑯</div><div><div class="eng-label">Tech Documentation</div><div class="eng-sub">README, ADR, troubleshooting guide</div></div></div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- PROJECT TOPICS -->
+  <h2>2. Final Project Topics</h2>
+
+  <div class="project-grid">
+    <div class="project-card">
+      <div class="proj-icon">🛒</div>
+      <div class="proj-title">E-commerce Platform</div>
+      <div class="proj-desc">Product catalog, cart, checkout, order management, payment integration. Classic domain với nhiều entities.</div>
+      <div class="proj-stack">
+        <span class="proj-tech">NestJS</span><span class="proj-tech">MongoDB</span><span class="proj-tech">Redis (cart)</span><span class="proj-tech">Stripe API</span><span class="proj-tech">Bull Queue</span>
+      </div>
+    </div>
+    <div class="project-card">
+      <div class="proj-icon">✍️</div>
+      <div class="proj-title">Blog Platform</div>
+      <div class="proj-desc">Multi-author blog với posts, categories, tags, comments, search. Focus vào content management và SEO.</div>
+      <div class="proj-stack">
+        <span class="proj-tech">NestJS</span><span class="proj-tech">MongoDB</span><span class="proj-tech">ElasticSearch</span><span class="proj-tech">S3 (images)</span><span class="proj-tech">CDN</span>
+      </div>
+    </div>
+    <div class="project-card">
+      <div class="proj-icon">✅</div>
+      <div class="proj-title">Task Manager</div>
+      <div class="proj-desc">Projects, tasks, assignees, deadlines, real-time updates. Good for learning WebSockets + collaboration features.</div>
+      <div class="proj-stack">
+        <span class="proj-tech">NestJS</span><span class="proj-tech">MongoDB</span><span class="proj-tech">WebSockets</span><span class="proj-tech">JWT Auth</span><span class="proj-tech">Notifications</span>
+      </div>
+    </div>
+    <div class="project-card">
+      <div class="proj-icon">💬</div>
+      <div class="proj-title">Real-time Chat</div>
+      <div class="proj-desc">Rooms, direct messages, file uploads, message history. Challenging với real-time + scale considerations.</div>
+      <div class="proj-stack">
+        <span class="proj-tech">NestJS</span><span class="proj-tech">Socket.io</span><span class="proj-tech">Redis Pub/Sub</span><span class="proj-tech">MongoDB</span><span class="proj-tech">S3</span>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- SCORING RUBRIC -->
+  <h2>3. Scoring Rubric</h2>
+
+  <div class="rubric" id="rubric">
+    <div class="rubric-item">
+      <div class="rubric-header">
+        <div class="rubric-label">🎯 Functionality</div>
+        <div class="rubric-pct" style="color:#3fb950">40%</div>
+        <div class="rubric-bar-wrap"><div class="rubric-bar rb-40" data-width="40"></div></div>
+      </div>
+      <p style="font-size:.78rem;color:#8b949e;padding-left:192px">Core features hoạt động đúng, edge cases handled, error states meaningful</p>
+    </div>
+    <div class="rubric-item">
+      <div class="rubric-header">
+        <div class="rubric-label">💎 Code Quality</div>
+        <div class="rubric-pct" style="color:#58a6ff">20%</div>
+        <div class="rubric-bar-wrap"><div class="rubric-bar rb-20" data-width="20"></div></div>
+      </div>
+      <p style="font-size:.78rem;color:#8b949e;padding-left:192px">Clean code, SOLID principles, consistent patterns, meaningful naming</p>
+    </div>
+    <div class="rubric-item">
+      <div class="rubric-header">
+        <div class="rubric-label">🧪 Testing</div>
+        <div class="rubric-pct" style="color:#bc8cff">15%</div>
+        <div class="rubric-bar-wrap"><div class="rubric-bar rb-15" data-width="15"></div></div>
+      </div>
+      <p style="font-size:.78rem;color:#8b949e;padding-left:192px">Unit tests ≥70% coverage, integration tests, meaningful assertions</p>
+    </div>
+    <div class="rubric-item">
+      <div class="rubric-header">
+        <div class="rubric-label">🚀 CI/CD</div>
+        <div class="rubric-pct" style="color:#f0883e">10%</div>
+        <div class="rubric-bar-wrap"><div class="rubric-bar rb-10" data-width="10"></div></div>
+      </div>
+      <p style="font-size:.78rem;color:#8b949e;padding-left:192px">Pipeline green, Docker working, deployed và accessible</p>
+    </div>
+    <div class="rubric-item">
+      <div class="rubric-header">
+        <div class="rubric-label">📖 Documentation</div>
+        <div class="rubric-pct" style="color:#f0883e">10%</div>
+        <div class="rubric-bar-wrap"><div class="rubric-bar rb-10b" data-width="10"></div></div>
+      </div>
+      <p style="font-size:.78rem;color:#8b949e;padding-left:192px">README, Swagger, ADR, architecture diagram rõ ràng</p>
+    </div>
+    <div class="rubric-item">
+      <div class="rubric-header">
+        <div class="rubric-label">🎤 Demo Day</div>
+        <div class="rubric-pct" style="color:#c9d1d9">5%</div>
+        <div class="rubric-bar-wrap"><div class="rubric-bar rb-5" data-width="5"></div></div>
+      </div>
+      <p style="font-size:.78rem;color:#8b949e;padding-left:192px">Trình bày rõ ràng, explain decisions, handle questions well</p>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- DEMO DAY -->
+  <h2>4. Demo Day Format</h2>
+
+  <div class="demo-tips">
+    <div class="demo-tip">
+      <div class="demo-tip-icon">⏱️</div>
+      <div class="demo-tip-text"><strong>10 phút demo</strong><br>5 phút Q&amp;A<br>Chuẩn bị kỹ, không đọc slide</div>
+    </div>
+    <div class="demo-tip">
+      <div class="demo-tip-icon">🎯</div>
+      <div class="demo-tip-text"><strong>Start với Problem</strong><br>Không start với code. "App này giải quyết vấn đề X."</div>
+    </div>
+    <div class="demo-tip">
+      <div class="demo-tip-icon">🔴</div>
+      <div class="demo-tip-text"><strong>Live demo</strong><br>Không screencast. Real app, real data, handle errors live.</div>
+    </div>
+    <div class="demo-tip">
+      <div class="demo-tip-icon">🏗️</div>
+      <div class="demo-tip-text"><strong>Explain 1 Technical Decision</strong><br>"Tôi chọn X vì Y" — show engineering thinking.</div>
+    </div>
+    <div class="demo-tip">
+      <div class="demo-tip-icon">📊</div>
+      <div class="demo-tip-text"><strong>Show the Numbers</strong><br>Test coverage %, API response time, CI pipeline status.</div>
+    </div>
+    <div class="demo-tip">
+      <div class="demo-tip-icon">🔮</div>
+      <div class="demo-tip-text"><strong>What's Next?</strong><br>"Nếu có thêm 2 tuần, tôi sẽ..." — show product thinking.</div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- CV SECTION -->
+  <h2>5. CV cho Backend Engineers</h2>
+
+  <div class="cv-compare">
+    <div class="cv-box cv-bad">
+      <div class="cv-label bad">❌ CV kém</div>
+      <div class="cv-line cv-strike">Biết JavaScript, Node.js, React</div>
+      <div class="cv-line cv-strike">Làm website cho công ty X</div>
+      <div class="cv-line cv-strike">Thành thạo lập trình</div>
+      <div class="cv-line cv-strike">Có kinh nghiệm database</div>
+      <div class="cv-line cv-strike">Tốt nghiệp loại giỏi</div>
+      <div class="cv-line cv-strike">Làm việc nhóm tốt</div>
+    </div>
+    <div class="cv-box cv-good">
+      <div class="cv-label good">✅ CV tốt</div>
+      <div class="cv-line cv-highlight">NestJS REST API — 95% test coverage</div>
+      <div class="cv-line">Reduce API latency from 800ms → 120ms bằng Redis caching</div>
+      <div class="cv-line">Build CI/CD pipeline xử lý 50 deployments/month</div>
+      <div class="cv-line">Design MongoDB schema cho 1M+ documents với proper indexes</div>
+      <div class="cv-line">Contributed 3 PRs to nestjs/nest (linked)</div>
+      <div class="cv-line">Open-source project: 120+ GitHub stars</div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <strong>Formula cho experience bullet:</strong> [Action verb] + [What you built] + [with X technology] + [resulting in Y metric/outcome]. Luôn có số cụ thể.
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- GITHUB AS PORTFOLIO -->
+  <h2>6. GitHub là Portfolio của Engineer</h2>
+
+  <div class="card">
+    <h3>GitHub Profile Checklist</h3>
+    <ul style="color:#c9d1d9;padding-left:20px">
+      <li style="margin:8px 0">📌 <strong>Pin 3-6 best projects</strong> — capstone project phải được pin</li>
+      <li style="margin:8px 0">📄 <strong>README chất lượng</strong> — mỗi pinned repo có README với demo GIF/screenshot</li>
+      <li style="margin:8px 0">🌿 <strong>Commit graph xanh</strong> — code consistently, không chỉ 1 tuần trước interview</li>
+      <li style="margin:8px 0">📝 <strong>Profile README</strong> — github.com/username/username — giới thiệu ngắn + stack + links</li>
+      <li style="margin:8px 0">⭐ <strong>Stars có ý nghĩa</strong> — star những tools bạn thực sự dùng, thể hiện taste</li>
+      <li style="margin:8px 0">🔄 <strong>Activity logs sạch</strong> — force push, random commits = red flag</li>
+    </ul>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- SYSTEM DESIGN / RESHADED -->
+  <h2>7. System Design Interview — RESHADED Framework</h2>
+  <p>Phỏng vấn system design = design một large-scale system trong 45-60 phút. RESHADED = checklist để không quên bước nào.</p>
+
+  <div class="reshaded">
+    <div class="rs-item"><div class="rs-letter">R</div><div class="rs-word">Requirements</div><div class="rs-desc">Clarify functional + non-functional. Never assume.</div></div>
+    <div class="rs-item"><div class="rs-letter">E</div><div class="rs-word">Estimation</div><div class="rs-desc">Scale: DAU, storage, bandwidth, QPS</div></div>
+    <div class="rs-item"><div class="rs-letter">S</div><div class="rs-word">Storage</div><div class="rs-desc">SQL vs NoSQL, schema design, sharding</div></div>
+    <div class="rs-item"><div class="rs-letter">H</div><div class="rs-word">High-level Design</div><div class="rs-desc">Block diagram: clients, LB, services, DB</div></div>
+    <div class="rs-item"><div class="rs-letter">A</div><div class="rs-word">APIs</div><div class="rs-desc">Key endpoints, request/response format</div></div>
+    <div class="rs-item"><div class="rs-letter">D</div><div class="rs-word">Detailed Design</div><div class="rs-desc">Deep dive vào 2-3 components interviewer care</div></div>
+    <div class="rs-item"><div class="rs-letter">E</div><div class="rs-word">Edge Cases</div><div class="rs-desc">Failure modes, race conditions, retries</div></div>
+    <div class="rs-item"><div class="rs-letter">D</div><div class="rs-word">Deliver</div><div class="rs-desc">Summarize, trade-offs, what you'd do differently</div></div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- OPEN SOURCE -->
+  <h2>8. Contributing to Open-Source</h2>
+  <p>OSS contribution = proof of skill tốt nhất. Được merge vào một project lớn = credential mạnh hơn bất kỳ certificate nào.</p>
+
+  <div class="oss-flow">
+    <div class="oss-step">
+      <div class="oss-icon" style="background:#0d1a2d;border:2px solid #1f4a9e;font-size:1.2rem">🍴</div>
+      <div class="oss-label">Fork repo</div>
+    </div>
+    <div class="oss-arrow">→</div>
+    <div class="oss-step">
+      <div class="oss-icon" style="background:#2d1a0d;border:2px solid #9e6c1e;font-size:1.2rem">🐛</div>
+      <div class="oss-label">Find issue (good first issue)</div>
+    </div>
+    <div class="oss-arrow">→</div>
+    <div class="oss-step">
+      <div class="oss-icon" style="background:#1a0d2d;border:2px solid #6e40c9;font-size:1.2rem">🌿</div>
+      <div class="oss-label">Branch + Fix</div>
+    </div>
+    <div class="oss-arrow">→</div>
+    <div class="oss-step">
+      <div class="oss-icon" style="background:#0d2d1a;border:2px solid #238636;font-size:1.2rem">📤</div>
+      <div class="oss-label">Open PR</div>
+    </div>
+    <div class="oss-arrow">→</div>
+    <div class="oss-step">
+      <div class="oss-icon" style="background:#0d2d2d;border:2px solid #1e9e9e;font-size:1.2rem">🔄</div>
+      <div class="oss-label">Review + Iterate</div>
+    </div>
+    <div class="oss-arrow">→</div>
+    <div class="oss-step">
+      <div class="oss-icon" style="background:#0d3b1f;border:2px solid #238636;font-size:1.2rem">✅</div>
+      <div class="oss-label">Merged!</div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <strong>Bắt đầu từ đâu?</strong> Filter issues với label <code>good first issue</code> hoặc <code>help wanted</code>. Đọc CONTRIBUTING.md trước. Comment vào issue trước khi code để claim.
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- ROADMAP -->
+  <h2>9. Learning Roadmap — Sau Khóa Học</h2>
+  <div class="roadmap">
+    <div class="road-level active">
+      <div class="road-label" style="color:#3fb950">✅ Hiện tại</div>
+      <div class="road-items">
+        <span class="road-tag rt-done">NestJS</span>
+        <span class="road-tag rt-done">TypeScript</span>
+        <span class="road-tag rt-done">MongoDB</span>
+        <span class="road-tag rt-done">REST API</span>
+        <span class="road-tag rt-done">Docker</span>
+        <span class="road-tag rt-done">CI/CD</span>
+        <span class="road-tag rt-done">Testing</span>
+      </div>
+    </div>
+    <div class="road-level next">
+      <div class="road-label" style="color:#58a6ff">6 tháng</div>
+      <div class="road-items">
+        <span class="road-tag rt-next">PostgreSQL + TypeORM</span>
+        <span class="road-tag rt-next">Redis advanced</span>
+        <span class="road-tag rt-next">Message queues (BullMQ)</span>
+        <span class="road-tag rt-next">Microservices</span>
+        <span class="road-tag rt-next">GraphQL</span>
+      </div>
+    </div>
+    <div class="road-level">
+      <div class="road-label">1 năm</div>
+      <div class="road-items">
+        <span class="road-tag rt-next">Kubernetes basics</span>
+        <span class="road-tag rt-next">System Design</span>
+        <span class="road-tag rt-next">Go language</span>
+        <span class="road-tag rt-next">Distributed systems</span>
+        <span class="road-tag rt-later">gRPC</span>
+      </div>
+    </div>
+    <div class="road-level">
+      <div class="road-label">2+ năm</div>
+      <div class="road-items">
+        <span class="road-tag rt-later">K8s advanced</span>
+        <span class="road-tag rt-later">Data engineering</span>
+        <span class="road-tag rt-later">ML ops</span>
+        <span class="road-tag rt-later">Architecture Lead</span>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- CORE MINDSET TRANSFORMATION -->
+  <h2>10. Core Mindset Transformation</h2>
+  <p>Đây là transformation quan trọng nhất của toàn bộ khóa học. Không phải tool hay language — mà là <em>cách nghĩ</em>.</p>
+
+  <div class="mindset-transforms">
+    <div class="mt-item">
+      <div class="mt-before">"Em biết code JavaScript"</div>
+      <div class="mt-arrow-icon">→</div>
+      <div class="mt-after">"Em giải quyết vấn đề bằng software"</div>
+    </div>
+    <div class="mt-item">
+      <div class="mt-before">"Code chạy là xong"</div>
+      <div class="mt-arrow-icon">→</div>
+      <div class="mt-after">"Code đúng, test đủ, documented"</div>
+    </div>
+    <div class="mt-item">
+      <div class="mt-before">"Feature hoạt động"</div>
+      <div class="mt-arrow-icon">→</div>
+      <div class="mt-after">"Feature maintainable + scalable"</div>
+    </div>
+    <div class="mt-item">
+      <div class="mt-before">"Họ không cho spec rõ ràng"</div>
+      <div class="mt-arrow-icon">→</div>
+      <div class="mt-after">"Tôi chủ động hỏi và clarify"</div>
+    </div>
+    <div class="mt-item">
+      <div class="mt-before">"Đó là bug của team khác"</div>
+      <div class="mt-arrow-icon">→</div>
+      <div class="mt-after">"Tôi own vấn đề đến khi giải quyết"</div>
+    </div>
+    <div class="mt-item">
+      <div class="mt-before">"Tôi không biết vì chưa học"</div>
+      <div class="mt-arrow-icon">→</div>
+      <div class="mt-after">"Tôi chưa biết — tôi sẽ tìm hiểu"</div>
+    </div>
+    <div class="mt-item">
+      <div class="mt-before">"AI viết code cho tôi"</div>
+      <div class="mt-arrow-icon">→</div>
+      <div class="mt-after">"AI là tool, tôi là engineer"</div>
+    </div>
+  </div>
+
+  <!-- Final message -->
+  <div style="background:linear-gradient(135deg,#0d2d6b,#1a0d2d);border:1px solid #58a6ff;border-radius:16px;padding:32px;margin:40px 0;text-align:center">
+    <div style="font-size:2.5rem;margin-bottom:16px">🎓</div>
+    <h3 style="font-size:1.4rem;color:#58a6ff;margin-bottom:12px">Chúc mừng!</h3>
+    <p style="color:#c9d1d9;max-width:600px;margin:0 auto;font-size:.95rem">Bạn đã hoàn thành 5 phases. Từ <em>"code chạy"</em> đến <em>"production-ready engineer."</em><br><br>Hành trình thực sự bắt đầu từ bây giờ — mỗi project, mỗi bug, mỗi code review là cơ hội để grow. Build things, ship things, break things (trong staging), learn from everything.</p>
+    <div style="margin-top:20px;font-size:1.1rem;color:#3fb950;font-weight:700">"The best way to learn engineering is to engineer."</div>
+  </div>
+
+  <div style="text-align:center;margin-top:40px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">Bài 19 / Phase 5 — The End</p>
+    <div style="margin-top:16px;display:flex;justify-content:center;gap:16px;flex-wrap:wrap">
+      <a href="16-engineering-workflow.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← Bài 16</a>
+      <a href="17-product-thinking.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← Bài 17</a>
+      <a href="18-documentation.html" style="color:#8b949e;text-decoration:none;font-size:.85rem">← Bài 18</a>
+      <a href="../phase-4-production/14-devops.html" style="color:#58a6ff;text-decoration:none;font-size:.85rem">↩ Bài 14 — DevOps</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// Animate rubric bars on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      document.querySelectorAll('.rubric-bar').forEach(bar => {
+        const w = bar.dataset.width;
+        bar.style.width = w + '%';
+      });
+      observer.disconnect();
+    }
+  });
+}, { threshold: 0.3 });
+
+const rubric = document.getElementById('rubric');
+if (rubric) observer.observe(rubric);
+</script>
+</body>
+</html>

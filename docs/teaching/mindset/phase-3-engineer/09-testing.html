@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>09 — Testing Mindset | Phase 3: Engineer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d1117; --bg2: #161b22; --bg3: #21262d;
+    --border: #30363d; --text: #e6edf3; --muted: #8b949e;
+    --green: #3fb950; --red: #f85149; --yellow: #d29922;
+    --blue: #58a6ff; --purple: #bc8cff; --orange: #ffa657;
+    --cyan: #39d353;
+  }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; }
+  .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+  h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; }
+  h2 { font-size: 1.5rem; font-weight: 600; margin: 2.5rem 0 1rem; color: var(--blue); }
+  h3 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.5rem; color: var(--purple); }
+  p { color: var(--muted); margin-bottom: 0.8rem; }
+  .badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+  .badge-green { background: rgba(63,185,80,0.15); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+  .badge-red { background: rgba(248,81,73,0.15); color: var(--red); border: 1px solid rgba(248,81,73,0.3); }
+  .badge-yellow { background: rgba(210,153,34,0.15); color: var(--yellow); border: 1px solid rgba(210,153,34,0.3); }
+  .badge-blue { background: rgba(88,166,255,0.15); color: var(--blue); border: 1px solid rgba(88,166,255,0.3); }
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin: 1rem 0; }
+  .story-card { background: linear-gradient(135deg, rgba(248,81,73,0.1), rgba(13,17,23,0)); border: 1px solid rgba(248,81,73,0.3); border-radius: 12px; padding: 1.5rem; margin: 1rem 0; }
+  pre { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; font-size: 0.85rem; line-height: 1.7; margin: 0.8rem 0; }
+  code { font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace; }
+  .kw { color: var(--purple); } .fn { color: var(--blue); } .str { color: var(--green); }
+  .cm { color: var(--muted); } .num { color: var(--orange); }
+  .tag { color: var(--red); }
+
+  /* Pyramid */
+  .pyramid { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 2rem 0; }
+  .pyramid-level { display: flex; align-items: center; justify-content: center; border-radius: 6px; cursor: pointer; transition: all 0.3s; position: relative; flex-direction: column; gap: 0.3rem; }
+  .pyramid-level:hover { filter: brightness(1.2); transform: scale(1.02); }
+  .pyramid-level span { font-weight: 700; font-size: 0.9rem; }
+  .pyramid-level small { font-size: 0.75rem; opacity: 0.8; }
+  .level-e2e { width: 220px; height: 70px; background: linear-gradient(135deg, rgba(248,81,73,0.3), rgba(248,81,73,0.1)); border: 1px solid rgba(248,81,73,0.4); color: var(--red); }
+  .level-int { width: 340px; height: 70px; background: linear-gradient(135deg, rgba(210,153,34,0.3), rgba(210,153,34,0.1)); border: 1px solid rgba(210,153,34,0.4); color: var(--yellow); }
+  .level-unit { width: 460px; height: 80px; background: linear-gradient(135deg, rgba(63,185,80,0.3), rgba(63,185,80,0.1)); border: 1px solid rgba(63,185,80,0.4); color: var(--green); }
+  .pyramid-info { display: none; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin-top: 1rem; width: 100%; max-width: 460px; text-align: left; }
+  .pyramid-info.show { display: block; animation: fadeIn 0.3s ease; }
+
+  /* AAA */
+  .aaa { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin: 1rem 0; }
+  .aaa-box { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center; position: relative; overflow: hidden; }
+  .aaa-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .aaa-arrange::before { background: var(--blue); }
+  .aaa-act::before { background: var(--purple); }
+  .aaa-assert::before { background: var(--green); }
+  .aaa-num { font-size: 2rem; font-weight: 800; opacity: 0.2; }
+
+  /* Mock diagram */
+  .mock-diagram { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+  .mock-box { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center; cursor: pointer; transition: all 0.3s; }
+  .mock-box:hover { border-color: var(--blue); transform: translateY(-2px); }
+  .mock-box .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+  .mock-detail { display: none; margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); text-align: left; }
+  .mock-box.open .mock-detail { display: block; }
+
+  /* TDD cycle */
+  .tdd { display: flex; justify-content: center; align-items: center; gap: 0; margin: 2rem 0; flex-wrap: wrap; }
+  .tdd-step { width: 120px; height: 120px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.4s; position: relative; }
+  .tdd-red { background: rgba(248,81,73,0.2); border: 3px solid var(--red); color: var(--red); }
+  .tdd-green { background: rgba(63,185,80,0.2); border: 3px solid var(--green); color: var(--green); }
+  .tdd-blue { background: rgba(88,166,255,0.2); border: 3px solid var(--blue); color: var(--blue); }
+  .tdd-arrow { font-size: 1.5rem; color: var(--muted); margin: 0 -0.5rem; }
+  .tdd-step.active { transform: scale(1.15); box-shadow: 0 0 20px currentColor; }
+
+  /* Coverage gauge */
+  .gauge-wrap { display: flex; justify-content: center; margin: 1.5rem 0; }
+  .gauge { position: relative; width: 200px; height: 100px; }
+  .gauge-bg { fill: none; stroke: var(--bg3); stroke-width: 20; }
+  .gauge-fill { fill: none; stroke-width: 20; stroke-linecap: round; transition: stroke-dasharray 1.5s ease; }
+  .gauge-text { text-anchor: middle; fill: var(--text); font-size: 1.3rem; font-weight: 700; }
+  .gauge-label { text-anchor: middle; fill: var(--muted); font-size: 0.6rem; }
+
+  /* Checklist */
+  .checklist { list-style: none; }
+  .checklist li { padding: 0.4rem 0; display: flex; gap: 0.5rem; align-items: flex-start; font-size: 0.9rem; }
+  .checklist li::before { flex-shrink: 0; margin-top: 2px; }
+  .check-yes::before { content: '✅'; }
+  .check-no::before { content: '❌'; }
+
+  /* Reveal */
+  .reveal { opacity: 0; transform: translateY(20px); transition: all 0.5s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* Compare */
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+  .compare-bad { border-left: 3px solid var(--red); padding-left: 1rem; }
+  .compare-good { border-left: 3px solid var(--green); padding-left: 1rem; }
+
+  /* Progress */
+  .progress-bar { height: 6px; background: var(--bg3); border-radius: 3px; margin: 2rem 0; }
+  .progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--blue), var(--purple)); width: 0; transition: width 1s ease; }
+
+  /* Exercise */
+  .exercise { background: linear-gradient(135deg, rgba(88,166,255,0.08), rgba(188,140,255,0.08)); border: 1px solid rgba(88,166,255,0.3); border-radius: 12px; padding: 1.5rem; margin: 2rem 0; }
+  .exercise h3 { color: var(--blue); margin-top: 0; }
+
+  /* Takeaway */
+  .takeaway { background: linear-gradient(135deg, rgba(57,211,83,0.08), rgba(13,17,23,0)); border: 1px solid rgba(57,211,83,0.3); border-radius: 12px; padding: 1.5rem; margin: 2rem 0; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+  .header-meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
+  .divider { height: 1px; background: var(--border); margin: 3rem 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header-meta">Phase 3: Engineer · Bài 09</div>
+  <h1>🧪 Testing Mindset</h1>
+  <p style="font-size:1.1rem; color: var(--text);">Tại sao "nó chạy trên máy tôi" không đủ — và cách viết code có thể tin tưởng được.</p>
+
+  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+  <!-- Story -->
+  <h2>💥 "It works on my machine"</h2>
+  <div class="story-card reveal">
+    <h3 style="color: var(--red); margin-top: 0;">🚨 Production Crash Story</h3>
+    <p style="color: var(--text);">Buổi tối trước khi deploy, dev kiểm tra trên máy local: <strong>"Chạy ngon rồi!"</strong></p>
+    <p>5 phút sau deploy lên production...</p>
+    <ul style="list-style: none; margin: 1rem 0;">
+      <li style="color: var(--red); font-size: 1.1rem; padding: 0.3rem 0;">💔 503 Service Unavailable</li>
+      <li style="color: var(--red); font-size: 1.1rem; padding: 0.3rem 0;">💔 Database connection timeout</li>
+      <li style="color: var(--red); font-size: 1.1rem; padding: 0.3rem 0;">💔 Memory leak → server restart loop</li>
+    </ul>
+    <p><strong>Nguyên nhân:</strong> Local dùng SQLite, production dùng PostgreSQL. Query syntax khác nhau. Không có test nào cover.</p>
+    <div style="margin-top: 1rem; padding: 0.8rem; background: rgba(0,0,0,0.3); border-radius: 8px; font-size: 0.85rem; color: var(--muted);">
+      <strong style="color: var(--yellow);">⏰ Timeline:</strong> 3 giờ debug đêm khuya · 2 engineer on-call · Rollback · Post-mortem · Customer complaint
+    </div>
+  </div>
+
+  <div class="card reveal">
+    <p><strong style="color: var(--text);">Testing không phải để "chứng minh code đúng"</strong> — mà để <strong style="color: var(--green);">phát hiện lỗi sớm</strong>, khi chi phí sửa còn rẻ.</p>
+    <div style="display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-top: 1rem; text-align: center; font-size: 0.85rem;">
+      <div style="padding: 0.8rem; background: var(--bg3); border-radius: 8px;">
+        <div style="font-size: 1.5rem;">🧑‍💻</div>
+        <div style="color: var(--green); font-weight: 700;">Dev time</div>
+        <div style="color: var(--muted);">Chi phí: $1</div>
+      </div>
+      <div style="padding: 0.8rem; background: var(--bg3); border-radius: 8px;">
+        <div style="font-size: 1.5rem;">🔍</div>
+        <div style="color: var(--yellow); font-weight: 700;">QA/Review</div>
+        <div style="color: var(--muted);">Chi phí: $10</div>
+      </div>
+      <div style="padding: 0.8rem; background: var(--bg3); border-radius: 8px;">
+        <div style="font-size: 1.5rem;">🚨</div>
+        <div style="color: var(--red); font-weight: 700;">Production</div>
+        <div style="color: var(--muted);">Chi phí: $100+</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Test Pyramid -->
+  <h2>🔺 Test Pyramid</h2>
+  <p>Không phải mọi test đều bình đẳng. Pyramid cho biết <em>bao nhiêu</em> của mỗi loại.</p>
+
+  <div class="pyramid reveal">
+    <div class="pyramid-level level-e2e" onclick="showPyramidInfo('e2e')">
+      <span>E2E Tests</span>
+      <small>~5–10% · Slow · Expensive</small>
+    </div>
+    <div style="width: 0; height: 0; border-left: 170px solid transparent; border-right: 170px solid transparent; border-top: 0; border-bottom: 12px solid var(--border); opacity: 0.3;"></div>
+    <div class="pyramid-level level-int" onclick="showPyramidInfo('int')">
+      <span>Integration Tests</span>
+      <small>~20–30% · Medium speed</small>
+    </div>
+    <div style="width: 0; height: 0; border-left: 230px solid transparent; border-right: 230px solid transparent; border-bottom: 12px solid var(--border); opacity: 0.3;"></div>
+    <div class="pyramid-level level-unit" onclick="showPyramidInfo('unit')">
+      <span>Unit Tests</span>
+      <small>~60–70% · Fast · Many</small>
+    </div>
+    <div id="pyramid-detail" class="pyramid-info"></div>
+  </div>
+
+  <!-- AAA Pattern -->
+  <h2>🔬 Unit Test Anatomy: Arrange → Act → Assert</h2>
+  <div class="aaa reveal">
+    <div class="aaa-box aaa-arrange">
+      <div class="aaa-num">1</div>
+      <h3 style="color: var(--blue); margin: 0.3rem 0;">Arrange</h3>
+      <p style="font-size: 0.85rem;">Setup dữ liệu đầu vào, mock dependencies</p>
+    </div>
+    <div class="aaa-box aaa-act">
+      <div class="aaa-num">2</div>
+      <h3 style="color: var(--purple); margin: 0.3rem 0;">Act</h3>
+      <p style="font-size: 0.85rem;">Gọi function/method cần test</p>
+    </div>
+    <div class="aaa-box aaa-assert">
+      <div class="aaa-num">3</div>
+      <h3 style="color: var(--green); margin: 0.3rem 0;">Assert</h3>
+      <p style="font-size: 0.85rem;">Kiểm tra kết quả đúng như mong đợi</p>
+    </div>
+  </div>
+
+  <pre><code><span class="cm">// ✅ Ví dụ: Test hàm tính giá sau discount</span>
+<span class="kw">describe</span>(<span class="str">'calculatePrice'</span>, () => {
+  <span class="kw">it</span>(<span class="str">'should apply 10% discount correctly'</span>, () => {
+    <span class="cm">// 🔵 Arrange — chuẩn bị dữ liệu</span>
+    <span class="kw">const</span> price = <span class="num">100</span>;
+    <span class="kw">const</span> discountPercent = <span class="num">10</span>;
+
+    <span class="cm">// 🟣 Act — chạy hàm cần test</span>
+    <span class="kw">const</span> result = <span class="fn">calculatePrice</span>(price, discountPercent);
+
+    <span class="cm">// 🟢 Assert — kiểm tra kết quả</span>
+    <span class="fn">expect</span>(result).<span class="fn">toBe</span>(<span class="num">90</span>);
+  });
+});</code></pre>
+
+  <!-- Mock/Stub/Spy -->
+  <h2>🎭 Mock vs Stub vs Spy</h2>
+  <p>Khi test, ta cần <em>cô lập</em> unit khỏi dependencies bên ngoài (DB, API, Email...).</p>
+
+  <div class="mock-diagram reveal">
+    <div class="mock-box" onclick="toggleMock(this)">
+      <div class="icon">🎭</div>
+      <strong>Mock</strong>
+      <div class="mock-detail">
+        <p>Thay thế hoàn toàn một object. Kiểm soát cả <strong>input và output</strong>.</p>
+        <p style="color: var(--yellow);">Dùng khi: cần verify object được gọi đúng cách.</p>
+        <code style="color: var(--green); font-size: 0.8rem;">jest.mock('./emailService')</code>
+      </div>
+    </div>
+    <div class="mock-box" onclick="toggleMock(this)">
+      <div class="icon">🔌</div>
+      <strong>Stub</strong>
+      <div class="mock-detail">
+        <p>Trả về giá trị cố định. Không quan tâm cách gọi.</p>
+        <p style="color: var(--yellow);">Dùng khi: cần control return value của dependency.</p>
+        <code style="color: var(--green); font-size: 0.8rem;">stub.returns({ id: 1 })</code>
+      </div>
+    </div>
+    <div class="mock-box" onclick="toggleMock(this)">
+      <div class="icon">🕵️</div>
+      <strong>Spy</strong>
+      <div class="mock-detail">
+        <p>Theo dõi real function — vẫn chạy thật nhưng ghi lại calls.</p>
+        <p style="color: var(--yellow);">Dùng khi: muốn verify function được gọi, không thay thế.</p>
+        <code style="color: var(--green); font-size: 0.8rem;">jest.spyOn(obj, 'method')</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- What to test -->
+  <h2>✅ Test cái gì? Không test cái gì?</h2>
+  <div class="compare reveal">
+    <div class="compare-good">
+      <h3 style="color: var(--green); margin-top: 0;">✅ NÊN test</h3>
+      <ul class="checklist">
+        <li class="check-yes">Business logic (tính giá, validate rules)</li>
+        <li class="check-yes">Edge cases (số âm, chuỗi rỗng, null)</li>
+        <li class="check-yes">Error handling paths</li>
+        <li class="check-yes">Public API / interface</li>
+        <li class="check-yes">Regression (bug đã fix trước đây)</li>
+      </ul>
+    </div>
+    <div class="compare-bad">
+      <h3 style="color: var(--red); margin-top: 0;">❌ KHÔNG test</h3>
+      <ul class="checklist">
+        <li class="check-no">Third-party library internals</li>
+        <li class="check-no">Framework boilerplate</li>
+        <li class="check-no">Private implementation details</li>
+        <li class="check-no">Database migrations (test riêng)</li>
+        <li class="check-no">Simple getter/setter không có logic</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- TDD -->
+  <h2>🔄 TDD: Red → Green → Refactor</h2>
+  <p>Test-Driven Development: <em>viết test trước</em>, rồi mới viết code để pass.</p>
+
+  <div class="tdd reveal">
+    <div class="tdd-step tdd-red" id="tdd-red" onclick="activateTDD('red')">
+      <span style="font-size: 1.5rem;">🔴</span>
+      <span>RED</span>
+      <small style="font-size: 0.7rem; margin-top: 0.3rem;">Viết test<br>Chạy → FAIL</small>
+    </div>
+    <div class="tdd-arrow">→</div>
+    <div class="tdd-step tdd-green" id="tdd-green" onclick="activateTDD('green')">
+      <span style="font-size: 1.5rem;">🟢</span>
+      <span>GREEN</span>
+      <small style="font-size: 0.7rem; margin-top: 0.3rem;">Viết code<br>Chạy → PASS</small>
+    </div>
+    <div class="tdd-arrow">→</div>
+    <div class="tdd-step tdd-blue" id="tdd-refactor" onclick="activateTDD('refactor')">
+      <span style="font-size: 1.5rem;">🔵</span>
+      <span>REFACTOR</span>
+      <small style="font-size: 0.7rem; margin-top: 0.3rem;">Cải thiện code<br>Test vẫn PASS</small>
+    </div>
+    <div class="tdd-arrow">↩</div>
+  </div>
+  <div id="tdd-detail" class="card" style="display:none; text-align: center; min-height: 60px;"></div>
+
+  <!-- Coverage -->
+  <h2>📊 Code Coverage — Hiểu đúng</h2>
+  <div class="gauge-wrap reveal">
+    <svg viewBox="0 0 200 110" width="300">
+      <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#21262d" stroke-width="20"/>
+      <path id="gauge-path" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#3fb950" stroke-width="20"
+        stroke-dasharray="0 251" stroke-linecap="round"/>
+      <text x="100" y="95" class="gauge-text" id="gauge-num">0%</text>
+      <text x="100" y="112" class="gauge-label">Code Coverage</text>
+    </svg>
+  </div>
+
+  <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin: 1rem 0;">
+    <button onclick="setGauge(45, '#f85149')" style="padding: 0.4rem 1rem; background: rgba(248,81,73,0.2); border: 1px solid var(--red); border-radius: 6px; color: var(--red); cursor: pointer;">45% — Nguy hiểm</button>
+    <button onclick="setGauge(70, '#d29922')" style="padding: 0.4rem 1rem; background: rgba(210,153,34,0.2); border: 1px solid var(--yellow); border-radius: 6px; color: var(--yellow); cursor: pointer;">70% — Chấp nhận được</button>
+    <button onclick="setGauge(80, '#3fb950')" style="padding: 0.4rem 1rem; background: rgba(63,185,80,0.2); border: 1px solid var(--green); border-radius: 6px; color: var(--green); cursor: pointer;">80% — Tốt</button>
+    <button onclick="setGauge(100, '#58a6ff')" style="padding: 0.4rem 1rem; background: rgba(88,166,255,0.2); border: 1px solid var(--blue); border-radius: 6px; color: var(--blue); cursor: pointer;">100% — Không tồn tại thực tế</button>
+  </div>
+
+  <div class="card" style="border-left: 3px solid var(--yellow);">
+    <strong style="color: var(--yellow);">⚠️ 80% coverage ≠ bug-free!</strong>
+    <p>Coverage chỉ đo <em>dòng code nào được chạy</em> — không đo <em>logic có đúng không</em>.</p>
+    <pre><code><span class="cm">// 100% coverage nhưng vẫn sai:</span>
+<span class="kw">function</span> <span class="fn">add</span>(a, b) { <span class="kw">return</span> a - b; } <span class="cm">// Bug: trừ thay vì cộng!</span>
+
+<span class="fn">test</span>(<span class="str">'add'</span>, () => {
+  <span class="fn">expect</span>(<span class="fn">add</span>(<span class="num">5</span>, <span class="num">3</span>)).<span class="fn">toBe</span>(<span class="num">8</span>); <span class="cm">// ❌ Assertion sai → test pass!</span>
+});</code></pre>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Exercise -->
+  <div class="exercise reveal">
+    <h3>🏋️ Exercise: Viết Test Cases</h3>
+    <p>Cho hàm sau, viết <strong>5 test cases</strong>: happy path, edge cases, error cases.</p>
+    <pre><code><span class="kw">function</span> <span class="fn">dividePrice</span>(total: <span class="kw">number</span>, people: <span class="kw">number</span>): <span class="kw">number</span> {
+  <span class="kw">return</span> total / people;
+}</code></pre>
+    <ol style="margin: 1rem 0 1rem 1.5rem; color: var(--muted);">
+      <li style="padding: 0.3rem 0;">Happy path: 100 / 4 = 25</li>
+      <li style="padding: 0.3rem 0;">Edge case: 0 / 4 = 0</li>
+      <li style="padding: 0.3rem 0;">Edge case: 100 / 1 = 100</li>
+      <li style="padding: 0.3rem 0;">Error: 100 / 0 → phải throw Error</li>
+      <li style="padding: 0.3rem 0;">Edge case: số lẻ → làm tròn 2 chữ số?</li>
+    </ol>
+    <details style="margin-top: 1rem;">
+      <summary style="cursor: pointer; color: var(--blue);">👁️ Xem gợi ý solution</summary>
+      <pre style="margin-top: 1rem;"><code><span class="fn">describe</span>(<span class="str">'dividePrice'</span>, () => {
+  <span class="fn">it</span>(<span class="str">'divides evenly'</span>, () => <span class="fn">expect</span>(<span class="fn">dividePrice</span>(<span class="num">100</span>, <span class="num">4</span>)).<span class="fn">toBe</span>(<span class="num">25</span>));
+  <span class="fn">it</span>(<span class="str">'handles zero total'</span>, () => <span class="fn">expect</span>(<span class="fn">dividePrice</span>(<span class="num">0</span>, <span class="num">4</span>)).<span class="fn">toBe</span>(<span class="num">0</span>));
+  <span class="fn">it</span>(<span class="str">'handles single person'</span>, () => <span class="fn">expect</span>(<span class="fn">dividePrice</span>(<span class="num">100</span>, <span class="num">1</span>)).<span class="fn">toBe</span>(<span class="num">100</span>));
+  <span class="fn">it</span>(<span class="str">'throws on divide by zero'</span>, () => {
+    <span class="fn">expect</span>(() => <span class="fn">dividePrice</span>(<span class="num">100</span>, <span class="num">0</span>)).<span class="fn">toThrow</span>(<span class="str">'Cannot divide by zero'</span>);
+  });
+  <span class="fn">it</span>(<span class="str">'rounds to 2 decimal places'</span>, () => {
+    <span class="fn">expect</span>(<span class="fn">dividePrice</span>(<span class="num">10</span>, <span class="num">3</span>)).<span class="fn">toBeCloseTo</span>(<span class="num">3.33</span>, <span class="num">2</span>);
+  });
+});</code></pre>
+    </details>
+  </div>
+
+  <!-- Takeaway -->
+  <div class="takeaway reveal">
+    <h3 style="color: var(--green); margin-top: 0;">🎯 Key Takeaways</h3>
+    <ul class="checklist">
+      <li class="check-yes">Test là bảo hiểm cho future changes — không phải kiểm tra cho QA</li>
+      <li class="check-yes">Pyramid: Unit nhiều, Integration vừa, E2E ít</li>
+      <li class="check-yes">AAA pattern giúp test dễ đọc, dễ maintain</li>
+      <li class="check-yes">Mock/Stub/Spy để isolate unit khỏi dependencies</li>
+      <li class="check-yes">Coverage là metric, không phải mục tiêu — test quality quan trọng hơn số %</li>
+      <li class="check-yes">TDD giúp design API tốt hơn vì bạn dùng code của mình trước</li>
+    </ul>
+  </div>
+
+</div>
+
+<script>
+// Pyramid
+const pyramidData = {
+  unit: { title: '🟢 Unit Tests', content: 'Test từng function/class độc lập. Chạy trong milliseconds. Không cần DB, network. Jest/Vitest. Mục tiêu: test mọi business logic.' },
+  int: { title: '🟡 Integration Tests', content: 'Test interaction giữa các module. Cần DB test, có thể mock external APIs. Chậm hơn unit 10–100x. Supertest + TestContainers.' },
+  e2e: { title: '🔴 E2E Tests', content: 'Test toàn bộ flow từ UI đến DB như user thật. Playwright/Cypress. Chạy lâu nhất (minutes). Chỉ cover critical paths.' }
+};
+function showPyramidInfo(type) {
+  const el = document.getElementById('pyramid-detail');
+  const d = pyramidData[type];
+  el.innerHTML = `<strong style="color:var(--blue)">${d.title}</strong><p style="margin-top:0.5rem;color:var(--muted);font-size:0.9rem">${d.content}</p>`;
+  el.classList.add('show');
+}
+
+// Mock toggle
+function toggleMock(el) { el.classList.toggle('open'); }
+
+// TDD
+const tddData = {
+  red: { color: 'var(--red)', text: '🔴 RED: Viết test cho tính năng chưa tồn tại. Chạy → FAIL. Điều này bình thường! Test fail = xác nhận test đang hoạt động.' },
+  green: { color: 'var(--green)', text: '🟢 GREEN: Viết code ĐỦ để test pass — không cần perfect. Chạy lại → PASS. Đừng over-engineer ở bước này.' },
+  refactor: { color: 'var(--blue)', text: '🔵 REFACTOR: Cải thiện code quality (naming, structure, duplication). Chạy lại test → vẫn PASS. Sau đó quay về RED cho feature tiếp theo.' }
+};
+function activateTDD(type) {
+  ['red','green','refactor'].forEach(t => document.getElementById('tdd-'+t).classList.remove('active'));
+  document.getElementById('tdd-'+type).classList.add('active');
+  const d = tddData[type];
+  const el = document.getElementById('tdd-detail');
+  el.style.display = 'block';
+  el.innerHTML = `<p style="color:${d.color}">${d.text}</p>`;
+}
+
+// Gauge
+function setGauge(pct, color) {
+  const total = 251;
+  const fill = (pct / 100) * total;
+  const path = document.getElementById('gauge-path');
+  path.style.stroke = color;
+  path.setAttribute('stroke-dasharray', `${fill} ${total}`);
+  document.getElementById('gauge-num').textContent = pct + '%';
+}
+setTimeout(() => setGauge(80, '#3fb950'), 500);
+
+// Progress
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  document.getElementById('progress').style.width = pct + '%';
+});
+
+// Reveal on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bài 14: DevOps — Bridge Between Dev and Ops</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.7}
+  .container{max-width:900px;margin:0 auto;padding:40px 24px}
+  h1{font-size:2.2rem;color:#58a6ff;margin-bottom:8px}
+  h2{font-size:1.5rem;color:#79c0ff;margin:40px 0 16px;padding-left:12px;border-left:3px solid #58a6ff}
+  h3{font-size:1.1rem;color:#a5d6ff;margin:20px 0 10px}
+  p{color:#c9d1d9;margin-bottom:12px}
+  .subtitle{color:#8b949e;font-size:1rem;margin-bottom:40px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600;margin-right:6px}
+  .badge-blue{background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e}
+  .badge-green{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .badge-orange{background:#3b1e0d;color:#f0883e;border:1px solid #9e4f1e}
+  .badge-purple{background:#2d1b6b;color:#bc8cff;border:1px solid #6e40c9}
+  .card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:24px;margin:20px 0}
+  .code-block{background:#0d1117;border:1px solid #30363d;border-radius:8px;padding:16px;font-family:'Fira Code','Cascadia Code',monospace;font-size:.85rem;overflow-x:auto;margin:12px 0}
+  .code-block .cm{color:#8b949e}
+  .code-block .kw{color:#ff7b72}
+  .code-block .str{color:#a5d6ff}
+  .code-block .fn{color:#d2a8ff}
+  .code-block .var{color:#ffa657}
+  .code-block .num{color:#79c0ff}
+  .tip{background:#0d2d1a;border:1px solid #238636;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .tip::before{content:'💡';position:absolute;left:14px;top:14px;font-size:1.1rem}
+  .warning{background:#2d1a0d;border:1px solid #9e4f1e;border-radius:8px;padding:16px;margin:16px 0;position:relative;padding-left:44px}
+  .warning::before{content:'⚠️';position:absolute;left:14px;top:14px;font-size:1.1rem}
+  /* Infinity Loop */
+  .infinity-wrap{display:flex;justify-content:center;margin:32px 0}
+  .infinity-svg{width:100%;max-width:700px}
+  /* Terminal animation */
+  .terminal{background:#0d1117;border:1px solid #30363d;border-radius:10px;overflow:hidden;margin:20px 0}
+  .terminal-bar{background:#21262d;padding:10px 16px;display:flex;align-items:center;gap:8px}
+  .dot{width:12px;height:12px;border-radius:50%}
+  .dot-red{background:#ff5f57}
+  .dot-yellow{background:#febc2e}
+  .dot-green{background:#28c840}
+  .terminal-body{padding:16px;font-family:'Fira Code',monospace;font-size:.85rem;min-height:160px}
+  .term-line{margin:2px 0;white-space:pre}
+  .term-prompt{color:#3fb950}
+  .term-output{color:#c9d1d9}
+  .term-comment{color:#8b949e}
+  .cursor{display:inline-block;width:8px;height:14px;background:#58a6ff;animation:blink 1s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+  /* Container vs VM */
+  .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:20px 0}
+  .compare-box{border-radius:10px;padding:20px;text-align:center}
+  .compare-box.vm{background:#1a0d2d;border:1px solid #6e40c9}
+  .compare-box.docker{background:#0d1a2d;border:1px solid #1f4a9e}
+  .stack-layer{padding:10px 16px;border-radius:6px;margin:6px 0;font-size:.85rem;font-weight:500;text-align:center;transition:transform .2s}
+  .stack-layer:hover{transform:scale(1.03)}
+  .layer-hw{background:#2d1a0d;color:#ffa657;border:1px solid #9e4f1e}
+  .layer-os{background:#0d2d1a;color:#3fb950;border:1px solid #238636}
+  .layer-hyp{background:#2d0d1a;color:#ff7b72;border:1px solid #9e1e1e}
+  .layer-vm{background:#2d1a0d;color:#f0883e;border:1px solid #9e6c1e}
+  .layer-app{background:#0d1a2d;color:#58a6ff;border:1px solid #1f4a9e}
+  .layer-cont{background:#0d2d2d;color:#39c5cf;border:1px solid #1e9e9e}
+  .layer-docker{background:#1a0d2d;color:#bc8cff;border:1px solid #6e40c9}
+  /* Dockerfile layers */
+  .df-layer{display:flex;align-items:center;gap:16px;padding:12px 16px;border-radius:8px;margin:6px 0;transition:all .3s}
+  .df-layer:hover{transform:translateX(4px)}
+  .df-step{background:#0d2d6b;color:#58a6ff;border:1px solid #1f4a9e;border-radius:6px;padding:4px 10px;font-family:monospace;font-size:.8rem;white-space:nowrap;min-width:80px;text-align:center}
+  .df-desc{color:#c9d1d9;font-size:.88rem}
+  .df-cached{margin-left:auto;font-size:.75rem;padding:2px 8px;border-radius:10px}
+  .df-cached.yes{background:#0d3b1f;color:#3fb950;border:1px solid #238636}
+  .df-cached.no{background:#3b1e0d;color:#f0883e;border:1px solid #9e4f1e}
+  /* CI/CD Pipeline */
+  .pipeline{display:flex;align-items:center;gap:0;margin:20px 0;overflow-x:auto;padding:10px 0}
+  .pipe-stage{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:90px}
+  .pipe-icon{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;transition:transform .3s}
+  .pipe-icon:hover{transform:scale(1.15)}
+  .pipe-label{font-size:.72rem;color:#8b949e;text-align:center}
+  .pipe-arrow{color:#30363d;font-size:1.4rem;padding:0 4px;align-self:center;margin-bottom:22px}
+  .pipe-push{background:#0d2d1a;border:2px solid #238636}
+  .pipe-lint{background:#2d1a0d;border:2px solid #9e6c1e}
+  .pipe-build{background:#0d1a2d;border:2px solid #1f4a9e}
+  .pipe-test{background:#2d0d1a;border:2px solid #9e1e1e}
+  .pipe-deploy{background:#1a0d2d;border:2px solid #6e40c9}
+  /* Deploy strategies */
+  .strategy-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:20px 0}
+  .strategy-card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px;text-align:center}
+  .strategy-card h4{color:#79c0ff;margin-bottom:8px;font-size:.95rem}
+  .server-row{display:flex;gap:6px;justify-content:center;margin:10px 0}
+  .server{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;transition:background .5s}
+  .s-v1{background:#0d2d1a;border:1px solid #238636;color:#3fb950}
+  .s-v2{background:#0d1a2d;border:1px solid #1f4a9e;color:#58a6ff}
+  .s-off{background:#1c1c1c;border:1px solid #30363d;color:#484f58}
+  /* Monitoring dashboard */
+  .dashboard{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}
+  .metric-card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px;text-align:center}
+  .metric-val{font-size:1.8rem;font-weight:700;color:#58a6ff}
+  .metric-label{font-size:.78rem;color:#8b949e;margin-top:4px}
+  .metric-trend{font-size:.8rem;margin-top:4px}
+  .trend-up{color:#3fb950}
+  .trend-down{color:#ff7b72}
+  /* Exercise */
+  .exercise{background:#0d1a2d;border:1px solid #1f4a9e;border-radius:12px;padding:24px;margin:32px 0}
+  .exercise h3{color:#58a6ff;margin-bottom:12px}
+  .checklist{list-style:none;padding:0}
+  .checklist li{padding:8px 0;color:#c9d1d9;display:flex;align-items:flex-start;gap:10px;border-bottom:1px solid #21262d;font-size:.9rem}
+  .checklist li:last-child{border-bottom:none}
+  .ch{color:#3fb950;flex-shrink:0;margin-top:2px}
+  /* Compose diagram */
+  .compose-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
+  .service-box{background:#161b22;border:2px solid #30363d;border-radius:10px;padding:16px;text-align:center;position:relative}
+  .service-box::after{content:'';position:absolute;right:-14px;top:50%;transform:translateY(-50%);width:14px;height:2px;background:#58a6ff}
+  .service-box:nth-child(2)::after,.service-box:nth-child(4)::after{display:none}
+  .service-icon{font-size:2rem;margin-bottom:8px}
+  .service-name{font-size:.85rem;font-weight:600;color:#c9d1d9}
+  .service-port{font-size:.75rem;color:#8b949e;margin-top:4px}
+  /* Env pipeline */
+  .env-pipe{display:flex;align-items:center;gap:0;margin:20px 0;overflow-x:auto}
+  .env-box{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:14px 20px;text-align:center;min-width:120px}
+  .env-arrow{color:#58a6ff;font-size:1.5rem;padding:0 8px}
+  .env-dev{border-color:#3fb950}
+  .env-stg{border-color:#f0883e}
+  .env-prod{border-color:#ff7b72}
+  .section-divider{border:none;border-top:1px solid #21262d;margin:40px 0}
+  @media(max-width:600px){
+    .compare-grid,.strategy-grid,.dashboard{grid-template-columns:1fr}
+    .compose-grid{grid-template-columns:1fr}
+    .pipeline{flex-direction:column;align-items:flex-start}
+    .pipe-arrow{transform:rotate(90deg)}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div style="margin-bottom:20px">
+    <span class="badge badge-orange">Phase 4</span>
+    <span class="badge badge-blue">Bài 14</span>
+    <span class="badge badge-green">Production</span>
+  </div>
+  <h1>DevOps</h1>
+  <p class="subtitle">Bridge Between Development và Operations — từ code đến production một cách tự động và đáng tin cậy.</p>
+
+  <!-- INFINITY LOOP -->
+  <h2>1. DevOps là gì?</h2>
+  <p>DevOps = <strong>Dev</strong>elopment + <strong>Op</strong>eration<strong>s</strong>. Không chỉ là tool, mà là <em>văn hóa</em> và <em>quy trình</em> — phá bỏ bức tường giữa team viết code và team vận hành.</p>
+
+  <div class="infinity-wrap">
+    <svg class="infinity-svg" viewBox="0 0 700 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 Z" fill="#58a6ff"/>
+        </marker>
+      </defs>
+      <!-- Left loop (Dev) -->
+      <ellipse cx="230" cy="110" rx="170" ry="85" stroke="#3fb950" stroke-width="2.5" stroke-dasharray="6 3" opacity="0.4"/>
+      <!-- Right loop (Ops) -->
+      <ellipse cx="470" cy="110" rx="170" ry="85" stroke="#f0883e" stroke-width="2.5" stroke-dasharray="6 3" opacity="0.4"/>
+      <!-- Infinity path animated -->
+      <path d="M350,110 C350,60 180,30 130,75 C80,120 130,175 200,155 C270,135 350,60 350,110 C350,160 480,195 550,155 C620,115 570,45 500,65 C430,85 350,160 350,110Z"
+            stroke="#58a6ff" stroke-width="3" fill="none">
+        <animate attributeName="stroke-dasharray" from="0,2000" to="2000,0" dur="3s" fill="freeze"/>
+      </path>
+      <!-- Labels -->
+      <text x="175" y="50" fill="#3fb950" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="600">PLAN</text>
+      <text x="110" y="110" fill="#3fb950" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="600">CODE</text>
+      <text x="175" y="175" fill="#3fb950" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="600">BUILD</text>
+      <text x="280" y="80" fill="#79c0ff" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="600">TEST</text>
+      <!-- Ops side -->
+      <text x="420" y="50" fill="#f0883e" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="600">RELEASE</text>
+      <text x="570" y="110" fill="#f0883e" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="600">DEPLOY</text>
+      <text x="520" y="175" fill="#f0883e" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="600">OPERATE</text>
+      <text x="350" y="185" fill="#bc8cff" font-size="13" text-anchor="middle" font-family="sans-serif" font-weight="600">MONITOR</text>
+      <!-- Center labels -->
+      <text x="230" y="108" fill="#c9d1d9" font-size="11" text-anchor="middle" font-family="sans-serif" opacity="0.7">DEV</text>
+      <text x="470" y="108" fill="#c9d1d9" font-size="11" text-anchor="middle" font-family="sans-serif" opacity="0.7">OPS</text>
+    </svg>
+  </div>
+
+  <div class="tip">
+    <strong>Tại sao cần DevOps?</strong> Trước đây: Dev viết code →던qua cho Ops → Ops than phiền "code này không chạy được trên server". DevOps xóa bỏ câu "works on my machine" bằng cách tự động hóa toàn bộ pipeline.
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- LINUX BASICS -->
+  <h2>2. Linux Basics</h2>
+  <p>Server production hầu hết chạy Linux. Biết terminal là kỹ năng bắt buộc của một Backend Engineer.</p>
+
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="dot dot-red"></div><div class="dot dot-yellow"></div><div class="dot dot-green"></div>
+      <span style="color:#8b949e;font-size:.8rem;margin-left:8px">bash — production-server</span>
+    </div>
+    <div class="terminal-body" id="termBody">
+      <div class="term-line"><span class="term-prompt">$</span> <span class="term-output" id="termOutput"></span><span class="cursor" id="cursor"></span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Các lệnh quan trọng nhất</h3>
+    <div class="code-block">
+<span class="cm"># Navigation</span>
+<span class="kw">ls</span> -la                    <span class="cm"># list files + hidden + permissions</span>
+<span class="kw">cd</span> /var/log/nginx         <span class="cm"># change directory</span>
+<span class="kw">pwd</span>                       <span class="cm"># print working directory</span>
+
+<span class="cm"># File operations</span>
+<span class="kw">cat</span> app.log               <span class="cm"># view file content</span>
+<span class="kw">tail</span> -f app.log           <span class="cm"># follow live log</span>
+<span class="kw">grep</span> "ERROR" app.log      <span class="cm"># search inside file</span>
+
+<span class="cm"># Power of pipe |</span>
+<span class="kw">cat</span> app.log | <span class="kw">grep</span> "ERROR" | <span class="kw">tail</span> -20
+<span class="cm"># = đọc log → lọc ERROR → lấy 20 dòng cuối</span>
+
+<span class="cm"># Process + resource</span>
+<span class="kw">ps</span> aux | <span class="kw">grep</span> node       <span class="cm"># find Node process</span>
+<span class="kw">htop</span>                      <span class="cm"># interactive process viewer</span>
+<span class="kw">df</span> -h                     <span class="cm"># disk usage</span>
+<span class="kw">free</span> -m                   <span class="cm"># memory usage</span></div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- DOCKER -->
+  <h2>3. Docker — Containers vs VMs</h2>
+  <p>Docker đóng gói ứng dụng cùng với <em>mọi thứ nó cần</em> — code, runtime, thư viện, config — thành một unit nhất quán chạy ở bất cứ đâu.</p>
+
+  <div class="compare-grid">
+    <div class="compare-box vm">
+      <h3 style="color:#bc8cff;margin-bottom:16px">Virtual Machine</h3>
+      <div class="stack-layer layer-hw">🖥️ Hardware</div>
+      <div class="stack-layer layer-os">OS Host</div>
+      <div class="stack-layer layer-hyp">Hypervisor</div>
+      <div class="stack-layer layer-vm">Guest OS (full)</div>
+      <div class="stack-layer layer-app">App A</div>
+      <div style="margin-top:12px;font-size:.8rem;color:#8b949e">⚡ Size: GB | Boot: phút</div>
+    </div>
+    <div class="compare-box docker">
+      <h3 style="color:#58a6ff;margin-bottom:16px">Docker Container</h3>
+      <div class="stack-layer layer-hw">🖥️ Hardware</div>
+      <div class="stack-layer layer-os">OS Host</div>
+      <div class="stack-layer layer-docker">Docker Engine</div>
+      <div class="stack-layer layer-cont">Container A</div>
+      <div class="stack-layer layer-app">App A</div>
+      <div style="margin-top:12px;font-size:.8rem;color:#8b949e">⚡ Size: MB | Boot: giây</div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- DOCKERFILE -->
+  <h2>4. Dockerfile — Multi-stage Build</h2>
+  <p>Mỗi lệnh trong Dockerfile tạo một <strong>layer</strong>. Layer không thay đổi được cache lại → build nhanh hơn.</p>
+
+  <div class="card">
+    <h3>Layer Caching Visualization</h3>
+    <div id="dfLayers">
+      <div class="df-layer" style="background:#161b22;border:1px solid #30363d;border-radius:8px">
+        <div class="df-step">FROM</div>
+        <div class="df-desc">node:20-alpine — base image nhỏ (5MB)</div>
+        <div class="df-cached yes">✓ cached</div>
+      </div>
+      <div class="df-layer" style="background:#161b22;border:1px solid #30363d;border-radius:8px">
+        <div class="df-step">WORKDIR</div>
+        <div class="df-desc">Set working directory /app</div>
+        <div class="df-cached yes">✓ cached</div>
+      </div>
+      <div class="df-layer" style="background:#161b22;border:1px solid #30363d;border-radius:8px">
+        <div class="df-step">COPY</div>
+        <div class="df-desc">package.json trước — install deps chỉ khi dependencies thay đổi</div>
+        <div class="df-cached yes">✓ cached</div>
+      </div>
+      <div class="df-layer" style="background:#161b22;border:1px solid #30363d;border-radius:8px">
+        <div class="df-step">RUN npm i</div>
+        <div class="df-desc">Install dependencies (tốn thời gian nhất)</div>
+        <div class="df-cached yes">✓ cached</div>
+      </div>
+      <div class="df-layer" style="background:#0d1a2d;border:1px solid #1f4a9e;border-radius:8px;animation:pulse 2s infinite">
+        <div class="df-step">COPY . .</div>
+        <div class="df-desc">Copy source code → THAY ĐỔI → invalidate cache từ đây</div>
+        <div class="df-cached no">✗ rebuild</div>
+      </div>
+      <div class="df-layer" style="background:#0d1a2d;border:1px solid #1f4a9e;border-radius:8px">
+        <div class="df-step">RUN build</div>
+        <div class="df-desc">Build TypeScript → JavaScript</div>
+        <div class="df-cached no">✗ rebuild</div>
+      </div>
+      <div class="df-layer" style="background:#0d1a2d;border:1px solid #1f4a9e;border-radius:8px">
+        <div class="df-step">CMD</div>
+        <div class="df-desc">node dist/main.js — entrypoint</div>
+        <div class="df-cached no">✗ rebuild</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+<span class="cm"># === Stage 1: Builder ===</span>
+<span class="kw">FROM</span> <span class="str">node:20-alpine</span> <span class="kw">AS</span> <span class="fn">builder</span>
+<span class="kw">WORKDIR</span> <span class="str">/app</span>
+<span class="kw">COPY</span> package*.json ./          <span class="cm"># copy deps file TRƯỚC</span>
+<span class="kw">RUN</span> npm ci --only=production   <span class="cm"># clean install</span>
+<span class="kw">COPY</span> . .                       <span class="cm"># copy source</span>
+<span class="kw">RUN</span> npm run build              <span class="cm"># compile TypeScript</span>
+
+<span class="cm"># === Stage 2: Runner (nhỏ hơn, không có dev tools) ===</span>
+<span class="kw">FROM</span> <span class="str">node:20-alpine</span> <span class="kw">AS</span> <span class="fn">runner</span>
+<span class="kw">WORKDIR</span> <span class="str">/app</span>
+<span class="kw">COPY</span> --from=builder /app/dist ./dist
+<span class="kw">COPY</span> --from=builder /app/node_modules ./node_modules
+<span class="kw">EXPOSE</span> <span class="num">3000</span>
+<span class="kw">CMD</span> ["node", "dist/main.js"]</div>
+
+  <hr class="section-divider">
+
+  <!-- DOCKER COMPOSE -->
+  <h2>5. Docker Compose — Multi-container</h2>
+  <p>Một ứng dụng thực tế cần nhiều services. Docker Compose orchestrate chúng bằng một file YAML.</p>
+
+  <div class="compose-grid">
+    <div class="service-box" style="border-color:#3fb950">
+      <div class="service-icon">🚀</div>
+      <div class="service-name">App (NestJS)</div>
+      <div class="service-port">:3000</div>
+    </div>
+    <div class="service-box" style="border-color:#f0883e">
+      <div class="service-icon">🍃</div>
+      <div class="service-name">MongoDB</div>
+      <div class="service-port">:27017</div>
+    </div>
+    <div class="service-box" style="border-color:#ff4d4d">
+      <div class="service-icon">🔴</div>
+      <div class="service-name">Redis</div>
+      <div class="service-port">:6379</div>
+    </div>
+    <div class="service-box" style="border-color:#bc8cff">
+      <div class="service-icon">📊</div>
+      <div class="service-name">Monitoring</div>
+      <div class="service-port">:9090</div>
+    </div>
+  </div>
+
+  <div class="code-block">
+<span class="cm"># docker-compose.yml</span>
+<span class="var">services</span>:
+  <span class="var">app</span>:
+    <span class="var">build</span>: .
+    <span class="var">ports</span>: ["<span class="str">3000:3000</span>"]
+    <span class="var">environment</span>:
+      - <span class="str">MONGO_URI=mongodb://mongo:27017/db</span>
+      - <span class="str">REDIS_URL=redis://redis:6379</span>
+    <span class="var">depends_on</span>: [mongo, redis]
+    <span class="var">restart</span>: unless-stopped
+
+  <span class="var">mongo</span>:
+    <span class="var">image</span>: <span class="str">mongo:7</span>
+    <span class="var">volumes</span>: [mongo_data:/data/db]
+
+  <span class="var">redis</span>:
+    <span class="var">image</span>: <span class="str">redis:7-alpine</span>
+
+<span class="var">volumes</span>:
+  <span class="var">mongo_data</span>: {}</div>
+
+  <hr class="section-divider">
+
+  <!-- CI/CD -->
+  <h2>6. CI/CD Pipeline</h2>
+  <p><strong>CI</strong> (Continuous Integration) = merge code thường xuyên, tự động test. <strong>CD</strong> (Continuous Delivery/Deployment) = tự động deploy lên môi trường.</p>
+
+  <div class="pipeline">
+    <div class="pipe-stage">
+      <div class="pipe-icon pipe-push" style="font-size:1.4rem">📤</div>
+      <div class="pipe-label">git push</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-stage">
+      <div class="pipe-icon pipe-lint">🔍</div>
+      <div class="pipe-label">Lint</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-stage">
+      <div class="pipe-icon pipe-build">🔨</div>
+      <div class="pipe-label">Build</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-stage">
+      <div class="pipe-icon pipe-test">🧪</div>
+      <div class="pipe-label">Test</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-stage">
+      <div class="pipe-icon" style="background:#0d2d2d;border:2px solid #1e9e9e;font-size:1.3rem">🐳</div>
+      <div class="pipe-label">Docker build</div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-stage">
+      <div class="pipe-icon pipe-deploy">🚀</div>
+      <div class="pipe-label">Deploy</div>
+    </div>
+  </div>
+
+  <div class="code-block">
+<span class="cm"># .github/workflows/deploy.yml</span>
+<span class="var">name</span>: <span class="str">Deploy</span>
+<span class="var">on</span>:
+  <span class="var">push</span>:
+    <span class="var">branches</span>: [<span class="str">main</span>]      <span class="cm"># trigger khi push vào main</span>
+
+<span class="var">jobs</span>:
+  <span class="var">deploy</span>:
+    <span class="var">runs-on</span>: <span class="str">ubuntu-latest</span>
+    <span class="var">steps</span>:
+      - <span class="var">uses</span>: <span class="str">actions/checkout@v4</span>
+
+      - <span class="var">name</span>: <span class="str">Setup Node</span>
+        <span class="var">uses</span>: <span class="str">actions/setup-node@v4</span>
+        <span class="var">with</span>: { <span class="var">node-version</span>: '<span class="str">20</span>' }
+
+      - <span class="var">name</span>: <span class="str">Install & Build</span>
+        <span class="var">run</span>: |
+          npm ci
+          npm run build
+          npm test
+
+      - <span class="var">name</span>: <span class="str">Build & Push Docker</span>
+        <span class="var">run</span>: |
+          docker build -t myapp:<span class="var">${{ github.sha }}</span> .
+          docker push myapp:<span class="var">${{ github.sha }}</span>
+
+      - <span class="var">name</span>: <span class="str">Deploy to Production</span>
+        <span class="var">run</span>: |
+          ssh production "docker pull myapp:<span class="var">${{ github.sha }}</span> && docker-compose up -d"</div>
+
+  <hr class="section-divider">
+
+  <!-- ENV MANAGEMENT -->
+  <h2>7. Environment Management</h2>
+  <div class="env-pipe">
+    <div class="env-box env-dev">
+      <div style="font-size:1.3rem">💻</div>
+      <div style="color:#3fb950;font-weight:600;font-size:.9rem">Development</div>
+      <div style="color:#8b949e;font-size:.75rem">localhost:3000</div>
+      <div style="color:#8b949e;font-size:.75rem">hot-reload</div>
+    </div>
+    <div class="env-arrow">→</div>
+    <div class="env-box env-stg">
+      <div style="font-size:1.3rem">🧪</div>
+      <div style="color:#f0883e;font-weight:600;font-size:.9rem">Staging</div>
+      <div style="color:#8b949e;font-size:.75rem">staging.app.com</div>
+      <div style="color:#8b949e;font-size:.75rem">test data</div>
+    </div>
+    <div class="env-arrow">→</div>
+    <div class="env-box env-prod">
+      <div style="font-size:1.3rem">🌐</div>
+      <div style="color:#ff7b72;font-weight:600;font-size:.9rem">Production</div>
+      <div style="color:#8b949e;font-size:.75rem">app.com</div>
+      <div style="color:#8b949e;font-size:.75rem">real users</div>
+    </div>
+  </div>
+  <div class="warning">Không bao giờ hardcode secrets (API key, password DB) vào code. Dùng environment variables và secrets manager (AWS Secrets Manager, GitHub Secrets, .env files chỉ local).</div>
+
+  <hr class="section-divider">
+
+  <!-- DEPLOYMENT STRATEGIES -->
+  <h2>8. Deployment Strategies</h2>
+  <div class="strategy-grid">
+    <div class="strategy-card">
+      <h4>🔄 Rolling</h4>
+      <div class="server-row">
+        <div class="server s-v2">v2</div><div class="server s-v2">v2</div><div class="server s-v1">v1</div>
+      </div>
+      <p style="font-size:.78rem;color:#8b949e;margin-top:8px">Cập nhật từng server một. Zero downtime nhưng có thể có 2 version cùng chạy.</p>
+    </div>
+    <div class="strategy-card">
+      <h4>🔵🟢 Blue-Green</h4>
+      <div class="server-row">
+        <div class="server s-v1">v1</div><div class="server s-v1">v1</div>
+        <div style="width:10px"></div>
+        <div class="server s-v2">v2</div><div class="server s-v2">v2</div>
+      </div>
+      <p style="font-size:.78rem;color:#8b949e;margin-top:8px">Chạy 2 môi trường song song. Switch traffic tức thì. Rollback = switch lại.</p>
+    </div>
+    <div class="strategy-card">
+      <h4>🐤 Canary</h4>
+      <div class="server-row">
+        <div class="server s-v1">v1</div><div class="server s-v1">v1</div><div class="server" style="background:#1a2d0d;border:1px solid #6e9e1e;color:#9fd44f">5%</div>
+      </div>
+      <p style="font-size:.78rem;color:#8b949e;margin-top:8px">Deploy cho 5% user trước. Kiểm tra, rồi mới rollout 100%.</p>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- MONITORING -->
+  <h2>9. Health Checks & Monitoring</h2>
+  <div class="dashboard">
+    <div class="metric-card">
+      <div class="metric-val">99.9%</div>
+      <div class="metric-label">Uptime</div>
+      <div class="metric-trend trend-up">↑ SLA đạt</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">42ms</div>
+      <div class="metric-label">Avg Response</div>
+      <div class="metric-trend trend-up">↓ nhanh hơn</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">0.02%</div>
+      <div class="metric-label">Error Rate</div>
+      <div class="metric-trend trend-up">↓ giảm</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">234</div>
+      <div class="metric-label">Req/sec</div>
+      <div class="metric-trend trend-up">↑ tăng</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">68%</div>
+      <div class="metric-label">CPU Usage</div>
+      <div class="metric-trend" style="color:#f0883e">→ theo dõi</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-val">2.1GB</div>
+      <div class="metric-label">Memory</div>
+      <div class="metric-trend trend-up">↓ ổn định</div>
+    </div>
+  </div>
+
+  <div class="code-block">
+<span class="cm"># Health check endpoint (NestJS)</span>
+<span class="fn">@Get</span>(<span class="str">'/health'</span>)
+<span class="kw">async</span> <span class="fn">health</span>() {
+  <span class="kw">return</span> {
+    <span class="var">status</span>: <span class="str">'ok'</span>,
+    <span class="var">timestamp</span>: <span class="kw">new</span> <span class="fn">Date</span>().toISOString(),
+    <span class="var">db</span>: <span class="kw">await</span> <span class="kw">this</span>.<span class="fn">checkDbConnection</span>(),
+    <span class="var">memory</span>: process.<span class="fn">memoryUsage</span>().<span class="var">heapUsed</span>,
+  };
+}</div>
+
+  <hr class="section-divider">
+
+  <!-- EXERCISE -->
+  <div class="exercise">
+    <h3>🎯 Exercise: Deploy App với Docker + CI/CD</h3>
+    <p style="color:#8b949e;margin-bottom:16px;font-size:.9rem">Thực hành: deploy NestJS app từ đầu đến production</p>
+    <ul class="checklist">
+      <li><span class="ch">①</span>Viết <code>Dockerfile</code> với multi-stage build (builder + runner)</li>
+      <li><span class="ch">②</span>Viết <code>docker-compose.yml</code> với app + MongoDB + Redis</li>
+      <li><span class="ch">③</span>Test local: <code>docker-compose up --build</code> → app chạy ở :3000</li>
+      <li><span class="ch">④</span>Tạo <code>.github/workflows/deploy.yml</code> với triggers + build + test steps</li>
+      <li><span class="ch">⑤</span>Push lên GitHub → xem Actions tab → confirm pipeline green ✅</li>
+      <li><span class="ch">⑥</span>Thêm <code>/health</code> endpoint trả về status + timestamp</li>
+      <li><span class="ch">⑦</span><em>Bonus:</em> Cấu hình rolling deployment strategy</li>
+    </ul>
+  </div>
+
+  <div class="tip">
+    <strong>Key Takeaway:</strong> DevOps không phải về tools — mà về <em>culture of automation</em>. Bất cứ thứ gì làm tay nhiều hơn 2 lần → tự động hóa nó.
+  </div>
+
+  <div style="text-align:center;margin-top:48px;padding:24px;border-top:1px solid #21262d">
+    <p style="color:#8b949e;font-size:.85rem">Bài 14 / Phase 4 — Production</p>
+    <p style="margin-top:8px"><a href="15-ai-programming.html" style="color:#58a6ff;text-decoration:none">Tiếp theo: Bài 15 — AI Programming →</a></p>
+  </div>
+</div>
+
+<style>
+@keyframes pulse{0%,100%{border-color:#1f4a9e}50%{border-color:#58a6ff;box-shadow:0 0 12px rgba(88,166,255,.3)}}
+</style>
+<script>
+// Terminal typing animation
+const commands = [
+  {cmd: "ls -la /var/log/", delay: 80},
+  {cmd: "cat app.log | grep ERROR | tail -20", delay: 70},
+  {cmd: "docker ps --format 'table {{.Names}}\\t{{.Status}}'", delay: 60},
+  {cmd: "htop", delay: 100},
+];
+let ci = 0, ci2 = 0;
+const out = document.getElementById('termOutput');
+function typeNext() {
+  if (ci >= commands.length) { ci = 0; }
+  const {cmd, delay} = commands[ci++];
+  ci2 = 0;
+  function typeChar() {
+    if (ci2 < cmd.length) {
+      out.textContent = cmd.slice(0, ++ci2);
+      setTimeout(typeChar, delay);
+    } else {
+      setTimeout(() => { out.textContent = ''; setTimeout(typeNext, 600); }, 2000);
+    }
+  }
+  typeChar();
+}
+setTimeout(typeNext, 800);
+</script>
+</body>
+</html>

@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tư Duy Lập Trình — Phase 1: Think</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+  --text: #eef1f8; --muted: #8899bb;
+  --accent: #a78bfa; --yellow: #ffd43b; --green: #2ecc71; --red: #e74c3c;
+  --blue: #5b8def; --orange: #ffb347; --pink: #ff5e7a; --teal: #00cec9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 30% 10%, rgba(0,206,201,0.05) 0%, transparent 50%), radial-gradient(ellipse at 70% 90%, rgba(255,94,122,0.04) 0%, transparent 50%); pointer-events:none; z-index:0; }
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; position: sticky; top: 0; z-index: 100; }
+.header-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.phase-badge { background: linear-gradient(135deg,#0984e3,#00cec9); color:#fff; padding: 3px 12px; border-radius: 20px; font-size: .7rem; font-weight: 700; letter-spacing: .5px; }
+header h1 { font-size: 1.3rem; font-weight: 800; background: linear-gradient(135deg,#00cec9,#5b8def); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.header-sub { color: var(--muted); font-size: .85rem; margin-left: auto; }
+.progress-bar { width: 100%; height: 3px; background: var(--border); border-radius: 2px; margin-top: 10px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg,#0984e3,#00cec9); border-radius: 2px; transition: width .4s; }
+main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: relative; z-index: 1; }
+.section { display: none; animation: fadeUp .5s ease; }
+.section.active { display: block; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: .75rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+.section-title { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg,#fff,var(--teal)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom: 10px; }
+.section-desc { color: var(--muted); font-size: 1rem; line-height: 1.7; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+.card-title { font-size: 1rem; font-weight: 700; color: var(--teal); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.card-body { color: var(--text); font-size: .95rem; line-height: 1.75; }
+.highlight { background: linear-gradient(135deg,rgba(0,206,201,0.08),rgba(91,141,239,0.06)); border: 1px solid rgba(0,206,201,0.25); border-radius: 12px; padding: 20px 24px; margin: 20px 0; }
+.highlight-label { font-size: .7rem; font-weight: 700; color: var(--teal); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.highlight-text { color: var(--text); font-size: .95rem; line-height: 1.7; }
+.takeaway { background: linear-gradient(135deg,rgba(46,204,113,0.1),rgba(46,204,113,0.04)); border: 1px solid rgba(46,204,113,0.3); border-radius: 14px; padding: 24px; margin-top: 28px; }
+.takeaway-title { color: var(--green); font-weight: 700; font-size: .9rem; letter-spacing: .5px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.takeaway-list { list-style: none; }
+.takeaway-list li { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; font-size: .9rem; color: var(--text); line-height: 1.6; }
+.takeaway-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 14px 24px; display: flex; justify-content: center; z-index: 100; }
+.nav-inner { display: flex; align-items: center; gap: 12px; max-width: 900px; width: 100%; }
+.btn { padding: 10px 24px; border-radius: 10px; font-size: .9rem; font-weight: 600; cursor: pointer; border: none; transition: all .2s; }
+.btn-prev { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-prev:hover:not(:disabled) { color: var(--text); border-color: var(--teal); }
+.btn-prev:disabled { opacity:.4; cursor:default; }
+.btn-next { background: linear-gradient(135deg,#0984e3,#00cec9); color:#fff; flex:1; max-width:200px; box-shadow:0 4px 16px rgba(9,132,227,0.4); }
+.btn-next:hover { transform:translateY(-1px); }
+.section-dots { display:flex; gap:6px; margin:0 auto; }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--border); transition:all .3s; cursor:pointer; }
+.dot.active { background:var(--teal); transform:scale(1.3); }
+.dot.done { background:rgba(0,206,201,0.4); }
+code.inline { background:var(--surface2); padding:2px 6px; border-radius:4px; font-family:monospace; font-size:.85em; color:var(--accent); }
+
+/* STATE DIAGRAM */
+.state-boxes { display:flex; gap:16px; align-items:center; justify-content:center; flex-wrap:wrap; margin:24px 0; }
+.state-var { display:flex; flex-direction:column; align-items:center; gap:6px; }
+.var-label { font-size:.75rem; color:var(--muted); font-family:monospace; }
+.var-box { width:80px; height:64px; border-radius:10px; border:2px solid var(--border); background:var(--surface2); display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:800; color:var(--text); transition:all .5s; font-family:monospace; }
+.var-box.changed { border-color:var(--orange); background:rgba(255,183,71,0.12); color:var(--orange); box-shadow:0 0 20px rgba(255,183,71,0.3); animation:pop .4s; }
+@keyframes pop { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
+.state-arrow { color:var(--muted); font-size:1.4rem; }
+.state-btns { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:16px; }
+.state-btn { background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:8px 16px; border-radius:8px; cursor:pointer; font-size:.85rem; transition:all .2s; font-family:monospace; }
+.state-btn:hover { border-color:var(--teal); }
+
+/* CONTROL FLOW */
+.cf-demo { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:20px 0; }
+.cf-box { background:var(--surface2); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+.cf-label { padding:10px 16px; font-size:.75rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; }
+.cf-box.if .cf-label { background:rgba(91,141,239,0.12); color:var(--blue); }
+.cf-box.loop .cf-label { background:rgba(255,183,71,0.12); color:var(--orange); }
+.cf-code { padding:14px 16px; font-family:monospace; font-size:.82rem; line-height:1.8; }
+.kw { color:#ff7f7f; }
+.fn { color:#7ec8e3; }
+.str { color:#a8d8a8; }
+.num { color:#ffd43b; }
+.cmt { color:#5a7a6a; }
+
+/* BLACK BOX */
+.blackbox-diagram { display:flex; align-items:center; justify-content:center; gap:0; margin:24px 0; flex-wrap:wrap; gap:8px; }
+.bb-input { text-align:right; }
+.bb-inputs { display:flex; flex-direction:column; gap:8px; }
+.bb-in { background:rgba(91,141,239,0.12); border:1px solid rgba(91,141,239,0.3); border-radius:8px; padding:8px 14px; font-size:.85rem; color:var(--blue); text-align:center; }
+.bb-arrow { font-size:1.8rem; color:var(--muted); }
+.bb-box { background:linear-gradient(135deg,rgba(0,206,201,0.12),rgba(0,206,201,0.05)); border:2px solid var(--teal); border-radius:14px; padding:20px 28px; text-align:center; min-width:140px; }
+.bb-box-label { font-size:1.1rem; font-weight:800; color:var(--teal); margin-bottom:4px; }
+.bb-box-sub { font-size:.75rem; color:var(--muted); }
+.bb-out { background:rgba(46,204,113,0.12); border:1px solid rgba(46,204,113,0.3); border-radius:8px; padding:8px 14px; font-size:.85rem; color:var(--green); text-align:center; }
+
+/* MODULE DIAGRAM */
+.module-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; position:relative; }
+.mod-box { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px; text-align:center; }
+.mod-box.coupled { border-color:rgba(231,76,60,0.4); background:rgba(231,76,60,0.06); }
+.mod-box.cohesive { border-color:rgba(46,204,113,0.4); background:rgba(46,204,113,0.06); }
+.mod-name { font-size:.82rem; font-weight:700; color:var(--text); margin-bottom:6px; }
+.mod-items { font-size:.72rem; color:var(--muted); line-height:1.6; }
+.mod-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.65rem; font-weight:700; }
+.mod-badge.bad { background:rgba(231,76,60,0.2); color:var(--red); }
+.mod-badge.good { background:rgba(46,204,113,0.2); color:var(--green); }
+
+/* PURE vs IMPURE */
+.purity-compare { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:20px 0; }
+.purity-side { border-radius:12px; padding:20px; }
+.purity-side.impure { background:rgba(231,76,60,0.06); border:1px solid rgba(231,76,60,0.25); }
+.purity-side.pure { background:rgba(46,204,113,0.06); border:1px solid rgba(46,204,113,0.25); }
+.purity-label { font-size:.75rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:12px; }
+.purity-side.impure .purity-label { color:var(--red); }
+.purity-side.pure .purity-label { color:var(--green); }
+
+/* CHECKLIST */
+.checklist { list-style:none; margin:20px 0; }
+.check-item { display:flex; align-items:flex-start; gap:12px; padding:14px 18px; background:var(--surface2); border-radius:10px; margin-bottom:8px; cursor:pointer; border:1px solid var(--border); transition:all .2s; }
+.check-item:hover { border-color:var(--teal); }
+.check-item.checked { background:rgba(46,204,113,0.06); border-color:rgba(46,204,113,0.3); }
+.check-box { width:22px; height:22px; border-radius:6px; border:2px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .2s; margin-top:1px; }
+.check-item.checked .check-box { background:var(--green); border-color:var(--green); }
+.check-text { font-size:.9rem; color:var(--text); line-height:1.5; }
+.check-item.checked .check-text { color:var(--muted); }
+.check-q { font-weight:700; color:var(--teal); display:block; margin-bottom:3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span class="phase-badge">PHASE 1 · THINK</span>
+    <h1>💻 Tư Duy Lập Trình</h1>
+    <span class="header-sub">Bài 02 / 04</span>
+    <div class="progress-bar" style="width:100%">
+      <div class="progress-fill" id="progressFill" style="width:12.5%"></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- SEC 0: Data & State -->
+<div class="section active" id="sec-0">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 01</div>
+    <div class="section-title">Data & State</div>
+    <div class="section-desc">Lập trình là quản lý dữ liệu thay đổi theo thời gian. State là "trạng thái hiện tại" của chương trình.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔄 Demo tương tác — Click để thay đổi state</div>
+    <div class="card-body" style="margin-bottom:20px;">Xem các biến thay đổi khi bạn thực hiện hành động:</div>
+    <div class="state-boxes">
+      <div class="state-var">
+        <div class="var-label">count</div>
+        <div class="var-box" id="sv-count">0</div>
+      </div>
+      <div class="state-arrow">→</div>
+      <div class="state-var">
+        <div class="var-label">isEven</div>
+        <div class="var-box" id="sv-even" style="font-size:.8rem">true</div>
+      </div>
+      <div class="state-arrow">→</div>
+      <div class="state-var">
+        <div class="var-label">total</div>
+        <div class="var-box" id="sv-total">0</div>
+      </div>
+    </div>
+    <div class="state-btns">
+      <button class="state-btn" onclick="doState('inc')">count++</button>
+      <button class="state-btn" onclick="doState('dec')">count--</button>
+      <button class="state-btn" onclick="doState('add')">total += count</button>
+      <button class="state-btn" onclick="doState('reset')">reset()</button>
+    </div>
+    <div id="state-log" style="margin-top:16px;font-family:monospace;font-size:.8rem;color:var(--muted);max-height:80px;overflow-y:auto;background:var(--surface2);border-radius:8px;padding:10px;"></div>
+  </div>
+
+  <div class="highlight">
+    <div class="highlight-label">State Management là gì?</div>
+    <div class="highlight-text">Khi ứng dụng lớn, state thay đổi ở nhiều nơi → khó theo dõi → bug khó tìm. Đây là lý do React có <code class="inline">useState</code>, Redux có Store — để <strong>quản lý state có hệ thống</strong>.</div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>State = dữ liệu + vị trí hiện tại + lịch sử thay đổi</li>
+      <li>Bug thường là: state không nhất quán giữa các phần của app</li>
+      <li>Nguyên tắc: state phải có nguồn duy nhất (Single Source of Truth)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 1: Control Flow -->
+<div class="section" id="sec-1">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 02</div>
+    <div class="section-title">Control Flow</div>
+    <div class="section-desc">Chương trình không chạy thẳng từ trên xuống. Nó rẽ nhánh, lặp, nhảy — đây là Control Flow.</div>
+  </div>
+
+  <div class="cf-demo">
+    <div class="cf-box if">
+      <div class="cf-label">If / Else — Rẽ nhánh</div>
+      <div class="cf-code">
+        <span class="kw">if</span> (score >= 8) {<br>
+        &nbsp;&nbsp;<span class="fn">grade</span> = <span class="str">"Giỏi"</span><br>
+        } <span class="kw">else if</span> (score >= 6) {<br>
+        &nbsp;&nbsp;<span class="fn">grade</span> = <span class="str">"Khá"</span><br>
+        } <span class="kw">else</span> {<br>
+        &nbsp;&nbsp;<span class="fn">grade</span> = <span class="str">"TB"</span><br>
+        }
+      </div>
+    </div>
+    <div class="cf-box loop">
+      <div class="cf-label">Loop — Lặp</div>
+      <div class="cf-code">
+        <span class="kw">for</span> (<span class="kw">let</span> i = <span class="num">0</span>; i &lt; n; i++) {<br>
+        &nbsp;&nbsp;<span class="fn">process</span>(items[i])<br>
+        }<br><br>
+        <span class="kw">while</span> (!done) {<br>
+        &nbsp;&nbsp;step = <span class="fn">next</span>()<br>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🌊 Control Flow như nước chảy</div>
+    <div class="card-body">
+      Hãy hình dung code như ống nước. <strong>if/else</strong> là chỗ nước chọn đường. <strong>loop</strong> là chỗ nước quay vòng. <strong>function call</strong> là nước đi vào nhánh phụ rồi về. <strong>return</strong> là chốt chặn — nước dừng lại tại đây.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⚠️ Lỗi Control Flow phổ biến</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:14px;">
+        <div style="color:var(--red);font-size:.75rem;font-weight:700;margin-bottom:8px;">❌ Infinite Loop</div>
+        <div class="cf-code" style="font-size:.78rem;padding:0">
+          <span class="kw">while</span> (true) {<br>
+          &nbsp;&nbsp;<span class="cmt">// không có break!</span><br>
+          }
+        </div>
+      </div>
+      <div style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:14px;">
+        <div style="color:var(--red);font-size:.75rem;font-weight:700;margin-bottom:8px;">❌ Off-by-one</div>
+        <div class="cf-code" style="font-size:.78rem;padding:0">
+          <span class="cmt">// arr[3] không tồn tại</span><br>
+          <span class="kw">for</span> (i=0; i&lt;=n; i++)<br>
+          &nbsp;&nbsp;arr[i] <span class="cmt">// crash!</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Trace qua code bằng tay với input cụ thể để debug control flow</li>
+      <li>Loop luôn cần điều kiện dừng rõ ràng</li>
+      <li>Early return giúp code phẳng, dễ đọc hơn nested if/else</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 2: Function -->
+<div class="section" id="sec-2">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 03</div>
+    <div class="section-title">Function — Hộp Đen</div>
+    <div class="section-desc">Function là đơn vị cơ bản của abstraction. Nó nhận input, xử lý, trả output — người dùng không cần biết bên trong.</div>
+  </div>
+
+  <div class="blackbox-diagram">
+    <div class="bb-inputs">
+      <div class="bb-in">📧 email</div>
+      <div class="bb-in">🔑 password</div>
+    </div>
+    <div class="bb-arrow" style="padding:0 8px">→</div>
+    <div class="bb-box">
+      <div class="bb-box-label">🔐 login()</div>
+      <div class="bb-box-sub">validate → hash → query DB<br>→ create session → log</div>
+    </div>
+    <div class="bb-arrow" style="padding:0 8px">→</div>
+    <div>
+      <div class="bb-out">✅ { token, user }</div>
+      <div style="height:8px"></div>
+      <div class="bb-out" style="background:rgba(231,76,60,0.12);border-color:rgba(231,76,60,0.3);color:var(--red)">❌ Error</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🧩 Composition — Kết hợp Functions</div>
+    <div class="card-body" style="margin-bottom:14px;">Functions nhỏ kết hợp tạo ra chức năng lớn:</div>
+    <div class="cf-code" style="background:var(--surface2);border-radius:10px;padding:16px;font-size:.85rem;line-height:1.9">
+      <span class="cmt">// Mỗi hàm làm 1 việc</span><br>
+      <span class="kw">const</span> <span class="fn">validate</span> = (data) => ...<br>
+      <span class="kw">const</span> <span class="fn">normalize</span> = (data) => ...<br>
+      <span class="kw">const</span> <span class="fn">save</span> = (data) => ...<br><br>
+      <span class="cmt">// Kết hợp lại</span><br>
+      <span class="kw">const</span> <span class="fn">processOrder</span> = (order) =><br>
+      &nbsp;&nbsp;<span class="fn">save</span>(<span class="fn">normalize</span>(<span class="fn">validate</span>(order)))
+    </div>
+  </div>
+
+  <div class="highlight">
+    <div class="highlight-label">Nguyên tắc thiết kế Function</div>
+    <div class="highlight-text">
+      <strong>Do one thing</strong> — hàm chỉ làm 1 việc<br>
+      <strong>Small</strong> — ≤ 20 dòng lý tưởng<br>
+      <strong>Descriptive name</strong> — đọc tên hiểu ngay làm gì<br>
+      <strong>Ít tham số</strong> — ≤ 3 tham số lý tưởng
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Function tốt = đọc tên biết làm gì, không cần đọc code bên trong</li>
+      <li>Composition mạnh hơn tạo 1 hàm siêu to làm hết mọi thứ</li>
+      <li>Test dễ nhất khi function là pure (không side effects)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 3: Module -->
+<div class="section" id="sec-3">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 04</div>
+    <div class="section-title">Module & Dependency</div>
+    <div class="section-desc">Module là nhóm các functions liên quan. Dependency là mối quan hệ giữa các modules.</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:20px 0;">
+    <div>
+      <div style="color:var(--red);font-size:.8rem;font-weight:700;margin-bottom:12px;">❌ Coupling cao (Tight Coupling)</div>
+      <div class="module-grid" style="grid-template-columns:1fr;">
+        <div class="mod-box coupled">
+          <div class="mod-name">🐙 UserModule</div>
+          <div class="mod-items">login, register, profile,<br>sendEmail, generatePDF,<br>processPayment, createOrder</div>
+          <div style="margin-top:8px"><span class="mod-badge bad">ĐA TRÁCH NHIỆM</span></div>
+        </div>
+      </div>
+      <div style="color:var(--muted);font-size:.8rem;margin-top:8px;">Thay đổi một thứ → phá vỡ nhiều thứ</div>
+    </div>
+    <div>
+      <div style="color:var(--green);font-size:.8rem;font-weight:700;margin-bottom:12px;">✅ Cohesion cao (Loose Coupling)</div>
+      <div class="module-grid" style="grid-template-columns:1fr;gap:8px;">
+        <div class="mod-box cohesive"><div class="mod-name">👤 UserModule</div><div class="mod-items">login, register, profile</div></div>
+        <div class="mod-box cohesive"><div class="mod-name">📧 MailModule</div><div class="mod-items">sendEmail, templates</div></div>
+        <div class="mod-box cohesive"><div class="mod-name">💳 PaymentModule</div><div class="mod-items">processPayment, refund</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight">
+    <div class="highlight-label">Quy tắc vàng</div>
+    <div class="highlight-text"><strong>High cohesion</strong> (các thứ trong module liên quan chặt với nhau) + <strong>Low coupling</strong> (modules ít phụ thuộc nhau) = codebase dễ maintain, dễ test, dễ thay thế.</div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Module = ranh giới logic, không phải ranh giới file</li>
+      <li>Khi module A biết quá nhiều về module B → coupling cao → nguy hiểm</li>
+      <li>Dependency Injection giúp giảm coupling, tăng testability</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 4: Interface -->
+<div class="section" id="sec-4">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 05</div>
+    <div class="section-title">Interface & Abstraction</div>
+    <div class="section-desc">Interface là "hợp đồng" — quy định những gì bạn cần cung cấp. Không quan tâm bạn thực hiện nó thế nào.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔌 Ví dụ: Ổ điện — Thiết bị</div>
+    <div class="card-body" style="margin-bottom:16px;">Ổ điện có interface chuẩn (220V, 50Hz, 2 lỗ). Bất kỳ thiết bị nào đúng interface đều cắm được — TV, quạt, máy tính, không cần biết thiết bị làm gì bên trong.</div>
+    <div style="display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin:16px 0;">
+      <div style="background:rgba(255,183,71,0.1);border:1px solid rgba(255,183,71,0.3);border-radius:10px;padding:12px 20px;text-align:center">
+        <div style="font-size:1.5rem">📺</div><div style="font-size:.75rem;color:var(--orange)">TV</div>
+      </div>
+      <div style="color:var(--muted)">→</div>
+      <div style="background:rgba(0,206,201,0.1);border:2px solid var(--teal);border-radius:10px;padding:14px 24px;text-align:center;">
+        <div style="font-size:1.2rem;font-weight:700;color:var(--teal)">🔌 Interface</div>
+        <div style="font-size:.72rem;color:var(--muted)">220V · 50Hz</div>
+      </div>
+      <div style="color:var(--muted)">←</div>
+      <div style="background:rgba(255,183,71,0.1);border:1px solid rgba(255,183,71,0.3);border-radius:10px;padding:12px 20px;text-align:center">
+        <div style="font-size:1.5rem">💻</div><div style="font-size:.75rem;color:var(--orange)">Laptop</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">💻 Trong code: TypeScript Interface</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:var(--surface2);border-radius:10px;padding:16px">
+        <div style="color:var(--teal);font-size:.75rem;font-weight:700;margin-bottom:10px;">Interface (Hợp đồng)</div>
+        <div class="cf-code" style="font-size:.78rem;padding:0;line-height:1.8">
+          <span class="kw">interface</span> <span class="fn">IMailService</span> {<br>
+          &nbsp;&nbsp;<span class="fn">send</span>(<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;to: <span class="num">string</span>,<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;body: <span class="num">string</span><br>
+          &nbsp;&nbsp;): <span class="num">Promise</span>&lt;<span class="kw">void</span>&gt;<br>
+          }
+        </div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:16px">
+        <div style="color:var(--green);font-size:.75rem;font-weight:700;margin-bottom:10px;">Implementations (Thực thi)</div>
+        <div class="cf-code" style="font-size:.78rem;padding:0;line-height:1.8">
+          SendGridService <span class="cmt">// implements</span><br>
+          SESService &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt">// implements</span><br>
+          MailgunService &nbsp;<span class="cmt">// implements</span><br><br>
+          <span class="cmt">// Swap dễ dàng,</span><br>
+          <span class="cmt">// caller không đổi!</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Program to an interface, not an implementation</li>
+      <li>Interface cho phép swap implementation mà không sửa caller</li>
+      <li>Test dùng mock implementation của interface — không cần real service</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 5: Composition vs Inheritance -->
+<div class="section" id="sec-5">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 06</div>
+    <div class="section-title">Composition over Inheritance</div>
+    <div class="section-desc">Kế thừa tạo ra cây phân cấp cứng nhắc. Composition linh hoạt hơn — lắp ghép như Lego.</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:20px 0;">
+    <div>
+      <div style="color:var(--orange);font-size:.85rem;font-weight:700;margin-bottom:12px;text-align:center;">🌳 Inheritance — Cây</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.8rem;">
+        <div style="background:rgba(255,183,71,0.1);border:1px solid rgba(255,183,71,0.3);border-radius:8px;padding:8px 20px;color:var(--orange)">Animal</div>
+        <div style="width:2px;height:16px;background:var(--border)"></div>
+        <div style="display:flex;gap:8px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--muted)">Bird</div>
+            <div style="width:2px;height:12px;background:var(--border)"></div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:.72rem;color:var(--muted)">Duck</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--muted)">Fish</div>
+            <div style="width:2px;height:12px;background:var(--border)"></div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:.72rem;color:var(--muted)">Salmon</div>
+          </div>
+        </div>
+        <div style="color:var(--red);font-size:.72rem;margin-top:8px;">FlyingFish → Bird hay Fish??</div>
+      </div>
+    </div>
+    <div>
+      <div style="color:var(--green);font-size:.85rem;font-weight:700;margin-bottom:12px;text-align:center;">🧩 Composition — Lego</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.3);border-radius:10px;padding:12px 16px;">
+          <div style="font-size:.8rem;font-weight:700;color:var(--green);margin-bottom:6px;">Duck</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span style="background:rgba(91,141,239,0.15);border:1px solid rgba(91,141,239,0.3);border-radius:6px;padding:2px 8px;font-size:.72rem;color:var(--blue)">canSwim()</span>
+            <span style="background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);border-radius:6px;padding:2px 8px;font-size:.72rem;color:var(--accent)">canFly()</span>
+          </div>
+        </div>
+        <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.3);border-radius:10px;padding:12px 16px;">
+          <div style="font-size:.8rem;font-weight:700;color:var(--green);margin-bottom:6px;">FlyingFish</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <span style="background:rgba(91,141,239,0.15);border:1px solid rgba(91,141,239,0.3);border-radius:6px;padding:2px 8px;font-size:.72rem;color:var(--blue)">canSwim()</span>
+            <span style="background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);border-radius:6px;padding:2px 8px;font-size:.72rem;color:var(--accent)">canFly()</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Inheritance → "is-a" relationship (Duck IS an Animal)</li>
+      <li>Composition → "has-a" relationship (Duck HAS ability to swim)</li>
+      <li>Composition dễ thay đổi hơn — thêm/bỏ behavior mà không phá hierarchy</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 6: Pure Functions -->
+<div class="section" id="sec-6">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 07</div>
+    <div class="section-title">Side Effects & Pure Functions</div>
+    <div class="section-desc">Pure function: cùng input → cùng output, không thay đổi gì bên ngoài. Đây là mục tiêu lý tưởng.</div>
+  </div>
+
+  <div class="purity-compare">
+    <div class="purity-side impure">
+      <div class="purity-label">❌ Impure Function</div>
+      <div class="cf-code" style="font-size:.8rem;line-height:1.9;padding:0">
+        <span class="kw">let</span> total = <span class="num">0</span><br><br>
+        <span class="kw">function</span> <span class="fn">addToTotal</span>(n) {<br>
+        &nbsp;&nbsp;total += n <span class="cmt">// side effect!</span><br>
+        &nbsp;&nbsp;<span class="fn">console.log</span>(total) <span class="cmt">// side effect!</span><br>
+        &nbsp;&nbsp;<span class="kw">return</span> total<br>
+        }
+      </div>
+      <div style="color:var(--red);font-size:.78rem;margin-top:12px;line-height:1.6">Gọi 2 lần với cùng input → kết quả khác nhau → khó test, khó debug</div>
+    </div>
+    <div class="purity-side pure">
+      <div class="purity-label">✅ Pure Function</div>
+      <div class="cf-code" style="font-size:.8rem;line-height:1.9;padding:0">
+        <span class="kw">function</span> <span class="fn">add</span>(a, b) {<br>
+        &nbsp;&nbsp;<span class="kw">return</span> a + b<br>
+        }<br><br>
+        <span class="cmt">// Luôn đúng:</span><br>
+        <span class="fn">add</span>(<span class="num">2</span>, <span class="num">3</span>) === <span class="num">5</span><br>
+        <span class="fn">add</span>(<span class="num">2</span>, <span class="num">3</span>) === <span class="num">5</span>
+      </div>
+      <div style="color:var(--green);font-size:.78rem;margin-top:12px;line-height:1.6">Predictable, dễ test, dễ cache (memoize), dễ parallelize</div>
+    </div>
+  </div>
+
+  <div class="highlight">
+    <div class="highlight-label">Side effects không phải luôn xấu</div>
+    <div class="highlight-text">Ghi DB, gọi API, in màn hình — đây đều là side effects và <strong>cần thiết</strong>. Nguyên tắc: <strong>isolate side effects</strong> — đẩy chúng ra rìa, giữ core logic pure.</div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Maximize pure functions → minimize surface area của bugs</li>
+      <li>Side effects phải rõ ràng — đặt tên hàm phản ánh (saveUser, sendEmail)</li>
+      <li>Pure functions dễ test: không cần mock, không cần setup</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 7: 5 Questions -->
+<div class="section" id="sec-7">
+  <div class="section-header">
+    <div class="section-num">Checklist</div>
+    <div class="section-title">5 Câu Hỏi Mỗi Lập Trình Viên</div>
+    <div class="section-desc">Trước khi viết code, hãy tự hỏi 5 câu này. Click vào từng câu khi bạn đã suy nghĩ xong.</div>
+  </div>
+
+  <ul class="checklist" id="devChecklist">
+    <li class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box"></div>
+      <div class="check-text">
+        <span class="check-q">1. Bài toán thực sự là gì?</span>
+        Không phải "implement feature X" mà là "user cần đạt được kết quả Y". Đôi khi feature X không phải giải pháp tốt nhất.
+      </div>
+    </li>
+    <li class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box"></div>
+      <div class="check-text">
+        <span class="check-q">2. Code này sẽ thay đổi như thế nào?</span>
+        Thiết kế cho change, không chỉ cho requirement hiện tại. "6 tháng nữa nếu cần thêm X thì sao?"
+      </div>
+    </li>
+    <li class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box"></div>
+      <div class="check-text">
+        <span class="check-q">3. Có giải pháp đơn giản hơn không?</span>
+        KISS principle. Nếu có thể solve bằng 10 dòng, đừng dùng design pattern phức tạp.
+      </div>
+    </li>
+    <li class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box"></div>
+      <div class="check-text">
+        <span class="check-q">4. Điều gì có thể sai?</span>
+        Edge cases, failure modes, race conditions. "Input này là gì nếu user nhập sai?"
+      </div>
+    </li>
+    <li class="check-item" onclick="toggleCheck(this)">
+      <div class="check-box"></div>
+      <div class="check-text">
+        <span class="check-q">5. Làm thế nào để test điều này?</span>
+        Nếu khó test → design có vấn đề. Good design = testable design.
+      </div>
+    </li>
+  </ul>
+
+  <div id="checkResult" style="display:none" class="highlight">
+    <div class="highlight-label">🏆 Hoàn thành!</div>
+    <div class="highlight-text">Bạn đã suy nghĩ qua 5 câu hỏi cốt lõi. Đây là mindset của một software engineer chuyên nghiệp.</div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🏆 Tổng kết Bài 02</div>
+    <ul class="takeaway-list">
+      <li><strong>State</strong> — quản lý dữ liệu thay đổi theo thời gian</li>
+      <li><strong>Control Flow</strong> — rẽ nhánh và lặp có hệ thống</li>
+      <li><strong>Function</strong> — đơn vị abstraction cơ bản</li>
+      <li><strong>Module</strong> — high cohesion + low coupling</li>
+      <li><strong>Interface</strong> — program to contract, not implementation</li>
+      <li><strong>Composition</strong> — linh hoạt hơn inheritance</li>
+      <li><strong>Pure Functions</strong> — predictable, testable, cacheable</li>
+    </ul>
+  </div>
+</div>
+
+</main>
+
+<div class="nav-bar">
+  <div class="nav-inner">
+    <button class="btn btn-prev" id="btnPrev" onclick="navigate(-1)" disabled>← Trước</button>
+    <div class="section-dots" id="dots"></div>
+    <button class="btn btn-next" id="btnNext" onclick="navigate(1)">Tiếp theo →</button>
+  </div>
+</div>
+
+<script>
+const SECTIONS = ['sec-0','sec-1','sec-2','sec-3','sec-4','sec-5','sec-6','sec-7'];
+let current = 0;
+
+const dotsEl = document.getElementById('dots');
+SECTIONS.forEach((_,i) => {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i===0?' active':'');
+  d.onclick = () => goTo(i);
+  dotsEl.appendChild(d);
+});
+
+function goTo(n) {
+  document.getElementById(SECTIONS[current]).classList.remove('active');
+  current = n;
+  document.getElementById(SECTIONS[current]).classList.add('active');
+  document.getElementById('btnPrev').disabled = current === 0;
+  document.getElementById('btnNext').textContent = current === SECTIONS.length-1 ? '🏁 Hoàn thành' : 'Tiếp theo →';
+  document.querySelectorAll('.dot').forEach((d,i) => {
+    d.className = 'dot' + (i===current?' active':(i<current?' done':''));
+  });
+  document.getElementById('progressFill').style.width = ((current+1)/SECTIONS.length*100)+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function navigate(dir) { if(current+dir>=0 && current+dir<SECTIONS.length) goTo(current+dir); }
+
+// State demo
+let count=0, total=0;
+const log = document.getElementById('state-log');
+function doState(action) {
+  let msg = '';
+  if(action==='inc') { count++; msg=`count++ → count=${count}`; }
+  else if(action==='dec') { count--; msg=`count-- → count=${count}`; }
+  else if(action==='add') { total+=count; msg=`total += ${count} → total=${total}`; }
+  else { count=0; total=0; msg='reset() → count=0, total=0'; }
+  ['count','even','total'].forEach(k => {
+    const el = document.getElementById('sv-'+k);
+    el.classList.remove('changed');
+    void el.offsetWidth;
+    el.classList.add('changed');
+  });
+  document.getElementById('sv-count').textContent = count;
+  document.getElementById('sv-even').textContent = count%2===0?'true':'false';
+  document.getElementById('sv-total').textContent = total;
+  log.innerHTML = `<span style="color:var(--teal)">> ${msg}</span>\n` + log.innerHTML;
+  setTimeout(() => {
+    ['count','even','total'].forEach(k => document.getElementById('sv-'+k).classList.remove('changed'));
+  }, 800);
+}
+
+// Checklist
+let checkedCount = 0;
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+  checkedCount = document.querySelectorAll('.check-item.checked').length;
+  document.getElementById('checkResult').style.display = checkedCount === 5 ? 'block' : 'none';
+}
+</script>
+</body>
+</html>

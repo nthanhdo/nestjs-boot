@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12 — Security | Phase 3: Engineer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d1117; --bg2: #161b22; --bg3: #21262d;
+    --border: #30363d; --text: #e6edf3; --muted: #8b949e;
+    --green: #3fb950; --red: #f85149; --yellow: #d29922;
+    --blue: #58a6ff; --purple: #bc8cff; --orange: #ffa657; --cyan: #39d353;
+  }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; }
+  .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+  h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; }
+  h2 { font-size: 1.5rem; font-weight: 600; margin: 2.5rem 0 1rem; color: var(--blue); }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 1.2rem 0 0.4rem; color: var(--purple); }
+  p { color: var(--muted); margin-bottom: 0.8rem; }
+  pre { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; font-size: 0.82rem; line-height: 1.7; margin: 0.8rem 0; }
+  code { font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace; }
+  .kw { color: var(--purple); } .fn { color: var(--blue); } .str { color: var(--green); }
+  .cm { color: var(--muted); } .num { color: var(--orange); } .err { color: var(--red); }
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin: 1rem 0; }
+  .reveal { opacity: 0; transform: translateY(20px); transition: all 0.5s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .divider { height: 1px; background: var(--border); margin: 3rem 0; }
+  .progress-bar { height: 6px; background: var(--bg3); border-radius: 3px; margin: 2rem 0; }
+  .progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--red), var(--orange)); width: 0; transition: width 0.3s; }
+  .header-meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
+  .exercise { background: linear-gradient(135deg, rgba(88,166,255,0.08), rgba(188,140,255,0.08)); border: 1px solid rgba(88,166,255,0.3); border-radius: 12px; padding: 1.5rem; margin: 2rem 0; }
+  .takeaway { background: linear-gradient(135deg, rgba(57,211,83,0.08), rgba(13,17,23,0)); border: 1px solid rgba(57,211,83,0.3); border-radius: 12px; padding: 1.5rem; margin: 2rem 0; }
+
+  /* Bake in animation */
+  .bake { display: flex; align-items: center; gap: 2rem; margin: 1.5rem 0; flex-wrap: wrap; }
+  .bake-stage { text-align: center; flex: 1; min-width: 150px; }
+  .bake-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+  .bake-label { font-weight: 700; }
+  .bake-sub { font-size: 0.8rem; color: var(--muted); margin-top: 0.3rem; }
+  .bake-arrow { font-size: 2rem; color: var(--muted); }
+
+  /* OWASP cards */
+  .owasp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.8rem; margin: 1rem 0; }
+  .owasp-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; cursor: pointer; transition: all 0.3s; }
+  .owasp-card:hover { border-color: var(--red); transform: translateY(-2px); }
+  .owasp-card.open { border-color: var(--orange); background: rgba(255,166,87,0.05); }
+  .owasp-num { font-size: 0.7rem; color: var(--orange); font-weight: 700; }
+  .owasp-title { font-weight: 700; font-size: 0.9rem; margin: 0.3rem 0; }
+  .owasp-detail { display: none; margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); }
+  .owasp-card.open .owasp-detail { display: block; }
+
+  /* Auth vs Authz */
+  .auth-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1.5rem 0; }
+  .auth-box { text-align: center; padding: 1.5rem; border-radius: 12px; cursor: pointer; transition: all 0.3s; }
+  .auth-box:hover { transform: scale(1.03); }
+  .auth-n { background: rgba(88,166,255,0.1); border: 2px solid rgba(88,166,255,0.4); }
+  .auth-z { background: rgba(63,185,80,0.1); border: 2px solid rgba(63,185,80,0.4); }
+  .auth-icon { font-size: 3rem; }
+  .auth-badge { font-size: 0.8rem; margin-top: 0.5rem; padding: 0.3rem 0.8rem; border-radius: 20px; display: inline-block; }
+
+  /* Password evolution */
+  .pwd-timeline { display: flex; flex-direction: column; gap: 0; margin: 1rem 0; }
+  .pwd-step { display: flex; gap: 1rem; cursor: pointer; padding: 0.8rem; border-radius: 8px; transition: all 0.2s; border-left: 3px solid var(--border); }
+  .pwd-step:hover { background: var(--bg2); }
+  .pwd-step.dead { border-left-color: var(--red); opacity: 0.8; }
+  .pwd-step.warn { border-left-color: var(--yellow); }
+  .pwd-step.good { border-left-color: var(--green); }
+  .pwd-step.best { border-left-color: var(--cyan); }
+  .pwd-era { font-size: 0.75rem; color: var(--muted); width: 60px; flex-shrink: 0; padding-top: 0.2rem; }
+  .pwd-content { flex: 1; }
+  .pwd-name { font-weight: 700; }
+  .pwd-why { font-size: 0.82rem; color: var(--muted); margin-top: 0.3rem; display: none; }
+  .pwd-step.open .pwd-why { display: block; }
+
+  /* JWT */
+  .jwt { font-family: monospace; font-size: 0.85rem; line-height: 2; word-break: break-all; background: var(--bg3); border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+  .jwt-h { color: var(--red); cursor: pointer; }
+  .jwt-p { color: var(--purple); cursor: pointer; }
+  .jwt-s { color: var(--cyan); cursor: pointer; }
+  .jwt-info { min-height: 40px; font-family: sans-serif; font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; }
+
+  /* Injection */
+  .inject-demo { margin: 1rem 0; }
+  .inject-input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem 1rem; color: var(--text); font-family: monospace; font-size: 0.9rem; outline: none; transition: border-color 0.3s; }
+  .inject-input:focus { border-color: var(--blue); }
+  .inject-query { margin-top: 0.5rem; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem; font-family: monospace; font-size: 0.82rem; min-height: 40px; transition: all 0.3s; }
+  .inject-warning { color: var(--red); font-weight: 700; margin-top: 0.5rem; min-height: 24px; font-size: 0.85rem; }
+
+  /* CTF cycle */
+  .ctf { display: flex; justify-content: center; flex-wrap: wrap; gap: 1rem; margin: 1.5rem 0; }
+  .ctf-step { text-align: center; padding: 1rem 1.2rem; border-radius: 10px; min-width: 120px; cursor: pointer; transition: all 0.3s; border: 2px solid transparent; }
+  .ctf-step:hover { transform: scale(1.05); border-color: var(--orange); }
+  .ctf-icon { font-size: 2rem; }
+  .ctf-label { font-weight: 700; font-size: 0.85rem; margin-top: 0.3rem; }
+  .ctf-detail { font-size: 0.75rem; color: var(--muted); margin-top: 0.2rem; }
+
+  /* Case study */
+  .case-study { background: linear-gradient(135deg, rgba(248,81,73,0.08), rgba(13,17,23,0)); border: 1px solid rgba(248,81,73,0.3); border-radius: 12px; padding: 1.5rem; margin: 1rem 0; }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+  .shake { animation: shake 0.4s ease; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header-meta">Phase 3: Engineer · Bài 12</div>
+  <h1>🔒 Security Mindset</h1>
+  <p style="font-size:1.1rem; color: var(--text);">Security không phải add-on — là mindset từ dòng code đầu tiên. "Bake in, don't bolt on."</p>
+
+  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+  <!-- Bake in -->
+  <h2>🏗️ "Bake In, Don't Bolt On"</h2>
+
+  <div class="bake reveal">
+    <div class="bake-stage" style="opacity:0.4;" id="bake-design">
+      <div class="bake-icon">📐</div>
+      <div class="bake-label">Design Phase</div>
+      <div class="bake-sub">Think threat model</div>
+    </div>
+    <div class="bake-arrow">→</div>
+    <div class="bake-stage" style="opacity:0.4;" id="bake-build">
+      <div class="bake-icon">🔨</div>
+      <div class="bake-label">Build Phase</div>
+      <div class="bake-sub">Validate, sanitize</div>
+    </div>
+    <div class="bake-arrow">→</div>
+    <div class="bake-stage" style="opacity:0.4;" id="bake-test">
+      <div class="bake-icon">🧪</div>
+      <div class="bake-label">Test Phase</div>
+      <div class="bake-sub">Security tests</div>
+    </div>
+    <div class="bake-arrow">→</div>
+    <div class="bake-stage" style="opacity:0.4;" id="bake-deploy">
+      <div class="bake-icon">🚀</div>
+      <div class="bake-label">Deploy Phase</div>
+      <div class="bake-sub">Monitoring, alerts</div>
+    </div>
+  </div>
+  <div style="text-align:center; margin-bottom:1rem;">
+    <button onclick="animateBake()" style="padding:0.5rem 1.5rem; background:rgba(248,81,73,0.15); border:1px solid var(--red); border-radius:8px; color:var(--red); cursor:pointer; font-size:0.9rem;">
+      ▶️ So sánh: Bake In vs Bolt On
+    </button>
+  </div>
+  <div id="bake-result" class="card" style="display:none; min-height:50px;"></div>
+
+  <!-- OWASP Top 10 -->
+  <h2>🛡️ OWASP Top 10 — Click để xem NestJS example</h2>
+
+  <div class="owasp-grid reveal">
+    <div class="owasp-card" onclick="this.classList.toggle('open')">
+      <div class="owasp-num">A01:2021</div>
+      <div class="owasp-title">🔓 Broken Access Control</div>
+      <div class="owasp-detail">
+        <strong style="color:var(--red);">NestJS:</strong> API /orders/:id không check ownership → user A xem được order của user B.<br><br>
+        <code style="color:var(--green);">Fix: if (order.userId !== req.user.id) throw ForbiddenException</code>
+      </div>
+    </div>
+    <div class="owasp-card" onclick="this.classList.toggle('open')">
+      <div class="owasp-num">A02:2021</div>
+      <div class="owasp-title">🔐 Cryptographic Failures</div>
+      <div class="owasp-detail">
+        <strong style="color:var(--red);">NestJS:</strong> Lưu password plaintext trong MongoDB.<br><br>
+        <code style="color:var(--green);">Fix: bcrypt.hash(password, 12) trước khi save</code>
+      </div>
+    </div>
+    <div class="owasp-card" onclick="this.classList.toggle('open')">
+      <div class="owasp-num">A03:2021</div>
+      <div class="owasp-title">💉 Injection</div>
+      <div class="owasp-detail">
+        <strong style="color:var(--red);">NestJS:</strong> Raw MongoDB query với user input không sanitized.<br><br>
+        <code style="color:var(--green);">Fix: Dùng Mongoose model + class-validator DTO</code>
+      </div>
+    </div>
+    <div class="owasp-card" onclick="this.classList.toggle('open')">
+      <div class="owasp-num">A04:2021</div>
+      <div class="owasp-title">🏗️ Insecure Design</div>
+      <div class="owasp-detail">
+        <strong style="color:var(--red);">NestJS:</strong> Password reset không rate-limit → brute force OTP.<br><br>
+        <code style="color:var(--green);">Fix: throttle 3 attempts/hour, expire OTP 10 phút</code>
+      </div>
+    </div>
+    <div class="owasp-card" onclick="this.classList.toggle('open')">
+      <div class="owasp-num">A05:2021</div>
+      <div class="owasp-title">⚙️ Security Misconfiguration</div>
+      <div class="owasp-detail">
+        <strong style="color:var(--red);">NestJS:</strong> CORS <code>origin: '*'</code> trên production, debug logs bật.<br><br>
+        <code style="color:var(--green);">Fix: whitelist origins, disable stack trace on prod</code>
+      </div>
+    </div>
+    <div class="owasp-card" onclick="this.classList.toggle('open')">
+      <div class="owasp-num">A06:2021</div>
+      <div class="owasp-title">📦 Vulnerable Components</div>
+      <div class="owasp-detail">
+        <strong style="color:var(--red);">NestJS:</strong> Dùng dependency có CVE đã known.<br><br>
+        <code style="color:var(--green);">Fix: npm audit, Dependabot, update regularly</code>
+      </div>
+    </div>
+    <div class="owasp-card" onclick="this.classList.toggle('open')">
+      <div class="owasp-num">A07:2021</div>
+      <div class="owasp-title">🔑 Auth Failures</div>
+      <div class="owasp-detail">
+        <strong style="color:var(--red);">NestJS:</strong> JWT secret là "secret" hardcoded, không rotate.<br><br>
+        <code style="color:var(--green);">Fix: JWT_SECRET từ env, strong random 256-bit</code>
+      </div>
+    </div>
+    <div class="owasp-card" onclick="this.classList.toggle('open')">
+      <div class="owasp-num">A08:2021</div>
+      <div class="owasp-title">🔧 Software Integrity Failures</div>
+      <div class="owasp-detail">
+        <strong style="color:var(--red);">NestJS:</strong> Download script không verify checksum.<br><br>
+        <code style="color:var(--green);">Fix: package-lock.json, verify npm registry</code>
+      </div>
+    </div>
+    <div class="owasp-card" onclick="this.classList.toggle('open')">
+      <div class="owasp-num">A09:2021</div>
+      <div class="owasp-title">📊 Logging Failures</div>
+      <div class="owasp-detail">
+        <strong style="color:var(--red);">NestJS:</strong> Log toàn bộ request body → log password, token.<br><br>
+        <code style="color:var(--green);">Fix: redact sensitive fields trước khi log</code>
+      </div>
+    </div>
+    <div class="owasp-card" onclick="this.classList.toggle('open')">
+      <div class="owasp-num">A10:2021</div>
+      <div class="owasp-title">🌐 SSRF</div>
+      <div class="owasp-detail">
+        <strong style="color:var(--red);">NestJS:</strong> <code>axios.get(userInputUrl)</code> → attacker fetch internal services.<br><br>
+        <code style="color:var(--green);">Fix: Whitelist allowed URLs, block private IP ranges</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- Auth vs Authz -->
+  <h2>🪪 Authentication vs Authorization</h2>
+
+  <div class="auth-compare reveal">
+    <div class="auth-box auth-n" onclick="showAuth('n')">
+      <div class="auth-icon">🪪</div>
+      <h3 style="color:var(--blue); margin:0.5rem 0;">Authentication</h3>
+      <div class="auth-badge" style="background:rgba(88,166,255,0.15); color:var(--blue);">"Bạn là ai?"</div>
+      <p style="font-size:0.85rem; margin-top:0.8rem;">Verify identity. Login với username/password, Google OAuth, biometric.</p>
+    </div>
+    <div class="auth-box auth-z" onclick="showAuth('z')">
+      <div class="auth-icon">🎫</div>
+      <h3 style="color:var(--green); margin:0.5rem 0;">Authorization</h3>
+      <div class="auth-badge" style="background:rgba(63,185,80,0.15); color:var(--green);">"Bạn được làm gì?"</div>
+      <p style="font-size:0.85rem; margin-top:0.8rem;">Check permissions. Admin role, resource ownership, feature gates.</p>
+    </div>
+  </div>
+  <div id="auth-info" class="card" style="display:none; min-height:40px;"></div>
+
+  <!-- Password Evolution -->
+  <h2>🔑 Password Security Evolution</h2>
+  <p>Click từng giai đoạn để hiểu tại sao nó bị deprecated.</p>
+
+  <div class="pwd-timeline reveal">
+    <div class="pwd-step dead" onclick="this.classList.toggle('open')">
+      <div class="pwd-era">1990s</div>
+      <div class="pwd-content">
+        <div class="pwd-name">💀 Plaintext — <code>password: "abc123"</code></div>
+        <div class="pwd-why">Lưu nguyên văn trong DB. Nếu DB bị dump → tất cả passwords bị lộ. Vẫn có sites dùng năm 2024 (!). NEVER.</div>
+      </div>
+    </div>
+    <div class="pwd-step dead" onclick="this.classList.toggle('open')">
+      <div class="pwd-era">2000s</div>
+      <div class="pwd-content">
+        <div class="pwd-name">💀 MD5/SHA1 — <code>hash: "5f4dcc3b..."</code></div>
+        <div class="pwd-why">Hashing nhưng không có salt. Rainbow table attacks: precomputed hash lookup. MD5 crack trong giây. SHA1 không tốt hơn nhiều.</div>
+      </div>
+    </div>
+    <div class="pwd-step warn" onclick="this.classList.toggle('open')">
+      <div class="pwd-era">2010s</div>
+      <div class="pwd-content">
+        <div class="pwd-name">⚠️ SHA256 + Salt — <code>hash(password + salt)</code></div>
+        <div class="pwd-why">Tốt hơn MD5. Nhưng SHA256 quá NHANH — GPU có thể thử 10 tỷ combinations/giây. "Fast hash = bad for passwords."</div>
+      </div>
+    </div>
+    <div class="pwd-step good" onclick="this.classList.toggle('open')">
+      <div class="pwd-era">2015+</div>
+      <div class="pwd-content">
+        <div class="pwd-name">✅ bcrypt — <code>bcrypt.hash(password, 12)</code></div>
+        <div class="pwd-why">Có cost factor — intentionally SLOW (100ms vs microseconds). Adaptive: tăng cost khi phần cứng mạnh hơn. Salt built-in. Vẫn được recommend.</div>
+      </div>
+    </div>
+    <div class="pwd-step best" onclick="this.classList.toggle('open')">
+      <div class="pwd-era">2020+</div>
+      <div class="pwd-content">
+        <div class="pwd-name">🏆 Argon2 — Winner of Password Hashing Competition</div>
+        <div class="pwd-why">Memory-hard: cần RAM lớn → GPU attacks kém hiệu quả hơn. 3 variants: argon2i (side-channel safe), argon2d (GPU resistant), argon2id (best of both). Recommendation hiện tại.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JWT -->
+  <h2>🎫 JWT Anatomy</h2>
+  <p>JWT = header.payload.signature. Click từng phần để decode.</p>
+
+  <div class="jwt reveal">
+    <span class="jwt-h" onclick="showJWT('header')">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9</span>.<span class="jwt-p" onclick="showJWT('payload')">eyJ1c2VySWQiOiIxMjMiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3MjM2NDI4MDB9</span>.<span class="jwt-s" onclick="showJWT('signature')">SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c</span>
+  </div>
+  <div class="jwt-info" id="jwt-info">Click phần nào để decode...</div>
+
+  <div class="card" style="border-left:3px solid var(--red); margin-top:0.5rem;">
+    <strong style="color:var(--red);">⚠️ JWT KHÔNG PHẢI ENCRYPTION!</strong>
+    <p style="font-size:0.85rem; margin-top:0.3rem;">Payload được base64 encode — KHÔNG phải mã hóa. Bất kỳ ai cũng có thể decode và đọc. ĐỪNG bao giờ để sensitive data (password, credit card) trong JWT payload.</p>
+    <pre style="margin-top:0.5rem;"><code><span class="cm">// ❌ KHÔNG làm:</span>
+<span class="kw">const</span> payload = { userId, password, creditCard };
+
+<span class="cm">// ✅ Chỉ để identifier + role:</span>
+<span class="kw">const</span> payload = { sub: userId, role: <span class="str">'admin'</span>, iat: <span class="fn">Date</span>.now() };</code></pre>
+  </div>
+
+  <!-- Injection -->
+  <h2>💉 Injection Attack — Live Demo</h2>
+  <p>Gõ vào ô tìm kiếm để thấy query bị inject như thế nào.</p>
+
+  <div class="inject-demo reveal">
+    <input class="inject-input" id="inject-input" type="text" placeholder="Tên sản phẩm cần tìm..." oninput="updateInjection(this.value)" value="iPhone">
+    <div>
+      <div style="font-size:0.75rem; color:var(--muted); margin-top:0.8rem;">Query được tạo ra:</div>
+      <div class="inject-query" id="inject-query"></div>
+      <div class="inject-warning" id="inject-warning"></div>
+    </div>
+    <div style="margin-top:1rem; display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+      <div>
+        <h3 style="color:var(--red); margin-top:0;">❌ Vulnerable code</h3>
+        <pre><code><span class="cm">// Raw string interpolation:</span>
+<span class="kw">const</span> query = `
+  <span class="fn">db.products.find</span>({
+    name: <span class="str">"${userInput}"</span>
+  })`;
+<span class="cm">// Attacker: input = {"$gt": ""}</span>
+<span class="cm">// → Trả về TẤT CẢ documents!</span></code></pre>
+      </div>
+      <div>
+        <h3 style="color:var(--green); margin-top:0;">✅ Safe code</h3>
+        <pre><code><span class="cm">// Mongoose sanitized query:</span>
+<span class="kw">const</span> products = <span class="kw">await</span>
+  Product.<span class="fn">find</span>({
+    name: <span class="kw">new</span> <span class="fn">RegExp</span>(
+      <span class="fn">escapeRegex</span>(input), <span class="str">'i'</span>
+    )
+  });
+<span class="cm">// User input never touches query operator</span></code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input Validation -->
+  <h2>🛡️ Input Validation — First Line of Defense</h2>
+  <div class="reveal">
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+      <div>
+        <h3 style="color:var(--red); margin-top:0;">❌ No validation</h3>
+        <pre><code><span class="cm">// Controller nhận gì cũng được</span>
+<span class="kw">async</span> <span class="fn">createOrder</span>(body: <span class="kw">any</span>) {
+  <span class="kw">await</span> <span class="kw">this</span>.orderService
+    .<span class="fn">create</span>(body);
+  <span class="cm">// body có thể chứa:</span>
+  <span class="cm">// { price: -1000 }</span>
+  <span class="cm">// { role: "admin" }</span>
+  <span class="cm">// { __proto__: ... }</span>
+}</code></pre>
+      </div>
+      <div>
+        <h3 style="color:var(--green); margin-top:0;">✅ class-validator DTO</h3>
+        <pre><code><span class="kw">class</span> <span class="fn">CreateOrderDto</span> {
+  <span class="kw">@IsString</span>()
+  <span class="kw">@MaxLength</span>(<span class="num">100</span>)
+  productId: <span class="kw">string</span>;
+
+  <span class="kw">@IsInt</span>()
+  <span class="kw">@Min</span>(<span class="num">1</span>) <span class="kw">@Max</span>(<span class="num">999</span>)
+  quantity: <span class="kw">number</span>;
+}
+<span class="cm">// NestJS ValidationPipe reject</span>
+<span class="cm">// bất kỳ field nào sai schema</span></code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTF Mindset -->
+  <h2>🎯 CTF Mindset: Build → Attack → Fix</h2>
+  <p>Tự tấn công code của mình trước khi attacker làm.</p>
+
+  <div class="ctf reveal">
+    <div class="ctf-step" style="background:rgba(63,185,80,0.1); border-color:rgba(63,185,80,0.3);" onclick="showCTF('build')">
+      <div class="ctf-icon">🏗️</div>
+      <div class="ctf-label" style="color:var(--green);">Build</div>
+      <div class="ctf-detail">Feature mới</div>
+    </div>
+    <div style="color:var(--muted); align-self:center; font-size:1.5rem;">→</div>
+    <div class="ctf-step" style="background:rgba(248,81,73,0.1); border-color:rgba(248,81,73,0.3);" onclick="showCTF('attack')">
+      <div class="ctf-icon">⚔️</div>
+      <div class="ctf-label" style="color:var(--red);">Attack</div>
+      <div class="ctf-detail">Think like hacker</div>
+    </div>
+    <div style="color:var(--muted); align-self:center; font-size:1.5rem;">→</div>
+    <div class="ctf-step" style="background:rgba(210,153,34,0.1); border-color:rgba(210,153,34,0.3);" onclick="showCTF('find')">
+      <div class="ctf-icon">🔍</div>
+      <div class="ctf-label" style="color:var(--yellow);">Find</div>
+      <div class="ctf-detail">Vulnerability?</div>
+    </div>
+    <div style="color:var(--muted); align-self:center; font-size:1.5rem;">→</div>
+    <div class="ctf-step" style="background:rgba(88,166,255,0.1); border-color:rgba(88,166,255,0.3);" onclick="showCTF('fix')">
+      <div class="ctf-icon">🔧</div>
+      <div class="ctf-label" style="color:var(--blue);">Fix</div>
+      <div class="ctf-detail">Before ship</div>
+    </div>
+    <div style="color:var(--muted); align-self:center; font-size:1.5rem;">→</div>
+    <div class="ctf-step" style="background:rgba(57,211,83,0.1); border-color:rgba(57,211,83,0.3);" onclick="showCTF('test')">
+      <div class="ctf-icon">🧪</div>
+      <div class="ctf-label" style="color:var(--cyan);">Test</div>
+      <div class="ctf-detail">Regression</div>
+    </div>
+  </div>
+  <div id="ctf-info" class="card" style="display:none;"></div>
+
+  <!-- Case Study -->
+  <h2>📚 Real Case Study: Path Traversal</h2>
+  <div class="case-study reveal">
+    <h3 style="color:var(--red); margin-top:0;">🚨 1 dòng code = security hole</h3>
+    <p>Từ nestjs-boot codebase — file serve endpoint.</p>
+    <pre><code><span class="cm">// ❌ VULNERABLE — Path Traversal Attack</span>
+<span class="kw">async</span> <span class="fn">serveFile</span>(filename: <span class="kw">string</span>) {
+  <span class="kw">const</span> path = <span class="str">`./uploads/${filename}`</span>;
+  <span class="kw">return</span> fs.<span class="fn">readFile</span>(path);
+  <span class="cm">// Attacker: filename = "../../etc/passwd"</span>
+  <span class="cm">// Đọc được: /etc/passwd (user list trên server)</span>
+  <span class="cm">// Hoặc: "../.env" → lộ DATABASE_URL, JWT_SECRET</span>
+}
+
+<span class="cm">// ✅ FIXED — 1 dòng check:</span>
+<span class="kw">async</span> <span class="fn">serveFile</span>(filename: <span class="kw">string</span>) {
+  <span class="kw">const</span> resolvedPath = path.<span class="fn">resolve</span>(<span class="str">'./uploads'</span>, filename);
+  <span class="kw">if</span> (!resolvedPath.<span class="fn">startsWith</span>(path.<span class="fn">resolve</span>(<span class="str">'./uploads'</span>))) {
+    <span class="kw">throw new</span> <span class="fn">ForbiddenException</span>(<span class="str">'Invalid file path'</span>);
+  }
+  <span class="kw">return</span> fs.<span class="fn">readFile</span>(resolvedPath);
+}</code></pre>
+    <p><strong style="color:var(--yellow);">Lesson:</strong> Mọi user input được dùng trong file system operations đều phải validate. Canonicalize path và check nằm trong allowed directory.</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="takeaway reveal">
+    <h3 style="color:var(--green); margin-top:0;">🎯 Key Takeaways</h3>
+    <ul style="list-style:none;">
+      <li style="padding:0.3rem 0;">✅ Security = mindset, không phải feature. Build-in từ đầu, không patch cuối</li>
+      <li style="padding:0.3rem 0;">✅ OWASP Top 10: bookmark và review mỗi feature mới</li>
+      <li style="padding:0.3rem 0;">✅ Authentication ("bạn là ai") ≠ Authorization ("bạn được làm gì")</li>
+      <li style="padding:0.3rem 0;">✅ Password: chỉ bcrypt hoặc Argon2. NEVER MD5/SHA1 cho passwords</li>
+      <li style="padding:0.3rem 0;">✅ JWT không encrypt payload — đừng để sensitive data trong đó</li>
+      <li style="padding:0.3rem 0;">✅ Validate mọi input — class-validator DTO trong NestJS là standard</li>
+      <li style="padding:0.3rem 0;">✅ Test negative cases trước: no key, fake key, wrong permission → MUST BLOCK</li>
+    </ul>
+  </div>
+
+</div>
+
+<script>
+// Bake animation
+let bakeMode = 'bake';
+function animateBake() {
+  bakeMode = bakeMode === 'bake' ? 'bolt' : 'bake';
+  const stages = ['bake-design', 'bake-build', 'bake-test', 'bake-deploy'];
+  const res = document.getElementById('bake-result');
+  res.style.display = 'block';
+  if (bakeMode === 'bake') {
+    stages.forEach((id, i) => {
+      setTimeout(() => {
+        document.getElementById(id).style.opacity = '1';
+        document.getElementById(id).style.filter = 'drop-shadow(0 0 8px rgba(63,185,80,0.5))';
+      }, i * 300);
+    });
+    res.innerHTML = '<strong style="color:var(--green)">✅ BAKE IN:</strong><p style="margin-top:0.5rem">Security được nghĩ từ design → cost thấp, dễ test, ít vulnerability. Phát hiện issue lúc code review = vài phút fix.</p>';
+  } else {
+    stages.forEach(id => {
+      document.getElementById(id).style.opacity = '0.3';
+      document.getElementById(id).style.filter = 'none';
+    });
+    const lastStage = document.getElementById('bake-deploy');
+    lastStage.style.opacity = '1';
+    lastStage.innerHTML = '<div class="bake-icon">🔧</div><div class="bake-label" style="color:var(--red)">BOLT ON</div><div class="bake-sub" style="color:var(--red)">Security patch sau</div>';
+    res.innerHTML = '<strong style="color:var(--red)">❌ BOLT ON:</strong><p style="margin-top:0.5rem">Add security sau khi xong. Phải refactor toàn bộ, có thể break features, miss nhiều cases. Production bug fix = 100x đắt hơn.</p>';
+  }
+}
+// Init
+document.querySelectorAll('.bake-stage').forEach(el => el.style.opacity = '1');
+
+// Auth info
+const authData = {
+  n: { title: 'Authentication (Authn)', ex: '<p>Ví dụ: <code>POST /auth/login</code> → verify username + password → issue JWT token. Sau đó mọi request gửi token này.</p><p>NestJS: <code>@UseGuards(JwtAuthGuard)</code> verify token trên mọi protected route.</p>' },
+  z: { title: 'Authorization (Authz)', ex: '<p>Ví dụ: User đã login (authenticated) nhưng không có quyền xóa product nếu không phải admin.</p><p>NestJS: <code>@Roles("admin") @UseGuards(RolesGuard)</code> check role sau khi verify JWT.</p>' }
+};
+function showAuth(type) {
+  const d = authData[type];
+  const el = document.getElementById('auth-info');
+  el.style.display = 'block';
+  el.innerHTML = `<strong style="color:var(--blue)">${d.title}</strong>${d.ex}`;
+}
+
+// JWT
+const jwtParts = {
+  header: { color: 'var(--red)', decoded: '{ "alg": "HS256", "typ": "JWT" }', note: 'Algorithm được dùng để sign. Base64 decode — không encrypt.' },
+  payload: { color: 'var(--purple)', decoded: '{ "userId": "123", "role": "admin", "iat": 1723642800 }', note: '⚠️ KHÔNG ENCRYPT! Bất kỳ ai cũng decode được. Chỉ để thông tin không sensitive.' },
+  signature: { color: 'var(--cyan)', decoded: 'HMACSHA256(base64(header) + "." + base64(payload), SECRET_KEY)', note: '✅ Đây là phần được verify. Nếu payload bị tamper → signature invalid → reject.' }
+};
+function showJWT(part) {
+  const d = jwtParts[part];
+  document.getElementById('jwt-info').innerHTML = `
+    <strong style="color:${d.color}">${part.toUpperCase()}</strong>
+    <pre style="margin:0.3rem 0; font-size:0.8rem"><code>${d.decoded}</code></pre>
+    <span style="color:${d.color === 'var(--purple)' ? 'var(--red)' : 'var(--green)'}">${d.note}</span>
+  `;
+}
+
+// Injection demo
+function updateInjection(val) {
+  const query = `db.products.find({ name: "${val}" })`;
+  const queryEl = document.getElementById('inject-query');
+  const warnEl = document.getElementById('inject-warning');
+  queryEl.textContent = query;
+  const dangerous = ['$gt', '$where', '$regex', '{"', '"}', 'function', 'eval', '\0', ';', '||', '1=1'];
+  const isDangerous = dangerous.some(d => val.includes(d));
+  if (isDangerous) {
+    queryEl.style.borderLeft = '3px solid var(--red)';
+    queryEl.style.color = 'var(--red)';
+    warnEl.textContent = '🚨 INJECTION DETECTED! Query bị manipulate bởi user input!';
+    queryEl.classList.add('shake');
+    setTimeout(() => queryEl.classList.remove('shake'), 400);
+  } else {
+    queryEl.style.borderLeft = 'none';
+    queryEl.style.color = 'var(--text)';
+    warnEl.textContent = '';
+  }
+  // Try tips
+  if (!val) warnEl.textContent = '💡 Thử nhập: {"$gt": ""} hoặc "}); db.dropDatabase(); //';
+}
+updateInjection('iPhone');
+
+// CTF
+const ctfInfo = {
+  build: 'Implement feature bình thường. Lúc này focus vào functionality.',
+  attack: 'Đặt câu hỏi: Nếu tôi là hacker, tôi sẽ tấn công chỗ nào? Thử: SQL injection, IDOR (access other users data), path traversal, missing auth check, rate limit missing.',
+  find: 'Nếu tìm được vulnerability → ghi lại. Mức độ severity: Critical/High/Medium/Low. Estimate impact.',
+  fix: 'Fix vulnerability trước khi merge. KHÔNG "fix sau". Security bug = highest priority.',
+  test: 'Viết security test để verify fix hoạt động. Đảm bảo regression không xảy ra.'
+};
+function showCTF(type) {
+  const el = document.getElementById('ctf-info');
+  el.style.display = 'block';
+  el.innerHTML = `<p style="color:var(--orange)">${ctfInfo[type]}</p>`;
+}
+
+// Progress
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  document.getElementById('progress').style.width = pct + '%';
+});
+
+// Reveal
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

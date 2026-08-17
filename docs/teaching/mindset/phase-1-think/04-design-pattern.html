@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Patterns — Phase 1: Think</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+  --text: #eef1f8; --muted: #8899bb;
+  --accent: #a78bfa; --yellow: #ffd43b; --green: #2ecc71; --red: #e74c3c;
+  --blue: #5b8def; --orange: #ffb347; --pink: #ff5e7a; --teal: #00cec9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 15% 25%, rgba(255,183,71,0.05) 0%, transparent 50%), radial-gradient(ellipse at 85% 75%, rgba(167,139,250,0.05) 0%, transparent 50%); pointer-events:none; z-index:0; }
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; position: sticky; top: 0; z-index: 100; }
+.header-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.phase-badge { background: linear-gradient(135deg,#e67e22,#f39c12); color:#fff; padding: 3px 12px; border-radius: 20px; font-size: .7rem; font-weight: 700; }
+header h1 { font-size: 1.3rem; font-weight: 800; background: linear-gradient(135deg,#f39c12,#f1c40f); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.header-sub { color: var(--muted); font-size: .85rem; margin-left: auto; }
+.progress-bar { width: 100%; height: 3px; background: var(--border); border-radius: 2px; margin-top: 10px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg,#e67e22,#f39c12); border-radius: 2px; transition: width .4s; }
+main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: relative; z-index: 1; }
+.section { display: none; animation: fadeUp .5s ease; }
+.section.active { display: block; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: .75rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+.section-title { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg,#fff,var(--yellow)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom: 10px; }
+.section-desc { color: var(--muted); font-size: 1rem; line-height: 1.7; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+.card-title { font-size: 1rem; font-weight: 700; color: var(--yellow); margin-bottom: 14px; }
+.highlight { background: linear-gradient(135deg,rgba(255,183,71,0.08),rgba(255,183,71,0.04)); border: 1px solid rgba(255,183,71,0.25); border-radius: 12px; padding: 20px 24px; margin: 20px 0; }
+.highlight-label { font-size: .7rem; font-weight: 700; color: var(--yellow); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.highlight-text { color: var(--text); font-size: .95rem; line-height: 1.7; }
+.takeaway { background: linear-gradient(135deg,rgba(46,204,113,0.1),rgba(46,204,113,0.04)); border: 1px solid rgba(46,204,113,0.3); border-radius: 14px; padding: 24px; margin-top: 28px; }
+.takeaway-title { color: var(--green); font-weight: 700; font-size: .9rem; margin-bottom: 14px; }
+.takeaway-list { list-style: none; }
+.takeaway-list li { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; font-size: .9rem; color: var(--text); line-height: 1.6; }
+.takeaway-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 14px 24px; display: flex; justify-content: center; z-index: 100; }
+.nav-inner { display: flex; align-items: center; gap: 12px; max-width: 900px; width: 100%; }
+.btn { padding: 10px 24px; border-radius: 10px; font-size: .9rem; font-weight: 600; cursor: pointer; border: none; transition: all .2s; }
+.btn-prev { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-prev:hover:not(:disabled) { color: var(--text); border-color: var(--yellow); }
+.btn-prev:disabled { opacity:.4; cursor:default; }
+.btn-next { background: linear-gradient(135deg,#e67e22,#f39c12); color:#fff; flex:1; max-width:200px; box-shadow:0 4px 16px rgba(230,126,34,0.4); }
+.btn-next:hover { transform:translateY(-1px); }
+.section-dots { display:flex; gap:6px; margin:0 auto; }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--border); transition:all .3s; cursor:pointer; }
+.dot.active { background:var(--yellow); transform:scale(1.3); }
+.dot.done { background:rgba(255,183,71,0.4); }
+.kw { color:#ff9f7f; }
+.fn { color:#7ec8e3; }
+.str { color:#a8d8a8; }
+.num { color:#ffd43b; }
+.cmt { color:#5a7a6a; }
+
+/* PATTERN CARD */
+.pattern-tabs { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+.ptab { background:var(--surface2); border:1px solid var(--border); color:var(--muted); padding:8px 16px; border-radius:8px; cursor:pointer; font-size:.85rem; transition:all .2s; }
+.ptab:hover { border-color:var(--yellow); }
+.ptab.active { background:rgba(255,183,71,0.12); border-color:var(--yellow); color:var(--yellow); font-weight:700; }
+.pattern-panel { display:none; animation:fadeUp .3s; }
+.pattern-panel.show { display:block; }
+.pattern-layout { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:16px 0; }
+.pattern-info { background:var(--surface2); border-radius:12px; padding:20px; }
+.pi-label { font-size:.72rem; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:10px; }
+.pi-content { font-size:.85rem; color:var(--muted); line-height:1.7; }
+.pi-tag { display:inline-block; padding:3px 10px; border-radius:20px; font-size:.72rem; font-weight:700; margin-top:8px; }
+.pi-tag.use { background:rgba(46,204,113,0.15); color:var(--green); }
+.pi-tag.nouse { background:rgba(231,76,60,0.15); color:var(--red); }
+
+/* FACTORY ANIMATION */
+.factory-anim { display:flex; align-items:center; justify-content:center; gap:16px; margin:24px 0; flex-wrap:wrap; }
+.factory-inputs { display:flex; flex-direction:column; gap:8px; }
+.factory-input { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px 14px; font-size:.82rem; cursor:pointer; transition:all .3s; }
+.factory-input:hover { border-color:var(--yellow); }
+.factory-input.selected { border-color:var(--orange); background:rgba(255,183,71,0.1); color:var(--orange); }
+.factory-machine { background:linear-gradient(135deg,rgba(255,183,71,0.1),rgba(255,183,71,0.05)); border:2px solid var(--orange); border-radius:14px; padding:20px 24px; text-align:center; min-width:140px; }
+.factory-machine-label { font-size:1rem; font-weight:800; color:var(--orange); }
+.factory-machine-sub { font-size:.72rem; color:var(--muted); margin-top:4px; }
+.factory-output { min-width:100px; height:80px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:2rem; border:2px dashed var(--border); transition:all .4s; }
+.factory-output.active { animation:popIn .4s cubic-bezier(.34,1.56,.64,1); }
+@keyframes popIn { 0%{transform:scale(0);opacity:0} 100%{transform:scale(1);opacity:1} }
+
+/* SINGLETON */
+.singleton-demo { display:flex; gap:12px; align-items:center; justify-content:center; flex-wrap:wrap; margin:20px 0; }
+.client-box { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 16px; text-align:center; font-size:.8rem; }
+.singleton-box { background:linear-gradient(135deg,rgba(167,139,250,0.12),rgba(167,139,250,0.05)); border:2px solid var(--accent); border-radius:12px; padding:16px 24px; text-align:center; }
+.singleton-label { font-weight:700; color:var(--accent); margin-bottom:4px; }
+.singleton-id { font-family:monospace; font-size:.75rem; color:var(--muted); }
+.sing-arrow { color:var(--muted); font-size:1.2rem; }
+
+/* OBSERVER */
+.observer-demo { margin:20px 0; }
+.publisher { background:linear-gradient(135deg,rgba(91,141,239,0.1),rgba(91,141,239,0.05)); border:1px solid rgba(91,141,239,0.3); border-radius:12px; padding:16px; text-align:center; margin-bottom:12px; }
+.pub-label { color:var(--blue); font-weight:700; font-size:.9rem; }
+.obs-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
+.obs-box { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center; font-size:.8rem; transition:all .3s; }
+.obs-box.notified { border-color:var(--orange); background:rgba(255,183,71,0.1); animation:notifyPop .4s; }
+@keyframes notifyPop { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+.obs-trigger { background:linear-gradient(135deg,var(--blue),#2c5aa0); color:#fff; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-size:.85rem; margin-top:12px; }
+
+/* ADAPTER */
+.adapter-demo { display:flex; align-items:center; justify-content:center; gap:0; margin:24px 0; flex-wrap:wrap; gap:8px; }
+.ad-old { background:rgba(231,76,60,0.08); border:1px solid rgba(231,76,60,0.3); border-radius:10px; padding:12px 16px; font-size:.8rem; color:var(--red); text-align:center; }
+.ad-adapter { background:rgba(255,183,71,0.1); border:2px solid var(--orange); border-radius:10px; padding:12px 20px; font-size:.85rem; color:var(--orange); font-weight:700; text-align:center; }
+.ad-new { background:rgba(46,204,113,0.08); border:1px solid rgba(46,204,113,0.3); border-radius:10px; padding:12px 16px; font-size:.8rem; color:var(--green); text-align:center; }
+.ad-arrow { color:var(--muted); font-size:1.4rem; padding:0 4px; }
+
+/* STRATEGY */
+.strategy-demo { margin:20px 0; }
+.strat-context { background:rgba(0,206,201,0.08); border:1px solid rgba(0,206,201,0.3); border-radius:12px; padding:16px; text-align:center; margin-bottom:12px; }
+.strat-label { color:var(--teal); font-weight:700; }
+.strat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.strat-item { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center; cursor:pointer; transition:all .2s; font-size:.82rem; }
+.strat-item:hover { border-color:var(--teal); }
+.strat-item.active { border-color:var(--teal); background:rgba(0,206,201,0.1); color:var(--teal); font-weight:700; }
+
+/* ANTI PATTERN */
+.anti-cases { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0; }
+.anti-case { background:rgba(231,76,60,0.06); border:1px solid rgba(231,76,60,0.25); border-radius:10px; padding:14px; }
+.anti-label { color:var(--red); font-size:.78rem; font-weight:700; margin-bottom:6px; }
+.anti-desc { color:var(--muted); font-size:.82rem; line-height:1.5; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span class="phase-badge">PHASE 1 · THINK</span>
+    <h1>🏗️ Design Patterns</h1>
+    <span class="header-sub">Bài 04 / 04</span>
+    <div class="progress-bar" style="width:100%">
+      <div class="progress-fill" id="progressFill" style="width:12.5%"></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- SEC 0: WHY -->
+<div class="section active" id="sec-0">
+  <div class="section-header">
+    <div class="section-num">Tại sao cần Patterns?</div>
+    <div class="section-title">Giải Pháp Đã Được Chứng Minh</div>
+    <div class="section-desc">Design patterns là các giải pháp có thể tái sử dụng cho các vấn đề thường gặp trong thiết kế phần mềm.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔄 Pattern xuất hiện như thế nào?</div>
+    <div style="display:flex;flex-direction:column;gap:0;align-items:center;margin:20px 0;">
+      <div style="background:rgba(231,76,60,0.08);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:14px 24px;text-align:center;color:var(--red);font-size:.9rem;">😤 Vấn đề lặp đi lặp lại</div>
+      <div style="width:2px;height:24px;background:var(--border)"></div>
+      <div style="background:rgba(255,183,71,0.08);border:1px solid rgba(255,183,71,0.25);border-radius:10px;padding:14px 24px;text-align:center;color:var(--orange);font-size:.9rem;">🔧 Giải pháp đặc thù cho từng dự án</div>
+      <div style="width:2px;height:24px;background:var(--border)"></div>
+      <div style="background:rgba(91,141,239,0.08);border:1px solid rgba(91,141,239,0.25);border-radius:10px;padding:14px 24px;text-align:center;color:var(--blue);font-size:.9rem;">💡 Nhận ra pattern chung giữa các giải pháp</div>
+      <div style="width:2px;height:24px;background:var(--border)"></div>
+      <div style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.25);border-radius:10px;padding:14px 24px;text-align:center;color:var(--green);font-size:.9rem;">📖 Đặt tên + document → Design Pattern</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0;">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:1.8rem;margin-bottom:8px;">🏭</div>
+      <div style="font-weight:700;color:var(--yellow);font-size:.9rem;margin-bottom:4px;">Creational</div>
+      <div style="font-size:.78rem;color:var(--muted)">Cách tạo object: Factory, Singleton, Builder</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:1.8rem;margin-bottom:8px;">🏗️</div>
+      <div style="font-weight:700;color:var(--blue);font-size:.9rem;margin-bottom:4px;">Structural</div>
+      <div style="font-size:.78rem;color:var(--muted)">Cấu trúc class: Adapter, Decorator, Facade</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:1.8rem;margin-bottom:8px;">🎭</div>
+      <div style="font-weight:700;color:var(--teal);font-size:.9rem;margin-bottom:4px;">Behavioral</div>
+      <div style="font-size:.78rem;color:var(--muted)">Giao tiếp giữa objects: Strategy, Observer, Command</div>
+    </div>
+  </div>
+
+  <div class="highlight">
+    <div class="highlight-label">Quan trọng</div>
+    <div class="highlight-text">Học pattern không phải để áp dụng mọi lúc. Mà để nhận ra khi nào thì pattern này phù hợp — và khi nào thì <strong>không</strong>.</div>
+  </div>
+</div>
+
+<!-- SEC 1: Creational -->
+<div class="section" id="sec-1">
+  <div class="section-header">
+    <div class="section-num">Creational Patterns</div>
+    <div class="section-title">Cách Tạo Objects</div>
+    <div class="section-desc">Kiểm soát quá trình khởi tạo objects — linh hoạt, có thể cấu hình, dễ thay thế.</div>
+  </div>
+
+  <div class="pattern-tabs">
+    <button class="ptab active" onclick="showCreational('factory')">🏭 Factory</button>
+    <button class="ptab" onclick="showCreational('singleton')">💎 Singleton</button>
+    <button class="ptab" onclick="showCreational('builder')">🧱 Builder</button>
+  </div>
+
+  <!-- FACTORY -->
+  <div class="pattern-panel show" id="cp-factory">
+    <div class="card">
+      <div style="color:var(--yellow);font-weight:700;margin-bottom:12px;">Factory — Nhà máy sản xuất objects</div>
+      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Thay vì <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent)">new Dog()</code> hay <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent)">new Cat()</code>, bạn gọi <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent)">AnimalFactory.create(type)</code>. Factory quyết định tạo loại nào.</div>
+      <div class="factory-anim">
+        <div class="factory-inputs">
+          <div class="factory-input" onclick="runFactory('dog')">🐕 'dog'</div>
+          <div class="factory-input" onclick="runFactory('cat')">🐈 'cat'</div>
+          <div class="factory-input" onclick="runFactory('bird')">🐦 'bird'</div>
+        </div>
+        <div>→</div>
+        <div class="factory-machine">
+          <div class="factory-machine-label">🏭 AnimalFactory</div>
+          <div class="factory-machine-sub">.create(type)</div>
+        </div>
+        <div>→</div>
+        <div class="factory-output" id="factoryOut">?</div>
+      </div>
+    </div>
+    <div class="pattern-layout">
+      <div class="pattern-info">
+        <div class="pi-label" style="color:var(--green)">✅ Dùng khi</div>
+        <div class="pi-content">Không biết trước sẽ tạo object loại nào. Type phụ thuộc vào runtime data. Muốn ẩn logic khởi tạo phức tạp.</div>
+        <div class="pi-tag use">Factory Method · Abstract Factory</div>
+      </div>
+      <div class="pattern-info">
+        <div class="pi-label" style="color:var(--red)">❌ Không dùng khi</div>
+        <div class="pi-content">Chỉ có 1 loại object. Logic tạo object đơn giản. Việc thêm Factory tạo ra complexity không cần thiết.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SINGLETON -->
+  <div class="pattern-panel" id="cp-singleton">
+    <div class="card">
+      <div style="color:var(--yellow);font-weight:700;margin-bottom:12px;">Singleton — Chỉ 1 instance duy nhất</div>
+      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Đảm bảo class chỉ có 1 instance và cung cấp global access point. Ví dụ: Logger, DB Connection Pool, Config.</div>
+      <div class="singleton-demo">
+        <div class="client-box">Client A<br><span style="font-size:.7rem;color:var(--muted)">getInstance()</span></div>
+        <div class="sing-arrow">→</div>
+        <div class="singleton-box">
+          <div class="singleton-label">💎 DatabasePool</div>
+          <div class="singleton-id">Instance: #0x4A2F</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">maxConnections: 10</div>
+        </div>
+        <div class="sing-arrow">←</div>
+        <div class="client-box">Client B<br><span style="font-size:.7rem;color:var(--muted)">getInstance()</span></div>
+      </div>
+      <div style="text-align:center;color:var(--green);font-size:.85rem;margin-top:8px;">Cả hai Client đều nhận cùng 1 instance: #0x4A2F</div>
+    </div>
+    <div class="pattern-layout">
+      <div class="pattern-info">
+        <div class="pi-label" style="color:var(--green)">✅ Dùng khi</div>
+        <div class="pi-content">Cần đúng 1 instance (DB connection, logger, config). Cần global access point được kiểm soát.</div>
+      </div>
+      <div class="pattern-info">
+        <div class="pi-label" style="color:var(--red)">❌ Cảnh báo</div>
+        <div class="pi-content">Global state = khó test. Overuse Singleton = anti-pattern. Trong NestJS, dùng <code style="font-family:monospace">@Injectable()</code> scope thay thế.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUILDER -->
+  <div class="pattern-panel" id="cp-builder">
+    <div class="card">
+      <div style="color:var(--yellow);font-weight:700;margin-bottom:12px;">Builder — Tạo object phức tạp từng bước</div>
+      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Tách construction của complex object khỏi representation. Tạo object có nhiều optional params một cách readable.</div>
+      <div style="background:var(--surface2);border-radius:12px;padding:16px;font-family:monospace;font-size:.82rem;line-height:1.9">
+        <span class="cmt">// ❌ Không có Builder</span><br>
+        <span class="kw">new</span> <span class="fn">HttpRequest</span>(<span class="str">'GET'</span>, <span class="str">'/api'</span>, null, {}, <span class="num">30</span>, <span class="kw">true</span>)<br><br>
+        <span class="cmt">// ✅ Có Builder</span><br>
+        <span class="kw">new</span> <span class="fn">HttpRequestBuilder</span>()<br>
+        &nbsp;&nbsp;.<span class="fn">method</span>(<span class="str">'GET'</span>)<br>
+        &nbsp;&nbsp;.<span class="fn">url</span>(<span class="str">'/api/users'</span>)<br>
+        &nbsp;&nbsp;.<span class="fn">timeout</span>(<span class="num">30</span>)<br>
+        &nbsp;&nbsp;.<span class="fn">withAuth</span>()<br>
+        &nbsp;&nbsp;.<span class="fn">build</span>()
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Factory: khi cần linh hoạt trong việc tạo objects</li>
+      <li>Singleton: dùng cẩn thận, tránh global state</li>
+      <li>Builder: khi object có nhiều optional configurations</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 2: Structural -->
+<div class="section" id="sec-2">
+  <div class="section-header">
+    <div class="section-num">Structural Patterns</div>
+    <div class="section-title">Cấu Trúc Classes & Objects</div>
+    <div class="section-desc">Cách tổ chức classes và objects để tạo cấu trúc lớn hơn, linh hoạt hơn.</div>
+  </div>
+
+  <div class="pattern-tabs">
+    <button class="ptab active" onclick="showStructural('adapter')">🔌 Adapter</button>
+    <button class="ptab" onclick="showStructural('decorator')">🎁 Decorator</button>
+    <button class="ptab" onclick="showStructural('facade')">🏠 Facade</button>
+  </div>
+
+  <!-- ADAPTER -->
+  <div class="pattern-panel show" id="sp-adapter">
+    <div class="card">
+      <div style="color:var(--blue);font-weight:700;margin-bottom:12px;">Adapter — Chuyển đổi interface</div>
+      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Giống bộ chuyển đổi ổ điện khi đi nước ngoài. Cho phép hai interfaces không tương thích làm việc với nhau.</div>
+      <div class="adapter-demo">
+        <div class="ad-old">🇺🇸 US Plugin<br><code style="font-size:.72rem">charge(110V)</code></div>
+        <div class="ad-arrow">→</div>
+        <div class="ad-adapter">🔌 Adapter<br><small>110V → 220V</small></div>
+        <div class="ad-arrow">→</div>
+        <div class="ad-new">🇻🇳 VN Socket<br><code style="font-size:.72rem">accept(220V)</code></div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px;font-family:monospace;font-size:.8rem;line-height:1.8">
+        <span class="cmt">// Old payment API</span><br>
+        legacyPay.<span class="fn">processCC</span>(cardNum, amount)<br><br>
+        <span class="cmt">// Adapter → new interface</span><br>
+        <span class="kw">class</span> <span class="fn">PaymentAdapter</span> {<br>
+        &nbsp;&nbsp;<span class="fn">pay</span>(method, amount) { <span class="cmt">// new interface</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;legacy.<span class="fn">processCC</span>(...) <span class="cmt">// gọi old API</span><br>
+        &nbsp;&nbsp;}<br>
+        }
+      </div>
+    </div>
+    <div class="pattern-layout">
+      <div class="pattern-info">
+        <div class="pi-label" style="color:var(--green)">✅ Dùng khi</div>
+        <div class="pi-content">Tích hợp thư viện third-party với interface khác. Reuse legacy code mà không sửa nó.</div>
+      </div>
+      <div class="pattern-info">
+        <div class="pi-label" style="color:var(--red)">❌ Không dùng khi</div>
+        <div class="pi-content">Có thể sửa trực tiếp source code. Thêm Adapter chỉ tạo thêm complexity không cần.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DECORATOR -->
+  <div class="pattern-panel" id="sp-decorator">
+    <div class="card">
+      <div style="color:var(--blue);font-weight:700;margin-bottom:12px;">Decorator — Thêm behavior mà không sửa class gốc</div>
+      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Wrap object với layers để thêm chức năng. Như gói quà — bên trong không đổi, bên ngoài thêm giấy gói, nơ, hộp...</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin:16px 0;">
+        <div style="background:rgba(255,183,71,0.1);border:1px solid rgba(255,183,71,0.3);border-radius:8px;padding:8px 20px;width:220px;text-align:center;font-size:.82rem;color:var(--orange)">LoggingDecorator</div>
+        <div style="background:rgba(91,141,239,0.1);border:1px solid rgba(91,141,239,0.3);border-radius:8px;padding:8px 20px;width:180px;text-align:center;font-size:.82rem;color:var(--blue)">CachingDecorator</div>
+        <div style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.3);border-radius:8px;padding:8px 20px;width:140px;text-align:center;font-size:.82rem;color:var(--green)">AuthDecorator</div>
+        <div style="background:rgba(167,139,250,0.15);border:2px solid var(--accent);border-radius:8px;padding:10px 20px;width:110px;text-align:center;font-size:.82rem;color:var(--accent);font-weight:700">UserService</div>
+      </div>
+      <div style="font-size:.82rem;color:var(--muted);text-align:center;">NestJS <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;color:var(--accent)">@UseGuards</code>, <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-family:monospace;color:var(--accent)">@UseInterceptors</code> là Decorator pattern!</div>
+    </div>
+  </div>
+
+  <!-- FACADE -->
+  <div class="pattern-panel" id="sp-facade">
+    <div class="card">
+      <div style="color:var(--blue);font-weight:700;margin-bottom:12px;">Facade — Giao diện đơn giản cho hệ thống phức tạp</div>
+      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Remote TV = Facade cho hàng trăm mạch điện phức tạp bên trong. Người dùng chỉ cần biết nút ON/OFF.</div>
+      <div style="display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;">
+        <div style="background:rgba(0,206,201,0.1);border:2px solid var(--teal);border-radius:12px;padding:16px 24px;text-align:center;">
+          <div style="color:var(--teal);font-weight:700;margin-bottom:8px;">🎬 OrderFacade</div>
+          <div style="font-family:monospace;font-size:.78rem;color:var(--muted)">placeOrder(cart)</div>
+        </div>
+        <div style="color:var(--muted)">→</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.75rem;color:var(--muted)">PaymentService.charge()</div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.75rem;color:var(--muted)">InventoryService.reserve()</div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.75rem;color:var(--muted)">ShippingService.create()</div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:.75rem;color:var(--muted)">EmailService.confirm()</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Adapter: "kết nối" hai thứ không tương thích</li>
+      <li>Decorator: thêm chức năng mà không sửa code gốc</li>
+      <li>Facade: đơn giản hóa interface cho hệ thống phức tạp</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 3: Behavioral -->
+<div class="section" id="sec-3">
+  <div class="section-header">
+    <div class="section-num">Behavioral Patterns</div>
+    <div class="section-title">Giao Tiếp Giữa Objects</div>
+    <div class="section-desc">Cách các objects giao tiếp, chia sẻ trách nhiệm và thực hiện hành động.</div>
+  </div>
+
+  <div class="pattern-tabs">
+    <button class="ptab active" onclick="showBehavioral('strategy')">🎯 Strategy</button>
+    <button class="ptab" onclick="showBehavioral('observer')">👀 Observer</button>
+    <button class="ptab" onclick="showBehavioral('command')">📋 Command</button>
+  </div>
+
+  <!-- STRATEGY -->
+  <div class="pattern-panel show" id="bp-strategy">
+    <div class="card">
+      <div style="color:var(--teal);font-weight:700;margin-bottom:12px;">Strategy — Swap thuật toán lúc runtime</div>
+      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Định nghĩa một family of algorithms, đóng gói từng cái, và làm chúng interchangeable.</div>
+      <div class="strategy-demo">
+        <div class="strat-context">
+          <div class="strat-label">🛒 SortContext</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:4px;" id="stratCurrent">Đang dùng: Bubble Sort</div>
+        </div>
+        <div class="strat-grid">
+          <div class="strat-item active" onclick="selectStrat(this,'Bubble Sort')">🫧 Bubble Sort<br><small>O(n²)</small></div>
+          <div class="strat-item" onclick="selectStrat(this,'Quick Sort')">⚡ Quick Sort<br><small>O(n log n)</small></div>
+          <div class="strat-item" onclick="selectStrat(this,'Merge Sort')">🔀 Merge Sort<br><small>O(n log n)</small></div>
+        </div>
+      </div>
+      <div style="color:var(--teal);font-size:.82rem;margin-top:12px;">Click để swap strategy — context code không thay đổi!</div>
+    </div>
+  </div>
+
+  <!-- OBSERVER -->
+  <div class="pattern-panel" id="bp-observer">
+    <div class="card">
+      <div style="color:var(--teal);font-weight:700;margin-bottom:12px;">Observer — Đăng ký và nhận thông báo</div>
+      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Giống đăng ký báo — khi có số mới, toà soạn tự gửi cho tất cả subscribers.</div>
+      <div class="observer-demo">
+        <div class="publisher">
+          <div class="pub-label">📰 EventBus — "order.created"</div>
+          <button class="obs-trigger" onclick="triggerObserver()">🔔 Emit Event</button>
+        </div>
+        <div class="obs-grid">
+          <div class="obs-box" id="obs1">📧 EmailService<br><small style="color:var(--muted)">subscriber</small></div>
+          <div class="obs-box" id="obs2">📊 Analytics<br><small style="color:var(--muted)">subscriber</small></div>
+          <div class="obs-box" id="obs3">📦 Inventory<br><small style="color:var(--muted)">subscriber</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMMAND -->
+  <div class="pattern-panel" id="bp-command">
+    <div class="card">
+      <div style="color:var(--teal);font-weight:700;margin-bottom:12px;">Command — Đóng gói action thành object</div>
+      <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Biến request thành object độc lập. Cho phép queue, log, và undo operations.</div>
+      <div style="display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap;margin:16px 0;">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;font-size:.82rem;">
+          <div>User clicks Ctrl+Z</div>
+        </div>
+        <div style="color:var(--muted)">→</div>
+        <div style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:10px;padding:12px 16px;font-size:.82rem;color:var(--accent);">
+          Command Stack<br>
+          <div style="font-family:monospace;font-size:.72rem;margin-top:6px;color:var(--muted)">
+            [DeleteCmd] ← top<br>
+            [InsertCmd]<br>
+            [MoveCmd]
+          </div>
+        </div>
+        <div style="color:var(--muted)">→</div>
+        <div style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.3);border-radius:10px;padding:12px;text-align:center;font-size:.82rem;color:var(--green);">
+          DeleteCmd.undo()<br><small>→ restore deleted text</small>
+        </div>
+      </div>
+      <div style="font-size:.82rem;color:var(--muted);text-align:center;">Undo/Redo, Job Queue, Transaction log — tất cả dùng Command pattern</div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Strategy: khi cần thay đổi algorithm linh hoạt</li>
+      <li>Observer: khi một event cần thông báo cho nhiều consumers</li>
+      <li>Command: khi cần queue, undo, hoặc log operations</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 4: Anti-patterns -->
+<div class="section" id="sec-4">
+  <div class="section-header">
+    <div class="section-num">Anti-Patterns</div>
+    <div class="section-title">Khi Nào KHÔNG Dùng Patterns</div>
+    <div class="section-desc">Pattern áp dụng sai chỗ còn tệ hơn không có pattern. Over-engineering là vấn đề phổ biến nhất.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⚠️ Over-Engineering Trap</div>
+    <div style="color:var(--muted);font-size:.9rem;line-height:1.7;margin-bottom:16px;">Junior dev sau khi học Design Patterns thường có xu hướng áp dụng mọi lúc mọi nơi:</div>
+    <div class="anti-cases">
+      <div class="anti-case">
+        <div class="anti-label">❌ Factory cho 1 loại object</div>
+        <div class="anti-desc">Dùng Factory khi chỉ tạo UserObject → needless complexity</div>
+      </div>
+      <div class="anti-case">
+        <div class="anti-label">❌ Singleton cho mọi thứ</div>
+        <div class="anti-desc">Global state = testability nightmare. NestJS DI đã handle việc này.</div>
+      </div>
+      <div class="anti-case">
+        <div class="anti-label">❌ Observer cho simple data flow</div>
+        <div class="anti-desc">Gọi function trực tiếp rõ ràng hơn event chain khó trace.</div>
+      </div>
+      <div class="anti-case">
+        <div class="anti-label">❌ Builder cho 2-3 params</div>
+        <div class="anti-desc">new User(email, name) đơn giản hơn UserBuilder().setEmail().setName().build()</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight">
+    <div class="highlight-label">Rule of Three</div>
+    <div class="highlight-text">Chỉ áp dụng pattern khi bạn thấy cùng vấn đề <strong>3 lần</strong>. Lần đầu — giải thẳng. Lần hai — ghi chú. Lần ba — refactor với pattern.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">✅ Checklist trước khi dùng Pattern</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;gap:10px;padding:10px 14px;background:var(--surface2);border-radius:8px;font-size:.88rem;"><span style="color:var(--teal)">?</span> Vấn đề này có thực sự phức tạp đến mức cần pattern không?</div>
+      <div style="display:flex;gap:10px;padding:10px 14px;background:var(--surface2);border-radius:8px;font-size:.88rem;"><span style="color:var(--teal)">?</span> Giải pháp đơn giản hơn có đủ không?</div>
+      <div style="display:flex;gap:10px;padding:10px 14px;background:var(--surface2);border-radius:8px;font-size:.88nm;"><span style="color:var(--teal)">?</span> Team có hiểu pattern này không?</div>
+      <div style="display:flex;gap:10px;padding:10px 14px;background:var(--surface2);border-radius:8px;font-size:.88rem;"><span style="color:var(--teal)">?</span> Trade-off của pattern này có chấp nhận được không?</div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🏆 Tổng kết Bài 04</div>
+    <ul class="takeaway-list">
+      <li><strong>Patterns = vocabulary</strong> — ngôn ngữ chung cho team thảo luận</li>
+      <li>Học pattern → hiểu vấn đề nó giải quyết, không chỉ code mẫu</li>
+      <li>Creational: Factory, Singleton, Builder</li>
+      <li>Structural: Adapter, Decorator, Facade</li>
+      <li>Behavioral: Strategy, Observer, Command</li>
+      <li>Anti-pattern: over-engineering > no pattern</li>
+    </ul>
+  </div>
+</div>
+
+</main>
+
+<div class="nav-bar">
+  <div class="nav-inner">
+    <button class="btn btn-prev" id="btnPrev" onclick="navigate(-1)" disabled>← Trước</button>
+    <div class="section-dots" id="dots"></div>
+    <button class="btn btn-next" id="btnNext" onclick="navigate(1)">Tiếp theo →</button>
+  </div>
+</div>
+
+<script>
+const SECTIONS = ['sec-0','sec-1','sec-2','sec-3','sec-4'];
+let current = 0;
+
+const dotsEl = document.getElementById('dots');
+SECTIONS.forEach((_,i) => {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i===0?' active':'');
+  d.onclick = () => goTo(i);
+  dotsEl.appendChild(d);
+});
+
+function goTo(n) {
+  document.getElementById(SECTIONS[current]).classList.remove('active');
+  current = n;
+  document.getElementById(SECTIONS[current]).classList.add('active');
+  document.getElementById('btnPrev').disabled = current === 0;
+  document.getElementById('btnNext').textContent = current === SECTIONS.length-1 ? '🏁 Hoàn thành' : 'Tiếp theo →';
+  document.querySelectorAll('.dot').forEach((d,i) => {
+    d.className = 'dot' + (i===current?' active':(i<current?' done':''));
+  });
+  document.getElementById('progressFill').style.width = ((current+1)/SECTIONS.length*100)+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function navigate(dir) { if(current+dir>=0 && current+dir<SECTIONS.length) goTo(current+dir); }
+
+function showTabs(prefix, id) {
+  document.querySelectorAll('[id^="'+prefix+'"]').forEach(p => p.classList.remove('show'));
+  document.getElementById(prefix+id).classList.add('show');
+}
+function showCreational(id) {
+  showTabs('cp-', id);
+  document.querySelectorAll('.ptab').forEach((t,i) => t.classList.toggle('active', ['factory','singleton','builder'][i]===id));
+}
+function showStructural(id) {
+  showTabs('sp-', id);
+  document.querySelectorAll('.ptab').forEach((t,i) => t.classList.toggle('active', ['adapter','decorator','facade'][i]===id));
+}
+function showBehavioral(id) {
+  showTabs('bp-', id);
+  document.querySelectorAll('.ptab').forEach((t,i) => t.classList.toggle('active', ['strategy','observer','command'][i]===id));
+}
+
+const factories = { dog: '🐕', cat: '🐈', bird: '🐦' };
+function runFactory(type) {
+  document.querySelectorAll('.factory-input').forEach(f => f.classList.remove('selected'));
+  event.target.classList.add('selected');
+  const out = document.getElementById('factoryOut');
+  out.textContent = '';
+  out.style.background = 'rgba(46,204,113,0.1)';
+  out.style.borderColor = 'var(--green)';
+  setTimeout(() => {
+    out.textContent = factories[type];
+    out.classList.add('active');
+    setTimeout(() => out.classList.remove('active'), 500);
+  }, 300);
+}
+
+function triggerObserver() {
+  [1,2,3].forEach((n,i) => {
+    setTimeout(() => {
+      const el = document.getElementById('obs'+n);
+      el.classList.add('notified');
+      el.querySelector('small').textContent = '✅ received!';
+      el.querySelector('small').style.color = 'var(--green)';
+      setTimeout(() => {
+        el.classList.remove('notified');
+        el.querySelector('small').textContent = 'subscriber';
+        el.querySelector('small').style.color = 'var(--muted)';
+      }, 2000);
+    }, i * 200);
+  });
+}
+
+function selectStrat(el, name) {
+  document.querySelectorAll('.strat-item').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('stratCurrent').textContent = 'Đang dùng: ' + name;
+}
+</script>
+</body>
+</html>

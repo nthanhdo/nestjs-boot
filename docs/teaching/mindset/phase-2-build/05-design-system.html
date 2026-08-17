@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design System — Phase 2: Build</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+  --text: #eef1f8; --muted: #8899bb;
+  --accent: #a78bfa; --yellow: #ffd43b; --green: #2ecc71; --red: #e74c3c;
+  --blue: #5b8def; --orange: #ffb347; --pink: #ff5e7a; --teal: #00cec9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 25% 15%, rgba(255,94,122,0.06) 0%, transparent 50%), radial-gradient(ellipse at 75% 85%, rgba(167,139,250,0.05) 0%, transparent 50%); pointer-events:none; z-index:0; }
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; position: sticky; top: 0; z-index: 100; }
+.header-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.phase-badge { background: linear-gradient(135deg,#e84393,#ff5e7a); color:#fff; padding: 3px 12px; border-radius: 20px; font-size: .7rem; font-weight: 700; }
+header h1 { font-size: 1.3rem; font-weight: 800; background: linear-gradient(135deg,#ff5e7a,#a78bfa); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.header-sub { color: var(--muted); font-size: .85rem; margin-left: auto; }
+.progress-bar { width: 100%; height: 3px; background: var(--border); border-radius: 2px; margin-top: 10px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg,#e84393,#ff5e7a); border-radius: 2px; transition: width .4s; }
+main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: relative; z-index: 1; }
+.section { display: none; animation: fadeUp .5s ease; }
+.section.active { display: block; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: .75rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+.section-title { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg,#fff,var(--pink)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom: 10px; }
+.section-desc { color: var(--muted); font-size: 1rem; line-height: 1.7; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+.card-title { font-size: 1rem; font-weight: 700; color: var(--pink); margin-bottom: 14px; }
+.highlight { background: linear-gradient(135deg,rgba(255,94,122,0.08),rgba(255,94,122,0.04)); border: 1px solid rgba(255,94,122,0.25); border-radius: 12px; padding: 20px 24px; margin: 20px 0; }
+.highlight-label { font-size: .7rem; font-weight: 700; color: var(--pink); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.highlight-text { color: var(--text); font-size: .95rem; line-height: 1.7; }
+.takeaway { background: linear-gradient(135deg,rgba(46,204,113,0.1),rgba(46,204,113,0.04)); border: 1px solid rgba(46,204,113,0.3); border-radius: 14px; padding: 24px; margin-top: 28px; }
+.takeaway-title { color: var(--green); font-weight: 700; font-size: .9rem; margin-bottom: 14px; }
+.takeaway-list { list-style: none; }
+.takeaway-list li { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; font-size: .9rem; color: var(--text); line-height: 1.6; }
+.takeaway-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 14px 24px; display: flex; justify-content: center; z-index: 100; }
+.nav-inner { display: flex; align-items: center; gap: 12px; max-width: 900px; width: 100%; }
+.btn { padding: 10px 24px; border-radius: 10px; font-size: .9rem; font-weight: 600; cursor: pointer; border: none; transition: all .2s; }
+.btn-prev { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-prev:hover:not(:disabled) { color: var(--text); border-color: var(--pink); }
+.btn-prev:disabled { opacity:.4; cursor:default; }
+.btn-next { background: linear-gradient(135deg,#e84393,#ff5e7a); color:#fff; flex:1; max-width:200px; box-shadow:0 4px 16px rgba(255,94,122,0.4); }
+.btn-next:hover { transform:translateY(-1px); }
+.section-dots { display:flex; gap:6px; margin:0 auto; }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--border); transition:all .3s; cursor:pointer; }
+.dot.active { background:var(--pink); transform:scale(1.3); }
+.dot.done { background:rgba(255,94,122,0.4); }
+
+/* DESIGN TOKEN DEMO */
+.token-demo { margin:20px 0; }
+.token-controls { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+.token-btn { background:var(--surface2); border:1px solid var(--border); color:var(--muted); padding:8px 14px; border-radius:8px; cursor:pointer; font-size:.82rem; transition:all .2s; }
+.token-btn:hover { border-color:var(--pink); }
+.token-btn.active { background:rgba(255,94,122,0.1); border-color:var(--pink); color:var(--pink); }
+.token-preview { background:var(--surface2); border-radius:14px; padding:24px; transition:all .5s; }
+.tok-card { border-radius:12px; padding:20px; margin-bottom:12px; transition:all .5s; }
+.tok-btn-row { display:flex; gap:8px; flex-wrap:wrap; }
+.tok-btn { border:none; border-radius:8px; padding:10px 20px; font-size:.9rem; font-weight:600; cursor:default; transition:all .5s; }
+.tok-text { font-size:1rem; transition:all .5s; }
+
+/* COLOR SYSTEM */
+.color-palette { margin:20px 0; }
+.color-row { display:flex; gap:4px; margin-bottom:12px; border-radius:10px; overflow:hidden; }
+.color-swatch { flex:1; height:48px; display:flex; align-items:flex-end; padding:4px 6px; }
+.color-swatch span { font-size:.65rem; color:rgba(0,0,0,0.5); font-weight:700; }
+.color-row.light .color-swatch span { color:rgba(255,255,255,0.7); }
+.color-info { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.ci-box { background:var(--surface2); border-radius:8px; padding:12px; }
+.ci-label { font-size:.7rem; color:var(--muted); margin-bottom:4px; }
+.ci-val { font-size:.85rem; font-weight:600; }
+
+/* TYPOGRAPHY SCALE */
+.type-scale { margin:20px 0; }
+.type-row { display:flex; align-items:baseline; gap:16px; padding:12px 0; border-bottom:1px solid var(--border); }
+.type-meta { width:80px; flex-shrink:0; }
+.type-size { font-size:.7rem; color:var(--muted); }
+.type-name { font-size:.65rem; color:var(--pink); font-weight:700; }
+.type-sample { color:var(--text); }
+
+/* SPACING */
+.spacing-demo { margin:20px 0; }
+.space-row { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+.space-label { width:50px; font-size:.75rem; color:var(--muted); text-align:right; flex-shrink:0; }
+.space-bar { background:linear-gradient(90deg,var(--pink),var(--accent)); border-radius:3px; height:16px; }
+.space-val { font-size:.75rem; color:var(--muted); }
+
+/* ATOMIC DESIGN */
+.atomic-flow { display:flex; align-items:center; gap:8px; justify-content:center; flex-wrap:wrap; margin:24px 0; }
+.atomic-level { text-align:center; }
+.atomic-box { border-radius:10px; padding:12px 16px; font-size:.8rem; font-weight:700; min-width:80px; }
+.atomic-sub { font-size:.68rem; color:var(--muted); margin-top:4px; }
+.atomic-arrow { color:var(--muted); font-size:1.2rem; }
+
+/* BUTTON STATES */
+.btn-states { display:flex; gap:10px; flex-wrap:wrap; margin:20px 0; align-items:center; }
+.demo-btn { border:none; border-radius:8px; padding:10px 20px; font-size:.9rem; font-weight:600; cursor:pointer; transition:all .2s; }
+.demo-btn.default { background:linear-gradient(135deg,#e84393,#ff5e7a); color:#fff; }
+.demo-btn.hover { background:linear-gradient(135deg,#c0143c,#e84393); color:#fff; box-shadow:0 4px 12px rgba(255,94,122,0.4); transform:translateY(-1px); }
+.demo-btn.active-state { background:linear-gradient(135deg,#990f2e,#c0143c); color:#fff; transform:scale(0.97); }
+.demo-btn.disabled-state { background:var(--surface2); color:var(--muted); cursor:not-allowed; opacity:.6; }
+.demo-btn.loading { background:linear-gradient(135deg,#e84393,#ff5e7a); color:#fff; opacity:.8; }
+.btn-state-label { font-size:.7rem; color:var(--muted); text-align:center; margin-top:4px; }
+
+/* RESPONSIVE DEMO */
+.responsive-demo { margin:20px 0; }
+.viewport-tabs { display:flex; gap:6px; margin-bottom:12px; }
+.vt { background:var(--surface2); border:1px solid var(--border); color:var(--muted); padding:6px 12px; border-radius:6px; cursor:pointer; font-size:.8rem; transition:all .2s; }
+.vt.active { border-color:var(--pink); color:var(--pink); }
+.viewport-frame { background:var(--surface2); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-top:12px; transition:all .4s; }
+.vf-header { background:var(--surface); padding:10px 16px; display:flex; gap:6px; }
+.vf-dot { width:10px; height:10px; border-radius:50%; }
+.vf-content { padding:16px; }
+.vf-nav { display:flex; gap:8px; align-items:center; }
+.vf-logo { background:var(--pink); border-radius:6px; padding:4px 10px; font-size:.72rem; font-weight:700; color:#fff; }
+.vf-links { display:flex; gap:8px; }
+.vf-link { background:var(--surface); border-radius:4px; padding:3px 8px; font-size:.68rem; color:var(--muted); }
+.vf-grid { display:grid; gap:8px; margin-top:12px; }
+.vf-card { background:var(--surface); border-radius:8px; padding:12px; height:60px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span class="phase-badge">PHASE 2 · BUILD</span>
+    <h1>🎨 Design System</h1>
+    <span class="header-sub">Bài 05 / 08</span>
+    <div class="progress-bar" style="width:100%">
+      <div class="progress-fill" id="progressFill" style="width:62.5%"></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- SEC 0: What is Design System -->
+<div class="section active" id="sec-0">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 01</div>
+    <div class="section-title">Design System là gì?</div>
+    <div class="section-desc">Không phải chỉ là "UI đẹp". Design System là ngôn ngữ thiết kế nhất quán giúp scale ứng dụng.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">💡 Design System vs "Chỉ là UI"</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:16px;">
+        <div style="color:var(--red);font-size:.78rem;font-weight:700;margin-bottom:10px;">❌ Không có Design System</div>
+        <ul style="list-style:none;font-size:.85rem;color:var(--muted);line-height:1.9">
+          <li>• 5 developer → 5 kiểu button khác nhau</li>
+          <li>• Đổi màu brand → sửa 200 file</li>
+          <li>• Spacing không nhất quán</li>
+          <li>• Component tương tự nhau × 10 bản</li>
+        </ul>
+      </div>
+      <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.25);border-radius:10px;padding:16px;">
+        <div style="color:var(--green);font-size:.78rem;font-weight:700;margin-bottom:10px;">✅ Có Design System</div>
+        <ul style="list-style:none;font-size:.85rem;color:var(--muted);line-height:1.9">
+          <li>• 1 Button component dùng khắp app</li>
+          <li>• Đổi màu brand → sửa 1 token</li>
+          <li>• Spacing 4px grid xuyên suốt</li>
+          <li>• Team nói cùng ngôn ngữ design</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0;">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:1.8rem;margin-bottom:8px;">🎨</div>
+      <div style="font-weight:700;color:var(--pink);font-size:.9rem;margin-bottom:4px;">Design Tokens</div>
+      <div style="font-size:.78rem;color:var(--muted)">Colors, spacing, typography, shadows</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:1.8rem;margin-bottom:8px;">🧩</div>
+      <div style="font-weight:700;color:var(--accent);font-size:.9rem;margin-bottom:4px;">Components</div>
+      <div style="font-size:.78rem;color:var(--muted)">Button, Input, Card, Modal...</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;">
+      <div style="font-size:1.8rem;margin-bottom:8px;">📖</div>
+      <div style="font-weight:700;color:var(--blue);font-size:.9rem;margin-bottom:4px;">Guidelines</div>
+      <div style="font-size:.78rem;color:var(--muted)">Khi nào dùng cái gì, tại sao</div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Design System = Single Source of Truth cho UI</li>
+      <li>Đầu tư ban đầu cao, nhưng tiết kiệm 10× về sau</li>
+      <li>Lớn hay nhỏ đều cần — chỉ khác về mức độ phức tạp</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 1: Design Tokens -->
+<div class="section" id="sec-1">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 02</div>
+    <div class="section-title">Design Tokens</div>
+    <div class="section-desc">Tokens là các "biến thiết kế" — thay đổi 1 token → toàn bộ app cập nhật.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔄 Demo tương tác — Đổi theme bằng cách đổi tokens</div>
+    <div class="token-controls">
+      <button class="token-btn active" onclick="applyTheme('brand')">🎯 Brand Theme</button>
+      <button class="token-btn" onclick="applyTheme('ocean')">🌊 Ocean Theme</button>
+      <button class="token-btn" onclick="applyTheme('forest')">🌿 Forest Theme</button>
+      <button class="token-btn" onclick="applyTheme('sunset')">🌅 Sunset Theme</button>
+    </div>
+    <div class="token-preview" id="tokenPreview">
+      <div class="tok-card" id="tokCard">
+        <div id="tokTitle" style="font-size:1.1rem;font-weight:700;margin-bottom:8px;">Thẻ sản phẩm</div>
+        <div id="tokDesc" style="font-size:.85rem;opacity:.7;margin-bottom:16px;">Thay đổi token → cả card thay đổi</div>
+        <div class="tok-btn-row">
+          <button class="tok-btn" id="tokBtnPrimary">Mua ngay</button>
+          <button class="tok-btn" id="tokBtnSecondary">Xem thêm</button>
+        </div>
+      </div>
+      <div style="margin-top:12px;font-family:monospace;font-size:.78rem;color:var(--muted)" id="tokVars"></div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Tokens = CSS variables, JS constants, hoặc JSON config</li>
+      <li>Thay đổi token ở 1 nơi → propagate khắp app tự động</li>
+      <li>Naming: --color-primary, --spacing-4, --font-size-lg</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 2: Color System -->
+<div class="section" id="sec-2">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 03</div>
+    <div class="section-title">Color System</div>
+    <div class="section-desc">Màu sắc có cấu trúc, không phải tùy hứng. Mỗi màu có vai trò rõ ràng.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎨 Palette có hệ thống</div>
+    <div class="color-palette">
+      <div style="font-size:.75rem;color:var(--muted);margin-bottom:6px;">Primary (Brand)</div>
+      <div class="color-row">
+        <div class="color-swatch" style="background:#fce4f0"><span style="color:#333">50</span></div>
+        <div class="color-swatch" style="background:#f9c0db"><span style="color:#333">100</span></div>
+        <div class="color-swatch" style="background:#f394bb"><span style="color:#333">200</span></div>
+        <div class="color-swatch" style="background:#ec679a"><span>300</span></div>
+        <div class="color-swatch" style="background:#e84393"><span>400</span></div>
+        <div class="color-swatch light" style="background:#d91f7d"><span>500★</span></div>
+        <div class="color-swatch light" style="background:#b01668"><span>600</span></div>
+        <div class="color-swatch light" style="background:#880f52"><span>700</span></div>
+        <div class="color-swatch light" style="background:#5f083b"><span>800</span></div>
+        <div class="color-swatch light" style="background:#3a0424"><span>900</span></div>
+      </div>
+
+      <div style="font-size:.75rem;color:var(--muted);margin:12px 0 6px;">Semantic Colors</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+        <div style="border-radius:8px;overflow:hidden">
+          <div style="background:#2ecc71;height:40px;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:rgba(0,0,0,0.5)">Success</div>
+          <div style="background:var(--surface2);padding:6px 8px;font-size:.68rem;color:var(--muted)">#2ecc71 · Xác nhận, thành công</div>
+        </div>
+        <div style="border-radius:8px;overflow:hidden">
+          <div style="background:#ffd43b;height:40px;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:rgba(0,0,0,0.5)">Warning</div>
+          <div style="background:var(--surface2);padding:6px 8px;font-size:.68rem;color:var(--muted)">#ffd43b · Cảnh báo, chú ý</div>
+        </div>
+        <div style="border-radius:8px;overflow:hidden">
+          <div style="background:#e74c3c;height:40px;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:rgba(255,255,255,0.8)">Error</div>
+          <div style="background:var(--surface2);padding:6px 8px;font-size:.68rem;color:var(--muted)">#e74c3c · Lỗi, nguy hiểm</div>
+        </div>
+        <div style="border-radius:8px;overflow:hidden">
+          <div style="background:#5b8def;height:40px;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;color:rgba(255,255,255,0.8)">Info</div>
+          <div style="background:var(--surface2);padding:6px 8px;font-size:.68rem;color:var(--muted)">#5b8def · Thông tin</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight">
+    <div class="highlight-label">Contrast Ratio — WCAG AA Standard</div>
+    <div class="highlight-text">Text trên nền phải có contrast ratio ≥ 4.5:1 (normal text) hoặc ≥ 3:1 (large text). Dùng công cụ: WebAIM Contrast Checker. Accessibility không phải optional.</div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Mỗi màu có semantic meaning — không dùng màu bừa</li>
+      <li>Primary palette: 10 shades (50-900), dùng 500 làm base</li>
+      <li>Semantic colors (success/warning/error) phải nhất quán xuyên app</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 3: Typography + Spacing -->
+<div class="section" id="sec-3">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 04 + 05</div>
+    <div class="section-title">Typography & Spacing</div>
+    <div class="section-desc">Font size và spacing cần có hệ thống — không phải số ngẫu nhiên.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📝 Type Scale — Modular Scale (ratio 1.25)</div>
+    <div class="type-scale">
+      <div class="type-row">
+        <div class="type-meta"><div class="type-size">10px</div><div class="type-name">xs</div></div>
+        <div class="type-sample" style="font-size:10px">Caption, labels, metadata</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><div class="type-size">12px</div><div class="type-name">sm</div></div>
+        <div class="type-sample" style="font-size:12px">Small text, footnotes</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><div class="type-size">14px</div><div class="type-name">base</div></div>
+        <div class="type-sample" style="font-size:14px">Body text mặc định</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><div class="type-size">16px</div><div class="type-name">md</div></div>
+        <div class="type-sample" style="font-size:16px">Body text lớn, lead paragraph</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><div class="type-size">20px</div><div class="type-name">lg</div></div>
+        <div class="type-sample" style="font-size:20px;font-weight:600">Subheading, section title</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><div class="type-size">24px</div><div class="type-name">xl</div></div>
+        <div class="type-sample" style="font-size:24px;font-weight:700">Heading H2</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><div class="type-size">32px</div><div class="type-name">2xl</div></div>
+        <div class="type-sample" style="font-size:32px;font-weight:800">Heading H1</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📐 4px Grid Spacing System</div>
+    <div class="spacing-demo">
+      <div class="space-row"><div class="space-label">4px · 1</div><div class="space-bar" style="width:4px"></div><div class="space-val">Icon gap, inline spacing</div></div>
+      <div class="space-row"><div class="space-label">8px · 2</div><div class="space-bar" style="width:8px"></div><div class="space-val">Tight element spacing</div></div>
+      <div class="space-row"><div class="space-label">12px · 3</div><div class="space-bar" style="width:12px"></div><div class="space-val">Component inner padding</div></div>
+      <div class="space-row"><div class="space-label">16px · 4</div><div class="space-bar" style="width:16px"></div><div class="space-val">Card padding (default)</div></div>
+      <div class="space-row"><div class="space-label">24px · 6</div><div class="space-bar" style="width:24px"></div><div class="space-val">Section spacing</div></div>
+      <div class="space-row"><div class="space-label">32px · 8</div><div class="space-bar" style="width:32px"></div><div class="space-val">Large section gap</div></div>
+      <div class="space-row"><div class="space-label">48px · 12</div><div class="space-bar" style="width:48px"></div><div class="space-val">Page section divider</div></div>
+      <div class="space-row"><div class="space-label">64px · 16</div><div class="space-bar" style="width:64px"></div><div class="space-val">Hero/feature spacing</div></div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Type scale: dùng tỷ lệ có hệ thống, không phải số tùy ý</li>
+      <li>4px grid: mọi spacing đều chia hết cho 4</li>
+      <li>Line height: body text = 1.5-1.75, heading = 1.2-1.3</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 4: Atomic Design -->
+<div class="section" id="sec-4">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 06</div>
+    <div class="section-title">Atomic Design</div>
+    <div class="section-desc">Thiết kế component từ nhỏ đến lớn, như nguyên tử kết hợp thành phân tử rồi thành sinh vật.</div>
+  </div>
+
+  <div class="atomic-flow">
+    <div class="atomic-level">
+      <div class="atomic-box" style="background:rgba(255,94,122,0.1);border:1px solid rgba(255,94,122,0.3);color:var(--pink)">⚛️ Atoms</div>
+      <div class="atomic-sub">Button, Input,<br>Icon, Label</div>
+    </div>
+    <div class="atomic-arrow">→</div>
+    <div class="atomic-level">
+      <div class="atomic-box" style="background:rgba(255,183,71,0.1);border:1px solid rgba(255,183,71,0.3);color:var(--orange)">🧪 Molecules</div>
+      <div class="atomic-sub">SearchBar,<br>FormField</div>
+    </div>
+    <div class="atomic-arrow">→</div>
+    <div class="atomic-level">
+      <div class="atomic-box" style="background:rgba(91,141,239,0.1);border:1px solid rgba(91,141,239,0.3);color:var(--blue)">🦠 Organisms</div>
+      <div class="atomic-sub">Header, Sidebar,<br>ProductList</div>
+    </div>
+    <div class="atomic-arrow">→</div>
+    <div class="atomic-level">
+      <div class="atomic-box" style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);color:var(--accent)">📄 Templates</div>
+      <div class="atomic-sub">Page layout<br>structure</div>
+    </div>
+    <div class="atomic-arrow">→</div>
+    <div class="atomic-level">
+      <div class="atomic-box" style="background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.3);color:var(--green)">🌐 Pages</div>
+      <div class="atomic-sub">Final UI<br>with real data</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">💡 Ví dụ thực tế: SearchBar</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:var(--surface2);border-radius:10px;padding:14px">
+        <div style="color:var(--pink);font-size:.75rem;font-weight:700;margin-bottom:8px;">⚛️ Atoms</div>
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.8">• TextInput (atom)<br>• SearchIcon (atom)<br>• ClearButton (atom)</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;padding:14px">
+        <div style="color:var(--orange);font-size:.75rem;font-weight:700;margin-bottom:8px;">🧪 Molecule</div>
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.8">• SearchBar = TextInput + SearchIcon + ClearButton<br>• Handle search logic</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Atoms → không thể chia nhỏ hơn và vẫn có ý nghĩa</li>
+      <li>Molecules → nhóm atoms hoạt động cùng nhau</li>
+      <li>Organisms → section của UI (Header, Footer, ProductGrid)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 5: States + Responsive -->
+<div class="section" id="sec-5">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 07 + 08</div>
+    <div class="section-title">States & Responsive</div>
+    <div class="section-desc">Mọi component phải handle tất cả states. Layout phải hoạt động ở mọi viewport.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔘 Button States — Tất cả phải được thiết kế</div>
+    <div class="btn-states">
+      <div>
+        <button class="demo-btn default">Default</button>
+        <div class="btn-state-label">default</div>
+      </div>
+      <div>
+        <button class="demo-btn hover">Hover</button>
+        <div class="btn-state-label">:hover</div>
+      </div>
+      <div>
+        <button class="demo-btn active-state">Active</button>
+        <div class="btn-state-label">:active</div>
+      </div>
+      <div>
+        <button class="demo-btn disabled-state" disabled>Disabled</button>
+        <div class="btn-state-label">:disabled</div>
+      </div>
+      <div>
+        <button class="demo-btn loading">
+          <span style="display:inline-block;animation:spin 1s linear infinite;margin-right:6px">⟳</span>Loading
+        </button>
+        <div class="btn-state-label">loading</div>
+      </div>
+    </div>
+    <style>@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}</style>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📱 Responsive — Click để xem layout thay đổi</div>
+    <div class="viewport-tabs">
+      <button class="vt active" onclick="setViewport('desktop')">🖥️ Desktop</button>
+      <button class="vt" onclick="setViewport('tablet')">📱 Tablet</button>
+      <button class="vt" onclick="setViewport('mobile')">📲 Mobile</button>
+    </div>
+    <div class="viewport-frame" id="vpFrame">
+      <div class="vf-header">
+        <div class="vf-dot" style="background:#e74c3c"></div>
+        <div class="vf-dot" style="background:#f39c12"></div>
+        <div class="vf-dot" style="background:#2ecc71"></div>
+      </div>
+      <div class="vf-content">
+        <div class="vf-nav">
+          <div class="vf-logo">DS</div>
+          <div class="vf-links" id="navLinks">
+            <div class="vf-link">Products</div>
+            <div class="vf-link">Pricing</div>
+            <div class="vf-link">Docs</div>
+          </div>
+        </div>
+        <div class="vf-grid" id="contentGrid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="vf-card"></div>
+          <div class="vf-card"></div>
+          <div class="vf-card"></div>
+          <div class="vf-card"></div>
+          <div class="vf-card"></div>
+          <div class="vf-card"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🏆 Tổng kết Bài 05</div>
+    <ul class="takeaway-list">
+      <li>Design System = Tokens + Components + Guidelines</li>
+      <li>Tokens: thay đổi 1 nơi, cập nhật khắp app</li>
+      <li>Color System: semantic meaning, contrast AA</li>
+      <li>Typography + Spacing: có hệ thống, không tùy ý</li>
+      <li>Atomic Design: atoms → molecules → organisms</li>
+      <li>States: mọi component phải có đủ states</li>
+    </ul>
+  </div>
+</div>
+
+</main>
+
+<div class="nav-bar">
+  <div class="nav-inner">
+    <button class="btn btn-prev" id="btnPrev" onclick="navigate(-1)" disabled>← Trước</button>
+    <div class="section-dots" id="dots"></div>
+    <button class="btn btn-next" id="btnNext" onclick="navigate(1)">Tiếp theo →</button>
+  </div>
+</div>
+
+<script>
+const SECTIONS = ['sec-0','sec-1','sec-2','sec-3','sec-4','sec-5'];
+let current = 0;
+const dotsEl = document.getElementById('dots');
+SECTIONS.forEach((_,i) => {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i===0?' active':'');
+  d.onclick = () => goTo(i);
+  dotsEl.appendChild(d);
+});
+function goTo(n) {
+  document.getElementById(SECTIONS[current]).classList.remove('active');
+  current = n;
+  document.getElementById(SECTIONS[current]).classList.add('active');
+  document.getElementById('btnPrev').disabled = current === 0;
+  document.getElementById('btnNext').textContent = current === SECTIONS.length-1 ? '🏁 Hoàn thành' : 'Tiếp theo →';
+  document.querySelectorAll('.dot').forEach((d,i) => d.className='dot'+(i===current?' active':(i<current?' done':'')));
+  document.getElementById('progressFill').style.width = ((current+1)/SECTIONS.length*100)+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function navigate(dir) { if(current+dir>=0 && current+dir<SECTIONS.length) goTo(current+dir); }
+
+const themes = {
+  brand: { primary:'#e84393', bg:'#2d1827', text:'#ffe0f0', btn1:'rgba(232,67,147,0.9)', btn2:'rgba(232,67,147,0.2)', vars:'--color-primary: #e84393\n--color-bg: #2d1827' },
+  ocean: { primary:'#0984e3', bg:'#0d2137', text:'#e0f0ff', btn1:'rgba(9,132,227,0.9)', btn2:'rgba(9,132,227,0.2)', vars:'--color-primary: #0984e3\n--color-bg: #0d2137' },
+  forest: { primary:'#00b894', bg:'#0d2b20', text:'#e0fff6', btn1:'rgba(0,184,148,0.9)', btn2:'rgba(0,184,148,0.2)', vars:'--color-primary: #00b894\n--color-bg: #0d2b20' },
+  sunset: { primary:'#e67e22', bg:'#2b1b0d', text:'#fff0e0', btn1:'rgba(230,126,34,0.9)', btn2:'rgba(230,126,34,0.2)', vars:'--color-primary: #e67e22\n--color-bg: #2b1b0d' },
+};
+function applyTheme(t) {
+  const th = themes[t];
+  document.getElementById('tokenPreview').style.background = th.bg;
+  document.getElementById('tokCard').style.background = 'rgba(255,255,255,0.05)';
+  document.getElementById('tokTitle').style.color = th.text;
+  document.getElementById('tokBtnPrimary').style.background = th.btn1;
+  document.getElementById('tokBtnPrimary').style.color = '#fff';
+  document.getElementById('tokBtnSecondary').style.background = th.btn2;
+  document.getElementById('tokBtnSecondary').style.color = th.primary;
+  document.getElementById('tokBtnSecondary').style.border = '1px solid ' + th.primary;
+  document.getElementById('tokVars').textContent = th.vars;
+  document.querySelectorAll('.token-btn').forEach((b,i) => b.classList.toggle('active', ['brand','ocean','forest','sunset'][i]===t));
+}
+applyTheme('brand');
+
+function setViewport(vp) {
+  const grid = document.getElementById('contentGrid');
+  const links = document.getElementById('navLinks');
+  document.querySelectorAll('.vt').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  if(vp==='desktop') { grid.style.gridTemplateColumns='repeat(3,1fr)'; links.style.display='flex'; }
+  else if(vp==='tablet') { grid.style.gridTemplateColumns='repeat(2,1fr)'; links.style.display='flex'; }
+  else { grid.style.gridTemplateColumns='1fr'; links.style.display='none'; }
+}
+</script>
+</body>
+</html>

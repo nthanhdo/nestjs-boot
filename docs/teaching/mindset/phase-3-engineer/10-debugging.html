@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10 — Debugging | Phase 3: Engineer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d1117; --bg2: #161b22; --bg3: #21262d;
+    --border: #30363d; --text: #e6edf3; --muted: #8b949e;
+    --green: #3fb950; --red: #f85149; --yellow: #d29922;
+    --blue: #58a6ff; --purple: #bc8cff; --orange: #ffa657;
+  }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; }
+  .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+  h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; }
+  h2 { font-size: 1.5rem; font-weight: 600; margin: 2.5rem 0 1rem; color: var(--blue); }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 1.2rem 0 0.4rem; color: var(--purple); }
+  p { color: var(--muted); margin-bottom: 0.8rem; }
+  pre { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; overflow-x: auto; font-size: 0.82rem; line-height: 1.7; margin: 0.8rem 0; }
+  code { font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace; }
+  .kw { color: var(--purple); } .fn { color: var(--blue); } .str { color: var(--green); }
+  .cm { color: var(--muted); } .num { color: var(--orange); } .err { color: var(--red); }
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin: 1rem 0; }
+  .reveal { opacity: 0; transform: translateY(20px); transition: all 0.5s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .divider { height: 1px; background: var(--border); margin: 3rem 0; }
+  .progress-bar { height: 6px; background: var(--bg3); border-radius: 3px; margin: 2rem 0; }
+  .progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--orange), var(--red)); width: 0; transition: width 0.3s; }
+  .header-meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 2rem; }
+  .exercise { background: linear-gradient(135deg, rgba(88,166,255,0.08), rgba(188,140,255,0.08)); border: 1px solid rgba(88,166,255,0.3); border-radius: 12px; padding: 1.5rem; margin: 2rem 0; }
+  .takeaway { background: linear-gradient(135deg, rgba(57,211,83,0.08), rgba(13,17,23,0)); border: 1px solid rgba(57,211,83,0.3); border-radius: 12px; padding: 1.5rem; margin: 2rem 0; }
+  .checklist { list-style: none; }
+  .checklist li { padding: 0.4rem 0; display: flex; gap: 0.5rem; align-items: flex-start; font-size: 0.9rem; }
+
+  /* Flowchart */
+  .flow { display: flex; flex-direction: column; align-items: center; gap: 0; margin: 1.5rem 0; }
+  .flow-step { padding: 0.7rem 1.5rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.3s; min-width: 200px; text-align: center; position: relative; }
+  .flow-step:hover { filter: brightness(1.2); transform: scale(1.03); }
+  .flow-arrow { color: var(--muted); font-size: 1.2rem; line-height: 1; padding: 0.2rem 0; }
+  .flow-detail { display: none; max-width: 400px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem 1rem; font-size: 0.82rem; color: var(--muted); text-align: left; margin: 0.3rem 0; }
+  .flow-detail.open { display: block; animation: fadeIn 0.3s; }
+
+  /* 5 Whys */
+  .whys { margin: 1.5rem 0; }
+  .why-item { display: flex; align-items: flex-start; gap: 0.8rem; margin: 0; padding: 0.8rem; border-left: 3px solid var(--border); position: relative; cursor: pointer; transition: background 0.2s; }
+  .why-item:hover { background: var(--bg2); }
+  .why-item.active { border-left-color: var(--orange); background: rgba(255,166,87,0.05); }
+  .why-badge { background: var(--orange); color: var(--bg); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; flex-shrink: 0; }
+  .why-content { flex: 1; }
+  .why-cause { font-weight: 600; color: var(--text); }
+  .why-q { font-size: 0.82rem; color: var(--muted); margin-top: 0.2rem; }
+  .why-hidden { display: none; margin-top: 0.5rem; padding: 0.5rem; background: var(--bg3); border-radius: 6px; font-size: 0.82rem; color: var(--green); }
+  .why-item.active .why-hidden { display: block; }
+
+  /* Tools comparison */
+  .tools-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0; }
+  .tool-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; }
+  .tool-card h4 { margin: 0 0 0.5rem; }
+  .tool-use { font-size: 0.78rem; padding: 0.2rem 0.5rem; border-radius: 4px; display: inline-block; margin-top: 0.3rem; }
+
+  /* Stack trace */
+  .stack-trace { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; font-family: monospace; font-size: 0.8rem; line-height: 1.8; position: relative; }
+  .stack-line { display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer; border-radius: 4px; padding: 0.1rem 0.3rem; transition: background 0.2s; }
+  .stack-line:hover { background: rgba(88,166,255,0.1); }
+  .stack-line.highlight { background: rgba(248,81,73,0.15); border-left: 3px solid var(--red); }
+  .stack-line.highlight2 { background: rgba(210,153,34,0.1); border-left: 3px solid var(--yellow); }
+  .stack-tooltip { display: none; font-size: 0.75rem; color: var(--muted); margin-left: 1rem; font-style: italic; }
+  .stack-line.open .stack-tooltip { display: block; }
+  .stack-num { color: var(--muted); width: 20px; flex-shrink: 0; text-align: right; }
+
+  /* Git bisect */
+  .bisect { display: flex; align-items: center; gap: 0.3rem; margin: 1.5rem 0; flex-wrap: nowrap; overflow-x: auto; padding: 1rem; background: var(--bg2); border-radius: 12px; }
+  .commit-dot { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; cursor: pointer; transition: all 0.3s; flex-shrink: 0; border: 2px solid transparent; }
+  .commit-good { background: rgba(63,185,80,0.2); border-color: var(--green); color: var(--green); }
+  .commit-bad { background: rgba(248,81,73,0.2); border-color: var(--red); color: var(--red); }
+  .commit-unknown { background: var(--bg3); border-color: var(--border); color: var(--muted); }
+  .commit-check { background: rgba(88,166,255,0.2); border-color: var(--blue); color: var(--blue); }
+  .bisect-arrow { color: var(--muted); font-size: 0.8rem; flex-shrink: 0; }
+
+  /* Bug patterns table */
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin: 1rem 0; }
+  th { background: var(--bg3); color: var(--text); padding: 0.6rem 0.8rem; text-align: left; border-bottom: 2px solid var(--border); }
+  td { padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header-meta">Phase 3: Engineer · Bài 10</div>
+  <h1>🔍 Debugging</h1>
+  <p style="font-size:1.1rem; color: var(--text);">Tìm bug là khoa học, không phải may mắn. Systematic process beats random guessing.</p>
+
+  <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+  <!-- Flowchart -->
+  <h2>🗺️ Debugging Process</h2>
+  <p>Click từng bước để xem chi tiết.</p>
+
+  <div class="flow reveal">
+    <div class="flow-step" style="background:rgba(248,81,73,0.15); border:1px solid rgba(248,81,73,0.4); color:var(--red);" onclick="toggleFlow('bug')">🐛 Bug Reported</div>
+    <div id="flow-bug" class="flow-detail open" style="display:block;"><strong style="color:var(--red)">Bước đầu:</strong> Đừng panic. Thu thập thông tin: ai báo, khi nào, platform nào, error message gì?</div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step" style="background:rgba(210,153,34,0.15); border:1px solid rgba(210,153,34,0.4); color:var(--yellow);" onclick="toggleFlow('repro')">🔁 Reproduce</div>
+    <div id="flow-repro" class="flow-detail"><strong style="color:var(--yellow)">Quan trọng nhất!</strong> Nếu không reproduce được → không fix được. Hỏi: môi trường, bước thực hiện, tần suất xảy ra?</div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step" style="background:rgba(88,166,255,0.15); border:1px solid rgba(88,166,255,0.4); color:var(--blue);" onclick="toggleFlow('evidence')">🔎 Gather Evidence</div>
+    <div id="flow-evidence" class="flow-detail"><strong style="color:var(--blue)">Đọc logs, stack traces, network requests.</strong> Ghi lại tất cả. Đừng assume — observe.</div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step" style="background:rgba(188,140,255,0.15); border:1px solid rgba(188,140,255,0.4); color:var(--purple);" onclick="toggleFlow('hyp')">💡 Form Hypothesis</div>
+    <div id="flow-hyp" class="flow-detail"><strong style="color:var(--purple)">Đặt giả thuyết:</strong> "Tôi nghĩ bug xảy ra vì X." Chỉ một giả thuyết mỗi lần — đừng test nhiều cùng lúc.</div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step" style="background:rgba(255,166,87,0.15); border:1px solid rgba(255,166,87,0.4); color:var(--orange);" onclick="toggleFlow('exp')">🧪 Experiment</div>
+    <div id="flow-exp" class="flow-detail"><strong style="color:var(--orange)">Test giả thuyết</strong> bằng cách thay đổi một điều và quan sát. Console.log, breakpoint, hoặc viết test.</div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step" style="background:rgba(63,185,80,0.15); border:1px solid rgba(63,185,80,0.4); color:var(--green);" onclick="toggleFlow('root')">🎯 Root Cause</div>
+    <div id="flow-root" class="flow-detail"><strong style="color:var(--green)">Tìm được root cause</strong> — không phải symptom. "Server crash" là symptom, "null pointer vì API không validate" là root cause.</div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step" style="background:rgba(63,185,80,0.2); border:1px solid var(--green); color:var(--green);" onclick="toggleFlow('fix')">✅ Fix + Regression Test</div>
+    <div id="flow-fix" class="flow-detail"><strong style="color:var(--green)">Fix rồi viết test</strong> cho case đó — để bug không quay lại. Đây là lúc test tốt nhất vì bạn hiểu case rõ nhất.</div>
+  </div>
+
+  <!-- 5 Whys -->
+  <h2>❓ Kỹ thuật 5 Whys</h2>
+  <p>Hỏi "tại sao?" 5 lần để đào từ <em>symptom</em> xuống <em>root cause</em>. Click từng bước.</p>
+
+  <div class="whys reveal">
+    <div class="why-item" onclick="this.classList.toggle('active')">
+      <div class="why-badge">!</div>
+      <div class="why-content">
+        <div class="why-cause">🚨 Production server crash mỗi đêm lúc 2am</div>
+        <div class="why-q">→ Tại sao server crash?</div>
+        <div class="why-hidden">✓ Vì memory bị đầy (OOM — Out of Memory)</div>
+      </div>
+    </div>
+    <div class="why-item" onclick="this.classList.toggle('active')">
+      <div class="why-badge">1</div>
+      <div class="why-content">
+        <div class="why-cause">Memory bị đầy</div>
+        <div class="why-q">→ Tại sao memory đầy?</div>
+        <div class="why-hidden">✓ Vì có memory leak — object không được garbage collected</div>
+      </div>
+    </div>
+    <div class="why-item" onclick="this.classList.toggle('active')">
+      <div class="why-badge">2</div>
+      <div class="why-content">
+        <div class="why-cause">Memory leak — object không được collect</div>
+        <div class="why-q">→ Tại sao object không được collect?</div>
+        <div class="why-hidden">✓ Vì EventEmitter listener không được removeListener khi request xong</div>
+      </div>
+    </div>
+    <div class="why-item" onclick="this.classList.toggle('active')">
+      <div class="why-badge">3</div>
+      <div class="why-content">
+        <div class="why-cause">EventEmitter listener không được cleanup</div>
+        <div class="why-q">→ Tại sao không cleanup?</div>
+        <div class="why-hidden">✓ Vì dev không biết cần gọi removeListener trong onDestroy lifecycle</div>
+      </div>
+    </div>
+    <div class="why-item" onclick="this.classList.toggle('active')">
+      <div class="why-badge">4</div>
+      <div class="why-content">
+        <div class="why-cause">Dev không biết cần cleanup lifecycle</div>
+        <div class="why-q">→ Tại sao không biết?</div>
+        <div class="why-hidden">✓ Vì code review không có checklist về memory management, và không có linting rule</div>
+      </div>
+    </div>
+    <div class="why-item active" onclick="this.classList.toggle('active')" style="border-left-color: var(--green);">
+      <div class="why-badge" style="background:var(--green);">5</div>
+      <div class="why-content">
+        <div class="why-cause" style="color:var(--green);">🎯 ROOT CAUSE: Thiếu process — không có checklist + linting</div>
+        <div class="why-q">→ Fix: Thêm ESLint rule "no-unresolved-listeners" + update code review checklist</div>
+        <div class="why-hidden" style="display:block;">✅ Fix đúng chỗ: Process/tooling, không phải cá nhân</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tools -->
+  <h2>🛠️ Tools: console.log vs Debugger vs Network Inspector</h2>
+
+  <div class="tools-grid reveal">
+    <div class="tool-card">
+      <h4>📝 console.log</h4>
+      <p style="font-size:0.82rem; margin-top:0.5rem;">Nhanh, đơn giản. Không cần setup.</p>
+      <div class="tool-use" style="background:rgba(63,185,80,0.15); color:var(--green);">✅ Quick & dirty inspect</div>
+      <div class="tool-use" style="background:rgba(248,81,73,0.15); color:var(--red); margin-top:0.3rem;">❌ Sót log trên production</div>
+      <pre style="margin-top:0.8rem; font-size:0.75rem;"><code><span class="cm">// Tip: structured log</span>
+console.<span class="fn">log</span>({ userId, data, at: <span class="kw">new</span> <span class="fn">Date</span>() });</code></pre>
+    </div>
+    <div class="tool-card">
+      <h4>🔴 Debugger / Breakpoint</h4>
+      <p style="font-size:0.82rem; margin-top:0.5rem;">Step-through execution. Inspect state tại bất kỳ dòng nào.</p>
+      <div class="tool-use" style="background:rgba(88,166,255,0.15); color:var(--blue);">✅ Complex logic bugs</div>
+      <div class="tool-use" style="background:rgba(88,166,255,0.15); color:var(--blue); margin-top:0.3rem;">✅ Async flow tracing</div>
+      <pre style="margin-top:0.8rem; font-size:0.75rem;"><code><span class="cm">// Trong code:</span>
+<span class="kw">debugger</span>; <span class="cm">// dừng tại đây</span>
+<span class="cm">// Hoặc VS Code: F9</span></code></pre>
+    </div>
+    <div class="tool-card">
+      <h4>🌐 Network Inspector</h4>
+      <p style="font-size:0.82rem; margin-top:0.5rem;">DevTools Network tab. Xem requests, responses, timing.</p>
+      <div class="tool-use" style="background:rgba(210,153,34,0.15); color:var(--yellow);">✅ API bugs</div>
+      <div class="tool-use" style="background:rgba(210,153,34,0.15); color:var(--yellow); margin-top:0.3rem;">✅ CORS, auth header</div>
+      <pre style="margin-top:0.8rem; font-size:0.75rem;"><code><span class="cm"># cURL replay:</span>
+curl -X POST /api/order \
+  -H <span class="str">"Authorization: Bearer ..."</span></code></pre>
+    </div>
+  </div>
+
+  <!-- Stack Trace -->
+  <h2>📋 Đọc Stack Trace</h2>
+  <p>Stack trace = lịch sử call stack lúc crash. Đọc từ <strong style="color:var(--red)">trên xuống</strong>. Click từng dòng.</p>
+
+  <div class="stack-trace reveal">
+    <div class="stack-line highlight" onclick="this.classList.toggle('open')">
+      <span class="stack-num">1</span>
+      <div>
+        <span class="err">TypeError: Cannot read properties of null (reading 'userId')</span>
+        <div class="stack-tooltip">🎯 Đây là ERROR MESSAGE — đọc đây trước! null object, access property 'userId' trên null.</div>
+      </div>
+    </div>
+    <div class="stack-line highlight" onclick="this.classList.toggle('open')">
+      <span class="stack-num">2</span>
+      <div>
+        <span style="color:var(--red);">at OrderService.createOrder</span> <span style="color:var(--muted);">(order.service.ts:47:23)</span>
+        <div class="stack-tooltip">🎯 BUG NẰM Ở ĐÂY! File: order.service.ts, dòng 47, cột 23. Mở file này ngay.</div>
+      </div>
+    </div>
+    <div class="stack-line highlight2" onclick="this.classList.toggle('open')">
+      <span class="stack-num">3</span>
+      <div>
+        <span style="color:var(--yellow);">at OrderController.create</span> <span style="color:var(--muted);">(order.controller.ts:23:5)</span>
+        <div class="stack-tooltip">⚠️ Caller của OrderService — controller gọi service. Kiểm tra input trước khi gọi service có đúng không?</div>
+      </div>
+    </div>
+    <div class="stack-line" onclick="this.classList.toggle('open')">
+      <span class="stack-num">4</span>
+      <div>
+        <span style="color:var(--muted);">at /node_modules/@nestjs/core/router/router-execution-context.js:38:29</span>
+        <div class="stack-tooltip">ℹ️ Framework code — thường không cần đọc. Skip qua.</div>
+      </div>
+    </div>
+    <div class="stack-line" onclick="this.classList.toggle('open')">
+      <span class="stack-num">5</span>
+      <div>
+        <span style="color:var(--muted);">at processTicksAndRejections (node:internal/process/task_queues:95:5)</span>
+        <div class="stack-tooltip">ℹ️ Node.js internal — luôn ignore.</div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:0.5rem; padding:0.8rem; border-left:3px solid var(--green);">
+    <strong style="color:var(--green);">✅ Công thức đọc stack trace:</strong> Tìm dòng đầu tiên có <code>your-project/</code> (không phải node_modules) — đó là nơi cần fix.
+  </div>
+
+  <!-- Git Bisect -->
+  <h2>🔀 Git Bisect — Binary Search qua commits</h2>
+  <p>"Bug xuất hiện lúc nào?" — Bisect chia đôi history để tìm commit gây ra bug.</p>
+
+  <div class="bisect reveal" id="bisect-visual">
+    <!-- rendered by JS -->
+  </div>
+  <div id="bisect-info" class="card" style="min-height: 60px;"></div>
+  <div style="display:flex; gap:0.5rem; margin:0.5rem 0; flex-wrap:wrap;">
+    <button onclick="bisectRun()" style="padding:0.5rem 1rem; background:rgba(88,166,255,0.15); border:1px solid var(--blue); border-radius:6px; color:var(--blue); cursor:pointer;">▶️ Chạy Bisect</button>
+    <button onclick="bisectReset()" style="padding:0.5rem 1rem; background:rgba(248,81,73,0.1); border:1px solid var(--red); border-radius:6px; color:var(--red); cursor:pointer;">🔄 Reset</button>
+  </div>
+
+  <!-- Bug Patterns -->
+  <h2>🐞 Common Bug Patterns</h2>
+
+  <table class="reveal">
+    <thead>
+      <tr><th>Symptom</th><th>Likely Cause</th><th>How to Verify</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Works locally, fails production</td><td>Environment difference (DB, env vars, OS)</td><td>So sánh .env, check Docker logs</td></tr>
+      <tr><td>Intermittent failure</td><td>Race condition / timing issue</td><td>Add delays, check async/await missing</td></tr>
+      <tr><td>Only fails under load</td><td>Resource leak hoặc concurrency bug</td><td>Load test + memory/CPU monitoring</td></tr>
+      <tr><td>First request OK, subsequent fail</td><td>Shared state / cache pollution</td><td>Check static variables, connection pool</td></tr>
+      <tr><td>Works with one user, fails with multiple</td><td>Race condition / missing mutex</td><td>Log timestamps, trace request IDs</td></tr>
+      <tr><td>"It was working yesterday"</td><td>Recent deployment / dependency update</td><td>git log --oneline -20, check package-lock</td></tr>
+    </tbody>
+  </table>
+
+  <!-- Anti-patterns -->
+  <h2>⚠️ Debugging Anti-patterns</h2>
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1rem 0;" class="reveal">
+    <div class="card" style="border-left:3px solid var(--red);">
+      <h3 style="color:var(--red); margin-top:0;">❌ "Nó chạy rồi!" (không hiểu tại sao)</h3>
+      <p style="font-size:0.85rem;">Xóa một dòng random → hết lỗi → commit. Tuần sau bug quay lại dưới dạng khác.</p>
+      <p style="font-size:0.85rem; color:var(--red);">Fix: Luôn hiểu root cause trước khi merge.</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--red);">
+      <h3 style="color:var(--red); margin-top:0;">❌ "Thử restart xem sao"</h3>
+      <p style="font-size:0.85rem;">Restart hide bug — memory leak tạm biến mất, nhưng nguyên nhân vẫn còn.</p>
+      <p style="font-size:0.85rem; color:var(--red);">Fix: Reproduce bug, đừng mask nó.</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--red);">
+      <h3 style="color:var(--red); margin-top:0;">❌ "Đổi random thứ và test"</h3>
+      <p style="font-size:0.85rem;">Thay đổi nhiều thứ cùng lúc → không biết cái nào fix bug.</p>
+      <p style="font-size:0.85rem; color:var(--red);">Fix: Một thay đổi, một test — scientific method.</p>
+    </div>
+    <div class="card" style="border-left:3px solid var(--red);">
+      <h3 style="color:var(--red); margin-top:0;">❌ "Chắc là cache" (không verify)</h3>
+      <p style="font-size:0.85rem;">Cache invalidation là excuse phổ biến — thường là logic bug thật sự.</p>
+      <p style="font-size:0.85rem; color:var(--red);">Fix: Verify hypothesis với evidence.</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Exercise -->
+  <div class="exercise reveal">
+    <h3>🏋️ Exercise: Production đang lỗi!</h3>
+    <p>Bạn nhận được alert lúc 3am. Chỉ có log này. Tìm root cause và đề xuất fix.</p>
+    <pre><code><span class="err">ERROR [2026-08-14 03:17:42] Unhandled Promise Rejection</span>
+<span class="err">Error: connect ECONNREFUSED 127.0.0.1:5432</span>
+    at TCPConnectWrap.afterConnect [as oncomplete] (net.js:1141:16)
+
+<span class="cm">--- 30 seconds later ---</span>
+<span class="err">ERROR [03:17:72] PaymentService.processPayment: Database unavailable</span>
+<span class="cm">--- requests timing out ---</span>
+<span class="err">ERROR [03:18:01] Request timeout after 30000ms: POST /api/payments</span>
+<span class="err">ERROR [03:18:01] Request timeout after 30000ms: GET /api/orders</span>
+<span class="cm">--- ALL requests failing now ---</span></code></pre>
+    <details style="margin-top:1rem;">
+      <summary style="cursor:pointer; color:var(--blue);">👁️ Xem phân tích</summary>
+      <div style="margin-top:1rem; padding:1rem; background:var(--bg3); border-radius:8px;">
+        <p><strong style="color:var(--green);">Root cause:</strong> PostgreSQL database ở localhost:5432 không connect được. ECONNREFUSED = DB service đã down.</p>
+        <p><strong style="color:var(--yellow);">Immediate fix:</strong> Kiểm tra DB service status → <code>systemctl status postgresql</code> hoặc <code>docker ps</code>. Restart DB.</p>
+        <p><strong style="color:var(--blue);">Long-term fix:</strong> (1) Health check endpoint, (2) Connection retry với exponential backoff, (3) Circuit breaker, (4) DB monitoring alert trước khi crash.</p>
+        <p><strong style="color:var(--purple);">5 Whys:</strong> DB down → tại sao? Disk full? Out of memory? Scheduled maintenance mà không thông báo? → Tìm tiếp.</p>
+      </div>
+    </details>
+  </div>
+
+  <div class="takeaway reveal">
+    <h3 style="color:var(--green); margin-top:0;">🎯 Key Takeaways</h3>
+    <ul class="checklist">
+      <li>✅ Reproduce trước, fix sau. Không reproduce được = không fix được đúng chỗ</li>
+      <li>✅ 5 Whys: luôn đào đến root cause, không dừng ở symptom</li>
+      <li>✅ Stack trace: tìm dòng đầu tiên thuộc project của bạn</li>
+      <li>✅ Một giả thuyết, một thay đổi, một test — scientific debugging</li>
+      <li>✅ "It works now" mà không hiểu tại sao = bug chưa được fix, chỉ bị ẩn</li>
+      <li>✅ Sau mỗi bug fix → viết regression test để không tái phát</li>
+    </ul>
+  </div>
+
+</div>
+
+<script>
+// Flow toggle
+function toggleFlow(id) {
+  const el = document.getElementById('flow-' + id);
+  el.classList.toggle('open');
+}
+
+// Bisect simulation
+const commits = [
+  { id: 'a1b2', label: 'c1', state: 'good' },
+  { id: 'c3d4', label: 'c2', state: 'good' },
+  { id: 'e5f6', label: 'c3', state: 'good' },
+  { id: 'g7h8', label: 'c4', state: 'unknown' },
+  { id: 'i9j0', label: 'c5', state: 'unknown' },
+  { id: 'k1l2', label: 'c6', state: 'unknown' },
+  { id: 'm3n4', label: 'c7', state: 'bad' },
+  { id: 'o5p6', label: 'c8', state: 'bad' },
+];
+let bisectStates = [...commits.map(c => c.state)];
+let bisectStep = 0;
+const bisectSteps = [
+  { check: 4, result: 'bad', info: '🔍 Bisect checks commit c5 (middle). Test → BAD. Bug trong c1–c5.' },
+  { check: 2, result: 'good', info: '🔍 Bisect checks commit c3 (middle of c1–c5). Test → GOOD. Bug trong c4–c5.' },
+  { check: 3, result: 'bad', info: '🎯 Bisect checks commit c4 (middle of c4–c5). Test → BAD. BUG FOUND! Commit c4 gây ra bug.' },
+];
+
+function renderBisect() {
+  const el = document.getElementById('bisect-visual');
+  el.innerHTML = '';
+  bisectStates.forEach((state, i) => {
+    const dot = document.createElement('div');
+    dot.className = `commit-dot commit-${state}`;
+    dot.textContent = commits[i].label;
+    dot.title = commits[i].id;
+    el.appendChild(dot);
+    if (i < commits.length - 1) {
+      const arr = document.createElement('div');
+      arr.className = 'bisect-arrow';
+      arr.textContent = '→';
+      el.appendChild(arr);
+    }
+  });
+}
+
+function bisectRun() {
+  if (bisectStep >= bisectSteps.length) return;
+  const s = bisectSteps[bisectStep];
+  bisectStates[s.check] = s.result === 'bad' ? 'bad' : 'good';
+  // mark as being checked
+  document.getElementById('bisect-info').innerHTML = `<p style="color:var(--blue)">${s.info}</p>`;
+  bisectStep++;
+  renderBisect();
+  if (bisectStep === bisectSteps.length) {
+    document.getElementById('bisect-info').innerHTML += `<p style="color:var(--green); margin-top:0.5rem;">✅ Git bisect tìm được bug chỉ sau ${bisectSteps.length} bước thay vì kiểm tra hết ${commits.length} commits!</p>`;
+  }
+}
+
+function bisectReset() {
+  bisectStates = [...commits.map(c => c.state)];
+  bisectStep = 0;
+  renderBisect();
+  document.getElementById('bisect-info').innerHTML = '<p style="color:var(--muted)">Click "Chạy Bisect" để xem Git tìm bug commit bằng binary search.</p><pre style="margin-top:0.5rem; font-size:0.8rem"><code>git bisect start\ngit bisect bad HEAD      # version hiện tại có bug\ngit bisect good v1.0.0   # version này OK\n# Git tự động checkout commit giữa\n# Bạn test, rồi: git bisect good/bad\n# Lặp lại → Git tìm ra commit gây bug</code></pre>';
+}
+
+bisectReset();
+
+// Progress
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  document.getElementById('progress').style.width = pct + '%';
+});
+
+// Reveal
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

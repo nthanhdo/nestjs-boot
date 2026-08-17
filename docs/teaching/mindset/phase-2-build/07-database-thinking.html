@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Database Thinking — Phase 2: Build</title>
+<style>
+:root {
+  --bg: #0e1525; --surface: #151d32; --surface2: #1c2744; --border: #2a3a5c;
+  --text: #eef1f8; --muted: #8899bb;
+  --accent: #a78bfa; --yellow: #ffd43b; --green: #2ecc71; --red: #e74c3c;
+  --blue: #5b8def; --orange: #ffb347; --pink: #ff5e7a; --teal: #00cec9;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system,'Segoe UI',sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+body::before { content:''; position:fixed; inset:0; background: radial-gradient(ellipse at 30% 20%, rgba(0,206,201,0.05) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(255,183,71,0.04) 0%, transparent 50%); pointer-events:none; z-index:0; }
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 18px 24px; position: sticky; top: 0; z-index: 100; }
+.header-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.phase-badge { background: linear-gradient(135deg,#00b894,#00cec9); color:#fff; padding: 3px 12px; border-radius: 20px; font-size: .7rem; font-weight: 700; }
+header h1 { font-size: 1.3rem; font-weight: 800; background: linear-gradient(135deg,#00cec9,#ffd43b); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.header-sub { color: var(--muted); font-size: .85rem; margin-left: auto; }
+.progress-bar { width: 100%; height: 3px; background: var(--border); border-radius: 2px; margin-top: 10px; }
+.progress-fill { height: 100%; background: linear-gradient(90deg,#00b894,#00cec9); border-radius: 2px; transition: width .4s; }
+main { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; position: relative; z-index: 1; }
+.section { display: none; animation: fadeUp .5s ease; }
+.section.active { display: block; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+.section-header { margin-bottom: 32px; }
+.section-num { font-size: .75rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+.section-title { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg,#fff,var(--teal)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom: 10px; }
+.section-desc { color: var(--muted); font-size: 1rem; line-height: 1.7; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 20px; }
+.card-title { font-size: 1rem; font-weight: 700; color: var(--teal); margin-bottom: 14px; }
+.highlight { background: linear-gradient(135deg,rgba(0,206,201,0.08),rgba(0,206,201,0.04)); border: 1px solid rgba(0,206,201,0.25); border-radius: 12px; padding: 20px 24px; margin: 20px 0; }
+.highlight-label { font-size: .7rem; font-weight: 700; color: var(--teal); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.highlight-text { color: var(--text); font-size: .95rem; line-height: 1.7; }
+.takeaway { background: linear-gradient(135deg,rgba(46,204,113,0.1),rgba(46,204,113,0.04)); border: 1px solid rgba(46,204,113,0.3); border-radius: 14px; padding: 24px; margin-top: 28px; }
+.takeaway-title { color: var(--green); font-weight: 700; font-size: .9rem; margin-bottom: 14px; }
+.takeaway-list { list-style: none; }
+.takeaway-list li { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; font-size: .9rem; color: var(--text); line-height: 1.6; }
+.takeaway-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+.nav-bar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border); padding: 14px 24px; display: flex; justify-content: center; z-index: 100; }
+.nav-inner { display: flex; align-items: center; gap: 12px; max-width: 900px; width: 100%; }
+.btn { padding: 10px 24px; border-radius: 10px; font-size: .9rem; font-weight: 600; cursor: pointer; border: none; transition: all .2s; }
+.btn-prev { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-prev:hover:not(:disabled) { color: var(--text); border-color: var(--teal); }
+.btn-prev:disabled { opacity:.4; cursor:default; }
+.btn-next { background: linear-gradient(135deg,#00b894,#00cec9); color:#fff; flex:1; max-width:200px; box-shadow:0 4px 16px rgba(0,206,201,0.4); }
+.btn-next:hover { transform:translateY(-1px); }
+.section-dots { display:flex; gap:6px; margin:0 auto; }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--border); transition:all .3s; cursor:pointer; }
+.dot.active { background:var(--teal); transform:scale(1.3); }
+.dot.done { background:rgba(0,206,201,0.4); }
+.kw { color:#ff9f7f; }
+.fn { color:#7ec8e3; }
+.str { color:#a8d8a8; }
+.num { color:#ffd43b; }
+.cmt { color:#5a7a6a; }
+
+/* DB TABLE */
+.db-table { width:100%; border-collapse:separate; border-spacing:0; border-radius:10px; overflow:hidden; border:1px solid var(--border); margin:12px 0; }
+.db-table th { background:var(--surface2); padding:8px 12px; font-size:.75rem; color:var(--teal); text-align:left; border-bottom:1px solid var(--border); }
+.db-table td { padding:8px 12px; font-size:.82rem; border-bottom:1px solid rgba(42,58,92,0.5); }
+.db-table tr:last-child td { border-bottom:none; }
+.db-table .pk { color:var(--yellow); font-weight:700; }
+.db-table .fk { color:var(--orange); }
+.db-table .highlight-row { background:rgba(46,204,113,0.06); }
+
+/* ERD */
+.erd { display:flex; gap:12px; align-items:center; justify-content:center; flex-wrap:wrap; margin:24px 0; }
+.erd-entity { background:var(--surface2); border:2px solid var(--border); border-radius:12px; overflow:hidden; min-width:140px; }
+.erd-entity.primary { border-color:rgba(0,206,201,0.4); }
+.erd-header { background:rgba(0,206,201,0.1); padding:8px 14px; font-size:.85rem; font-weight:700; color:var(--teal); }
+.erd-fields { padding:8px 14px; }
+.erd-field { font-size:.75rem; font-family:monospace; padding:3px 0; border-bottom:1px solid rgba(42,58,92,0.4); color:var(--muted); }
+.erd-field:last-child { border-bottom:none; }
+.erd-field .erd-pk { color:var(--yellow); }
+.erd-field .erd-fk { color:var(--orange); }
+.erd-rel { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.erd-rel-line { width:2px; height:30px; background:var(--border); }
+.erd-rel-label { font-size:.65rem; color:var(--muted); background:var(--surface); padding:2px 6px; border-radius:4px; border:1px solid var(--border); white-space:nowrap; }
+
+/* NORMALIZATION */
+.norm-steps { margin:20px 0; }
+.norm-step { display:none; }
+.norm-step.active { display:block; animation:fadeUp .3s; }
+.norm-tabs { display:flex; gap:8px; margin-bottom:16px; }
+.ntab { background:var(--surface2); border:1px solid var(--border); color:var(--muted); padding:8px 16px; border-radius:8px; cursor:pointer; font-size:.82rem; transition:all .2s; }
+.ntab.active { border-color:var(--teal); color:var(--teal); background:rgba(0,206,201,0.08); }
+
+/* INDEX B-TREE */
+.btree { margin:20px 0; font-family:monospace; font-size:.8rem; }
+.btree-row { display:flex; gap:4px; justify-content:center; margin-bottom:12px; }
+.btree-node { background:var(--surface2); border:1px solid var(--border); border-radius:6px; padding:6px 10px; color:var(--text); text-align:center; position:relative; }
+.btree-node.root { border-color:var(--teal); color:var(--teal); }
+.btree-node.found { border-color:var(--green); background:rgba(46,204,113,0.1); color:var(--green); animation:popIn .4s; }
+.btree-node.searching { border-color:var(--orange); background:rgba(255,183,71,0.1); color:var(--orange); }
+@keyframes popIn { 0%{transform:scale(1.2)} 100%{transform:scale(1)} }
+
+/* ACID ANIMATION */
+.acid-steps { margin:20px 0; }
+.acid-step { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:8px; display:flex; gap:12px; align-items:flex-start; }
+.acid-step.done { border-color:var(--green); background:rgba(46,204,113,0.06); }
+.acid-step.failed { border-color:var(--red); background:rgba(231,76,60,0.06); }
+.acid-step.rollback { border-color:var(--orange); background:rgba(255,183,71,0.06); }
+.acid-icon { font-size:1.2rem; flex-shrink:0; }
+.acid-text { font-size:.85rem; color:var(--text); line-height:1.5; }
+.acid-amount { font-family:monospace; font-weight:700; }
+
+/* N+1 */
+.nplusone { margin:20px 0; }
+.query-list { max-height:180px; overflow-y:auto; }
+.query-item { font-family:monospace; font-size:.75rem; padding:5px 10px; border-radius:4px; margin-bottom:3px; animation:slideIn .15s; }
+@keyframes slideIn { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:translateX(0)} }
+.query-item.q1 { background:rgba(91,141,239,0.1); color:var(--blue); }
+.query-item.qn { background:rgba(231,76,60,0.08); color:var(--red); }
+.query-counter { font-size:2rem; font-weight:800; color:var(--red); font-family:monospace; text-align:center; margin:12px 0; }
+
+/* SCALE LEVELS */
+.scale-levels { display:grid; grid-template-columns:1fr; gap:8px; margin:20px 0; }
+.scale-level { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px 18px; display:flex; gap:12px; align-items:center; transition:all .2s; cursor:pointer; }
+.scale-level:hover { border-color:var(--teal); }
+.scale-level.active { border-color:var(--teal); background:rgba(0,206,201,0.06); }
+.scale-badge { background:linear-gradient(135deg,var(--teal),#00b894); color:#fff; padding:4px 10px; border-radius:6px; font-size:.75rem; font-weight:700; white-space:nowrap; }
+.scale-info { flex:1; font-size:.85rem; }
+.scale-detail { display:none; font-size:.8rem; color:var(--muted); margin-top:6px; line-height:1.6; }
+.scale-level.active .scale-detail { display:block; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <span class="phase-badge">PHASE 2 · BUILD</span>
+    <h1>🗄️ Database Thinking</h1>
+    <span class="header-sub">Bài 07 / 08</span>
+    <div class="progress-bar" style="width:100%">
+      <div class="progress-fill" id="progressFill" style="width:87.5%"></div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- SEC 0: Why Databases -->
+<div class="section active" id="sec-0">
+  <div class="section-header">
+    <div class="section-num">Tại sao cần Database?</div>
+    <div class="section-title">Vấn Đề Của File Storage</div>
+    <div class="section-desc">Lưu data vào file hoạt động tốt cho một người. Nhưng sẽ sụp đổ ngay khi có nhiều người dùng cùng lúc.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">💥 File Storage gặp vấn đề gì?</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:14px">
+        <div style="color:var(--red);font-size:.78rem;font-weight:700;margin-bottom:8px;">❌ Race Condition</div>
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.6">User A và B cùng đọc balance=1000. A trừ 200, ghi lại 800. B trừ 300, ghi lại 700. Balance đúng phải là 500!</div>
+      </div>
+      <div style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:14px">
+        <div style="color:var(--red);font-size:.78rem;font-weight:700;margin-bottom:8px;">❌ Search chậm</div>
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.6">Tìm user theo email → phải đọc toàn bộ file. 1M records = đọc 1M dòng mỗi lần tìm.</div>
+      </div>
+      <div style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:14px">
+        <div style="color:var(--red);font-size:.78rem;font-weight:700;margin-bottom:8px;">❌ Integrity</div>
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.6">Không có way nào đảm bảo email là unique, hay quantity &gt; 0, hay format đúng.</div>
+      </div>
+      <div style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:14px">
+        <div style="color:var(--red);font-size:.78rem;font-weight:700;margin-bottom:8px;">❌ Crash recovery</div>
+        <div style="font-size:.82rem;color:var(--muted);line-height:1.6">Server crash giữa chừng khi đang ghi → file corrupt, data mất một phần.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight">
+    <div class="highlight-label">Database giải quyết tất cả những vấn đề này</div>
+    <div class="highlight-text">ACID Transactions, Indexes, Constraints, WAL (Write-Ahead Logging) — database là software phức tạp được build để handle những vấn đề này một cách reliable.</div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Database = file system + concurrency + search + integrity + recovery</li>
+      <li>Hiểu vấn đề nó giải quyết → mới hiểu tại sao ACID quan trọng</li>
+      <li>JSON file là DB đơn giản nhất — SQLite là bước tiếp theo</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 1: ERD -->
+<div class="section" id="sec-1">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 01</div>
+    <div class="section-title">Entity Relationship Diagram</div>
+    <div class="section-desc">ERD là bản vẽ kiến trúc của database. Thiết kế ERD trước khi viết code.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔗 ERD: E-commerce cơ bản</div>
+    <div class="erd">
+      <div class="erd-entity primary">
+        <div class="erd-header">📦 Product</div>
+        <div class="erd-fields">
+          <div class="erd-field"><span class="erd-pk">🔑 id (PK)</span></div>
+          <div class="erd-field">name: string</div>
+          <div class="erd-field">price: decimal</div>
+          <div class="erd-field">stock: int</div>
+        </div>
+      </div>
+
+      <div class="erd-rel">
+        <div style="font-size:.68rem;color:var(--muted)">1</div>
+        <div class="erd-rel-line"></div>
+        <div class="erd-rel-label">has many</div>
+        <div class="erd-rel-line"></div>
+        <div style="font-size:.68rem;color:var(--muted)">N</div>
+      </div>
+
+      <div class="erd-entity primary">
+        <div class="erd-header">🛒 OrderItem</div>
+        <div class="erd-fields">
+          <div class="erd-field"><span class="erd-pk">🔑 id (PK)</span></div>
+          <div class="erd-field"><span class="erd-fk">🔗 orderId (FK)</span></div>
+          <div class="erd-field"><span class="erd-fk">🔗 productId (FK)</span></div>
+          <div class="erd-field">quantity: int</div>
+          <div class="erd-field">price: decimal</div>
+        </div>
+      </div>
+
+      <div class="erd-rel">
+        <div style="font-size:.68rem;color:var(--muted)">N</div>
+        <div class="erd-rel-line"></div>
+        <div class="erd-rel-label">belongs to</div>
+        <div class="erd-rel-line"></div>
+        <div style="font-size:.68rem;color:var(--muted)">1</div>
+      </div>
+
+      <div class="erd-entity primary">
+        <div class="erd-header">📋 Order</div>
+        <div class="erd-fields">
+          <div class="erd-field"><span class="erd-pk">🔑 id (PK)</span></div>
+          <div class="erd-field"><span class="erd-fk">🔗 userId (FK)</span></div>
+          <div class="erd-field">status: enum</div>
+          <div class="erd-field">total: decimal</div>
+          <div class="erd-field">createdAt: datetime</div>
+        </div>
+      </div>
+
+      <div class="erd-rel">
+        <div style="font-size:.68rem;color:var(--muted)">N</div>
+        <div class="erd-rel-line"></div>
+        <div class="erd-rel-label">belongs to</div>
+        <div class="erd-rel-line"></div>
+        <div style="font-size:.68rem;color:var(--muted)">1</div>
+      </div>
+
+      <div class="erd-entity primary">
+        <div class="erd-header">👤 User</div>
+        <div class="erd-fields">
+          <div class="erd-field"><span class="erd-pk">🔑 id (PK)</span></div>
+          <div class="erd-field">email: string UNIQUE</div>
+          <div class="erd-field">name: string</div>
+          <div class="erd-field">createdAt: datetime</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>PK (Primary Key): identifier duy nhất của mỗi row</li>
+      <li>FK (Foreign Key): tham chiếu đến PK của bảng khác</li>
+      <li>Relationships: 1-to-1, 1-to-many, many-to-many (qua junction table)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 2: Normalization -->
+<div class="section" id="sec-2">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 02</div>
+    <div class="section-title">Normalization</div>
+    <div class="section-desc">Chuẩn hóa database để tránh data trùng lặp và update anomalies.</div>
+  </div>
+
+  <div class="norm-tabs">
+    <button class="ntab active" onclick="showNorm(0)">❌ Unnormalized</button>
+    <button class="ntab" onclick="showNorm(1)">📊 1NF</button>
+    <button class="ntab" onclick="showNorm(2)">📊 2NF</button>
+    <button class="ntab" onclick="showNorm(3)">✅ 3NF</button>
+  </div>
+
+  <div class="norm-steps">
+    <div class="norm-step active" id="norm-0">
+      <div style="color:var(--red);font-size:.82rem;font-weight:700;margin-bottom:10px;">❌ Unnormalized: Mọi thứ trong 1 bảng</div>
+      <table class="db-table">
+        <tr><th>order_id</th><th>customer_name</th><th>customer_email</th><th>products</th></tr>
+        <tr><td class="pk">1</td><td>Nguyễn A</td><td>a@mail.com</td><td>"Áo, Quần, Giày"</td></tr>
+        <tr><td class="pk">2</td><td>Trần B</td><td>b@mail.com</td><td>"Áo"</td></tr>
+        <tr><td class="pk">3</td><td>Nguyễn A</td><td>a@mail.com</td><td>"Túi"</td></tr>
+      </table>
+      <div style="color:var(--red);font-size:.82rem;margin-top:8px;">Vấn đề: email của Nguyễn A xuất hiện 2 lần. Sửa 1 chỗ → 1 chỗ bị sai!</div>
+    </div>
+
+    <div class="norm-step" id="norm-1">
+      <div style="color:var(--orange);font-size:.82rem;font-weight:700;margin-bottom:10px;">1NF: Mỗi ô chứa 1 giá trị nguyên tử</div>
+      <table class="db-table">
+        <tr><th>order_id</th><th>customer_name</th><th>customer_email</th><th>product</th></tr>
+        <tr><td class="pk">1</td><td>Nguyễn A</td><td>a@mail.com</td><td>Áo</td></tr>
+        <tr><td class="pk">1</td><td>Nguyễn A</td><td>a@mail.com</td><td>Quần</td></tr>
+        <tr><td class="pk">1</td><td>Nguyễn A</td><td>a@mail.com</td><td>Giày</td></tr>
+        <tr><td class="pk">2</td><td>Trần B</td><td>b@mail.com</td><td>Áo</td></tr>
+      </table>
+      <div style="color:var(--orange);font-size:.82rem;margin-top:8px;">Không còn array trong ô. Nhưng customer info vẫn lặp lại theo từng sản phẩm!</div>
+    </div>
+
+    <div class="norm-step" id="norm-2">
+      <div style="color:var(--blue);font-size:.82rem;font-weight:700;margin-bottom:10px;">2NF: Tách partial dependencies</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <div style="color:var(--blue);font-size:.72rem;margin-bottom:4px;">Orders</div>
+          <table class="db-table">
+            <tr><th>id</th><th>customer_id</th><th>product</th></tr>
+            <tr><td class="pk">1</td><td class="fk">C1</td><td>Áo</td></tr>
+            <tr><td class="pk">1</td><td class="fk">C1</td><td>Quần</td></tr>
+            <tr><td class="pk">2</td><td class="fk">C2</td><td>Áo</td></tr>
+          </table>
+        </div>
+        <div>
+          <div style="color:var(--blue);font-size:.72rem;margin-bottom:4px;">Customers</div>
+          <table class="db-table">
+            <tr><th>id</th><th>name</th><th>email</th></tr>
+            <tr><td class="pk">C1</td><td>Nguyễn A</td><td>a@mail.com</td></tr>
+            <tr><td class="pk">C2</td><td>Trần B</td><td>b@mail.com</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="norm-step" id="norm-3">
+      <div style="color:var(--green);font-size:.82rem;font-weight:700;margin-bottom:10px;">✅ 3NF: Tách transitive dependencies</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+        <div>
+          <div style="color:var(--green);font-size:.72rem;margin-bottom:4px;">Orders</div>
+          <table class="db-table">
+            <tr><th>id</th><th>cust_id</th></tr>
+            <tr><td class="pk">1</td><td class="fk">C1</td></tr>
+            <tr><td class="pk">2</td><td class="fk">C2</td></tr>
+          </table>
+        </div>
+        <div>
+          <div style="color:var(--green);font-size:.72rem;margin-bottom:4px;">OrderItems</div>
+          <table class="db-table">
+            <tr><th>order</th><th>prod</th></tr>
+            <tr><td class="fk">1</td><td class="fk">P1</td></tr>
+            <tr><td class="fk">1</td><td class="fk">P2</td></tr>
+            <tr><td class="fk">2</td><td class="fk">P1</td></tr>
+          </table>
+        </div>
+        <div>
+          <div style="color:var(--green);font-size:.72rem;margin-bottom:4px;">Customers</div>
+          <table class="db-table">
+            <tr><th>id</th><th>name</th></tr>
+            <tr><td class="pk">C1</td><td>A</td></tr>
+            <tr><td class="pk">C2</td><td>B</td></tr>
+          </table>
+        </div>
+      </div>
+      <div style="color:var(--green);font-size:.82rem;margin-top:8px;">✓ Không có data trùng lặp. Update 1 chỗ → consistent.</div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>1NF: atomic values, no repeating groups</li>
+      <li>2NF: no partial dependencies on composite PK</li>
+      <li>3NF: no transitive dependencies</li>
+      <li>Denormalize có mục đích khi cần performance</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 3: Index -->
+<div class="section" id="sec-3">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 03</div>
+    <div class="section-title">Index — Mục Lục Của Database</div>
+    <div class="section-desc">Index giống mục lục sách — thay vì đọc hết, bạn tra ngay vào trang cần.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔍 Tìm email "z@mail.com" trong 1 triệu records</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0;">
+      <div style="background:rgba(231,76,60,0.06);border:1px solid rgba(231,76,60,0.25);border-radius:10px;padding:16px">
+        <div style="color:var(--red);font-size:.78rem;font-weight:700;margin-bottom:10px;">❌ Không có Index</div>
+        <div style="font-family:monospace;font-size:.78rem;color:var(--muted);margin-bottom:8px">SELECT * FROM users<br>WHERE email = 'z@mail.com'</div>
+        <div style="color:var(--muted);font-size:.82rem;line-height:1.6">→ Full Table Scan: đọc 1,000,000 rows<br>→ Thời gian: ~500ms</div>
+      </div>
+      <div style="background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.25);border-radius:10px;padding:16px">
+        <div style="color:var(--green);font-size:.78rem;font-weight:700;margin-bottom:10px;">✅ Có Index trên email</div>
+        <div style="font-family:monospace;font-size:.78rem;color:var(--muted);margin-bottom:8px">CREATE INDEX idx_email<br>ON users (email)</div>
+        <div style="color:var(--muted);font-size:.82rem;line-height:1.6">→ B-tree lookup: ~20 nodes<br>→ Thời gian: ~1ms</div>
+      </div>
+    </div>
+
+    <div style="color:var(--teal);font-size:.85rem;font-weight:700;margin-bottom:12px;">B-Tree Index — Simplified</div>
+    <div class="btree">
+      <div class="btree-row">
+        <div class="btree-node root">m</div>
+      </div>
+      <div class="btree-row">
+        <div class="btree-node">f</div>
+        <div class="btree-node">s</div>
+      </div>
+      <div class="btree-row">
+        <div class="btree-node">a-e</div>
+        <div class="btree-node">g-l</div>
+        <div class="btree-node">n-r</div>
+        <div class="btree-node found">z@…</div>
+      </div>
+    </div>
+    <div style="color:var(--muted);font-size:.8rem;margin-top:8px">Tìm 'z' → đi phải (>m) → đi phải (>s) → found! Chỉ 3 bước thay vì 1M bước.</div>
+  </div>
+
+  <div class="highlight">
+    <div class="highlight-label">Index Trade-off</div>
+    <div class="highlight-text">Index tăng tốc READ nhưng làm chậm WRITE (phải cập nhật index khi insert/update). Đừng index mọi column — chỉ index những column thường được query/filter.</div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Luôn index FK columns (foreign keys)</li>
+      <li>Index columns thường xuất hiện trong WHERE, JOIN, ORDER BY</li>
+      <li>EXPLAIN ANALYZE để kiểm tra query có dùng index không</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 4: ACID + N+1 -->
+<div class="section" id="sec-4">
+  <div class="section-header">
+    <div class="section-num">Khái niệm 04 + 05</div>
+    <div class="section-title">ACID & N+1 Problem</div>
+    <div class="section-desc">ACID đảm bảo data integrity. N+1 là bug phổ biến nhất khi làm việc với DB trong code.</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">💸 ACID — Chuyển tiền A→B, server crash giữa chừng</div>
+    <div class="acid-steps" id="acidSteps">
+      <div class="acid-step" id="as1">
+        <div class="acid-icon">⏳</div>
+        <div class="acid-text"><strong>BEGIN TRANSACTION</strong> — mọi thứ dưới đây là 1 đơn vị</div>
+      </div>
+      <div class="acid-step" id="as2">
+        <div class="acid-icon">📤</div>
+        <div class="acid-text">Trừ tài khoản A: <span class="acid-amount">1,000,000 → 800,000</span></div>
+      </div>
+      <div class="acid-step" id="as3">
+        <div class="acid-icon">💥</div>
+        <div class="acid-text" style="color:var(--red)"><strong>SERVER CRASH!</strong> Chưa cộng được vào B</div>
+      </div>
+      <div class="acid-step rollback" id="as4" style="display:none">
+        <div class="acid-icon">↩️</div>
+        <div class="acid-text"><strong>ROLLBACK!</strong> Tài khoản A phục hồi về <span class="acid-amount">1,000,000</span>. Không mất tiền!</div>
+      </div>
+    </div>
+    <button onclick="showRollback()" style="background:linear-gradient(135deg,var(--teal),#00b894);color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:.85rem;margin-top:12px;">→ Xem ROLLBACK</button>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px;">
+      <div style="background:rgba(91,141,239,0.08);border:1px solid rgba(91,141,239,0.3);border-radius:8px;padding:10px;text-align:center"><div style="color:var(--blue);font-weight:700;font-size:.85rem;margin-bottom:4px">A</div><div style="font-size:.72rem;color:var(--muted)">Atomicity<br>Tất cả hoặc không gì</div></div>
+      <div style="background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.3);border-radius:8px;padding:10px;text-align:center"><div style="color:var(--green);font-weight:700;font-size:.85rem;margin-bottom:4px">C</div><div style="font-size:.72rem;color:var(--muted)">Consistency<br>Rules luôn được giữ</div></div>
+      <div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.3);border-radius:8px;padding:10px;text-align:center"><div style="color:var(--accent);font-weight:700;font-size:.85rem;margin-bottom:4px">I</div><div style="font-size:.72rem;color:var(--muted)">Isolation<br>Transactions không thấy nhau</div></div>
+      <div style="background:rgba(255,183,71,0.08);border:1px solid rgba(255,183,71,0.3);border-radius:8px;padding:10px;text-align:center"><div style="color:var(--orange);font-weight:700;font-size:.85rem;margin-bottom:4px">D</div><div style="font-size:.72rem;color:var(--muted)">Durability<br>Đã commit = không mất</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⚠️ N+1 Query Problem</div>
+    <div style="color:var(--muted);font-size:.88rem;line-height:1.7;margin-bottom:16px;">Lấy 100 orders, mỗi order gọi thêm 1 query để lấy user. Kết quả: 1 + 100 = 101 queries!</div>
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+      <div style="flex:1">
+        <button onclick="simulateNPlusOne()" style="background:rgba(231,76,60,0.15);border:1px solid rgba(231,76,60,0.4);color:var(--red);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:.82rem;margin-bottom:8px;">▶ Run N+1 Queries</button>
+        <div class="query-counter" id="qCounter">0</div>
+        <div style="font-size:.75rem;color:var(--muted);text-align:center">queries</div>
+        <div class="query-list" id="queryList"></div>
+      </div>
+      <div style="flex:1">
+        <div style="color:var(--green);font-size:.78rem;font-weight:700;margin-bottom:8px;">✅ Fix: JOIN hoặc eager load</div>
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;font-family:monospace;font-size:.75rem;line-height:1.8;color:var(--muted)">
+          <span class="cmt">// 1 query thay vì N+1</span><br>
+          <span class="kw">SELECT</span> o.*, u.name<br>
+          <span class="kw">FROM</span> orders o<br>
+          <span class="kw">JOIN</span> users u ON o.user_id = u.id
+        </div>
+        <div style="color:var(--green);font-size:.78rem;margin-top:8px;">→ 1 query, thay vì 101!</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🎯 Key Takeaway</div>
+    <ul class="takeaway-list">
+      <li>Dùng Transaction cho operations cần atomicity</li>
+      <li>N+1 hay xuất hiện khi dùng ORM + lazy loading</li>
+      <li>Detect N+1: đếm queries trong log, dùng query analyzer</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SEC 5: Scale -->
+<div class="section" id="sec-5">
+  <div class="section-header">
+    <div class="section-num">Thực hành</div>
+    <div class="section-title">Scale từ 100 → 10M Users</div>
+    <div class="section-desc">Mỗi level có challenges khác nhau. Click vào từng level để xem phải làm gì.</div>
+  </div>
+
+  <div class="scale-levels">
+    <div class="scale-level active" onclick="toggleScale(this)">
+      <div class="scale-badge">100 users</div>
+      <div class="scale-info">
+        <div style="font-weight:600">Simple setup</div>
+        <div class="scale-detail">Single server, single DB. SQLite hoặc PostgreSQL. Không cần gì phức tạp. Tập trung vào features, không phải infra.</div>
+      </div>
+    </div>
+    <div class="scale-level" onclick="toggleScale(this)">
+      <div class="scale-badge">10K users</div>
+      <div class="scale-info">
+        <div style="font-weight:600">Add indexes + basic caching</div>
+        <div class="scale-detail">Tạo index cho các queries chậm. Thêm Redis cache cho data ít thay đổi. Connection pooling. Bắt đầu monitor query performance.</div>
+      </div>
+    </div>
+    <div class="scale-level" onclick="toggleScale(this)">
+      <div class="scale-badge">1M users</div>
+      <div class="scale-info">
+        <div style="font-weight:600">Read replicas + CDN</div>
+        <div class="scale-detail">Primary DB cho writes, Read Replicas cho reads (80-90% traffic thường là reads). CDN cho static assets. Horizontal scaling app servers. Queue cho heavy operations.</div>
+      </div>
+    </div>
+    <div class="scale-level" onclick="toggleScale(this)">
+      <div class="scale-badge">10M users</div>
+      <div class="scale-info">
+        <div style="font-weight:600">Sharding + Microservices</div>
+        <div class="scale-detail">DB sharding theo user ID range hoặc hash. Tách services theo domain. Message queues (Kafka). Time-series DB cho metrics. Distributed cache (Redis Cluster). Đây là "Google scale" — hầu hết app không cần đến đây.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight">
+    <div class="highlight-label">Bài học quan trọng nhất</div>
+    <div class="highlight-text">Đừng over-engineer ngay từ đầu. Xây cho 100 users trước. Khi có vấn đề ở 10K users — fix. Mỗi optimization tốn chi phí, đừng trả chi phí trước khi cần.</div>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-title">🏆 Tổng kết Bài 07</div>
+    <ul class="takeaway-list">
+      <li><strong>ERD</strong>: thiết kế trước khi code</li>
+      <li><strong>Normalization</strong>: tránh data duplication</li>
+      <li><strong>Index</strong>: đọc nhanh, nhưng tốn write performance</li>
+      <li><strong>ACID</strong>: transactions đảm bảo data integrity</li>
+      <li><strong>N+1</strong>: anti-pattern phổ biến nhất khi dùng ORM</li>
+      <li><strong>Scale</strong>: evolve dần, không build cho 10M ngay từ đầu</li>
+    </ul>
+  </div>
+</div>
+
+</main>
+
+<div class="nav-bar">
+  <div class="nav-inner">
+    <button class="btn btn-prev" id="btnPrev" onclick="navigate(-1)" disabled>← Trước</button>
+    <div class="section-dots" id="dots"></div>
+    <button class="btn btn-next" id="btnNext" onclick="navigate(1)">Tiếp theo →</button>
+  </div>
+</div>
+
+<script>
+const SECTIONS = ['sec-0','sec-1','sec-2','sec-3','sec-4','sec-5'];
+let current = 0;
+const dotsEl = document.getElementById('dots');
+SECTIONS.forEach((_,i) => {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i===0?' active':'');
+  d.onclick = () => goTo(i);
+  dotsEl.appendChild(d);
+});
+function goTo(n) {
+  document.getElementById(SECTIONS[current]).classList.remove('active');
+  current = n;
+  document.getElementById(SECTIONS[current]).classList.add('active');
+  document.getElementById('btnPrev').disabled = current === 0;
+  document.getElementById('btnNext').textContent = current === SECTIONS.length-1 ? '🏁 Hoàn thành' : 'Tiếp theo →';
+  document.querySelectorAll('.dot').forEach((d,i) => d.className='dot'+(i===current?' active':(i<current?' done':'')));
+  document.getElementById('progressFill').style.width = ((current+1)/SECTIONS.length*100)+'%';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function navigate(dir) { if(current+dir>=0 && current+dir<SECTIONS.length) goTo(current+dir); }
+
+function showNorm(n) {
+  document.querySelectorAll('.norm-step').forEach((s,i) => s.classList.toggle('active', i===n));
+  document.querySelectorAll('.ntab').forEach((t,i) => t.classList.toggle('active', i===n));
+}
+
+function showRollback() {
+  ['as1','as2','as3'].forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.add('failed');
+  });
+  document.getElementById('as4').style.display = 'flex';
+  document.getElementById('as4').classList.add('rollback');
+}
+
+let nPlusRunning = false;
+function simulateNPlusOne() {
+  if(nPlusRunning) return;
+  nPlusRunning = true;
+  const ql = document.getElementById('queryList');
+  const qc = document.getElementById('qCounter');
+  ql.innerHTML = '';
+  qc.textContent = '0';
+  let count = 0;
+  const q1 = document.createElement('div');
+  q1.className = 'query-item q1';
+  q1.textContent = 'SELECT * FROM orders LIMIT 10';
+  ql.appendChild(q1);
+  count++;
+  qc.textContent = count;
+  let i = 0;
+  const interval = setInterval(() => {
+    if(i >= 10) { clearInterval(interval); nPlusRunning = false; return; }
+    const qi = document.createElement('div');
+    qi.className = 'query-item qn';
+    qi.textContent = `SELECT * FROM users WHERE id = ${i+1}`;
+    ql.appendChild(qi);
+    ql.scrollTop = ql.scrollHeight;
+    count++;
+    qc.textContent = count;
+    i++;
+  }, 200);
+}
+
+function toggleScale(el) {
+  document.querySelectorAll('.scale-level').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>

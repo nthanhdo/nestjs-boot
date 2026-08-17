@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teaching Hub — Nguyễn Thanh Đô</title>
+<style>
+  :root {
+    --bg: #0b1120; --surface: #131a2e; --surface2: #1a2340; --border: #2a3a5c;
+    --text: #eef1f8; --muted: #8899bb; --accent: #a78bfa; --accent2: #6c5ce7;
+    --blue: #0984e3; --green: #2ed573; --orange: #ffa502; --pink: #e84393;
+    --yellow: #ffd43b; --cyan: #00cec9; --red: #ff6b6b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  body::before { content:''; position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 10%, rgba(108,92,231,0.07) 0%, transparent 50%), radial-gradient(ellipse at 80% 90%, rgba(9,132,227,0.05) 0%, transparent 50%); pointer-events: none; z-index: 0; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* ===== HERO ===== */
+  .hero { text-align: center; padding: 56px 0 40px; }
+  .hero h1 { font-size: 2.4rem; font-weight: 800; margin-bottom: 6px;
+    background: linear-gradient(135deg, #a78bfa, #6c5ce7, #0984e3);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .hero .author { font-size: 1rem; color: var(--muted); margin-bottom: 16px; }
+  .hero .author b { color: var(--text); }
+  .hero p { color: var(--muted); font-size: .95rem; line-height: 1.7; max-width: 700px; margin: 0 auto; }
+  .hero p b { color: var(--text); }
+
+  /* Stats row */
+  .stats-row { display: flex; justify-content: center; gap: 16px; margin: 28px 0 0; flex-wrap: wrap; }
+  .stat-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 20px; text-align: center; min-width: 120px; }
+  .stat-pill .num { font-size: 1.5rem; font-weight: 800; }
+  .stat-pill .label { font-size: .72rem; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* ===== COURSE SECTIONS ===== */
+  .course { margin: 48px 0; }
+  .course-header { display: flex; align-items: center; gap: 16px; margin-bottom: 6px; }
+  .course-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+  .course-title { font-size: 1.4rem; font-weight: 700; }
+  .course-desc { color: var(--muted); font-size: .88rem; line-height: 1.6; margin-bottom: 20px; padding-left: 60px; }
+  .course-desc b { color: var(--text); }
+
+  /* ===== MODULE GROUP ===== */
+  .module-group { margin-bottom: 28px; padding-left: 60px; }
+  .module-label { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .module-badge { padding: 3px 10px; border-radius: 6px; font-size: .7rem; font-weight: 700; color: #fff; letter-spacing: 0.3px; }
+  .module-name { font-size: .95rem; font-weight: 600; color: var(--text); }
+  .module-hint { font-size: .78rem; color: var(--muted); margin-left: 4px; }
+
+  /* ===== CARDS GRID ===== */
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; display: flex; align-items: center; gap: 12px;
+    text-decoration: none; color: var(--text); transition: all 0.2s ease; cursor: pointer;
+  }
+  .card:hover { border-color: var(--accent); background: var(--surface2); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+  .card-num { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: .68rem; font-weight: 800; color: #fff; flex-shrink: 0; }
+  .card-body { flex: 1; min-width: 0; }
+  .card-title { font-size: .82rem; font-weight: 600; line-height: 1.3; }
+  .card-sub { font-size: .68rem; color: var(--muted); margin-top: 2px; line-height: 1.3; }
+  .card-arrow { color: var(--border); font-size: .9rem; transition: all 0.2s; flex-shrink: 0; }
+  .card:hover .card-arrow { color: var(--accent); transform: translateX(3px); }
+  .card-type { font-size: .6rem; font-weight: 700; padding: 1px 5px; border-radius: 3px; color: #fff; margin-left: 4px; vertical-align: middle; }
+
+  /* Color coding */
+  .c-mindset { background: linear-gradient(135deg, #e84393, #fd79a8); }
+  .c-think { background: linear-gradient(135deg, #e17055, #fab1a0); }
+  .c-build { background: linear-gradient(135deg, #fdcb6e, #f39c12); }
+  .c-engineer { background: linear-gradient(135deg, #00b894, #55efc4); }
+  .c-production { background: linear-gradient(135deg, #0984e3, #74b9ff); }
+  .c-professional { background: linear-gradient(135deg, #6c5ce7, #a29bfe); }
+  .c-backend { background: linear-gradient(135deg, #0984e3, #74b9ff); }
+  .c-ds { background: linear-gradient(135deg, #0984e3, #74b9ff); }
+  .c-sort { background: linear-gradient(135deg, #6c5ce7, #a29bfe); }
+  .c-search { background: linear-gradient(135deg, #00b894, #55efc4); }
+  .c-paradigm { background: linear-gradient(135deg, #e17055, #fab1a0); }
+  .c-dp { background: linear-gradient(135deg, #fdcb6e, #f39c12); }
+  .c-graph { background: linear-gradient(135deg, #e84393, #fd79a8); }
+
+  /* ===== DIVIDER ===== */
+  .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 48px 0; }
+
+  /* ===== FOOTER ===== */
+  .footer { text-align: center; padding: 40px 0 60px; color: var(--muted); font-size: .82rem; line-height: 1.8; }
+  .footer b { color: var(--accent); }
+  .footer .quote { font-style: italic; color: #6b7fa3; margin-top: 12px; font-size: .88rem; }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>Teaching Hub</h1>
+    <div class="author">by <b>Nguyễn Thanh Đô</b> — Backend Tech Lead, 11+ năm kinh nghiệm</div>
+    <p>
+      Chương trình đào tạo Software Engineer toàn diện. <b>70 bài giảng</b> interactive —
+      từ tư duy giải quyết vấn đề đến production deployment.
+      Mỗi file HTML mở browser là chạy, không cần server, không cần internet.
+    </p>
+    <div class="stats-row">
+      <div class="stat-pill"><div class="num" style="color:#e84393">19</div><div class="label">SE Mindset</div></div>
+      <div class="stat-pill"><div class="num" style="color:#0984e3">16</div><div class="label">Backend Weeks</div></div>
+      <div class="stat-pill"><div class="num" style="color:#6c5ce7">31</div><div class="label">Algorithms</div></div>
+      <div class="stat-pill"><div class="num" style="color:#2ed573">70</div><div class="label">Total Files</div></div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- COURSE 1: SE MINDSET -->
+  <!-- ============================================ -->
+  <div class="divider"></div>
+  <div class="course">
+    <div class="course-header">
+      <div class="course-icon c-mindset">🧠</div>
+      <div class="course-title">Software Engineering Mindset</div>
+    </div>
+    <p class="course-desc">
+      <b>19 bài trình diễn interactive</b> — 5 giai đoạn phát triển tư duy.
+      Không chỉ "biết code" mà "biết giải quyết vấn đề bằng software".
+      Mỗi bài có animated diagrams, flowcharts, code before/after, bài tập.
+    </p>
+
+    <!-- Phase 1: Think -->
+    <div class="module-group">
+      <div class="module-label">
+        <div class="module-badge c-think">PHASE 1</div>
+        <div class="module-name">THINK — Tư duy</div>
+        <div class="module-hint">Nền tảng tư duy giải quyết vấn đề</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="mindset/phase-1-think/01-computational-thinking.html">
+          <div class="card-num c-think">01</div>
+          <div class="card-body"><div class="card-title">Computational Thinking</div><div class="card-sub">Decomposition · Abstraction · Pattern · Edge Cases</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+        <a class="card" href="mindset/phase-1-think/02-programming-thinking.html">
+          <div class="card-num c-think">02</div>
+          <div class="card-body"><div class="card-title">Programming Thinking</div><div class="card-sub">Data & State · Control Flow · Module · Side Effects</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+        <a class="card" href="mindset/phase-1-think/03-clean-code.html">
+          <div class="card-num c-think">03</div>
+          <div class="card-body"><div class="card-title">Clean Code & Quality</div><div class="card-sub">SOLID · DRY · KISS · Code Smells · Refactoring</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+        <a class="card" href="mindset/phase-1-think/04-design-pattern.html">
+          <div class="card-num c-think">04</div>
+          <div class="card-body"><div class="card-title">Design Patterns</div><div class="card-sub">Factory · Observer · Strategy · Adapter · Decorator</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Phase 2: Build -->
+    <div class="module-group">
+      <div class="module-label">
+        <div class="module-badge c-build">PHASE 2</div>
+        <div class="module-name">BUILD — Xây dựng</div>
+        <div class="module-hint">Thiết kế và xây dựng hệ thống</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="mindset/phase-2-build/05-design-system.html">
+          <div class="card-num c-build">05</div>
+          <div class="card-body"><div class="card-title">Design System</div><div class="card-sub">Tokens · Typography · Components · Responsive</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+        <a class="card" href="mindset/phase-2-build/06-architecture.html">
+          <div class="card-num c-build">06</div>
+          <div class="card-body"><div class="card-title">Software Architecture</div><div class="card-sub">Layered · Clean · Microservices · Event-driven</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+        <a class="card" href="mindset/phase-2-build/07-database-thinking.html">
+          <div class="card-num c-build">07</div>
+          <div class="card-body"><div class="card-title">Database Thinking</div><div class="card-sub">ERD · Normalization · Index · ACID · N+1 Query</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+        <a class="card" href="mindset/phase-2-build/08-api-fundamentals.html">
+          <div class="card-num c-build">08</div>
+          <div class="card-body"><div class="card-title">API & Backend</div><div class="card-sub">REST · HTTP · JWT · Validation · Idempotency</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Phase 3: Engineer -->
+    <div class="module-group">
+      <div class="module-label">
+        <div class="module-badge c-engineer">PHASE 3</div>
+        <div class="module-name">ENGINEER — Kỹ sư</div>
+        <div class="module-hint">Kiểm thử, debug, bảo mật, thiết kế hệ thống</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="mindset/phase-3-engineer/09-testing.html">
+          <div class="card-num c-engineer">09</div>
+          <div class="card-body"><div class="card-title">Testing</div><div class="card-sub">Unit · Integration · E2E · TDD · Coverage</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+        <a class="card" href="mindset/phase-3-engineer/10-debugging.html">
+          <div class="card-num c-engineer">10</div>
+          <div class="card-body"><div class="card-title">Debugging & Root Cause</div><div class="card-sub">5 Whys · Stack Trace · Git Bisect · Profiling</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+        <a class="card" href="mindset/phase-3-engineer/11-git-workflow.html">
+          <div class="card-num c-engineer">11</div>
+          <div class="card-body"><div class="card-title">Git & Workflow</div><div class="card-sub">Branch · PR · Code Review · Semantic Versioning</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+        <a class="card" href="mindset/phase-3-engineer/12-security.html">
+          <div class="card-num c-engineer">12</div>
+          <div class="card-body"><div class="card-title">Security Mindset</div><div class="card-sub">OWASP Top 10 · JWT · Injection · CTF exercises</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+        <a class="card" href="mindset/phase-3-engineer/13-system-design.html">
+          <div class="card-num c-engineer">13</div>
+          <div class="card-body"><div class="card-title">System Design</div><div class="card-sub">Scaling · Cache · Queue · CAP · Circuit Breaker</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Phase 4: Production -->
+    <div class="module-group">
+      <div class="module-label">
+        <div class="module-badge c-production">PHASE 4</div>
+        <div class="module-name">PRODUCTION — Triển khai</div>
+        <div class="module-hint">Docker, CI/CD, AI-assisted engineering</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="mindset/phase-4-production/14-devops.html">
+          <div class="card-num c-production">14</div>
+          <div class="card-body"><div class="card-title">DevOps & CI/CD</div><div class="card-sub">Docker · GitHub Actions · Deploy · Monitoring</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+        <a class="card" href="mindset/phase-4-production/15-ai-programming.html">
+          <div class="card-num c-production">15</div>
+          <div class="card-body"><div class="card-title">AI-assisted Programming</div><div class="card-sub">Prompting · Verification · Hallucination · Ownership</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+      </div>
+    </div>
+
+    <!-- Phase 5: Professional -->
+    <div class="module-group">
+      <div class="module-label">
+        <div class="module-badge c-professional">PHASE 5</div>
+        <div class="module-name">PROFESSIONAL — Chuyên nghiệp</div>
+        <div class="module-hint">Product thinking, communication, career</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="mindset/phase-5-professional/16-engineering-workflow.html">
+          <div class="card-num c-professional">16</div>
+          <div class="card-body"><div class="card-title">Engineering Workflow</div><div class="card-sub">Agile · Estimation · RFC · Code Review</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+        <a class="card" href="mindset/phase-5-professional/17-product-thinking.html">
+          <div class="card-num c-professional">17</div>
+          <div class="card-body"><div class="card-title">Product Thinking</div><div class="card-sub">MVP · Metrics · User Problem · Trade-off</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+        <a class="card" href="mindset/phase-5-professional/18-documentation.html">
+          <div class="card-num c-professional">18</div>
+          <div class="card-body"><div class="card-title">Documentation</div><div class="card-sub">README · API Docs · C4 · ADR · Sequence Diagram</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+        <a class="card" href="mindset/phase-5-professional/19-capstone-overview.html">
+          <div class="card-num c-professional">19</div>
+          <div class="card-body"><div class="card-title">Capstone & Career</div><div class="card-sub">Final Project · CV · Interview · Open Source</div></div>
+          <div class="card-arrow">→</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- COURSE 2: BACKEND ENGINEERING -->
+  <!-- ============================================ -->
+  <div class="divider"></div>
+  <div class="course">
+    <div class="course-header">
+      <div class="course-icon c-backend">⚙️</div>
+      <div class="course-title">Backend Engineering với nestjs-boot</div>
+    </div>
+    <p class="course-desc">
+      <b>16 tuần</b> bài giảng chi tiết (.md) — học từ production code thật.
+      Mỗi tuần map trực tiếp với module trong <b>nestjs-boot</b> (55+ modules, 495 tests).
+      Format: 60 phút lý thuyết + 30 phút thực hành.
+    </p>
+
+    <div class="module-group">
+      <div class="module-label">
+        <div class="module-badge c-backend">STAGE 1</div>
+        <div class="module-name">Nền tảng</div>
+        <div class="module-hint">Tuần 1–4</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="stage-1-fundamentals/week-01-typescript-nestjs.md"><div class="card-num c-backend">01</div><div class="card-body"><div class="card-title">TypeScript & NestJS Core</div><div class="card-sub">Types · DI · Module/Controller/Service</div></div><span class="card-type c-backend">.md</span><div class="card-arrow">→</div></a>
+        <a class="card" href="stage-1-fundamentals/week-02-database-repository.md"><div class="card-num c-backend">02</div><div class="card-body"><div class="card-title">Database & Repository</div><div class="card-sub">MongoDB · Mongoose · BaseRepository</div></div><span class="card-type c-backend">.md</span><div class="card-arrow">→</div></a>
+        <a class="card" href="stage-1-fundamentals/week-03-api-design.md"><div class="card-num c-backend">03</div><div class="card-body"><div class="card-title">API Design & Validation</div><div class="card-sub">REST · DTO · class-validator · Swagger</div></div><span class="card-type c-backend">.md</span><div class="card-arrow">→</div></a>
+        <a class="card" href="stage-1-fundamentals/week-04-config-environment.md"><div class="card-num c-backend">04</div><div class="card-body"><div class="card-title">Config & Environment</div><div class="card-sub">12-Factor · .env · Validation · Milestone 1</div></div><span class="card-type c-backend">.md</span><div class="card-arrow">→</div></a>
+      </div>
+    </div>
+
+    <div class="module-group">
+      <div class="module-label">
+        <div class="module-badge c-backend">STAGE 2</div>
+        <div class="module-name">Trung cấp</div>
+        <div class="module-hint">Tuần 5–8</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="stage-2-intermediate/week-05-authentication.md"><div class="card-num c-backend">05</div><div class="card-body"><div class="card-title">Authentication & Authorization</div><div class="card-sub">JWT · RBAC · Guards · API Key</div></div><span class="card-type c-backend">.md</span><div class="card-arrow">→</div></a>
+        <a class="card" href="stage-2-intermediate/week-06-caching.md"><div class="card-num c-backend">06</div><div class="card-body"><div class="card-title">Caching & Performance</div><div class="card-sub">Redis · L1/L2 · Stampede · Benchmark</div></div><span class="card-type c-backend">.md</span><div class="card-arrow">→</div></a>
+        <a class="card" href="stage-2-intermediate/week-07-testing.md"><div class="card-num c-backend">07</div><div class="card-body"><div class="card-title">Testing</div><div class="card-sub">Unit · Integration · Mock · Coverage</div></div><span class="card-type c-backend">.md</span><div class="card-arrow">→</div></a>
+        <a class="card" href="stage-2-intermediate/week-08-error-resilience.md"><div class="card-num c-backend">08</div><div class="card-body"><div class="card-title">Error Handling & Resilience</div><div class="card-sub">Circuit Breaker · Retry · Health · Milestone 2</div></div><span class="card-type c-backend">.md</span><div class="card-arrow">→</div></a>
+      </div>
+    </div>
+
+    <div class="module-group">
+      <div class="module-label">
+        <div class="module-badge c-backend">STAGE 3</div>
+        <div class="module-name">Nâng cao</div>
+        <div class="module-hint">Tuần 9–12</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="stage-3-advanced/week-09-microservices.md"><div class="card-num c-backend">09</div><div class="card-body"><div class="card-title">Microservices</div><div class="card-sub">gRPC · Transport · Correlation ID</div></div><span class="card-type c-backend">.md</span><div class="card-arrow">→</div></a>
+        <a class="card" href="stage-3-advanced/week-10-queue.md"><div class="card-num c-backend">10</div><div class="card-body"><div class="card-title">Message Queue</div><div class="card-sub">BullMQ · Workers · Dead Letter · Retry</div></div><span class="card-type c-backend">.md</span><div class="card-arrow">→</div></a>
+        <a class="card" href="stage-3-advanced/week-11-events-cqrs.md"><div class="card-num c-backend">11</div><div class="card-body"><div class="card-title">Events & CQRS</div><div class="card-sub">EventBus · CommandBus · Saga · Outbox</div></div><span class="card-type c-backend">.md</span><div class="card-arrow">→</div></a>
+        <a class="card" href="stage-3-advanced/week-12-observability.md"><div class="card-num c-backend">12</div><div class="card-body"><div class="card-title">Observability</div><div class="card-sub">Prometheus · Grafana · OpenTelemetry · Milestone 3</div></div><span class="card-type c-backend">.md</span><div class="card-arrow">→</div></a>
+      </div>
+    </div>
+
+    <div class="module-group">
+      <div class="module-label">
+        <div class="module-badge c-backend">STAGE 4</div>
+        <div class="module-name">Production</div>
+        <div class="module-hint">Tuần 13–16</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="stage-4-production/week-13-cicd-devops.md"><div class="card-num c-backend">13</div><div class="card-body"><div class="card-title">CI/CD & DevOps</div><div class="card-sub">Docker · GitHub Actions · Deploy</div></div><span class="card-type c-backend">.md</span><div class="card-arrow">→</div></a>
+        <a class="card" href="stage-4-production/week-14-security.md"><div class="card-num c-backend">14</div><div class="card-body"><div class="card-title">Security</div><div class="card-sub">OWASP · Path Traversal · CTF</div></div><span class="card-type c-backend">.md</span><div class="card-arrow">→</div></a>
+        <a class="card" href="stage-4-production/week-15-performance.md"><div class="card-num c-backend">15</div><div class="card-body"><div class="card-title">Performance & System Design</div><div class="card-sub">N+1 · Index · K6 · RESHADED</div></div><span class="card-type c-backend">.md</span><div class="card-arrow">→</div></a>
+        <a class="card" href="stage-4-production/week-16-capstone.md"><div class="card-num c-backend">16</div><div class="card-body"><div class="card-title">Capstone & Career</div><div class="card-sub">Final Project · CV · Interview</div></div><span class="card-type c-backend">.md</span><div class="card-arrow">→</div></a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- COURSE 3: ALGORITHMS -->
+  <!-- ============================================ -->
+  <div class="divider"></div>
+  <div class="course">
+    <div class="course-header">
+      <div class="course-icon c-sort">🧮</div>
+      <div class="course-title">Thuật toán & Giải thuật — Interactive</div>
+    </div>
+    <p class="course-desc">
+      <b>31 bài</b> trực quan bằng HTML/CSS/JS animation. Step-by-step, Play/Pause/Speed,
+      code panel sync, giải thích tiếng Việt. Mở browser là chạy.
+    </p>
+
+    <div class="module-group">
+      <div class="module-label">
+        <div class="module-badge c-ds">M1</div>
+        <div class="module-name">Cấu trúc dữ liệu</div>
+        <div class="module-hint">7 bài</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="algorithms/module-1-data-structures/01-array.html"><div class="card-num c-ds">01</div><div class="card-body"><div class="card-title">Array</div><div class="card-sub">Access O(1) · Insert O(n)</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-1-data-structures/02-linked-list.html"><div class="card-num c-ds">02</div><div class="card-body"><div class="card-title">Linked List</div><div class="card-sub">Singly/Doubly · Insert O(1)</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-1-data-structures/03-stack.html"><div class="card-num c-ds">03</div><div class="card-body"><div class="card-title">Stack</div><div class="card-sub">LIFO · Push/Pop O(1)</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-1-data-structures/04-queue.html"><div class="card-num c-ds">04</div><div class="card-body"><div class="card-title">Queue</div><div class="card-sub">FIFO · Circular · Priority</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-1-data-structures/05-hash-table.html"><div class="card-num c-ds">05</div><div class="card-body"><div class="card-title">Hash Table</div><div class="card-sub">Hash · Collision · O(1) avg</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-1-data-structures/06-tree-bst.html"><div class="card-num c-ds">06</div><div class="card-body"><div class="card-title">BST</div><div class="card-sub">Search O(log n) · Traversals</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-1-data-structures/07-heap.html"><div class="card-num c-ds">07</div><div class="card-body"><div class="card-title">Heap</div><div class="card-sub">Min/Max · Dual view</div></div><div class="card-arrow">→</div></a>
+      </div>
+    </div>
+
+    <div class="module-group">
+      <div class="module-label">
+        <div class="module-badge c-sort">M2</div>
+        <div class="module-name">Sắp xếp</div>
+        <div class="module-hint">6 bài</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="algorithms/module-2-sorting/08-bubble-sort.html"><div class="card-num c-sort">08</div><div class="card-body"><div class="card-title">Bubble Sort</div><div class="card-sub">O(n²) · Stable</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-2-sorting/09-selection-sort.html"><div class="card-num c-sort">09</div><div class="card-body"><div class="card-title">Selection Sort</div><div class="card-sub">O(n²) · Find min</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-2-sorting/10-insertion-sort.html"><div class="card-num c-sort">10</div><div class="card-body"><div class="card-title">Insertion Sort</div><div class="card-sub">O(n²) avg · O(n) best</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-2-sorting/11-merge-sort.html"><div class="card-num c-sort">11</div><div class="card-body"><div class="card-title">Merge Sort</div><div class="card-sub">O(n log n) · Divide & Conquer</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-2-sorting/12-quick-sort.html"><div class="card-num c-sort">12</div><div class="card-body"><div class="card-title">Quick Sort</div><div class="card-sub">O(n log n) avg · Pivot</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-2-sorting/13-heap-sort.html"><div class="card-num c-sort">13</div><div class="card-body"><div class="card-title">Heap Sort</div><div class="card-sub">O(n log n) · In-place</div></div><div class="card-arrow">→</div></a>
+      </div>
+    </div>
+
+    <div class="module-group">
+      <div class="module-label">
+        <div class="module-badge c-search">M3</div>
+        <div class="module-name">Tìm kiếm</div>
+        <div class="module-hint">4 bài</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="algorithms/module-3-searching/14-linear-search.html"><div class="card-num c-search">14</div><div class="card-body"><div class="card-title">Linear Search</div><div class="card-sub">O(n) · Sequential</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-3-searching/15-binary-search.html"><div class="card-num c-search">15</div><div class="card-body"><div class="card-title">Binary Search</div><div class="card-sub">O(log n) · Sorted</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-3-searching/16-dfs.html"><div class="card-num c-search">16</div><div class="card-body"><div class="card-title">DFS</div><div class="card-sub">Stack · Backtracking</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-3-searching/17-bfs.html"><div class="card-num c-search">17</div><div class="card-body"><div class="card-title">BFS</div><div class="card-sub">Queue · Shortest path</div></div><div class="card-arrow">→</div></a>
+      </div>
+    </div>
+
+    <div class="module-group">
+      <div class="module-label">
+        <div class="module-badge c-paradigm">M4</div>
+        <div class="module-name">Tư duy giải thuật</div>
+        <div class="module-hint">6 bài</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="algorithms/module-4-paradigms/18-recursion.html"><div class="card-num c-paradigm">18</div><div class="card-body"><div class="card-title">Recursion</div><div class="card-sub">Call Stack · Fibonacci · Hanoi</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-4-paradigms/19-two-pointers.html"><div class="card-num c-paradigm">19</div><div class="card-body"><div class="card-title">Two Pointers</div><div class="card-sub">O(n²)→O(n)</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-4-paradigms/20-sliding-window.html"><div class="card-num c-paradigm">20</div><div class="card-body"><div class="card-title">Sliding Window</div><div class="card-sub">Fixed/Variable</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-4-paradigms/21-divide-and-conquer.html"><div class="card-num c-paradigm">21</div><div class="card-body"><div class="card-title">Divide & Conquer</div><div class="card-sub">Split · Merge</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-4-paradigms/22-greedy.html"><div class="card-num c-paradigm">22</div><div class="card-body"><div class="card-title">Greedy</div><div class="card-sub">Local optimal · Failure demo</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-4-paradigms/23-backtracking.html"><div class="card-num c-paradigm">23</div><div class="card-body"><div class="card-title">Backtracking</div><div class="card-sub">N-Queens · Maze · Sudoku</div></div><div class="card-arrow">→</div></a>
+      </div>
+    </div>
+
+    <div class="module-group">
+      <div class="module-label">
+        <div class="module-badge c-dp">M5</div>
+        <div class="module-name">Quy hoạch động</div>
+        <div class="module-hint">4 bài</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="algorithms/module-5-dynamic-programming/24-dp-fibonacci.html"><div class="card-num c-dp">24</div><div class="card-body"><div class="card-title">DP Fibonacci</div><div class="card-sub">Naive vs Memo vs Table</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-5-dynamic-programming/25-dp-knapsack.html"><div class="card-num c-dp">25</div><div class="card-body"><div class="card-title">0/1 Knapsack</div><div class="card-sub">2D table · Backtrack</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-5-dynamic-programming/26-dp-lcs.html"><div class="card-num c-dp">26</div><div class="card-body"><div class="card-title">LCS</div><div class="card-sub">String matching · Arrows</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-5-dynamic-programming/27-dp-matrix-chain.html"><div class="card-num c-dp">27</div><div class="card-body"><div class="card-title">Matrix Chain</div><div class="card-sub">Diagonal fill · Parenthesization</div></div><div class="card-arrow">→</div></a>
+      </div>
+    </div>
+
+    <div class="module-group">
+      <div class="module-label">
+        <div class="module-badge c-graph">M6</div>
+        <div class="module-name">Đồ thị nâng cao</div>
+        <div class="module-hint">4 bài</div>
+      </div>
+      <div class="cards">
+        <a class="card" href="algorithms/module-6-graph-advanced/28-dijkstra.html"><div class="card-num c-graph">28</div><div class="card-body"><div class="card-title">Dijkstra</div><div class="card-sub">Shortest path · PQ</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-6-graph-advanced/29-bellman-ford.html"><div class="card-num c-graph">29</div><div class="card-body"><div class="card-title">Bellman-Ford</div><div class="card-sub">Negative edges · Cycle</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-6-graph-advanced/30-kruskal-prim.html"><div class="card-num c-graph">30</div><div class="card-body"><div class="card-title">Kruskal & Prim</div><div class="card-sub">MST · Union-Find</div></div><div class="card-arrow">→</div></a>
+        <a class="card" href="algorithms/module-6-graph-advanced/31-topological-sort.html"><div class="card-num c-graph">31</div><div class="card-body"><div class="card-title">Topological Sort</div><div class="card-sub">Kahn · DFS · Cycle detect</div></div><div class="card-arrow">→</div></a>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="divider"></div>
+  <div class="footer">
+    <b>70 bài giảng</b> · 3 khóa học · Tất cả offline, mở browser là chạy<br>
+    Xây dựng bởi <b>Nguyễn Thanh Đô</b> — Backend Tech Lead<br>
+    Framework: <b>nestjs-boot</b> · GitHub: <b>nthanhdo/nestjs-boot</b>
+    <div class="quote">"Don't teach students how to use today's technology.<br>Teach students how to think when tomorrow's technology changes."</div>
+  </div>
+
+</div>
+</body>
+</html>

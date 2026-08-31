@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 
 export interface LeveledRole {
   name: string;
@@ -13,7 +13,6 @@ export interface LeveledRole {
  */
 @Injectable()
 export class PrivilegeBoundary {
-  private readonly logger = new Logger(PrivilegeBoundary.name);
   private readonly roles = new Map<string, LeveledRole>();
 
   constructor(definitions?: LeveledRole[]) {

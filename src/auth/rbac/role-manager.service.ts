@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PermissionStore } from './permission-store';
 import { PrivilegeBoundary, LeveledRole } from './privilege-boundary';
 
@@ -26,7 +26,6 @@ export interface PermissionDefinitionRecord {
  */
 @Injectable()
 export class RoleManager {
-  private readonly logger = new Logger(RoleManager.name);
   private roles = new Map<string, RoleDefinitionRecord>();
   private permissions = new Map<string, PermissionDefinitionRecord>();
   private rolePermissions = new Map<string, Set<string>>();

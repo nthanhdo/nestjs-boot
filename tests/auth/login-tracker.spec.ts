@@ -60,10 +60,10 @@ describe('LoginTracker', () => {
   });
 
   it('isLocked returns false after lockout expires', async () => {
-    const shortTracker = new LoginTracker({ maxAttempts: 1, lockoutDuration: 10 });
+    const shortTracker = new LoginTracker({ maxAttempts: 1, lockoutDuration: 50 });
     shortTracker.recordFailure('u7');
     expect(shortTracker.isLocked('u7')).toBe(true);
-    await new Promise((r) => setTimeout(r, 20));
+    await new Promise((r) => setTimeout(r, 100));
     expect(shortTracker.isLocked('u7')).toBe(false);
   });
 });

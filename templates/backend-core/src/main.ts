@@ -2,6 +2,16 @@ import { createApp } from 'nestjs-boot';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET must be set in production');
+  }
+
+  const jwtRefreshSecret = process.env.JWT_REFRESH_SECRET;
+  if (!jwtRefreshSecret && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_REFRESH_SECRET must be set in production');
+  }
+
   const app = await createApp(AppModule, {
     // ── Database ──
     database: {
@@ -15,10 +25,10 @@ async function bootstrap() {
     // ── Auth ──
     auth: {
       jwt: {
-        secret: process.env.JWT_SECRET ?? 'dev-secret-change-in-production-32ch',
+        secret: jwtSecret ?? 'dev-secret-change-in-production-32ch',
         signOptions: { expiresIn: process.env.JWT_EXPIRES_IN ?? '1h' },
         refreshSecret:
-          process.env.JWT_REFRESH_SECRET ?? 'dev-refresh-secret-change-32chars',
+          jwtRefreshSecret ?? 'dev-refresh-secret-change-32chars',
         refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
       },
       rbac: {

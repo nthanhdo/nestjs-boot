@@ -9,6 +9,7 @@ import { BootOptions } from './interfaces/boot-options.interface';
 import { parseDiError, formatDiError } from './di/di-error-handler';
 import { scanForCircularDepWarnings } from './di/circular-dep-scanner';
 import { validateLayers } from './layers/layer-enforcer';
+import { PluginRegistry } from './plugin/plugin.registry';
 
 // --- Lazy loaders for optional heavy modules ---
 // These are loaded on-demand so consumers don't need peer deps they don't use.
@@ -86,6 +87,28 @@ function lazySwagger() {
 }
 
 /**
+ * ESM-compatible lazy import with CJS fallback.
+ *
+ * Prefers native `import()` (works in ESM and bundlers that tree-shake CJS).
+ * Falls back to `require()` for pure CJS environments where dynamic import
+ * of a CJS module may fail.
+ *
+ * **Migration path:** Once the codebase is fully ESM, remove the `require()`
+ * fallback and convert all `lazyXxx()` helpers above to use `lazyImport()`.
+ *
+ * @param modulePath - Module specifier (relative or package name).
+ * @returns The module's namespace object.
+ */
+export async function lazyImport<T = any>(modulePath: string): Promise<T> {
+  try {
+    return await import(modulePath);
+  } catch {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require(modulePath);
+  }
+}
+
+/**
  * Load .env files using dotenv.
  * Supports environment profiles: `.env.{BOOT_ENV || NODE_ENV}` overrides `.env`.
  */
@@ -139,6 +162,7 @@ function loadEnvFiles(): void {
 function buildBootModule(
   AppModule: Type<unknown>,
   validated: BootOptions,
+  pluginRegistry: PluginRegistry,
 ): Type<unknown> {
   const imports: DynamicModule[] = [BootConfigModule.register(validated)];
 
@@ -233,6 +257,19 @@ function buildBootModule(
     imports.push(StorageModule.register(validated.storage));
   }
 
+  // --- External plugins ---
+  if (validated.plugins?.length) {
+    for (const plugin of validated.plugins) {
+      pluginRegistry.register(plugin);
+    }
+  }
+  for (const plugin of pluginRegistry.getAll()) {
+    const pluginConfig = (validated as Record<string, unknown>)[plugin.configKey];
+    if (pluginConfig) {
+      imports.push(plugin.register(pluginConfig));
+    }
+  }
+
   @Module({ imports: [...imports, AppModule] })
   class BootWrappedModule {}
 
@@ -242,7 +279,7 @@ function buildBootModule(
 /**
  * Apply global interceptors and filters to the NestJS app.
  */
-function applyGlobals(app: INestApplication, validated: BootOptions): void {
+function applyGlobals(app: INestApplication, validated: BootOptions, pluginRegistry: PluginRegistry): void {
   // Interceptors
   if (validated.response?.envelope) {
     app.useGlobalInterceptors(new ResponseInterceptor());
@@ -288,6 +325,13 @@ function applyGlobals(app: INestApplication, validated: BootOptions): void {
       app.useGlobalFilters(rpcFilter);
     } catch {
       // RPC filter not available — skip
+    }
+  }
+
+  // External plugin globals
+  for (const plugin of pluginRegistry.getAll()) {
+    if (plugin.applyGlobals) {
+      plugin.applyGlobals(app);
     }
   }
 }
@@ -339,7 +383,8 @@ export async function createApp(
   }
 
   // 3. Build infrastructure module
-  const BootWrappedModule = buildBootModule(AppModule, validated);
+  const pluginRegistry = new PluginRegistry();
+  const BootWrappedModule = buildBootModule(AppModule, validated, pluginRegistry);
 
   // 4. Create NestJS app (with DI error enrichment)
   const nestOptions: Record<string, unknown> = {};
@@ -403,7 +448,7 @@ export async function createApp(
   }
 
   // 8. Apply global interceptors + filters
-  applyGlobals(app, validated);
+  applyGlobals(app, validated, pluginRegistry);
 
   // 9. Connect microservice transports
   if (validated.transport) {

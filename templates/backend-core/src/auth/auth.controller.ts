@@ -14,6 +14,7 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
   ChangePasswordDto,
+  VerifyEmailDto,
 } from './dto/auth.dto';
 
 @Controller('auth')
@@ -24,6 +25,13 @@ export class AuthController {
   @Post('register')
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
+  }
+
+  @Public()
+  @Post('verify-email')
+  @HttpCode(200)
+  verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.authService.verifyEmail(dto);
   }
 
   @Public()

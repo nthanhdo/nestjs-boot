@@ -25,6 +25,8 @@ export interface AuthorizationContext {
   departmentId?: string;
   /** Team context */
   teamId?: string;
+  /** Purpose of use — why the action is being performed */
+  purposeOfUse?: string;
   /** Additional metadata */
   metadata?: Record<string, any>;
 }

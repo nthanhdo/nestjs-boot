@@ -74,6 +74,15 @@ export class MongoAuditStore implements AuditStore {
     return this.auditModel.countDocuments(filter).exec();
   }
 
+  async purgeOlderThan(date: Date): Promise<{ auditEntriesDeleted: number; securityEventsDeleted: number }> {
+    const auditResult = await this.auditModel.deleteMany({ timestamp: { $lt: date } }).exec();
+    const secResult = await this.securityModel.deleteMany({ timestamp: { $lt: date } }).exec();
+    return {
+      auditEntriesDeleted: auditResult.deletedCount ?? 0,
+      securityEventsDeleted: secResult.deletedCount ?? 0,
+    };
+  }
+
   async saveSecurityEvent(event: SecurityEvent): Promise<void> {
     await this.securityModel.create(event);
   }

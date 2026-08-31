@@ -40,6 +40,17 @@ export class MemoryAuditStore implements AuditStore {
     return (await this.findAuditEntries(filter)).length;
   }
 
+  async purgeOlderThan(date: Date): Promise<{ auditEntriesDeleted: number; securityEventsDeleted: number }> {
+    const auditBefore = this.auditEntries.length;
+    this.auditEntries = this.auditEntries.filter((e) => e.timestamp >= date);
+    const secBefore = this.securityEvents.length;
+    this.securityEvents = this.securityEvents.filter((e) => e.timestamp >= date);
+    return {
+      auditEntriesDeleted: auditBefore - this.auditEntries.length,
+      securityEventsDeleted: secBefore - this.securityEvents.length,
+    };
+  }
+
   async saveSecurityEvent(event: SecurityEvent): Promise<void> {
     this.securityEvents.push({ ...event, id: event.id ?? `sec_${++this.counter}` });
   }

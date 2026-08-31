@@ -149,13 +149,119 @@ health() {
 }
 ```
 
-## Tùy chọn RBAC Config
+## Tùy chọn RBAC Config (đầy đủ 7 trường)
 
 | Option | Type | Default | Mô tả |
 |--------|------|---------|-------------|
 | `enabled` | `boolean` | — | Bật RBAC guard toàn cục |
 | `extractRoles` | `(req) => string[]` | `req.user?.roles ?? []` | Trích xuất danh sách role từ request |
 | `extractPermissions` | `(req) => string[]` | `req.user?.permissions ?? []` | Trích xuất danh sách permission từ request |
+| `denyByDefault` | `boolean` | `false` | Khi `true`, route không có `@Roles()` hoặc `@Permissions()` sẽ bị từ chối (403). Route `@Public()` vẫn cho qua. |
+| `hierarchy` | `RoleDefinition[]` | — | Định nghĩa kế thừa role. Xem phần dưới. |
+| `superAdmin` | `string` | — | Tên role bypass tất cả kiểm tra role/permission |
+| `permissionStore` | `PermissionStore` | — | Store permission từ DB thay vì JWT. Xem phần dưới. |
+
+## denyByDefault
+
+Mặc định, route không có `@Roles()` / `@Permissions()` cho qua — bất kỳ user đã xác thực đều truy cập được. Bật `denyByDefault: true` để đảo ngược:
+
+```ts
+rbac: {
+  enabled: true,
+  denyByDefault: true, // khuyến nghị cho production
+}
+```
+
+Route không có decorator → `403 Forbidden: "Access denied: no roles defined for this route"`. Buộc developer phải khai báo rõ ràng authorization cho mọi route.
+
+## Role Hierarchy (Kế thừa role)
+
+```ts
+rbac: {
+  hierarchy: [
+    { name: 'SUPER_ADMIN', inherits: ['ADMIN'] },
+    { name: 'ADMIN', inherits: ['MANAGER'] },
+    { name: 'MANAGER', inherits: ['STAFF'] },
+    { name: 'STAFF' },
+  ],
+}
+```
+
+**Hướng kế thừa:** `inherits` nghĩa là "cũng có khả năng của". `ADMIN` kế thừa `MANAGER` → admin truy cập được mọi route yêu cầu `MANAGER`. Kế thừa đi xuống, không đi lên.
+
+Mỗi `RoleDefinition` có thể kèm permissions được resolve qua hierarchy:
+
+```ts
+{ name: 'ADMIN', inherits: ['MANAGER'], permissions: ['user:delete'] },
+{ name: 'MANAGER', permissions: ['user:create', 'user:read'] },
+// ADMIN có: user:delete + user:create + user:read (kế thừa)
+```
+
+## superAdmin
+
+Role bypass tất cả `@Roles()` và `@Permissions()`:
+
+```ts
+rbac: { superAdmin: 'SUPER_ADMIN' }
+```
+
+Decorator `@SuperAdminOnly()` chỉ cho phép role super-admin, từ chối tất cả role khác:
+
+```ts
+import { SuperAdminOnly } from 'nestjs-boot';
+
+@SuperAdminOnly()
+@Delete('reset-database')
+resetDatabase() { /* chỉ SUPER_ADMIN */ }
+```
+
+## PermissionStore (Permission từ DB)
+
+```ts
+import { MemoryPermissionStore } from 'nestjs-boot';
+
+rbac: {
+  permissionStore: new MemoryPermissionStore(), // dev/test
+}
+```
+
+Interface `PermissionStore`: `getUserPermissions`, `getUserRoles`, `assignRoles`, `removeRoles`, `assignPermissions`, `removePermissions`, `hasPermission`.
+
+Khi cấu hình `permissionStore`, `PermissionsGuard` chạy async: lấy permission từ store (theo `request.user.id`) và merge với permission từ JWT + hierarchy.
+
+## PrivilegeBoundary (Ngăn leo thang quyền)
+
+```ts
+import { PrivilegeBoundary } from 'nestjs-boot';
+
+const boundary = new PrivilegeBoundary([
+  { name: 'ADMIN', level: 90 },
+  { name: 'MANAGER', level: 70 },
+  { name: 'STAFF', level: 20 },
+]);
+
+boundary.canAssignRole(['MANAGER'], 'STAFF');  // true — 70 > 20
+boundary.canAssignRole(['MANAGER'], 'ADMIN');  // false — 70 < 90
+boundary.enforceAssignment(['MANAGER'], 'ADMIN'); // throws ForbiddenException
+```
+
+## RoleManager (Quản lý role lifecycle)
+
+```ts
+import { RoleManager } from 'nestjs-boot';
+
+const manager = new RoleManager(permissionStore, privilegeBoundary);
+
+// Seed (idempotent)
+manager.seed(roles, permissions);
+
+// CRUD role
+manager.createRole({ code: 'EDITOR', name: 'Editor', level: 30, permissions: [] });
+manager.deleteRole('EDITOR'); // throws nếu isSystem: true
+
+// Gán role cho user (có kiểm tra privilege boundary)
+await manager.assignRoleToUser('user-123', 'STAFF', ['ADMIN']);
+```
 
 ## Best Practices
 

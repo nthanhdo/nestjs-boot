@@ -10,8 +10,17 @@ import {
 } from '@nestjs/common';
 import { Permissions, CurrentUser, RequireScope, AccessScope } from 'nestjs-boot';
 import { UsersService } from './users.service';
-import { PaginationDto } from '../common/dto/pagination.dto';
-import { CreateUserDto, UpdateUserDto, AssignRoleDto } from './dto/user.dto';
+import { CreateUserDto, UpdateUserDto, AssignRoleDto, UserFilterDto } from './dto/user.dto';
+
+interface JwtPayload {
+  sub: string;
+  email: string;
+  roles: string[];
+  permissions: string[];
+  organizationId: string | null;
+  departmentId: string | null;
+  teamId: string | null;
+}
 
 @Controller('users')
 export class UsersController {
@@ -20,8 +29,8 @@ export class UsersController {
   @Get()
   @Permissions('user.read')
   @RequireScope(AccessScope.ORGANIZATION)
-  findAll(@Query() pagination: PaginationDto) {
-    return this.usersService.findAll(pagination);
+  findAll(@Query() filter: UserFilterDto) {
+    return this.usersService.findAll(filter);
   }
 
   @Get(':id')
@@ -32,7 +41,7 @@ export class UsersController {
 
   @Post()
   @Permissions('user.create')
-  create(@Body() dto: CreateUserDto, @CurrentUser() user: any) {
+  create(@Body() dto: CreateUserDto, @CurrentUser() user: JwtPayload) {
     return this.usersService.create(dto, user?.roles);
   }
 
@@ -41,7 +50,7 @@ export class UsersController {
   update(
     @Param('id') id: string,
     @Body() dto: UpdateUserDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: JwtPayload,
   ) {
     return this.usersService.update(id, dto, user?.roles);
   }
@@ -49,7 +58,7 @@ export class UsersController {
   @Delete(':id')
   @Permissions('user.delete')
   @RequireScope(AccessScope.ORGANIZATION)
-  delete(@Param('id') id: string, @CurrentUser() user: any) {
+  delete(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return this.usersService.delete(id, user?.roles);
   }
 
@@ -58,7 +67,7 @@ export class UsersController {
   assignRole(
     @Param('id') id: string,
     @Body() dto: AssignRoleDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: JwtPayload,
   ) {
     return this.usersService.assignRole(id, dto.roleCode, user?.roles);
   }
@@ -68,7 +77,7 @@ export class UsersController {
   removeRole(
     @Param('id') id: string,
     @Param('roleCode') roleCode: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: JwtPayload,
   ) {
     return this.usersService.removeRole(id, roleCode, user?.roles);
   }

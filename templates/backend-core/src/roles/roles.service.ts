@@ -4,16 +4,49 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
-import { PrismaService } from 'nestjs-boot';
+import { PrismaService, PrivilegeBoundary } from 'nestjs-boot';
 import { AuditService } from 'nestjs-boot';
 import { CreateRoleDto, UpdateRoleDto } from './dto/role.dto';
 
+interface RolePermission {
+  id: string;
+  code: string;
+  name: string;
+  resource: string;
+  action: string;
+}
+
+interface RoleWithRelations {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  level: number;
+  isSystem: boolean;
+  permissions: RolePermission[];
+  inherits: Array<{ code: string; name: string; permissions?: RolePermission[] }>;
+}
+
 @Injectable()
 export class RolesService {
+  private readonly boundary: PrivilegeBoundary;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
-  ) {}
+  ) {
+    this.boundary = new PrivilegeBoundary();
+  }
+
+  /** Sync role definitions from DB into PrivilegeBoundary for level checks */
+  private async syncBoundary(): Promise<void> {
+    const allRoles = await this.prisma.client.role.findMany({
+      select: { code: true, level: true },
+    });
+    for (const r of allRoles) {
+      this.boundary.define({ name: r.code, level: r.level });
+    }
+  }
 
   async findAll() {
     return this.prisma.client.role.findMany({
@@ -25,7 +58,7 @@ export class RolesService {
     });
   }
 
-  async findById(code: string) {
+  async findById(code: string): Promise<RoleWithRelations> {
     const role = await this.prisma.client.role.findUnique({
       where: { code },
       include: {
@@ -40,7 +73,7 @@ export class RolesService {
       throw new NotFoundException(`Role ${code} not found`);
     }
 
-    return role;
+    return role as unknown as RoleWithRelations;
   }
 
   async create(dto: CreateRoleDto, actorRoles?: string[]) {
@@ -51,9 +84,12 @@ export class RolesService {
       throw new BadRequestException(`Role code ${dto.code} already exists`);
     }
 
-    // Privilege boundary: only super_admin can create high-level roles
-    if (actorRoles && !actorRoles.includes('super_admin') && (dto.level ?? 0) >= 100) {
-      throw new ForbiddenException('Insufficient privilege to create a role at this level');
+    // Privilege boundary: actor must have higher level than the role being created
+    if (actorRoles) {
+      await this.syncBoundary();
+      // Register the new role temporarily to check level
+      this.boundary.define({ name: dto.code, level: dto.level ?? 10 });
+      this.boundary.enforceAssignment(actorRoles, dto.code);
     }
 
     const role = await this.prisma.client.role.create({
@@ -80,8 +116,14 @@ export class RolesService {
   async update(code: string, dto: UpdateRoleDto, actorRoles?: string[]) {
     const role = await this.findById(code);
 
-    if ((role as any).isSystem && !actorRoles?.includes('super_admin')) {
+    if (role.isSystem && !actorRoles?.includes('super_admin')) {
       throw new ForbiddenException('Cannot modify a system role');
+    }
+
+    // Privilege boundary: actor must have higher level than the target role
+    if (actorRoles) {
+      await this.syncBoundary();
+      this.boundary.enforceAssignment(actorRoles, code);
     }
 
     await this.prisma.client.role.update({
@@ -94,11 +136,11 @@ export class RolesService {
     });
 
     if (dto.permissions !== undefined) {
-      await this.setPermissions((role as any).id, dto.permissions);
+      await this.setPermissions(role.id, dto.permissions);
     }
 
     if (dto.inherits !== undefined) {
-      await this.setInherits((role as any).id, dto.inherits);
+      await this.setInherits(role.id, dto.inherits);
     }
 
     return this.findById(code);
@@ -107,12 +149,14 @@ export class RolesService {
   async delete(code: string, actorRoles?: string[]) {
     const role = await this.findById(code);
 
-    if ((role as any).isSystem) {
+    if (role.isSystem) {
       throw new ForbiddenException('Cannot delete a system role');
     }
 
-    if (actorRoles && !actorRoles.includes('super_admin') && (role as any).level >= 100) {
-      throw new ForbiddenException('Insufficient privilege to delete this role');
+    // Privilege boundary: actor must have higher level than the role being deleted
+    if (actorRoles) {
+      await this.syncBoundary();
+      this.boundary.enforceAssignment(actorRoles, code);
     }
 
     await this.prisma.client.role.delete({ where: { code } });
@@ -129,14 +173,14 @@ export class RolesService {
   async getRolePermissions(code: string) {
     const role = await this.findById(code);
 
-    const direct = (role as any).permissions ?? [];
-    const inherited = (role as any).inherits?.flatMap((r: any) => r.permissions ?? []) ?? [];
+    const direct = role.permissions ?? [];
+    const inherited = role.inherits?.flatMap((r) => r.permissions ?? []) ?? [];
 
     const all = [...direct, ...inherited];
-    const unique = [...new Map(all.map((p: any) => [p.code, p])).values()];
+    const unique = [...new Map(all.map((p) => [p.code, p])).values()];
 
     return {
-      role: { code: (role as any).code, name: (role as any).name },
+      role: { code: role.code, name: role.name },
       direct,
       inherited,
       all: unique,
@@ -150,7 +194,7 @@ export class RolesService {
       where: { code: { in: permissionCodes } },
     });
 
-    const foundCodes = new Set(perms.map((p: any) => p.code));
+    const foundCodes = new Set(perms.map((p: { code: string }) => p.code));
     const missing = permissionCodes.filter((c) => !foundCodes.has(c));
     if (missing.length) {
       throw new NotFoundException(`Permissions not found: ${missing.join(', ')}`);
@@ -159,7 +203,7 @@ export class RolesService {
     await this.prisma.client.rolePermission.deleteMany({ where: { roleId } });
 
     await this.prisma.client.rolePermission.createMany({
-      data: perms.map((p: any) => ({ roleId, permissionId: p.id })),
+      data: perms.map((p: { id: string }) => ({ roleId, permissionId: p.id })),
     });
   }
 
@@ -168,7 +212,7 @@ export class RolesService {
       where: { code: { in: inheritCodes } },
     });
 
-    const foundCodes = new Set(roles.map((r: any) => r.code));
+    const foundCodes = new Set(roles.map((r: { code: string }) => r.code));
     const missing = inheritCodes.filter((c) => !foundCodes.has(c));
     if (missing.length) {
       throw new NotFoundException(`Inherited roles not found: ${missing.join(', ')}`);
@@ -178,7 +222,7 @@ export class RolesService {
     await this.prisma.client.roleInheritance.deleteMany({ where: { childId: roleId } });
 
     await this.prisma.client.roleInheritance.createMany({
-      data: roles.map((r: any) => ({ childId: roleId, parentId: r.id })),
+      data: roles.map((r: { id: string }) => ({ childId: roleId, parentId: r.id })),
     });
   }
 }

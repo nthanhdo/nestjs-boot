@@ -160,6 +160,26 @@
       "types": "./dist/websocket/index.d.ts",
       "require": "./dist/websocket/index.js",
       "import": "./dist/websocket/index.mjs"
+    },
+    "./audit": {
+      "types": "./dist/audit/index.d.ts",
+      "require": "./dist/audit/index.js",
+      "import": "./dist/audit/index.mjs"
+    },
+    "./di": {
+      "types": "./dist/di/di-error-handler.d.ts",
+      "require": "./dist/di/di-error-handler.js",
+      "import": "./dist/di/di-error-handler.mjs"
+    },
+    "./organizations": {
+      "types": "./dist/organizations/index.d.ts",
+      "require": "./dist/organizations/index.js",
+      "import": "./dist/organizations/index.mjs"
+    },
+    "./scope": {
+      "types": "./dist/scope/index.d.ts",
+      "require": "./dist/scope/index.js",
+      "import": "./dist/scope/index.mjs"
     }
   },
   "bin": {

@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import type * as jwtTypes from 'jsonwebtoken';
 import { AUTH_OPTIONS } from '../constants';
 import { AuthOptions } from '../interfaces';
@@ -24,6 +24,7 @@ function getJwt(): typeof import('jsonwebtoken') {
  */
 @Injectable()
 export class BootJwtService {
+  private readonly logger = new Logger(BootJwtService.name);
   private readonly secret: string;
   private readonly signOpts: jwtTypes.SignOptions;
   private readonly algorithm: jwtTypes.Algorithm;
@@ -45,6 +46,9 @@ export class BootJwtService {
     }
 
     this.refreshSecret = jwtOpts.refreshSecret ?? jwtOpts.secret;
+    if (!jwtOpts.refreshSecret) {
+      this.logger.warn('No separate refreshSecret configured — using main secret. Set a unique refreshSecret for production.');
+    }
     this.resetSecret = jwtOpts.resetSecret ?? jwtOpts.secret;
     this.refreshSignOpts = {};
     if (jwtOpts.refreshExpiresIn) {

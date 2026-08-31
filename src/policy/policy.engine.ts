@@ -37,6 +37,7 @@ export class PolicyEngine {
       organizationId: user.organizationId,
       departmentId: user.departmentId,
       teamId: user.teamId,
+      purposeOfUse: request.headers?.['x-purpose-of-use'] ?? request.body?.purposeOfUse,
       metadata,
     };
   }

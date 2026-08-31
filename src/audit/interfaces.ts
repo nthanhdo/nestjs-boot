@@ -20,6 +20,8 @@ export interface AuditEntry {
   userAgent?: string;
   /** When it happened */
   timestamp: Date;
+  /** Purpose of use (from X-Purpose-Of-Use header or request body) */
+  purposeOfUse?: string;
   /** Additional structured data */
   metadata?: Record<string, any>;
   /** SHA-256 hash of the previous audit entry (hash chain for tamper-proofing) */
@@ -48,6 +50,7 @@ export enum SecurityEventType {
   SESSION_REVOKED = 'SESSION_REVOKED',
   SUSPICIOUS_ACCESS = 'SUSPICIOUS_ACCESS',
   PRIVILEGE_ESCALATION_ATTEMPT = 'PRIVILEGE_ESCALATION_ATTEMPT',
+  BREAK_GLASS_ACCESS = 'BREAK_GLASS_ACCESS',
 }
 
 export interface SecurityEvent {
@@ -81,6 +84,9 @@ export interface AuditStore {
   }): Promise<AuditEntry[]>;
   countAuditEntries(filter: Record<string, any>): Promise<number>;
 
+  /** Purge audit entries and security events older than the given date */
+  purgeOlderThan(date: Date): Promise<{ auditEntriesDeleted: number; securityEventsDeleted: number }>;
+
   saveSecurityEvent(event: SecurityEvent): Promise<void>;
   findSecurityEvents(filter: {
     type?: string;
@@ -101,4 +107,12 @@ export interface AuditModuleOptions {
   extractIp?: (request: any) => string;
   /** Function to extract user agent from request */
   extractUserAgent?: (request: any) => string;
+  /** Retention period in days. Entries older than this are eligible for purging. */
+  retentionDays?: number;
+}
+
+export interface AuditModuleAsyncOptions {
+  imports?: any[];
+  useFactory: (...args: any[]) => Promise<AuditModuleOptions> | AuditModuleOptions;
+  inject?: any[];
 }

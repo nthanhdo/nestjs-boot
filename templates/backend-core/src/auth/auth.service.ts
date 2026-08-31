@@ -17,6 +17,7 @@ import {
   ForgotPasswordDto,
   ResetPasswordDto,
   ChangePasswordDto,
+  VerifyEmailDto,
 } from './dto/auth.dto';
 
 @Injectable()
@@ -55,7 +56,41 @@ export class AuthService {
       },
     });
 
+    // Generate email verification token
+    const verificationToken = this.jwt.signEmailVerification(user.email);
+    this.logger.log(
+      `[EMAIL VERIFY] User: ${user.email} | Token: ${verificationToken.slice(0, 8)}...`,
+    );
+
     return user;
+  }
+
+  async verifyEmail(dto: VerifyEmailDto) {
+    let decoded: { email: string; purpose: string };
+    try {
+      decoded = this.jwt.verifyEmailVerification(dto.token);
+    } catch {
+      throw new BadRequestException('Invalid or expired verification token');
+    }
+
+    if (decoded.purpose !== 'email-verification') {
+      throw new BadRequestException('Invalid token purpose');
+    }
+
+    const user = await this.prisma.client.user.findUnique({
+      where: { email: decoded.email },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.prisma.client.user.update({
+      where: { id: user.id },
+      data: { emailVerified: true },
+    });
+
+    return { message: 'Email verified successfully' };
   }
 
   async login(dto: LoginDto) {
@@ -91,11 +126,12 @@ export class AuthService {
     this.loginTracker.recordSuccess(dto.email);
 
     const membership = user.memberships?.[0];
-    const roles = user.roles?.map((ur: any) => ur.role?.code).filter(Boolean) ?? [];
+    const userRoles = user.roles as Array<{ role: { code: string; permissions?: Array<{ code: string }> } }> | undefined;
+    const roles = userRoles?.map((ur) => ur.role?.code).filter(Boolean) ?? [];
     const permissions = [
       ...new Set(
-        user.roles?.flatMap((ur: any) =>
-          ur.role?.permissions?.map((p: any) => p.code) ?? [],
+        userRoles?.flatMap((ur) =>
+          ur.role?.permissions?.map((p) => p.code) ?? [],
         ) ?? [],
       ),
     ];
@@ -130,7 +166,7 @@ export class AuthService {
   }
 
   async refreshToken(dto: RefreshTokenDto) {
-    let decoded: any;
+    let decoded: Record<string, unknown>;
     try {
       decoded = this.jwt.verifyRefresh(dto.refreshToken);
     } catch {
@@ -206,7 +242,7 @@ export class AuthService {
     const resetUrl = `${process.env.APP_URL ?? 'http://localhost:3000'}/auth/reset-password?token=${resetToken}`;
 
     this.logger.warn(
-      `[PASSWORD RESET] User: ${user.email} | Token: ${resetToken} | URL: ${resetUrl}`,
+      `[PASSWORD RESET] User: ${user.email} | Token: ${resetToken.slice(0, 8)}... | URL: ${resetUrl}`,
     );
 
     return { message: 'If the email exists, a reset link has been sent' };

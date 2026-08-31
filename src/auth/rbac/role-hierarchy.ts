@@ -1,3 +1,19 @@
+/**
+ * Glob-style permission matching.
+ * - `*` matches any permission.
+ * - `user:*` matches `user:read`, `user:write`, etc.
+ * - Exact match otherwise.
+ */
+export function matchesPermission(userPerm: string, required: string): boolean {
+  if (userPerm === '*') return true;
+  if (userPerm === required) return true;
+  if (userPerm.endsWith(':*')) {
+    const prefix = userPerm.slice(0, -1); // e.g. 'user:'
+    return required.startsWith(prefix);
+  }
+  return false;
+}
+
 export interface RoleDefinition {
   name: string;
   inherits?: string[];

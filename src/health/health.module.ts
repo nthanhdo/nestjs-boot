@@ -5,6 +5,8 @@ import { CACHE_SERVICE } from '../cache/constants';
 import { MultiCacheService } from '../cache/multi-cache.service';
 import { DatabaseHealthIndicator } from './indicators/database.indicator';
 import { RedisHealthIndicator } from './indicators/redis.indicator';
+import { QueueHealthIndicator } from './indicators/queue.indicator';
+import { QueueService } from '../queue/queue.service';
 import { HealthController } from './health.controller';
 
 /**
@@ -43,6 +45,20 @@ export class HealthModule {
     } else {
       providers.push({
         provide: RedisHealthIndicator,
+        useValue: null,
+      });
+    }
+
+    // Queue health indicator — checks BullMQ Redis connectivity if queue is configured
+    if (options.queue) {
+      providers.push({
+        provide: QueueHealthIndicator,
+        useFactory: (queueService?: QueueService) => new QueueHealthIndicator(queueService),
+        inject: [{ token: QueueService, optional: true }],
+      });
+    } else {
+      providers.push({
+        provide: QueueHealthIndicator,
         useValue: null,
       });
     }

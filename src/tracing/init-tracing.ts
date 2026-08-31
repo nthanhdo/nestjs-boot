@@ -47,13 +47,17 @@ export function initTracing(options: TracingOptions): void {
 
   const instrumentations = loadAutoInstrumentations();
 
+  // Default sample rate: 0.1 (10%) in production, 1.0 (100%) otherwise
+  const effectiveSampleRate = options.sampleRate ??
+    (process.env.NODE_ENV === 'production' ? 0.1 : 1.0);
+
+  const sampler = createSampler(effectiveSampleRate);
+
   const sdk = new NodeSDK({
     traceExporter: exporter,
     instrumentations,
     serviceName: options.serviceName || readServiceName(),
-    ...(options.sampleRate !== undefined
-      ? { sampler: createSampler(options.sampleRate) }
-      : {}),
+    ...(sampler ? { sampler } : {}),
   });
 
   sdk.start();

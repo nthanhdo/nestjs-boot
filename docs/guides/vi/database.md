@@ -224,24 +224,51 @@ Gói nhiều thao tác repository trong một MongoDB transaction. Yêu cầu re
 ```ts
 import { Injectable } from '@nestjs/common';
 import { UnitOfWork } from 'nestjs-boot';
+import { ClientSession } from 'mongoose';
 
 @Injectable()
 export class OrderService {
   constructor(private readonly unitOfWork: UnitOfWork) {}
 
   async placeOrder(data: CreateOrderDto) {
-    return this.unitOfWork.execute(async (session) => {
-      const order = await this.orderRepo.create(data, { session });
-      await this.inventoryRepo.decrement(data.productId, data.qty, { session });
-      await this.paymentRepo.charge(data.userId, data.total, { session });
-      return order;
+    return this.unitOfWork.execute(async (session: ClientSession) => {
+      // BaseRepository KHÔNG hỗ trợ tham số session.
+      // Dùng Mongoose model trực tiếp với session:
+      const order = await this.orderModel.create([data], { session });
+      await this.inventoryModel.updateOne(
+        { productId: data.productId },
+        { $inc: { quantity: -data.qty } },
+        { session },
+      );
+      await this.paymentModel.create([{ userId: data.userId, amount: data.total }], { session });
+      return order[0];
     });
-    // All succeed or all rollback
+    // Tất cả thành công hoặc tất cả rollback
   }
 }
 ```
 
 Method `execute()` khởi tạo session, bắt đầu transaction, chạy callback, commit khi thành công, và abort khi lỗi. Session luôn được kết thúc trong block `finally`.
+
+**Lưu ý:** Các method của `BaseRepository` (`create`, `update`, `delete`, v.v.) không nhận tham số `session`. Bên trong `UnitOfWork.execute()`, hãy dùng Mongoose model trực tiếp (vd: `this.model.create([data], { session })`). Hoặc thêm method hỗ trợ session vào repository subclass.
+
+### Prisma transactions
+
+Với project dùng Prisma, dùng `PrismaBaseRepository.withTransaction()` hoặc `PrismaService.$transaction()` thay vì `UnitOfWork`:
+
+```ts
+// Qua repository
+await this.productRepo.withTransaction(async (tx) => {
+  await tx.product.create({ data: productData });
+  await tx.order.create({ data: orderData });
+});
+
+// Qua service
+await this.prisma.$transaction(async (tx) => {
+  await tx.product.create({ data: productData });
+  await tx.order.create({ data: orderData });
+});
+```
 
 ## Migration
 

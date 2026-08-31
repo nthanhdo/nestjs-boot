@@ -1,4 +1,4 @@
-import { Injectable, Inject, Optional } from '@nestjs/common';
+import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
 import { SCOPE_OPTIONS } from './constants';
 import { AccessScope, SCOPE_LEVELS, ScopeContext, ScopeModuleOptions } from './interfaces';
 
@@ -7,6 +7,8 @@ import { AccessScope, SCOPE_LEVELS, ScopeContext, ScopeModuleOptions } from './i
  */
 @Injectable()
 export class ScopeResolver {
+  private readonly logger = new Logger(ScopeResolver.name);
+
   constructor(
     @Optional() @Inject(SCOPE_OPTIONS) private readonly options?: ScopeModuleOptions,
   ) {}
@@ -18,8 +20,13 @@ export class ScopeResolver {
     }
     // Default: read from request.user
     const user = request.user;
+    const userId = user?.sub ?? user?.id;
+    if (!userId) {
+      this.logger.warn('ScopeResolver: no userId found — auth guard may not have run');
+      return { userId: '' }; // will produce restrictive filter
+    }
     return {
-      userId: user?.sub ?? user?.id ?? '',
+      userId,
       organizationId: user?.organizationId,
       departmentId: user?.departmentId,
       teamId: user?.teamId,

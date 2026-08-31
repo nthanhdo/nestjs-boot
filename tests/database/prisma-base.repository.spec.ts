@@ -79,22 +79,24 @@ describe('PrismaBaseRepository', () => {
 
   // ── findMany ──────────────────────────────────────────────────────────────
 
-  it('findMany passes where and options to model', async () => {
+  it('findMany returns paginated result', async () => {
     const users: FakeUser[] = [
       { id: '1', name: 'Alice', email: 'alice@example.com' },
       { id: '2', name: 'Bob', email: 'bob@example.com' },
     ];
     model.findMany.mockResolvedValue(users);
+    model.count.mockResolvedValue(2);
 
-    const result = await repo.findMany({ name: 'Alice' }, { take: 10 });
+    const result = await repo.findMany({ name: 'Alice' }, { page: 1, limit: 10 });
 
-    expect(model.findMany).toHaveBeenCalledWith({ where: { name: 'Alice' }, take: 10 });
-    expect(result).toHaveLength(2);
+    expect(result.data).toHaveLength(2);
+    expect(result.total).toBe(2);
+    expect(result.page).toBe(1);
   });
 
-  it('findMany works with no arguments', async () => {
+  it('findManyRaw works with no arguments', async () => {
     model.findMany.mockResolvedValue([]);
-    const result = await repo.findMany();
+    const result = await repo.findManyRaw();
     expect(model.findMany).toHaveBeenCalledWith({ where: undefined });
     expect(result).toEqual([]);
   });
@@ -146,16 +148,22 @@ describe('PrismaBaseRepository', () => {
 
   // ── createMany ────────────────────────────────────────────────────────────
 
-  it('createMany returns count', async () => {
-    model.createMany.mockResolvedValue({ count: 3 });
+  it('createMany returns array of created items', async () => {
+    const items = [
+      { id: '1', name: 'A', email: 'a@example.com' },
+      { id: '2', name: 'B', email: 'b@example.com' },
+      { id: '3', name: 'C', email: 'c@example.com' },
+    ];
+    // createMany uses $transaction with individual creates
+    const prismaService = repo['prisma'] as any;
+    prismaService.$transaction = vi.fn().mockResolvedValue(items);
     const data = [
       { name: 'A', email: 'a@example.com' },
       { name: 'B', email: 'b@example.com' },
       { name: 'C', email: 'c@example.com' },
     ];
     const result = await repo.createMany(data);
-    expect(model.createMany).toHaveBeenCalledWith({ data });
-    expect(result.count).toBe(3);
+    expect(result).toHaveLength(3);
   });
 
   // ── update ────────────────────────────────────────────────────────────────

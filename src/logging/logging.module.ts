@@ -16,6 +16,7 @@ export class LoggingModule {
       providers: [
         { provide: LOGGING_OPTIONS, useValue: opts },
         { provide: BootLogger, useValue: logger },
+        { provide: 'BOOT_LOGGER', useValue: logger },
         LoggingInterceptor,
       ],
       exports: [BootLogger, LoggingInterceptor, LOGGING_OPTIONS],

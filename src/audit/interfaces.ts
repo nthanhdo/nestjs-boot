@@ -22,6 +22,10 @@ export interface AuditEntry {
   timestamp: Date;
   /** Additional structured data */
   metadata?: Record<string, any>;
+  /** SHA-256 hash of the previous audit entry (hash chain for tamper-proofing) */
+  previousHash?: string;
+  /** SHA-256 hash of this entry (computed over all fields except entryHash itself) */
+  entryHash?: string;
 }
 
 export enum SecurityEventType {

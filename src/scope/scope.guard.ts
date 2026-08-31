@@ -24,12 +24,14 @@ export class ScopeGuard implements CanActivate {
     ]);
     if (isPublic) return true;
 
-    const requiredScope = this.reflector.getAllAndOverride<AccessScope>(SCOPE_KEY, [
+    let requiredScope = this.reflector.getAllAndOverride<AccessScope>(SCOPE_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
-    // No @RequireScope() → no restriction
-    if (!requiredScope) return true;
+    if (!requiredScope) {
+      // Default to OWN scope for authenticated routes (least privilege)
+      requiredScope = AccessScope.OWN;
+    }
 
     const request = context.switchToHttp().getRequest();
     const userScope = await this.scopeResolver.resolveScope(request);

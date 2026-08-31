@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, Inject, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { timingSafeEqual } from 'crypto';
 import { IS_PUBLIC_KEY } from '../constants';
 import { SESSION_OPTIONS } from './session.constants';
 import { SessionModuleOptions } from './session.interfaces';
@@ -74,7 +75,7 @@ export class SessionGuard implements CanActivate {
   private unsignCookie(signedValue: string, secret: string): string | null {
     // Format: value.signature
     const dotIndex = signedValue.lastIndexOf('.');
-    if (dotIndex === -1) return signedValue; // unsigned cookie, accept as-is
+    if (dotIndex === -1) return null; // unsigned cookie = invalid, reject
 
     const value = signedValue.slice(0, dotIndex);
     const signature = signedValue.slice(dotIndex + 1);
@@ -85,7 +86,7 @@ export class SessionGuard implements CanActivate {
       .update(value)
       .digest('base64url');
 
-    if (signature === expected) return value;
+    if (signature.length === expected.length && timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return value;
     return null;
   }
 }

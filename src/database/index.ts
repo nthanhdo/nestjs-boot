@@ -1,7 +1,8 @@
 export { DatabaseModule } from './database.module';
 export type { ModelDefinition } from './database.module';
+export type { IRepository, PaginationOptions, PaginatedResult } from './repository.interface';
 export { BaseRepository } from './base.repository';
-export type { PaginatedResult, FindAllOptions } from './base.repository';
+export type { FindAllOptions } from './base.repository';
 export { InjectConnection } from './decorators';
 export {
   DATABASE_CONNECTION_PREFIX,

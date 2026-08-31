@@ -39,10 +39,3 @@ export interface ScopeModuleOptions {
   /** Default scope when none is configured */
   defaultScope?: AccessScope;
 }
-
-export interface ScopeCheckResult {
-  allowed: boolean;
-  userScope: AccessScope;
-  requiredScope: AccessScope;
-  context?: ScopeContext;
-}

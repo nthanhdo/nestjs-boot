@@ -246,7 +246,7 @@ describe('PolicyGuard', () => {
     registry.register(makePolicy('allowed', { allowed: true }));
     const { guard, context } = makeGuardContext(
       { id: 'u1' },
-      { [POLICY_KEY]: { policyName: 'allowed' } },
+      { [POLICY_KEY]: { policyNames: ['allowed'] } },
     );
     await expect(guard.canActivate(context)).resolves.toBe(true);
   });
@@ -255,7 +255,7 @@ describe('PolicyGuard', () => {
     registry.register(makePolicy('denied', { allowed: false, reason: 'not allowed' }));
     const { guard, context } = makeGuardContext(
       { id: 'u1' },
-      { [POLICY_KEY]: { policyName: 'denied' } },
+      { [POLICY_KEY]: { policyNames: ['denied'] } },
     );
     await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
   });
@@ -264,7 +264,7 @@ describe('PolicyGuard', () => {
     registry.register(makePolicy('silent-deny', { allowed: false }));
     const { guard, context } = makeGuardContext(
       { id: 'u1' },
-      { [POLICY_KEY]: { policyName: 'silent-deny' } },
+      { [POLICY_KEY]: { policyNames: ['silent-deny'] } },
     );
     await expect(guard.canActivate(context)).rejects.toThrow(ForbiddenException);
   });

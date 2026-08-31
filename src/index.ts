@@ -34,6 +34,9 @@ export { EnvFileAdapter } from './config';
 export { AwsSecretsAdapter } from './config';
 export { VaultAdapter } from './config';
 
+// --- Database (shared interface) ---
+export type { IRepository, PaginationOptions, PaginatedResult } from './database/repository.interface';
+
 // --- Database --- (use subpath import: nestjs-boot/database)
 
 // --- Common ---
@@ -48,8 +51,9 @@ export {
   ErrorReporter,
   CrudService,
   CrudController,
+  PrismaCrudService,
 } from './common';
-export type { ResponseEnvelope, ErrorResponse, BootExceptionOptions, CrudPaginatedResult, CrudFindAllOptions } from './common';
+export type { ResponseEnvelope, ErrorResponse, BootExceptionOptions, CrudPaginatedResult, CrudFindAllOptions, PrismaCrudPaginatedResult, PrismaCrudFindAllOptions } from './common';
 
 // --- Health --- (use subpath import: nestjs-boot/health)
 
@@ -426,7 +430,7 @@ export {
   AccessScope,
   SCOPE_LEVELS,
 } from './scope';
-export type { ScopeContext, ScopeModuleOptions, ScopeCheckResult } from './scope';
+export type { ScopeContext, ScopeModuleOptions } from './scope';
 
 // --- Organizations ---
 export {
@@ -444,6 +448,21 @@ export type {
   OrganizationStore,
   OrganizationModuleOptions,
 } from './organizations';
+
+// --- Audit ---
+export {
+  AuditModule,
+  AuditService,
+  AuditInterceptor,
+  MemoryAuditStore,
+  MongoAuditStore,
+  Audited,
+  AUDIT_ACTION_KEY,
+  AUDIT_STORE,
+  AUDIT_OPTIONS,
+  SecurityEventType,
+} from './audit';
+export type { AuditEntry, SecurityEvent, AuditStore, AuditModuleOptions } from './audit';
 
 // --- Alert Notifications ---
 export {

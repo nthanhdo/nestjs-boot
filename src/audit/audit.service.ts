@@ -1,19 +1,33 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
+import { createHash } from 'crypto';
 import { AUDIT_STORE, AUDIT_OPTIONS } from './constants';
 import { AuditStore, AuditEntry, SecurityEvent, AuditModuleOptions } from './interfaces';
 
 @Injectable()
 export class AuditService {
   private readonly logger = new Logger(AuditService.name);
+  private lastHash: string | undefined;
 
   constructor(
     @Inject(AUDIT_STORE) private readonly store: AuditStore,
     @Inject(AUDIT_OPTIONS) private readonly options: AuditModuleOptions,
   ) {}
 
-  /** Log an audit entry */
+  /** Compute SHA-256 hash of an audit entry (excluding entryHash field) */
+  private computeHash(entry: Omit<AuditEntry, 'entryHash'>): string {
+    const payload = JSON.stringify(entry);
+    return createHash('sha256').update(payload).digest('hex');
+  }
+
+  /** Log an audit entry with hash chain for tamper-proofing */
   async log(entry: Omit<AuditEntry, 'timestamp'>): Promise<void> {
-    const fullEntry: AuditEntry = { ...entry, timestamp: new Date() };
+    const fullEntry: AuditEntry = {
+      ...entry,
+      timestamp: new Date(),
+      previousHash: this.lastHash,
+    };
+    fullEntry.entryHash = this.computeHash(fullEntry);
+    this.lastHash = fullEntry.entryHash;
     await this.store.saveAuditEntry(fullEntry);
     this.logger.debug(
       `Audit: ${entry.actorId} ${entry.action} ${entry.resource ?? ''}${entry.resourceId ? ':' + entry.resourceId : ''} → ${entry.result}`,

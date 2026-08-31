@@ -85,7 +85,7 @@ export class TotpService {
     for (let i = -1; i <= 1; i++) {
       const timeStep = Math.floor(now / period) + i;
       const expected = this.generateTOTP(secret, timeStep);
-      if (expected === token) return true;
+      if (expected.length === token.length && crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(token))) return true;
     }
     return false;
   }

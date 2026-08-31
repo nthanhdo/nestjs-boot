@@ -25,6 +25,12 @@ export interface RbacOptions {
   extractRoles?: (request: any) => string[];
   /** Function to extract permissions from request */
   extractPermissions?: (request: any) => string[];
+  /** Role hierarchy definitions. If provided, role checks include inherited roles. */
+  hierarchy?: import('./rbac/role-hierarchy').RoleDefinition[];
+  /** Super-admin role name. Users with this role bypass all role/permission checks. */
+  superAdmin?: string;
+  /** Permission store for DB-backed permissions. If provided, permissions are loaded from store instead of JWT. */
+  permissionStore?: import('./rbac/permission-store').PermissionStore;
 }
 
 export interface AuthOptions {

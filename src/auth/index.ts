@@ -9,6 +9,10 @@ export { Roles, Permissions, Public, CurrentUser } from './decorators';
 export { AUTH_OPTIONS, ROLES_KEY, PERMISSIONS_KEY, IS_PUBLIC_KEY } from './constants';
 export type { AuthOptions, JwtAuthOptions, ApiKeyAuthOptions, RbacOptions } from './interfaces';
 
+// RBAC
+export { RoleHierarchy, MemoryPermissionStore, PERMISSION_STORE, SuperAdminOnly, SUPERADMIN_ONLY_KEY } from './rbac';
+export type { RoleDefinition, PermissionStore } from './rbac';
+
 // Social auth
 export {
   SocialAuthModule,

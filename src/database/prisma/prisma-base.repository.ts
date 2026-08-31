@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
+import { SchemaRegistry } from './schema-registry';
 
 export interface PrismaPaginationOptions {
   page?: number;
@@ -32,12 +33,23 @@ export class PrismaBaseRepository<T> {
   constructor(
     protected readonly prisma: PrismaService,
     protected readonly modelName: string,
+    protected readonly schemaRegistry?: SchemaRegistry,
   ) {
     this.logger = new Logger(`${modelName}Repository`);
   }
 
   protected get model() {
     return (this.prisma.client as any)[this.modelName];
+  }
+
+  /** Get the schema this model belongs to */
+  get schema(): string | undefined {
+    return this.schemaRegistry?.getSchema(this.modelName);
+  }
+
+  /** Get fully qualified name (schema.table) */
+  get qualifiedName(): string {
+    return this.schemaRegistry?.qualifiedName(this.modelName) ?? this.modelName;
   }
 
   /**

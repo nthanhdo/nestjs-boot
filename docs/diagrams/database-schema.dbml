@@ -1,19 +1,39 @@
 // nestjs-boot — Database Schema (DBML)
 // Edit at https://dbdiagram.io or https://dbdocs.io
 // Source of truth for all persistable entities
+//
+// ═══════════════════════════════════════════════════════════════════
+// MULTI-SCHEMA ARCHITECTURE
+// ═══════════════════════════════════════════════════════════════════
+//
+// The database is partitioned into 5 PostgreSQL schemas to enforce
+// separation of concerns at the storage layer:
+//
+//  masterdata  — Canonical definitions: roles, permissions, orgs.
+//                Rarely mutated. Referenced by all other schemas.
+//
+//  metadata    — Machine-readable definitions consumed by the policy
+//                engine at runtime (permission codes, scope levels,
+//                policy configs). Decouples rule declaration from
+//                enforcement.
+//
+//  userdata    — All user-owned state: accounts, role assignments,
+//                session tokens, org memberships. Highest churn.
+//
+//  analytics   — Append-only audit trail and security events.
+//                Write-once, never updated, retained for compliance.
+//
+//  statistics  — Pre-aggregated counters and latency metrics.
+//                Materialized periodically (hourly/daily/monthly)
+//                so dashboards never hit raw analytics tables.
+//
+// Cross-schema foreign keys are intentionally avoided where possible;
+// referential integrity is enforced at the application layer to keep
+// schema boundaries clean and allow independent scaling / archiving.
+// ═══════════════════════════════════════════════════════════════════
 
-// ─── Auth ────────────────────────────────────────────
-
-Table users {
-  id varchar [pk, note: 'UUID']
-  email varchar [unique, not null]
-  password_hash varchar [not null]
-  name varchar
-  email_verified boolean [default: false]
-  status varchar [not null, default: 'ACTIVE', note: 'ACTIVE | INACTIVE | SUSPENDED | LOCKED | PENDING']
-  created_at timestamp [not null, default: `now()`]
-  updated_at timestamp [not null, default: `now()`]
-}
+// ─── SCHEMA: masterdata ──────────────────────────────────────────
+// Canonical definitions for roles, permissions, and org structure.
 
 Table roles {
   code varchar [pk]
@@ -23,6 +43,8 @@ Table roles {
   is_system boolean [default: false, note: 'System roles cannot be renamed/deleted']
   created_at timestamp [not null, default: `now()`]
   updated_at timestamp [not null, default: `now()`]
+
+  note: '@@schema: masterdata'
 }
 
 Table permissions {
@@ -32,28 +54,8 @@ Table permissions {
   resource varchar [not null, note: 'e.g. user, task, report']
   action varchar [not null, note: 'e.g. read, create, delete']
   created_at timestamp [not null, default: `now()`]
-}
 
-Table user_roles {
-  user_id varchar [not null, ref: > users.id]
-  role_code varchar [not null, ref: > roles.code]
-  assigned_at timestamp [not null, default: `now()`]
-  assigned_by varchar [ref: > users.id]
-
-  indexes {
-    (user_id, role_code) [pk]
-  }
-}
-
-Table user_permissions {
-  user_id varchar [not null, ref: > users.id]
-  permission_code varchar [not null, ref: > permissions.code]
-  granted_at timestamp [not null, default: `now()`]
-  granted_by varchar [ref: > users.id]
-
-  indexes {
-    (user_id, permission_code) [pk]
-  }
+  note: '@@schema: masterdata'
 }
 
 Table role_permissions {
@@ -63,6 +65,8 @@ Table role_permissions {
   indexes {
     (role_code, permission_code) [pk]
   }
+
+  note: '@@schema: masterdata'
 }
 
 Table role_hierarchy {
@@ -73,44 +77,8 @@ Table role_hierarchy {
     (role_code, parent_role_code) [pk]
   }
 
-  note: 'Role inheritance — child inherits all permissions from parent'
+  note: 'Role inheritance — child inherits all permissions from parent\n@@schema: masterdata'
 }
-
-// ─── Token & Session ─────────────────────────────────
-
-Table refresh_tokens {
-  token_id varchar [pk, note: 'UUID / jti']
-  family_id varchar [not null, note: 'Rotation chain — shared by all tokens in a refresh cycle']
-  user_id varchar [not null, ref: > users.id]
-  used boolean [not null, default: false, note: 'Marked true after rotation; reuse = security event']
-  expires_at timestamp [not null]
-  created_at timestamp [not null, default: `now()`]
-
-  indexes {
-    family_id
-    user_id
-  }
-}
-
-Table sessions {
-  session_id varchar [pk]
-  user_id varchar [ref: > users.id]
-  data jsonb
-  ip_address varchar
-  user_agent text
-  created_at bigint [note: 'epoch ms']
-  last_accessed_at bigint [note: 'epoch ms']
-  expires_at bigint [note: 'epoch ms']
-}
-
-Table login_attempts {
-  identifier varchar [pk, note: 'email, username, or IP']
-  failure_count int [not null, default: 0]
-  locked_until timestamp [note: 'null = not locked']
-  last_attempt_at timestamp
-}
-
-// ─── Organization ────────────────────────────────────
 
 Table organizations {
   id varchar [pk, note: 'UUID']
@@ -121,6 +89,8 @@ Table organizations {
   metadata jsonb
   created_at timestamp [not null, default: `now()`]
   updated_at timestamp [not null, default: `now()`]
+
+  note: '@@schema: masterdata'
 }
 
 Table departments {
@@ -138,6 +108,8 @@ Table departments {
   indexes {
     (organization_id, code) [unique]
   }
+
+  note: '@@schema: masterdata'
 }
 
 Table teams {
@@ -155,6 +127,89 @@ Table teams {
   indexes {
     (department_id, code) [unique]
   }
+
+  note: '@@schema: masterdata'
+}
+
+// ─── SCHEMA: metadata ────────────────────────────────────────────
+// Machine-readable rule definitions consumed by the policy engine.
+
+Table permission_definitions {
+  id varchar [pk]
+  code varchar [unique, not null]
+  category varchar [note: 'auth | content | admin | reporting']
+  resource varchar [not null]
+  action varchar [not null]
+  description text
+  is_system boolean [default: false]
+  created_at timestamp
+
+  note: '@@schema: metadata'
+}
+
+Table scope_definitions {
+  id varchar [pk]
+  name varchar [unique, not null, note: 'OWN | TEAM | DEPARTMENT | ORGANIZATION | SYSTEM']
+  level int [not null]
+  description text
+  filter_template jsonb [note: 'Template for query filter generation']
+
+  note: '@@schema: metadata'
+}
+
+Table policy_definitions {
+  id varchar [pk]
+  name varchar [unique, not null]
+  description text
+  evaluation_order int [default: 0]
+  is_active boolean [default: true]
+  config jsonb [note: 'Policy-specific configuration']
+  created_at timestamp
+  updated_at timestamp
+
+  note: '@@schema: metadata'
+}
+
+// ─── SCHEMA: userdata ────────────────────────────────────────────
+// All user-owned state: accounts, assignments, tokens, memberships.
+
+Table users {
+  id varchar [pk, note: 'UUID']
+  email varchar [unique, not null]
+  password_hash varchar [not null]
+  name varchar
+  email_verified boolean [default: false]
+  status varchar [not null, default: 'ACTIVE', note: 'ACTIVE | INACTIVE | SUSPENDED | LOCKED | PENDING']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+
+  note: '@@schema: userdata'
+}
+
+Table user_roles {
+  user_id varchar [not null, ref: > users.id]
+  role_code varchar [not null, ref: > roles.code]
+  assigned_at timestamp [not null, default: `now()`]
+  assigned_by varchar [ref: > users.id]
+
+  indexes {
+    (user_id, role_code) [pk]
+  }
+
+  note: '@@schema: userdata'
+}
+
+Table user_permissions {
+  user_id varchar [not null, ref: > users.id]
+  permission_code varchar [not null, ref: > permissions.code]
+  granted_at timestamp [not null, default: `now()`]
+  granted_by varchar [ref: > users.id]
+
+  indexes {
+    (user_id, permission_code) [pk]
+  }
+
+  note: '@@schema: userdata'
 }
 
 Table user_org_memberships {
@@ -172,9 +227,41 @@ Table user_org_memberships {
     department_id
     team_id
   }
+
+  note: '@@schema: userdata'
 }
 
-// ─── Audit ───────────────────────────────────────────
+Table refresh_tokens {
+  token_id varchar [pk, note: 'UUID / jti']
+  family_id varchar [not null, note: 'Rotation chain — shared by all tokens in a refresh cycle']
+  user_id varchar [not null, ref: > users.id]
+  used boolean [not null, default: false, note: 'Marked true after rotation; reuse = security event']
+  expires_at timestamp [not null]
+  created_at timestamp [not null, default: `now()`]
+
+  indexes {
+    family_id
+    user_id
+  }
+
+  note: '@@schema: userdata'
+}
+
+Table sessions {
+  session_id varchar [pk]
+  user_id varchar [ref: > users.id]
+  data jsonb
+  ip_address varchar
+  user_agent text
+  created_at bigint [note: 'epoch ms']
+  last_accessed_at bigint [note: 'epoch ms']
+  expires_at bigint [note: 'epoch ms']
+
+  note: '@@schema: userdata'
+}
+
+// ─── SCHEMA: analytics ───────────────────────────────────────────
+// Append-only audit trail and security events.
 
 Table audit_entries {
   id varchar [pk, note: 'UUID']
@@ -197,6 +284,8 @@ Table audit_entries {
     timestamp
     organization_id
   }
+
+  note: '@@schema: analytics'
 }
 
 Table security_events {
@@ -216,34 +305,109 @@ Table security_events {
     actor_id
     timestamp
   }
+
+  note: '@@schema: analytics'
 }
 
-// ─── Table Groups ────────────────────────────────────
+Table login_attempts {
+  identifier varchar [pk, note: 'email, username, or IP']
+  failure_count int [not null, default: 0]
+  locked_until timestamp [note: 'null = not locked']
+  last_attempt_at timestamp
 
-TableGroup auth {
-  users
+  note: '@@schema: analytics'
+}
+
+// ─── SCHEMA: statistics ──────────────────────────────────────────
+// Pre-aggregated counters and latency metrics (hourly/daily/monthly).
+
+Table access_stats {
+  id varchar [pk]
+  schema_name varchar [not null, note: 'Which schema was accessed']
+  table_name varchar [not null]
+  action varchar [not null, note: 'SELECT | INSERT | UPDATE | DELETE']
+  count bigint [not null, default: 0]
+  period varchar [not null, note: 'hourly | daily | monthly']
+  period_start timestamp [not null]
+  created_at timestamp [not null]
+
+  note: '@@schema: statistics'
+}
+
+Table permission_usage {
+  id varchar [pk]
+  permission_code varchar [not null, ref: > permissions.code]
+  usage_count bigint [not null, default: 0]
+  last_used_at timestamp
+  granted_count int [not null, default: 0, note: 'How many users have this permission']
+  period varchar [not null]
+  period_start timestamp [not null]
+
+  note: '@@schema: statistics'
+}
+
+Table scope_hits {
+  id varchar [pk]
+  scope varchar [not null, note: 'OWN | TEAM | DEPARTMENT | ORGANIZATION | SYSTEM']
+  hit_count bigint [not null, default: 0]
+  deny_count bigint [not null, default: 0]
+  avg_resolve_ms float
+  period varchar [not null]
+  period_start timestamp [not null]
+
+  note: '@@schema: statistics'
+}
+
+Table policy_evaluations {
+  id varchar [pk]
+  policy_name varchar [not null]
+  total_count bigint [not null, default: 0]
+  allow_count bigint [not null, default: 0]
+  deny_count bigint [not null, default: 0]
+  error_count bigint [not null, default: 0]
+  avg_evaluate_ms float
+  period varchar [not null]
+  period_start timestamp [not null]
+
+  note: '@@schema: statistics'
+}
+
+// ─── Table Groups (5 schemas) ────────────────────────────────────
+
+TableGroup masterdata {
   roles
   permissions
-  user_roles
-  user_permissions
   role_permissions
   role_hierarchy
-}
-
-TableGroup tokens {
-  refresh_tokens
-  sessions
-  login_attempts
-}
-
-TableGroup organization {
   organizations
   departments
   teams
-  user_org_memberships
 }
 
-TableGroup audit {
+TableGroup metadata {
+  permission_definitions
+  scope_definitions
+  policy_definitions
+}
+
+TableGroup userdata {
+  users
+  user_roles
+  user_permissions
+  user_org_memberships
+  refresh_tokens
+  sessions
+}
+
+TableGroup analytics {
   audit_entries
   security_events
+  login_attempts
+}
+
+TableGroup statistics {
+  access_stats
+  permission_usage
+  scope_hits
+  policy_evaluations
 }

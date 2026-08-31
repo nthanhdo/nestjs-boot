@@ -4,7 +4,7 @@ Architectural diagrams for nestjs-boot. Mermaid diagrams render natively on GitH
 
 ## Database Schema (ER Diagram)
 
-> 17 tables across 4 groups: Auth, Tokens, Organization, Audit.
+> 24 tables across 5 schemas: masterdata, metadata, userdata, analytics, statistics.
 
 ![Database Schema](database-schema.svg)
 

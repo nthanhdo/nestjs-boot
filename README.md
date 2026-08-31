@@ -4,8 +4,8 @@
 
 [![npm version](https://img.shields.io/npm/v/nestjs-boot.svg)](https://www.npmjs.com/package/nestjs-boot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-541%20passing-brightgreen.svg)](https://github.com/nthanhdo/nestjs-boot/actions)
-[![Modules](https://img.shields.io/badge/modules-55%2B-blue.svg)](#modules)
+[![Tests](https://img.shields.io/badge/tests-856%20passing-brightgreen.svg)](https://github.com/nthanhdo/nestjs-boot/actions)
+[![Modules](https://img.shields.io/badge/modules-60%2B-blue.svg)](#modules)
 
 ## What is nestjs-boot?
 
@@ -22,10 +22,11 @@ npm install
 npm run start:dev
 ```
 
-The CLI prompts for database (MongoDB or None), cache (Redis, Memcached), auth (JWT), and transport (HTTP, gRPC, TCP, NATS, RabbitMQ). Or pass flags:
+The CLI prompts for database (MongoDB, PostgreSQL, or None), cache (Redis, Memcached), auth (JWT), and transport (HTTP, gRPC, TCP, NATS, RabbitMQ). Or pass flags:
 
 ```bash
 npx nestjs-boot new my-service --db=mongodb --cache=redis --auth=jwt --transport=grpc
+npx nestjs-boot new my-service --db=postgres --auth=jwt    # PostgreSQL + Prisma
 npx nestjs-boot new my-service -y  # defaults: MongoDB + Redis + JWT + HTTP
 ```
 
@@ -179,18 +180,27 @@ flowchart TD
 
 ### Database
 
-Multi-connection MongoDB with automatic reader/writer split. `BaseRepository<T>` provides CRUD + pagination with automatic connection routing. `CachedBaseRepository<T>` adds cache-aside on top. `CrudService<T>` provides lifecycle hooks (`beforeCreate`, `afterCreate`, etc.). `UnitOfWork` supports MongoDB transactions. `Specification<T>` enables composable query filters.
+**Multi-driver:** MongoDB (Mongoose) and PostgreSQL (Prisma) — use one or both in the same project.
 
-**Migrations:** `MigrationRunner` with `_migrations` collection tracking state. CLI: `npx nestjs-boot migrate`, `migrate:create`, `migrate:rollback`, `migrate:status`.
+**MongoDB:** Multi-connection with automatic reader/writer split. `BaseRepository<T>` provides CRUD + pagination with automatic connection routing. `CachedBaseRepository<T>` adds cache-aside on top. `CrudService<T>` provides lifecycle hooks (`beforeCreate`, `afterCreate`, etc.). `UnitOfWork` supports MongoDB transactions. `Specification<T>` enables composable query filters. **Migrations:** `MigrationRunner` with `_migrations` collection tracking state.
+
+**PostgreSQL:** `PrismaModule.register()` with lazy `@prisma/client` loading. `PrismaBaseRepository<T>` provides CRUD, pagination, upsert, and transactions. `PrismaService` manages lifecycle (`$connect` / `$disconnect`) and exposes `$transaction()`.
+
+**Multi-DB:** Use both drivers side by side — MongoDB for event store / cache metadata, PostgreSQL for relational data:
 
 ```ts
+// MongoDB (Mongoose)
 database: {
   connections: {
     master: { writerUri: 'mongodb://primary:27017/app', readerUri: 'mongodb://replica:27017/app' },
-    analytics: { writerUri: 'mongodb://analytics:27017/metrics' },
   },
 }
+
+// PostgreSQL (Prisma) — import PrismaModule separately
+PrismaModule.register({ url: process.env.DATABASE_URL })
 ```
+
+CLI: `npx nestjs-boot migrate`, `migrate:create`, `migrate:rollback`, `migrate:status` (MongoDB). For Prisma: use standard `npx prisma migrate` workflow.
 
 ### Cache
 
@@ -204,18 +214,40 @@ cache: { redis: { url: 'redis://localhost:6379' }, defaultTtl: 300 }
 
 ### Auth
 
-Full auth stack: JWT (access + refresh + revocation), API key validation, RBAC (`@Roles`, `@Permissions`), `@Public()` bypass, `@CurrentUser()` extraction.
+Full auth stack: JWT (access + refresh + token family tracking + reuse detection), API key validation, RBAC with role hierarchy + DB-backed permissions + privilege boundary, `@Public()` bypass, `@CurrentUser()` extraction.
 
-**Social/OAuth2:** `SocialAuthModule` with `GoogleStrategy` and `GitHubStrategy` out of the box.
-**TOTP:** `TotpService` for 2FA (generate secret, verify token).
-**Session:** `SessionAuthModule` with pluggable `SessionStore` and `@Session()` decorator.
+**RBAC:** `@Roles()`, `@Permissions()`, `@RequireScope()`, `@CheckPolicy()`. Role hierarchy with inheritance. `PrivilegeBoundary` prevents privilege escalation. `RoleManager` for role/permission CRUD + idempotent seeding. `denyByDefault` mode for zero-trust.
+
+**Scope:** `ScopeModule` with `OWN → TEAM → DEPARTMENT → ORGANIZATION → SYSTEM` access levels. `ScopeResolver` builds query filters per scope.
+
+**Policy:** `PolicyModule` with named `AuthorizationPolicy` implementations, `PolicyEngine`, structured `AuthorizationResult` (allowed/reason/scope/policy).
+
+**Organizations:** `OrganizationModule` for generic org/department/team hierarchy with membership management. Domain-agnostic — works for hospitals, companies, schools.
+
+**Audit:** `AuditModule` for structured audit logging + `SecurityEventType` tracking. Auto-logs auth denials via `AuditInterceptor`.
+
+**Security:** `LoginTracker` with configurable lockout (max attempts + duration). `TokenStore` for refresh token family tracking + reuse detection.
+
+**Social/OAuth2:** `SocialAuthModule` with `GoogleStrategy` and `GitHubStrategy`.
+**TOTP:** `TotpService` for 2FA. **Session:** `SessionAuthModule` with pluggable `SessionStore`.
 **WebSocket:** `WsJwtGuard` for authenticated WebSocket connections.
 
 ```ts
 auth: {
   jwt: { secret: '...', refreshSecret: '...', refreshExpiresIn: '7d' },
   apiKey: { enabled: true, validate: async (key) => isValid(key) },
-  rbac: { enabled: true },
+  rbac: {
+    enabled: true,
+    denyByDefault: true,
+    superAdmin: 'SUPER_ADMIN',
+    hierarchy: [
+      { name: 'SUPER_ADMIN', inherits: ['ADMIN'], permissions: ['*'] },
+      { name: 'ADMIN', inherits: ['MANAGER'], permissions: ['user.delete', 'role.manage'] },
+      { name: 'MANAGER', inherits: ['STAFF'], permissions: ['user.create', 'report.read'] },
+      { name: 'STAFF', permissions: ['task.read', 'task.complete'] },
+    ],
+  },
+  loginTracker: { maxAttempts: 5, lockoutDuration: 900_000 },
 }
 ```
 
@@ -416,22 +448,35 @@ await suite.teardown();
 
 ### `npx nestjs-boot new <name>`
 
-Interactive project scaffolding. Supports MongoDB (or None) for database, cache, auth, and 5 transport options.
+Interactive project scaffolding. Supports MongoDB, PostgreSQL, or None for database, plus cache, auth, and 5 transport options.
 
 ```bash
 npx nestjs-boot new my-service              # interactive prompts
+npx nestjs-boot new my-service --db=postgres # PostgreSQL + Prisma
 npx nestjs-boot new my-service --grpc       # with gRPC transport
-npx nestjs-boot new my-service -y           # all defaults
+npx nestjs-boot new my-service -y           # all defaults (MongoDB)
 npx nestjs-boot new my-service --db=mongodb --cache=memcached --transport=nats
 ```
 
 ### `npx nestjs-boot g resource <name>`
 
-Generate a CRUD resource (module, controller, service, schema, DTOs):
+Generate a CRUD resource. Auto-detects your DB driver (Mongoose or Prisma):
 
 ```bash
 npx nestjs-boot g resource product          # full CRUD resource
 npx nestjs-boot g resource product --minimal  # minimal scaffold
+# In a Prisma project → generates PrismaService-based code
+# In a Mongoose project → generates Mongoose schema + CrudService
+```
+
+### `npx nestjs-boot g auth`
+
+Scaffold a complete JWT auth flow (User model, DTOs, service, controller, module, test):
+
+```bash
+npx nestjs-boot g auth
+# → register, login, refresh, logout, forgot-password, reset-password, me
+# Auto-detects Mongoose vs Prisma
 ```
 
 ### `npx nestjs-boot graph`
@@ -583,13 +628,18 @@ Detailed documentation for specific topics:
 Use any module without `createApp()`:
 
 ```ts
-import { DatabaseModule, CacheModule, AuthModule } from 'nestjs-boot';
+import { DatabaseModule, PrismaModule, CacheModule, AuthModule, ScopeModule, PolicyModule, AuditModule } from 'nestjs-boot';
 
 @Module({
   imports: [
-    DatabaseModule.register({ connections: { master: { writerUri: '...' } } }),
+    // Pick your database (or use both)
+    DatabaseModule.register({ connections: { master: { writerUri: '...' } } }), // MongoDB
+    PrismaModule.register({ url: process.env.DATABASE_URL }),                   // PostgreSQL
     CacheModule.register({ redis: { url: '...' }, defaultTtl: 600 }),
-    AuthModule.register({ jwt: { secret: '...' } }),
+    AuthModule.register({ jwt: { secret: '...' }, rbac: { enabled: true } }),
+    ScopeModule.register(),       // OWN/TEAM/DEPT/ORG/SYSTEM scopes
+    PolicyModule.register(),      // Named authorization policies
+    AuditModule.register(),       // Audit logging + security events
   ],
 })
 export class AppModule {}
@@ -597,7 +647,7 @@ export class AppModule {}
 
 ## Roadmap
 
-- PostgreSQL / TypeORM database adapter
+- TypeORM database adapter
 - Rate limiting module
 - WebSocket transport improvements
 
@@ -606,7 +656,8 @@ export class AppModule {}
 Install only what you use:
 
 ```bash
-npm install mongoose @nestjs/mongoose        # Database
+npm install mongoose @nestjs/mongoose        # MongoDB
+npm install @prisma/client && npx prisma init # PostgreSQL
 npm install ioredis                          # Redis cache
 npm install memjs                            # Memcached cache
 npm install bullmq                           # Queue
@@ -625,7 +676,7 @@ npm install otpauth                          # TOTP 2FA
 git clone https://github.com/nthanhdo/nestjs-boot.git
 cd nestjs-boot
 npm install
-npm test           # 541 tests
+npm test           # 856 tests
 npm run build      # CJS + ESM + DTS
 ```
 

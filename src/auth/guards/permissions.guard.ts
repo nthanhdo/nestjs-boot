@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Injectable, Inject, ForbiddenException }
 import { Reflector } from '@nestjs/core';
 import { AUTH_OPTIONS, PERMISSIONS_KEY, IS_PUBLIC_KEY } from '../constants';
 import { AuthOptions } from '../interfaces';
-import { RoleHierarchy } from '../rbac/role-hierarchy';
+import { RoleHierarchy, matchesPermission } from '../rbac/role-hierarchy';
 
 /**
  * PermissionsGuard — checks if user has ALL required permissions.
@@ -16,12 +16,22 @@ import { RoleHierarchy } from '../rbac/role-hierarchy';
  */
 @Injectable()
 export class PermissionsGuard implements CanActivate {
+  private static _instances = new Set<PermissionsGuard>();
   private _hierarchy: RoleHierarchy | null = null;
 
   constructor(
     private readonly reflector: Reflector,
     @Inject(AUTH_OPTIONS) private readonly authOptions: AuthOptions,
-  ) {}
+  ) {
+    PermissionsGuard._instances.add(this);
+  }
+
+  /** Clear cached RoleHierarchy on all guard instances (call after role mutations) */
+  static clearHierarchyCache(): void {
+    for (const inst of PermissionsGuard._instances) {
+      inst._hierarchy = null;
+    }
+  }
 
   private getHierarchy(): RoleHierarchy | null {
     const defs = this.authOptions.rbac?.hierarchy;
@@ -82,8 +92,11 @@ export class PermissionsGuard implements CanActivate {
 
     const userPermissions = new Set([...directPermissions, ...hierarchyPermissions]);
 
-    // User must have ALL required permissions
-    const hasAll = requiredPermissions.every((perm) => userPermissions.has(perm));
+    // User must have ALL required permissions (with wildcard support)
+    const userPermsArray = [...userPermissions];
+    const hasAll = requiredPermissions.every((required) =>
+      userPermsArray.some((userPerm) => matchesPermission(userPerm, required)),
+    );
     if (!hasAll) {
       throw new ForbiddenException('Insufficient permissions');
     }
@@ -131,7 +144,11 @@ export class PermissionsGuard implements CanActivate {
       ...storeRolePermissions,
     ]);
 
-    const hasAll = requiredPermissions.every((perm) => userPermissions.has(perm));
+    // Wildcard support
+    const userPermsArray = [...userPermissions];
+    const hasAll = requiredPermissions.every((required) =>
+      userPermsArray.some((userPerm) => matchesPermission(userPerm, required)),
+    );
     if (!hasAll) {
       throw new ForbiddenException('Insufficient permissions');
     }

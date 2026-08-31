@@ -29,6 +29,7 @@ export class AuditInterceptor implements NestInterceptor {
     return next.handle().pipe(
       tap(() => {
         if (auditAction) {
+          const purposeOfUse = request.headers?.['x-purpose-of-use'] ?? request.body?.purposeOfUse;
           // Log successful response when @Audited() is present
           this.auditService
             .logAccess(ctx.actorId, auditAction, undefined, undefined, {
@@ -36,6 +37,7 @@ export class AuditInterceptor implements NestInterceptor {
               userAgent: ctx.userAgent,
               method,
               url,
+              ...(purposeOfUse ? { purposeOfUse } : {}),
             })
             .catch(() => {}); // fire-and-forget
         }

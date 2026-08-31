@@ -215,4 +215,11 @@ export interface BootOptions {
    * Integrates with MetricsService for periodic threshold checks.
    */
   alerts?: import('../alerts/interfaces').AlertOptions;
+
+  /**
+   * External plugins to register into the boot assembly.
+   * Each plugin owns a configKey; when `options[configKey]` is truthy,
+   * the plugin's module is loaded. See BootPlugin interface.
+   */
+  plugins?: import('../plugin/plugin.interface').BootPlugin[];
 }

@@ -7,8 +7,37 @@ import {
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'nestjs-boot';
 import { AuditService } from 'nestjs-boot';
-import { PaginationDto } from '../common/dto/pagination.dto';
-import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
+import { CreateUserDto, UpdateUserDto, UserFilterDto } from './dto/user.dto';
+
+interface UserPermission {
+  id: string;
+  code: string;
+  name: string;
+  resource: string;
+  action: string;
+}
+
+interface UserRole {
+  role: {
+    id: string;
+    code: string;
+    name: string;
+    level: number;
+    permissions?: UserPermission[];
+    inherits?: Array<{ permissions?: UserPermission[] }>;
+  };
+}
+
+interface UserWithRoles {
+  id: string;
+  email: string;
+  name: string | null;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+  roles?: UserRole[];
+  memberships?: Array<{ organization: unknown; status: string }>;
+}
 
 @Injectable()
 export class UsersService {
@@ -17,24 +46,38 @@ export class UsersService {
     private readonly audit: AuditService,
   ) {}
 
-  private parsePagination(dto: PaginationDto) {
-    const page = dto.page ?? 1;
-    const limit = dto.limit ?? 20;
-    const [sortField, sortDir] = (dto.sort ?? 'createdAt:desc').split(':');
-    return {
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: { [sortField]: sortDir === 'asc' ? 'asc' : 'desc' },
-    };
-  }
+  async findAll(filter: UserFilterDto) {
+    const page = filter.page ?? 1;
+    const limit = filter.limit ?? 20;
+    const [sortField, sortDir] = (filter.sort ?? 'createdAt:desc').split(':');
+    const skip = (page - 1) * limit;
+    const orderBy = { [sortField]: sortDir === 'asc' ? 'asc' : 'desc' };
 
-  async findAll(pagination: PaginationDto) {
-    const { skip, take, orderBy } = this.parsePagination(pagination);
+    // Build where clause from filter params
+    const where: Record<string, unknown> = {};
+
+    if (filter.search) {
+      where.OR = [
+        { name: { contains: filter.search, mode: 'insensitive' } },
+        { email: { contains: filter.search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (filter.status) {
+      where.status = filter.status;
+    }
+
+    if (filter.role) {
+      where.roles = {
+        some: { role: { code: filter.role } },
+      };
+    }
 
     const [items, total] = await Promise.all([
       this.prisma.client.user.findMany({
+        where,
         skip,
-        take,
+        take: limit,
         orderBy,
         select: {
           id: true,
@@ -48,19 +91,19 @@ export class UsersService {
           },
         },
       }),
-      this.prisma.client.user.count(),
+      this.prisma.client.user.count({ where }),
     ]);
 
     return {
       items,
       total,
-      page: pagination.page ?? 1,
-      limit: take,
-      pages: Math.ceil(total / take),
+      page,
+      limit,
+      pages: Math.ceil(total / limit),
     };
   }
 
-  async findById(id: string) {
+  async findById(id: string): Promise<UserWithRoles> {
     const user = await this.prisma.client.user.findUnique({
       where: { id },
       include: {
@@ -83,7 +126,7 @@ export class UsersService {
     }
 
     const { passwordHash, ...result } = user;
-    return result;
+    return result as UserWithRoles;
   }
 
   async create(dto: CreateUserDto, actorRoles?: string[]) {
@@ -146,8 +189,8 @@ export class UsersService {
 
     // Check privilege boundary — cannot delete user with higher roles
     if (actorRoles && !actorRoles.includes('super_admin')) {
-      const userRoles = (user as any).roles?.map((ur: any) => ur.role?.code) ?? [];
-      if (userRoles.includes('super_admin') || userRoles.includes('admin')) {
+      const userRoleCodes = user.roles?.map((ur) => ur.role?.code) ?? [];
+      if (userRoleCodes.includes('super_admin') || userRoleCodes.includes('admin')) {
         throw new ForbiddenException('Insufficient privilege to delete this user');
       }
     }
@@ -225,8 +268,9 @@ export class UsersService {
     }
 
     const permissionsSet = new Set<string>();
+    const userWithRoles = user as unknown as { roles?: UserRole[] };
 
-    for (const userRole of (user as any).roles ?? []) {
+    for (const userRole of userWithRoles.roles ?? []) {
       const role = userRole.role;
       // Direct role permissions
       for (const perm of role.permissions ?? []) {

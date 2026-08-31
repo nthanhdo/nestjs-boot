@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PermissionStore } from './permission-store';
 import { PrivilegeBoundary, LeveledRole } from './privilege-boundary';
+import { RolesGuard } from '../guards/roles.guard';
+import { PermissionsGuard } from '../guards/permissions.guard';
 
 export interface RoleDefinitionRecord {
   code: string;
@@ -35,6 +37,12 @@ export class RoleManager {
     private readonly boundary?: PrivilegeBoundary,
   ) {}
 
+  /** Invalidate cached RoleHierarchy in all guards after role/permission mutations */
+  private invalidateHierarchyCache(): void {
+    RolesGuard.clearHierarchyCache();
+    PermissionsGuard.clearHierarchyCache();
+  }
+
   // ── Role CRUD ──
 
   createRole(role: RoleDefinitionRecord): RoleDefinitionRecord {
@@ -51,6 +59,7 @@ export class RoleManager {
         permissions: role.permissions,
       } satisfies LeveledRole);
     }
+    this.invalidateHierarchyCache();
     return role;
   }
 
@@ -74,6 +83,7 @@ export class RoleManager {
     if (data.permissions) {
       this.rolePermissions.set(code, new Set(data.permissions));
     }
+    this.invalidateHierarchyCache();
     return updated;
   }
 
@@ -84,6 +94,7 @@ export class RoleManager {
     }
     this.roles.delete(code);
     this.rolePermissions.delete(code);
+    this.invalidateHierarchyCache();
   }
 
   // ── Permission CRUD ──
@@ -114,11 +125,13 @@ export class RoleManager {
     const perms = this.rolePermissions.get(roleCode) ?? new Set<string>();
     perms.add(permissionCode);
     this.rolePermissions.set(roleCode, perms);
+    this.invalidateHierarchyCache();
   }
 
   removePermissionFromRole(roleCode: string, permissionCode: string): void {
     const perms = this.rolePermissions.get(roleCode);
     if (perms) perms.delete(permissionCode);
+    this.invalidateHierarchyCache();
   }
 
   getRolePermissions(roleCode: string): string[] {

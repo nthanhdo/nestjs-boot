@@ -1,3 +1,5 @@
+import { RoleHierarchy, matchesPermission } from './role-hierarchy';
+
 export interface PermissionStore {
   /** Get permissions for a user by ID */
   getUserPermissions(userId: string): Promise<string[]>;
@@ -11,8 +13,8 @@ export interface PermissionStore {
   assignPermissions(userId: string, permissions: string[]): Promise<void>;
   /** Remove permissions from a user */
   removePermissions(userId: string, permissions: string[]): Promise<void>;
-  /** Check if a user has a specific permission (direct or via role) */
-  hasPermission(userId: string, permission: string): Promise<boolean>;
+  /** Check if a user has a specific permission (direct or via role hierarchy) */
+  hasPermission(userId: string, permission: string, hierarchy?: RoleHierarchy): Promise<boolean>;
 }
 
 export const PERMISSION_STORE = 'BOOT_PERMISSION_STORE';
@@ -53,7 +55,26 @@ export class MemoryPermissionStore implements PermissionStore {
     if (set) for (const p of permissions) set.delete(p);
   }
 
-  async hasPermission(userId: string, permission: string): Promise<boolean> {
-    return this.userPermissions.get(userId)?.has(permission) ?? false;
+  async hasPermission(userId: string, permission: string, hierarchy?: RoleHierarchy): Promise<boolean> {
+    // Check direct user permissions (with wildcard support)
+    const directPerms = this.userPermissions.get(userId);
+    if (directPerms) {
+      for (const userPerm of directPerms) {
+        if (matchesPermission(userPerm, permission)) return true;
+      }
+    }
+
+    // Resolve role-based permissions via hierarchy
+    if (hierarchy) {
+      const roles = await this.getUserRoles(userId);
+      if (roles.length > 0) {
+        const rolePerms = hierarchy.getAllPermissions(roles);
+        for (const rolePerm of rolePerms) {
+          if (matchesPermission(rolePerm, permission)) return true;
+        }
+      }
+    }
+
+    return false;
   }
 }

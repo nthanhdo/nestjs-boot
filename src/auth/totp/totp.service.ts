@@ -44,7 +44,7 @@ export class TotpService {
       return {
         secret: secret.base32,
         otpauthUrl,
-        qrDataUrl: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpauthUrl)}`,
+        qrDataUrl: otpauthUrl, // Use 'qrcode' package client-side to render: QRCode.toDataURL(otpauthUrl)
       };
     }
 
@@ -56,7 +56,7 @@ export class TotpService {
     return {
       secret: base32Secret,
       otpauthUrl,
-      qrDataUrl: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpauthUrl)}`,
+      qrDataUrl: otpauthUrl, // Use 'qrcode' package client-side to render: QRCode.toDataURL(otpauthUrl)
     };
   }
 

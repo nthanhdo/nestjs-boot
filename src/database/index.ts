@@ -13,6 +13,7 @@ export {
 } from './constants';
 export { createConnectionModules } from './connection.factory';
 export { CachedBaseRepository } from './cached.repository';
+export { CachedRepository } from './cached-repository.decorator';
 export { UnitOfWork, UNIT_OF_WORK_CONNECTION } from './unit-of-work';
 export { Specification, AndSpecification, OrSpecification, NotSpecification } from './specification';
 

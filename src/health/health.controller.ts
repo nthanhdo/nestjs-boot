@@ -2,6 +2,7 @@ import { Controller, Get, Inject, Optional, ServiceUnavailableException } from '
 import { HealthCheck, HealthCheckService, HealthCheckResult, HealthIndicatorFunction } from '@nestjs/terminus';
 import { DatabaseHealthIndicator } from './indicators/database.indicator';
 import { RedisHealthIndicator } from './indicators/redis.indicator';
+import { QueueHealthIndicator } from './indicators/queue.indicator';
 import { ShutdownService } from '../shutdown/shutdown.service';
 
 /**
@@ -18,6 +19,7 @@ export class HealthController {
     private readonly health: HealthCheckService,
     private readonly dbIndicator: DatabaseHealthIndicator | null,
     private readonly redisIndicator: RedisHealthIndicator | null,
+    private readonly queueIndicator: QueueHealthIndicator | null,
     @Optional() @Inject(ShutdownService) private readonly shutdownService?: ShutdownService,
   ) {}
 
@@ -54,6 +56,9 @@ export class HealthController {
     }
     if (this.redisIndicator) {
       checks.push(() => this.redisIndicator!.isHealthy());
+    }
+    if (this.queueIndicator) {
+      checks.push(() => this.queueIndicator!.isHealthy());
     }
 
     return this.health.check(checks);

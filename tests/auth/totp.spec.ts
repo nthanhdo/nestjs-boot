@@ -11,7 +11,7 @@ describe('TotpService', () => {
     expect(result.secret.length).toBeGreaterThan(10);
     expect(result.otpauthUrl).toContain('otpauth://totp/');
     expect(result.otpauthUrl).toContain('user%40example.com');
-    expect(result.qrDataUrl).toContain('qrserver.com');
+    expect(result.qrDataUrl).toContain('otpauth://totp/');
   });
 
   it('should generate backup codes', () => {

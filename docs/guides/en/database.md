@@ -226,17 +226,24 @@ Wraps multiple repository operations in a MongoDB transaction. Requires a replic
 ```ts
 import { Injectable } from '@nestjs/common';
 import { UnitOfWork } from 'nestjs-boot/database';
+import { ClientSession } from 'mongoose';
 
 @Injectable()
 export class OrderService {
   constructor(private readonly unitOfWork: UnitOfWork) {}
 
   async placeOrder(data: CreateOrderDto) {
-    return this.unitOfWork.execute(async (session) => {
-      const order = await this.orderRepo.create(data, { session });
-      await this.inventoryRepo.decrement(data.productId, data.qty, { session });
-      await this.paymentRepo.charge(data.userId, data.total, { session });
-      return order;
+    return this.unitOfWork.execute(async (session: ClientSession) => {
+      // BaseRepository methods do NOT accept a session parameter.
+      // Use the underlying Mongoose model directly with session:
+      const order = await this.orderModel.create([data], { session });
+      await this.inventoryModel.updateOne(
+        { productId: data.productId },
+        { $inc: { quantity: -data.qty } },
+        { session },
+      );
+      await this.paymentModel.create([{ userId: data.userId, amount: data.total }], { session });
+      return order[0];
     });
     // All succeed or all rollback
   }
@@ -244,6 +251,26 @@ export class OrderService {
 ```
 
 The `execute()` method starts a session, begins a transaction, runs your callback, commits on success, and aborts on error. The session is always ended in the `finally` block.
+
+**Important:** `BaseRepository` methods (`create`, `update`, `delete`, etc.) do not accept a `session` parameter. Inside `UnitOfWork.execute()`, use the underlying Mongoose model directly (e.g., `this.model.create([data], { session })`). Alternatively, add session-aware methods to your repository subclass.
+
+### Prisma transactions
+
+For Prisma-based projects, use `PrismaBaseRepository.withTransaction()` or `PrismaService.$transaction()` instead of `UnitOfWork`:
+
+```ts
+// Via repository
+await this.productRepo.withTransaction(async (tx) => {
+  await tx.product.create({ data: productData });
+  await tx.order.create({ data: orderData });
+});
+
+// Via service
+await this.prisma.$transaction(async (tx) => {
+  await tx.product.create({ data: productData });
+  await tx.order.create({ data: orderData });
+});
+```
 
 ## Migrations
 

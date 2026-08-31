@@ -11,6 +11,13 @@ import { Permissions, CurrentUser } from 'nestjs-boot';
 import { RolesService } from './roles.service';
 import { CreateRoleDto, UpdateRoleDto } from './dto/role.dto';
 
+interface JwtPayload {
+  sub: string;
+  email: string;
+  roles: string[];
+  permissions: string[];
+}
+
 @Controller('roles')
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
@@ -35,7 +42,7 @@ export class RolesController {
 
   @Post()
   @Permissions('role.manage')
-  create(@Body() dto: CreateRoleDto, @CurrentUser() user: any) {
+  create(@Body() dto: CreateRoleDto, @CurrentUser() user: JwtPayload) {
     return this.rolesService.create(dto, user?.roles);
   }
 
@@ -44,14 +51,14 @@ export class RolesController {
   update(
     @Param('code') code: string,
     @Body() dto: UpdateRoleDto,
-    @CurrentUser() user: any,
+    @CurrentUser() user: JwtPayload,
   ) {
     return this.rolesService.update(code, dto, user?.roles);
   }
 
   @Delete(':code')
   @Permissions('role.manage')
-  delete(@Param('code') code: string, @CurrentUser() user: any) {
+  delete(@Param('code') code: string, @CurrentUser() user: JwtPayload) {
     return this.rolesService.delete(code, user?.roles);
   }
 }

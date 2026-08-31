@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { AUTH_OPTIONS, ROLES_KEY, IS_PUBLIC_KEY } from '../constants';
 import { AuthOptions } from '../interfaces';
 import { RoleHierarchy } from '../rbac/role-hierarchy';
+import { SUPERADMIN_ONLY_KEY } from '../rbac/superadmin.decorator';
 
 /**
  * RolesGuard — checks if user has ANY of the required roles.
@@ -15,12 +16,22 @@ import { RoleHierarchy } from '../rbac/role-hierarchy';
  */
 @Injectable()
 export class RolesGuard implements CanActivate {
+  private static _instances = new Set<RolesGuard>();
   private _hierarchy: RoleHierarchy | null = null;
 
   constructor(
     private readonly reflector: Reflector,
     @Inject(AUTH_OPTIONS) private readonly authOptions: AuthOptions,
-  ) {}
+  ) {
+    RolesGuard._instances.add(this);
+  }
+
+  /** Clear cached RoleHierarchy on all guard instances (call after role mutations) */
+  static clearHierarchyCache(): void {
+    for (const inst of RolesGuard._instances) {
+      inst._hierarchy = null;
+    }
+  }
 
   private getHierarchy(): RoleHierarchy | null {
     const defs = this.authOptions.rbac?.hierarchy;
@@ -58,6 +69,15 @@ export class RolesGuard implements CanActivate {
     // Super-admin bypass
     const superAdmin = this.authOptions.rbac?.superAdmin;
     if (superAdmin && rawUserRoles.includes(superAdmin)) return true;
+
+    // @SuperAdminOnly() — only superAdmin role is allowed, reject all others
+    const isSuperAdminOnly = this.reflector.getAllAndOverride<boolean>(SUPERADMIN_ONLY_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isSuperAdminOnly) {
+      throw new ForbiddenException('Super-admin access only');
+    }
 
     // Resolve through hierarchy (lazy, cached)
     const hierarchy = this.getHierarchy();

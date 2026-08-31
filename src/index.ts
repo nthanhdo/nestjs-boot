@@ -1,3 +1,14 @@
+// ============================================================
+// nestjs-boot — Root barrel export
+//
+// Foundation-only: config, common, createApp, DI utils, interfaces.
+// Module-specific exports live in subpath imports:
+//   import { BaseRepository } from 'nestjs-boot/database'
+//   import { AuthModule } from 'nestjs-boot/auth'
+//   import { TracingModule } from 'nestjs-boot/tracing'
+//   etc.
+// ============================================================
+
 // --- Interfaces ---
 export type {
   BootOptions,
@@ -11,11 +22,6 @@ export type {
   HealthOptions,
   AuthOptions,
 } from './interfaces/boot-options.interface';
-export type {
-  JwtAuthOptions,
-  ApiKeyAuthOptions,
-  RbacOptions,
-} from './auth';
 
 // --- Config ---
 export {
@@ -34,11 +40,6 @@ export { EnvFileAdapter } from './config';
 export { AwsSecretsAdapter } from './config';
 export { VaultAdapter } from './config';
 
-// --- Database (shared interface) ---
-export type { IRepository, PaginationOptions, PaginatedResult } from './database/repository.interface';
-
-// --- Database --- (use subpath import: nestjs-boot/database)
-
 // --- Common ---
 export {
   ResponseInterceptor,
@@ -55,181 +56,15 @@ export {
 } from './common';
 export type { ResponseEnvelope, ErrorResponse, BootExceptionOptions, CrudPaginatedResult, CrudFindAllOptions, PrismaCrudPaginatedResult, PrismaCrudFindAllOptions } from './common';
 
-// --- Health --- (use subpath import: nestjs-boot/health)
+// --- Database (shared interface only — use nestjs-boot/database for implementations) ---
+export type { IRepository, PaginationOptions, PaginatedResult } from './database/repository.interface';
 
-// --- Auth ---
-export {
-  AuthModule,
-  BootJwtService,
-  JwtAuthGuard,
-  WsJwtGuard,
-  ApiKeyGuard,
-  RolesGuard,
-  PermissionsGuard,
-  Roles,
-  Permissions,
-  Public,
-  CurrentUser,
-  AUTH_OPTIONS,
-  ROLES_KEY,
-  PERMISSIONS_KEY,
-  IS_PUBLIC_KEY,
-  // Social auth
-  SocialAuthModule,
-  GoogleStrategy,
-  GitHubStrategy,
-  SOCIAL_AUTH_OPTIONS,
-  // TOTP
-  TotpModule,
-  TotpService,
-  // Session
-  SessionAuthModule,
-  SessionGuard,
-  Session,
-  MemorySessionStore,
-  SESSION_OPTIONS,
-} from './auth';
-export type {
-  SocialProfile,
-  SocialAuthOptions,
-  SocialProviderConfig,
-  SessionStore,
-  SessionData,
-  SessionModuleOptions,
-} from './auth';
+// --- createApp ---
+export { createApp, lazyImport } from './create-app';
 
-// --- Correlation ---
-export {
-  CorrelationModule,
-  CorrelationIdMiddleware,
-  CorrelationInterceptor,
-  withCorrelationId,
-  getCorrelationId,
-  setCorrelationId,
-  runWithCorrelationId,
-  CORRELATION_HEADER,
-  CORRELATION_OPTIONS,
-} from './correlation';
-export type { CorrelationOptions } from './correlation';
-
-// --- Shutdown ---
-export {
-  ShutdownModule,
-  ShutdownService,
-  isKubernetesEnvironment,
-  getK8sPreStopDelay,
-  getK8sShutdownInfo,
-  SHUTDOWN_OPTIONS,
-  DEFAULT_SHUTDOWN_TIMEOUT,
-  DEFAULT_SHUTDOWN_SIGNALS,
-} from './shutdown';
-export type { ShutdownOptions, DrainStrategy } from './shutdown';
-
-// --- Inter-Service Auth ---
-export {
-  InterServiceAuthModule,
-  AuthPropagationInterceptor,
-  getAuthContext,
-  setAuthContext,
-  runWithAuthContext,
-  buildAuthHeaders,
-  injectAuthIntoPayload,
-  INTER_SERVICE_AUTH_OPTIONS,
-} from './inter-service-auth';
-export type { InterServiceAuthOptions, AuthContext } from './inter-service-auth';
-
-// --- Transport ---
-export {
-  TransportModule,
-  connectTransports,
-  ServiceClient,
-  InjectClient,
-  InjectGrpcClient,
-  getClientToken,
-  createResilientClient,
-  ResilientServiceClient,
-  ServiceDiscoveryHook,
-  TRANSPORT_CLIENT_PREFIX,
-  TRANSPORT_OPTIONS,
-  TRANSPORT_TYPE_MAP,
-} from './transport';
-export type {
-  TransportOptions,
-  GrpcTransportOptions,
-  TcpTransportOptions,
-  NatsTransportOptions,
-  RmqTransportOptions,
-  ClientTransportOptions,
-} from './transport';
-
-// --- RPC ---
-export {
-  RpcModule,
-  BootRpcExceptionFilter,
-  deserializeRpcError,
-  isRetryable,
-  GrpcStatus,
-  httpStatusToGrpc,
-  grpcStatusToHttp,
-  RPC_OPTIONS,
-} from './rpc';
-export type { RpcErrorEnvelope, RpcOptions } from './rpc';
-
-// --- Tracing ---
-export {
-  TracingModule,
-  TracingService,
-  initTracing,
-  BootTrace,
-  TRACING_OPTIONS,
-} from './tracing';
-export type { TracingOptions } from './tracing';
-
-// --- Metrics ---
-export {
-  MetricsModule,
-  MetricsService,
-  MetricsController,
-  HttpMetricsInterceptor,
-  DbMetricsInterceptor,
-  CacheMetricsInterceptor,
-  QueueMetrics,
-  METRICS_OPTIONS,
-  METRICS_SERVICE,
-  DEFAULT_METRICS_PATH,
-} from './metrics';
-export type { MetricsOptions } from './metrics';
-
-// --- Logging ---
-export {
-  LoggingModule,
-  BootLogger,
-  LoggingInterceptor,
-  LOGGING_OPTIONS,
-} from './logging';
-export type { LoggingOptions } from './logging';
-
-// --- Resilience ---
-export {
-  CircuitBreaker,
-  CircuitBreakerOpenError,
-  CircuitBreakerDecorator,
-  Retry,
-  Timeout,
-  TimeoutInterceptor,
-  CircuitBreakerObservability,
-  CircuitBreakerStateChangeEvent,
-  CIRCUIT_BREAKER_OPTIONS,
-  TIMEOUT_KEY,
-  RESILIENCE_OPTIONS,
-  DEFAULT_TIMEOUT,
-} from './resilience';
-export type {
-  CircuitBreakerOptions,
-  CircuitBreakerState,
-  RetryOptions,
-  ResilienceOptions,
-} from './resilience';
+// --- Plugin System ---
+export type { BootPlugin } from './plugin';
+export { PluginRegistry } from './plugin';
 
 // --- DI ---
 export { parseDiError, formatDiError } from './di/di-error-handler';
@@ -248,237 +83,3 @@ export type { LayerViolation, LayerValidationResult, LayerOptions } from './laye
 // --- Graph ---
 export { analyzeModules, detectCycles, renderMermaid } from './graph';
 export type { ModuleNode, GraphResult } from './graph';
-
-// --- createApp ---
-export { createApp } from './create-app';
-
-// --- Cache ---
-export {
-  CacheModule,
-  MultiCacheService,
-  MemoryCacheAdapter,
-  RedisCacheAdapter,
-  MemcachedCacheAdapter,
-  InjectCache,
-  CACHE_SERVICE,
-  CACHE_OPTIONS,
-} from './cache';
-export type { CacheAdapter, CacheSetOptions } from './cache';
-
-// --- Queue ---
-export {
-  QueueModule,
-  QueueService,
-  Processor,
-  Process,
-  OnFailed,
-  OnCompleted,
-  QUEUE_OPTIONS,
-  QUEUE_PREFIX,
-} from './queue';
-export type { QueueOptions } from './queue';
-
-// --- CQRS + Event Sourcing (PP21) ---
-export {
-  CqrsModule,
-  CommandBus,
-  CommandHandler,
-  COMMAND_HANDLER_METADATA,
-  DomainEvent,
-  AggregateRoot,
-  ConcurrencyError,
-  MemoryEventStore,
-  MongoDBEventStore,
-  MemorySnapshotStore,
-  MongoDBSnapshotStore,
-  Projection,
-  OnDomainEvent,
-  PROJECTION_METADATA,
-  ON_DOMAIN_EVENT_METADATA,
-  EventReplayService,
-  OutboxProcessor,
-  CQRS_OPTIONS,
-  CQRS_EVENT_STORE,
-  CQRS_SNAPSHOT_STORE,
-  CQRS_COMMAND_BUS,
-  CQRS_REPLAY_SERVICE,
-  CQRS_OUTBOX_PROCESSOR,
-} from './cqrs';
-export type {
-  ICommand,
-  ICommandHandler,
-  StoredEvent,
-  EventStore,
-  SnapshotStore,
-  CqrsOptions,
-  ReplayResult,
-  OutboxEntry,
-} from './cqrs';
-
-// --- Events ---
-export {
-  EventBusModule,
-  EventBusService,
-  BootEvent,
-  BootQuery,
-  OnEvent,
-  OnQuery,
-  EVENT_BUS_OPTIONS,
-  EVENT_BUS_SERVICE,
-} from './events';
-export type { EventBusOptions, OnEventOptions } from './events';
-
-// --- Testing --- (use subpath import: nestjs-boot/testing)
-
-// --- Versioning (PP13) ---
-export { VersioningModule } from './versioning';
-export type { VersioningOptions } from './versioning';
-export { ApiVersion, DeprecatedVersion, VersionInterceptor } from './versioning';
-export { VERSIONING_OPTIONS, DEPRECATED_VERSION_KEY } from './versioning';
-
-// --- Tenancy (PP14) ---
-export { TenancyModule } from './tenancy';
-export type { TenancyOptions } from './tenancy';
-export {
-  TenantContext,
-  getTenantId,
-  runWithTenant,
-  TenantMiddleware,
-  TenantGuard,
-  TenantRequired,
-  TenantScoped,
-  CurrentTenant,
-  TenantAwareRepository,
-  RowIsolation,
-  SchemaIsolation,
-  DatabaseIsolation,
-} from './tenancy';
-export { TENANCY_OPTIONS, TENANT_REQUIRED_KEY, TENANT_SCOPED_KEY } from './tenancy';
-
-
-// --- Migration System (PP15) --- (use subpath import: nestjs-boot/database)
-
-// --- Swagger/OpenAPI (PP16) ---
-export { SwaggerModule, setupSwagger, SWAGGER_OPTIONS } from './swagger';
-export type { SwaggerOptions } from './swagger';
-export { ApiTag, ApiResponse, ApiPaginated, ApiErrorResponses, AutoApiProperties } from './swagger';
-
-// --- WebSocket Scaling (PP17) ---
-export { WebSocketModule, WS_OPTIONS, WS_REDIS_ADAPTER } from './websocket';
-export { WsCorrelationInterceptor } from './websocket';
-export { BootWsGateway } from './websocket';
-export { createRedisAdapterFactory } from './websocket';
-export {
-  WsRoom,
-  WsBroadcast,
-  WsAuthRequired,
-  OnConnection,
-  OnDisconnection,
-} from './websocket';
-export type { WebSocketOptions, WebSocketRedisOptions, WebSocketCorsOptions } from './websocket';
-
-// --- Advanced Cache Patterns (PP18) ---
-export {
-  CacheStampedeGuard,
-  CacheWarmer,
-  TaggedCacheService,
-  CacheStats,
-} from './cache';
-export type { CacheWarmEntry, TaggedCacheOptions, CacheStatsResult } from './cache';
-
-// --- Payment Webhook + Idempotency (PP19) ---
-export { WebhookModule } from './payments';
-export { WebhookController } from './payments';
-export { IdempotencyGuard, Idempotent } from './payments';
-export { StripeWebhookProvider, PayPalWebhookProvider } from './payments';
-export { WEBHOOK_OPTIONS, IDEMPOTENCY_STORE } from './payments';
-export type { WebhookEvent, WebhookProvider, WebhookModuleOptions } from './payments';
-
-// --- File Storage Abstraction (PP20) ---
-export { StorageModule, StorageService, FileValidationPipe, InjectStorage } from './storage';
-export { LocalAdapter, S3Adapter, GCSAdapter } from './storage';
-export { STORAGE_SERVICE, STORAGE_OPTIONS, STORAGE_ADAPTER } from './storage';
-export type { StorageAdapter, StorageModuleOptions, StorageResult, UploadedFile } from './storage';
-
-// --- Deploy Lifecycle (PP22) ---
-export {
-  DeployHooksModule,
-  DeployService,
-  OnDeploy,
-  DEPLOY_OPTIONS,
-  DEPLOY_PHASE_ORDER,
-  EnvValidationHook,
-  DependencyCheckHook,
-  ReadinessGateHook,
-} from './deploy';
-export type {
-  DeployHook,
-  DeployPhase,
-  DeployContext,
-  DeployOptions,
-  DeployHookMetadata,
-} from './deploy';
-
-// --- Scope-based Authorization ---
-export {
-  ScopeModule,
-  ScopeResolver,
-  ScopeGuard,
-  RequireScope,
-  SCOPE_KEY,
-  SCOPE_OPTIONS,
-  AccessScope,
-  SCOPE_LEVELS,
-} from './scope';
-export type { ScopeContext, ScopeModuleOptions } from './scope';
-
-// --- Organizations ---
-export {
-  OrganizationModule,
-  OrganizationService,
-  MemoryOrganizationStore,
-  ORGANIZATION_STORE,
-  ORGANIZATION_OPTIONS,
-} from './organizations';
-export type {
-  OrganizationEntity,
-  DepartmentEntity,
-  TeamEntity,
-  UserOrganizationMembership,
-  OrganizationStore,
-  OrganizationModuleOptions,
-} from './organizations';
-
-// --- Audit ---
-export {
-  AuditModule,
-  AuditService,
-  AuditInterceptor,
-  MemoryAuditStore,
-  MongoAuditStore,
-  Audited,
-  AUDIT_ACTION_KEY,
-  AUDIT_STORE,
-  AUDIT_OPTIONS,
-  SecurityEventType,
-} from './audit';
-export type { AuditEntry, SecurityEvent, AuditStore, AuditModuleOptions } from './audit';
-
-// --- Alert Notifications ---
-export {
-  AlertModule,
-  AlertService,
-  ConsoleChannel,
-  WebhookChannel,
-  SlackChannel,
-  DiscordChannel,
-  PagerDutyChannel,
-  ALERT_OPTIONS,
-} from './alerts';
-export type {
-  AlertChannel,
-  AlertPayload,
-  AlertRule,
-  AlertOptions,
-  AlertChannelConfig,
-} from './alerts';

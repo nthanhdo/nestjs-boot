@@ -977,36 +977,20 @@ export class ${pascal}Module {}
 
     // Full Prisma resource
     writeFile(join(dir, `${lower}.service.ts`), `import { Injectable } from '@nestjs/common';
+import { PrismaCrudService } from 'nestjs-boot';
 import { PrismaService } from 'nestjs-boot';
+import { Create${pascal}Dto, Update${pascal}Dto } from './${lower}.dto';
 
 @Injectable()
-export class ${pascal}Service {
-  constructor(private readonly prisma: PrismaService) {}
-
-  async findAll() {
-    return this.prisma.client.${lower}.findMany();
-  }
-
-  async findById(id: string) {
-    return this.prisma.client.${lower}.findUnique({ where: { id } });
-  }
-
-  async create(data: any) {
-    return this.prisma.client.${lower}.create({ data });
-  }
-
-  async update(id: string, data: any) {
-    return this.prisma.client.${lower}.update({ where: { id }, data });
-  }
-
-  async delete(id: string) {
-    return this.prisma.client.${lower}.delete({ where: { id } });
+export class ${pascal}Service extends PrismaCrudService<Create${pascal}Dto, Update${pascal}Dto> {
+  constructor(private readonly prisma: PrismaService) {
+    super(prisma, '${lower}');
   }
 }
 `);
 
     writeFile(join(dir, `${lower}.controller.ts`), `import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
-import { Public, Roles } from 'nestjs-boot';
+import { Public, Permissions } from 'nestjs-boot';
 import { ${pascal}Service } from './${lower}.service';
 import { Create${pascal}Dto, Update${pascal}Dto } from './${lower}.dto';
 
@@ -1014,29 +998,31 @@ import { Create${pascal}Dto, Update${pascal}Dto } from './${lower}.dto';
 export class ${pascal}Controller {
   constructor(private readonly service: ${pascal}Service) {}
 
+  @Permissions('${lower}.create')
   @Post()
   create(@Body() dto: Create${pascal}Dto) {
     return this.service.create(dto);
   }
 
-  @Public()
+  @Permissions('${lower}.read')
   @Get()
   findAll() {
     return this.service.findAll();
   }
 
-  @Public()
+  @Permissions('${lower}.read')
   @Get(':id')
   findById(@Param('id') id: string) {
     return this.service.findById(id);
   }
 
+  @Permissions('${lower}.update')
   @Put(':id')
   update(@Param('id') id: string, @Body() dto: Update${pascal}Dto) {
     return this.service.update(id, dto);
   }
 
-  @Roles('admin')
+  @Permissions('${lower}.delete')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.service.delete(id);

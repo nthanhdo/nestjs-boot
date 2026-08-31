@@ -1,6 +1,6 @@
 # Auth API Reference
 
-> Composable, opt-in authentication and RBAC — JWT, API key, roles, permissions, sessions, TOTP, and social login. No forced user model.
+> Composable, opt-in authentication and RBAC — JWT, API key, roles, permissions, role hierarchy, super-admin, DB-backed permission store, sessions, TOTP, and social login. No forced user model.
 
 ## Module Registration
 
@@ -13,7 +13,7 @@ AuthModule.register(options: AuthOptions): DynamicModule
 `AuthModule` is `global: true`. Only the guards for configured strategies are activated.
 
 ```ts
-import { AuthModule } from '@nestjs-boot/auth';
+import { AuthModule } from 'nestjs-boot';
 
 AuthModule.register({
   jwt: {
@@ -24,13 +24,18 @@ AuthModule.register({
   },
   apiKey: {
     enabled: true,
-    headerName: 'x-api-key',           // default
+    headerName: 'x-api-key',
     validate: async (key) => myDb.findApiKey(key) !== null,
   },
   rbac: {
     enabled: true,
-    extractRoles: (req) => req.user?.roles ?? [],
-    extractPermissions: (req) => req.user?.permissions ?? [],
+    superAdmin: 'superadmin',
+    hierarchy: [
+      { name: 'superadmin', inherits: ['admin'] },
+      { name: 'admin', inherits: ['manager'], permissions: ['user:delete', 'user:ban'] },
+      { name: 'manager', inherits: ['user'], permissions: ['user:edit', 'content:moderate'] },
+      { name: 'user', permissions: ['user:read', 'content:read'] },
+    ],
   },
 })
 ```
@@ -50,11 +55,16 @@ AuthModule.register({
 | `apiKey` | `ApiKeyAuthOptions` | — | Enable API key authentication |
 | `apiKey.enabled` | `boolean` | — | **Required when `apiKey` is set** |
 | `apiKey.headerName` | `string` | `'x-api-key'` | Header name to read the API key from |
-| `apiKey.validate` | `(key) => Promise<boolean \| { valid: boolean; permissions?: string[] }>` | — | **Required.** Caller-provided key validator |
+| `apiKey.validate` | `(key) => Promise<boolean \| { valid; permissions? }>` | — | **Required.** Caller-provided key validator |
 | `rbac` | `RbacOptions` | — | Enable role/permission guards |
 | `rbac.enabled` | `boolean` | — | **Required when `rbac` is set** |
 | `rbac.extractRoles` | `(req) => string[]` | `req.user?.roles ?? []` | Extract roles from the request |
 | `rbac.extractPermissions` | `(req) => string[]` | `req.user?.permissions ?? []` | Extract permissions from the request |
+| `rbac.hierarchy` | `RoleDefinition[]` | — | Role hierarchy definitions. Enables role inheritance |
+| `rbac.superAdmin` | `string` | — | Super-admin role name. Bypasses all role/permission checks |
+| `rbac.permissionStore` | `PermissionStore` | — | DB-backed permission store. Enables async permission loading |
+
+When `hierarchy` is provided, `RoleHierarchy` is registered as a provider and exported. When `permissionStore` is provided, it is registered under the `PERMISSION_STORE` token.
 
 ---
 
@@ -67,15 +77,13 @@ SessionAuthModule.register(options: SessionModuleOptions): DynamicModule
 Session-based authentication. Store-agnostic — plug in any `SessionStore` implementation. Defaults to `MemorySessionStore` (development only).
 
 ```ts
-import { SessionAuthModule } from '@nestjs-boot/auth/session';
-
 SessionAuthModule.register({
   secret: 'session-signing-secret',
-  store: new RedisSessionStore(redisClient), // user-provided implementation
-  maxAge: 3_600_000, // 1 hour in ms
+  store: new RedisSessionStore(redisClient),
+  maxAge: 3_600_000,
   cookieName: 'boot.sid',
   httpOnly: true,
-  secure: true,  // set true in production
+  secure: true,
   sameSite: 'lax',
 })
 ```
@@ -128,7 +136,7 @@ SocialAuthModule.register({
 })
 ```
 
-Requires `passport-google-oauth20` or `passport-github2` to be installed depending on the strategy used.
+Requires `passport-google-oauth20` or `passport-github2` depending on the strategy used.
 
 ---
 
@@ -180,6 +188,108 @@ Verify an email-verification token. Throws if invalid, expired, or `purpose` doe
 
 ---
 
+### `RoleHierarchy`
+
+> Resolves role inheritance chains and aggregates permissions across the hierarchy. Lazy-instantiated and cached by guards when `rbac.hierarchy` is configured.
+
+#### Constructor
+
+```ts
+new RoleHierarchy(definitions?: RoleDefinition[])
+```
+
+#### Methods
+
+##### `define(definition: RoleDefinition): void`
+
+Register or update a role definition at runtime.
+
+```ts
+hierarchy.define({ name: 'editor', inherits: ['user'], permissions: ['content:write'] });
+```
+
+##### `resolve(role: string): string[]`
+
+Get all effective roles for a single role, including inherited roles. Circular dependencies are safe (visited-set guard).
+
+```ts
+hierarchy.resolve('admin');
+// → ['admin', 'manager', 'user']
+```
+
+##### `resolveAll(roles: string[]): string[]`
+
+Get all effective roles for multiple user roles.
+
+```ts
+hierarchy.resolveAll(['admin', 'editor']);
+// → ['admin', 'manager', 'user', 'editor']
+```
+
+##### `getPermissions(role: string): string[]`
+
+Get all permissions for a role, including permissions inherited through the hierarchy.
+
+```ts
+hierarchy.getPermissions('admin');
+// → ['user:delete', 'user:ban', 'user:edit', 'content:moderate', 'user:read', 'content:read']
+```
+
+##### `getAllPermissions(roles: string[]): string[]`
+
+Get all permissions for multiple roles.
+
+##### `validate(): { valid: boolean; cycles: string[][] }`
+
+Check for circular dependencies in the hierarchy. Returns detected cycles.
+
+```ts
+const result = hierarchy.validate();
+if (!result.valid) {
+  console.error('Circular roles:', result.cycles);
+}
+```
+
+---
+
+### `MemoryPermissionStore`
+
+> In-memory implementation of `PermissionStore`. For development and testing only — not for production. Use a MongoDB/Redis implementation in production.
+
+Implements all `PermissionStore` methods using `Map<string, Set<string>>`.
+
+#### Methods
+
+##### `getUserPermissions(userId: string): Promise<string[]>`
+
+Get all directly assigned permissions for a user.
+
+##### `getUserRoles(userId: string): Promise<string[]>`
+
+Get all directly assigned roles for a user.
+
+##### `assignRoles(userId: string, roles: string[]): Promise<void>`
+
+Add roles to a user. Deduplicates automatically.
+
+##### `removeRoles(userId: string, roles: string[]): Promise<void>`
+
+Remove roles from a user. No-op for roles the user doesn't have.
+
+##### `assignPermissions(userId: string, permissions: string[]): Promise<void>`
+
+Add permissions directly to a user. Deduplicates automatically.
+
+##### `removePermissions(userId: string, permissions: string[]): Promise<void>`
+
+Remove permissions from a user.
+
+##### `hasPermission(userId: string, permission: string): Promise<boolean>`
+
+Check if a user has a specific direct permission.
+
+---
+
 ### `TotpService`
 
 > TOTP / 2FA utilities. Uses `otpauth` library if installed; falls back to built-in HMAC-SHA1 TOTP.
@@ -221,9 +331,33 @@ Reads the API key from the configured header (default `x-api-key`). Calls the us
 
 Checks that `request.user` has **any** of the roles required by `@Roles()`. Routes without `@Roles()` pass through.
 
+**Hierarchy support:** When `rbac.hierarchy` is configured, user roles are resolved through `RoleHierarchy.resolveAll()` before checking. The hierarchy instance is lazy-created and cached.
+
+**Super-admin:** When `rbac.superAdmin` is set, users with that role bypass the check entirely — no `@Roles()` can block them.
+
+```ts
+// With hierarchy: admin inherits manager inherits user
+// A user with role 'admin' passes @Roles('user') because admin → manager → user
+@Roles('user')
+@Get('profile')
+getProfile() {}
+```
+
 ### `PermissionsGuard`
 
 Checks that `request.user` has **all** permissions required by `@Permissions()`. Routes without `@Permissions()` pass through.
+
+**Permission resolution order** (all sources are merged):
+1. Direct permissions from JWT/request (`extractPermissions`)
+2. Role-based permissions from hierarchy (`hierarchy.getAllPermissions(userRoles)`)
+3. Store-backed permissions (`permissionStore.getUserPermissions(userId)`) — async path
+4. Store-backed roles → hierarchy expansion (`permissionStore.getUserRoles(userId)` → `hierarchy.getAllPermissions(storeRoles)`)
+
+Sources 3–4 are only active when `rbac.permissionStore` is configured. The guard returns `boolean | Promise<boolean>` — sync when no store, async when store is present.
+
+**Super-admin:** Same as `RolesGuard` — users with the `superAdmin` role bypass all permission checks.
+
+**User ID extraction:** When using `permissionStore`, the guard reads `request.user.id ?? request.user.sub` to identify the user.
 
 ### `WsJwtGuard`
 
@@ -244,7 +378,7 @@ Reads the session ID from the signed cookie, fetches from the configured `Sessio
 
 ### `@Roles(...roles: string[])`
 
-Mark a route as requiring **any** of the specified roles. Works with `RolesGuard`.
+Mark a route as requiring **any** of the specified roles. Works with `RolesGuard`. When hierarchy is configured, inherited roles count.
 
 ```ts
 @Roles('admin', 'moderator')
@@ -254,7 +388,7 @@ getDashboard() {}
 
 ### `@Permissions(...permissions: string[])`
 
-Mark a route as requiring **all** of the specified permissions. Works with `PermissionsGuard`.
+Mark a route as requiring **all** of the specified permissions. Works with `PermissionsGuard`. Permissions can come from JWT, hierarchy, or store.
 
 ```ts
 @Permissions('product:read', 'product:write')
@@ -281,7 +415,17 @@ Parameter decorator. Extracts `request.user` or a specific field from it.
 getProfile(@CurrentUser() user: UserPayload) {}
 
 @Get('id')
-getId(@CurrentUser('id') userId: string) {}
+getId(@CurrentUser('sub') userId: string) {}
+```
+
+### `@SuperAdminOnly()`
+
+Mark a route as accessible only to the super-admin role. Sets `boot:superadminOnly` metadata.
+
+```ts
+@SuperAdminOnly()
+@Delete('system/reset')
+resetSystem() {}
 ```
 
 ### `@Session(field?: string)`
@@ -296,6 +440,16 @@ getMe(@Session('userId') userId: string) {}
 ---
 
 ## Interfaces
+
+### `AuthOptions`
+
+```ts
+interface AuthOptions {
+  jwt?: JwtAuthOptions;
+  apiKey?: ApiKeyAuthOptions;
+  rbac?: RbacOptions;
+}
+```
 
 ### `JwtAuthOptions`
 
@@ -327,16 +481,33 @@ interface RbacOptions {
   enabled: boolean;
   extractRoles?: (request: any) => string[];
   extractPermissions?: (request: any) => string[];
+  hierarchy?: RoleDefinition[];
+  superAdmin?: string;
+  permissionStore?: PermissionStore;
 }
 ```
 
-### `AuthOptions`
+### `RoleDefinition`
 
 ```ts
-interface AuthOptions {
-  jwt?: JwtAuthOptions;
-  apiKey?: ApiKeyAuthOptions;
-  rbac?: RbacOptions;
+interface RoleDefinition {
+  name: string;
+  inherits?: string[];
+  permissions?: string[];
+}
+```
+
+### `PermissionStore`
+
+```ts
+interface PermissionStore {
+  getUserPermissions(userId: string): Promise<string[]>;
+  getUserRoles(userId: string): Promise<string[]>;
+  assignRoles(userId: string, roles: string[]): Promise<void>;
+  removeRoles(userId: string, roles: string[]): Promise<void>;
+  assignPermissions(userId: string, permissions: string[]): Promise<void>;
+  removePermissions(userId: string, permissions: string[]): Promise<void>;
+  hasPermission(userId: string, permission: string): Promise<boolean>;
 }
 ```
 
@@ -356,8 +527,8 @@ interface SessionStore {
 ```ts
 interface SessionData {
   [key: string]: any;
-  createdAt?: number;      // epoch ms
-  lastAccessedAt?: number; // epoch ms
+  createdAt?: number;
+  lastAccessedAt?: number;
 }
 ```
 
@@ -390,11 +561,38 @@ interface SocialProviderConfig {
 
 ## Constants / Tokens
 
-| Token | Type | Description |
-|-------|------|-------------|
-| `AUTH_OPTIONS` | `string` | Injection token for the `AuthOptions` config object |
-| `ROLES_KEY` | `string` (`'boot:roles'`) | Reflector metadata key used by `@Roles()` and `RolesGuard` |
-| `PERMISSIONS_KEY` | `string` (`'boot:permissions'`) | Reflector metadata key used by `@Permissions()` and `PermissionsGuard` |
-| `IS_PUBLIC_KEY` | `string` (`'boot:isPublic'`) | Reflector metadata key used by `@Public()` and all guards |
+| Token | Value | Description |
+|-------|-------|-------------|
+| `AUTH_OPTIONS` | `'BOOT_AUTH_OPTIONS'` | Injection token for the `AuthOptions` config object |
+| `ROLES_KEY` | `'boot:roles'` | Reflector metadata key used by `@Roles()` and `RolesGuard` |
+| `PERMISSIONS_KEY` | `'boot:permissions'` | Reflector metadata key used by `@Permissions()` and `PermissionsGuard` |
+| `IS_PUBLIC_KEY` | `'boot:isPublic'` | Reflector metadata key used by `@Public()` and all guards |
+| `PERMISSION_STORE` | `'BOOT_PERMISSION_STORE'` | Injection token for `PermissionStore` instance |
+| `SUPERADMIN_ONLY_KEY` | `'boot:superadminOnly'` | Reflector metadata key used by `@SuperAdminOnly()` |
 | `SESSION_OPTIONS` | `string` | Injection token for `SessionModuleOptions` |
 | `SOCIAL_AUTH_OPTIONS` | `string` | Injection token for `SocialAuthOptions` |
+
+---
+
+## CLI Generator
+
+### `npx nestjs-boot g auth`
+
+Scaffolds a complete JWT auth flow in `src/auth/` of your project:
+
+| File | Description |
+|------|-------------|
+| `user.schema.ts` | Mongoose User schema (email, passwordHash, name, roles, permissions, refreshToken, emailVerified) |
+| `auth.dto.ts` | RegisterDto, LoginDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto |
+| `auth.service.ts` | Full auth service — register, login, refresh, logout, forgot/reset password, profile |
+| `auth.controller.ts` | 7 endpoints: register, login, refresh, logout, forgot-password, reset-password, me |
+| `auth.module.ts` | `UserAuthModule` — wires Mongoose, service, controller |
+| `auth.spec.ts` | Vitest integration test (register + login) |
+
+**Password reset:** In dev mode, the reset token is logged to console via `Logger.warn()`. Replace with your email provider (SendGrid, SES, etc.) for production.
+
+```bash
+npx nestjs-boot g auth
+# → 6 files created
+# Next: npm i bcrypt, import UserAuthModule in AppModule
+```

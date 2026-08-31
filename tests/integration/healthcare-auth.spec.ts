@@ -632,11 +632,11 @@ describe('Healthcare Auth Integration', () => {
     });
 
     it('lock expires after lockout duration', async () => {
-      const tracker = new LoginTracker({ maxAttempts: 2, lockoutDuration: 1 }); // 1ms
+      const tracker = new LoginTracker({ maxAttempts: 2, lockoutDuration: 50 });
       tracker.recordFailure('u@h.com');
       tracker.recordFailure('u@h.com');
       expect(tracker.isLocked('u@h.com')).toBe(true);
-      await new Promise(r => setTimeout(r, 10)); // wait for lock to expire
+      await new Promise(r => setTimeout(r, 100)); // wait for lock to expire
       expect(tracker.isLocked('u@h.com')).toBe(false);
     });
   });

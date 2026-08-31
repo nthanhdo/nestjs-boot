@@ -91,6 +91,10 @@ ${pc.bold('Options:')}
   -y, --yes           Accept all defaults (no prompts)
   -h, --help          Show this help message
 
+${pc.bold('Generators:')}
+  nestjs-boot g resource <name>  Generate a CRUD resource (schema, dto, service, controller, module, spec)
+  nestjs-boot g auth             Generate a full auth module (user schema, DTOs, service, controller, module, spec)
+
 ${pc.bold('Examples:')}
   npx nestjs-boot new my-service
   npx nestjs-boot new my-service --db=mongodb --cache=redis --auth=jwt --transport=grpc
@@ -98,6 +102,8 @@ ${pc.bold('Examples:')}
   npx nestjs-boot new my-service --iac=aws
   npx nestjs-boot new my-service --observability
   npx nestjs-boot new my-service -y
+  npx nestjs-boot g resource product
+  npx nestjs-boot g auth
 `);
 }
 
@@ -377,6 +383,338 @@ function printNextSteps(config) {
 // ── Main ────────────────────────────────────────────────────────────
 
 // ── Resource generator ─────────────────────────────────────────────
+
+function generateAuth() {
+  const dir = join(process.cwd(), 'src', 'auth');
+
+  if (existsSync(dir)) {
+    console.error(pc.red('Error: directory "src/auth" already exists.'));
+    process.exit(1);
+  }
+
+  mkdirSync(dir, { recursive: true });
+
+  // File 1: user.schema.ts
+  writeFile(join(dir, 'user.schema.ts'), `import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
+
+export type UserDocument = User & Document;
+
+@Schema({ timestamps: true, collection: 'users' })
+export class User {
+  @Prop({ required: true, unique: true, lowercase: true, trim: true })
+  email: string;
+
+  @Prop({ required: true })
+  passwordHash: string;
+
+  @Prop({ trim: true })
+  name: string;
+
+  @Prop({ type: [String], default: ['user'] })
+  roles: string[];
+
+  @Prop({ type: [String], default: [] })
+  permissions: string[];
+
+  @Prop()
+  refreshToken?: string;
+
+  @Prop({ default: false })
+  emailVerified: boolean;
+}
+
+export const UserSchema = SchemaFactory.createForClass(User);
+UserSchema.index({ email: 1 }, { unique: true });
+`);
+
+  // File 2: auth.dto.ts
+  writeFile(join(dir, 'auth.dto.ts'), `import { IsEmail, IsString, IsNotEmpty, MinLength, IsOptional } from 'class-validator';
+
+export class RegisterDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
+  password: string;
+
+  @IsString()
+  @IsOptional()
+  name?: string;
+}
+
+export class LoginDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  password: string;
+}
+
+export class RefreshTokenDto {
+  @IsString()
+  @IsNotEmpty()
+  refreshToken: string;
+}
+
+export class ForgotPasswordDto {
+  @IsEmail()
+  email: string;
+}
+
+export class ResetPasswordDto {
+  @IsString()
+  @IsNotEmpty()
+  token: string;
+
+  @IsString()
+  @MinLength(8)
+  newPassword: string;
+}
+`);
+
+  // File 3: auth.service.ts
+  writeFile(join(dir, 'auth.service.ts'), `import { Injectable, UnauthorizedException, ConflictException, Logger } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { BootJwtService } from 'nestjs-boot';
+import { User, UserDocument } from './user.schema';
+
+let bcrypt: any;
+try {
+  bcrypt = require('bcrypt');
+} catch {
+  try {
+    bcrypt = require('bcryptjs');
+  } catch {
+    throw new Error('Auth requires bcrypt or bcryptjs. Install one: npm i bcrypt');
+  }
+}
+
+@Injectable()
+export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+  private readonly SALT_ROUNDS = 10;
+
+  constructor(
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    private readonly jwt: BootJwtService,
+  ) {}
+
+  async register(email: string, password: string, name?: string) {
+    const existing = await this.userModel.findOne({ email: email.toLowerCase() });
+    if (existing) throw new ConflictException('Email already registered');
+
+    const passwordHash = await bcrypt.hash(password, this.SALT_ROUNDS);
+    const user = await this.userModel.create({
+      email: email.toLowerCase(),
+      passwordHash,
+      name,
+    });
+
+    return { id: user._id, email: user.email, name: user.name, roles: user.roles };
+  }
+
+  async login(email: string, password: string) {
+    const user = await this.userModel.findOne({ email: email.toLowerCase() });
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) throw new UnauthorizedException('Invalid credentials');
+
+    const payload = { sub: user._id.toString(), email: user.email, roles: user.roles, permissions: user.permissions };
+    const accessToken = this.jwt.sign(payload);
+    const refreshToken = this.jwt.signRefresh(payload);
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    return {
+      accessToken,
+      refreshToken,
+      user: { id: user._id, email: user.email, name: user.name, roles: user.roles },
+    };
+  }
+
+  async refreshToken(oldRefreshToken: string) {
+    const { accessToken, refreshToken } = this.jwt.rotateRefreshToken(oldRefreshToken);
+
+    const decoded = this.jwt.verifyRefresh<{ sub: string }>(refreshToken);
+    await this.userModel.updateOne(
+      { _id: decoded.sub, refreshToken: oldRefreshToken },
+      { refreshToken },
+    );
+
+    return { accessToken, refreshToken };
+  }
+
+  async logout(userId: string) {
+    await this.userModel.updateOne({ _id: userId }, { $unset: { refreshToken: 1 } });
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.userModel.findOne({ email: email.toLowerCase() });
+    if (!user) return; // Silent — don't reveal user existence
+
+    const token = this.jwt.signPasswordReset(user._id.toString());
+    const resetUrl = \`/auth/reset-password?token=\${token}\`;
+
+    // TODO: Replace with your email provider (SendGrid, SES, etc.)
+    this.logger.warn('========================================');
+    this.logger.warn('PASSWORD RESET TOKEN (dev mode)');
+    this.logger.warn(\`User: \${email}\`);
+    this.logger.warn(\`Token: \${token}\`);
+    this.logger.warn(\`URL: \${resetUrl}\`);
+    this.logger.warn('========================================');
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const { sub } = this.jwt.verifyPasswordReset(token);
+    const passwordHash = await bcrypt.hash(newPassword, this.SALT_ROUNDS);
+    await this.userModel.updateOne({ _id: sub }, { passwordHash, $unset: { refreshToken: 1 } });
+  }
+
+  async getProfile(userId: string) {
+    const user = await this.userModel.findById(userId).select('-passwordHash -refreshToken');
+    if (!user) throw new UnauthorizedException('User not found');
+    return user;
+  }
+}
+`);
+
+  // File 4: auth.controller.ts
+  writeFile(join(dir, 'auth.controller.ts'), `import { Controller, Post, Get, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Public, CurrentUser } from 'nestjs-boot';
+import { AuthService } from './auth.service';
+import { RegisterDto, LoginDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto } from './auth.dto';
+
+@Controller('auth')
+export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
+  @Public()
+  @Post('register')
+  register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto.email, dto.password, dto.name);
+  }
+
+  @Public()
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  login(@Body() dto: LoginDto) {
+    return this.authService.login(dto.email, dto.password);
+  }
+
+  @Public()
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  refresh(@Body() dto: RefreshTokenDto) {
+    return this.authService.refreshToken(dto.refreshToken);
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  logout(@CurrentUser('sub') userId: string) {
+    return this.authService.logout(userId);
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto.token, dto.newPassword);
+  }
+
+  @Get('me')
+  getProfile(@CurrentUser('sub') userId: string) {
+    return this.authService.getProfile(userId);
+  }
+}
+`);
+
+  // File 5: auth.module.ts
+  writeFile(join(dir, 'auth.module.ts'), `import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { User, UserSchema } from './user.schema';
+import { AuthService } from './auth.service';
+import { AuthController } from './auth.controller';
+
+@Module({
+  imports: [
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+  ],
+  controllers: [AuthController],
+  providers: [AuthService],
+  exports: [AuthService],
+})
+export class UserAuthModule {}
+`);
+
+  // File 6: auth.spec.ts
+  writeFile(join(dir, 'auth.spec.ts'), `import { describe, it, expect } from 'vitest';
+import { createTestApp, createTestClient } from 'nestjs-boot/testing';
+import { UserAuthModule } from './auth.module';
+
+describe('Auth', () => {
+  it('should register and login', async () => {
+    const app = await createTestApp({ imports: [UserAuthModule] });
+    const client = createTestClient(app);
+
+    const registerRes = await client.post('/auth/register').send({
+      email: 'test@example.com',
+      password: 'password123',
+      name: 'Test User',
+    });
+    expect(registerRes.status).toBe(201);
+    expect(registerRes.body.email).toBe('test@example.com');
+
+    const loginRes = await client.post('/auth/login').send({
+      email: 'test@example.com',
+      password: 'password123',
+    });
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.accessToken).toBeDefined();
+    expect(loginRes.body.refreshToken).toBeDefined();
+
+    await app.close();
+  });
+});
+`);
+
+  const files = [
+    'src/auth/user.schema.ts',
+    'src/auth/auth.dto.ts',
+    'src/auth/auth.service.ts',
+    'src/auth/auth.controller.ts',
+    'src/auth/auth.module.ts',
+    'src/auth/auth.spec.ts',
+  ];
+
+  console.log('');
+  console.log(pc.green(pc.bold('Auth module generated!')));
+  console.log('');
+  for (const f of files) {
+    console.log(`  ${pc.dim('created')} ${f}`);
+  }
+  console.log('');
+  console.log(`  ${pc.cyan('Next steps:')}`);
+  console.log(`    1. Install: npm i bcrypt && npm i -D @types/bcrypt`);
+  console.log(`       (or: npm i bcryptjs && npm i -D @types/bcryptjs)`);
+  console.log(`    2. Import UserAuthModule in your AppModule`);
+  console.log(`    3. Ensure BootJwtModule is configured in your AppModule`);
+  console.log(`    4. Replace the forgotPassword console.warn with your email provider`);
+  console.log('');
+}
 
 function generateResource(name, flags = {}) {
   const pascal = name.charAt(0).toUpperCase() + name.slice(1);
@@ -1122,9 +1460,12 @@ if (args[0] === 'graph') {
   process.exit(0);
 }
 
-// Handle `g resource <name>` subcommand
+// Handle `g resource <name>` and `g auth` subcommands
 if (args[0] === 'g' || args[0] === 'generate') {
-  if (args[1] === 'resource' && args[2]) {
+  if (args[1] === 'auth') {
+    generateAuth();
+    process.exit(0);
+  } else if (args[1] === 'resource' && args[2]) {
     const resourceName = args[2];
     if (!/^[a-z][a-z0-9-]*$/.test(resourceName)) {
       console.error(pc.red('Error: resource name must be lowercase alphanumeric with hyphens.'));
@@ -1137,7 +1478,9 @@ if (args[0] === 'g' || args[0] === 'generate') {
     generateResource(resourceName, flags);
     process.exit(0);
   } else {
-    console.error(pc.red('Usage: nestjs-boot g resource <name> [--crud|--minimal]'));
+    console.error(pc.red('Usage:'));
+    console.error(pc.red('  nestjs-boot g resource <name> [--crud|--minimal]'));
+    console.error(pc.red('  nestjs-boot g auth'));
     process.exit(1);
   }
 }

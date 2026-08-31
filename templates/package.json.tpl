@@ -25,6 +25,9 @@
     "@nestjs/mongoose": "^10.1.0",
     "mongoose": "^8.0.0",
 {{/eq}}
+{{#eq dbType "postgres"}}
+    "@prisma/client": "^5.0.0",
+{{/eq}}
 {{#eq cacheType "redis"}}
     "ioredis": "^5.4.0",
 {{/eq}}
@@ -51,6 +54,9 @@
     "eslint": "^9.0.0",
     "prettier": "^3.3.0",
     "typescript": "^5.5.0",
+{{#eq dbType "postgres"}}
+    "prisma": "^5.0.0",
+{{/eq}}
     "vitest": "^2.0.0",
     "@vitest/coverage-v8": "^2.0.0",
     "supertest": "^7.0.0",

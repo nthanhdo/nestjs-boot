@@ -20,3 +20,7 @@ export { MigrationModule } from './migrations/migration.module';
 export type { MigrationModuleOptions } from './migrations/migration.module';
 export { MigrationRunner } from './migrations/migration.runner';
 export type { Migration, MigrationResult, MigrationStatus } from './migrations/migration.interface';
+
+// Prisma (PostgreSQL)
+export { PrismaService, PrismaBaseRepository, PrismaModule, PRISMA_SERVICE } from './prisma';
+export type { PrismaModuleOptions, PrismaPaginationOptions, PrismaPaginatedResult } from './prisma';

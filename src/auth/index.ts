@@ -39,3 +39,11 @@ export {
   SESSION_OPTIONS,
 } from './session';
 export type { SessionStore, SessionData, SessionModuleOptions } from './session';
+
+// Token store (refresh token family tracking)
+export { TOKEN_STORE, MemoryTokenStore } from './token';
+export type { TokenStore } from './token';
+
+// Login attempt tracker
+export { LoginTracker, LOGIN_TRACKER_OPTIONS } from './login-tracker';
+export type { LoginTrackerOptions } from './login-tracker';

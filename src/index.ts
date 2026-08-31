@@ -415,6 +415,36 @@ export type {
   DeployHookMetadata,
 } from './deploy';
 
+// --- Scope-based Authorization ---
+export {
+  ScopeModule,
+  ScopeResolver,
+  ScopeGuard,
+  RequireScope,
+  SCOPE_KEY,
+  SCOPE_OPTIONS,
+  AccessScope,
+  SCOPE_LEVELS,
+} from './scope';
+export type { ScopeContext, ScopeModuleOptions, ScopeCheckResult } from './scope';
+
+// --- Organizations ---
+export {
+  OrganizationModule,
+  OrganizationService,
+  MemoryOrganizationStore,
+  ORGANIZATION_STORE,
+  ORGANIZATION_OPTIONS,
+} from './organizations';
+export type {
+  OrganizationEntity,
+  DepartmentEntity,
+  TeamEntity,
+  UserOrganizationMembership,
+  OrganizationStore,
+  OrganizationModuleOptions,
+} from './organizations';
+
 // --- Alert Notifications ---
 export {
   AlertModule,

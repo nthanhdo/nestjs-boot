@@ -56,4 +56,29 @@ describe('RolesGuard', () => {
     const guard = new RolesGuard(reflector, authOptions);
     expect(guard.canActivate(context)).toBe(true);
   });
+
+  describe('denyByDefault', () => {
+    const denyOptions: AuthOptions = { rbac: { enabled: true, denyByDefault: true } };
+
+    it('denies route with no @Roles() decorator when denyByDefault=true', () => {
+      const { context, reflector } = createMockContext({ roles: ['user'] }, {});
+      const guard = new RolesGuard(reflector, denyOptions);
+      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+    });
+
+    it('still allows @Public() routes when denyByDefault=true', () => {
+      const { context, reflector } = createMockContext(null, { [IS_PUBLIC_KEY]: true });
+      const guard = new RolesGuard(reflector, denyOptions);
+      expect(guard.canActivate(context)).toBe(true);
+    });
+
+    it('allows route with matching @Roles() when denyByDefault=true', () => {
+      const { context, reflector } = createMockContext(
+        { roles: ['admin'] },
+        { [ROLES_KEY]: ['admin'] },
+      );
+      const guard = new RolesGuard(reflector, denyOptions);
+      expect(guard.canActivate(context)).toBe(true);
+    });
+  });
 });

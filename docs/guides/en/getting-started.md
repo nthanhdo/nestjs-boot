@@ -16,7 +16,8 @@ Peer dependencies are loaded on demand. Install only what you use:
 
 | Feature | Peer dependency |
 |---------|----------------|
-| Database | `mongoose`, `@nestjs/mongoose` |
+| Database (MongoDB) | `mongoose`, `@nestjs/mongoose` |
+| Database (PostgreSQL) | `@prisma/client`, `prisma` |
 | Cache (Redis L2) | `ioredis` |
 | Cache (Memcached L1) | `memjs` |
 | Auth (JWT) | `@nestjs/jwt`, `@nestjs/passport`, `passport-jwt` |
@@ -114,7 +115,7 @@ When you call `createApp(AppModule, options)`, the following happens in order:
 
 | Section | What it enables |
 |---------|----------------|
-| `database` | MongoDB multi-connection with reader/writer split |
+| `database` | MongoDB multi-connection with reader/writer split (see also: [Prisma guide](prisma.md) for PostgreSQL) |
 | `cache` | Multi-layer cache (L1 memory + L2 Redis) |
 | `auth` | JWT + API key + RBAC |
 | `health` | Health check endpoint (default: enabled) |
@@ -148,9 +149,26 @@ When you call `createApp(AppModule, options)`, the following happens in order:
 - **MongoDB URI format** — `writerUri` must start with `mongodb://` or `mongodb+srv://`. Validation rejects other formats.
 - **Redis URI format** — must start with `redis://` or `rediss://`.
 
+## Database choice: Mongoose vs Prisma
+
+nestjs-boot supports both MongoDB (Mongoose) and PostgreSQL (Prisma). Both implement `IRepository<T>`, a shared CRUD interface, so your services can be database-agnostic:
+
+| | MongoDB (Mongoose) | PostgreSQL (Prisma) |
+|---|---|---|
+| Repository | `BaseRepository<T>` | `PrismaBaseRepository<T>` |
+| CRUD Service | `CrudService<T>` | `PrismaCrudService<T>` |
+| Cached Repo | `CachedBaseRepository<T>` | (use cache module directly) |
+| Config key | `database.connections` | `PrismaModule.register()` |
+
+The `createApp()` function handles MongoDB via the `database` config key. For Prisma, import `PrismaModule` in your `AppModule` — see the [Prisma guide](prisma.md) for full setup.
+
+The CLI (`npx nestjs-boot new my-service --db=postgres`) scaffolds a Prisma-based project with `prisma/schema.prisma` and `PrismaCrudService` out of the box.
+
 ## See also
 
 - [Configuration](configuration.md) — full BootOptions reference and config adapters
+- [Prisma (PostgreSQL)](prisma.md) — PrismaModule, PrismaCrudService, migrations
+- [Authorization](authorization.md) — RBAC, policies, wildcard permissions, break glass
 - [CLI Reference](cli-reference.md) — scaffold a complete project with `npx nestjs-boot new`
 - [Migration from NestJS](migration-from-nestjs.md) — adopt nestjs-boot in an existing project
 - [Production Checklist](production-checklist.md) — before you deploy

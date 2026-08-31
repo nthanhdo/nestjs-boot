@@ -1,7 +1,7 @@
-import { DynamicModule, Global, Module, OnModuleInit, Inject, Optional } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { DynamicModule, Global, Module, OnModuleInit, Inject, Optional, Provider } from '@nestjs/common';
+import { APP_GUARD, ModuleRef } from '@nestjs/core';
 import { POLICY_OPTIONS } from './constants';
-import { PolicyModuleOptions } from './interfaces';
+import { AuthorizationPolicy, AuthorizationPolicyClass, PolicyModuleOptions } from './interfaces';
 import { PolicyRegistry } from './policy.registry';
 import { PolicyEngine } from './policy.engine';
 import { PolicyGuard } from './policy.guard';
@@ -11,10 +11,15 @@ import { PolicyGuard } from './policy.guard';
 export class PolicyModule implements OnModuleInit {
   constructor(
     private readonly registry: PolicyRegistry,
+    private readonly moduleRef: ModuleRef,
     @Optional() @Inject(POLICY_OPTIONS) private readonly options?: PolicyModuleOptions,
   ) {}
 
   static register(options?: PolicyModuleOptions): DynamicModule {
+    const policyProviders: Provider[] = (options?.policies ?? [])
+      .filter((p): p is AuthorizationPolicyClass => typeof p === 'function')
+      .map(cls => ({ provide: cls, useClass: cls }));
+
     return {
       module: PolicyModule,
       global: true,
@@ -29,16 +34,23 @@ export class PolicyModule implements OnModuleInit {
           provide: APP_GUARD,
           useClass: PolicyGuard,
         },
+        ...policyProviders,
       ],
-      exports: [POLICY_OPTIONS, PolicyRegistry, PolicyEngine],
+      exports: [POLICY_OPTIONS, PolicyRegistry, PolicyEngine, ...policyProviders],
     };
   }
 
-  onModuleInit() {
-    // Register policies from options
-    if (this.options?.policies) {
-      for (const policy of this.options.policies) {
-        this.registry.register(policy);
+  async onModuleInit() {
+    if (!this.options?.policies) return;
+
+    for (const policyOrClass of this.options.policies) {
+      if (typeof policyOrClass === 'function') {
+        // Class reference — resolve via DI
+        const instance = await this.moduleRef.resolve(policyOrClass);
+        this.registry.register(instance as AuthorizationPolicy);
+      } else {
+        // Instance — register directly
+        this.registry.register(policyOrClass);
       }
     }
   }

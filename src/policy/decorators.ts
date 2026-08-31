@@ -3,11 +3,14 @@ import { POLICY_KEY } from './constants';
 
 /**
  * @CheckPolicy('policyName') — invokes a named policy for authorization.
+ * @CheckPolicy(['policy1', 'policy2']) — invokes multiple policies (all must pass).
  * Can pass additional metadata for the policy context.
  *
  * @example
  * @CheckPolicy('canAccessResource')
- * @CheckPolicy('departmentAccess', { resource: 'report' })
+ * @CheckPolicy(['ownership', 'orgBoundary'], { resource: 'report' })
  */
-export const CheckPolicy = (policyName: string, metadata?: Record<string, any>) =>
-  SetMetadata(POLICY_KEY, { policyName, metadata });
+export const CheckPolicy = (nameOrNames: string | string[], metadata?: Record<string, any>) => {
+  const policyNames = Array.isArray(nameOrNames) ? nameOrNames : [nameOrNames];
+  return SetMetadata(POLICY_KEY, { policyNames, metadata });
+};

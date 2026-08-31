@@ -131,7 +131,20 @@ export class AlertService implements OnModuleInit, OnModuleDestroy {
         this.cooldowns.set(name, now);
         await this.sendAlert(payload, rule.channels);
       } else {
-        // Condition cleared — reset pending
+        // Condition cleared — send resolution if previously fired
+        const pendingEntry = this.pending.get(name);
+        if (pendingEntry?.fired) {
+          const payload: AlertPayload = {
+            severity: 'info',
+            title: `[RESOLVED] ${rule.name}`,
+            message: `${rule.metric} returned to normal (value: ${value}, threshold: ${rule.condition} ${rule.threshold})`,
+            metric: rule.metric,
+            value,
+            threshold: rule.threshold,
+            timestamp: new Date(),
+          };
+          await this.sendAlert(payload, rule.channels);
+        }
         this.pending.delete(name);
       }
     }

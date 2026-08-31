@@ -21,6 +21,20 @@ export class HealthController {
     @Optional() @Inject(ShutdownService) private readonly shutdownService?: ShutdownService,
   ) {}
 
+  @Get('healthz')
+  getLiveness() {
+    return { status: 'ok' };
+  }
+
+  @Get('readyz')
+  getReadiness() {
+    if (this.shutdownService?.isShuttingDownNow()) {
+      throw new ServiceUnavailableException('Shutting down');
+    }
+
+    return { status: 'ok' };
+  }
+
   @Get()
   @HealthCheck()
   async check(): Promise<HealthCheckResult> {

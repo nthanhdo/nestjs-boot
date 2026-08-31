@@ -1,14 +1,12 @@
 import { Model, FilterQuery, PipelineStage, Document, UpdateQuery } from 'mongoose';
+import {
+  IRepository,
+  PaginationOptions,
+  PaginatedResult,
+} from './repository.interface';
 
-/**
- * Paginated result set.
- */
-export interface PaginatedResult<T> {
-  data: T[];
-  total: number;
-  page: number;
-  limit: number;
-}
+// Re-export for backwards compatibility
+export type { PaginatedResult } from './repository.interface';
 
 /**
  * Options for findAll queries.
@@ -23,10 +21,13 @@ export interface FindAllOptions {
 /**
  * Generic base repository with reader/writer split.
  *
+ * Implements {@link IRepository} so Mongoose and Prisma repos share
+ * the same contract.
+ *
  * - All READ operations use the reader model (if available), else writer.
  * - All WRITE operations always use the writer model.
  */
-export class BaseRepository<T extends Document> {
+export class BaseRepository<T extends Document> implements IRepository<T> {
   protected readonly readerModel: Model<T> | null;
   protected readonly writerModel: Model<T>;
 
@@ -67,7 +68,18 @@ export class BaseRepository<T extends Document> {
       this.readModel.countDocuments(filter).exec(),
     ]);
 
-    return { data, total, page, limit };
+    return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  /**
+   * Find many documents matching filter with pagination.
+   * Satisfies the {@link IRepository} contract by delegating to {@link findAll}.
+   */
+  async findMany(
+    filter: Record<string, any>,
+    options?: PaginationOptions,
+  ): Promise<PaginatedResult<T>> {
+    return this.findAll(filter as FilterQuery<T>, options);
   }
 
   /**

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { of, throwError } from 'rxjs';
 import { MemoryAuditStore } from '../../src/audit/memory-audit.store';
 import { AuditService } from '../../src/audit/audit.service';
@@ -281,6 +282,7 @@ function createMockContext(request: Record<string, any> = {}) {
     switchToHttp: () => ({
       getRequest: () => request,
     }),
+    getHandler: () => () => {},
   } as any;
 }
 
@@ -288,7 +290,8 @@ describe('AuditInterceptor', () => {
   it('logs denial and re-throws ForbiddenException', async () => {
     const { service } = makeService();
     const logDenialSpy = vi.spyOn(service, 'logDenial').mockResolvedValue(undefined);
-    const interceptor = new AuditInterceptor(service);
+    const mockReflector = { get: vi.fn().mockReturnValue(undefined) } as unknown as Reflector;
+    const interceptor = new AuditInterceptor(service, mockReflector);
 
     const error = new ForbiddenException('no access');
     const ctx = createMockContext({ method: 'GET', url: '/secret', user: { sub: 'u1' }, headers: {} });
@@ -308,7 +311,8 @@ describe('AuditInterceptor', () => {
   it('logs denial on UnauthorizedException', async () => {
     const { service } = makeService();
     const logDenialSpy = vi.spyOn(service, 'logDenial').mockResolvedValue(undefined);
-    const interceptor = new AuditInterceptor(service);
+    const mockReflector = { get: vi.fn().mockReturnValue(undefined) } as unknown as Reflector;
+    const interceptor = new AuditInterceptor(service, mockReflector);
 
     const error = new UnauthorizedException();
     const ctx = createMockContext({ method: 'POST', url: '/admin', user: {}, headers: {} });
@@ -327,7 +331,8 @@ describe('AuditInterceptor', () => {
   it('does not log denial for other errors', async () => {
     const { service } = makeService();
     const logDenialSpy = vi.spyOn(service, 'logDenial').mockResolvedValue(undefined);
-    const interceptor = new AuditInterceptor(service);
+    const mockReflector = { get: vi.fn().mockReturnValue(undefined) } as unknown as Reflector;
+    const interceptor = new AuditInterceptor(service, mockReflector);
 
     const error = new Error('generic');
     const ctx = createMockContext({ method: 'GET', url: '/data', user: { sub: 'u' }, headers: {} });
@@ -345,7 +350,8 @@ describe('AuditInterceptor', () => {
 
   it('passes through successful responses unchanged', async () => {
     const { service } = makeService();
-    const interceptor = new AuditInterceptor(service);
+    const mockReflector = { get: vi.fn().mockReturnValue(undefined) } as unknown as Reflector;
+    const interceptor = new AuditInterceptor(service, mockReflector);
 
     const ctx = createMockContext({ user: {}, headers: {} });
     const handler = { handle: () => of({ data: 'ok' }) } as any;

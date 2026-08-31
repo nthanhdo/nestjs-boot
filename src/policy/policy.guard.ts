@@ -22,7 +22,7 @@ export class PolicyGuard implements CanActivate {
     ]);
     if (isPublic) return true;
 
-    const policyMeta = this.reflector.getAllAndOverride<{ policyName: string; metadata?: Record<string, any> }>(
+    const policyMeta = this.reflector.getAllAndOverride<{ policyNames: string[]; metadata?: Record<string, any> }>(
       POLICY_KEY,
       [context.getHandler(), context.getClass()],
     );
@@ -30,7 +30,14 @@ export class PolicyGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const authContext = await this.policyEngine.buildContext(request, policyMeta.metadata);
-    const result = await this.policyEngine.evaluate(policyMeta.policyName, authContext);
+
+    const { policyNames } = policyMeta;
+    let result;
+    if (policyNames.length === 1) {
+      result = await this.policyEngine.evaluate(policyNames[0], authContext);
+    } else {
+      result = await this.policyEngine.evaluateAll(policyNames, authContext);
+    }
 
     if (!result.allowed) {
       throw new ForbiddenException(result.reason ?? 'Policy denied access');

@@ -56,9 +56,14 @@ export interface AuthorizationPolicy {
   evaluate(context: AuthorizationContext): Promise<AuthorizationResult>;
 }
 
+/** A class that implements AuthorizationPolicy, for DI resolution */
+export interface AuthorizationPolicyClass {
+  new (...args: any[]): AuthorizationPolicy;
+}
+
 export interface PolicyModuleOptions {
-  /** Registered policies */
-  policies?: AuthorizationPolicy[];
+  /** Registered policies — instances or class references (resolved via DI) */
+  policies?: (AuthorizationPolicy | AuthorizationPolicyClass)[];
   /** Function to build AuthorizationContext from request + metadata */
   buildContext?: (request: any, metadata?: Record<string, any>) => AuthorizationContext | Promise<AuthorizationContext>;
   /** Default to deny if no policy matches. Default: true */

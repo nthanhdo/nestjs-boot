@@ -390,6 +390,18 @@ export async function createApp(
     app.useLogger(logger);
   }
 
+  // 7.5. Register InFlightInterceptor if shutdown is configured
+  if (validated.shutdown) {
+    try {
+      const { InFlightInterceptor } = require('./shutdown/in-flight.interceptor');
+      const { InFlightTracker } = require('./shutdown/in-flight-tracker');
+      const tracker = app.get(InFlightTracker);
+      app.useGlobalInterceptors(new InFlightInterceptor(tracker));
+    } catch {
+      // ShutdownModule not available — skip
+    }
+  }
+
   // 8. Apply global interceptors + filters
   applyGlobals(app, validated);
 

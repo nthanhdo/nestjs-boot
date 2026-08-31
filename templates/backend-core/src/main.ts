@@ -1,38 +1,67 @@
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, Logger } from '@nestjs/common';
+import { createApp } from 'nestjs-boot';
 import { AppModule } from './app.module';
-import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  const logger = new Logger('Bootstrap');
+  const app = await createApp(AppModule, {
+    // ── Database ──
+    database: {
+      connections: {
+        master: {
+          writerUri: process.env.DATABASE_URL ?? 'mongodb://localhost:27017/backend-core',
+        },
+      },
+    },
 
-  // Global validation pipe
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-    }),
-  );
+    // ── Auth ──
+    auth: {
+      jwt: {
+        secret: process.env.JWT_SECRET ?? 'dev-secret-change-in-production-32ch',
+        signOptions: { expiresIn: process.env.JWT_EXPIRES_IN ?? '1h' },
+        refreshSecret:
+          process.env.JWT_REFRESH_SECRET ?? 'dev-refresh-secret-change-32chars',
+        refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
+      },
+      rbac: {
+        enabled: true,
+        denyByDefault: true,
+        superAdmin: 'SUPER_ADMIN',
+        hierarchy: [
+          { name: 'SUPER_ADMIN', inherits: ['ADMIN'] },
+          { name: 'ADMIN', inherits: ['MANAGER'] },
+          { name: 'MANAGER', inherits: ['MODERATOR'] },
+          { name: 'MODERATOR', inherits: ['LEADER'] },
+          { name: 'LEADER', inherits: ['STAFF'] },
+          { name: 'STAFF', inherits: ['USER'] },
+          { name: 'USER' },
+        ],
+      },
+      loginTracker: {
+        maxAttempts: 5,
+        lockoutDuration: 15 * 60 * 1000,
+      },
+    },
 
-  // Global exception filter
-  app.useGlobalFilters(new GlobalExceptionFilter());
+    // ── Observability ──
+    correlation: {},
+    logging: { level: process.env.LOG_LEVEL ?? 'info' },
+    shutdown: { timeout: 10000 },
 
-  // CORS
-  app.enableCors({
-    origin: process.env.CORS_ORIGIN ?? '*',
-    credentials: true,
+    // ── API ──
+    swagger: {
+      enabled: process.env.NODE_ENV !== 'production',
+      path: '/api/docs',
+    },
+    versioning: { type: 'uri', defaultVersion: '1' },
+
+    // ── Response ──
+    response: {
+      envelope: true,
+      errorHandler: true,
+    },
   });
-
-  // API prefix
-  app.setGlobalPrefix('api/v1');
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
-  logger.log(`Application running on port ${port}`);
-  logger.log(`Swagger: http://localhost:${port}/api/docs`);
 }
 
 bootstrap();

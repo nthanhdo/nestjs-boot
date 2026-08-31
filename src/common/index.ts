@@ -6,6 +6,8 @@ export { BootException } from './boot-exception';
 export type { BootExceptionOptions } from './boot-exception';
 export { CrudService } from './crud.service';
 export type { CrudPaginatedResult, CrudFindAllOptions } from './crud.service';
+export { PrismaCrudService } from './prisma-crud.service';
+export type { PrismaCrudPaginatedResult, PrismaCrudFindAllOptions } from './prisma-crud.service';
 export { CrudController } from './crud.controller';
 export { ErrorCodes } from './error-codes';
 export type { ErrorCode } from './error-codes';

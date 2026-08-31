@@ -2,6 +2,8 @@ import { DynamicModule, Global, Module, Provider } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AUTH_OPTIONS } from './constants';
 import { AuthOptions } from './interfaces';
+import { RoleHierarchy } from './rbac/role-hierarchy';
+import { PERMISSION_STORE } from './rbac/permission-store';
 import { BootJwtService } from './services/jwt.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ApiKeyGuard } from './guards/api-key.guard';
@@ -53,6 +55,24 @@ export class AuthModule {
 
     // RBAC guards
     if (options.rbac?.enabled) {
+      // Optional: register PermissionStore if provided
+      if (options.rbac.permissionStore) {
+        providers.push({
+          provide: PERMISSION_STORE,
+          useValue: options.rbac.permissionStore,
+        });
+        exports.push(PERMISSION_STORE);
+      }
+
+      // Optional: register RoleHierarchy if hierarchy definitions provided
+      if (options.rbac.hierarchy) {
+        providers.push({
+          provide: RoleHierarchy,
+          useValue: new RoleHierarchy(options.rbac.hierarchy),
+        });
+        exports.push(RoleHierarchy);
+      }
+
       providers.push({
         provide: APP_GUARD,
         useClass: RolesGuard,

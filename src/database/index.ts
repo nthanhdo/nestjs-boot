@@ -24,3 +24,12 @@ export type { Migration, MigrationResult, MigrationStatus } from './migrations/m
 // Prisma (PostgreSQL)
 export { PrismaService, PrismaBaseRepository, PrismaModule, PRISMA_SERVICE } from './prisma';
 export type { PrismaModuleOptions, PrismaPaginationOptions, PrismaPaginatedResult } from './prisma';
+export {
+  SchemaRegistry,
+  DatabaseSchema,
+  DEFAULT_SCHEMA_MAP,
+  SCHEMA_REGISTRY,
+  MultiSchemaModule,
+  MULTI_SCHEMA_OPTIONS,
+} from './prisma';
+export type { SchemaRegistryOptions, MultiSchemaModuleOptions } from './prisma';

@@ -1,0 +1,409 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["masterdata", "metadata", "userdata", "analytics", "statistics"]
+}
+
+// ── masterdata ──────────────────────────────────────────────────────────────
+// Canonical definitions for roles, permissions, and org structure.
+// Rarely mutated. Referenced by all other schemas.
+
+model Role {
+  code        String   @id
+  name        String
+  description String?
+  level       Int
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  permissions  RolePermission[]
+  parentOf     RoleHierarchy[]  @relation("ParentRole")
+  childOf      RoleHierarchy[]  @relation("ChildRole")
+  userRoles    UserRole[]
+
+  @@map("roles")
+  @@schema("masterdata")
+}
+
+model Permission {
+  code        String   @id
+  name        String
+  description String?
+  resource    String
+  action      String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  rolePermissions  RolePermission[]
+  userPermissions  UserPermission[]
+  permissionUsage  PermissionUsage[]
+
+  @@map("permissions")
+  @@schema("masterdata")
+}
+
+model RolePermission {
+  roleCode       String @map("role_code")
+  permissionCode String @map("permission_code")
+
+  role       Role       @relation(fields: [roleCode], references: [code])
+  permission Permission @relation(fields: [permissionCode], references: [code])
+
+  @@id([roleCode, permissionCode])
+  @@map("role_permissions")
+  @@schema("masterdata")
+}
+
+model RoleHierarchy {
+  roleCode       String @map("role_code")
+  parentRoleCode String @map("parent_role_code")
+
+  role       Role @relation("ChildRole", fields: [roleCode], references: [code])
+  parentRole Role @relation("ParentRole", fields: [parentRoleCode], references: [code])
+
+  @@id([roleCode, parentRoleCode])
+  @@map("role_hierarchy")
+  @@schema("masterdata")
+}
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  departments     Department[]
+  teams           Team[]
+  orgMemberships  UserOrgMembership[]
+  auditEntries    AuditEntry[]
+
+  @@map("organizations")
+  @@schema("masterdata")
+}
+
+model Department {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  parentId       String?  @map("parent_id")
+  name           String
+  code           String
+  description    String?
+  isActive       Boolean  @default(true) @map("is_active")
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  parent         Department?       @relation("DepartmentChildren", fields: [parentId], references: [id])
+  children       Department[]      @relation("DepartmentChildren")
+  teams          Team[]
+  orgMemberships UserOrgMembership[]
+  auditEntries   AuditEntry[]
+
+  @@unique([organizationId, code])
+  @@map("departments")
+  @@schema("masterdata")
+}
+
+model Team {
+  id             String   @id @default(uuid())
+  departmentId   String   @map("department_id")
+  organizationId String   @map("organization_id")
+  name           String
+  code           String
+  description    String?
+  isActive       Boolean  @default(true) @map("is_active")
+  metadata       Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  department     Department        @relation(fields: [departmentId], references: [id])
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  orgMemberships UserOrgMembership[]
+
+  @@unique([departmentId, code])
+  @@map("teams")
+  @@schema("masterdata")
+}
+
+// ── metadata ────────────────────────────────────────────────────────────────
+// Machine-readable rule definitions consumed by the policy engine at runtime.
+
+model PermissionDefinition {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  category    String?
+  resource    String
+  action      String
+  description String?
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("permission_definitions")
+  @@schema("metadata")
+}
+
+model ScopeDefinition {
+  id             String  @id @default(uuid())
+  name           String  @unique
+  level          Int
+  description    String?
+  filterTemplate Json?   @map("filter_template")
+
+  @@map("scope_definitions")
+  @@schema("metadata")
+}
+
+model PolicyDefinition {
+  id              String   @id @default(uuid())
+  name            String   @unique
+  description     String?
+  evaluationOrder Int      @default(0) @map("evaluation_order")
+  isActive        Boolean  @default(true) @map("is_active")
+  config          Json?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("policy_definitions")
+  @@schema("metadata")
+}
+
+// ── userdata ────────────────────────────────────────────────────────────────
+// All user-owned state: accounts, role assignments, session tokens, memberships.
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String   @map("password_hash")
+  name          String?
+  emailVerified Boolean  @default(false) @map("email_verified")
+  status        String   @default("ACTIVE")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  roles              UserRole[]
+  permissions        UserPermission[]
+  orgMemberships     UserOrgMembership[]
+  refreshTokens      RefreshToken[]
+  sessions           Session[]
+  auditEntries       AuditEntry[]
+  securityEvents     SecurityEvent[]
+  assignedRoles      UserRole[]         @relation("AssignedBy")
+  grantedPermissions UserPermission[]   @relation("GrantedBy")
+
+  @@map("users")
+  @@schema("userdata")
+}
+
+model UserRole {
+  userId     String   @map("user_id")
+  roleCode   String   @map("role_code")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  assignedBy String?  @map("assigned_by")
+
+  user       User @relation(fields: [userId], references: [id])
+  assigner   User? @relation("AssignedBy", fields: [assignedBy], references: [id])
+
+  @@id([userId, roleCode])
+  @@map("user_roles")
+  @@schema("userdata")
+}
+
+model UserPermission {
+  userId         String   @map("user_id")
+  permissionCode String   @map("permission_code")
+  grantedAt      DateTime @default(now()) @map("granted_at")
+  grantedBy      String?  @map("granted_by")
+
+  user       User       @relation(fields: [userId], references: [id])
+  granter    User?      @relation("GrantedBy", fields: [grantedBy], references: [id])
+  permission Permission @relation(fields: [permissionCode], references: [code])
+
+  @@id([userId, permissionCode])
+  @@map("user_permissions")
+  @@schema("userdata")
+}
+
+model UserOrgMembership {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  organizationId String   @map("organization_id")
+  departmentId   String?  @map("department_id")
+  teamId         String?  @map("team_id")
+  role           String?
+  joinedAt       DateTime @default(now()) @map("joined_at")
+
+  user         User         @relation(fields: [userId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  department   Department?  @relation(fields: [departmentId], references: [id])
+  team         Team?        @relation(fields: [teamId], references: [id])
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@index([departmentId])
+  @@index([teamId])
+  @@map("user_org_memberships")
+  @@schema("userdata")
+}
+
+model RefreshToken {
+  tokenId   String   @id @map("token_id")
+  familyId  String   @map("family_id")
+  userId    String   @map("user_id")
+  used      Boolean  @default(false)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([familyId])
+  @@index([userId])
+  @@map("refresh_tokens")
+  @@schema("userdata")
+}
+
+model Session {
+  sessionId      String  @id @map("session_id")
+  userId         String? @map("user_id")
+  data           Json?
+  ipAddress      String? @map("ip_address")
+  userAgent      String? @map("user_agent")
+  createdAt      BigInt? @map("created_at")
+  lastAccessedAt BigInt? @map("last_accessed_at")
+  expiresAt      BigInt? @map("expires_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("sessions")
+  @@schema("userdata")
+}
+
+// ── analytics ───────────────────────────────────────────────────────────────
+// Append-only audit trail and security events. Write-once, never updated.
+
+model AuditEntry {
+  id             String   @id @default(uuid())
+  actorId        String   @map("actor_id")
+  action         String
+  resource       String?
+  resourceId     String?  @map("resource_id")
+  result         String
+  organizationId String?  @map("organization_id")
+  departmentId   String?  @map("department_id")
+  ipAddress      String?  @map("ip_address")
+  userAgent      String?  @map("user_agent")
+  timestamp      DateTime
+  metadata       Json?
+
+  actor        User          @relation(fields: [actorId], references: [id])
+  organization Organization? @relation(fields: [organizationId], references: [id])
+  department   Department?   @relation(fields: [departmentId], references: [id])
+
+  @@index([actorId])
+  @@index([action])
+  @@index([resource])
+  @@index([timestamp])
+  @@index([organizationId])
+  @@map("audit_entries")
+  @@schema("analytics")
+}
+
+model SecurityEvent {
+  id          String   @id @default(uuid())
+  type        String
+  severity    String
+  actorId     String?  @map("actor_id")
+  description String
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  timestamp   DateTime
+  metadata    Json?
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([type])
+  @@index([severity])
+  @@index([actorId])
+  @@index([timestamp])
+  @@map("security_events")
+  @@schema("analytics")
+}
+
+model LoginAttempt {
+  identifier     String    @id
+  failureCount   Int       @default(0) @map("failure_count")
+  lockedUntil    DateTime? @map("locked_until")
+  lastAttemptAt  DateTime? @map("last_attempt_at")
+
+  @@map("login_attempts")
+  @@schema("analytics")
+}
+
+// ── statistics ──────────────────────────────────────────────────────────────
+// Pre-aggregated counters and latency metrics. Materialized periodically.
+
+model AccessStat {
+  id          String   @id @default(uuid())
+  schemaName  String   @map("schema_name")
+  tableName   String   @map("table_name")
+  action      String
+  count       BigInt   @default(0)
+  period      String
+  periodStart DateTime @map("period_start")
+  createdAt   DateTime @map("created_at")
+
+  @@map("access_stats")
+  @@schema("statistics")
+}
+
+model PermissionUsage {
+  id             String    @id @default(uuid())
+  permissionCode String    @map("permission_code")
+  usageCount     BigInt    @default(0) @map("usage_count")
+  lastUsedAt     DateTime? @map("last_used_at")
+  grantedCount   Int       @default(0) @map("granted_count")
+  period         String
+  periodStart    DateTime  @map("period_start")
+
+  permission Permission @relation(fields: [permissionCode], references: [code])
+
+  @@map("permission_usage")
+  @@schema("statistics")
+}
+
+model ScopeHit {
+  id           String   @id @default(uuid())
+  scope        String
+  hitCount     BigInt   @default(0) @map("hit_count")
+  denyCount    BigInt   @default(0) @map("deny_count")
+  avgResolveMs Float?   @map("avg_resolve_ms")
+  period       String
+  periodStart  DateTime @map("period_start")
+
+  @@map("scope_hits")
+  @@schema("statistics")
+}
+
+model PolicyEvaluation {
+  id             String   @id @default(uuid())
+  policyName     String   @map("policy_name")
+  totalCount     BigInt   @default(0) @map("total_count")
+  allowCount     BigInt   @default(0) @map("allow_count")
+  denyCount      BigInt   @default(0) @map("deny_count")
+  errorCount     BigInt   @default(0) @map("error_count")
+  avgEvaluateMs  Float?   @map("avg_evaluate_ms")
+  period         String
+  periodStart    DateTime @map("period_start")
+
+  @@map("policy_evaluations")
+  @@schema("statistics")
+}

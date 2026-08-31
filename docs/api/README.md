@@ -18,7 +18,7 @@
 
 | Module | Description |
 |--------|-------------|
-| [Database](database.md) | Multi-connection MongoDB, reader/writer split, repositories |
+| [Database](database.md) | Multi-connection MongoDB, reader/writer split, repositories; Prisma/PostgreSQL adapter |
 | [Cache](cache.md) | Multi-layer cache (memory + Redis + Memcached), stampede guard |
 | [Queue](queue.md) | BullMQ job queues with decorator-based processors |
 | [CQRS](cqrs.md) | Command bus, event sourcing, sagas, outbox pattern |
@@ -28,7 +28,10 @@
 
 | Module | Description |
 |--------|-------------|
-| [Auth](auth.md) | JWT, API key, RBAC, social login, TOTP, sessions |
+| [Auth](auth.md) | JWT, API key, RBAC, social login, TOTP, sessions, token store, login tracker, privilege boundary, role manager |
+| [Scope](scope.md) | Scope-based data access control (own → team → department → organization → system) |
+| [Policy](policy.md) | Named policy engine for resource-level authorization |
+| [Audit](audit.md) | Structured audit logging and security event tracking |
 | [Inter-Service Auth](inter-service-auth.md) | Service-to-service auth context propagation |
 | [Tenancy](tenancy.md) | Multi-tenancy (row/schema/database isolation) |
 
@@ -61,6 +64,7 @@
 
 | Module | Description |
 |--------|-------------|
+| [Organizations](organizations.md) | Org/department/team hierarchy with membership management |
 | [Contracts](contracts.md) | Service contract definitions and validation |
 | [Layers](layers.md) | Architectural layer enforcement |
 | [Resilience](resilience.md) | Circuit breaker, retry, timeout decorators |

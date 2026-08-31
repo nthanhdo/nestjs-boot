@@ -19,11 +19,10 @@ const PKG = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-
 
 // ── Option definitions ──────────────────────────────────────────────
 
-// Only MongoDB is supported by BootOptions/DatabaseModule at runtime.
-// TODO: Multi-DB support (PostgreSQL, MySQL, DynamoDB, Elasticsearch) is on the roadmap.
 const DB_OPTIONS = [
-  { value: 'mongodb',        label: 'MongoDB (Mongoose)',    hint: 'default' },
-  { value: 'none',           label: 'None' },
+  { value: 'mongodb',  label: 'MongoDB (Mongoose)',    hint: 'default' },
+  { value: 'postgres', label: 'PostgreSQL (Prisma)' },
+  { value: 'none',     label: 'None' },
 ];
 
 const CACHE_OPTIONS = [
@@ -81,7 +80,7 @@ ${pc.bold('nestjs-boot')} ${pc.dim(`v${PKG.version}`)}
 ${pc.bold('Usage:')} nestjs-boot new <project-name> [options]
 
 ${pc.bold('Options:')}
-  --db=<type>         Database: mongodb, none
+  --db=<type>         Database: mongodb, postgres, none
   --cache=<type>      Cache: redis, memcached, none
   --auth=<type>       Auth: jwt, none
   --transport=<type>  Transport: http, grpc, tcp, nats, rabbitmq
@@ -324,6 +323,21 @@ function createProject(config) {
     createdFiles.push(`scripts/${script}`);
   }
 
+  // Generate prisma/schema.prisma for postgres projects
+  if (db === 'postgres') {
+    const prismaSchema = `generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+`;
+    writeFile(join(projectDir, 'prisma', 'schema.prisma'), prismaSchema);
+    createdFiles.push('prisma/schema.prisma');
+  }
+
   // Copy .env.example → .env
   const envContent = loadTemplate('.env.example.tpl');
   writeFile(join(projectDir, '.env'), renderTemplate(envContent, vars));
@@ -354,7 +368,8 @@ function printNextSteps(config) {
   const { name, db, cache } = config;
 
   const dockerServices = [];
-  if (db !== 'none') dockerServices.push('MongoDB');
+  if (db === 'mongodb') dockerServices.push('MongoDB');
+  if (db === 'postgres') dockerServices.push('PostgreSQL');
   if (cache !== 'none') dockerServices.push(cache === 'redis' ? 'Redis' : 'Memcached');
 
   console.log('');
@@ -386,6 +401,7 @@ function printNextSteps(config) {
 
 function generateAuth() {
   const dir = join(process.cwd(), 'src', 'auth');
+  const driver = detectDbDriver();
 
   if (existsSync(dir)) {
     console.error(pc.red('Error: directory "src/auth" already exists.'));
@@ -394,41 +410,7 @@ function generateAuth() {
 
   mkdirSync(dir, { recursive: true });
 
-  // File 1: user.schema.ts
-  writeFile(join(dir, 'user.schema.ts'), `import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
-
-export type UserDocument = User & Document;
-
-@Schema({ timestamps: true, collection: 'users' })
-export class User {
-  @Prop({ required: true, unique: true, lowercase: true, trim: true })
-  email: string;
-
-  @Prop({ required: true })
-  passwordHash: string;
-
-  @Prop({ trim: true })
-  name: string;
-
-  @Prop({ type: [String], default: ['user'] })
-  roles: string[];
-
-  @Prop({ type: [String], default: [] })
-  permissions: string[];
-
-  @Prop()
-  refreshToken?: string;
-
-  @Prop({ default: false })
-  emailVerified: boolean;
-}
-
-export const UserSchema = SchemaFactory.createForClass(User);
-UserSchema.index({ email: 1 }, { unique: true });
-`);
-
-  // File 2: auth.dto.ts
+  // File: auth.dto.ts (shared between drivers)
   writeFile(join(dir, 'auth.dto.ts'), `import { IsEmail, IsString, IsNotEmpty, MinLength, IsOptional } from 'class-validator';
 
 export class RegisterDto {
@@ -476,7 +458,277 @@ export class ResetPasswordDto {
 }
 `);
 
-  // File 3: auth.service.ts
+  // File: auth.controller.ts (shared between drivers)
+  writeFile(join(dir, 'auth.controller.ts'), `import { Controller, Post, Get, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Public, CurrentUser } from 'nestjs-boot';
+import { AuthService } from './auth.service';
+import { RegisterDto, LoginDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto } from './auth.dto';
+
+@Controller('auth')
+export class AuthController {
+  constructor(private readonly authService: AuthService) {}
+
+  @Public()
+  @Post('register')
+  register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto.email, dto.password, dto.name);
+  }
+
+  @Public()
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  login(@Body() dto: LoginDto) {
+    return this.authService.login(dto.email, dto.password);
+  }
+
+  @Public()
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  refresh(@Body() dto: RefreshTokenDto) {
+    return this.authService.refreshToken(dto.refreshToken);
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  logout(@CurrentUser('sub') userId: string) {
+    return this.authService.logout(userId);
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto.token, dto.newPassword);
+  }
+
+  @Get('me')
+  getProfile(@CurrentUser('sub') userId: string) {
+    return this.authService.getProfile(userId);
+  }
+}
+`);
+
+  // File: auth.spec.ts (shared between drivers)
+  writeFile(join(dir, 'auth.spec.ts'), `import { describe, it, expect } from 'vitest';
+import { createTestApp, createTestClient } from 'nestjs-boot/testing';
+import { UserAuthModule } from './auth.module';
+
+describe('Auth', () => {
+  it('should register and login', async () => {
+    const app = await createTestApp({ imports: [UserAuthModule] });
+    const client = createTestClient(app);
+
+    const registerRes = await client.post('/auth/register').send({
+      email: 'test@example.com',
+      password: 'password123',
+      name: 'Test User',
+    });
+    expect(registerRes.status).toBe(201);
+    expect(registerRes.body.email).toBe('test@example.com');
+
+    const loginRes = await client.post('/auth/login').send({
+      email: 'test@example.com',
+      password: 'password123',
+    });
+    expect(loginRes.status).toBe(200);
+    expect(loginRes.body.accessToken).toBeDefined();
+    expect(loginRes.body.refreshToken).toBeDefined();
+
+    await app.close();
+  });
+});
+`);
+
+  if (driver === 'prisma') {
+    // Prisma auth service — uses PrismaService instead of Mongoose
+    writeFile(join(dir, 'auth.service.ts'), `import { Injectable, UnauthorizedException, ConflictException, Logger } from '@nestjs/common';
+import { PrismaService, BootJwtService } from 'nestjs-boot';
+
+let bcrypt: any;
+try {
+  bcrypt = require('bcrypt');
+} catch {
+  try {
+    bcrypt = require('bcryptjs');
+  } catch {
+    throw new Error('Auth requires bcrypt or bcryptjs. Install one: npm i bcrypt');
+  }
+}
+
+@Injectable()
+export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+  private readonly SALT_ROUNDS = 10;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwt: BootJwtService,
+  ) {}
+
+  async register(email: string, password: string, name?: string) {
+    const existing = await this.prisma.client.user.findUnique({ where: { email: email.toLowerCase() } });
+    if (existing) throw new ConflictException('Email already registered');
+
+    const passwordHash = await bcrypt.hash(password, this.SALT_ROUNDS);
+    const user = await this.prisma.client.user.create({
+      data: { email: email.toLowerCase(), passwordHash, name },
+    });
+
+    return { id: user.id, email: user.email, name: user.name, roles: user.roles };
+  }
+
+  async login(email: string, password: string) {
+    const user = await this.prisma.client.user.findUnique({ where: { email: email.toLowerCase() } });
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) throw new UnauthorizedException('Invalid credentials');
+
+    const payload = { sub: user.id, email: user.email, roles: user.roles, permissions: user.permissions };
+    const accessToken = this.jwt.sign(payload);
+    const refreshToken = this.jwt.signRefresh(payload);
+
+    await this.prisma.client.user.update({ where: { id: user.id }, data: { refreshToken } });
+
+    return {
+      accessToken,
+      refreshToken,
+      user: { id: user.id, email: user.email, name: user.name, roles: user.roles },
+    };
+  }
+
+  async refreshToken(oldRefreshToken: string) {
+    const { accessToken, refreshToken } = this.jwt.rotateRefreshToken(oldRefreshToken);
+    const decoded = this.jwt.verifyRefresh<{ sub: string }>(refreshToken);
+    await this.prisma.client.user.updateMany({
+      where: { id: decoded.sub, refreshToken: oldRefreshToken },
+      data: { refreshToken },
+    });
+    return { accessToken, refreshToken };
+  }
+
+  async logout(userId: string) {
+    await this.prisma.client.user.update({ where: { id: userId }, data: { refreshToken: null } });
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.prisma.client.user.findUnique({ where: { email: email.toLowerCase() } });
+    if (!user) return; // Silent — don't reveal user existence
+
+    const token = this.jwt.signPasswordReset(user.id);
+    const resetUrl = \`/auth/reset-password?token=\${token}\`;
+
+    // TODO: Replace with your email provider (SendGrid, SES, etc.)
+    this.logger.warn('========================================');
+    this.logger.warn('PASSWORD RESET TOKEN (dev mode)');
+    this.logger.warn(\`User: \${email}\`);
+    this.logger.warn(\`Token: \${token}\`);
+    this.logger.warn(\`URL: \${resetUrl}\`);
+    this.logger.warn('========================================');
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const { sub } = this.jwt.verifyPasswordReset(token);
+    const passwordHash = await bcrypt.hash(newPassword, this.SALT_ROUNDS);
+    await this.prisma.client.user.update({ where: { id: sub }, data: { passwordHash, refreshToken: null } });
+  }
+
+  async getProfile(userId: string) {
+    const user = await this.prisma.client.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true, roles: true, permissions: true, emailVerified: true, createdAt: true },
+    });
+    if (!user) throw new UnauthorizedException('User not found');
+    return user;
+  }
+}
+`);
+
+    // Prisma auth module — no MongooseModule.forFeature
+    writeFile(join(dir, 'auth.module.ts'), `import { Module } from '@nestjs/common';
+import { AuthService } from './auth.service';
+import { AuthController } from './auth.controller';
+
+@Module({
+  controllers: [AuthController],
+  providers: [AuthService],
+  exports: [AuthService],
+})
+export class UserAuthModule {}
+`);
+
+    const prismaFiles = [
+      'src/auth/auth.dto.ts',
+      'src/auth/auth.service.ts',
+      'src/auth/auth.controller.ts',
+      'src/auth/auth.module.ts',
+      'src/auth/auth.spec.ts',
+    ];
+
+    console.log('');
+    console.log(pc.green(pc.bold('Auth module generated! (Prisma)')));
+    console.log('');
+    for (const f of prismaFiles) {
+      console.log(`  ${pc.dim('created')} ${f}`);
+    }
+    console.log('');
+    console.log(`  ${pc.cyan('Next steps:')}`);
+    console.log(`    1. Install: npm i bcrypt && npm i -D @types/bcrypt`);
+    console.log(`       (or: npm i bcryptjs && npm i -D @types/bcryptjs)`);
+    console.log(`    2. Add User model to prisma/schema.prisma with fields:`);
+    console.log(`       id, email, passwordHash, name, roles, permissions, refreshToken, emailVerified, createdAt, updatedAt`);
+    console.log(`    3. Run: npx prisma generate && npx prisma migrate dev`);
+    console.log(`    4. Import UserAuthModule in your AppModule`);
+    console.log(`    5. Ensure BootJwtModule is configured in your AppModule`);
+    console.log(`    6. Replace the forgotPassword console.warn with your email provider`);
+    console.log('');
+    return;
+  }
+
+  // Mongoose auth path (default)
+
+  // File: user.schema.ts
+  writeFile(join(dir, 'user.schema.ts'), `import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
+
+export type UserDocument = User & Document;
+
+@Schema({ timestamps: true, collection: 'users' })
+export class User {
+  @Prop({ required: true, unique: true, lowercase: true, trim: true })
+  email: string;
+
+  @Prop({ required: true })
+  passwordHash: string;
+
+  @Prop({ trim: true })
+  name: string;
+
+  @Prop({ type: [String], default: ['user'] })
+  roles: string[];
+
+  @Prop({ type: [String], default: [] })
+  permissions: string[];
+
+  @Prop()
+  refreshToken?: string;
+
+  @Prop({ default: false })
+  emailVerified: boolean;
+}
+
+export const UserSchema = SchemaFactory.createForClass(User);
+UserSchema.index({ email: 1 }, { unique: true });
+`);
+
+  // File: auth.service.ts
   writeFile(join(dir, 'auth.service.ts'), `import { Injectable, UnauthorizedException, ConflictException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -585,64 +837,7 @@ export class AuthService {
 }
 `);
 
-  // File 4: auth.controller.ts
-  writeFile(join(dir, 'auth.controller.ts'), `import { Controller, Post, Get, Body, HttpCode, HttpStatus } from '@nestjs/common';
-import { Public, CurrentUser } from 'nestjs-boot';
-import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto, RefreshTokenDto, ForgotPasswordDto, ResetPasswordDto } from './auth.dto';
-
-@Controller('auth')
-export class AuthController {
-  constructor(private readonly authService: AuthService) {}
-
-  @Public()
-  @Post('register')
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto.email, dto.password, dto.name);
-  }
-
-  @Public()
-  @Post('login')
-  @HttpCode(HttpStatus.OK)
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto.email, dto.password);
-  }
-
-  @Public()
-  @Post('refresh')
-  @HttpCode(HttpStatus.OK)
-  refresh(@Body() dto: RefreshTokenDto) {
-    return this.authService.refreshToken(dto.refreshToken);
-  }
-
-  @Post('logout')
-  @HttpCode(HttpStatus.OK)
-  logout(@CurrentUser('sub') userId: string) {
-    return this.authService.logout(userId);
-  }
-
-  @Public()
-  @Post('forgot-password')
-  @HttpCode(HttpStatus.OK)
-  forgotPassword(@Body() dto: ForgotPasswordDto) {
-    return this.authService.forgotPassword(dto.email);
-  }
-
-  @Public()
-  @Post('reset-password')
-  @HttpCode(HttpStatus.OK)
-  resetPassword(@Body() dto: ResetPasswordDto) {
-    return this.authService.resetPassword(dto.token, dto.newPassword);
-  }
-
-  @Get('me')
-  getProfile(@CurrentUser('sub') userId: string) {
-    return this.authService.getProfile(userId);
-  }
-}
-`);
-
-  // File 5: auth.module.ts
+  // File: auth.module.ts
   writeFile(join(dir, 'auth.module.ts'), `import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './user.schema';
@@ -658,37 +853,6 @@ import { AuthController } from './auth.controller';
   exports: [AuthService],
 })
 export class UserAuthModule {}
-`);
-
-  // File 6: auth.spec.ts
-  writeFile(join(dir, 'auth.spec.ts'), `import { describe, it, expect } from 'vitest';
-import { createTestApp, createTestClient } from 'nestjs-boot/testing';
-import { UserAuthModule } from './auth.module';
-
-describe('Auth', () => {
-  it('should register and login', async () => {
-    const app = await createTestApp({ imports: [UserAuthModule] });
-    const client = createTestClient(app);
-
-    const registerRes = await client.post('/auth/register').send({
-      email: 'test@example.com',
-      password: 'password123',
-      name: 'Test User',
-    });
-    expect(registerRes.status).toBe(201);
-    expect(registerRes.body.email).toBe('test@example.com');
-
-    const loginRes = await client.post('/auth/login').send({
-      email: 'test@example.com',
-      password: 'password123',
-    });
-    expect(loginRes.status).toBe(200);
-    expect(loginRes.body.accessToken).toBeDefined();
-    expect(loginRes.body.refreshToken).toBeDefined();
-
-    await app.close();
-  });
-});
 `);
 
   const files = [
@@ -716,12 +880,25 @@ describe('Auth', () => {
   console.log('');
 }
 
+function detectDbDriver() {
+  // Check if prisma/ directory exists (Prisma project)
+  if (existsSync(join(process.cwd(), 'prisma'))) return 'prisma';
+  // Check package.json for mongoose or @prisma/client
+  try {
+    const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf-8'));
+    if (pkg.dependencies?.['@prisma/client']) return 'prisma';
+    if (pkg.dependencies?.mongoose) return 'mongoose';
+  } catch {}
+  return 'mongoose'; // default
+}
+
 function generateResource(name, flags = {}) {
   const pascal = name.charAt(0).toUpperCase() + name.slice(1);
   const lower = name.toLowerCase();
   const dir = join(process.cwd(), 'src', lower);
   const isCrud = flags.crud !== false; // default: full CRUD
   const isMinimal = flags.minimal === true;
+  const driver = detectDbDriver();
 
   if (existsSync(dir)) {
     console.error(pc.red(`Error: directory "src/${lower}" already exists.`));
@@ -730,28 +907,7 @@ function generateResource(name, flags = {}) {
 
   mkdirSync(dir, { recursive: true });
 
-  // Schema — Mongoose with timestamps + indexes
-  writeFile(join(dir, `${lower}.schema.ts`), `import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
-
-export type ${pascal}Document = ${pascal} & Document;
-
-@Schema({ timestamps: true, collection: '${lower}s' })
-export class ${pascal} {
-  @Prop({ required: true, index: true })
-  name: string;
-
-  @Prop({ default: true })
-  isActive: boolean;
-}
-
-export const ${pascal}Schema = SchemaFactory.createForClass(${pascal});
-
-// Compound indexes
-${pascal}Schema.index({ name: 1, isActive: 1 });
-`);
-
-  // DTO — with class-validator decorators
+  // DTO — with class-validator decorators (shared between drivers)
   writeFile(join(dir, `${lower}.dto.ts`), `import { IsString, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
 
 export class Create${pascal}Dto {
@@ -773,6 +929,201 @@ export class Update${pascal}Dto {
   @IsOptional()
   isActive?: boolean;
 }
+`);
+
+  if (driver === 'prisma') {
+    // Prisma path — no schema.ts file
+
+    if (isMinimal) {
+      writeFile(join(dir, `${lower}.service.ts`), `import { Injectable } from '@nestjs/common';
+import { PrismaService } from 'nestjs-boot';
+
+@Injectable()
+export class ${pascal}Service {
+  constructor(private readonly prisma: PrismaService) {}
+}
+`);
+
+      writeFile(join(dir, `${lower}.module.ts`), `import { Module } from '@nestjs/common';
+import { ${pascal}Service } from './${lower}.service';
+
+@Module({
+  providers: [${pascal}Service],
+  exports: [${pascal}Service],
+})
+export class ${pascal}Module {}
+`);
+
+      const files = [
+        `src/${lower}/${lower}.dto.ts`,
+        `src/${lower}/${lower}.service.ts`,
+        `src/${lower}/${lower}.module.ts`,
+      ];
+
+      console.log('');
+      console.log(pc.green(pc.bold(`Resource "${lower}" generated! (minimal, Prisma)`)));
+      console.log('');
+      for (const f of files) {
+        console.log(`  ${pc.dim('created')} ${f}`);
+      }
+      console.log('');
+      console.log(`  ${pc.cyan('Next:')}`);
+      console.log(`    1. Add ${lower} model to prisma/schema.prisma`);
+      console.log(`    2. Run: npx prisma generate`);
+      console.log(`    3. Import ${pascal}Module in your AppModule`);
+      console.log('');
+      return;
+    }
+
+    // Full Prisma resource
+    writeFile(join(dir, `${lower}.service.ts`), `import { Injectable } from '@nestjs/common';
+import { PrismaService } from 'nestjs-boot';
+
+@Injectable()
+export class ${pascal}Service {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async findAll() {
+    return this.prisma.client.${lower}.findMany();
+  }
+
+  async findById(id: string) {
+    return this.prisma.client.${lower}.findUnique({ where: { id } });
+  }
+
+  async create(data: any) {
+    return this.prisma.client.${lower}.create({ data });
+  }
+
+  async update(id: string, data: any) {
+    return this.prisma.client.${lower}.update({ where: { id }, data });
+  }
+
+  async delete(id: string) {
+    return this.prisma.client.${lower}.delete({ where: { id } });
+  }
+}
+`);
+
+    writeFile(join(dir, `${lower}.controller.ts`), `import { Controller, Get, Post, Put, Delete, Body, Param, Query } from '@nestjs/common';
+import { Public, Roles } from 'nestjs-boot';
+import { ${pascal}Service } from './${lower}.service';
+import { Create${pascal}Dto, Update${pascal}Dto } from './${lower}.dto';
+
+@Controller('${lower}s')
+export class ${pascal}Controller {
+  constructor(private readonly service: ${pascal}Service) {}
+
+  @Post()
+  create(@Body() dto: Create${pascal}Dto) {
+    return this.service.create(dto);
+  }
+
+  @Public()
+  @Get()
+  findAll() {
+    return this.service.findAll();
+  }
+
+  @Public()
+  @Get(':id')
+  findById(@Param('id') id: string) {
+    return this.service.findById(id);
+  }
+
+  @Put(':id')
+  update(@Param('id') id: string, @Body() dto: Update${pascal}Dto) {
+    return this.service.update(id, dto);
+  }
+
+  @Roles('admin')
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.service.delete(id);
+  }
+}
+`);
+
+    writeFile(join(dir, `${lower}.module.ts`), `import { Module } from '@nestjs/common';
+import { ${pascal}Service } from './${lower}.service';
+import { ${pascal}Controller } from './${lower}.controller';
+
+@Module({
+  controllers: [${pascal}Controller],
+  providers: [${pascal}Service],
+  exports: [${pascal}Service],
+})
+export class ${pascal}Module {}
+`);
+
+    writeFile(join(dir, `${lower}.spec.ts`), `import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { createTestApp } from 'nestjs-boot/testing';
+import type { TestAppContext } from 'nestjs-boot/testing';
+import { ${pascal}Module } from './${lower}.module';
+import { ${pascal}Service } from './${lower}.service';
+
+describe('${pascal}Service', () => {
+  let ctx: TestAppContext;
+  let service: ${pascal}Service;
+
+  beforeAll(async () => {
+    ctx = await createTestApp(${pascal}Module);
+    service = ctx.app.get(${pascal}Service);
+  });
+
+  afterAll(async () => {
+    await ctx.cleanup();
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+});
+`);
+
+    console.log('');
+    console.log(pc.green(pc.bold(`Resource "${lower}" generated! (Prisma)`)));
+    console.log('');
+    const prismaFiles = [
+      `src/${lower}/${lower}.dto.ts`,
+      `src/${lower}/${lower}.service.ts`,
+      `src/${lower}/${lower}.controller.ts`,
+      `src/${lower}/${lower}.module.ts`,
+      `src/${lower}/${lower}.spec.ts`,
+    ];
+    for (const f of prismaFiles) {
+      console.log(`  ${pc.dim('created')} ${f}`);
+    }
+    console.log('');
+    console.log(`  ${pc.cyan('Next:')}`);
+    console.log(`    1. Add ${lower} model to prisma/schema.prisma`);
+    console.log(`    2. Run: npx prisma generate`);
+    console.log(`    3. Import ${pascal}Module in your AppModule`);
+    console.log('');
+    return;
+  }
+
+  // Mongoose path (default)
+
+  // Schema — Mongoose with timestamps + indexes
+  writeFile(join(dir, `${lower}.schema.ts`), `import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
+
+export type ${pascal}Document = ${pascal} & Document;
+
+@Schema({ timestamps: true, collection: '${lower}s' })
+export class ${pascal} {
+  @Prop({ required: true, index: true })
+  name: string;
+
+  @Prop({ default: true })
+  isActive: boolean;
+}
+
+export const ${pascal}Schema = SchemaFactory.createForClass(${pascal});
+
+// Compound indexes
+${pascal}Schema.index({ name: 1, isActive: 1 });
 `);
 
   if (isMinimal) {

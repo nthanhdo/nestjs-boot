@@ -42,8 +42,13 @@ export class RolesGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    // No @Roles() decorator → no restriction
-    if (!requiredRoles || requiredRoles.length === 0) return true;
+    // No @Roles() decorator — deny-by-default or pass through
+    if (!requiredRoles || requiredRoles.length === 0) {
+      if (this.authOptions.rbac?.denyByDefault) {
+        throw new ForbiddenException('Access denied: no roles defined for this route');
+      }
+      return true;
+    }
 
     const request = context.switchToHttp().getRequest();
     const extractRoles = this.authOptions.rbac?.extractRoles

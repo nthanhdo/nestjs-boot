@@ -43,8 +43,13 @@ export class PermissionsGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    // No @Permissions() decorator → no restriction
-    if (!requiredPermissions || requiredPermissions.length === 0) return true;
+    // No @Permissions() decorator — deny-by-default or pass through
+    if (!requiredPermissions || requiredPermissions.length === 0) {
+      if (this.authOptions.rbac?.denyByDefault) {
+        throw new ForbiddenException('Access denied: no permissions defined for this route');
+      }
+      return true;
+    }
 
     const request = context.switchToHttp().getRequest();
 

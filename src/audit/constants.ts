@@ -1,0 +1,2 @@
+export const AUDIT_STORE = 'BOOT_AUDIT_STORE';
+export const AUDIT_OPTIONS = 'BOOT_AUDIT_OPTIONS';

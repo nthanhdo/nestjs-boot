@@ -574,6 +574,287 @@ interface SocialProviderConfig {
 
 ---
 
+## Token Store
+
+### `TokenStore` interface
+
+> Pluggable storage for refresh token family tracking and reuse detection.
+
+```ts
+interface TokenStore {
+  storeToken(tokenId: string, familyId: string, userId: string, expiresAt: Date): Promise<void>;
+  getToken(tokenId: string): Promise<{ familyId: string; userId: string; used: boolean } | null>;
+  markUsed(tokenId: string): Promise<void>;
+  revokeFamily(familyId: string): Promise<void>;
+  isFamilyRevoked(familyId: string): Promise<boolean>;
+  revokeAllForUser(userId: string): Promise<void>;
+}
+```
+
+Each refresh token has a `tokenId` (unique per token) and a `familyId` (shared within a rotation chain). When a token is used to obtain a new access token, it is marked as `used` via `markUsed()` and a new token in the same family is issued. If a `used` token is presented again (reuse detected), `revokeFamily()` invalidates the entire chain.
+
+Inject via the `TOKEN_STORE` token (`'BOOT_TOKEN_STORE'`).
+
+### `MemoryTokenStore`
+
+> In-memory `TokenStore` implementation. **Not for production** — state resets on restart.
+
+Handles token expiry automatically: expired tokens are evicted on `getToken()` calls.
+
+```ts
+import { MemoryTokenStore } from '@nestjs-boot/auth/token';
+// Register in AuthModule with { provide: TOKEN_STORE, useClass: MemoryTokenStore }
+```
+
+---
+
+## Login Tracker
+
+### `LoginTracker`
+
+> In-memory brute-force protection — tracks failed login attempts per identifier and temporarily locks accounts after repeated failures.
+
+Configure via `AuthOptions.loginTracker` or instantiate directly.
+
+```ts
+AuthModule.register({
+  jwt: { ... },
+  loginTracker: {
+    maxAttempts: 5,            // default: 5
+    lockoutDuration: 900_000,  // default: 15 minutes in ms
+  },
+})
+```
+
+Injectable via class token when `loginTracker` is configured.
+
+#### Methods
+
+##### `isLocked(identifier: string): boolean`
+
+Check whether an account identifier (email, username, etc.) is currently locked. Automatically clears expired locks.
+
+##### `recordFailure(identifier: string): boolean`
+
+Increment the failure counter for an identifier. Returns `true` if the account is now locked (failure count reached `maxAttempts`).
+
+##### `recordSuccess(identifier: string): void`
+
+Reset the failure counter after a successful login.
+
+##### `getRemainingAttempts(identifier: string): number`
+
+Return how many more failures are allowed before lockout.
+
+##### `unlock(identifier: string): void`
+
+Manually remove the lockout and reset the failure counter (e.g. after admin intervention).
+
+#### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `maxAttempts` | `number` | `5` | Failures before account is locked |
+| `lockoutDuration` | `number` | `900000` | Lock duration in milliseconds (15 minutes) |
+
+---
+
+## Privilege Boundary
+
+### `PrivilegeBoundary`
+
+> Prevents privilege escalation — enforces that users can only assign roles/modify users at a lower authority level than their own.
+
+Not automatically registered. Instantiate and wire as needed, or use via `RoleManager`.
+
+```ts
+import { PrivilegeBoundary } from '@nestjs-boot/auth/rbac';
+
+const boundary = new PrivilegeBoundary([
+  { name: 'superadmin', level: 100 },
+  { name: 'admin',      level: 80 },
+  { name: 'manager',    level: 50 },
+  { name: 'user',       level: 10 },
+]);
+
+boundary.enforceAssignment(['admin'], 'manager'); // OK — admin (80) > manager (50)
+boundary.enforceAssignment(['manager'], 'admin'); // throws ForbiddenException
+```
+
+#### Methods
+
+##### `define(role: LeveledRole): void`
+
+Register or update a role definition. Called automatically by `RoleManager.createRole()`.
+
+##### `getLevel(roleName: string): number`
+
+Return the numeric level for a role. Unknown roles return `0`.
+
+##### `getMaxLevel(roleNames: string[]): number`
+
+Return the highest level among a list of role names.
+
+##### `canAssignRole(actorRoles: string[], targetRole: string): boolean`
+
+Return `true` if the actor's max level is **strictly greater than** the target role's level.
+
+##### `enforceAssignment(actorRoles: string[], targetRole: string): void`
+
+Like `canAssignRole`, but throws `ForbiddenException` on failure.
+
+##### `canModifyUser(actorRoles: string[], targetUserRoles: string[]): boolean`
+
+Return `true` if the actor's max level is strictly greater than the target user's max role level.
+
+##### `enforceModification(actorRoles: string[], targetUserRoles: string[]): void`
+
+Like `canModifyUser`, but throws `ForbiddenException` on failure.
+
+##### `getAllRoles(): LeveledRole[]`
+
+Return all defined roles sorted by level descending.
+
+#### `LeveledRole` interface
+
+```ts
+interface LeveledRole {
+  name: string;
+  level: number;        // Numeric authority level — higher = more privileged
+  inherits?: string[];
+  permissions?: string[];
+}
+```
+
+---
+
+## Role Manager
+
+### `RoleManager`
+
+> Manages role and permission definitions, role-permission assignments, and user-role assignments with optional privilege boundary enforcement.
+
+Injectable via class token when configured. Works with any `PermissionStore` implementation.
+
+#### Role CRUD
+
+##### `createRole(role: RoleDefinitionRecord): RoleDefinitionRecord`
+
+Create a role. Throws `ConflictException` if the code already exists. Automatically registers the role with `PrivilegeBoundary` (if wired).
+
+##### `getRole(code: string): RoleDefinitionRecord`
+
+Get a role by code. Throws `NotFoundException` if not found.
+
+##### `listRoles(): RoleDefinitionRecord[]`
+
+Return all roles sorted by level descending.
+
+##### `updateRole(code: string, data: Partial<RoleDefinitionRecord>): RoleDefinitionRecord`
+
+Update a role. Throws `ConflictException` when attempting to rename a system role (`isSystem: true`).
+
+##### `deleteRole(code: string): void`
+
+Delete a role. Throws `ConflictException` for system roles.
+
+#### Permission CRUD
+
+##### `createPermission(perm: PermissionDefinitionRecord): PermissionDefinitionRecord`
+
+Create a permission definition. Throws `ConflictException` if code already exists.
+
+##### `getPermission(code: string): PermissionDefinitionRecord`
+
+Get a permission by code. Throws `NotFoundException` if not found.
+
+##### `listPermissions(): PermissionDefinitionRecord[]`
+
+Return all permission definitions.
+
+#### Role-Permission assignment
+
+##### `assignPermissionToRole(roleCode: string, permissionCode: string): void`
+
+Add a permission to a role. Validates both exist first.
+
+##### `removePermissionFromRole(roleCode: string, permissionCode: string): void`
+
+Remove a permission from a role.
+
+##### `getRolePermissions(roleCode: string): string[]`
+
+Return all permission codes currently assigned to a role.
+
+#### User-Role assignment
+
+##### `assignRoleToUser(userId: string, roleCode: string, actorRoles?: string[]): Promise<void>`
+
+Assign a role to a user. If `actorRoles` is supplied and a `PrivilegeBoundary` is wired, enforces that the actor has sufficient authority.
+
+##### `removeRoleFromUser(userId: string, roleCode: string, actorRoles?: string[]): Promise<void>`
+
+Remove a role from a user, with the same boundary check as `assignRoleToUser`.
+
+##### `getUserRoles(userId: string): Promise<string[]>`
+
+Return all role codes assigned to a user (via `PermissionStore`).
+
+##### `getUserPermissions(userId: string): Promise<string[]>`
+
+Return all permission codes for a user (via `PermissionStore`).
+
+#### Seeding
+
+##### `seed(roles: RoleDefinitionRecord[], permissions: PermissionDefinitionRecord[]): { rolesCreated, permissionsCreated }`
+
+Idempotent bulk seed. Skips any role or permission code that already exists. Returns counts of newly created records.
+
+#### `RoleDefinitionRecord` interface
+
+```ts
+interface RoleDefinitionRecord {
+  code: string;
+  name: string;
+  description?: string;
+  level: number;
+  isSystem?: boolean;    // System roles cannot be renamed or deleted
+  permissions: string[];
+  inherits?: string[];
+}
+```
+
+#### `PermissionDefinitionRecord` interface
+
+```ts
+interface PermissionDefinitionRecord {
+  code: string;
+  name: string;
+  description?: string;
+  resource: string;  // E.g. 'user', 'report'
+  action: string;    // E.g. 'read', 'write', 'export'
+}
+```
+
+---
+
+## `denyByDefault` option in `RbacOptions`
+
+When `rbac.denyByDefault: true` is set in `AuthModule.register()`, the `RolesGuard` and `PermissionsGuard` deny requests that reach routes with **no** `@Roles()` or `@Permissions()` decorator. Routes decorated with `@Public()` are always allowed regardless of this setting.
+
+```ts
+AuthModule.register({
+  rbac: {
+    enabled: true,
+    denyByDefault: true,  // All undecorated routes → 403 (except @Public())
+  },
+})
+```
+
+Default is `false` (open-by-default). Enable in security-sensitive APIs to prevent accidentally unprotected routes.
+
+---
+
 ## CLI Generator
 
 ### `npx nestjs-boot g auth`

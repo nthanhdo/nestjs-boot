@@ -364,3 +364,179 @@ For model injection, use `@nestjs/mongoose`'s `@InjectModel` with the connection
 | `getReaderConnectionName(name)` | `string` | `getReaderConnectionName('master')` → `'master_reader'` |
 
 Use `getWriterConnectionName` / `getReaderConnectionName` as the connection name argument to `@nestjs/mongoose`'s `@InjectModel`.
+
+---
+
+## Prisma (PostgreSQL)
+
+> Thin, lifecycle-managed Prisma wrapper with a generic base repository that mirrors the MongoDB `BaseRepository` API.
+
+Requires `@prisma/client` installed and a generated Prisma schema.
+
+### `PrismaModule.register(options?): DynamicModule`
+
+```ts
+import { PrismaModule } from '@nestjs-boot/database/prisma';
+
+PrismaModule.register({
+  url: process.env.DATABASE_URL, // optional — falls back to DATABASE_URL env var via Prisma default
+  log: ['warn', 'error'],        // optional — Prisma log levels
+})
+```
+
+`PrismaModule` is `global: true`. Registers `PrismaService` under both the class token and the `PRISMA_SERVICE` string token.
+
+#### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `url` | `string` | Prisma default (`DATABASE_URL`) | PostgreSQL connection string |
+| `log` | `string[]` | `['warn', 'error']` | Prisma query log levels (`'query'`, `'info'`, `'warn'`, `'error'`) |
+
+---
+
+### `PrismaService`
+
+> Lifecycle-managed Prisma client. Connects on `onModuleInit`, disconnects on `onModuleDestroy`.
+
+Injectable via class token or `PRISMA_SERVICE` token.
+
+#### Properties
+
+##### `client: PrismaClient`
+
+The underlying Prisma client instance. Lazily instantiated on first access. Use this to call Prisma model delegates directly when not using `PrismaBaseRepository`.
+
+```ts
+const user = await prisma.client.user.findUnique({ where: { id } });
+```
+
+#### Methods
+
+##### `$transaction<T>(fn: (tx) => Promise<T>): Promise<T>`
+
+Run a callback inside a Prisma interactive transaction. The `tx` argument is the transactional Prisma client — pass it to `PrismaBaseRepository.withTransaction()` or use it directly.
+
+```ts
+await prisma.$transaction(async (tx) => {
+  await tx.user.create({ data: { ... } });
+  await tx.audit.create({ data: { ... } });
+});
+```
+
+---
+
+### `PrismaBaseRepository<T>`
+
+> Generic Prisma repository. Extend it for each model — provides a consistent CRUD API matching MongoDB's `BaseRepository`.
+
+```ts
+import { PrismaBaseRepository } from '@nestjs-boot/database/prisma';
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '@nestjs-boot/database/prisma';
+
+@Injectable()
+export class UserRepository extends PrismaBaseRepository<User> {
+  constructor(prisma: PrismaService) {
+    super(prisma, 'user'); // 'user' must match the Prisma model name (camelCase)
+  }
+}
+```
+
+#### Methods
+
+##### `findById(id: string): Promise<T | null>`
+
+Find a record by its `id` field using `findUnique`.
+
+##### `findOne(where: Record<string, any>): Promise<T | null>`
+
+Find the first record matching the where clause using `findFirst`.
+
+##### `findMany(where?, options?): Promise<T[]>`
+
+Find multiple records. `options` accepts `skip`, `take`, `orderBy`, `include`.
+
+##### `findWithPagination(where, options: PrismaPaginationOptions): Promise<PrismaPaginatedResult<T>>`
+
+Offset-paginated query. Runs `findMany` and `count` in parallel.
+
+| Param | Type | Default | Description |
+|-------|------|---------|-------------|
+| `options.page` | `number` | `1` | Page number (1-indexed) |
+| `options.limit` | `number` | `20` | Records per page |
+| `options.sort` | `Record<string, 'asc' \| 'desc'>` | `{ createdAt: 'desc' }` | Sort order |
+
+##### `create(data: Partial<T>): Promise<T>`
+
+Create a single record.
+
+##### `createMany(data: Partial<T>[]): Promise<{ count: number }>`
+
+Bulk-insert multiple records. Returns the count of rows created.
+
+##### `update(id: string, data: Partial<T>): Promise<T>`
+
+Update a record by ID.
+
+##### `updateMany(where, data): Promise<{ count: number }>`
+
+Update all records matching the where clause.
+
+##### `delete(id: string): Promise<T>`
+
+Delete a record by ID and return the deleted record.
+
+##### `deleteMany(where): Promise<{ count: number }>`
+
+Delete all records matching the where clause.
+
+##### `count(where?): Promise<number>`
+
+Count records matching the where clause (or all records when omitted).
+
+##### `exists(where): Promise<boolean>`
+
+Return `true` if at least one record matches the where clause.
+
+##### `upsert(where, create, update): Promise<T>`
+
+Create or update based on the unique `where` clause.
+
+##### `withTransaction<R>(fn: (tx) => Promise<R>): Promise<R>`
+
+Run operations inside a Prisma transaction. Delegates to `PrismaService.$transaction()`.
+
+---
+
+### Interfaces
+
+#### `PrismaPaginationOptions`
+
+```ts
+interface PrismaPaginationOptions {
+  page?: number;
+  limit?: number;
+  sort?: Record<string, 'asc' | 'desc'>;
+}
+```
+
+#### `PrismaPaginatedResult<T>`
+
+```ts
+interface PrismaPaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+```
+
+---
+
+### Constants / Tokens
+
+| Token | Value | Description |
+|-------|-------|-------------|
+| `PRISMA_SERVICE` | `'BOOT_PRISMA_SERVICE'` | Injection token for `PrismaService` (also injectable by class) |

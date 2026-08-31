@@ -9,6 +9,8 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ApiKeyGuard } from './guards/api-key.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { PermissionsGuard } from './guards/permissions.guard';
+import { TOKEN_STORE } from './token/token-store.interface';
+import { LoginTracker } from './login-tracker/login-tracker';
 
 /**
  * AuthModule — composable, opt-in auth + RBAC.
@@ -43,6 +45,25 @@ export class AuthModule {
         useClass: JwtAuthGuard,
       });
       exports.push(BootJwtService);
+
+      // Token store for refresh token family tracking
+      if (options.jwt.tokenStore) {
+        providers.push({
+          provide: TOKEN_STORE,
+          useValue: options.jwt.tokenStore,
+        });
+        exports.push(TOKEN_STORE);
+      }
+    }
+
+    // Login attempt tracker (always register when options provided)
+    {
+      const trackerOptions = options.loginTracker;
+      providers.push({
+        provide: LoginTracker,
+        useValue: new LoginTracker(trackerOptions),
+      });
+      exports.push(LoginTracker);
     }
 
     // API key auth

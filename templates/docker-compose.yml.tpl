@@ -12,6 +12,10 @@ services:
       mongodb:
         condition: service_started
 {{/eq}}
+{{#eq dbType "postgres"}}
+      postgres:
+        condition: service_started
+{{/eq}}
 {{#eq cacheType "redis"}}
       redis:
         condition: service_started
@@ -51,7 +55,25 @@ services:
     restart: unless-stopped
 
 {{/eq}}
+{{#eq dbType "postgres"}}
+  postgres:
+    image: postgres:16-alpine
+    container_name: {{name}}-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: {{name}}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+{{/eq}}
 volumes:
 {{#eq dbType "mongodb"}}
   mongo-data:
+{{/eq}}
+{{#eq dbType "postgres"}}
+  postgres_data:
 {{/eq}}

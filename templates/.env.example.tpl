@@ -9,6 +9,10 @@ NODE_ENV=development
 # MongoDB
 MONGO_URI=mongodb://localhost:27017/{{name}}
 {{/eq}}
+{{#eq dbType "postgres"}}
+# PostgreSQL (Prisma)
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/{{name}}?schema=public
+{{/eq}}
 
 {{#eq cacheType "redis"}}
 # Redis (cache)

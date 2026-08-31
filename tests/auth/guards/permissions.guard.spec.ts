@@ -56,4 +56,29 @@ describe('PermissionsGuard', () => {
     const guard = new PermissionsGuard(reflector, authOptions);
     expect(guard.canActivate(context)).toBe(true);
   });
+
+  describe('denyByDefault', () => {
+    const denyOptions: AuthOptions = { rbac: { enabled: true, denyByDefault: true } };
+
+    it('denies route with no @Permissions() decorator when denyByDefault=true', () => {
+      const { context, reflector } = createMockContext({ permissions: ['product:read'] }, {});
+      const guard = new PermissionsGuard(reflector, denyOptions);
+      expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
+    });
+
+    it('still allows @Public() routes when denyByDefault=true', () => {
+      const { context, reflector } = createMockContext(null, { [IS_PUBLIC_KEY]: true });
+      const guard = new PermissionsGuard(reflector, denyOptions);
+      expect(guard.canActivate(context)).toBe(true);
+    });
+
+    it('allows route with matching @Permissions() when denyByDefault=true', () => {
+      const { context, reflector } = createMockContext(
+        { permissions: ['product:read'] },
+        { [PERMISSIONS_KEY]: ['product:read'] },
+      );
+      const guard = new PermissionsGuard(reflector, denyOptions);
+      expect(guard.canActivate(context)).toBe(true);
+    });
+  });
 });

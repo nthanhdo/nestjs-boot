@@ -7,6 +7,8 @@ export interface JwtAuthOptions {
   resetSecret?: string;
   /** Optional token revocation check. Called after JWT verify succeeds. */
   isRevoked?: (payload: any) => Promise<boolean>;
+  /** Token store for refresh token family tracking and reuse detection */
+  tokenStore?: import('./token/token-store.interface').TokenStore;
 }
 
 export interface ApiKeyAuthOptions {
@@ -31,10 +33,18 @@ export interface RbacOptions {
   superAdmin?: string;
   /** Permission store for DB-backed permissions. If provided, permissions are loaded from store instead of JWT. */
   permissionStore?: import('./rbac/permission-store').PermissionStore;
+  /**
+   * Deny-by-default mode. When true, routes with NO @Roles() / @Permissions() decorator
+   * are denied (ForbiddenException) instead of passing through.
+   * Routes decorated with @Public() are still allowed.
+   */
+  denyByDefault?: boolean;
 }
 
 export interface AuthOptions {
   jwt?: JwtAuthOptions;
   apiKey?: ApiKeyAuthOptions;
   rbac?: RbacOptions;
+  /** Login attempt tracking options — enables in-memory brute-force protection */
+  loginTracker?: import('./login-tracker/login-tracker').LoginTrackerOptions;
 }

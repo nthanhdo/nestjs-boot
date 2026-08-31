@@ -4,8 +4,9 @@
 
 [![npm version](https://img.shields.io/npm/v/nestjs-boot.svg)](https://www.npmjs.com/package/nestjs-boot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-856%20passing-brightgreen.svg)](https://github.com/nthanhdo/nestjs-boot/actions)
+[![Tests](https://img.shields.io/badge/tests-900%2B%20passing-brightgreen.svg)](https://github.com/nthanhdo/nestjs-boot/actions)
 [![Modules](https://img.shields.io/badge/modules-60%2B-blue.svg)](#modules)
+[![Kaizen Audit](https://img.shields.io/badge/quality-11--phase%20Kaizen-blueviolet.svg)](#quality-assurance)
 
 ## What is nestjs-boot?
 
@@ -182,9 +183,11 @@ flowchart TD
 
 **Multi-driver:** MongoDB (Mongoose) and PostgreSQL (Prisma) — use one or both in the same project.
 
-**MongoDB:** Multi-connection with automatic reader/writer split. `BaseRepository<T>` provides CRUD + pagination with automatic connection routing. `CachedBaseRepository<T>` adds cache-aside on top. `CrudService<T>` provides lifecycle hooks (`beforeCreate`, `afterCreate`, etc.). `UnitOfWork` supports MongoDB transactions. `Specification<T>` enables composable query filters. **Migrations:** `MigrationRunner` with `_migrations` collection tracking state.
+**Shared interface:** `IRepository<T>` defines the common CRUD contract implemented by both `BaseRepository<T>` (Mongoose) and `PrismaBaseRepository<T>` (Prisma). Swap database drivers without changing service code.
 
-**PostgreSQL:** `PrismaModule.register()` with lazy `@prisma/client` loading. `PrismaBaseRepository<T>` provides CRUD, pagination, upsert, and transactions. `PrismaService` manages lifecycle (`$connect` / `$disconnect`) and exposes `$transaction()`.
+**MongoDB:** Multi-connection with automatic reader/writer split. `BaseRepository<T>` provides CRUD + pagination with automatic connection routing. `CachedBaseRepository<T>` (alias `CachedRepository<T>`) adds cache-aside on top with automatic invalidation. `CrudService<T>` provides lifecycle hooks (`beforeCreate`, `afterCreate`, etc.). `UnitOfWork` supports MongoDB transactions. `Specification<T>` enables composable query filters. **Migrations:** `MigrationRunner` with `_migrations` collection tracking state.
+
+**PostgreSQL:** `PrismaModule.register()` with lazy `@prisma/client` loading. `PrismaBaseRepository<T>` provides CRUD, pagination, upsert, and transactions. `PrismaCrudService<T>` provides the same lifecycle-hook pattern as `CrudService<T>` but backed by Prisma. `PrismaService` manages lifecycle (`$connect` / `$disconnect`) and exposes `$transaction()`.
 
 **Multi-DB:** Use both drivers side by side — MongoDB for event store / cache metadata, PostgreSQL for relational data:
 
@@ -216,7 +219,9 @@ cache: { redis: { url: 'redis://localhost:6379' }, defaultTtl: 300 }
 
 Full auth stack: JWT (access + refresh + token family tracking + reuse detection), API key validation, RBAC with role hierarchy + DB-backed permissions + privilege boundary, `@Public()` bypass, `@CurrentUser()` extraction.
 
-**RBAC:** `@Roles()`, `@Permissions()`, `@RequireScope()`, `@CheckPolicy()`. Role hierarchy with inheritance. `PrivilegeBoundary` prevents privilege escalation. `RoleManager` for role/permission CRUD + idempotent seeding. `denyByDefault` mode for zero-trust.
+**RBAC:** `@Roles()`, `@Permissions()`, `@RequireScope()`, `@CheckPolicy()`. Role hierarchy with inheritance. Wildcard permissions (`user.*`, `*`) with glob matching. `PrivilegeBoundary` prevents privilege escalation. `RoleManager` for role/permission CRUD + idempotent seeding. `denyByDefault` mode for zero-trust.
+
+**Break Glass:** `BreakGlassModule` for emergency access override. `@BreakGlass()` decorator marks endpoints that can bypass normal auth in declared emergencies. Audit-logged with automatic expiry.
 
 **Scope:** `ScopeModule` with `OWN → TEAM → DEPARTMENT → ORGANIZATION → SYSTEM` access levels. `ScopeResolver` builds query filters per scope.
 
@@ -600,18 +605,6 @@ interface BootOptions {
 
 Every top-level section is optional. Omitted sections = that module is not loaded.
 
-## Guides
-
-Detailed documentation for specific topics:
-
-- [Circular Dependency Prevention](docs/guides/en/circular-dependency-prevention.md) -- patterns to avoid circular imports
-- [DI Best Practices](docs/guides/en/di-best-practices.md) -- contract-based DI, layer enforcement, graph analysis
-- [Testing Guide](docs/guides/en/testing-guide.md) -- factories, suites, snapshots, gRPC testing, message dispatching
-- [Transport Selection](docs/guides/en/transport-selection.md) -- when to use gRPC vs TCP vs NATS vs RabbitMQ
-- [Auth & Rate Limiting](docs/guides/en/auth-rate-limiting.md) -- JWT lifecycle, API key rotation, guard composition
-- [Production Checklist](docs/guides/en/production-checklist.md) -- health checks, shutdown, metrics, tracing, security
-- [Serverless Considerations](docs/guides/en/serverless-considerations.md) -- cold start, connection pooling, stateless auth
-
 ## Examples
 
 - **[10-service microservice architecture](examples/microservices/)** -- API Gateway + 9 services, gRPC, EventBus, BullMQ, MongoDB, Redis
@@ -645,6 +638,46 @@ import { DatabaseModule, PrismaModule, CacheModule, AuthModule, ScopeModule, Pol
 export class AppModule {}
 ```
 
+## Plugin System
+
+Extend nestjs-boot without modifying core. Implement the `BootPlugin` interface to register your own modules:
+
+```ts
+import { BootPlugin } from 'nestjs-boot';
+
+const myPlugin: BootPlugin = {
+  name: 'my-plugin',
+  configKey: 'myPlugin',
+  register: (options) => MyModule.register(options),
+  applyGlobals: (app) => app.useGlobalInterceptors(new MyInterceptor()),
+};
+
+const app = await createApp(AppModule, { myPlugin: { /* ... */ } }, { plugins: [myPlugin] });
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details on writing plugins.
+
+## Quality Assurance
+
+The codebase has undergone an **11-phase Kaizen audit** covering architecture, DI safety, error handling, security, performance, testing, documentation, and developer experience. 900+ tests validate all modules.
+
+## Documentation
+
+Detailed guides for specific topics:
+
+- [Getting Started](docs/guides/en/getting-started.md) -- installation, minimal example, progressive config
+- [Prisma (PostgreSQL)](docs/guides/en/prisma.md) -- PrismaModule, PrismaCrudService, migrations
+- [Authorization](docs/guides/en/authorization.md) -- RBAC, policies, wildcard permissions
+- [Scope Authorization](docs/guides/en/scope-authorization.md) -- OWN/TEAM/DEPT/ORG/SYSTEM access levels
+- [User Management](docs/guides/en/user-management.md) -- user lifecycle, roles, organizations
+- [When to Use](docs/guides/en/when-to-use.md) -- decision guide for adopting nestjs-boot
+- [Production Checklist](docs/guides/en/production-checklist.md) -- health, shutdown, metrics, tracing, security
+- [Circular Dependency Prevention](docs/guides/en/circular-dependency-prevention.md) -- patterns to avoid circular imports
+- [DI Best Practices](docs/guides/en/di-best-practices.md) -- contract-based DI, layer enforcement, graph analysis
+- [Testing Guide](docs/guides/en/testing-guide.md) -- factories, suites, snapshots, gRPC testing
+- [Transport Selection](docs/guides/en/transport-selection.md) -- when to use gRPC vs TCP vs NATS vs RabbitMQ
+- [Auth & Rate Limiting](docs/guides/en/auth-rate-limiting.md) -- JWT lifecycle, API key rotation, guard composition
+
 ## Roadmap
 
 - TypeORM database adapter
@@ -672,11 +705,13 @@ npm install otpauth                          # TOTP 2FA
 
 ## Contributing
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide: project structure, adding modules, plugin system, code style, testing, and PR process.
+
 ```bash
 git clone https://github.com/nthanhdo/nestjs-boot.git
 cd nestjs-boot
 npm install
-npm test           # 856 tests
+npx vitest run     # 900+ tests
 npm run build      # CJS + ESM + DTS
 ```
 

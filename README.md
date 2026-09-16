@@ -1,18 +1,53 @@
-# nestjs-boot
+<h1 align="center">nestjs-boot</h1>
 
-> Production-ready NestJS microservice framework. One config object, zero wiring.
+<p align="center">
+  <strong>Spring Boot-style auto-configuration for NestJS.</strong><br/>
+  One config object. Zero wiring. Production-ready.
+</p>
 
-[![npm version](https://img.shields.io/npm/v/nestjs-boot.svg)](https://www.npmjs.com/package/nestjs-boot)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-900%2B%20passing-brightgreen.svg)](https://github.com/nthanhdo/nestjs-boot/actions)
-[![Modules](https://img.shields.io/badge/modules-60%2B-blue.svg)](#modules)
-[![Kaizen Audit](https://img.shields.io/badge/quality-11--phase%20Kaizen-blueviolet.svg)](#quality-assurance)
+<p align="center">
+  <a href="https://www.npmjs.com/package/nestjs-boot"><img src="https://img.shields.io/npm/v/nestjs-boot.svg?style=flat-square&color=cb3837" alt="npm version" /></a>
+  <a href="https://www.npmjs.com/package/nestjs-boot"><img src="https://img.shields.io/npm/dm/nestjs-boot.svg?style=flat-square&color=blue" alt="npm downloads" /></a>
+  <a href="https://github.com/nthanhdo/nestjs-boot/actions"><img src="https://img.shields.io/badge/tests-900%2B%20passing-brightgreen?style=flat-square" alt="tests" /></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="license" /></a>
+  <a href="#modules"><img src="https://img.shields.io/badge/modules-34%2B-blueviolet?style=flat-square" alt="modules" /></a>
+  <a href="https://github.com/nthanhdo/nestjs-boot"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs welcome" /></a>
+</p>
 
-## What is nestjs-boot?
+<p align="center">
+  <a href="#quick-start">Quick Start</a> &bull;
+  <a href="#why-nestjs-boot">Why?</a> &bull;
+  <a href="#modules">Modules</a> &bull;
+  <a href="#full-config-reference">Config</a> &bull;
+  <a href="#documentation">Docs</a> &bull;
+  <a href="#contributing">Contributing</a>
+</p>
 
-`nestjs-boot` is a **runtime package** (not a template or boilerplate). Install it as a dependency, call `createApp(AppModule, config)`, and it auto-wires databases, cache, auth, transports, queues, events, health checks, metrics, tracing, and more -- based on what you configure. Every module is optional: omit a config section and that module is not loaded. Your `AppModule` stays clean with only business logic.
+<p align="center">
+  <a href="README.vi.md">Tieng Viet</a>
+</p>
 
-## Getting Started
+---
+
+## Why nestjs-boot?
+
+Building a production NestJS service means wiring up databases, cache, auth, health checks, metrics, tracing, transports, queues, and more -- over and over. `nestjs-boot` eliminates that boilerplate.
+
+| | Without nestjs-boot | With nestjs-boot |
+|---|---|---|
+| **Setup** | ~40 lines of infrastructure imports per service | 1 config object in `main.ts` |
+| **Modules** | Wire each one manually | Auto-loaded based on config |
+| **Multi-DB** | DIY connection management | Built-in reader/writer split |
+| **Auth** | Build JWT + RBAC + policies from scratch | Declare in config, use decorators |
+| **Observability** | Integrate 3-5 libraries | `metrics`, `logging`, `tracing` keys |
+
+`nestjs-boot` is a **runtime package** -- not a template or boilerplate. Install it, configure it, and your `AppModule` stays clean with only business logic.
+
+```bash
+npm install nestjs-boot
+```
+
+## Quick Start
 
 ### Option 1: Create a new project (interactive CLI)
 
@@ -38,7 +73,31 @@ curl http://localhost:3000/health       # health check
 curl http://localhost:3000/metrics      # Prometheus metrics
 ```
 
-### Option 2: Run the 10-service example
+### Option 2: Add to an existing project
+
+```ts
+// main.ts
+import { createApp } from 'nestjs-boot';
+import { AppModule } from './app.module';
+
+const app = await createApp(AppModule, {
+  database: {
+    connections: {
+      master: { writerUri: process.env.MONGO_URI!, readerUri: process.env.MONGO_READER_URI },
+    },
+  },
+  cache: { redis: { url: process.env.REDIS_URL! }, defaultTtl: 300 },
+  auth: { jwt: { secret: process.env.JWT_SECRET! } },
+  health: { enabled: true },
+  response: { envelope: true },
+});
+
+await app.listen(3000);
+```
+
+Every top-level config key is optional -- omit a section and that module is simply not loaded.
+
+### Option 3: Run the 10-service example
 
 ```bash
 git clone https://github.com/nthanhdo/nestjs-boot.git
@@ -47,6 +106,8 @@ docker-compose up --build
 ```
 
 Starts 10 services + MongoDB + Redis communicating via gRPC. See [examples/microservices/](examples/microservices/).
+
+---
 
 ## Architecture
 
@@ -102,45 +163,6 @@ graph LR
     style REDIS fill:#dc2626,stroke:#b91c1c,color:#fff
 ```
 
-## `createApp()` -- How It Works
-
-**Before** -- manual wiring (~40 lines of infrastructure per service):
-
-```ts
-@Module({
-  imports: [
-    MongooseModule.forRootAsync({ connectionName: 'master_writer', useFactory: () => ({ uri: '...' }) }),
-    MongooseModule.forRootAsync({ connectionName: 'master_reader', useFactory: () => ({ uri: '...' }) }),
-    CacheModule.register({ store: redisStore, url: '...' }),
-    ConfigModule.forRoot({ validationSchema: Joi.object({ /* ... */ }) }),
-    TerminusModule.forRoot(),
-    // + interceptors, filters, health indicators ...
-  ],
-})
-export class AppModule {}
-```
-
-**After** -- one config object in `main.ts`:
-
-```ts
-import { createApp } from 'nestjs-boot';
-import { AppModule } from './app.module';
-
-const app = await createApp(AppModule, {
-  database: {
-    connections: {
-      master: { writerUri: process.env.MONGO_URI!, readerUri: process.env.MONGO_READER_URI },
-    },
-  },
-  cache: { redis: { url: process.env.REDIS_URL! }, defaultTtl: 300 },
-  auth: { jwt: { secret: process.env.JWT_SECRET! } },
-  health: { enabled: true },
-  response: { envelope: true },
-});
-
-await app.listen(3000);
-```
-
 ### Boot Sequence
 
 ```mermaid
@@ -177,39 +199,51 @@ flowchart TD
     P --> Q
 ```
 
+---
+
 ## Modules
 
 ### Database
 
-**Multi-driver:** MongoDB (Mongoose) and PostgreSQL (Prisma) — use one or both in the same project.
+**Multi-driver:** MongoDB (Mongoose) and PostgreSQL (Prisma) -- use one or both in the same project.
 
 **Shared interface:** `IRepository<T>` defines the common CRUD contract implemented by both `BaseRepository<T>` (Mongoose) and `PrismaBaseRepository<T>` (Prisma). Swap database drivers without changing service code.
 
-**MongoDB:** Multi-connection with automatic reader/writer split. `BaseRepository<T>` provides CRUD + pagination with automatic connection routing. `CachedBaseRepository<T>` (alias `CachedRepository<T>`) adds cache-aside on top with automatic invalidation. `CrudService<T>` provides lifecycle hooks (`beforeCreate`, `afterCreate`, etc.). `UnitOfWork` supports MongoDB transactions. `Specification<T>` enables composable query filters. **Migrations:** `MigrationRunner` with `_migrations` collection tracking state.
+<details>
+<summary><strong>MongoDB</strong></summary>
 
-**PostgreSQL:** `PrismaModule.register()` with lazy `@prisma/client` loading. `PrismaBaseRepository<T>` provides CRUD, pagination, upsert, and transactions. `PrismaCrudService<T>` provides the same lifecycle-hook pattern as `CrudService<T>` but backed by Prisma. `PrismaService` manages lifecycle (`$connect` / `$disconnect`) and exposes `$transaction()`.
-
-**Multi-DB:** Use both drivers side by side — MongoDB for event store / cache metadata, PostgreSQL for relational data:
+Multi-connection with automatic reader/writer split. `BaseRepository<T>` provides CRUD + pagination with automatic connection routing. `CachedBaseRepository<T>` (alias `CachedRepository<T>`) adds cache-aside on top with automatic invalidation. `CrudService<T>` provides lifecycle hooks (`beforeCreate`, `afterCreate`, etc.). `UnitOfWork` supports MongoDB transactions. `Specification<T>` enables composable query filters. **Migrations:** `MigrationRunner` with `_migrations` collection tracking state.
 
 ```ts
-// MongoDB (Mongoose)
 database: {
   connections: {
     master: { writerUri: 'mongodb://primary:27017/app', readerUri: 'mongodb://replica:27017/app' },
   },
 }
+```
 
-// PostgreSQL (Prisma) — import PrismaModule separately
+CLI: `npx nestjs-boot migrate`, `migrate:create`, `migrate:rollback`, `migrate:status`.
+
+</details>
+
+<details>
+<summary><strong>PostgreSQL (Prisma)</strong></summary>
+
+`PrismaModule.register()` with lazy `@prisma/client` loading. `PrismaBaseRepository<T>` provides CRUD, pagination, upsert, and transactions. `PrismaCrudService<T>` provides the same lifecycle-hook pattern as `CrudService<T>` but backed by Prisma. `PrismaService` manages lifecycle (`$connect` / `$disconnect`) and exposes `$transaction()`.
+
+```ts
 PrismaModule.register({ url: process.env.DATABASE_URL })
 ```
 
-CLI: `npx nestjs-boot migrate`, `migrate:create`, `migrate:rollback`, `migrate:status` (MongoDB). For Prisma: use standard `npx prisma migrate` workflow.
+Uses standard `npx prisma migrate` workflow.
+
+</details>
 
 ### Cache
 
 L1 in-memory LRU + optional L2 Redis. Size-aware routing (>1MB goes to L2 only). Optional Memcached adapter for L1. `MultiCacheService` provides `getOrSet()`, `del()`, `delByPrefix()`.
 
-**Advanced:** `CacheStampedeGuard` (prevents thundering herd -- only one request hits DB when cache expires), `CacheWarmer` (pre-warms cache at startup), `TaggedCacheService` (invalidate by tag), `CacheStats` (hit rate statistics).
+**Advanced:** `CacheStampedeGuard` (prevents thundering herd), `CacheWarmer` (pre-warms at startup), `TaggedCacheService` (invalidate by tag), `CacheStats` (hit rate statistics).
 
 ```ts
 cache: { redis: { url: 'redis://localhost:6379' }, defaultTtl: 300 }
@@ -219,15 +253,18 @@ cache: { redis: { url: 'redis://localhost:6379' }, defaultTtl: 300 }
 
 Full auth stack: JWT (access + refresh + token family tracking + reuse detection), API key validation, RBAC with role hierarchy + DB-backed permissions + privilege boundary, `@Public()` bypass, `@CurrentUser()` extraction.
 
+<details>
+<summary><strong>RBAC, Scope, Policy, Audit, Break Glass, Social, TOTP, Session</strong></summary>
+
 **RBAC:** `@Roles()`, `@Permissions()`, `@RequireScope()`, `@CheckPolicy()`. Role hierarchy with inheritance. Wildcard permissions (`user.*`, `*`) with glob matching. `PrivilegeBoundary` prevents privilege escalation. `RoleManager` for role/permission CRUD + idempotent seeding. `denyByDefault` mode for zero-trust.
 
 **Break Glass:** `BreakGlassModule` for emergency access override. `@BreakGlass()` decorator marks endpoints that can bypass normal auth in declared emergencies. Audit-logged with automatic expiry.
 
-**Scope:** `ScopeModule` with `OWN → TEAM → DEPARTMENT → ORGANIZATION → SYSTEM` access levels. `ScopeResolver` builds query filters per scope.
+**Scope:** `ScopeModule` with `OWN -> TEAM -> DEPARTMENT -> ORGANIZATION -> SYSTEM` access levels. `ScopeResolver` builds query filters per scope.
 
 **Policy:** `PolicyModule` with named `AuthorizationPolicy` implementations, `PolicyEngine`, structured `AuthorizationResult` (allowed/reason/scope/policy).
 
-**Organizations:** `OrganizationModule` for generic org/department/team hierarchy with membership management. Domain-agnostic — works for hospitals, companies, schools.
+**Organizations:** `OrganizationModule` for generic org/department/team hierarchy with membership management.
 
 **Audit:** `AuditModule` for structured audit logging + `SecurityEventType` tracking. Auto-logs auth denials via `AuditInterceptor`.
 
@@ -237,265 +274,178 @@ Full auth stack: JWT (access + refresh + token family tracking + reuse detection
 **TOTP:** `TotpService` for 2FA. **Session:** `SessionAuthModule` with pluggable `SessionStore`.
 **WebSocket:** `WsJwtGuard` for authenticated WebSocket connections.
 
+</details>
+
 ```ts
 auth: {
   jwt: { secret: '...', refreshSecret: '...', refreshExpiresIn: '7d' },
-  apiKey: { enabled: true, validate: async (key) => isValid(key) },
   rbac: {
     enabled: true,
     denyByDefault: true,
-    superAdmin: 'SUPER_ADMIN',
     hierarchy: [
       { name: 'SUPER_ADMIN', inherits: ['ADMIN'], permissions: ['*'] },
-      { name: 'ADMIN', inherits: ['MANAGER'], permissions: ['user.delete', 'role.manage'] },
-      { name: 'MANAGER', inherits: ['STAFF'], permissions: ['user.create', 'report.read'] },
+      { name: 'ADMIN', inherits: ['MANAGER'], permissions: ['user.delete'] },
+      { name: 'MANAGER', inherits: ['STAFF'], permissions: ['user.create'] },
       { name: 'STAFF', permissions: ['task.read', 'task.complete'] },
     ],
   },
-  loginTracker: { maxAttempts: 5, lockoutDuration: 900_000 },
 }
 ```
 
 ### Transport
 
-Config-driven hybrid HTTP + gRPC/TCP/NATS/RabbitMQ. `ServiceClient<T>` provides type-safe RPC calls with auto correlation-ID forwarding. `createResilientClient()` wraps clients with circuit breaker + retry. `ServiceDiscoveryHook` enables dynamic service resolution.
+Config-driven hybrid HTTP + gRPC/TCP/NATS/RabbitMQ. `ServiceClient<T>` provides type-safe RPC calls with auto correlation-ID forwarding. `createResilientClient()` wraps clients with circuit breaker + retry.
 
 ```ts
 transport: {
   grpc: { url: '0.0.0.0:5000', package: 'product', protoPath: 'product.proto' },
-  clients: {
-    PRODUCT_SERVICE: { transport: 'grpc', options: { url: 'product:5000', package: 'product', protoPath: 'product.proto' } },
-  },
 }
 ```
 
 ### Observability
 
-**Metrics:** Prometheus endpoint via `MetricsModule`. Includes `HttpMetricsInterceptor`, `DbMetricsInterceptor`, `CacheMetricsInterceptor`, and `QueueMetrics` collectors.
-
-**Logging:** Structured pino via `LoggingModule` with `BootLogger` and `LoggingInterceptor` (request timing, redaction).
-
-**Tracing:** OpenTelemetry via `TracingModule`. `@BootTrace('name')` auto-creates spans. `initTracing()` runs before NestFactory (handled by `createApp`).
-
-**Correlation:** `X-Correlation-Id` propagated across services via `AsyncLocalStorage`. Use `getCorrelationId()` / `setCorrelationId()` anywhere.
+| Feature | Module | Key highlight |
+|---|---|---|
+| **Metrics** | `MetricsModule` | Prometheus endpoint, HTTP/DB/Cache/Queue collectors |
+| **Logging** | `LoggingModule` | Structured pino, request timing, field redaction |
+| **Tracing** | `TracingModule` | OpenTelemetry, `@BootTrace()` decorator, auto-spans |
+| **Correlation** | `CorrelationModule` | `X-Correlation-Id` propagated via `AsyncLocalStorage` |
 
 ```ts
 metrics: { enabled: true, path: '/metrics', prefix: 'myapp_' },
 logging: { level: 'info', pretty: true, redact: ['req.headers.authorization'] },
 tracing: { exporter: 'otlp', endpoint: 'http://jaeger:4318', sampleRate: 0.1 },
-correlation: { header: 'X-Correlation-Id' },
 ```
 
 ### Resilience
 
-`@CircuitBreaker()` wraps methods with closed/open/half-open state machine. `@Retry({ attempts: 3, backoff: 'exponential' })` adds automatic retries. `@Timeout(5000)` enforces per-method deadlines via `TimeoutInterceptor`.
+`@CircuitBreaker()` with closed/open/half-open state machine. `@Retry({ attempts: 3, backoff: 'exponential' })`. `@Timeout(5000)` per-method deadlines.
 
 ```ts
-resilience: { circuitBreaker: { failureThreshold: 5, resetTimeout: 30000 }, timeout: { default: 5000 } }
+resilience: { circuitBreaker: { failureThreshold: 5, resetTimeout: 30000 } }
 ```
 
-### Error Handling
+### More Modules
 
-`AllExceptionsFilter` for structured HTTP errors. `BootRpcExceptionFilter` for gRPC with HTTP-to-gRPC status mapping. `BootException` adds stable `code` + `details` fields. `MongooseErrorInterceptor` transforms duplicate-key and validation errors. `toProblemDetails()` outputs RFC 9457. `ErrorReporter` hooks into Sentry/Datadog. `errorBoundary()` wraps async calls with fallback.
+<details>
+<summary><strong>Queue & Events</strong></summary>
 
-```ts
-throw new BootException('Not found', { code: ErrorCodes.NOT_FOUND, status: 404 });
-```
+**Queue:** BullMQ job processing with `@Processor`, `@Process`, `@OnFailed`, `@OnCompleted` decorators.
 
-### Queue & Events
-
-**Queue:** BullMQ job processing with `@Processor`, `@Process`, `@OnFailed`, `@OnCompleted` decorators. `QueueService.addJob()` to enqueue.
-
-**Events:** In-process or Redis pub/sub event bus. `BootEvent` for fire-and-forget. `BootQuery` for request/response (`emitAndWait`). `@OnEvent()` and `@OnQuery()` handler decorators.
+**Events:** In-process or Redis pub/sub event bus. `BootEvent` for fire-and-forget. `BootQuery` for request/response.
 
 ```ts
 queue: { driver: 'bullmq', redis: { url: 'redis://localhost:6379' } },
 events: { transport: 'redis', redis: { url: 'redis://localhost:6379' } },
 ```
 
-### CQRS & Event Sourcing
+</details>
 
-- **CommandBus:** 1:1 command-to-handler routing via `@CommandHandler`.
-- **AggregateRoot:** DDD pattern with `apply()`, `loadFromHistory()`, version management.
-- **EventStore:** MongoDB + memory adapter, interface for EventStoreDB/Kafka.
-- **Projection:** `@OnDomainEvent` builds read models automatically when streaming.
-- **Outbox:** Writes events to DB in the same transaction, publishes asynchronously -- guarantees at-least-once delivery.
-- **Saga:** `defineSaga()` builder with reverse compensations.
+<details>
+<summary><strong>CQRS & Event Sourcing</strong></summary>
+
+CommandBus, AggregateRoot (DDD), EventStore (MongoDB + memory), Projections via `@OnDomainEvent`, Outbox pattern (at-least-once delivery), Saga with compensations.
 
 ```ts
 cqrs: { eventStore: 'mongodb', outbox: { enabled: true } }
 ```
 
-### Multi-tenancy
+</details>
 
-3 isolation strategies: row-level (shared collection, filter by `tenantId`), schema-level (prefixed collections), database-level (separate connection per tenant). `TenantAwareRepository` auto-scopes queries. `@CurrentTenant()` decorator.
+<details>
+<summary><strong>Multi-tenancy</strong></summary>
+
+3 isolation strategies: row-level, schema-level, database-level. `TenantAwareRepository` auto-scopes queries. `@CurrentTenant()` decorator.
 
 ```ts
 tenancy: { strategy: 'header', isolation: 'row' }
 ```
 
-### API Versioning
+</details>
 
-URI / header / media-type versioning. `@DeprecatedVersion('2027-01-01')` adds a Sunset header.
+<details>
+<summary><strong>Payments & Webhooks</strong></summary>
 
-```ts
-versioning: { type: 'uri', defaultVersion: '1' }
-```
-
-### Swagger/OpenAPI
-
-Auto-configured from `package.json`. Adds auth schemes when AuthModule is configured. `@ApiPaginated`, `@ApiErrorResponses`, `AutoApiProperties()`. Enabled by default in dev, disabled in prod.
-
-```ts
-swagger: { enabled: true, path: '/docs' }
-```
-
-### WebSocket
-
-Redis adapter for multi-instance scaling. `BootWsGateway` base class. `WsCorrelationInterceptor` attaches correlationId to every message. Supports Socket.IO (default) or native `ws`.
-
-```ts
-websocket: { adapter: 'socket.io', redis: { url: 'redis://localhost:6379' } }
-```
-
-### Payments & Webhooks
-
-Stripe/PayPal signature verification (HMAC-SHA256). `IdempotencyGuard` prevents duplicate processing. Custom providers via interface. Requires `rawBody: true` on NestFactory.
+Stripe/PayPal signature verification (HMAC-SHA256). `IdempotencyGuard` prevents duplicate processing.
 
 ```ts
 webhooks: { providers: { stripe: { secret: process.env.STRIPE_WEBHOOK_SECRET! } } }
 ```
 
-### File Storage
+</details>
 
-Driver abstraction: `local` (zero deps) | `s3` (requires `@aws-sdk/client-s3`) | `gcs` (requires `@google-cloud/storage`). `FileValidationPipe` checks mime + size before upload. `getSignedUrl()` for temporary URLs.
+<details>
+<summary><strong>File Storage</strong></summary>
+
+Driver abstraction: `local` | `s3` | `gcs`. `FileValidationPipe` checks mime + size. `getSignedUrl()` for temporary URLs.
 
 ```ts
 storage: { driver: 's3', s3: { bucket: 'my-bucket', region: 'us-east-1' } }
 ```
 
-### Alerts
+</details>
 
-Multi-channel alert notifications: Console, Webhook, Slack, Discord, PagerDuty. `AlertService` evaluates `AlertRule` conditions and dispatches `AlertPayload` to configured channels. Pluggable `AlertChannel` interface for custom integrations.
+<details>
+<summary><strong>Alerts & Deploy</strong></summary>
 
-```ts
-alerts: {
-  channels: [{ type: 'slack', webhookUrl: process.env.SLACK_WEBHOOK! }],
-  rules: [{ metric: 'error_rate', threshold: 0.05, channels: ['slack'] }],
-}
-```
+**Alerts:** Multi-channel (Console, Webhook, Slack, Discord, PagerDuty). Rule-based evaluation.
 
-### Deploy
+**Deploy:** Lifecycle hooks with `@OnDeploy()`, env validation, dependency checks, readiness gates.
 
-Deploy lifecycle hooks: `@OnDeploy('pre-start')` registers phase-aware hooks. Built-in hooks: `EnvValidationHook` (validates required env vars), `DependencyCheckHook` (verifies external service connectivity), `ReadinessGateHook` (blocks traffic until ready). `DeployService` orchestrates hooks in `DEPLOY_PHASE_ORDER`.
+</details>
 
-```ts
-deploy: { hooks: [EnvValidationHook, DependencyCheckHook, ReadinessGateHook] }
-```
+<details>
+<summary><strong>API Versioning, Swagger, WebSocket, Graceful Shutdown</strong></summary>
 
-### Config
+**Versioning:** URI / header / media-type. `@DeprecatedVersion('2027-01-01')` adds Sunset header.
 
-Joi validation, `.env` + `.env.{BOOT_ENV}` profiles, `BootConfigService` with typed dot-notation access. Async loading via `BootConfigModule.registerAsync()`. Secret adapters: `AwsSecretsAdapter`, `VaultAdapter`, `EnvFileAdapter`. `mergeConfigs()` for multi-source composition. `ConfigWatcher` for dev hot-reload. `generateConfigDocs()` outputs config schema docs.
+**Swagger:** Auto-configured from `package.json`. Auth schemes auto-added. Dev-only by default.
 
-```ts
-BootConfigModule.registerAsync({
-  useFactory: async (vault) => ({ database: { connections: { master: { writerUri: await vault.get('MONGO_URI') } } } }),
-})
-```
+**WebSocket:** Redis adapter for multi-instance scaling. `BootWsGateway` base class. Correlation ID support.
 
-### Health
+**Shutdown:** Drain in-flight requests, close connections, flush queues. K8s-aware with pre-stop delay.
 
-Auto-detects configured drivers (MongoDB, Redis) and registers `@nestjs/terminus` health indicators. Returns 503 during graceful shutdown.
+</details>
 
-```ts
-health: { enabled: true, path: '/health' }
-```
+<details>
+<summary><strong>DI Safety & Architecture</strong></summary>
 
-### Graceful Shutdown
+**Error enrichment:** `parseDiError()` turns cryptic Nest DI errors into actionable fix suggestions.
 
-`ShutdownModule` drains in-flight requests, closes database connections, flushes queues. K8s-aware with configurable pre-stop delay.
+**Contracts:** `createContract<T>()` for interface-based DI. `validateContracts()` catches missing bindings at startup.
 
-```ts
-shutdown: { timeout: 10000, signals: ['SIGTERM', 'SIGINT'] }
-```
+**Graph:** `analyzeModules()` + `detectCycles()` (Tarjan's SCC) + `renderMermaid()`.
 
-### Inter-Service Auth
+**Layers:** `@Layer(ModuleLayer.INFRASTRUCTURE)` + `validateLayers()` prevents upward dependencies.
 
-Propagates auth context (JWT, API keys) across service boundaries via `AsyncLocalStorage`. `AuthPropagationInterceptor` captures incoming auth. `getAuthContext()` / `buildAuthHeaders()` for manual propagation.
+</details>
 
-```ts
-interServiceAuth: { propagation: true, serviceToken: 'internal-service-secret' }
-```
-
-### DI Safety
-
-**Error enrichment:** `parseDiError()` + `formatDiError()` turn cryptic Nest DI errors into actionable fix suggestions.
-
-**Contracts:** `createContract<T>()` defines interface-based DI tokens. `provideContract()` / `provideContractFactory()` bind implementations. `validateContracts()` catches missing bindings at startup.
-
-**Graph analysis:** `analyzeModules()` walks the module tree. `detectCycles()` finds circular dependencies via Tarjan's SCC. `renderMermaid()` outputs a visual diagram.
-
-**Layer enforcement:** `@Layer(ModuleLayer.INFRASTRUCTURE)` decorator + `validateLayers()` prevents upward dependencies (infra importing application).
-
-### Testing
-
-`createTestSuite(options)` -- full lifecycle manager (setup/teardown, module compilation, cleanup). `createFactory<T>(defaults)` -- data factories with traits, sequences, and `afterCreate` hooks. `createTestClient(app)` -- supertest wrapper with typed responses. `createGrpcTestClient()` -- gRPC service testing. `createMessageDispatcher()` -- microservice message testing. `ContractVerifier` -- verify gRPC contracts against proto files. `expectSnapshot()` + `stripVolatileFields()` -- deterministic snapshot testing. `seedDatabase()` / `cleanDatabase()` -- test data lifecycle. `createTestJwt()` + `MockAuthModule` -- auth test helpers.
-
-```ts
-const suite = createTestSuite({ imports: [AppModule] });
-const app = await suite.compile();
-const client = createTestClient(app);
-await client.get('/products').expect(200);
-await suite.teardown();
-```
+---
 
 ## CLI Commands
 
-### `npx nestjs-boot new <name>`
-
-Interactive project scaffolding. Supports MongoDB, PostgreSQL, or None for database, plus cache, auth, and 5 transport options.
-
 ```bash
-npx nestjs-boot new my-service              # interactive prompts
-npx nestjs-boot new my-service --db=postgres # PostgreSQL + Prisma
-npx nestjs-boot new my-service --grpc       # with gRPC transport
-npx nestjs-boot new my-service -y           # all defaults (MongoDB)
-npx nestjs-boot new my-service --db=mongodb --cache=memcached --transport=nats
+npx nestjs-boot new <name>             # Interactive project scaffolding
+npx nestjs-boot new <name> -y          # All defaults (MongoDB + Redis + JWT)
+npx nestjs-boot new <name> --db=postgres --auth=jwt
+
+npx nestjs-boot g resource <name>      # Generate CRUD resource (auto-detects Mongoose/Prisma)
+npx nestjs-boot g auth                 # Scaffold complete JWT auth flow
+
+npx nestjs-boot graph                  # Module dependency graph (Mermaid)
+npx nestjs-boot graph --strict         # Exit 1 if cycles found (CI gate)
+
+npx nestjs-boot migrate                # Run MongoDB migrations
+npx nestjs-boot migrate:create <name>  # Create migration file
+npx nestjs-boot migrate:status         # Show migration status
 ```
 
-### `npx nestjs-boot g resource <name>`
-
-Generate a CRUD resource. Auto-detects your DB driver (Mongoose or Prisma):
-
-```bash
-npx nestjs-boot g resource product          # full CRUD resource
-npx nestjs-boot g resource product --minimal  # minimal scaffold
-# In a Prisma project → generates PrismaService-based code
-# In a Mongoose project → generates Mongoose schema + CrudService
-```
-
-### `npx nestjs-boot g auth`
-
-Scaffold a complete JWT auth flow (User model, DTOs, service, controller, module, test):
-
-```bash
-npx nestjs-boot g auth
-# → register, login, refresh, logout, forgot-password, reset-password, me
-# Auto-detects Mongoose vs Prisma
-```
-
-### `npx nestjs-boot graph`
-
-Visualize module dependency graph. Detects circular dependencies.
-
-```bash
-npx nestjs-boot graph                       # Mermaid diagram to stdout
-npx nestjs-boot graph --strict              # exit 1 if cycles found (CI gate)
-npx nestjs-boot graph --format=json         # JSON output
-npx nestjs-boot graph --output=graph.md     # write to file
-```
+---
 
 ## Full Config Reference
+
+<details>
+<summary><strong>Click to expand BootOptions interface</strong></summary>
 
 ```ts
 interface BootOptions {
@@ -536,19 +486,11 @@ interface BootOptions {
     rabbitmq?: { urls: string[]; queue: string };
     clients?: Record<string, { transport: string; options: object }>;
   };
-  events?: {
-    transport: 'memory' | 'redis';
-    redis?: { url: string };
-  };
+  events?: { transport: 'memory' | 'redis'; redis?: { url: string } };
   queue?: {
     driver: 'bullmq';
     redis: { url: string };
-    defaultOptions?: {
-      attempts?: number;
-      backoff?: { type: 'exponential' | 'fixed'; delay: number };
-      removeOnComplete?: boolean | number;
-      removeOnFail?: boolean | number;
-    };
+    defaultOptions?: { attempts?: number; backoff?: { type: string; delay: number } };
   };
   correlation?: { header?: string; generator?: () => string };
   metrics?: { enabled?: boolean; path?: string; prefix?: string; defaultMetrics?: boolean };
@@ -559,80 +501,34 @@ interface BootOptions {
     timeout?: { default?: number };
   };
   shutdown?: { timeout?: number; signals?: string[] };
-  interServiceAuth?: { propagation?: boolean; serviceToken?: string };
-  monitoring?: {
-    errorReporter?: (error: Error, context: Record<string, unknown>) => void;
-  };
-  logger?: boolean | unknown;
-  versioning?: {
-    type: 'uri' | 'header' | 'media-type';
-    defaultVersion?: string;
-  };
-  tenancy?: {
-    strategy: 'header' | 'subdomain' | 'path';
-    isolation: 'database' | 'schema' | 'row';
-  };
-  swagger?: {
-    enabled?: boolean;                       // default: true in dev, false in prod
-    path?: string;                           // default: '/docs'
-    title?: string;
-  };
-  websocket?: {
-    adapter?: 'socket.io' | 'ws';
-    redis?: { url: string };
-  };
-  webhooks?: {
-    providers: Record<string, { secret: string }>;
-  };
-  storage?: {
-    driver: 'local' | 's3' | 'gcs';
-    local?: { root: string };
-    s3?: { bucket: string; region: string };
-    gcs?: { bucket: string; projectId: string };
-  };
-  cqrs?: {
-    eventStore: 'mongodb' | 'memory';
-    snapshotStore?: string;
-    outbox?: { enabled: boolean };
-  };
-  layers?: {
-    enabled?: boolean;                       // module layer enforcement
-    strict?: boolean;                        // exit on violation
-  };
-  lazy?: boolean;                            // defer DB/cache connections until first request (serverless)
+  tenancy?: { strategy: 'header' | 'subdomain' | 'path'; isolation: 'database' | 'schema' | 'row' };
+  versioning?: { type: 'uri' | 'header' | 'media-type'; defaultVersion?: string };
+  swagger?: { enabled?: boolean; path?: string; title?: string };
+  websocket?: { adapter?: 'socket.io' | 'ws'; redis?: { url: string } };
+  webhooks?: { providers: Record<string, { secret: string }> };
+  storage?: { driver: 'local' | 's3' | 'gcs'; local?: { root: string }; s3?: { bucket: string; region: string }; gcs?: { bucket: string; projectId: string } };
+  cqrs?: { eventStore: 'mongodb' | 'memory'; outbox?: { enabled: boolean } };
+  layers?: { enabled?: boolean; strict?: boolean };
+  lazy?: boolean;                            // defer connections until first request (serverless)
 }
 ```
 
-Every top-level section is optional. Omitted sections = that module is not loaded.
+</details>
 
-## Examples
-
-- **[10-service microservice architecture](examples/microservices/)** -- API Gateway + 9 services, gRPC, EventBus, BullMQ, MongoDB, Redis
-- **[Learning skeleton](examples/learning/)** -- minimal starter for understanding nestjs-boot
-
-## Tools
-
-- **[Web Generator](packages/web-generator/)** -- interactive browser-based project generator with visual config builder
-- **[Admin Dashboard](packages/admin-dashboard/)** -- visual GUI for project generation, module exploration, architecture diagrams, and interactive learning
-- **[Visualize Flow](packages/visualize-flow/)** -- static animated flow diagrams for all nestjs-boot subsystems (boot, auth, cache, CQRS, observability, and more) — open `index.html` directly in a browser
+---
 
 ## Standalone Usage
 
-Use any module without `createApp()`:
+Use any module independently without `createApp()`:
 
 ```ts
-import { DatabaseModule, PrismaModule, CacheModule, AuthModule, ScopeModule, PolicyModule, AuditModule } from 'nestjs-boot';
+import { DatabaseModule, CacheModule, AuthModule } from 'nestjs-boot';
 
 @Module({
   imports: [
-    // Pick your database (or use both)
-    DatabaseModule.register({ connections: { master: { writerUri: '...' } } }), // MongoDB
-    PrismaModule.register({ url: process.env.DATABASE_URL }),                   // PostgreSQL
+    DatabaseModule.register({ connections: { master: { writerUri: '...' } } }),
     CacheModule.register({ redis: { url: '...' }, defaultTtl: 600 }),
     AuthModule.register({ jwt: { secret: '...' }, rbac: { enabled: true } }),
-    ScopeModule.register(),       // OWN/TEAM/DEPT/ORG/SYSTEM scopes
-    PolicyModule.register(),      // Named authorization policies
-    AuditModule.register(),       // Audit logging + security events
   ],
 })
 export class AppModule {}
@@ -640,7 +536,7 @@ export class AppModule {}
 
 ## Plugin System
 
-Extend nestjs-boot without modifying core. Implement the `BootPlugin` interface to register your own modules:
+Extend nestjs-boot without modifying core:
 
 ```ts
 import { BootPlugin } from 'nestjs-boot';
@@ -652,37 +548,35 @@ const myPlugin: BootPlugin = {
   applyGlobals: (app) => app.useGlobalInterceptors(new MyInterceptor()),
 };
 
-const app = await createApp(AppModule, { myPlugin: { /* ... */ } }, { plugins: [myPlugin] });
+const app = await createApp(AppModule, config, { plugins: [myPlugin] });
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details on writing plugins.
+## Testing
 
-## Quality Assurance
+Built-in test utilities for every layer:
 
-The codebase has undergone an **11-phase Kaizen audit** covering architecture, DI safety, error handling, security, performance, testing, documentation, and developer experience. 900+ tests validate all modules.
+```ts
+const suite = createTestSuite({ imports: [AppModule] });
+const app = await suite.compile();
+const client = createTestClient(app);
 
-## Documentation
+await client.get('/products').expect(200);
+await suite.teardown();
+```
 
-Detailed guides for specific topics:
+Includes: `createFactory()` (data factories with traits), `createGrpcTestClient()`, `ContractVerifier`, `createTestJwt()`, `MockAuthModule`, `seedDatabase()` / `cleanDatabase()`.
 
-- [Getting Started](docs/guides/en/getting-started.md) -- installation, minimal example, progressive config
-- [Prisma (PostgreSQL)](docs/guides/en/prisma.md) -- PrismaModule, PrismaCrudService, migrations
-- [Authorization](docs/guides/en/authorization.md) -- RBAC, policies, wildcard permissions
-- [Scope Authorization](docs/guides/en/scope-authorization.md) -- OWN/TEAM/DEPT/ORG/SYSTEM access levels
-- [User Management](docs/guides/en/user-management.md) -- user lifecycle, roles, organizations
-- [When to Use](docs/guides/en/when-to-use.md) -- decision guide for adopting nestjs-boot
-- [Production Checklist](docs/guides/en/production-checklist.md) -- health, shutdown, metrics, tracing, security
-- [Circular Dependency Prevention](docs/guides/en/circular-dependency-prevention.md) -- patterns to avoid circular imports
-- [DI Best Practices](docs/guides/en/di-best-practices.md) -- contract-based DI, layer enforcement, graph analysis
-- [Testing Guide](docs/guides/en/testing-guide.md) -- factories, suites, snapshots, gRPC testing
-- [Transport Selection](docs/guides/en/transport-selection.md) -- when to use gRPC vs TCP vs NATS vs RabbitMQ
-- [Auth & Rate Limiting](docs/guides/en/auth-rate-limiting.md) -- JWT lifecycle, API key rotation, guard composition
+---
 
-## Roadmap
+## Tools & Examples
 
-- TypeORM database adapter
-- Rate limiting module
-- WebSocket transport improvements
+| Tool | Description |
+|---|---|
+| [10-service microservices](examples/microservices/) | API Gateway + 9 services, gRPC, EventBus, BullMQ |
+| [Learning skeleton](examples/learning/) | Minimal starter for understanding nestjs-boot |
+| [Web Generator](packages/web-generator/) | Browser-based project generator with visual config builder |
+| [Admin Dashboard](packages/admin-dashboard/) | GUI for project generation, module exploration, architecture diagrams |
+| [Visualize Flow](packages/visualize-flow/) | Animated flow diagrams for all subsystems |
 
 ## Optional Peer Dependencies
 
@@ -692,29 +586,72 @@ Install only what you use:
 npm install mongoose @nestjs/mongoose        # MongoDB
 npm install @prisma/client && npx prisma init # PostgreSQL
 npm install ioredis                          # Redis cache
-npm install memjs                            # Memcached cache
 npm install bullmq                           # Queue
 npm install pino pino-pretty                 # Logging
 npm install prom-client                      # Metrics
 npm install @nestjs/terminus                 # Health checks
-npm install @opentelemetry/sdk-node @opentelemetry/api  # Tracing
+npm install @opentelemetry/sdk-node          # Tracing
 npm install @grpc/grpc-js @grpc/proto-loader # gRPC transport
 npm install @nestjs/microservices            # Transport module
-npm install otpauth                          # TOTP 2FA
 ```
+
+## Documentation
+
+| Guide | Topic |
+|---|---|
+| [Getting Started](docs/guides/en/getting-started.md) | Installation, minimal example, progressive config |
+| [Prisma (PostgreSQL)](docs/guides/en/prisma.md) | PrismaModule, PrismaCrudService, migrations |
+| [Authorization](docs/guides/en/authorization.md) | RBAC, policies, wildcard permissions |
+| [Scope Authorization](docs/guides/en/scope-authorization.md) | OWN/TEAM/DEPT/ORG/SYSTEM access levels |
+| [Testing Guide](docs/guides/en/testing-guide.md) | Factories, suites, snapshots, gRPC testing |
+| [Transport Selection](docs/guides/en/transport-selection.md) | gRPC vs TCP vs NATS vs RabbitMQ |
+| [Production Checklist](docs/guides/en/production-checklist.md) | Health, shutdown, metrics, tracing, security |
+| [DI Best Practices](docs/guides/en/di-best-practices.md) | Contract-based DI, layer enforcement, graph analysis |
+| [User Management](docs/guides/en/user-management.md) | User lifecycle, roles, organizations |
+| [When to Use](docs/guides/en/when-to-use.md) | Decision guide for adopting nestjs-boot |
+
+## Roadmap
+
+- [ ] TypeORM database adapter
+- [ ] Rate limiting module
+- [ ] WebSocket transport improvements
+- [ ] Docs website
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide: project structure, adding modules, plugin system, code style, testing, and PR process.
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
 
 ```bash
 git clone https://github.com/nthanhdo/nestjs-boot.git
 cd nestjs-boot
 npm install
-npx vitest run     # 900+ tests
-npm run build      # CJS + ESM + DTS
+npm test          # 900+ tests
+npm run build     # CJS + ESM + DTS
 ```
+
+---
+
+## Author
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/nthanhdo">
+        <img src="https://avatars.githubusercontent.com/u/13937528?v=4" width="120" style="border-radius:50%" alt="Do Nguyen" />
+        <br />
+        <strong>Do Nguyen</strong>
+      </a>
+      <br />
+      Tech Lead | NestJS &middot; Laravel &middot; AWS | 12+ yrs
+      <br />
+      Ho Chi Minh City, Vietnam
+      <br /><br />
+      <a href="https://github.com/nthanhdo"><img src="https://img.shields.io/badge/GitHub-nthanhdo-181717?style=flat-square&logo=github" alt="GitHub" /></a>
+      <a href="https://www.linkedin.com/in/do-nguyen-a7815d61/"><img src="https://img.shields.io/badge/LinkedIn-Do%20Nguyen-0A66C2?style=flat-square&logo=linkedin" alt="LinkedIn" /></a>
+    </td>
+  </tr>
+</table>
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) -- Made with dedication in Vietnam.

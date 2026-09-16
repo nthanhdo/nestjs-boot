@@ -31,6 +31,10 @@ const modules = [
   'transport',
   'versioning',
   'websocket',
+  'audit',
+  'di',
+  'organizations',
+  'scope',
 ];
 
 const external = [

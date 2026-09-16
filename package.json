@@ -2,6 +2,7 @@
   "name": "nestjs-boot",
   "version": "0.1.0",
   "description": "Spring Boot auto-configuration for NestJS \u2014 multi-database connections, reader/writer split, multi-layer cache. One config object, zero wiring.",
+  "sideEffects": false,
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -167,9 +168,9 @@
       "import": "./dist/audit/index.mjs"
     },
     "./di": {
-      "types": "./dist/di/di-error-handler.d.ts",
-      "require": "./dist/di/di-error-handler.js",
-      "import": "./dist/di/di-error-handler.mjs"
+      "types": "./dist/di/index.d.ts",
+      "require": "./dist/di/index.js",
+      "import": "./dist/di/index.mjs"
     },
     "./organizations": {
       "types": "./dist/organizations/index.d.ts",
@@ -365,13 +366,6 @@
     "dotenv": "^16.6.1",
     "joi": "^17.0.0",
     "picocolors": "^1.1.0"
-  },
-  "overrides": {
-    "body-parser": "^2.3.0",
-    "multer": "^2.2.0",
-    "esbuild": "^0.25.0",
-    "qs": "^6.15.2",
-    "express": "^4.22.2"
   },
   "devDependencies": {
     "@nestjs/common": "^10.4.0",

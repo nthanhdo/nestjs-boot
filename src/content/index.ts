@@ -8,6 +8,11 @@ export { ContentAssetService } from './services/content-asset.service';
 export { ContentComponentService } from './services/content-component.service';
 export { ContentSearchService } from './services/content-search.service';
 export { ContentWebhookService } from './services/content-webhook.service';
+export { seedContentData } from './seed/content-seed';
+export { ContentApiKeyGuard } from './guards/content-api-key.guard';
+export { ContentPermissionGuard, ContentPermissions } from './guards/content-permission.guard';
+export { ContentEvents } from './events/content.events';
+export type { ContentEventType } from './events/content.events';
 export { EntryStatus, ENTRY_STATUS_TRANSITIONS } from './enums/entry-status.enum';
 export {
   CONTENT_MODULE_OPTIONS,

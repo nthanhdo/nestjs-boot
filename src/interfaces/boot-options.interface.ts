@@ -217,6 +217,13 @@ export interface BootOptions {
   alerts?: import('../alerts/interfaces').AlertOptions;
 
   /**
+   * Content service — Headless CMS module.
+   * Dynamic content types, publishing workflow, localization, REST + GraphQL delivery.
+   * Uses PostgreSQL (Prisma) for storage.
+   */
+  content?: import('../content/interfaces').ContentModuleOptions;
+
+  /**
    * External plugins to register into the boot assembly.
    * Each plugin owns a configKey; when `options[configKey]` is truthy,
    * the plugin's module is loaded. See BootPlugin interface.

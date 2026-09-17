@@ -6,7 +6,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["masterdata", "metadata", "userdata", "analytics", "statistics"]
+  schemas  = ["masterdata", "metadata", "userdata", "analytics", "statistics", "content"]
 }
 
 // ── masterdata ──────────────────────────────────────────────────────────────
@@ -406,4 +406,170 @@ model PolicyEvaluation {
 
   @@map("policy_evaluations")
   @@schema("statistics")
+}
+
+// ── content ────────────────────────────────────────────────────────────────
+// Headless CMS: dynamic content types, entries, assets, publishing workflow.
+// All models scoped by tenantId for row-level multi-tenancy.
+
+model ContentType {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String
+  description String?
+  /** Field definitions stored as JSON array of ContentFieldDefinition */
+  fields      Json     @default("[]")
+  /** Slugs of reusable ContentComponents used by this type */
+  components  String[] @default([])
+  tenantId    String?  @map("tenant_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  entries ContentEntry[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@map("content_types")
+  @@schema("content")
+}
+
+model ContentComponent {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String
+  /** Field definitions stored as JSON array of ContentFieldDefinition */
+  fields      Json     @default("[]")
+  tenantId    String?  @map("tenant_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+  @@map("content_components")
+  @@schema("content")
+}
+
+model ContentEntry {
+  id            String    @id @default(uuid())
+  contentTypeId String    @map("content_type_id")
+  /** Dynamic field data stored as JSONB */
+  data          Json      @default("{}")
+  locale        String    @default("en")
+  status        String    @default("DRAFT")
+  version       Int       @default(1)
+  slug          String?
+  publishedAt   DateTime? @map("published_at")
+  scheduledAt   DateTime? @map("scheduled_at")
+  tenantId      String?   @map("tenant_id")
+  createdBy     String?   @map("created_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  contentType ContentType          @relation(fields: [contentTypeId], references: [id])
+  versions    ContentEntryVersion[]
+
+  @@index([tenantId, slug])
+  @@index([tenantId, contentTypeId, locale, status])
+  @@index([tenantId, status])
+  @@index([scheduledAt])
+  @@map("content_entries")
+  @@schema("content")
+}
+
+model ContentEntryVersion {
+  id        String   @id @default(uuid())
+  entryId   String   @map("entry_id")
+  version   Int
+  data      Json
+  changedBy String?  @map("changed_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  entry ContentEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@index([entryId, version])
+  @@map("content_entry_versions")
+  @@schema("content")
+}
+
+model ContentAsset {
+  id         String   @id @default(uuid())
+  filename   String
+  mimeType   String   @map("mime_type")
+  size       BigInt
+  storageKey String   @map("storage_key")
+  folder     String?
+  tags       String[] @default([])
+  /** Localizable alt text: { "en": "...", "vi": "..." } */
+  altText    Json?    @map("alt_text")
+  tenantId   String?  @map("tenant_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@index([tenantId, folder])
+  @@map("content_assets")
+  @@schema("content")
+}
+
+model ContentLocale {
+  id             String  @id @default(uuid())
+  code           String
+  name           String
+  isDefault      Boolean @default(false) @map("is_default")
+  fallbackLocale String? @map("fallback_locale")
+  tenantId       String? @map("tenant_id")
+
+  @@unique([tenantId, code])
+  @@map("content_locales")
+  @@schema("content")
+}
+
+model ContentApiKey {
+  id          String   @id @default(uuid())
+  keyHash     String   @map("key_hash")
+  name        String
+  environment String   @default("development")
+  permissions Json     @default("{}")
+  tenantId    String?  @map("tenant_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([keyHash])
+  @@index([tenantId])
+  @@map("content_api_keys")
+  @@schema("content")
+}
+
+model ContentWebhook {
+  id        String   @id @default(uuid())
+  url       String
+  events    String[] @default([])
+  secret    String
+  active    Boolean  @default(true)
+  tenantId  String?  @map("tenant_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  logs ContentWebhookLog[]
+
+  @@index([tenantId])
+  @@map("content_webhooks")
+  @@schema("content")
+}
+
+model ContentWebhookLog {
+  id             String   @id @default(uuid())
+  webhookId      String   @map("webhook_id")
+  event          String
+  payload        Json
+  responseStatus Int?     @map("response_status")
+  attempt        Int      @default(1)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  webhook ContentWebhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId])
+  @@index([createdAt])
+  @@map("content_webhook_logs")
+  @@schema("content")
 }

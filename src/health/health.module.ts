@@ -3,17 +3,20 @@ import { TerminusModule } from '@nestjs/terminus';
 import { BootOptions } from '../interfaces/boot-options.interface';
 import { CACHE_SERVICE } from '../cache/constants';
 import { MultiCacheService } from '../cache/multi-cache.service';
-import { DatabaseHealthIndicator } from './indicators/database.indicator';
-import { RedisHealthIndicator } from './indicators/redis.indicator';
-import { QueueHealthIndicator } from './indicators/queue.indicator';
 import { QueueService } from '../queue/queue.service';
 import { HealthController } from './health.controller';
+
+// Lazy-load indicator symbols to avoid pulling hard dependencies (e.g. mongoose)
+// when the corresponding driver is not configured.
+const DATABASE_INDICATOR = 'DatabaseHealthIndicator';
+const REDIS_INDICATOR = 'RedisHealthIndicator';
+const QUEUE_INDICATOR = 'QueueHealthIndicator';
 
 /**
  * HealthModule — auto-detects configured drivers and registers health indicators.
  *
- * - If `options.database` → DatabaseHealthIndicator
- * - If `options.cache?.redis` → RedisHealthIndicator (wired via DI with CacheService)
+ * - If `options.database` → DatabaseHealthIndicator (lazy-loaded to avoid mongoose dep)
+ * - If `options.cache?.redis` → RedisHealthIndicator
  * - GET endpoint at `options.health?.path ?? '/health'`
  */
 @Module({})
@@ -22,15 +25,18 @@ export class HealthModule {
     const path = options.health?.path ?? '/health';
     const providers: Provider[] = [];
 
-    // Database health indicator
+    // Database health indicator — lazy-loaded to avoid top-level mongoose import
     if (options.database) {
       providers.push({
-        provide: DatabaseHealthIndicator,
-        useFactory: () => new DatabaseHealthIndicator(options.database!),
+        provide: DATABASE_INDICATOR,
+        useFactory: async () => {
+          const { DatabaseHealthIndicator } = await import('./indicators/database.indicator');
+          return new DatabaseHealthIndicator(options.database!);
+        },
       });
     } else {
       providers.push({
-        provide: DatabaseHealthIndicator,
+        provide: DATABASE_INDICATOR,
         useValue: null,
       });
     }
@@ -38,13 +44,16 @@ export class HealthModule {
     // Redis health indicator — properly wired via DI so CacheService is injected
     if (options.cache?.redis) {
       providers.push({
-        provide: RedisHealthIndicator,
-        useFactory: (cacheService: MultiCacheService) => new RedisHealthIndicator(cacheService),
+        provide: REDIS_INDICATOR,
+        useFactory: async (cacheService: MultiCacheService) => {
+          const { RedisHealthIndicator } = await import('./indicators/redis.indicator');
+          return new RedisHealthIndicator(cacheService);
+        },
         inject: [CACHE_SERVICE],
       });
     } else {
       providers.push({
-        provide: RedisHealthIndicator,
+        provide: REDIS_INDICATOR,
         useValue: null,
       });
     }
@@ -52,13 +61,16 @@ export class HealthModule {
     // Queue health indicator — checks BullMQ Redis connectivity if queue is configured
     if (options.queue) {
       providers.push({
-        provide: QueueHealthIndicator,
-        useFactory: (queueService?: QueueService) => new QueueHealthIndicator(queueService),
+        provide: QUEUE_INDICATOR,
+        useFactory: async (queueService?: QueueService) => {
+          const { QueueHealthIndicator } = await import('./indicators/queue.indicator');
+          return new QueueHealthIndicator(queueService);
+        },
         inject: [{ token: QueueService, optional: true }],
       });
     } else {
       providers.push({
-        provide: QueueHealthIndicator,
+        provide: QUEUE_INDICATOR,
         useValue: null,
       });
     }

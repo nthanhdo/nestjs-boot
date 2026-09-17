@@ -204,11 +204,17 @@ export const bootOptionsSchema = Joi.object({
     }).optional(),
   }).optional(),
   events: Joi.object({
-    transport: Joi.string().valid('memory', 'redis').required(),
+    transport: Joi.string().valid('memory', 'redis').optional(),
     redis: Joi.object({
       url: Joi.string().pattern(/^rediss?:\/\//).required(),
     }).optional(),
-  }).optional(),
+  }).optional().custom((value) => {
+    // Auto-infer transport from config keys when not explicitly set
+    if (!value.transport) {
+      value.transport = value.redis ? 'redis' : 'memory';
+    }
+    return value;
+  }),
   cqrs: Joi.object({
     eventStore: Joi.string().valid('mongodb', 'memory').required(),
     snapshotStore: Joi.string().valid('mongodb', 'memory').optional(),

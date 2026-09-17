@@ -1,4 +1,4 @@
-import { Model, FilterQuery, PipelineStage, Document, UpdateQuery } from 'mongoose';
+import type { Model, FilterQuery, PipelineStage, Document, UpdateQuery } from 'mongoose';
 import {
   IRepository,
   PaginationOptions,

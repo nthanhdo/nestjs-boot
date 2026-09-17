@@ -17,6 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Container deployment** — Docker production setup with `docker-compose.prod` and CI docker build+push guide
 - **541 tests** across all modules (up from 506)
 
+## [0.1.6] — 2026-09-17
+
+### Added
+
+- **GraphQL delivery endpoint** — optional `/graphql` with queries: `contentTypes`, `entries(type, locale, search)`, `entry(slug)`, `asset(id)`. Enable via `content.graphql: true`
+- **Mock UI** — static HTML demo at `/content-ui` with content type builder, entry CRUD, publishing workflow, asset browser, locale/webhook/API key management
+- **Seed data** — `seedContentData(prismaClient)` creates sample Blog Post, Product, FAQ types + 8 entries (EN/VI) + SEO component + locales
+- **Additional exports** — `ContentApiKeyGuard`, `ContentPermissionGuard`, `ContentPermissions`, `ContentEvents`, `seedContentData`
+
 ## [0.1.5] — 2026-09-17
 
 ### Fixed

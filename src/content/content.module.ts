@@ -24,6 +24,7 @@ import { ContentLocaleController } from './controllers/content-locale.controller
 import { ContentWebhookController } from './controllers/content-webhook.controller';
 import { ContentApiKeyController } from './controllers/content-api-key.controller';
 import { DeliveryController } from './controllers/delivery.controller';
+import { MockUiController } from './controllers/mock-ui.controller';
 
 const logger = new Logger('ContentModule');
 
@@ -79,6 +80,7 @@ export class ContentModule {
       ContentWebhookController,
       ContentApiKeyController,
       DeliveryController,
+      MockUiController,
     ];
 
     // GraphQL resolver — only if enabled and deps available

@@ -1,4 +1,5 @@
 import type { RagOptions } from './rag-options.interface';
+import type { CdnOptions } from './cdn-options.interface';
 
 export interface ContentModuleOptions {
   /**
@@ -93,4 +94,11 @@ export interface ContentModuleOptions {
    * Requires PostgreSQL with pgvector extension.
    */
   rag?: RagOptions;
+
+  /**
+   * CDN integration configuration.
+   * Adds Cache-Control headers to Delivery API and auto-purges on publish.
+   * Supports CloudFront, Cloudflare, or custom webhook.
+   */
+  cdn?: CdnOptions;
 }

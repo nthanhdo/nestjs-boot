@@ -1,5 +1,5 @@
 import {
-  Controller, Get, Param, Query, Req, UseGuards, Inject, Optional,
+  Controller, Get, Param, Query, Req, UseGuards, Inject, Optional, UseInterceptors,
 } from '@nestjs/common';
 import { ContentEntryService } from '../services/content-entry.service';
 import { ContentTypeService } from '../services/content-type.service';
@@ -11,9 +11,11 @@ import { CONTENT_MODULE_OPTIONS, RAG_SEARCH_SERVICE } from '../constants';
 import { EntryStatus } from '../enums/entry-status.enum';
 import type { ContentModuleOptions } from '../interfaces/content-options.interface';
 import type { RagSearchService } from '../services/rag/rag-search.service';
+import { CdnCacheInterceptor } from '../interceptors/cdn-cache.interceptor';
 
 @Controller('api/delivery')
 @UseGuards(ContentApiKeyGuard)
+@UseInterceptors(CdnCacheInterceptor)
 export class DeliveryController {
   constructor(
     private readonly entryService: ContentEntryService,

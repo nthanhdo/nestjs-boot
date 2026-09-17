@@ -1,10 +1,11 @@
 import { Injectable, Inject, Optional, BadRequestException, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ContentEntryRepository } from '../repositories/content-entry.repository';
 import { EntryStatus, ENTRY_STATUS_TRANSITIONS } from '../enums/entry-status.enum';
-import { CONTENT_MODULE_OPTIONS, RAG_EMBEDDING_SERVICE } from '../constants';
+import { CONTENT_MODULE_OPTIONS, RAG_EMBEDDING_SERVICE, CDN_PURGE_SERVICE } from '../constants';
 import type { ContentModuleOptions } from '../interfaces/content-options.interface';
 import type { IContentEntry } from '../interfaces';
 import type { RagEmbeddingService } from './rag/rag-embedding.service';
+import type { CdnPurgeService } from './cdn/cdn-purge.service';
 
 @Injectable()
 export class ContentPublishingService implements OnModuleInit, OnModuleDestroy {
@@ -15,6 +16,7 @@ export class ContentPublishingService implements OnModuleInit, OnModuleDestroy {
     private readonly entryRepo: ContentEntryRepository,
     @Inject(CONTENT_MODULE_OPTIONS) private readonly options: ContentModuleOptions,
     @Optional() @Inject(RAG_EMBEDDING_SERVICE) private readonly ragEmbeddingService?: RagEmbeddingService,
+    @Optional() @Inject(CDN_PURGE_SERVICE) private readonly cdnPurgeService?: CdnPurgeService,
   ) {}
 
   onModuleInit(): void {
@@ -73,6 +75,13 @@ export class ContentPublishingService implements OnModuleInit, OnModuleDestroy {
     if (targetStatus === EntryStatus.PUBLISHED && this.ragEmbeddingService) {
       this.ragEmbeddingService.embedEntry(entryId, tenantId).catch((err) => {
         this.logger.error(`RAG embedding failed for entry ${entryId}: ${err}`);
+      });
+    }
+
+    // Trigger CDN cache purge on publish/unpublish (fire-and-forget)
+    if ((targetStatus === EntryStatus.PUBLISHED || targetStatus === EntryStatus.UNPUBLISHED) && this.cdnPurgeService) {
+      this.cdnPurgeService.purgeEntry(entry.slug ?? undefined, entry.locale).catch((err) => {
+        this.logger.error(`CDN purge failed for entry ${entryId}: ${err}`);
       });
     }
 

@@ -83,6 +83,24 @@ export class ContentModule {
       MockUiController,
     ];
 
+    // CDN integration — cache headers + auto-purge
+    if (opts.cdn?.enabled) {
+      try {
+        const { CdnPurgeService } = require('./services/cdn/cdn-purge.service');
+        const { CdnCacheInterceptor } = require('./interceptors/cdn-cache.interceptor');
+        const { CDN_PURGE_SERVICE } = require('./constants');
+
+        providers.push(
+          { provide: CDN_PURGE_SERVICE, useClass: CdnPurgeService },
+          CdnPurgeService,
+          CdnCacheInterceptor,
+        );
+        logger.log(`CDN integration enabled (provider: ${opts.cdn.provider})`);
+      } catch (err) {
+        logger.warn(`CDN enabled but initialization failed: ${err}`);
+      }
+    }
+
     // RAG semantic search — only if enabled
     if (opts.rag?.enabled) {
       try {

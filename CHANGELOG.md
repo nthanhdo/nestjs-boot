@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Container deployment** — Docker production setup with `docker-compose.prod` and CI docker build+push guide
 - **541 tests** across all modules (up from 506)
 
+## [0.1.4] — 2026-09-17
+
+### Fixed
+
+- **HealthModule ShutdownService DI — complete fix** — v0.1.3 renamed the token but didn't register a fallback provider. When `shutdown` is not configured, `BOOT_SHUTDOWN_SERVICE` now resolves to `null` via a local provider in HealthModule. When ShutdownModule IS loaded (global), its real provider takes precedence. Fixes crash loop on NestJS 12 for all configurations.
+
 ## [0.1.3] — 2026-09-17
 
 ### Added

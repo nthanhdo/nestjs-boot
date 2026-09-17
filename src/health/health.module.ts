@@ -76,6 +76,16 @@ export class HealthModule {
       });
     }
 
+    // ShutdownService fallback — when ShutdownModule is not configured,
+    // provide null so @Optional @Inject('BOOT_SHUTDOWN_SERVICE') resolves.
+    // When ShutdownModule IS loaded (global), its provider takes precedence.
+    if (!options.shutdown) {
+      providers.push({
+        provide: 'BOOT_SHUTDOWN_SERVICE',
+        useValue: null,
+      });
+    }
+
     // Dynamic controller with configured path
     @Controller(path)
     class DynamicHealthController extends HealthController {}

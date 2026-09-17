@@ -1,5 +1,5 @@
 import {
-  Controller, Get, Param, Query, Req, UseGuards, Inject,
+  Controller, Get, Param, Query, Req, UseGuards, Inject, Optional,
 } from '@nestjs/common';
 import { ContentEntryService } from '../services/content-entry.service';
 import { ContentTypeService } from '../services/content-type.service';
@@ -7,9 +7,10 @@ import { ContentAssetService } from '../services/content-asset.service';
 import { ContentSearchService } from '../services/content-search.service';
 import { ContentLocalizationService } from '../services/content-localization.service';
 import { ContentApiKeyGuard } from '../guards/content-api-key.guard';
-import { CONTENT_MODULE_OPTIONS } from '../constants';
+import { CONTENT_MODULE_OPTIONS, RAG_SEARCH_SERVICE } from '../constants';
 import { EntryStatus } from '../enums/entry-status.enum';
 import type { ContentModuleOptions } from '../interfaces/content-options.interface';
+import type { RagSearchService } from '../services/rag/rag-search.service';
 
 @Controller('api/delivery')
 @UseGuards(ContentApiKeyGuard)
@@ -21,6 +22,7 @@ export class DeliveryController {
     private readonly searchService: ContentSearchService,
     private readonly localizationService: ContentLocalizationService,
     @Inject(CONTENT_MODULE_OPTIONS) private readonly options: ContentModuleOptions,
+    @Optional() @Inject(RAG_SEARCH_SERVICE) private readonly ragSearchService?: RagSearchService,
   ) {}
 
   @Get('types')
@@ -38,19 +40,39 @@ export class DeliveryController {
     @Query('page') page?: string,
     @Query('pageSize') pageSize?: string,
     @Query('fields') fields?: string,
+    @Query('mode') mode?: 'keyword' | 'semantic' | 'hybrid',
   ) {
     const tenantId = req.contentTenantId;
     const requestedLocale = locale ?? this.options.defaultLocale ?? 'en';
+    const parsedPage = page ? parseInt(page, 10) : undefined;
+    const parsedPageSize = pageSize ? parseInt(pageSize, 10) : undefined;
 
-    // If search query provided, use search service
+    // If search query provided, dispatch to appropriate search engine
     if (search) {
+      const searchMode = mode ?? (this.ragSearchService ? 'hybrid' : 'keyword');
+
+      if (searchMode === 'semantic' && this.ragSearchService) {
+        return this.ragSearchService.semanticSearch({
+          query: search, locale: requestedLocale, tenantId,
+          page: parsedPage, pageSize: parsedPageSize,
+        });
+      }
+
+      if (searchMode === 'hybrid' && this.ragSearchService) {
+        return this.ragSearchService.hybridSearch({
+          query: search, locale: requestedLocale, tenantId,
+          page: parsedPage, pageSize: parsedPageSize,
+        });
+      }
+
+      // Default: keyword search
       return this.searchService.search({
         query: search,
         locale: requestedLocale,
         status: EntryStatus.PUBLISHED,
         tenantId,
-        page: page ? parseInt(page, 10) : undefined,
-        pageSize: pageSize ? parseInt(pageSize, 10) : undefined,
+        page: parsedPage,
+        pageSize: parsedPageSize,
       });
     }
 

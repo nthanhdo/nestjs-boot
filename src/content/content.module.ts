@@ -83,6 +83,34 @@ export class ContentModule {
       MockUiController,
     ];
 
+    // RAG semantic search — only if enabled
+    if (opts.rag?.enabled) {
+      try {
+        const { ChunkingService } = require('./services/rag/chunking.service');
+        const { RagEmbeddingService } = require('./services/rag/rag-embedding.service');
+        const { RagSearchService } = require('./services/rag/rag-search.service');
+        const { RagManagementService } = require('./services/rag/rag-management.service');
+        const { RagManagementController } = require('./controllers/rag-management.controller');
+        const { createEmbeddingProvider } = require('./services/rag/embedding-provider.factory');
+        const { RAG_EMBEDDING_PROVIDER, RAG_EMBEDDING_SERVICE, RAG_SEARCH_SERVICE } = require('./constants');
+
+        const embeddingProvider = createEmbeddingProvider(opts.rag);
+        providers.push(
+          { provide: RAG_EMBEDDING_PROVIDER, useValue: embeddingProvider },
+          { provide: RAG_SEARCH_SERVICE, useClass: RagSearchService },
+          { provide: RAG_EMBEDDING_SERVICE, useClass: RagEmbeddingService },
+          ChunkingService,
+          RagEmbeddingService,
+          RagSearchService,
+          RagManagementService,
+        );
+        controllers.push(RagManagementController);
+        logger.log(`RAG semantic search enabled (provider: ${opts.rag.embeddingProvider}, model: ${opts.rag.model ?? 'text-embedding-3-small'})`);
+      } catch (err) {
+        logger.warn(`RAG enabled but initialization failed: ${err}`);
+      }
+    }
+
     // GraphQL resolver — only if enabled and deps available
     if (opts.graphql) {
       try {

@@ -573,3 +573,20 @@ model ContentWebhookLog {
   @@map("content_webhook_logs")
   @@schema("content")
 }
+
+model ContentEmbedding {
+  id         String   @id @default(uuid())
+  entryId    String   @map("entry_id")
+  chunkIndex Int      @map("chunk_index")
+  chunkText  String   @map("chunk_text")
+  /// pgvector embedding column — added via raw SQL migration, not Prisma-native
+  /// actual column: embedding vector(1536)
+  metadata   Json?    @default("{}")
+  tenantId   String?  @map("tenant_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([entryId])
+  @@index([tenantId])
+  @@map("content_embeddings")
+  @@schema("content")
+}

@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { PermissionStore } from './permission-store';
+import type { PermissionStore } from './permission-store';
 import { PrivilegeBoundary, LeveledRole } from './privilege-boundary';
 import { RolesGuard } from '../guards/roles.guard';
 import { PermissionsGuard } from '../guards/permissions.guard';

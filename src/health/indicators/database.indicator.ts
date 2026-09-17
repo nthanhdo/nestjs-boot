@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { HealthIndicatorService, HealthIndicatorResult } from '@nestjs/terminus';
 import mongoose from 'mongoose';
-import { DatabaseOptions } from '../../interfaces/boot-options.interface';
+import type { DatabaseOptions } from '../../interfaces/boot-options.interface';
 import { getWriterConnectionName } from '../../database/constants';
 
 /**

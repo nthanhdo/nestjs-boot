@@ -1,6 +1,6 @@
 import { DynamicModule, Logger, Module, OnModuleInit } from '@nestjs/common';
 import { DiscoveryModule, DiscoveryService, MetadataScanner, Reflector } from '@nestjs/core';
-import { EventBusOptions } from './interfaces';
+import type { EventBusOptions } from './interfaces';
 import { EventBusService } from './event-bus.service';
 import { EVENT_BUS_OPTIONS, EVENT_BUS_SERVICE, ON_EVENT_METADATA, ON_QUERY_METADATA } from './constants';
 

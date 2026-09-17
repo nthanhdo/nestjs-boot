@@ -1,5 +1,5 @@
 import { DynamicModule, Logger, Module } from '@nestjs/common';
-import { StorageModuleOptions, StorageAdapter } from './storage.interface';
+import type { StorageModuleOptions, StorageAdapter } from './storage.interface';
 import { StorageService } from './storage.service';
 import { STORAGE_SERVICE, STORAGE_ADAPTER, STORAGE_OPTIONS } from './storage.constants';
 

@@ -1,9 +1,9 @@
 import { DynamicModule, Global, Logger, Module, OnModuleDestroy, Provider } from '@nestjs/common';
-import { CacheOptions } from '../interfaces/boot-options.interface';
+import type { CacheOptions } from '../interfaces/boot-options.interface';
 import { MemoryCacheAdapter } from './adapters/memory-cache.adapter';
 import { MemcachedCacheAdapter } from './adapters/memcached-cache.adapter';
 import { RedisCacheAdapter } from './adapters/redis-cache.adapter';
-import { CacheAdapter } from './interfaces';
+import type { CacheAdapter } from './interfaces';
 import { MultiCacheService } from './multi-cache.service';
 import { CACHE_SERVICE, CACHE_OPTIONS } from './constants';
 import { CacheWarmer } from './cache-warming';

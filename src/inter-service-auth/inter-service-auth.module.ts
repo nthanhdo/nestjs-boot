@@ -1,7 +1,7 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { INTER_SERVICE_AUTH_OPTIONS } from './constants';
-import { InterServiceAuthOptions } from './interfaces';
+import type { InterServiceAuthOptions } from './interfaces';
 import { AuthPropagationInterceptor } from './auth-propagation.interceptor';
 
 @Module({})

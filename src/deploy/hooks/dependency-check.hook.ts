@@ -1,4 +1,4 @@
-import { DeployHook, DeployContext } from '../interfaces';
+import type { DeployHook, DeployContext } from '../interfaces';
 
 /**
  * Checks external dependency connectivity (MongoDB, Redis) before boot.

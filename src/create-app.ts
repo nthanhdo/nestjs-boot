@@ -5,7 +5,7 @@ import { BootConfigModule } from './config/config.module';
 import { validateBootOptions } from './config/validators';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
-import { BootOptions } from './interfaces/boot-options.interface';
+import type { BootOptions } from './interfaces/boot-options.interface';
 import { parseDiError, formatDiError } from './di/di-error-handler';
 import { scanForCircularDepWarnings } from './di/circular-dep-scanner';
 import { validateLayers } from './layers/layer-enforcer';

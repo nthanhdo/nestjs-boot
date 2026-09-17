@@ -1,5 +1,5 @@
 import { DynamicModule, Logger, Module } from '@nestjs/common';
-import { CqrsOptions } from './interfaces';
+import type { CqrsOptions } from './interfaces';
 import { CommandBus } from './command-bus';
 import { EventReplayService } from './event-replay.service';
 import { MemoryEventStore } from './adapters/memory-event-store';

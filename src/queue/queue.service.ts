@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { QueueOptions } from './interfaces';
+import type { QueueOptions } from './interfaces';
 
 /** Minimal shape for a BullMQ Queue (optional dep) */
 interface BullQueue {

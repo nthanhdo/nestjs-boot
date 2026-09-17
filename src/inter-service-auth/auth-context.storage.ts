@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'async_hooks';
-import { AuthContext } from './interfaces';
+import type { AuthContext } from './interfaces';
 
 const storage = new AsyncLocalStorage<AuthContext>();
 

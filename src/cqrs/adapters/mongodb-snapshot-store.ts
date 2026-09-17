@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { SnapshotStore } from '../interfaces';
+import type { SnapshotStore } from '../interfaces';
 
 /**
  * MongoDB-backed SnapshotStore.

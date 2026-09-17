@@ -1,6 +1,6 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common';
 import { SESSION_OPTIONS } from './session.constants';
-import { SessionModuleOptions } from './session.interfaces';
+import type { SessionModuleOptions } from './session.interfaces';
 import { SessionGuard } from './session.guard';
 import { MemorySessionStore } from './memory-session.store';
 

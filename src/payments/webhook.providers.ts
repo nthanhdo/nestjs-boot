@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from 'crypto';
-import { WebhookEvent, WebhookProvider } from './webhook.interfaces';
+import type { WebhookEvent, WebhookProvider } from './webhook.interfaces';
 
 /**
  * Stripe webhook provider.

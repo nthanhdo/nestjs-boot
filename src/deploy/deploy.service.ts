@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DeployHook, DeployPhase, DeployContext } from './interfaces';
+import type { DeployHook, DeployPhase, DeployContext } from './interfaces';
 
 @Injectable()
 export class DeployService {

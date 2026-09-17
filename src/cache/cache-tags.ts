@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MultiCacheService } from './multi-cache.service';
-import { CacheSetOptions } from './interfaces';
+import type { CacheSetOptions } from './interfaces';
 
 export interface TaggedCacheOptions extends CacheSetOptions {
   /** Tags to associate with this cache entry */

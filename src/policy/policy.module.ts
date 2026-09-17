@@ -1,7 +1,7 @@
 import { DynamicModule, Global, Module, OnModuleInit, Inject, Optional, Provider } from '@nestjs/common';
 import { APP_GUARD, ModuleRef } from '@nestjs/core';
 import { POLICY_OPTIONS } from './constants';
-import { AuthorizationPolicy, AuthorizationPolicyClass, PolicyModuleOptions } from './interfaces';
+import type { AuthorizationPolicy, AuthorizationPolicyClass, PolicyModuleOptions } from './interfaces';
 import { PolicyRegistry } from './policy.registry';
 import { PolicyEngine } from './policy.engine';
 import { PolicyGuard } from './policy.guard';

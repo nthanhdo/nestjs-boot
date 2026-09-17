@@ -12,7 +12,7 @@ import {
   Param,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { WebhookEvent, WebhookModuleOptions, WebhookProvider } from './webhook.interfaces';
+import type { WebhookEvent, WebhookModuleOptions, WebhookProvider } from './webhook.interfaces';
 import { StripeWebhookProvider, PayPalWebhookProvider } from './webhook.providers';
 import { WEBHOOK_OPTIONS, IDEMPOTENCY_STORE } from './constants';
 

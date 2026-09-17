@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { AlertChannel, AlertPayload } from '../interfaces';
+import type { AlertChannel, AlertPayload } from '../interfaces';
 
 export class WebhookChannel implements AlertChannel {
   readonly name = 'webhook';

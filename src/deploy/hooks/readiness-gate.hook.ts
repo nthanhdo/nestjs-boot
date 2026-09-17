@@ -1,4 +1,4 @@
-import { DeployHook, DeployContext } from '../interfaces';
+import type { DeployHook, DeployContext } from '../interfaces';
 
 /**
  * Polls the app health endpoint until it returns healthy,

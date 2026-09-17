@@ -1,5 +1,5 @@
 import { DynamicModule, Module, Provider, Logger } from '@nestjs/common';
-import { TransportOptions, ClientTransportOptions } from './interfaces';
+import type { TransportOptions, ClientTransportOptions } from './interfaces';
 import { TRANSPORT_OPTIONS, TRANSPORT_TYPE_MAP } from './constants';
 import { getClientToken } from './decorators';
 

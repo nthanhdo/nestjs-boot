@@ -1,6 +1,6 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { WebhookController } from './webhook.controller';
-import { WebhookModuleOptions } from './webhook.interfaces';
+import type { WebhookModuleOptions } from './webhook.interfaces';
 import { WEBHOOK_OPTIONS, IDEMPOTENCY_STORE } from './constants';
 
 /**

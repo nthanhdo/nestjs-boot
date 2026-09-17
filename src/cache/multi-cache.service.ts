@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { CacheAdapter, CacheSetOptions } from './interfaces';
+import type { CacheAdapter, CacheSetOptions } from './interfaces';
 
 /** Threshold for L1 storage — values >= 1MB go to L2 only. */
 const SIZE_THRESHOLD_BYTES = 1024 * 1024; // 1MB

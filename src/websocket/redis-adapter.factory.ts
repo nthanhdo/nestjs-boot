@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { WebSocketOptions } from './interfaces';
+import type { WebSocketOptions } from './interfaces';
 
 const logger = new Logger('RedisAdapterFactory');
 

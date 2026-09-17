@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { BootEvent } from './boot-event';
-import { EventBusOptions, OnEventOptions, EmitAndWaitOptions } from './interfaces';
+import type { EventBusOptions, OnEventOptions, EmitAndWaitOptions } from './interfaces';
 
 /** Minimal shape for an ioredis client used for pub/sub (optional dep) */
 interface RedisPubSubClient {

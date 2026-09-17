@@ -1,4 +1,4 @@
-import { DeployHook, DeployContext } from '../interfaces';
+import type { DeployHook, DeployContext } from '../interfaces';
 
 /**
  * Validates that all required environment variables are set before boot.

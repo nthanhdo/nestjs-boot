@@ -1,5 +1,5 @@
 import { INestApplication, Logger } from '@nestjs/common';
-import { TransportOptions } from './interfaces';
+import type { TransportOptions } from './interfaces';
 import { TRANSPORT_TYPE_MAP } from './constants';
 
 const logger = new Logger('TransportFactory');

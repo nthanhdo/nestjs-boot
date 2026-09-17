@@ -1,5 +1,5 @@
 import { DynamicModule, Global, Module, Provider, Type } from '@nestjs/common';
-import { BootOptions } from '../interfaces/boot-options.interface';
+import type { BootOptions } from '../interfaces/boot-options.interface';
 import { BootConfigService } from './config.service';
 import { BOOT_OPTIONS } from './constants';
 import { validateBootOptions } from './validators';

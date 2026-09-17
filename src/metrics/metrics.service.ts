@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger, OnModuleInit } from '@nestjs/common';
 import { METRICS_OPTIONS } from './constants';
-import { MetricsOptions } from './interfaces';
+import type { MetricsOptions } from './interfaces';
 
 let promClient: typeof import('prom-client') | undefined;
 try {

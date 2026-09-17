@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, Inject } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AUTH_OPTIONS, IS_PUBLIC_KEY } from '../constants';
-import { AuthOptions } from '../interfaces';
+import type { AuthOptions } from '../interfaces';
 import { BootJwtService } from '../services/jwt.service';
 
 /**

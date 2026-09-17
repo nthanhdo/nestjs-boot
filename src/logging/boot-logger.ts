@@ -1,6 +1,6 @@
 import { LoggerService } from '@nestjs/common';
 import { getCorrelationId } from '../correlation/correlation.storage';
-import { LoggingOptions } from './interfaces';
+import type { LoggingOptions } from './interfaces';
 import { buildLogContext } from './log-context';
 
 let pinoFactory: ((opts?: any) => any) | undefined;

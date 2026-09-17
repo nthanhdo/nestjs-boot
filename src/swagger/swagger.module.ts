@@ -1,5 +1,5 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { SwaggerOptions } from './interfaces';
+import type { SwaggerOptions } from './interfaces';
 
 const SWAGGER_OPTIONS = 'SWAGGER_OPTIONS';
 

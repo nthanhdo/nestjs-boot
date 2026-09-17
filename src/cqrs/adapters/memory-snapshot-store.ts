@@ -1,4 +1,4 @@
-import { SnapshotStore } from '../interfaces';
+import type { SnapshotStore } from '../interfaces';
 
 /**
  * In-memory SnapshotStore implementation.

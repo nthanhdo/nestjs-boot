@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { AuthorizationPolicy } from './interfaces';
+import type { AuthorizationPolicy } from './interfaces';
 
 /**
  * PolicyRegistry — manages named authorization policies.

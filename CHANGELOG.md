@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Container deployment** — Docker production setup with `docker-compose.prod` and CI docker build+push guide
 - **541 tests** across all modules (up from 506)
 
+## [0.1.7] — 2026-09-17
+
+### Added
+
+- **Content service README** — comprehensive documentation (534 lines) covering quick start, configuration, architecture, API reference, GraphQL, search, webhooks, deployment, and vs Strapi comparison
+
 ## [0.1.6] — 2026-09-17
 
 ### Added

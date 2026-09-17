@@ -9,6 +9,7 @@ export type {
   IContentComponent,
 } from './content-type.interface';
 export type { RagOptions } from './rag-options.interface';
+export type { CdnOptions } from './cdn-options.interface';
 export type { EmbeddingProvider } from './embedding-provider.interface';
 export type {
   IContentEntry,

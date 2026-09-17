@@ -17,6 +17,8 @@ export { RagSearchService } from './services/rag/rag-search.service';
 export { RagManagementService } from './services/rag/rag-management.service';
 export { OpenAIEmbeddingProvider } from './services/rag/openai-embedding.provider';
 export { createEmbeddingProvider } from './services/rag/embedding-provider.factory';
+export { CdnPurgeService } from './services/cdn/cdn-purge.service';
+export { CdnCacheInterceptor } from './interceptors/cdn-cache.interceptor';
 export { ContentEvents } from './events/content.events';
 export type { ContentEventType } from './events/content.events';
 export { EntryStatus, ENTRY_STATUS_TRANSITIONS } from './enums/entry-status.enum';

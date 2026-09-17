@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Container deployment** — Docker production setup with `docker-compose.prod` and CI docker build+push guide
 - **541 tests** across all modules (up from 506)
 
+## [0.1.5] — 2026-09-17
+
+### Fixed
+
+- **Health endpoint bypasses JWT auth** — `/health`, `/healthz`, `/readyz` now marked `@Public()` (`boot:isPublic` metadata) so global JWT guard skips them. Previously returned 401 when `auth.jwt` was configured.
+
 ## [0.1.4] — 2026-09-17
 
 ### Fixed

@@ -1,6 +1,6 @@
 import { Injectable, Inject, NotFoundException, ConflictException } from '@nestjs/common';
 import { ORGANIZATION_STORE } from './constants';
-import {
+import type {
   OrganizationStore,
   OrganizationEntity,
   DepartmentEntity,

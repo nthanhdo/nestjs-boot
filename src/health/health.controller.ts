@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Optional, ServiceUnavailableException } from '@nestjs/common';
+import { Controller, Get, Inject, Optional, ServiceUnavailableException, SetMetadata } from '@nestjs/common';
 import { HealthCheck, HealthCheckService, HealthCheckResult, HealthIndicatorFunction } from '@nestjs/terminus';
 import type { ShutdownService } from '../shutdown/shutdown.service';
 
@@ -18,6 +18,7 @@ const SHUTDOWN_SERVICE_TOKEN = 'BOOT_SHUTDOWN_SERVICE';
  * in-flight connections are drained.
  */
 @Controller()
+@SetMetadata('boot:isPublic', true)
 export class HealthController {
   constructor(
     private readonly health: HealthCheckService,

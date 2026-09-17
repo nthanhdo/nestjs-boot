@@ -1,6 +1,6 @@
 {
   "name": "nestjs-boot",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Spring Boot auto-configuration for NestJS — multi-database connections, reader/writer split, multi-layer cache. One config object, zero wiring.",
   "sideEffects": false,
   "main": "dist/index.js",

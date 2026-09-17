@@ -30,8 +30,12 @@ export class ShutdownModule {
         },
         InFlightTracker,
         ShutdownService,
+        {
+          provide: 'BOOT_SHUTDOWN_SERVICE',
+          useExisting: ShutdownService,
+        },
       ],
-      exports: [ShutdownService, InFlightTracker],
+      exports: [ShutdownService, InFlightTracker, 'BOOT_SHUTDOWN_SERVICE'],
     };
   }
 }

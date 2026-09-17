@@ -24,6 +24,8 @@ export class RpcModule {
   static register(options?: RpcOptions): DynamicModule {
     const opts: RpcOptions = options ?? {};
 
+    const filterInstance = new BootRpcExceptionFilter({ serviceName: opts.serviceName });
+
     return {
       module: RpcModule,
       providers: [
@@ -33,10 +35,14 @@ export class RpcModule {
         },
         {
           provide: APP_FILTER,
-          useFactory: () => new BootRpcExceptionFilter({ serviceName: opts.serviceName }),
+          useValue: filterInstance,
+        },
+        {
+          provide: BootRpcExceptionFilter,
+          useValue: filterInstance,
         },
       ],
-      exports: [RPC_OPTIONS],
+      exports: [RPC_OPTIONS, BootRpcExceptionFilter],
     };
   }
 }

@@ -1,6 +1,13 @@
 import { Controller, Get, Inject, Optional, ServiceUnavailableException } from '@nestjs/common';
 import { HealthCheck, HealthCheckService, HealthCheckResult, HealthIndicatorFunction } from '@nestjs/terminus';
-import { ShutdownService } from '../shutdown/shutdown.service';
+import type { ShutdownService } from '../shutdown/shutdown.service';
+
+/**
+ * String token avoids NestJS 12 DI resolution failure when ShutdownModule
+ * is not registered. The class token requires the provider to exist at
+ * module compile time even with @Optional(), which breaks in NestJS 12.
+ */
+const SHUTDOWN_SERVICE_TOKEN = 'BOOT_SHUTDOWN_SERVICE';
 
 /**
  * Health check controller — GET endpoint at configured path.
@@ -17,7 +24,7 @@ export class HealthController {
     @Optional() @Inject('DatabaseHealthIndicator') private readonly dbIndicator: any,
     @Optional() @Inject('RedisHealthIndicator') private readonly redisIndicator: any,
     @Optional() @Inject('QueueHealthIndicator') private readonly queueIndicator: any,
-    @Optional() @Inject(ShutdownService) private readonly shutdownService?: ShutdownService,
+    @Optional() @Inject(SHUTDOWN_SERVICE_TOKEN) private readonly shutdownService?: ShutdownService,
   ) {}
 
   @Get('healthz')

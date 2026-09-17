@@ -27,6 +27,11 @@
       "require": "./dist/cache/index.js",
       "import": "./dist/cache/index.mjs"
     },
+    "./content": {
+      "types": "./dist/content/index.d.ts",
+      "require": "./dist/content/index.js",
+      "import": "./dist/content/index.mjs"
+    },
     "./common": {
       "types": "./dist/common/index.d.ts",
       "require": "./dist/common/index.js",
@@ -233,8 +238,11 @@
     "@google-cloud/storage": ">=6.0.0",
     "@grpc/grpc-js": "^1.9.0",
     "@grpc/proto-loader": "^0.7.0",
+    "@apollo/server": ">=4.0.0",
+    "@nestjs/apollo": "^12.0.0 || ^13.0.0",
     "@nestjs/common": "^10.0.0 || ^11.0.0 || ^12.0.0",
     "@nestjs/core": "^10.0.0 || ^11.0.0 || ^12.0.0",
+    "@nestjs/graphql": "^12.0.0 || ^13.0.0",
     "@nestjs/microservices": "^10.0.0 || ^11.0.0 || ^12.0.0",
     "@nestjs/mongoose": "^10.0.0 || ^11.0.0 || ^12.0.0",
     "@nestjs/swagger": "^7.0.0 || ^8.0.0 || ^12.0.0",
@@ -280,6 +288,15 @@
       "optional": true
     },
     "@grpc/proto-loader": {
+      "optional": true
+    },
+    "@apollo/server": {
+      "optional": true
+    },
+    "@nestjs/apollo": {
+      "optional": true
+    },
+    "@nestjs/graphql": {
       "optional": true
     },
     "@nestjs/microservices": {

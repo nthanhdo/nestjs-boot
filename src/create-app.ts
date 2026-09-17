@@ -251,6 +251,12 @@ function buildBootModule(
     imports.push(WebhookModule.register(validated.webhooks));
   }
 
+  // Content Service (Headless CMS)
+  if (validated.content) {
+    const { ContentModule } = require('./content/content.module');
+    imports.push(ContentModule.register(validated.content));
+  }
+
   // PP20: File Storage
   if (validated.storage) {
     const { StorageModule } = require('./storage/storage.module');

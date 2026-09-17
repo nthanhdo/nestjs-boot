@@ -8,6 +8,8 @@ export type {
   IContentType,
   IContentComponent,
 } from './content-type.interface';
+export type { RagOptions } from './rag-options.interface';
+export type { EmbeddingProvider } from './embedding-provider.interface';
 export type {
   IContentEntry,
   IContentEntryVersion,

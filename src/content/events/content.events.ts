@@ -13,6 +13,7 @@ export const ContentEvents = {
   TYPE_DELETED: 'content-type.deleted',
   ASSET_UPLOADED: 'asset.uploaded',
   ASSET_DELETED: 'asset.deleted',
+  ENTRY_EMBEDDED: 'entry.embedded',
 } as const;
 
 export type ContentEventType = typeof ContentEvents[keyof typeof ContentEvents];

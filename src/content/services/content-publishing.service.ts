@@ -1,9 +1,10 @@
-import { Injectable, Inject, BadRequestException, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Inject, Optional, BadRequestException, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ContentEntryRepository } from '../repositories/content-entry.repository';
 import { EntryStatus, ENTRY_STATUS_TRANSITIONS } from '../enums/entry-status.enum';
-import { CONTENT_MODULE_OPTIONS } from '../constants';
+import { CONTENT_MODULE_OPTIONS, RAG_EMBEDDING_SERVICE } from '../constants';
 import type { ContentModuleOptions } from '../interfaces/content-options.interface';
 import type { IContentEntry } from '../interfaces';
+import type { RagEmbeddingService } from './rag/rag-embedding.service';
 
 @Injectable()
 export class ContentPublishingService implements OnModuleInit, OnModuleDestroy {
@@ -13,6 +14,7 @@ export class ContentPublishingService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly entryRepo: ContentEntryRepository,
     @Inject(CONTENT_MODULE_OPTIONS) private readonly options: ContentModuleOptions,
+    @Optional() @Inject(RAG_EMBEDDING_SERVICE) private readonly ragEmbeddingService?: RagEmbeddingService,
   ) {}
 
   onModuleInit(): void {
@@ -65,7 +67,16 @@ export class ContentPublishingService implements OnModuleInit, OnModuleDestroy {
       updateData.publishedAt = undefined;
     }
 
-    return this.entryRepo.update(entryId, updateData);
+    const updated = await this.entryRepo.update(entryId, updateData);
+
+    // Trigger RAG embedding on publish (fire-and-forget)
+    if (targetStatus === EntryStatus.PUBLISHED && this.ragEmbeddingService) {
+      this.ragEmbeddingService.embedEntry(entryId, tenantId).catch((err) => {
+        this.logger.error(`RAG embedding failed for entry ${entryId}: ${err}`);
+      });
+    }
+
+    return updated;
   }
 
   /** Convenience methods */

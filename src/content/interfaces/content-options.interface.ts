@@ -1,3 +1,5 @@
+import type { RagOptions } from './rag-options.interface';
+
 export interface ContentModuleOptions {
   /**
    * Enable content service module.
@@ -84,4 +86,11 @@ export interface ContentModuleOptions {
    * @default 60000 (1 minute)
    */
   scheduleCheckInterval?: number;
+
+  /**
+   * RAG (Retrieval-Augmented Generation) configuration.
+   * Enables semantic search via pgvector embeddings.
+   * Requires PostgreSQL with pgvector extension.
+   */
+  rag?: RagOptions;
 }

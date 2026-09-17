@@ -1,8 +1,5 @@
 import { Controller, Get, Inject, Optional, ServiceUnavailableException } from '@nestjs/common';
-import { HealthCheck, HealthCheckService, HealthCheckResult, HealthIndicatorFunction } from '@nestjs/terminus';
-import { DatabaseHealthIndicator } from './indicators/database.indicator';
-import { RedisHealthIndicator } from './indicators/redis.indicator';
-import { QueueHealthIndicator } from './indicators/queue.indicator';
+import { HealthCheck, HealthCheckService, HealthCheckResult, HealthIndicator, HealthIndicatorFunction } from '@nestjs/terminus';
 import { ShutdownService } from '../shutdown/shutdown.service';
 
 /**
@@ -17,9 +14,9 @@ import { ShutdownService } from '../shutdown/shutdown.service';
 export class HealthController {
   constructor(
     private readonly health: HealthCheckService,
-    private readonly dbIndicator: DatabaseHealthIndicator | null,
-    private readonly redisIndicator: RedisHealthIndicator | null,
-    private readonly queueIndicator: QueueHealthIndicator | null,
+    @Optional() @Inject('DatabaseHealthIndicator') private readonly dbIndicator: HealthIndicator | null,
+    @Optional() @Inject('RedisHealthIndicator') private readonly redisIndicator: HealthIndicator | null,
+    @Optional() @Inject('QueueHealthIndicator') private readonly queueIndicator: HealthIndicator | null,
     @Optional() @Inject(ShutdownService) private readonly shutdownService?: ShutdownService,
   ) {}
 
@@ -52,13 +49,13 @@ export class HealthController {
     const checks: HealthIndicatorFunction[] = [];
 
     if (this.dbIndicator) {
-      checks.push(() => this.dbIndicator!.isHealthy());
+      checks.push(() => (this.dbIndicator as any).isHealthy());
     }
     if (this.redisIndicator) {
-      checks.push(() => this.redisIndicator!.isHealthy());
+      checks.push(() => (this.redisIndicator as any).isHealthy());
     }
     if (this.queueIndicator) {
-      checks.push(() => this.queueIndicator!.isHealthy());
+      checks.push(() => (this.queueIndicator as any).isHealthy());
     }
 
     return this.health.check(checks);

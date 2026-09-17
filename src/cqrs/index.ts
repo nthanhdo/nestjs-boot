@@ -2,7 +2,8 @@
 export { CqrsModule } from './cqrs.module';
 
 // --- Command Bus ---
-export { CommandBus, CommandHandler, ICommand, ICommandHandler, COMMAND_HANDLER_METADATA } from './command-bus';
+export { CommandBus, CommandHandler, COMMAND_HANDLER_METADATA } from './command-bus';
+export type { ICommand, ICommandHandler } from './command-bus';
 
 // --- Domain Events ---
 export { DomainEvent } from './domain-event';

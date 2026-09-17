@@ -95,6 +95,7 @@ export class QueueModule implements OnModuleInit {
       if (!prototype) continue;
 
       // Check class-level @Processor metadata
+      if (!wrapper.metatype) continue;
       const queueName = this.reflector.get<string>(PROCESSOR_METADATA, wrapper.metatype);
       if (!queueName) continue;
 

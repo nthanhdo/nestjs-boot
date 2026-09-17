@@ -20,7 +20,7 @@ function makeSwaggerMock() {
   };
 
   return {
-    DocumentBuilder: vi.fn(() => builderInstance),
+    DocumentBuilder: class { constructor() { return builderInstance; } },
     SwaggerModule: { createDocument: createDocumentSpy, setup: setupSpy },
     // exposed for assertions
     setupSpy,

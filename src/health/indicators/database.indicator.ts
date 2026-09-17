@@ -1,9 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  HealthCheckError,
-  HealthIndicator,
-  HealthIndicatorResult,
-} from '@nestjs/terminus';
+import { HealthIndicatorService, HealthIndicatorResult } from '@nestjs/terminus';
 import mongoose from 'mongoose';
 import { DatabaseOptions } from '../../interfaces/boot-options.interface';
 import { getWriterConnectionName } from '../../database/constants';
@@ -12,28 +8,28 @@ import { getWriterConnectionName } from '../../database/constants';
  * Database health indicator — checks Mongoose connection readyState per connection.
  */
 @Injectable()
-export class DatabaseHealthIndicator extends HealthIndicator {
-  constructor(private readonly dbOptions: DatabaseOptions) {
-    super();
-  }
+export class DatabaseHealthIndicator {
+  constructor(
+    private readonly dbOptions: DatabaseOptions,
+    private readonly indicator: HealthIndicatorService,
+  ) {}
 
   async isHealthy(key = 'database'): Promise<HealthIndicatorResult> {
-    const details: Record<string, { status: string }> = {};
-    let isUp = true;
+    const details: Record<string, string> = {};
+    let allUp = true;
 
     for (const name of Object.keys(this.dbOptions.connections)) {
       const connName = getWriterConnectionName(name);
       const conn = mongoose.connections.find((c) => c.name === connName);
       const ready = conn?.readyState === 1;
-
-      details[name] = { status: ready ? 'up' : 'down' };
-      if (!ready) isUp = false;
+      details[name] = ready ? 'up' : 'down';
+      if (!ready) allUp = false;
     }
 
-    const result = this.getStatus(key, isUp, details);
-    if (!isUp) {
-      throw new HealthCheckError('Database check failed', result);
+    const session = this.indicator.check(key);
+    if (allUp) {
+      return session.up(details);
     }
-    return result;
+    return session.down(details);
   }
 }

@@ -17,6 +17,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Container deployment** — Docker production setup with `docker-compose.prod` and CI docker build+push guide
 - **541 tests** across all modules (up from 506)
 
+## [0.1.8] — 2026-09-17
+
+### Added
+
+- **RAG semantic search** — pgvector integration for content entries with:
+  - Pluggable embedding providers (OpenAI `text-embedding-3-small` default, custom)
+  - Auto-embed on publish (fire-and-forget, non-blocking)
+  - Recursive text chunking from JSONB with configurable size/overlap
+  - Three search modes: `?mode=keyword|semantic|hybrid` (hybrid = 70% vector + 30% keyword)
+  - Management API: `POST /api/content/rag/re-embed`, `GET /api/content/rag/status`
+  - Prisma `ContentEmbedding` model with HNSW index for cosine similarity
+  - No hard SDK dependency — OpenAI provider uses native `fetch`
+  - 27 new tests (965 total across 105 test files)
+
 ## [0.1.7] — 2026-09-17
 
 ### Added

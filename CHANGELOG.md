@@ -17,6 +17,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Container deployment** — Docker production setup with `docker-compose.prod` and CI docker build+push guide
 - **541 tests** across all modules (up from 506)
 
+## [0.1.2] — 2026-09-17
+
+### Fixed
+
+- **Widen NestJS peer deps** — `@nestjs/common`, `@nestjs/core`, `@nestjs/microservices`, `@nestjs/mongoose`, `@nestjs/websockets` now accept `^10.0.0 || ^11.0.0 || ^12.0.0`; `@nestjs/swagger` accepts `^7.0.0 || ^8.0.0 || ^12.0.0`. Consumers on NestJS v10/v11 no longer forced to upgrade ([#1](https://github.com/nthanhdo/nestjs-boot/issues/1))
+- **`@nestjs/terminus` stays `^12.0.0`** (required by `HealthIndicatorService` API) but is marked optional — consumers not using the health module are unaffected
+
+## [0.1.1] — 2026-09-17
+
+### Fixed
+
+- **Health module no longer crashes without MongoDB** — all health indicators (`DatabaseHealthIndicator`, `RedisHealthIndicator`, `QueueHealthIndicator`) are now lazy-loaded via `dynamic import()`, so `mongoose` is only required when `options.database` is actually configured ([#1](https://github.com/nthanhdo/nestjs-boot/issues/1), [#2](https://github.com/nthanhdo/nestjs-boot/pull/2))
+- **`events.transport` auto-inferred from config** — the `transport` field is now optional; when omitted, it defaults to `'redis'` if `redis` config is present, otherwise `'memory'` ([#1](https://github.com/nthanhdo/nestjs-boot/issues/1))
+- **Static mongoose imports converted to `import type`** — ~90 files changed from value imports to type-only imports so `import 'nestjs-boot'` no longer crashes in projects without `mongoose` installed ([#1](https://github.com/nthanhdo/nestjs-boot/issues/1))
+- **esbuild build failures resolved** — all interface/type imports across the codebase are now `import type`, fixing tsup/esbuild "No matching export" errors during `npm run build`
+
+### Changed
+
+- **Upgraded NestJS v10 → v12** — `@nestjs/core`, `@nestjs/common`, `@nestjs/platform-express`, `@nestjs/mongoose`, `@nestjs/terminus`, `@nestjs/testing`, `@nestjs/websockets`, `@nestjs/swagger`, `@nestjs/config`, `@nestjs/microservices`, `@nestjs/bull`, `@nestjs/throttler`
+- **Upgraded vitest v3 → v4.1.11** — added `@swc/core` + `unplugin-swc` for decorator support in the new vitest transformer
+- **Health indicators migrated to `@nestjs/terminus` v12 API** — replaced deprecated `HealthIndicator` base class and `HealthCheckError` with new `HealthIndicatorService` pattern
+- **Resolved all high-severity npm audit findings** — multer DoS vulnerabilities (via `@nestjs/platform-express` v12), js-yaml CPU exhaustion, body-parser limit bypass. 4 remaining moderate/low vulns are unfixable upstream (uuid in bull, esbuild Windows-only)
+- **900 tests passing** across 97 test files
+
 ## [0.1.0] — 2026-08-13 (unreleased, no Git tag)
 
 ### Added
@@ -59,4 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Roadmap cleaned up, deps restructured for optional peer dependencies
 - Architecture Mermaid diagram: LR layout, color-coded, reduced clutter
 
-[Unreleased]: https://github.com/nthanhdo/nestjs-boot/compare/main...HEAD
+[Unreleased]: https://github.com/nthanhdo/nestjs-boot/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/nthanhdo/nestjs-boot/compare/v0.1.1...v0.1.2
+[0.1.1]: https://github.com/nthanhdo/nestjs-boot/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/nthanhdo/nestjs-boot/releases/tag/v0.1.0

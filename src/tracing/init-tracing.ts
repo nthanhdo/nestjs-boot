@@ -1,4 +1,4 @@
-import { TracingOptions } from './interfaces';
+import type { TracingOptions } from './interfaces';
 
 /**
  * Initialize OpenTelemetry tracing SDK.

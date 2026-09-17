@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { BootOptions } from '../interfaces/boot-options.interface';
+import type { BootOptions } from '../interfaces/boot-options.interface';
 
 export type DeployPhase = 'preStart' | 'preMigrate' | 'postMigrate' | 'postStart' | 'healthGate';
 

@@ -1,4 +1,4 @@
-import { CacheAdapter } from '../interfaces';
+import type { CacheAdapter } from '../interfaces';
 
 /**
  * Thrown when an operation is not supported by the adapter implementation.

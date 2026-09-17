@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { timingSafeEqual } from 'crypto';
 import { IS_PUBLIC_KEY } from '../constants';
 import { SESSION_OPTIONS } from './session.constants';
-import { SessionModuleOptions } from './session.interfaces';
+import type { SessionModuleOptions } from './session.interfaces';
 
 /**
  * SessionGuard — validates that a valid session exists.

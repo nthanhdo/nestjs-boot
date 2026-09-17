@@ -1,6 +1,6 @@
 import { SetMetadata } from '@nestjs/common';
 import { ON_EVENT_METADATA, ON_QUERY_METADATA } from './constants';
-import { OnEventOptions } from './interfaces';
+import type { OnEventOptions } from './interfaces';
 
  
 type EventClass = new (...args: any[]) => any;

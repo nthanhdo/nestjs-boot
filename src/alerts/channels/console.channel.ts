@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { AlertChannel, AlertPayload } from '../interfaces';
+import type { AlertChannel, AlertPayload } from '../interfaces';
 
 const SEVERITY_PREFIX: Record<string, string> = {
   info: 'INFO',

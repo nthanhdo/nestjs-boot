@@ -1,6 +1,6 @@
 import { DynamicModule, Logger, Module, OnModuleInit } from '@nestjs/common';
 import { DiscoveryModule, DiscoveryService, MetadataScanner, Reflector } from '@nestjs/core';
-import { QueueOptions } from './interfaces';
+import type { QueueOptions } from './interfaces';
 import { QueueService } from './queue.service';
 import { QUEUE_OPTIONS, QUEUE_PREFIX, PROCESSOR_METADATA, PROCESS_METADATA, ON_FAILED_METADATA, ON_COMPLETED_METADATA } from './constants';
 

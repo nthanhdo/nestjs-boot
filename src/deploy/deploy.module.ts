@@ -2,7 +2,7 @@ import { DynamicModule, Inject, Module, OnModuleInit, Logger, Injectable } from 
 import { DiscoveryModule, DiscoveryService } from '@nestjs/core';
 import 'reflect-metadata';
 import { DeployService } from './deploy.service';
-import { DeployOptions } from './interfaces';
+import type { DeployOptions } from './interfaces';
 import { DEPLOY_HOOK_METADATA, DeployHookMetadata } from './decorators';
 
 export const DEPLOY_OPTIONS = 'DEPLOY_OPTIONS';

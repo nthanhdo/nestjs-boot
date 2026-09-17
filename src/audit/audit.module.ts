@@ -1,7 +1,7 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AUDIT_STORE, AUDIT_OPTIONS } from './constants';
-import { AuditModuleOptions, AuditModuleAsyncOptions } from './interfaces';
+import type { AuditModuleOptions, AuditModuleAsyncOptions } from './interfaces';
 import { MemoryAuditStore } from './memory-audit.store';
 import { AuditService } from './audit.service';
 import { AuditInterceptor } from './audit.interceptor';

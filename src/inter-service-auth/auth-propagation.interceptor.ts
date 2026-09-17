@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { INTER_SERVICE_AUTH_OPTIONS, DEFAULT_AUTH_HEADER, DEFAULT_API_KEY_HEADER } from './constants';
-import { InterServiceAuthOptions } from './interfaces';
+import type { InterServiceAuthOptions } from './interfaces';
 import { authContextStorage } from './auth-context.storage';
 
 /**

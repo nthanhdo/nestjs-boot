@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
-import { ShutdownOptions } from './interfaces';
+import type { ShutdownOptions } from './interfaces';
 import { InFlightTracker } from './in-flight-tracker';
 import { SignalHandler } from './signal-handler';
 import {

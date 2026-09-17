@@ -1,7 +1,7 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
 import { getConnectionToken, MongooseModule } from '@nestjs/mongoose';
 import mongoose from 'mongoose';
-import { DatabaseOptions } from '../interfaces/boot-options.interface';
+import type { DatabaseOptions } from '../interfaces/boot-options.interface';
 import { createConnectionModules } from './connection.factory';
 import {
   getWriterToken,

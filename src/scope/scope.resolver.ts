@@ -1,6 +1,7 @@
 import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
 import { SCOPE_OPTIONS } from './constants';
-import { AccessScope, SCOPE_LEVELS, ScopeContext, ScopeModuleOptions } from './interfaces';
+import type { ScopeContext, ScopeModuleOptions } from './interfaces';
+import { AccessScope, SCOPE_LEVELS } from './interfaces';
 
 /**
  * ScopeResolver — determines the user's effective scope and checks access.

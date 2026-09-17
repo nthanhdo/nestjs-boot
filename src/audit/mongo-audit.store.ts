@@ -1,4 +1,4 @@
-import { AuditStore, AuditEntry, SecurityEvent } from './interfaces';
+import type { AuditStore, AuditEntry, SecurityEvent } from './interfaces';
 
 /**
  * MongoDB-backed AuditStore implementation skeleton.

@@ -1,4 +1,4 @@
-import { CacheAdapter } from '../interfaces';
+import type { CacheAdapter } from '../interfaces';
 
 /**
  * Redis cache adapter using ioredis.

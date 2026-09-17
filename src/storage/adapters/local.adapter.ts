@@ -1,5 +1,5 @@
 import { resolve } from 'path';
-import { StorageAdapter, UploadedFile, StorageResult } from '../storage.interface';
+import type { StorageAdapter, UploadedFile, StorageResult } from '../storage.interface';
 import { generateStorageKey } from '../storage.utils';
 
 /**

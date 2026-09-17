@@ -1,4 +1,4 @@
-import { CacheAdapter } from '../interfaces';
+import type { CacheAdapter } from '../interfaces';
 
 interface CacheEntry {
   value: unknown;

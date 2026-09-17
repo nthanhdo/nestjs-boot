@@ -1,7 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import type * as jwtTypes from 'jsonwebtoken';
 import { AUTH_OPTIONS } from '../constants';
-import { AuthOptions } from '../interfaces';
+import type { AuthOptions } from '../interfaces';
 
 // Lazy-load jsonwebtoken to avoid hard dependency at import time
 let _jwt: typeof import('jsonwebtoken') | undefined;

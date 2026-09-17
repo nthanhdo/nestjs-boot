@@ -1,6 +1,6 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
 import { ORGANIZATION_OPTIONS, ORGANIZATION_STORE } from './constants';
-import { OrganizationModuleOptions } from './interfaces';
+import type { OrganizationModuleOptions } from './interfaces';
 import { MemoryOrganizationStore } from './memory-organization.store';
 import { OrganizationService } from './organization.service';
 

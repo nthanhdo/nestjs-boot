@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import { SwaggerOptions } from './interfaces';
+import type { SwaggerOptions } from './interfaces';
 
 /**
  * Read package.json from the consumer project root.

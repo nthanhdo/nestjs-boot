@@ -3,7 +3,7 @@ import { Reflector } from '@nestjs/core';
 import type { Algorithm } from 'jsonwebtoken';
 import { AUTH_OPTIONS } from '../constants';
 import { IS_PUBLIC_KEY } from '../constants';
-import { AuthOptions } from '../interfaces';
+import type { AuthOptions } from '../interfaces';
 
 // Lazy-load jsonwebtoken to avoid hard dependency at import time
 let _jwt: typeof import('jsonwebtoken') | undefined;

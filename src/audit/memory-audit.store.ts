@@ -1,4 +1,4 @@
-import { AuditStore, AuditEntry, SecurityEvent } from './interfaces';
+import type { AuditStore, AuditEntry, SecurityEvent } from './interfaces';
 
 export class MemoryAuditStore implements AuditStore {
   private auditEntries: AuditEntry[] = [];

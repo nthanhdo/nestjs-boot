@@ -1,5 +1,5 @@
 import * as Joi from 'joi';
-import { BootOptions } from '../interfaces/boot-options.interface';
+import type { BootOptions } from '../interfaces/boot-options.interface';
 
 const connectionOptionsSchema = Joi.object().pattern(
   Joi.string(),

@@ -1,5 +1,5 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { LoggingOptions } from './interfaces';
+import type { LoggingOptions } from './interfaces';
 import { LOGGING_OPTIONS } from './constants';
 import { BootLogger } from './boot-logger';
 import { LoggingInterceptor } from './logging.interceptor';

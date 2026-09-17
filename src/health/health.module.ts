@@ -1,6 +1,6 @@
 import { Controller, DynamicModule, Module, Provider } from '@nestjs/common';
 import { TerminusModule, HealthIndicatorService } from '@nestjs/terminus';
-import { BootOptions } from '../interfaces/boot-options.interface';
+import type { BootOptions } from '../interfaces/boot-options.interface';
 import { CACHE_SERVICE } from '../cache/constants';
 import { MultiCacheService } from '../cache/multi-cache.service';
 import { QueueService } from '../queue/queue.service';

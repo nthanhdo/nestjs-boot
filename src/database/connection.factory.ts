@@ -1,6 +1,6 @@
 import { DynamicModule, Logger } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { DatabaseOptions } from '../interfaces/boot-options.interface';
+import type { DatabaseOptions } from '../interfaces/boot-options.interface';
 import { getWriterConnectionName, getReaderConnectionName } from './constants';
 
 const logger = new Logger('DatabaseModule');

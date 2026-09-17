@@ -1,5 +1,5 @@
 import { DynamicModule, Logger, Module } from '@nestjs/common';
-import { WebSocketOptions } from './interfaces';
+import type { WebSocketOptions } from './interfaces';
 import { WsCorrelationInterceptor } from './ws-correlation.interceptor';
 import { createRedisAdapterFactory } from './redis-adapter.factory';
 

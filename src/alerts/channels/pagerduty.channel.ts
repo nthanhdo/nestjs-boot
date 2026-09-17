@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { AlertChannel, AlertPayload } from '../interfaces';
+import type { AlertChannel, AlertPayload } from '../interfaces';
 
 const PAGERDUTY_EVENTS_URL = 'https://events.pagerduty.com/v2/enqueue';
 

@@ -1,4 +1,4 @@
-import { DeployPhase } from './interfaces';
+import type { DeployPhase } from './interfaces';
 import 'reflect-metadata';
 
 export const DEPLOY_HOOK_METADATA = 'DEPLOY_HOOK_METADATA';

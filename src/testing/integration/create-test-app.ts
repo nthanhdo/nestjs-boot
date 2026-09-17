@@ -2,7 +2,7 @@ import { Type, Provider } from '@nestjs/common';
 import { INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import type { Connection } from 'mongoose';
-import { BootOptions } from '../../interfaces/boot-options.interface';
+import type { BootOptions } from '../../interfaces/boot-options.interface';
 
 /**
  * Options for createTestApp beyond BootOptions overrides.

@@ -1,6 +1,6 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { RouterModule } from '@nestjs/core';
-import { MetricsOptions } from './interfaces';
+import type { MetricsOptions } from './interfaces';
 import { METRICS_OPTIONS } from './constants';
 import { MetricsService } from './metrics.service';
 import { MetricsController } from './metrics.controller';

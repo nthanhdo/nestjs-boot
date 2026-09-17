@@ -1,4 +1,4 @@
-import { SessionStore, SessionData } from './session.interfaces';
+import type { SessionStore, SessionData } from './session.interfaces';
 
 /**
  * RedisSessionStore — Redis-backed session store.

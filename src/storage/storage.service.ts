@@ -1,5 +1,5 @@
 import { Injectable, Inject, BadRequestException, Logger } from '@nestjs/common';
-import { StorageAdapter, UploadedFile, StorageResult, StorageModuleOptions } from './storage.interface';
+import type { StorageAdapter, UploadedFile, StorageResult, StorageModuleOptions } from './storage.interface';
 import { STORAGE_ADAPTER, STORAGE_OPTIONS } from './storage.constants';
 import { validateFile } from './storage.utils';
 

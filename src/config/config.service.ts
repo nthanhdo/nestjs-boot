@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { BootOptions } from '../interfaces/boot-options.interface';
+import type { BootOptions } from '../interfaces/boot-options.interface';
 import { BOOT_OPTIONS } from './constants';
 import { bootOptionsSchema } from './validators';
 

@@ -1,7 +1,8 @@
 import { Logger } from '@nestjs/common';
 import type { Connection as MongooseConnection } from 'mongoose';
 import { StoredEvent } from '../domain-event';
-import { EventStore, ConcurrencyError } from '../interfaces';
+import type { EventStore } from '../interfaces';
+import { ConcurrencyError } from '../interfaces';
 
 /**
  * MongoDB-backed EventStore implementation.

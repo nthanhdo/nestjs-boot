@@ -1,7 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { AUDIT_STORE, AUDIT_OPTIONS } from './constants';
-import { AuditStore, AuditEntry, SecurityEvent, AuditModuleOptions } from './interfaces';
+import type { AuditStore, AuditEntry, SecurityEvent, AuditModuleOptions } from './interfaces';
 
 @Injectable()
 export class AuditService {

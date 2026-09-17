@@ -1,7 +1,7 @@
 import { DynamicModule, Global, Module, Provider } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AUTH_OPTIONS } from './constants';
-import { AuthOptions } from './interfaces';
+import type { AuthOptions } from './interfaces';
 import { RoleHierarchy } from './rbac/role-hierarchy';
 import { PERMISSION_STORE } from './rbac/permission-store';
 import { BootJwtService } from './services/jwt.service';

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { StoredEvent } from './domain-event';
-import { EventStore } from './interfaces';
+import type { EventStore } from './interfaces';
 import { ON_DOMAIN_EVENT_METADATA } from './decorators';
 
 /**

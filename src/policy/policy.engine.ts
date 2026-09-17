@@ -1,6 +1,6 @@
 import { Injectable, Inject, Optional, Logger } from '@nestjs/common';
 import { POLICY_OPTIONS } from './constants';
-import { AuthorizationContext, AuthorizationResult, PolicyModuleOptions } from './interfaces';
+import type { AuthorizationContext, AuthorizationResult, PolicyModuleOptions } from './interfaces';
 import { PolicyRegistry } from './policy.registry';
 
 /**

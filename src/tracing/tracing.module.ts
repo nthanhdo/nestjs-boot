@@ -1,5 +1,5 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
-import { TracingOptions } from './interfaces';
+import type { TracingOptions } from './interfaces';
 import { TracingService } from './tracing.service';
 import { TRACING_OPTIONS } from './constants';
 

@@ -1,5 +1,6 @@
 import { StoredEvent } from '../domain-event';
-import { EventStore, ConcurrencyError } from '../interfaces';
+import type { EventStore } from '../interfaces';
+import { ConcurrencyError } from '../interfaces';
 
 /**
  * In-memory EventStore implementation.

@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger, OnModuleInit, OnModuleDestroy, Optional } from '@nestjs/common';
 import { ALERT_OPTIONS, DEFAULT_CHECK_INTERVAL, DEFAULT_COOLDOWN } from './constants';
-import { AlertChannel, AlertOptions, AlertPayload, AlertRule } from './interfaces';
+import type { AlertChannel, AlertOptions, AlertPayload, AlertRule } from './interfaces';
 import { MetricsService } from '../metrics/metrics.service';
 
 interface PendingAlert {

@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { MultiCacheService } from './multi-cache.service';
-import { CacheSetOptions } from './interfaces';
+import type { CacheSetOptions } from './interfaces';
 
 const LOCK_TTL_SECONDS = 30; // max time a factory is expected to take
 

@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { AlertChannel, AlertPayload } from '../interfaces';
+import type { AlertChannel, AlertPayload } from '../interfaces';
 
 const SEVERITY_COLOR: Record<string, number> = {
   info: 0x3498db,    // blue

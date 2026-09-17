@@ -1,4 +1,4 @@
-import { SessionStore, SessionData } from './session.interfaces';
+import type { SessionStore, SessionData } from './session.interfaces';
 
 /**
  * MemorySessionStore — in-memory session store for DEVELOPMENT ONLY.

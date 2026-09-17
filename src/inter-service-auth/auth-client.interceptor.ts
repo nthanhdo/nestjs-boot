@@ -1,6 +1,6 @@
 import { getAuthContext } from './auth-context.storage';
 import { DEFAULT_AUTH_HEADER, DEFAULT_API_KEY_HEADER } from './constants';
-import { InterServiceAuthOptions } from './interfaces';
+import type { InterServiceAuthOptions } from './interfaces';
 
 /**
  * Builds headers/metadata to attach to outgoing inter-service calls.

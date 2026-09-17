@@ -1,6 +1,6 @@
 import { DynamicModule, Module, OnModuleInit } from '@nestjs/common';
 import { ALERT_OPTIONS } from './constants';
-import { AlertOptions } from './interfaces';
+import type { AlertOptions } from './interfaces';
 import { AlertService } from './alert.service';
 import { ConsoleChannel } from './channels/console.channel';
 import { WebhookChannel } from './channels/webhook.channel';

@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, Inject, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AUTH_OPTIONS, ROLES_KEY, IS_PUBLIC_KEY } from '../constants';
-import { AuthOptions } from '../interfaces';
+import type { AuthOptions } from '../interfaces';
 import { RoleHierarchy } from '../rbac/role-hierarchy';
 import { SUPERADMIN_ONLY_KEY } from '../rbac/superadmin.decorator';
 

@@ -17,6 +17,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Container deployment** — Docker production setup with `docker-compose.prod` and CI docker build+push guide
 - **541 tests** across all modules (up from 506)
 
+## [0.1.3] — 2026-09-17
+
+### Added
+
+- **Content service module** — full Headless CMS (simpler than Strapi) with:
+  - Dynamic content types with reusable components (16 field types)
+  - Entry CRUD with JSONB data storage, versioning, soft delete
+  - Publishing workflow: Draft → Approved → Scheduled → Published
+  - Localization (EN/VI) with field-level fallback chain
+  - PostgreSQL full-text search (`tsvector` + `pg_trgm` + `unaccent` for Vietnamese)
+  - Media/asset management via StorageModule (R2/S3)
+  - Webhook dispatch with HMAC-SHA256 signature + exponential backoff retry
+  - Delivery API (read-only, API key auth) + Management API (JWT + RBAC)
+  - Row-level multi-tenancy
+  - Service ON/OFF via `.env` config — standalone deployable
+  - Docker-compose for standalone content-service
+  - 38 new tests (938 total across 102 test files)
+- **GraphQL peer deps** — `@nestjs/graphql`, `@nestjs/apollo`, `@apollo/server` added as optional peer dependencies for Delivery API GraphQL endpoint
+- **Prisma schema** — 9 new models in `content` schema (ContentType, ContentEntry, ContentEntryVersion, ContentComponent, ContentAsset, ContentLocale, ContentApiKey, ContentWebhook, ContentWebhookLog)
+
+### Fixed
+
+- **BootRpcExceptionFilter NestJS 12 crash** — filter now registered under both `APP_FILTER` and class token so `app.get(BootRpcExceptionFilter)` resolves correctly in NestJS 12's stricter DI context
+- **DynamicHealthController ShutdownService DI failure** — replaced class token `@Inject(ShutdownService)` with string token `'BOOT_SHUTDOWN_SERVICE'` to avoid NestJS 12 compile-time resolution failure when ShutdownModule is not configured. Both fixes unblock 7 production services stuck in crash loop on NestJS 12 + gRPC transport
+
 ## [0.1.2] — 2026-09-17
 
 ### Fixed

@@ -17,6 +17,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Container deployment** — Docker production setup with `docker-compose.prod` and CI docker build+push guide
 - **541 tests** across all modules (up from 506)
 
+## [0.1.9] — 2026-09-17
+
+### Added
+
+- **CDN integration** — cache headers and auto-purge for Delivery API:
+  - `Cache-Control`, `ETag`, `Last-Modified` headers on all delivery responses
+  - `304 Not Modified` support via `If-None-Match` / `If-Modified-Since`
+  - Configurable TTLs: entries (300s), assets (24h), content types (1h)
+  - CDN purge providers: CloudFront (AWS SDK), Cloudflare (native fetch), custom webhook
+  - Auto-purge on publish/unpublish (fire-and-forget, non-blocking)
+  - `Vary: X-API-Key, Accept-Language` for correct edge caching
+  - Config via `.env`: `CDN_PROVIDER`, `CDN_CLOUDFLARE_ZONE_ID`, TTL settings
+  - 15 new CDN tests (980 total across 107 test files)
+
 ## [0.1.8] — 2026-09-17
 
 ### Added

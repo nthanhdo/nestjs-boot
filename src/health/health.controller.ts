@@ -1,5 +1,5 @@
 import { Controller, Get, Inject, Optional, ServiceUnavailableException } from '@nestjs/common';
-import { HealthCheck, HealthCheckService, HealthCheckResult, HealthIndicator, HealthIndicatorFunction } from '@nestjs/terminus';
+import { HealthCheck, HealthCheckService, HealthCheckResult, HealthIndicatorFunction } from '@nestjs/terminus';
 import { ShutdownService } from '../shutdown/shutdown.service';
 
 /**
@@ -14,9 +14,9 @@ import { ShutdownService } from '../shutdown/shutdown.service';
 export class HealthController {
   constructor(
     private readonly health: HealthCheckService,
-    @Optional() @Inject('DatabaseHealthIndicator') private readonly dbIndicator: HealthIndicator | null,
-    @Optional() @Inject('RedisHealthIndicator') private readonly redisIndicator: HealthIndicator | null,
-    @Optional() @Inject('QueueHealthIndicator') private readonly queueIndicator: HealthIndicator | null,
+    @Optional() @Inject('DatabaseHealthIndicator') private readonly dbIndicator: any,
+    @Optional() @Inject('RedisHealthIndicator') private readonly redisIndicator: any,
+    @Optional() @Inject('QueueHealthIndicator') private readonly queueIndicator: any,
     @Optional() @Inject(ShutdownService) private readonly shutdownService?: ShutdownService,
   ) {}
 
@@ -49,13 +49,13 @@ export class HealthController {
     const checks: HealthIndicatorFunction[] = [];
 
     if (this.dbIndicator) {
-      checks.push(() => (this.dbIndicator as any).isHealthy());
+      checks.push(() => this.dbIndicator.isHealthy());
     }
     if (this.redisIndicator) {
-      checks.push(() => (this.redisIndicator as any).isHealthy());
+      checks.push(() => this.redisIndicator.isHealthy());
     }
     if (this.queueIndicator) {
-      checks.push(() => (this.queueIndicator as any).isHealthy());
+      checks.push(() => this.queueIndicator.isHealthy());
     }
 
     return this.health.check(checks);

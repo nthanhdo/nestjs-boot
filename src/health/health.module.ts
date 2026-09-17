@@ -1,5 +1,5 @@
 import { Controller, DynamicModule, Module, Provider } from '@nestjs/common';
-import { TerminusModule } from '@nestjs/terminus';
+import { TerminusModule, HealthIndicatorService } from '@nestjs/terminus';
 import { BootOptions } from '../interfaces/boot-options.interface';
 import { CACHE_SERVICE } from '../cache/constants';
 import { MultiCacheService } from '../cache/multi-cache.service';
@@ -29,10 +29,11 @@ export class HealthModule {
     if (options.database) {
       providers.push({
         provide: DATABASE_INDICATOR,
-        useFactory: async () => {
+        useFactory: async (indicatorService: HealthIndicatorService) => {
           const { DatabaseHealthIndicator } = await import('./indicators/database.indicator');
-          return new DatabaseHealthIndicator(options.database!);
+          return new DatabaseHealthIndicator(options.database!, indicatorService);
         },
+        inject: [HealthIndicatorService],
       });
     } else {
       providers.push({
@@ -45,11 +46,11 @@ export class HealthModule {
     if (options.cache?.redis) {
       providers.push({
         provide: REDIS_INDICATOR,
-        useFactory: async (cacheService: MultiCacheService) => {
+        useFactory: async (indicatorService: HealthIndicatorService, cacheService: MultiCacheService) => {
           const { RedisHealthIndicator } = await import('./indicators/redis.indicator');
-          return new RedisHealthIndicator(cacheService);
+          return new RedisHealthIndicator(indicatorService, cacheService);
         },
-        inject: [CACHE_SERVICE],
+        inject: [HealthIndicatorService, CACHE_SERVICE],
       });
     } else {
       providers.push({
@@ -62,11 +63,11 @@ export class HealthModule {
     if (options.queue) {
       providers.push({
         provide: QUEUE_INDICATOR,
-        useFactory: async (queueService?: QueueService) => {
+        useFactory: async (indicatorService: HealthIndicatorService, queueService?: QueueService) => {
           const { QueueHealthIndicator } = await import('./indicators/queue.indicator');
-          return new QueueHealthIndicator(queueService);
+          return new QueueHealthIndicator(indicatorService, queueService);
         },
-        inject: [{ token: QueueService, optional: true }],
+        inject: [HealthIndicatorService, { token: QueueService, optional: true }],
       });
     } else {
       providers.push({

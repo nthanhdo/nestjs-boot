@@ -29,8 +29,8 @@ describe('HealthModule', () => {
 
     // Both indicators should be null providers
     const providers = dynamicModule.providers as any[];
-    const dbProvider = providers.find((p) => p.provide?.name === 'DatabaseHealthIndicator');
-    const redisProvider = providers.find((p) => p.provide?.name === 'RedisHealthIndicator');
+    const dbProvider = providers.find((p) => p.provide === 'DatabaseHealthIndicator');
+    const redisProvider = providers.find((p) => p.provide === 'RedisHealthIndicator');
 
     if (dbProvider) expect(dbProvider.useValue).toBeNull();
     if (redisProvider) expect(redisProvider.useValue).toBeNull();
@@ -53,7 +53,7 @@ describe('HealthModule', () => {
 
     const providers = dynamicModule.providers as any[];
     const redisProvider = providers.find(
-      (p) => p.provide?.name === 'RedisHealthIndicator',
+      (p) => p.provide === 'RedisHealthIndicator',
     );
 
     // Should use factory (DI-wired), not useValue

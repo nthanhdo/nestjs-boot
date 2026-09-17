@@ -1,7 +1,7 @@
 import { Type, Provider } from '@nestjs/common';
 import { INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
-import { Connection } from 'mongoose';
+import type { Connection } from 'mongoose';
 import { BootOptions } from '../../interfaces/boot-options.interface';
 
 /**

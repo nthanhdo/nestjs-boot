@@ -1,4 +1,4 @@
-import { Document, FilterQuery, Model, PipelineStage } from 'mongoose';
+import type { Document, FilterQuery, Model, PipelineStage } from 'mongoose';
 import { createHash } from 'crypto';
 import { BaseRepository, FindAllOptions, PaginatedResult } from './base.repository';
 import { MultiCacheService } from '../cache/multi-cache.service';

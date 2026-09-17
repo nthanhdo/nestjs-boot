@@ -1,4 +1,4 @@
-import { Connection, Model, Schema } from 'mongoose';
+import type { Connection, Model, Schema } from 'mongoose';
 
 /**
  * Factory field definition — either a static value or a generator function.

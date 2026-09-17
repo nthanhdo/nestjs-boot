@@ -1,7 +1,7 @@
 import { Type } from '@nestjs/common';
 import { INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
-import { Connection } from 'mongoose';
+import type { Connection } from 'mongoose';
 import { createTestApp, cleanDatabase } from './index';
 import { createTestClient } from '../http';
 import { createFactory } from '../factories';

@@ -1,4 +1,4 @@
-import { Model, Document, FilterQuery, UpdateQuery } from 'mongoose';
+import type { Model, Document, FilterQuery, UpdateQuery } from 'mongoose';
 
 /**
  * Paginated result for CrudService queries.

@@ -1,5 +1,5 @@
 import { Get, Post, Put, Delete, Param, Body, Query, HttpCode, HttpStatus } from '@nestjs/common';
-import { Document } from 'mongoose';
+import type { Document } from 'mongoose';
 import { CrudService, CrudFindAllOptions, CrudPaginatedResult } from './crud.service';
 
 /**

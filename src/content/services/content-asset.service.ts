@@ -77,6 +77,14 @@ export class ContentAssetService {
     await this.assetRepo.delete(id);
   }
 
+  async distinctFolders(tenantId?: string): Promise<string[]> {
+    return this.assetRepo.distinctFolders(tenantId);
+  }
+
+  async distinctTags(tenantId?: string): Promise<string[]> {
+    return this.assetRepo.distinctTags(tenantId);
+  }
+
   async getSignedUrl(id: string, tenantId?: string, expiresIn = 3600): Promise<string | null> {
     const asset = await this.findById(id, tenantId);
     if (this.storage?.getSignedUrl) {

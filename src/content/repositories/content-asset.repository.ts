@@ -69,4 +69,22 @@ export class ContentAssetRepository {
   async delete(id: string): Promise<void> {
     await this.prisma.client.contentAsset.delete({ where: { id } });
   }
+
+  async distinctFolders(tenantId?: string): Promise<string[]> {
+    const rows = await this.prisma.client.contentAsset.findMany({
+      where: { ...(tenantId ? { tenantId } : {}), folder: { not: null } },
+      distinct: ['folder'],
+      select: { folder: true },
+      orderBy: { folder: 'asc' },
+    });
+    return rows.map((r: { folder: string | null }) => r.folder!).filter(Boolean);
+  }
+
+  async distinctTags(tenantId?: string): Promise<string[]> {
+    const rows: { tag: string }[] = await this.prisma.client.$queryRawUnsafe(
+      `SELECT DISTINCT unnest(tags) AS tag FROM content.content_assets WHERE ($1::text IS NULL OR tenant_id = $1) ORDER BY tag`,
+      tenantId ?? null,
+    );
+    return rows.map((r: { tag: string }) => r.tag);
+  }
 }

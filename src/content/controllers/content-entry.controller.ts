@@ -6,7 +6,7 @@ import { ContentPublishingService } from '../services/content-publishing.service
 import { ContentVersionService } from '../services/content-version.service';
 import { ContentWebhookService } from '../services/content-webhook.service';
 import { ContentEvents } from '../events/content.events';
-import type { EntryStatus } from '../enums/entry-status.enum';
+import { EntryStatus } from '../enums/entry-status.enum';
 
 @Controller('api/content/entries')
 export class ContentEntryController {
@@ -204,6 +204,28 @@ export class ContentEntryController {
   ) {
     const data = await this.versionService.rollback(id, parseInt(version, 10));
     return this.entryService.update(id, { data }, tenantId);
+  }
+
+  // --- Permanent delete (hard) ---
+
+  @Delete(':id/permanent')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async permanentDelete(
+    @Param('id') id: string,
+    @Query('tenantId') tenantId?: string,
+  ) {
+    await this.entryService.findById(id, tenantId);
+    await this.entryService.hardDelete(id);
+  }
+
+  // --- Restore (undelete) ---
+
+  @Post(':id/restore')
+  async restore(
+    @Param('id') id: string,
+    @Query('tenantId') tenantId?: string,
+  ) {
+    return this.entryService.update(id, { status: EntryStatus.DRAFT }, tenantId);
   }
 
   // --- Duplicate ---

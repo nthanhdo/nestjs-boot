@@ -17,6 +17,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Container deployment** — Docker production setup with `docker-compose.prod` and CI docker build+push guide
 - **541 tests** across all modules (up from 506)
 
+## [0.1.10] — 2026-09-18
+
+### Added
+
+- **Entry reference resolution** — Delivery API `?populate=author,tags` or `?populate=*` resolves cross-entry references with configurable max depth (default 3)
+- **Scheduled unpublish** — `POST /entries/:id/schedule-unpublish` with `scheduledUnpublishAt` field, auto-unpublish in periodic check + CDN purge
+- **Delivery API rate limiting** — per-API-key throttling (default 100 req/min) with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` headers, 429 on exceed
+- **Bulk import/export** — full data migration support:
+  - `GET /bulk/export` — full JSON dump (types, components, entries, locales)
+  - `GET /bulk/export/entries/csv` — CSV export per content type
+  - `POST /bulk/import` — JSON import with upsert (skips existing by slug)
+  - `POST /bulk/import/entries/csv` — CSV import
+- **Prisma schema** — added `scheduled_unpublish_at` column to `ContentEntry`
+- 19 new tests (999 total across 110 test files)
+
 ## [0.1.9] — 2026-09-17
 
 ### Added

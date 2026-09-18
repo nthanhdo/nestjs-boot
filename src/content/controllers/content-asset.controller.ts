@@ -60,6 +60,16 @@ export class ContentAssetController {
     );
   }
 
+  @Get('folders')
+  async listFolders(@Query('tenantId') tenantId?: string) {
+    return this.assetService.distinctFolders(tenantId);
+  }
+
+  @Get('tags')
+  async listTags(@Query('tenantId') tenantId?: string) {
+    return this.assetService.distinctTags(tenantId);
+  }
+
   @Get(':id')
   async findById(@Param('id') id: string, @Query('tenantId') tenantId?: string) {
     return this.assetService.findById(id, tenantId);

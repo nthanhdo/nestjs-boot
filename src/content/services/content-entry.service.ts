@@ -5,6 +5,7 @@ import { ContentVersionService } from './content-version.service';
 import { CONTENT_MODULE_OPTIONS } from '../constants';
 import type { ContentModuleOptions } from '../interfaces/content-options.interface';
 import type { IContentEntry, ContentPaginatedResult, ContentEntryFilters } from '../interfaces';
+import type { EntryStatus } from '../enums/entry-status.enum';
 
 @Injectable()
 export class ContentEntryService {
@@ -66,7 +67,7 @@ export class ContentEntryService {
 
   async update(
     id: string,
-    data: { data?: Record<string, unknown>; slug?: string },
+    data: { data?: Record<string, unknown>; slug?: string; status?: EntryStatus },
     tenantId?: string,
     changedBy?: string,
   ): Promise<IContentEntry> {
@@ -77,10 +78,16 @@ export class ContentEntryService {
       this.validateEntryData(data.data, type.fields);
     }
 
+    // Status-only updates (restore, etc.) don't bump version
+    if (data.status && !data.data && !data.slug) {
+      return this.entryRepo.update(id, { status: data.status });
+    }
+
     const newVersion = entry.version + 1;
     const updatedEntry = await this.entryRepo.update(id, {
       ...(data.data !== undefined ? { data: data.data } : {}),
       ...(data.slug !== undefined ? { slug: data.slug } : {}),
+      ...(data.status !== undefined ? { status: data.status } : {}),
       version: newVersion,
     });
 
@@ -92,6 +99,10 @@ export class ContentEntryService {
   async delete(id: string, tenantId?: string): Promise<IContentEntry> {
     await this.findById(id, tenantId);
     return this.entryRepo.softDelete(id);
+  }
+
+  async hardDelete(id: string): Promise<void> {
+    await this.entryRepo.hardDelete(id);
   }
 
   async duplicate(id: string, tenantId?: string, createdBy?: string): Promise<IContentEntry> {

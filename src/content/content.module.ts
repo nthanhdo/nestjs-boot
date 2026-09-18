@@ -1,6 +1,7 @@
 import { DynamicModule, Global, Logger, Module, type Provider } from '@nestjs/common';
 import type { ContentModuleOptions } from './interfaces/content-options.interface';
 import { CONTENT_MODULE_OPTIONS } from './constants';
+import { PrismaService } from '../database/prisma/prisma.service';
 import { ContentTypeRepository } from './repositories/content-type.repository';
 import { ContentEntryRepository } from './repositories/content-entry.repository';
 import { ContentComponentRepository } from './repositories/content-component.repository';
@@ -56,6 +57,7 @@ export class ContentModule {
 
     const providers: Provider[] = [
       { provide: CONTENT_MODULE_OPTIONS, useValue: opts },
+      { provide: PrismaService, useFactory: () => new PrismaService() },
       // Repositories
       ContentTypeRepository,
       ContentEntryRepository,
@@ -149,6 +151,7 @@ export class ContentModule {
           providers,
           controllers,
           exports: [
+            PrismaService,
             ContentTypeService,
             ContentEntryService,
             ContentPublishingService,
@@ -173,6 +176,7 @@ export class ContentModule {
       providers,
       controllers,
       exports: [
+        PrismaService,
         ContentTypeService,
         ContentEntryService,
         ContentPublishingService,

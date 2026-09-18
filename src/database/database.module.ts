@@ -1,6 +1,4 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
-import { getConnectionToken, MongooseModule } from '@nestjs/mongoose';
-import mongoose from 'mongoose';
 import type { DatabaseOptions } from '../interfaces/boot-options.interface';
 import { createConnectionModules } from './connection.factory';
 import {
@@ -10,18 +8,36 @@ import {
   getReaderConnectionName,
 } from './constants';
 
+function getMongoose() {
+  try {
+    return {
+      getConnectionToken: require('@nestjs/mongoose').getConnectionToken,
+      MongooseModule: require('@nestjs/mongoose').MongooseModule,
+      mongoose: require('mongoose'),
+    };
+  } catch {
+    throw new Error(
+      '[nestjs-boot] @nestjs/mongoose and mongoose are required for MongoDB connections. Install them: npm install @nestjs/mongoose mongoose',
+    );
+  }
+}
+
 /**
  * Schema definition for forFeature — matches @nestjs/mongoose ModelDefinition.
  */
 export interface ModelDefinition {
   name: string;
-  schema: mongoose.Schema;
+  schema: any; // mongoose.Schema — typed as any to avoid top-level mongoose import
   collection?: string;
-  discriminators?: Array<{ name: string; schema: mongoose.Schema }>;
+  discriminators?: Array<{ name: string; schema: any }>;
 }
 
 /**
  * DatabaseModule — config-driven multi-connection MongoDB with reader/writer split.
+ *
+ * NOTE: @nestjs/mongoose and mongoose are loaded lazily. PostgreSQL-only apps
+ * that use PrismaModule can import from `nestjs-boot/database` without installing
+ * MongoDB dependencies.
  *
  * Usage:
  * ```ts
@@ -65,10 +81,11 @@ export class DatabaseModule {
    * Register database connections from config.
    */
   static register(options: DatabaseOptions): DynamicModule {
+    const { getConnectionToken } = getMongoose();
     const connectionModules = createConnectionModules(options);
     const connectionProviders: Array<{
       provide: string;
-      useFactory: (connection: mongoose.Connection) => mongoose.Connection;
+      useFactory: (connection: any) => any;
       inject: any[];
     }> = [];
 
@@ -84,7 +101,7 @@ export class DatabaseModule {
       // Writer connection provider
       connectionProviders.push({
         provide: getWriterToken(name),
-        useFactory: (connection: mongoose.Connection) => connection,
+        useFactory: (connection: any) => connection,
         inject: [getConnectionToken(writerConnName)],
       });
 
@@ -93,7 +110,7 @@ export class DatabaseModule {
         const readerConnName = getReaderConnectionName(name);
         connectionProviders.push({
           provide: getReaderToken(name),
-          useFactory: (connection: mongoose.Connection) => connection,
+          useFactory: (connection: any) => connection,
           inject: [getConnectionToken(readerConnName)],
         });
       }
@@ -113,18 +130,6 @@ export class DatabaseModule {
   /**
    * Register schemas on a named connection.
    * Automatically registers on BOTH writer AND reader connections (if reader exists).
-   *
-   * @param connectionName - The connection name from config (e.g., 'master')
-   * @param schemas - Array of model definitions (name + schema)
-   * @throws Error if connectionName was not registered via DatabaseModule.register()
-   *
-   * Usage:
-   * ```ts
-   * DatabaseModule.forFeature('master', [
-   *   { name: Product.name, schema: ProductSchema },
-   *   { name: Order.name, schema: OrderSchema },
-   * ])
-   * ```
    */
   static forFeature(
     connectionName: string,
@@ -138,10 +143,11 @@ export class DatabaseModule {
       );
     }
 
+    const { MongooseModule } = getMongoose();
     const writerConnName = getWriterConnectionName(connectionName);
     const imports: DynamicModule[] = [
       MongooseModule.forFeature(
-        schemas.map((s) => ({
+        schemas.map((s: ModelDefinition) => ({
           name: s.name,
           schema: s.schema,
           collection: s.collection,
@@ -156,7 +162,7 @@ export class DatabaseModule {
       const readerConnName = getReaderConnectionName(connectionName);
       imports.push(
         MongooseModule.forFeature(
-          schemas.map((s) => ({
+          schemas.map((s: ModelDefinition) => ({
             name: s.name,
             schema: s.schema,
             collection: s.collection,

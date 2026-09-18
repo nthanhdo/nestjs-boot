@@ -83,3 +83,15 @@ export type { LayerViolation, LayerValidationResult, LayerOptions } from './laye
 // --- Graph ---
 export { analyzeModules, detectCycles, renderMermaid } from './graph';
 export type { ModuleNode, GraphResult } from './graph';
+
+// --- Re-exports for single-bundle DI consistency ---
+// Eagerly import to ensure CJS bundle includes these in module.exports
+import { PrismaService as _PrismaService } from './database/prisma/prisma.service';
+import { BootJwtService as _BootJwtService } from './auth/services/jwt.service';
+import { Public as _Public, Roles as _Roles, CurrentUser as _CurrentUser } from './auth/decorators';
+export const PrismaService = _PrismaService;
+export const BootJwtService = _BootJwtService;
+export const Public = _Public;
+export const Roles = _Roles;
+export const CurrentUser = _CurrentUser;
+export type { RoleDefinition } from './auth/rbac/role-hierarchy';

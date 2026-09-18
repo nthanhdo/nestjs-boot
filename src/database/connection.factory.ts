@@ -1,7 +1,17 @@
 import { DynamicModule, Logger } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
 import type { DatabaseOptions } from '../interfaces/boot-options.interface';
 import { getWriterConnectionName, getReaderConnectionName } from './constants';
+
+function getMongooseModule(): { forRoot: (uri: string, options?: any) => DynamicModule } {
+  try {
+    const mod = require('@nestjs/mongoose');
+    return mod.MongooseModule;
+  } catch {
+    throw new Error(
+      '[nestjs-boot] @nestjs/mongoose is required for MongoDB connections. Install it: npm install @nestjs/mongoose mongoose',
+    );
+  }
+}
 
 const logger = new Logger('DatabaseModule');
 
@@ -9,8 +19,12 @@ const logger = new Logger('DatabaseModule');
  * Creates an array of MongooseModule.forRoot DynamicModules from DatabaseOptions.
  * For each named connection, creates a writer connection and optionally a reader connection.
  * Passes through Mongoose connection options (pool size, auth, etc.) when provided.
+ *
+ * NOTE: @nestjs/mongoose is loaded lazily — only crashes if this function is actually called
+ * without @nestjs/mongoose installed. PostgreSQL-only apps that use PrismaModule are unaffected.
  */
 export function createConnectionModules(options: DatabaseOptions): DynamicModule[] {
+  const MongooseModule = getMongooseModule();
   const modules: DynamicModule[] = [];
 
   for (const [name, connectionConfig] of Object.entries(options.connections)) {
@@ -22,7 +36,7 @@ export function createConnectionModules(options: DatabaseOptions): DynamicModule
       MongooseModule.forRoot(connectionConfig.writerUri, {
         connectionName: writerConnName,
         ...mongooseOptions,
-        connectionFactory: (connection) => {
+        connectionFactory: (connection: any) => {
           connection.on('connected', () => {
             logger.log(`[${name}] Writer connection established`);
           });
@@ -34,7 +48,7 @@ export function createConnectionModules(options: DatabaseOptions): DynamicModule
           });
           return connection;
         },
-      } as Parameters<typeof MongooseModule.forRoot>[1]),
+      }),
     );
 
     // Reader connection (only if readerUri provided)
@@ -44,7 +58,7 @@ export function createConnectionModules(options: DatabaseOptions): DynamicModule
         MongooseModule.forRoot(connectionConfig.readerUri, {
           connectionName: readerConnName,
           ...mongooseOptions,
-          connectionFactory: (connection) => {
+          connectionFactory: (connection: any) => {
             connection.on('connected', () => {
               logger.log(`[${name}] Reader connection established`);
             });
@@ -56,7 +70,7 @@ export function createConnectionModules(options: DatabaseOptions): DynamicModule
             });
             return connection;
           },
-        } as Parameters<typeof MongooseModule.forRoot>[1]),
+        }),
       );
     }
   }

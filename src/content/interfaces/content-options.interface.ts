@@ -89,6 +89,18 @@ export interface ContentModuleOptions {
   scheduleCheckInterval?: number;
 
   /**
+   * Max requests per API key per window for Delivery API.
+   * @default 100
+   */
+  rateLimitMax?: number;
+
+  /**
+   * Rate limit window in milliseconds.
+   * @default 60000 (1 minute)
+   */
+  rateLimitWindowMs?: number;
+
+  /**
    * RAG (Retrieval-Augmented Generation) configuration.
    * Enables semantic search via pgvector embeddings.
    * Requires PostgreSQL with pgvector extension.

@@ -459,8 +459,9 @@ model ContentEntry {
   version       Int       @default(1)
   slug          String?
   publishedAt   DateTime? @map("published_at")
-  scheduledAt   DateTime? @map("scheduled_at")
-  tenantId      String?   @map("tenant_id")
+  scheduledAt          DateTime? @map("scheduled_at")
+  scheduledUnpublishAt DateTime? @map("scheduled_unpublish_at")
+  tenantId             String?   @map("tenant_id")
   createdBy     String?   @map("created_by")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")

@@ -109,15 +109,34 @@ export class ContentPublishingService implements OnModuleInit, OnModuleDestroy {
     return this.transition(entryId, EntryStatus.UNPUBLISHED, tenantId);
   }
 
+  /**
+   * Schedule automatic unpublish at a future date.
+   * Entry must be PUBLISHED. At the scheduled time, it will transition to UNPUBLISHED.
+   */
+  async scheduleUnpublish(entryId: string, scheduledUnpublishAt: Date, tenantId?: string): Promise<IContentEntry> {
+    const entry = await this.entryRepo.findById(entryId, tenantId);
+    if (!entry) throw new BadRequestException(`Entry "${entryId}" not found`);
+    if (entry.status !== EntryStatus.PUBLISHED) {
+      throw new BadRequestException('Only PUBLISHED entries can be scheduled for unpublish');
+    }
+    if (scheduledUnpublishAt <= new Date()) {
+      throw new BadRequestException('scheduledUnpublishAt must be in the future');
+    }
+    return this.entryRepo.update(entryId, { scheduledUnpublishAt });
+  }
+
   async archive(entryId: string, tenantId?: string): Promise<IContentEntry> {
     return this.transition(entryId, EntryStatus.ARCHIVED, tenantId);
   }
 
-  /** Periodic check for scheduled entries that need to be published */
+  /** Periodic check for scheduled publish and unpublish */
   private async processScheduledEntries(): Promise<void> {
+    const now = new Date();
+
+    // Scheduled publish
     try {
-      const entries = await this.entryRepo.findScheduledEntries(new Date());
-      for (const entry of entries) {
+      const toPublish = await this.entryRepo.findScheduledEntries(now);
+      for (const entry of toPublish) {
         try {
           await this.entryRepo.update(entry.id, {
             status: EntryStatus.PUBLISHED,
@@ -131,6 +150,29 @@ export class ContentPublishingService implements OnModuleInit, OnModuleDestroy {
       }
     } catch (err) {
       this.logger.error(`Scheduled publish check failed: ${err}`);
+    }
+
+    // Scheduled unpublish
+    try {
+      const toUnpublish = await this.entryRepo.findScheduledUnpublishEntries(now);
+      for (const entry of toUnpublish) {
+        try {
+          await this.entryRepo.update(entry.id, {
+            status: EntryStatus.UNPUBLISHED,
+            publishedAt: undefined,
+            scheduledUnpublishAt: undefined,
+          });
+          this.logger.log(`Auto-unpublished entry "${entry.id}" (scheduled)`);
+
+          if (this.cdnPurgeService) {
+            this.cdnPurgeService.purgeEntry(entry.slug ?? undefined).catch(() => {});
+          }
+        } catch (err) {
+          this.logger.error(`Failed to auto-unpublish entry "${entry.id}": ${err}`);
+        }
+      }
+    } catch (err) {
+      this.logger.error(`Scheduled unpublish check failed: ${err}`);
     }
   }
 }

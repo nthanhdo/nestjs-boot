@@ -122,6 +122,15 @@ export class ContentEntryRepository {
     });
   }
 
+  async findScheduledUnpublishEntries(before: Date): Promise<IContentEntry[]> {
+    return this.prisma.client.contentEntry.findMany({
+      where: {
+        status: 'PUBLISHED',
+        scheduledUnpublishAt: { lte: before },
+      },
+    });
+  }
+
   async countByType(contentTypeId: string, tenantId?: string): Promise<number> {
     return this.prisma.client.contentEntry.count({
       where: {

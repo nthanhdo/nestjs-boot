@@ -14,6 +14,7 @@ export interface IContentEntry {
   slug?: string;
   publishedAt?: Date;
   scheduledAt?: Date;
+  scheduledUnpublishAt?: Date;
   tenantId?: string;
   createdBy?: string;
   createdAt: Date;

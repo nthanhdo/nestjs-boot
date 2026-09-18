@@ -16,6 +16,8 @@ import { ContentLocalizationService } from './services/content-localization.serv
 import { ContentAssetService } from './services/content-asset.service';
 import { ContentComponentService } from './services/content-component.service';
 import { ContentSearchService } from './services/content-search.service';
+import { ContentBulkService } from './services/content-bulk.service';
+import { ContentReferenceService } from './services/content-reference.service';
 import { ContentWebhookService } from './services/content-webhook.service';
 import { ContentTypeController } from './controllers/content-type.controller';
 import { ContentEntryController } from './controllers/content-entry.controller';
@@ -23,6 +25,8 @@ import { ContentAssetController } from './controllers/content-asset.controller';
 import { ContentLocaleController } from './controllers/content-locale.controller';
 import { ContentWebhookController } from './controllers/content-webhook.controller';
 import { ContentApiKeyController } from './controllers/content-api-key.controller';
+import { DeliveryRateLimitGuard } from './guards/delivery-rate-limit.guard';
+import { ContentBulkController } from './controllers/content-bulk.controller';
 import { DeliveryController } from './controllers/delivery.controller';
 import { MockUiController } from './controllers/mock-ui.controller';
 
@@ -69,6 +73,9 @@ export class ContentModule {
       ContentAssetService,
       ContentComponentService,
       ContentSearchService,
+      ContentReferenceService,
+      ContentBulkService,
+      DeliveryRateLimitGuard,
       ContentWebhookService,
     ];
 
@@ -79,6 +86,7 @@ export class ContentModule {
       ContentLocaleController,
       ContentWebhookController,
       ContentApiKeyController,
+      ContentBulkController,
       DeliveryController,
       MockUiController,
     ];

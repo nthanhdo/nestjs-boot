@@ -163,6 +163,15 @@ export class ContentEntryController {
     return entry;
   }
 
+  @Post(':id/schedule-unpublish')
+  async scheduleUnpublish(
+    @Param('id') id: string,
+    @Body() body: { scheduledUnpublishAt: string },
+    @Query('tenantId') tenantId?: string,
+  ) {
+    return this.publishingService.scheduleUnpublish(id, new Date(body.scheduledUnpublishAt), tenantId);
+  }
+
   @Post(':id/archive')
   async archive(@Param('id') id: string, @Query('tenantId') tenantId?: string) {
     const entry = await this.publishingService.archive(id, tenantId);

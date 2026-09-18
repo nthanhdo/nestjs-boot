@@ -10,11 +10,13 @@ import { ContentApiKeyGuard } from '../guards/content-api-key.guard';
 import { CONTENT_MODULE_OPTIONS, RAG_SEARCH_SERVICE } from '../constants';
 import { EntryStatus } from '../enums/entry-status.enum';
 import type { ContentModuleOptions } from '../interfaces/content-options.interface';
+import { ContentReferenceService } from '../services/content-reference.service';
 import type { RagSearchService } from '../services/rag/rag-search.service';
 import { CdnCacheInterceptor } from '../interceptors/cdn-cache.interceptor';
+import { DeliveryRateLimitGuard } from '../guards/delivery-rate-limit.guard';
 
 @Controller('api/delivery')
-@UseGuards(ContentApiKeyGuard)
+@UseGuards(ContentApiKeyGuard, DeliveryRateLimitGuard)
 @UseInterceptors(CdnCacheInterceptor)
 export class DeliveryController {
   constructor(
@@ -24,6 +26,7 @@ export class DeliveryController {
     private readonly searchService: ContentSearchService,
     private readonly localizationService: ContentLocalizationService,
     @Inject(CONTENT_MODULE_OPTIONS) private readonly options: ContentModuleOptions,
+    private readonly referenceService: ContentReferenceService,
     @Optional() @Inject(RAG_SEARCH_SERVICE) private readonly ragSearchService?: RagSearchService,
   ) {}
 
@@ -95,22 +98,30 @@ export class DeliveryController {
     @Req() req: any,
     @Query('locale') locale?: string,
     @Query('preview') preview?: string,
+    @Query('populate') populate?: string,
   ) {
     const tenantId = req.contentTenantId;
     const requestedLocale = locale ?? this.options.defaultLocale ?? 'en';
 
-    // Preview mode returns draft entries (requires specific API key permission)
+    let entry;
     if (preview === 'true') {
-      return this.entryService.findBySlug(slug, requestedLocale, tenantId);
+      entry = await this.entryService.findBySlug(slug, requestedLocale, tenantId);
+    } else {
+      entry = await this.entryService.findBySlug(slug, requestedLocale, tenantId);
+      if (entry.status !== EntryStatus.PUBLISHED) {
+        const fallback = await this.localizationService.resolveWithFallback(entry.id, requestedLocale, tenantId);
+        if (fallback && fallback.status === EntryStatus.PUBLISHED) entry = fallback;
+        else return null;
+      }
     }
 
-    const entry = await this.entryService.findBySlug(slug, requestedLocale, tenantId);
-    if (entry.status !== EntryStatus.PUBLISHED) {
-      // Try localization fallback
-      const fallback = await this.localizationService.resolveWithFallback(entry.id, requestedLocale, tenantId);
-      if (fallback && fallback.status === EntryStatus.PUBLISHED) return fallback;
-      return null;
+    // Resolve references if populate requested
+    if (populate && entry) {
+      const populateFields = populate === '*' ? ['*'] : populate.split(',');
+      const type = await this.typeService.findById(entry.contentTypeId, tenantId);
+      entry = await this.referenceService.resolveReferences(entry, type, populateFields);
     }
+
     return entry;
   }
 
@@ -119,9 +130,18 @@ export class DeliveryController {
     @Param('id') id: string,
     @Req() req: any,
     @Query('locale') _locale?: string,
+    @Query('populate') populate?: string,
   ) {
     const tenantId = req.contentTenantId;
-    return this.entryService.findById(id, tenantId);
+    let entry = await this.entryService.findById(id, tenantId);
+
+    if (populate) {
+      const populateFields = populate === '*' ? ['*'] : populate.split(',');
+      const type = await this.typeService.findById(entry.contentTypeId, tenantId);
+      entry = await this.referenceService.resolveReferences(entry, type, populateFields);
+    }
+
+    return entry;
   }
 
   @Get('assets/:id')

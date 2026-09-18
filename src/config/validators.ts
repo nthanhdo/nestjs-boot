@@ -86,8 +86,14 @@ export const bootOptionsSchema = Joi.object({
     }).optional(),
     rbac: Joi.object({
       enabled: Joi.boolean().required(),
+      superAdmin: Joi.string().optional(),
+      hierarchy: Joi.any().optional(),
       extractRoles: Joi.function().optional(),
       extractPermissions: Joi.function().optional(),
+    }).optional(),
+    loginTracker: Joi.object({
+      maxAttempts: Joi.number().integer().min(1).optional(),
+      lockoutDuration: Joi.number().integer().min(0).optional(),
     }).optional(),
   }).optional(),
   correlation: Joi.object({
@@ -250,6 +256,30 @@ export const bootOptionsSchema = Joi.object({
     }).optional(),
     path: Joi.string().optional().default('/socket.io'),
     namespaces: Joi.array().items(Joi.string()).optional(),
+  }).optional(),
+  content: Joi.object({
+    enabled: Joi.boolean().optional(),
+    enableCache: Joi.boolean().optional(),
+    enableSearch: Joi.boolean().optional(),
+    enableWebhooks: Joi.boolean().optional(),
+    webhookRetryAttempts: Joi.number().integer().optional(),
+    graphql: Joi.boolean().optional(),
+    defaultLocale: Joi.string().optional(),
+    supportedLocales: Joi.array().items(Joi.string()).optional(),
+    managementPrefix: Joi.string().optional(),
+    deliveryPrefix: Joi.string().optional(),
+    defaultPageSize: Joi.number().integer().optional(),
+    maxPopulateDepth: Joi.number().integer().optional(),
+    cacheTtl: Joi.number().integer().optional(),
+    scheduleCheckInterval: Joi.number().integer().optional(),
+    cdn: Joi.any().optional(),
+  }).optional(),
+  swagger: Joi.object({
+    enabled: Joi.boolean().optional(),
+    title: Joi.string().optional(),
+    description: Joi.string().optional(),
+    version: Joi.string().optional(),
+    path: Joi.string().optional(),
   }).optional(),
 }).options({ abortEarly: false, stripUnknown: false });
 

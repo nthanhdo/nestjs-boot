@@ -1,5 +1,5 @@
 import {
-  Controller, Get, Param, Query, Req, UseGuards, Inject, Optional, UseInterceptors,
+  Controller, Get, Param, Query, Req, UseGuards, Inject, Optional, UseInterceptors, SetMetadata,
 } from '@nestjs/common';
 import { ContentEntryService } from '../services/content-entry.service';
 import { ContentTypeService } from '../services/content-type.service';
@@ -16,6 +16,7 @@ import { CdnCacheInterceptor } from '../interceptors/cdn-cache.interceptor';
 import { DeliveryRateLimitGuard } from '../guards/delivery-rate-limit.guard';
 
 @Controller('api/delivery')
+@SetMetadata('boot:isPublic', true)
 @UseGuards(ContentApiKeyGuard, DeliveryRateLimitGuard)
 @UseInterceptors(CdnCacheInterceptor)
 export class DeliveryController {
